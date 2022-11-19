@@ -60,7 +60,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.prettyNames = prettyNames;
   ext.prettyNames = prettyNames;
   
-  local startFound :: [Decorated SyntaxDcl] = getSyntaxDcl(searchEnvTree(startnt, host.cstEnv));
+  local startFound :: [Decorated SyntaxDcl] = getSyntaxDcl(filterSameTypeEnv(searchEnvTree(startnt, host.cstEnv)));
 
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   top.cstErrors <- if !null(startFound) then []

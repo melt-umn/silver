@@ -9,6 +9,7 @@ import silver:util:treeset as s;
 monoid attribute cstDcls :: [Pair<String (Maybe<Type>,Decorated SyntaxDcl)>];
 inherited attribute cstEnv :: EnvTree<(Maybe<Type>, Decorated SyntaxDcl)>;
 monoid attribute cstErrors :: [String];
+monoid attribute cstPolyDcls :: [Decorated SyntaxDcl];
 
 -- Transformation that moves productions underneath their respective nonterminals.
 monoid attribute cstProds :: [Pair<String SyntaxDcl>];
@@ -146,7 +147,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.cstDcls := [pair(t.typeName, (just(t),top))] ++ subdcls.cstDcls;
   top.allNonterminals := [top];
   
-  top.cstErrors <- if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
+  top.cstErrors <- if length(filterSameTypeEnv(searchEnvTree(t.typeName,top.cstEnv))) == 1 then []
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstProds := subdcls.cstProds;
   top.cstNormalize :=
@@ -245,18 +246,18 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
-  top.cstDcls := [pair(ns.fullName, (nothing(),top))];
+  top.cstDcls := [pair(ns.fullName, (just(ns.typerep),top))];
   top.allProductions := [top];
   top.allProductionNames := [ns.fullName];
   
   modifiers.productionSig = ns;
 
   production lhsRef :: [Decorated SyntaxDcl] =
-    getSyntaxDcl(searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv));
+    getSyntaxDcl(filterSameTypeEnv(searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv)));
   production rhsRefs :: [[Decorated SyntaxDcl]] =
-    map(getSyntaxDcl, lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv));
+    map(compose(getSyntaxDcl,filterSameTypeEnv), lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv));
 
-  top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
+  top.cstErrors <- if length(filterSameTypeEnv(searchEnvTree(ns.fullName, top.cstEnv))) == 1 then []
                    else ["Name conflict with production " ++ ns.fullName];
 
   top.cstErrors <- if length(lhsRef) == 1 then
@@ -322,6 +323,16 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         head(lhsRef).copperElementReference,
         map((.copperElementReference), map(head, rhsRefs)), prodLayout)
     ];
+}
+
+
+function filterSameTypeEnv
+[(Maybe<Type>,Decorated SyntaxDcl)] ::= l::[(Maybe<Type>,Decorated SyntaxDcl)]
+{
+  return case l of 
+  | [] -> []
+  | h::_ -> filter(\t::(Maybe<Type>, Decorated SyntaxDcl) -> fst(t) ==  fst(h),l) 
+  end;
 }
 
 function fetchChildren
