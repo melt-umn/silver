@@ -44,7 +44,7 @@ top::AttributeDclInfo ::=
   top.isStrategy = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = strategyAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateStrategy(_, location=_);

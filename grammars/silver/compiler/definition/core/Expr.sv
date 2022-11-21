@@ -493,28 +493,24 @@ top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Loca
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
 }
-abstract production accessBounceDecorate
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur
+function accessBounceDecorate
+Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur  loc::Location
 {
-  undecorates to access(e, '.', q, location=top.location);
-  forwards to accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=top.location), 'with', '{', '}', location=top.location), q, location=top.location);
+  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=loc), 'with', '{', '}', location=loc), q, location=loc);
 }
 -- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
-abstract production accessBounceUndecorate
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur
+function accessBounceUndecorate
+Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur  loc::Location
 {
-  undecorates to access(e, '.', q, location=top.location);
-  forwards to accessBouncer(target,
+  return accessBouncer(target,
     application(
-      baseExpr(
-        qName(top.location, "silver:core:getTermThatWasDecorated"),
-        location=top.location), '(',
+      baseExpr(qName(loc, "silver:core:getTermThatWasDecorated"), location=loc), '(',
       oneAppExprs(
-        presentAppExpr(exprRef(e, location=top.location), location=top.location),
-        location=top.location), ',',
-      emptyAnnoAppExprs(location=top.location), ')',
-      location=top.location),
-    q, location=top.location);
+        presentAppExpr(exprRef(e, location=loc), location=loc),
+        location=loc), ',',
+      emptyAnnoAppExprs(location=loc), ')',
+      location=loc),
+    q, location=loc);
 }
 
 abstract production decoratedAccessHandler
