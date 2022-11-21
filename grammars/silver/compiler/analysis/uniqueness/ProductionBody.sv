@@ -22,6 +22,16 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  top.errors <-
+    if any(map((.isUniqueDecorated), top.frame.signature.inputTypes)) then []
+    else map(\ r::(String, UniqueRefSite) -> err(r.2.sourceLocation,
+        s"Unique reference to ${r.1} taken outside of a unique context. " ++
+        s"The return of ${top.frame.fullName} is not a unique context as this function has no unique parameters."),
+      e.uniqueRefs);
+}
 aspect production undecoratesTo
 top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
 {

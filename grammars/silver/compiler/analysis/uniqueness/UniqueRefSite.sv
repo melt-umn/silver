@@ -33,4 +33,4 @@ instance Eq UniqueRefSite {
 }
 
 global uniqueContextErrors::([Message] ::= [(String, UniqueRefSite)]) =
-  map(\ r::(String, UniqueRefSite) -> err(r.2.sourceLocation, s"Unique reference to ${r.1} taken outside of a unique context"), _);
+  map(\ r::(String, UniqueRefSite) -> err(r.2.sourceLocation, s"Unique reference to ${r.1} taken outside of a unique context."), _);

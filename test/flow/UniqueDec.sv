@@ -118,3 +118,12 @@ top::UDExpr ::= e::Decorated! UDExpr with {env1}
   local otherRef::Decorated! UDExpr with {} = e;
 }
 }
+
+wrongCode "Unique reference to flow:uniqueReturn:e taken outside of a unique context." {
+function uniqueReturn
+UDExpr ::= e::UDExpr
+{
+  e.env1 = [];
+  return dispatchThing(e);
+}
+}
