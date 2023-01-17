@@ -28,6 +28,7 @@ attribute lazyTranslation occurs on Exprs;
 --   to put values in a `new Object[]{...}`
 
 synthesized attribute invokeTranslation :: String occurs on Expr;
+inherited attribute invokeIsUnique :: Boolean occurs on Expr;
 inherited attribute invokeArgs :: Decorated AppExprs occurs on Expr;
 inherited attribute invokeNamedArgs :: Decorated AnnoAppExprs occurs on Expr;
 inherited attribute sameProdAsProductionDefinedOn :: Boolean occurs on Expr;
@@ -139,7 +140,11 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
-    s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})";
+    s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ",
+      makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++
+      toString(top.invokeIsUnique) ::
+      contexts.transContexts ++
+      map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})";
 }
 
 aspect production functionReference
@@ -158,7 +163,10 @@ top::Expr ::= q::PartiallyDecorated QName
 
   local invokeTrans::String =
     -- static method invocation
-    s"${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))})";
+    s"${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ",
+      [makeOriginContextRef(top)] ++
+      contexts.transContexts ++
+      map((.lazyTranslation), top.invokeArgs.exprs))})";
   top.invokeTranslation =
     if top.typerep.outputType.transType != finalType(top).outputType.transType
     then s"common.Util.<${finalType(top).outputType.transType}>uncheckedCast(${invokeTrans})"
@@ -208,6 +216,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::
   top.translation = e.invokeTranslation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
+  e.invokeIsUnique = top.isUnique;
   e.invokeArgs = es;
   e.invokeNamedArgs = annos;
   e.sameProdAsProductionDefinedOn =
@@ -416,6 +425,15 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
 }
 
 
+
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.translation =
+    s"new ${finalType(top).transType}.DecorationSiteWrapper(${if finalType(top).tracked then makeOriginContextRef(top) ++ ", " else ""}${e.translation})";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
 aspect production trueConst
 top::Expr ::='true'
 {
@@ -559,7 +577,6 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;
 }
-
 
 function wrapThunk
 String ::= exp::String  beLazy::Boolean

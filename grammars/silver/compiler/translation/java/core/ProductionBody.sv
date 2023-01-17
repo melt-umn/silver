@@ -90,6 +90,12 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.attrName = q.attrOccursInitIndex;
 }
 
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  top.translation = "";
+}
+
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {

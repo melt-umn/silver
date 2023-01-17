@@ -7,7 +7,7 @@ propagate upSubst, downSubst
    excluding
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
-     decorateExprWith, exprInh, presentAppExpr,
+     decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
@@ -363,6 +363,20 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Operand to decorate must be a nonterminal or partially decorated type.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
+}
+
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, e, errCheck1, top;
+
+  errCheck1 = check(e.typerep, partiallyDecoratedType(freshType(), inhSetType([])));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to @ must be partially decorated with no attributes.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 

@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.TraceException;
+
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
  * 
@@ -11,6 +13,12 @@ package common;
  * @see DecoratedNode
  */
 public abstract class Node implements Decorable, Typed {
+	public final boolean isUnique;
+	
+	protected Node(final boolean isUnique) {
+		this.isUnique = isUnique;
+	}
+
 	// Common manipulators of Node objects.
 	
 	/**
@@ -22,7 +30,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
@@ -38,14 +46,14 @@ public abstract class Node implements Decorable, Typed {
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A "decorated" form of this Node 
 	 */
-	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
                                  this, parent, null, fwdParent);
 	}
-	
+
 	/**
 	 * A convenience method unused by generate Silver code, but useful when working with
 	 * the Silver runtime from Java.
@@ -54,6 +62,18 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	public DecoratedNode decorate() {
 		return decorate(TopNode.singleton, (Lazy[])null);
+	}
+	
+	private Node undecoratedValue = null;
+	public final Node undecorate(final DecoratedNode context) {
+		if (undecoratedValue == null) {
+			try {
+				undecoratedValue = evalUndecorate(context);
+			} catch(Throwable t) {
+				throw new TraceException("While undecorating " + context.getDebugID(), t);
+			}
+		}
+		return undecoratedValue;
 	}
 
 	// These methods are to be provided by the *nonterminal*
@@ -181,7 +201,7 @@ public abstract class Node implements Decorable, Typed {
 	/**
 	 * Reports whether or not this production forwards.
 	 * 
-	 * @return true is {@link #evalForward} can be called, false if that immediately throws.
+	 * @return true if {@link #evalForward} can be called, false if that immediately throws.
 	 */
 	public abstract boolean hasForward();
 	
@@ -193,6 +213,14 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The Node that context forwards to.
 	 */
 	public abstract Node evalForward(final DecoratedNode context);
+	
+	/**
+	 * Compute the term that this Node undecorates to.
+	 *
+	 * @param context The DN of this node, to use to evaluate the undecorate equation.
+	 * @return The Node that context undecorates to.
+	 */
+	public abstract Node evalUndecorate(final DecoratedNode context);
 
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })

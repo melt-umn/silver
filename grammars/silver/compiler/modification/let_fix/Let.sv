@@ -51,6 +51,8 @@ top::Expr ::= la::AssignExpr  e::Expr
 
   propagate downSubst, upSubst, finalSubst;
   
+  top.isUnique = e.isUnique;
+  
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
   la.env = top.env;
@@ -122,6 +124,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 abstract production lexicalLocalReference
 top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);
@@ -150,5 +153,7 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
     end;
 
   propagate downSubst, upSubst;
+  
+  top.isUnique = false;  -- TODO: This is overly restrictive
 }
 

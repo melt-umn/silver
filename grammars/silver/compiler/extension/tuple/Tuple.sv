@@ -60,23 +60,23 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
     -- exprRef prevents exponential type checking
-    else select(exprRef(tuple, location=top.location), 1, accessIndex, len);
+    else select(exprRef(tuple, location=top.location), 1, accessIndex, len, location=top.location);
 
 }
 
-function select
+abstract production select
 -- i is the current index, a is the desired access index
 -- len is the total length of the tuple
-Expr ::= exp::Expr i::Integer a::Integer len::Integer
- {
-  return 
+top::Expr ::= exp::Expr i::Integer a::Integer len::Integer
+{
+  forwards to 
     if i == a then
       if a == len then
         -- only if the access index is the length of the
         -- tuple do we simply return the expression itself
-        Silver_Expr { $Expr{exp} } 
-      else Silver_Expr { $Expr{exp}.fst }
-    else select(Silver_Expr{ $Expr{exp}.snd }, i + 1, a, len);
+        @exp
+      else Silver_Expr { $Expr{@exp}.fst }
+    else select(Silver_Expr{ $Expr{@exp}.snd }, i + 1, a, len, location=top.location);
 }
 
 -- TupleList cases:

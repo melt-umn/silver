@@ -3,7 +3,7 @@
 set -eu
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss16M -Xmx5G -jar ../jars/silver.compiler.composed.Default.jar"
+JVM_ARGS="-Xss16M -Xmx6G -jar ../jars/silver.compiler.composed.Default.jar"
 export ANT_OPTS=-Xss10M
 
 # just run this script, no parameters or options.

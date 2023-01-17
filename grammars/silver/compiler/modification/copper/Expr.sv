@@ -16,11 +16,13 @@ top::Expr ::= 'disambiguationFailure'
   top.lazyTranslation = top.translation;
 
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }
 
 abstract production actionChildReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -32,11 +34,13 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }
 
 abstract production pluckTerminalReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -49,6 +53,7 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
   
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }
 
 -- TODO: Distinct from pluckTerminalReference (since this can occur in any action block and
@@ -58,6 +63,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production terminalIdReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -71,11 +77,13 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }
 
 abstract production lexerClassReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -90,11 +98,13 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
   
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }
 
 abstract production parserAttributeReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -109,11 +119,13 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }
 
 abstract production termAttrValueReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -132,4 +144,5 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation; -- never, but okay!
 
   top.upSubst = top.downSubst;
+  top.isUnique = false;
 }

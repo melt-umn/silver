@@ -186,8 +186,9 @@ top::Expr ::= q::PartiallyDecorated QName
       -- Check that there is at most one partial reference taken to this decoration site.
       -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
       -- a term and decorating that more than once), need some sort of "linearity analysis".
-      else if length(partialRefs) > 1
-      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- TODO: This check is overly conservative, it flags partially decorated references in mutually exclusive positions:
+      {-else if length(partialRefs) > 1
+      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]-}
       else []
     | _, _ -> []
     end;
@@ -213,8 +214,9 @@ top::Expr ::= q::PartiallyDecorated QName
       -- Check that there is at most one partial reference taken to this decoration site.
       -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
       -- a term and decorating that more than once), need some sort of "linearity analysis".
-      else if length(partialRefs) > 1
-      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- TODO: This check is overly conservative, it flags partially decorated references in mutually exclusive positions:
+      {-else if length(partialRefs) > 1
+      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]-}
       else []
     | _, _ -> []
     end;
