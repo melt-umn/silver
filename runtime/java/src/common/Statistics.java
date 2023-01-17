@@ -6,7 +6,6 @@ import java.util.Map;
 public class Statistics extends Thread {
 	// Enabling:
 	// Uncomment the two things in both DecoratedNode and Node and Thunk.
-	// Also, as an ugly hack to make this all-runtime, uncomment the thing in Decorator. :(
 
 	protected static boolean hooked = false;
 

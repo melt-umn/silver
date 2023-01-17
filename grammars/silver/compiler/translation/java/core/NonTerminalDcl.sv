@@ -37,7 +37,6 @@ public abstract class ${className} extends common.Node ${
 
 	public static final String[] occurs_inh = new String[num_inh_attrs];
 	public static final String[] occurs_syn = new String[num_syn_attrs];
-	public static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();
 
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 

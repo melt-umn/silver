@@ -10,7 +10,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.setupInh := body.setupInh;
   top.initProd := s"\t\t${className}.initProductionAttributeDefinitions();\n"
                ++ s"\t\tcommon.RTTIManager.registerProduction(${className}.prodleton);\n\n";
-  top.postInit := s"\t\tcommon.Decorator.applyDecorators(${fnnt}.decorators, ${className}.prodleton);\n";
+  top.postInit := s"";
 
   top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
   top.valueWeaving := body.valueWeaving;

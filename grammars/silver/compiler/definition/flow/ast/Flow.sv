@@ -19,8 +19,7 @@ nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwd
 monoid attribute synTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production, sig, attribute) to find inherited equation
- - Used to ensure a necessary rhs.inh equation exists.
- - Also decides whether to add a copy equation for autocopy attributes to rhs elements. -}
+ - Used to ensure a necessary rhs.inh equation exists. -}
 monoid attribute inhTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (nonterminal, attribute) to find default syn equations
