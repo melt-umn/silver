@@ -179,8 +179,8 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-             -- TODO: Consider if all decorable children are directly undecorable.
-             -- This must avoid forcing children that are thunks, and probably also should be cached.
+          -- TODO: Consider if all decorable children are directly undecorable.
+          -- This must avoid forcing children that are thunks, and probably also should be cached.
           else "return this;"}
     }
 
