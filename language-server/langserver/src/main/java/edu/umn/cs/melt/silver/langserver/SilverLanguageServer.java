@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -14,6 +15,8 @@ import org.eclipse.lsp4j.FileOperationPattern;
 import org.eclipse.lsp4j.FileOperationsServerCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
@@ -26,10 +29,14 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import com.google.gson.JsonObject;
+
 import edu.umn.cs.melt.lsp4jutil.Util;
+import silver.compiler.definition.core.NRoot;
 
 public class SilverLanguageServer implements LanguageServer, LanguageClientAware {
     private SilverLanguageService service;
+    private LanguageClient client;
     private int errorCode = 1;
 
     public SilverLanguageServer() {
@@ -38,13 +45,46 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {
-		common.Util.init();
-		silver.compiler.composed.Default.Init.initAllStatics();
-		silver.compiler.composed.Default.Init.init();
-		silver.compiler.composed.Default.Init.postInit();
-
         System.err.println("Initializing Silver language server");
 
+        // Initialize the Silver runtime
+		common.Util.init();
+
+        // Get the initialization options
+        String compilerJar = "", parserName = "";
+        try {
+            JsonObject initOptions = (JsonObject)initializeParams.getInitializationOptions();
+            compilerJar = initOptions.get("compilerJar").getAsString();
+            parserName = initOptions.get("parserName").getAsString();
+        } catch(ClassCastException e) {
+            System.err.println("Failed to get compiler jar/parser name");
+        }
+        if (parserName.isEmpty()) {
+            parserName = "silver:compiler:composed:Default:svParse";
+        }
+
+        // Initialize grammars from the specified compiler jar (or default classloader)
+        ClassLoader loader = compilerJar.isEmpty()? 
+            ClassLoader.getSystemClassLoader() :
+            Util.getJarClassLoader(Paths.get(compilerJar));
+        try {
+            // The grammar silver:compiler:langserver contains language server-specific
+            // compiler utilities, and imports silver:compiler:host.
+            Util.initGrammar("silver:compiler:langserver", loader);
+        } catch (SecurityException | ReflectiveOperationException e) {
+            client.showMessage(new MessageParams(MessageType.Error, "Error loading compiler jar " + compilerJar + ": " + e.toString()));
+        }
+
+        // Load the specified parser
+        boolean loadedParser = false;
+        try {
+            service.setParserFactory(Util.loadCopperParserFactory(loader, parserName, NRoot.class));
+            loadedParser = true;
+        } catch (SecurityException | ReflectiveOperationException e) {
+            client.showMessage(new MessageParams(MessageType.Error, "Error loading parser " + parserName + " from jar: " + e.toString()));
+        }
+
+        // Set up the Silver standard library grammars folder
         Path silverGrammars;
         try {
             silverGrammars = Files.createTempDirectory("silver_grammars");
@@ -54,16 +94,21 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         }
         service.setSilverGrammarsPath(silverGrammars);
 
-        service.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
+        // Initialize the project grammars folder(s)
+        if (initializeParams.getWorkspaceFolders() != null) {
+            service.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
+        }
 
         // Set the capabilities of the LS to inform the client.
         ServerCapabilities capabilities = new ServerCapabilities();
         capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
-        capabilities.setSemanticTokensProvider(
-            new SemanticTokensWithRegistrationOptions(
-                new SemanticTokensLegend(
-                    SilverLanguageService.tokenTypes, SilverLanguageService.tokenModifiers),
-                new SemanticTokensServerFull(false), false));
+        if (loadedParser) {
+            capabilities.setSemanticTokensProvider(
+                new SemanticTokensWithRegistrationOptions(
+                    new SemanticTokensLegend(
+                        SilverLanguageService.tokenTypes, SilverLanguageService.tokenModifiers),
+                    new SemanticTokensServerFull(false), false));
+        }
         capabilities.setExecuteCommandProvider(new ExecuteCommandOptions(List.of(
             "silver.clean"
         )));
@@ -111,6 +156,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 
     @Override
     public void connect(LanguageClient languageClient) {
+        this.client = languageClient;
         service.setClient(languageClient);
     }
 }
