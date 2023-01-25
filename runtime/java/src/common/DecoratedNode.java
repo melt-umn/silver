@@ -39,7 +39,7 @@ public class DecoratedNode implements Decorable, Typed {
 	protected final Node self;
 	/**
 	 * The node that forwards to this one. (May be null)
-	 * Not final, because we may set this when forwarding to a partially-decorated reference.
+	 * Not final, because we may set this when forwarding to a (unique) reference.
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
@@ -177,7 +177,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
-	 * Decorate this (partially decorated) node with additional inherited attributes.
+	 * Decorate this (unique decorated) node with additional inherited attributes.
 	 * 
 	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.

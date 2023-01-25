@@ -261,13 +261,13 @@ top::Type ::= te::Type i::Type
 }
 
 {--
- - A *partially decorated* nonterminal type.
+ - A *unique decorated* nonterminal type.
  - Represents a reference with some exact set of provided inherited attributes,
  - may be decorated with additional attributes.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
  - @param i  MUST have kind InhSet
  -}
-abstract production partiallyDecoratedType
+abstract production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
@@ -297,7 +297,7 @@ top::Type ::= te::Type i::Type
  -
  - @param nt  MUST be a 'nonterminalType'
  - @param inhs  The inh set that we're decorated with, or a free var if we don't care - MUST have kind InhSet
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'partiallyDecoratedType(nt, inhs)'
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'uniqueDecoratedType(nt, inhs)'
  -                representing state: unspecialized, undecorated, or decorated.
  - @param defaultPartialDec  The default for what we are if we never specialize.
  - @param inhs  The default for what we're decorated with if we never specialize - MUST have kind InhSet

@@ -17,7 +17,7 @@ top::Expr ::= params::ProductionRHS e::Expr
 
 
 aspect production lambdaParamReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

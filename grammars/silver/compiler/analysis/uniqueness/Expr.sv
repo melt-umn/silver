@@ -15,85 +15,85 @@ top::Expr ::= msg::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
+top::Expr ::= msg::[Message]  q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = finalType(top).isUnique;
 }
 
 aspect production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = finalType(top).isUnique;
 }
 
 aspect production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.isUnique = false;
 }
 
 aspect production errorApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   top.isUnique = false;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   top.isUnique = e.isUnique || es.isUnique;
 }
 
 aspect production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   top.isUnique = e.isUnique || es.isUnique;
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.isUnique = false;
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.isUnique = false;
 }
@@ -105,25 +105,25 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.isUnique = false;
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.isUnique = false;
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.isUnique = false;
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.isUnique = false;
 }
@@ -283,7 +283,7 @@ top::AppExprs ::=
 }
 
 aspect production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
+top::Expr ::= e::Decorated! Expr
 {
   top.isUnique = e.isUnique;
 }

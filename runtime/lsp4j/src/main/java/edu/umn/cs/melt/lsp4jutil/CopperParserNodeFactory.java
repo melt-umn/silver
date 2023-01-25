@@ -16,7 +16,6 @@ import silver.core.NParseResult;
 * A wrapper to treat a Silver-generated Copper parser as a Silver function.
 * 
 * @author krame505
-* @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
 */
 public class CopperParserNodeFactory extends NodeFactory<NParseResult> {
     private Supplier<? extends SilverCopperParser<?>> parserFactory;

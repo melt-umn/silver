@@ -5,7 +5,7 @@ flowtype UndecNT = decorate {};
 propagate compareTo, isEqual on UndecNT;
 
 production fork1UNT
-top::UndecNT ::= a::PartiallyDecorated UndecNT b::UndecNT
+top::UndecNT ::= a::Decorated! UndecNT b::UndecNT
 {
   undecorates to fork2UNT(a, b);
 }
@@ -20,7 +20,7 @@ top::UndecNT ::=
 {}
 
 production wrapUNT
-top::UndecNT ::= a::PartiallyDecorated UndecNT
+top::UndecNT ::= a::Decorated! UndecNT
 {
   undecorates to a;
 }

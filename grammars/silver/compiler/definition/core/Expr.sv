@@ -97,7 +97,7 @@ top::Expr ::= q::QName
 }
 
 abstract production errorReference
-top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
+top::Expr ::= msg::[Message]  q::Decorated! QName
 {
   undecorates to errorExpr(msg, location=top.location);
   top.unparse = q.unparse;
@@ -109,7 +109,7 @@ top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 
 -- TODO: We should separate this out, even, to be "nonterminal/decorable" and "as-is"
 abstract production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -121,7 +121,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -132,7 +132,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -144,7 +144,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -158,7 +158,7 @@ top::Expr ::= q::PartiallyDecorated QName
 -- Later on, we do *not* distinguish for application.
 
 abstract production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -177,7 +177,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -196,7 +196,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -228,7 +228,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -314,7 +314,7 @@ top::Expr ::= e::Expr '(' ')'
 }
 
 abstract production errorApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -332,7 +332,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 -- We don't distinguish anymore at this point. A production reference
 -- becomes a function, effectively.
 abstract production functionApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -345,7 +345,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 abstract production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -356,7 +356,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 abstract production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -413,7 +413,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 abstract production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -429,7 +429,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 abstract production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -441,7 +441,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 abstract production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -466,7 +466,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 abstract production undecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -483,7 +483,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -494,21 +494,21 @@ top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNam
   forwards to target(e, q, top.location);
 }
 abstract production accessBounceDecorate
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   forwards to accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=top.location), 'with', '{', '}', location=top.location), q, location=top.location);
 }
 -- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
 abstract production accessBounceUndecorate
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   forwards to accessBouncer(target, mkStrFunctionInvocation(top.location, "silver:core:getTermThatWasDecorated", [exprRef(e, location=top.location)]), q, location=top.location);
 }
 
 abstract production decoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -523,7 +523,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 abstract production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -532,7 +532,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 abstract production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -542,7 +542,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 
 -- TODO: change name. really "unknownDclAccessHandler"
 abstract production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -567,7 +567,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
   production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
 
-  -- TODO: This _could_ be partiallyDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
+  -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
   top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
@@ -1244,7 +1244,7 @@ AnnoExpr ::= p::Pair<String Expr>
  - references to those children.
  -}
 abstract production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
+top::Expr ::= e::Decorated! Expr
 {
   undecorates to e;
 

@@ -63,7 +63,7 @@ String ::= fn::String  et::String  ty::String
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   -- To account for a magic case where we generate a let expression with a type
   -- that is, for example, a ntOrDecType or something,

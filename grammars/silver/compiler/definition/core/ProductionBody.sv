@@ -304,7 +304,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
 abstract production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to errorProductionStmt(msg, location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -315,7 +315,7 @@ top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::Part
 }
 
 abstract production synthesizedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -324,7 +324,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 }
 
 abstract production inheritedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -349,7 +349,7 @@ top::DefLHS ::= q::QName
 }
 
 abstract production errorDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
@@ -369,7 +369,7 @@ top::DefLHS ::= q::'forward'
 }
 
 abstract production childDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
@@ -386,7 +386,7 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production lhsDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
@@ -403,7 +403,7 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production localDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
@@ -420,7 +420,7 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production forwardDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
@@ -456,7 +456,7 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 }
 
 abstract production errorValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
@@ -469,7 +469,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 }
 
 abstract production localValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";

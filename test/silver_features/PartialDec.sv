@@ -20,7 +20,7 @@ top::PDExpr ::= e::PDExpr
 }
 
 production pdOp1Impl
-top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
+top::PDExpr ::= e::Decorated! PDExpr with {env1}
 {
   undecorates to pdOp1(e);
   e.env2 = top.env2;
@@ -36,10 +36,10 @@ top::PDExpr ::= e::PDExpr
 }
 
 production pdOp2Impl
-top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
+top::PDExpr ::= e::Decorated! PDExpr with {env1}
 {
   undecorates to pdOp2(e);
-  local e2::PartiallyDecorated PDExpr with {env1} = e;
+  local e2::Decorated! PDExpr with {env1} = e;
   e2.env2 = top.env2;
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
@@ -54,7 +54,7 @@ top::PDExpr ::= e::PDExpr
 }
 
 production pdOp3Impl
-top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
+top::PDExpr ::= e::Decorated! PDExpr with {env1}
 {
   undecorates to pdOp3(e);
   local e2::Decorated PDExpr = decorate withEnv1(e) with {env2 = top.env2;};
@@ -62,22 +62,22 @@ top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
   top.errors2 = e2.errors2;
 }
 
-global withEnv1::(PartiallyDecorated PDExpr with {env1} ::= PartiallyDecorated PDExpr with {env1}) = id;
+global withEnv1::(Decorated! PDExpr with {env1} ::= Decorated! PDExpr with {env1}) = id;
 
 production pdOp4
 top::PDExpr ::= e::PDExpr
 {
   e.env1 = top.env1;
-  local e2::PartiallyDecorated PDExpr with {env1} = e;
+  local e2::Decorated! PDExpr with {env1} = e;
   e2.env2 = top.env2;
   forwards to pdOp4Impl(e2);
 }
 
 production pdOp4Impl
-top::PDExpr ::= e::PartiallyDecorated PDExpr
+top::PDExpr ::= e::Decorated! PDExpr
 {
   undecorates to pdOp4(e);
-  local e2::PartiallyDecorated PDExpr = e;
+  local e2::Decorated! PDExpr = e;
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
 }

@@ -49,9 +49,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
-global partialDefaultAttributeDef::(ProductionStmt ::= PartiallyDecorated DefLHS  PartiallyDecorated QNameAttrOccur  Expr  Location) =
-  \ dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr loc::Location ->
-    attributeDef(newPartial(dl), '.', newPartial(attr), '=', e, ';', location=loc);
+global partialDefaultAttributeDef::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
+  \ dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr loc::Location ->
+    attributeDef(newUnique(dl), '.', newUnique(attr), '=', e, ';', location=loc);
 
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
@@ -193,7 +193,7 @@ function buildExplicitAttrErrors
 
 --productions for error checking on restricted attributes
 abstract production restrictedSynAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -219,7 +219,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 
 
 abstract production restrictedInhAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -248,7 +248,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 
 --productions for error checking on implicit attributes
 abstract production implicitSynAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -279,7 +279,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 
 
 abstract production implicitInhAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";

@@ -20,7 +20,7 @@ top::Expr ::= 'disambiguationFailure'
 }
 
 abstract production actionChildReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -38,7 +38,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production pluckTerminalReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -61,7 +61,7 @@ top::Expr ::= q::PartiallyDecorated QName
 -- thing.  Also having type classes would let us use a more specific type than generic TerminalId,
 -- and pluckTerminalReference wouldn't need to cheat with a fresh type.
 abstract production terminalIdReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -81,7 +81,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production lexerClassReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -102,7 +102,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production parserAttributeReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -123,7 +123,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production termAttrValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
