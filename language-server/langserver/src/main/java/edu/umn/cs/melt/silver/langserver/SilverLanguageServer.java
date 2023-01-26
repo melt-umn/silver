@@ -54,10 +54,16 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         String compilerJar = "", parserName = "";
         try {
             JsonObject initOptions = (JsonObject)initializeParams.getInitializationOptions();
-            compilerJar = initOptions.get("compilerJar").getAsString();
-            parserName = initOptions.get("parserName").getAsString();
+            if (initOptions != null) {
+                if (initOptions.has("compilerJar")) {
+                    compilerJar = initOptions.get("compilerJar").getAsString();
+                }
+                if (initOptions.has("parserName")) {
+                    parserName = initOptions.get("parserName").getAsString();
+                }
+            }
         } catch(ClassCastException e) {
-            System.err.println("Failed to get compiler jar/parser name");
+            System.err.println("Got unexpected init options: " + initializeParams.getInitializationOptions());
         }
         if (parserName.isEmpty()) {
             parserName = "silver:compiler:composed:Default:svParse";
