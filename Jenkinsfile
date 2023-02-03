@@ -88,6 +88,16 @@ melt.trynode('silver') {
     // Upon succeeding at initial build, archive for future builds
     archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
     melt.archiveCommitArtifacts("jars/*.jar")
+
+    // Build language server
+    // dir ("${WS}/language-server") {
+    //   sh "./build.sh"
+    // }
+
+    // Build VS Code plugin
+    dir ("${WS}/support/vs-code/silverlsp") {
+      sh "npx vsce package"
+    }
   }
 
   stage("Modular Analyses") {
