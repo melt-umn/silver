@@ -95,8 +95,10 @@ melt.trynode('silver') {
     // }
 
     // Build VS Code plugin
-    dir ("${WS}/support/vs-code/silverlsp") {
-      sh "npx vsce package"
+    withenv (["PATH+npx=/export/scratch/thirdparty/node-v18.13.0/bin"]) {
+      dir ("${WS}/support/vs-code/silverlsp") {
+        sh "npx vsce package"
+      }
     }
   }
 
