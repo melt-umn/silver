@@ -62,7 +62,9 @@ top::PDExpr ::= e::Decorated! PDExpr with {env1}
   top.errors2 = e2.errors2;
 }
 
-global withEnv1::(Decorated! PDExpr with {env1} ::= Decorated! PDExpr with {env1}) = id;
+function withEnv1
+Decorated! PDExpr with {env1} ::= x::Decorated! PDExpr with {env1}
+{ return x; }
 
 production pdOp4
 top::PDExpr ::= e::PDExpr
@@ -89,3 +91,7 @@ equalityTest(decorate pdTerm with { env1 = ["foo"]; env2 = []; }.errors1, false,
 equalityTest(decorate pdTerm with { env1 = ["foo"]; env2 = []; }.errors2, true, Boolean, silver_tests);
 equalityTest(decorate pdTerm with { env1 = []; env2 = ["foo"]; }.errors1, true, Boolean, silver_tests);
 equalityTest(decorate pdTerm with { env1 = []; env2 = ["foo"]; }.errors2, true, Boolean, silver_tests);
+
+wrongCode "Cannot specialize" {
+  global uniqueRefId::(Decorated! PDExpr ::= Decorated! PDExpr) = id;
+}
