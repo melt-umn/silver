@@ -108,6 +108,46 @@ top::Expr ::= q::Decorated! QName
     | _ -> []
     end;
 }
+aspect production productionReference
+top::Expr ::= q::Decorated! QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <- flatMap(\ tv::TyVar ->
+    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
+    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
+    else [],
+    top.typerep.freeVariables);
+}
+aspect production functionReference
+top::Expr ::= q::Decorated! QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <- flatMap(\ tv::TyVar ->
+    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
+    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
+    else [],
+    top.typerep.freeVariables);
+}
+aspect production classMemberReference
+top::Expr ::= q::Decorated! QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <- flatMap(\ tv::TyVar ->
+    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
+    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
+    else [],
+    top.typerep.freeVariables);
+}
+aspect production globalValueReference
+top::Expr ::= q::Decorated! QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <- flatMap(\ tv::TyVar ->
+    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
+    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
+    else [],
+    top.typerep.freeVariables);
+}
 
 monoid attribute appExprUniquenessErrors::[Message] occurs on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 -- Whether nonterminal uniqueness is preserved for this argument position,
