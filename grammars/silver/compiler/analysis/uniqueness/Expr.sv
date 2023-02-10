@@ -111,41 +111,45 @@ top::Expr ::= q::Decorated! QName
 aspect production productionReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <- flatMap(\ tv::TyVar ->
-    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
-    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
-    else [],
+    let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
+    in if substTy.isUniqueDecorated
+       then [err(top.location, s"Cannot specialize type variable ${prettyTypeWith(varType(tv), top.typerep.freeVariables)} of ${q.name}::${prettyType(top.typerep)} to a unique reference type ${prettyType(substTy)}")]
+       else []
+    end,
     top.typerep.freeVariables);
 }
 aspect production functionReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <- flatMap(\ tv::TyVar ->
-    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
-    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
-    else [],
+    let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
+    in if substTy.isUniqueDecorated
+       then [err(top.location, s"Cannot specialize type variable ${prettyTypeWith(varType(tv), top.typerep.freeVariables)} of ${q.name}::${prettyType(top.typerep)} to a unique reference type ${prettyType(substTy)}")]
+       else []
+    end,
     top.typerep.freeVariables);
 }
 aspect production classMemberReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <- flatMap(\ tv::TyVar ->
-    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
-    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
-    else [],
+    let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
+    in if substTy.isUniqueDecorated
+       then [err(top.location, s"Cannot specialize type variable ${prettyTypeWith(varType(tv), top.typerep.freeVariables)} of ${q.name}::${prettyType(top.typerep)} to a unique reference type ${prettyType(substTy)}")]
+       else []
+    end,
     top.typerep.freeVariables);
 }
 aspect production globalValueReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <- flatMap(\ tv::TyVar ->
-    if performSubstitution(varType(tv), top.finalSubst).isUniqueDecorated
-    then [err(top.location, s"Cannot specialize type variable ${prettyType(varType(tv))} of ${q.name} to a unique reference type ${prettyType(finalTy)}")]
-    else [],
+    let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
+    in if substTy.isUniqueDecorated
+       then [err(top.location, s"Cannot specialize type variable ${prettyTypeWith(varType(tv), top.typerep.freeVariables)} of ${q.name}::${prettyType(top.typerep)} to a unique reference type ${prettyType(substTy)}")]
+       else []
+    end,
     top.typerep.freeVariables);
 }
 
