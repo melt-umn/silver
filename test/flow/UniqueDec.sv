@@ -49,12 +49,11 @@ top::UDExpr ::= e::UDExpr
 }
 }
 
-warnCode "Attribute env2 with an equation on e is not in the unique reference taken" {
+-- Defining attributes not in the reference set taken is permitted
 aspect production overloadThing
 top::UDExpr ::= e::UDExpr
 {
   e.env2 = [];
-}
 }
 
 wrongFlowCode "Multiple unique references taken to e2 in production flow:overloadThing (reference has type Decorated! flow:UDExpr with {flow:env1})." {
@@ -69,11 +68,12 @@ top::UDExpr ::= e::UDExpr
 }
 }
 
-wrongCode "Unique reference of type Decorated! flow:UDExpr with {} does not contain all attributes in the reference set of e's type Decorated! flow:UDExpr with {flow:env1}" {
+wrongFlowCode "Multiple unique references taken to e in production flow:dispatchThing (reference has type Decorated! flow:UDExpr with {})." {
 aspect production dispatchThing
 top::UDExpr ::= e::Decorated! UDExpr with {env1}
 {
   local otherRef::Decorated! UDExpr with {} = e;
+  local otherRef2::Decorated! UDExpr with {} = e;
 }
 }
 
@@ -84,12 +84,11 @@ Decorated! UDExpr with {env1} ::= e::Decorated! UDExpr with i
   return e;
 }
 
-wrongCode "Cannot take a unique reference to e of type Decorated! flow:UDExpr with i, as the reference set is not bounded" {
+-- Taking a unique reference with an unbounded reference set is permitted
 function thingWithUnboundedRefArg
 {env1, env2} subset i => Decorated! UDExpr with {env1} ::= e::Decorated! UDExpr with i
 {
   return e;
-}
 }
 
 warnCode "Duplicate equation for env2 on e in production flow:alreadyDec" {
@@ -101,25 +100,16 @@ function alreadyDec
 }
 }
 
-warnCode "Attribute env1 with an equation on e is not in the unique reference taken" {
+-- Defining attributes not in the reference set taken is permitted
 function eqnNotInRef
-Decorated! UDExpr with {env2} ::= e::UDExpr
+Decorated! UDExpr with {env2} ::= e::UDExpr extra::Decorated! UDExpr
 {
   e.env1 = [];
   e.env2 = [];
   return e;
 }
-}
 
-wrongCode "Unique reference of type Decorated! flow:UDExpr with {} does not contain all attributes in the reference set of e's type Decorated! flow:UDExpr with {flow:env1}" {
-aspect production dispatchThing
-top::UDExpr ::= e::Decorated! UDExpr with {env1}
-{
-  local otherRef::Decorated! UDExpr with {} = e;
-}
-}
-
-wrongCode "Unique reference to flow:uniqueReturn:e taken outside of a unique context." {
+wrongFlowCode "Unique reference to flow:uniqueReturn:e taken outside of a unique context. The return of flow:uniqueReturn is not a unique context as this function has no unique parameters." {
 function uniqueReturn
 UDExpr ::= e::UDExpr
 {
