@@ -496,7 +496,7 @@ top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Loca
 function accessBounceDecorate
 Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur  loc::Location
 {
-  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=loc), 'with', '{', '}', location=loc), q, location=loc);
+  return accessBouncer(target, decorateExprWithEmpty('decorate', @e, 'with', '{', '}', location=loc), q, location=loc);
 }
 -- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
 function accessBounceUndecorate
@@ -506,7 +506,7 @@ Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location)
     application(
       baseExpr(qName(loc, "silver:core:getTermThatWasDecorated"), location=loc), '(',
       oneAppExprs(
-        presentAppExpr(exprRef(e, location=loc), location=loc),
+        presentAppExpr(@e, location=loc),
         location=loc), ',',
       emptyAnnoAppExprs(location=loc), ')',
       location=loc),
@@ -1236,31 +1236,16 @@ AnnoExpr ::= p::Pair<String Expr>
 }
 
 {--
- - We allow references to existing subexpressions to appear arbitrarily in trees.
+ - Note on the use of the 'decorated here' (@) operator with already-decorated expressions:
  - 
- - There is one MAJOR restriction on the use of this production:
- -   The referenced expression (e) MUST APPEAR in the same expression tree
+ - There is one MAJOR restriction on the use of this operator:
+ -   The referenced expression MUST APPEAR in the same expression tree
  -   as it is referenced in.
  -
  - This is for type information reasons: the subtree referenced must have been
  - typechecked in the same 'typing context' as wherever this tree appears.
  -
- - This is trivially satisfied for the typical use case for this production,
+ - This is trivially satisfied for the typical use case for this operator,
  - where you're typechecking your children, then forwarding to some tree with
  - references to those children.
  -}
-abstract production exprRef
-top::Expr ::= e::Decorated! Expr
-{
-  undecorates to e;
-
-  top.unparse = e.unparse;
-
-  -- See the major restriction. This should have been checked for error already!
-  top.typerep = e.typerep;
-  
-  -- TODO: one of the little things we might want is to make this transparent to
-  -- forwarding. e.g. e might be a 'childReference' and pattern matching would
-  -- need to separately account for this!
-  -- To accomplish this, we might want some notion of a decorated forward.
-}

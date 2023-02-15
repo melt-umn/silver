@@ -45,6 +45,7 @@ top::Expr ::= a::Expr b::Expr
   top.translation = s"new common.StringCatter(${a.translation}, ${b.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
   
+  -- TODO: Avoid directly decorating a and b when we have decoration site flow projections
   thread downSubst, upSubst on top, a, b, forward;
 
   a.isRoot = false;
@@ -57,9 +58,9 @@ top::Expr ::= a::Expr b::Expr
     snocAppExprs(
       snocAppExprs(
         emptyAppExprs(location=top.location), ',',
-        presentAppExpr(exprRef(a, location=a.location), location=top.location),
+        presentAppExpr(@a, location=top.location),
         location=top.location), ',',
-      presentAppExpr(exprRef(b, location=b.location), location=top.location),
+      presentAppExpr(@b, location=top.location),
       location=top.location),
     ',',
     emptyAnnoAppExprs(location=top.location),

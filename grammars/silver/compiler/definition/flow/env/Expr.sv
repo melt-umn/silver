@@ -206,12 +206,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     
 }
 
-aspect production exprRef
-top::Expr ::= e::Decorated! Expr
-{
-  top.flowVertexInfo = e.flowVertexInfo;
-}
-
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
 propagate flowDefs, flowEnv on AssignExpr;

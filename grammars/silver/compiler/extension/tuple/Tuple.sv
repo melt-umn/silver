@@ -59,8 +59,8 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
-    -- exprRef prevents exponential type checking
-    else select(exprRef(tuple, location=top.location), 1, accessIndex, len, location=top.location);
+    -- @ prevents exponential type checking
+    else select(@tuple, 1, accessIndex, len, location=top.location);
 
 }
 

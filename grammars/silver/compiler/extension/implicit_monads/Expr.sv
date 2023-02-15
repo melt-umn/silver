@@ -2057,22 +2057,6 @@ top::AppExprs ::=
   top.monadRewritten = emptyAppExprs(location=top.location);
 }
 
-
-aspect production exprRef
-top::Expr ::= e::Decorated! Expr
-{
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
-  e.monadicallyUsed = top.monadicallyUsed;
-
-  top.merrors := e.merrors;
-  top.mUpSubst = e.mUpSubst;
-  top.mtyperep = e.mtyperep;
-  top.monadicNames = e.monadicNames;
-  top.monadRewritten = e.monadRewritten;
-}
-
-
 --Copper Expressions
 aspect production failureTerminalIdExpr
 top::Expr ::= 'disambiguationFailure'

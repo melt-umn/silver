@@ -767,10 +767,3 @@ top::AnnoAppExprs ::=
 {
   top.transform = nilNamedASTExpr();
 }
-
-aspect production exprRef
-top::Expr ::= e::Decorated! Expr
-{
-  top.transform = e.transform;
-  e.boundVars = top.boundVars;
-}

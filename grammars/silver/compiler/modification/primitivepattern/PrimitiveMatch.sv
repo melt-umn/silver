@@ -58,14 +58,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  -- We are wrapping 'e' in 'exprRef' which suppresses errors
-  top.errors <- e.errors;
-  
   forwards to
     matchPrimitiveReal(
       if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
-      then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
-      else exprRef(e, location=e.location),
+      then decorateExprWithEmpty('decorate', @e, 'with', '{', '}', location=e.location)
+      else @e,
       t, pr, f, location=top.location);
 }
 
