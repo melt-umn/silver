@@ -71,20 +71,6 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
-
-  -- Check that if there is a unique reference taken to this decoration site,
-  -- we aren't defining an equation that isn't in that reference type (UniqueDecorated Foo with {...}).
-  top.errors <-
-    if dl.found && attr.found
-    && top.config.warnEqdef
-    then flatMap(
-      \ refSite::UniqueRefSite ->
-        if contains(attr.attrDcl.fullName, refSite.refSet) then []
-        else [mwdaWrn(top.config, top.location,
-          s"Attribute ${attr.name} with an equation on ${dl.name} is not in the unique reference taken at " ++
-          s"${refSite.sourceGrammar}:${refSite.sourceLocation.unparse} with only ${implode(", ", refSite.refSet)}")],
-      getUniqueRefs(dl.refSiteName, top.flowEnv))
-    else [];
 }
 
 
@@ -134,20 +120,6 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
-    else [];
-
-  -- Check that if there is a unique reference taken to this decoration site,
-  -- we aren't defining an equation that isn't in that reference type (UniqueDecorated Foo with {...}).
-  top.errors <-
-    if dl.found && attr.found
-    && top.config.warnEqdef
-    then flatMap(
-      \ refSite::UniqueRefSite ->
-        if contains(attr.attrDcl.fullName, refSite.refSet) then []
-        else [mwdaWrn(top.config, top.location,
-          s"Attribute ${attr.name} with an equation on ${dl.name} is not in the unique reference taken at " ++
-          s"${refSite.sourceGrammar}:${refSite.sourceLocation.unparse} with only ${implode(", ", refSite.refSet)}")],
-      getUniqueRefs(dl.refSiteName, top.flowEnv))
     else [];
 }
 

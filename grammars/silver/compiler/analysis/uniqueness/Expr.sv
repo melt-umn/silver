@@ -32,14 +32,8 @@ top::Expr ::= q::Decorated! QName
 
   local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(refSiteName, top.flowEnv);
   top.errors <-
-    case finalTy, refSet of
-    | uniqueDecoratedType(_, _), just(inhs) when q.lookupValue.found ->
-      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
-      | just(origInhs) ->
-        if all(map(contains(_, inhs), origInhs)) then []
-        else [err(top.location, s"Unique reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
-      | nothing() -> [err(top.location, s"Cannot take a unique reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
-      end ++
+    case finalTy of
+    | uniqueDecoratedType(_, _) when q.lookupValue.found ->
       -- Check that we are exported by the decoration site.
       if q.lookupValue.found
       && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
@@ -48,7 +42,7 @@ top::Expr ::= q::Decorated! QName
       else if length(allUniqueRefs) > 1
       then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       else []
-    | _, _ -> []
+    | _ -> []
     end;
 }
 aspect production localReference
@@ -67,14 +61,8 @@ top::Expr ::= q::Decorated! QName
 
   local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(refSiteName, top.flowEnv);
   top.errors <-
-    case finalTy, refSet of
-    | uniqueDecoratedType(_, _), just(inhs) when q.lookupValue.found ->
-      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
-      | just(origInhs) ->
-        if all(map(contains(_, inhs), origInhs)) then []
-        else [err(top.location, s"Unique reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
-      | nothing() -> [err(top.location, s"Cannot take a unique reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
-      end ++
+    case finalTy of
+    | uniqueDecoratedType(_, _) when q.lookupValue.found ->
       -- Check that we are exported by the decoration site.
       if q.lookupValue.found
       && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
@@ -83,7 +71,7 @@ top::Expr ::= q::Decorated! QName
       else if length(allUniqueRefs) > 1
       then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       else []
-    | _, _ -> []
+    | _ -> []
     end;
 }
 aspect production lhsReference

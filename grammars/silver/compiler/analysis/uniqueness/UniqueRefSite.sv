@@ -19,11 +19,11 @@ abstract production uniqueRefSite
 top::UniqueRefSite ::=
 {}
 
--- Append lists of referencees, ignoring duplicate refs to the same ref site that have the same name and ref set
+-- Append lists of references, ignoring duplicate refs to the same ref site
 function unionMutuallyExclusiveRefs
 [(String, UniqueRefSite)] ::= rs1::[(String, UniqueRefSite)] rs2::[(String, UniqueRefSite)]
 {
-  return rs1 ++ filter(\ r::(String, UniqueRefSite) -> lookupAll(r.1, rs1) != [r.2], rs2);
+  return rs1 ++ filter(\ r::(String, UniqueRefSite) -> !lookup(r.1, rs1).isJust, rs2);
 }
 
 -- Compare unique ref sites based on ref set.
