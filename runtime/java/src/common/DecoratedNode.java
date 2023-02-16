@@ -101,8 +101,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * <p> 'self' and 'parent' are not null (except for TopNode)
 	 * 
-	 * <p> Only one or none of 'inhs' and 'forwardParent' should be supplied.
-	 * 
 	 * @param cc  Child count
 	 * @param ic  Inherited attribute count
 	 * @param sc  Synthesized attribute count
@@ -110,7 +108,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param self  The Node to decorate.
 	 * @param parent  The DecoratedNode creating this one, to evaluate inhs in.
 	 * @param inhs  The inherited attributes to decorate this node with.
-	 * @param forwardParent  The node to request inherited attributes from instead of using 'inhs'.
+	 * @param forwardParent  The node to request inherited attributes from if not supplied in 'inhs'.
 	 * 
 	 * @see Node#decorate(DecoratedNode, DecoratedNode)
 	 * @see Node#decorate(DecoratedNode, Lazy[])
@@ -181,7 +179,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)
-	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'.
 	 */
 	@Override
@@ -204,11 +202,14 @@ public class DecoratedNode implements Decorable, Typed {
 	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+	@Override
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent) {
 		if (forwardParent == null) {
+			decorate(parent, inhs);
 			forwardParent = fwdParent;
 		}
 		return this;
@@ -439,10 +440,26 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	private final DecoratedNode evalForward() {
 		try {
-			return self.evalForward(this).decorate(parent, this);
+			return self.evalForward(this).decorate(parent, getForwardInheritedAttributes(), this);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
+	}
+
+	private final Lazy[] getForwardInheritedAttributes() {
+		boolean hasForwardInh = false;
+		Lazy[] result = new Lazy[self.getNumberOfInhAttrs()];
+		for(int i = 0; i < result.length; i++) {
+			final int attribute = i;
+			Lazy l = self.getForwardInheritedAttributes(attribute);
+			if (l != null) {
+				hasForwardInh = true;
+				// The Lazys in self.getForwardInheritedAttributes expect this (forwarding) DecoratedNode as context,
+				// but will be passed the parent of this node instead.
+				result[attribute] = (context) -> l.eval(this);
+			}
+		}
+		return hasForwardInh? result : null;
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
@@ -486,7 +503,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	private final Object evalInhViaFwdP(final int attribute) {
 		try {
-			return forwardParent.inheritedForwarded(attribute);
+			return forwardParent.inherited(attribute);
 		} catch(Throwable t) {
 			throw handleInhFwdPError(attribute, t); 
 		}
@@ -527,36 +544,6 @@ public class DecoratedNode implements Decorable, Typed {
 		// so the user omitting some inherited equations for attributes with higher indices
 		// could mean the resulting array that we are passed is too short.  Sigh.
 		return inheritedAttributes != null && attribute < inheritedAttributes.length && inheritedAttributes[attribute] != null;
-	}
-	
-	/**
-	 * Only called by {@link #inherited(String)}, when it doesn't have an inherited attribute,
-	 * and it wants to request that value from this DecorateNode (its {@link #forwardParent}).
-	 * 
-	 * @param attribute The full name of the attribute.
-	 * @return The value of the attribute.
-	 */
-	protected Object inheritedForwarded(final int attribute) {
-		// common.Util.stackProbe();
-		// System.err.println("TRACE: " + getDebugID() + " demanding FORWARDED inh attribute: " + self.getNameOfInhAttr(attribute));
-		
-		// No cache look up here. There is only one forward production. It will call this method
-		// a maximum of once for each attribute, since it will cache the result.
-		
-		Lazy l = self.getForwardInheritedAttributes(attribute);
-		if(l == null) {
-			return inherited(attribute);
-		}
-		try {
-			// No need for caching here, it'll be cached by the inherited() that called us
-			return l.eval(this);
-		} catch(Throwable t) {
-			throw handleInhFwdError(attribute, t);
-		}
-	}
-	
-	private final SilverException handleInhFwdError(final int attribute, Throwable t) {
-		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' for forward in " + getDebugID(), t);
 	}
 
 	// The following are very common types of thunks.
