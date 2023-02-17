@@ -6,6 +6,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.0.4]
+- Updating dependencies
+
 ## [0.0.3]
 - Load alternate compiler jar/parser on startup, fixing some bugs when using an extended compiler jar built against alternate version of Silver 
 
