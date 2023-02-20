@@ -174,7 +174,11 @@ synthesized attribute valueFileRefLocs::map:Map<String (Location, Decorated Root
 synthesized attribute typeFileRefLocs::map:Map<String (Location, Decorated RootSpec, TypeDclInfo)>;
 synthesized attribute attributeFileRefLocs::map:Map<String (Location, Decorated RootSpec, AttributeDclInfo)>;
 
-attribute valueFileRefLocs, typeFileRefLocs, attributeFileRefLocs occurs on Compilation;
+synthesized attribute allValueRefs::map:Map<String (String, Location)>;
+synthesized attribute allTypeRefs::map:Map<String (String, Location)>;
+synthesized attribute allAttributeRefs::map:Map<String (String, Location)>;
+
+attribute valueFileRefLocs, typeFileRefLocs, attributeFileRefLocs, allValueRefs, allTypeRefs, allAttributeRefs occurs on Compilation;
 
 aspect production compilation
 top::Compilation ::= g::Grammars r::Grammars _ _
@@ -182,6 +186,9 @@ top::Compilation ::= g::Grammars r::Grammars _ _
   top.valueFileRefLocs = buildFileRefs((.valueRefLocs), g.grammarList);
   top.typeFileRefLocs = buildFileRefs((.typeRefLocs), g.grammarList);
   top.attributeFileRefLocs = buildFileRefs((.attributeRefLocs), g.grammarList);
+  top.allValueRefs = buildAllRefs((.valueRefLocs), g.grammarList);
+  top.allTypeRefs = buildAllRefs((.typeRefLocs), g.grammarList);
+  top.allAttributeRefs = buildAllRefs((.attributeRefLocs), g.grammarList);
 }
 
 function buildFileRefs
@@ -193,6 +200,19 @@ map:Map<String (Location, Decorated RootSpec, a)> ::= accessor::([(Location, a)]
       (r.grammarSource ++ item.1.filename, item.1, head(map:lookup(item.2.sourceGrammar, r.compiledGrammars)), item.2),
       accessor(r)),
     rs));
+}
+
+-- Create a map from a reference's full name to its path & location
+function buildAllRefs
+attribute fullName {} occurs on a =>
+map:Map<String (String, Location)> ::= accessor::([(Location, a)] ::= Decorated RootSpec) rs::[Decorated RootSpec]
+{
+  return directBuildTree(flatMap(\ r::Decorated RootSpec ->
+    map(\item::(Location, a) ->
+      (item.2.fullName, r.grammarSource ++ item.1.filename, item.1),
+      accessor(r)),
+    rs));  
+
 }
 
 attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on InterfaceItems, InterfaceItem;
@@ -255,4 +275,27 @@ function findDeclLocation
     lookupDeclLocation(fileName, line, col, c.valueFileRefLocs) ++
     lookupDeclLocation(fileName, line, col, c.typeFileRefLocs) ++
     lookupDeclLocation(fileName, line, col, c.attributeFileRefLocs);
+}
+
+-- Looks up all references to symbol at the given location
+-- Returns a list of all reference locations
+-- Input is filename, line & col number, & decl map to resolve the symbol
+-- Uses refs map to lookup the reference paths & locations from the symbol fullName  
+function lookupReferenceLocations
+attribute fullName {} occurs on a =>
+[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)>
+{
+  return foldr(\a::[Location] b::[Location] -> a ++ b, [], map(\ item::(Decorated RootSpec, a) -> 
+    map( \loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
+    (map:lookup(item.2.fullName, refs))), 
+    lookupPos(line, col, map:lookup(fileName, decls))));
+}
+
+function findReferences
+[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation
+{
+  return
+    lookupReferenceLocations(fileName, line, col, c.valueFileRefLocs, c.allValueRefs) ++
+    lookupReferenceLocations(fileName, line, col, c.typeFileRefLocs, c.allTypeRefs) ++
+    lookupReferenceLocations(fileName, line, col, c.attributeFileRefLocs, c.allAttributeRefs);
 }
