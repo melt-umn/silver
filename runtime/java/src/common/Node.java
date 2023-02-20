@@ -1,5 +1,6 @@
 package common;
 
+import common.exceptions.SilverException;
 import common.exceptions.TraceException;
 
 /**
@@ -65,17 +66,24 @@ public abstract class Node implements Decorable, Typed {
 	public DecoratedNode decorate() {
 		return decorate(TopNode.singleton, (Lazy[])null);
 	}
-	
+
 	private Node undecoratedValue = null;
 	public final Node undecorate(final DecoratedNode context) {
 		if (undecoratedValue == null) {
 			try {
 				undecoratedValue = evalUndecorate(context);
 			} catch(Throwable t) {
-				throw new TraceException("While undecorating " + context.getDebugID(), t);
+				throw handleUndecorateError(context, t);
 			}
 		}
 		return undecoratedValue;
+	}
+
+	/** 
+	 * Attempt at factoring out the slow path.
+	 */
+	private final SilverException handleUndecorateError(final DecoratedNode context, final Throwable t) {
+		return new TraceException("While undecorating " + context.getDebugID(), t);
 	}
 
 	// These methods are to be provided by the *nonterminal*

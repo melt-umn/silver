@@ -21,7 +21,7 @@ public class DecoratedNode implements Decorable, Typed {
 	// Please note: the methods in this file have been refined to be quite small
 	// because the JVM makes inlining decisions on a per-method basis (of course!)
 	// So we try to keep the "slow paths" in a separate method, so the hot paths
-	// can be inlined. (Things are designed around 37 bytes of bytecode as the limit.)
+	// can be inlined. (Things are designed around 35 bytes of bytecode as the limit.)
 
 	// Error reporting note: we don't attempt to identify and report errors for
 	// mis-generated code.  e.g. asking for synthesized attributes that
@@ -143,7 +143,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	DecoratedNode(final int cc, final int lc, final FunctionNode self) {
 		// TODO: I added this constructor largely because I wanted to
-		// see if I could make all this fit under the 37 byte inline limit.
+		// see if I could make all this fit under the 35 byte inline limit.
 		// This doesn't. :(  Leaving it, because it certainly doesn't hurt.
 		this.self = self;
 		this.parent = TopNode.singleton;
@@ -371,7 +371,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalSyn(final int attribute) {
-		// TODO: Try to break this up into < 37 byte methods?
+		// TODO: Try to break this up into < 35 byte methods?
 		Lazy l = self.getSynthesized(attribute);
 		if(l != null) {
 			try {
