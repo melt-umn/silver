@@ -204,13 +204,17 @@ map:Map<String (Location, Decorated RootSpec, a)> ::= accessor::([(Location, a)]
 
 -- Create a map from a reference's full name to its path & location
 function buildAllRefs
+annotation sourceLocation occurs on a,
 attribute fullName {} occurs on a =>
 map:Map<String (String, Location)> ::= accessor::([(Location, a)] ::= Decorated RootSpec) rs::[Decorated RootSpec]
 {
   return directBuildTree(flatMap(\ r::Decorated RootSpec ->
-    map(\item::(Location, a) ->
+    (map(\item::(Location, a) ->
       (item.2.fullName, r.grammarSource ++ item.1.filename, item.1),
-      accessor(r)),
+      accessor(r))) ++ 
+    (map(\item::(Location, a) ->
+      (item.2.fullName, r.grammarSource ++ item.1.filename, item.2.sourceLocation),
+      accessor(r))),
     rs));  
 
 }
