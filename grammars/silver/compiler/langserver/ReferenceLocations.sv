@@ -204,13 +204,21 @@ map:Map<String (Location, Decorated RootSpec, a)> ::= accessor::([(Location, a)]
 
 -- Create a map from a reference's full name to its path & location
 function buildAllRefs
+annotation sourceGrammar occurs on a,
 annotation sourceLocation occurs on a,
 attribute fullName {} occurs on a =>
 map:Map<String (String, Location)> ::= accessor::([(Location, a)] ::= Decorated RootSpec) rs::[Decorated RootSpec]
 {
+  local grammarMap :: map:Map<String String> =
+    directBuildTree(map(\ r::Decorated RootSpec ->
+    (r.declaredName, r.grammarSource),
+    rs));
+
+  -- Tries to look up path given the sourceGrammar, but this approach does not work
+  -- I think does the same thing as grammarToPath
   return directBuildTree(flatMap(\ r::Decorated RootSpec ->
-    (map(\item::(Location, a) ->
-      (item.2.fullName, r.grammarSource ++ item.1.filename, item.1),
+    (flatMap(\item::(Location, a) ->
+    (map(\grammarPath::String -> (item.2.fullName, grammarPath ++ item.1.filename, item.1), map:lookup(item.2.sourceGrammar, grammarMap))),
       accessor(r))) ++ 
     (map(\item::(Location, a) ->
       (item.2.fullName, r.grammarSource ++ item.1.filename, item.2.sourceLocation),
@@ -289,10 +297,10 @@ function lookupReferenceLocations
 attribute fullName {} occurs on a =>
 [Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)>
 {
-  return foldr(\a::[Location] b::[Location] -> a ++ b, [], map(\ item::(Decorated RootSpec, a) -> 
+  return flatMap(\ item::(Decorated RootSpec, a) -> 
     map( \loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
     (map:lookup(item.2.fullName, refs))), 
-    lookupPos(line, col, map:lookup(fileName, decls))));
+    lookupPos(line, col, map:lookup(fileName, decls)));
 }
 
 function findReferences
