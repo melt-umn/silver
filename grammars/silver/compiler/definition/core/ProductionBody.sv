@@ -359,7 +359,7 @@ top::DefLHS ::= q::Decorated! QName
   top.errors <- q.lookupValue.errors;
   top.errors <-
     if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
-  top.typerep = q.lookupValue.typeScheme.monoType;
+  top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 concrete production concreteDefLHSfwd

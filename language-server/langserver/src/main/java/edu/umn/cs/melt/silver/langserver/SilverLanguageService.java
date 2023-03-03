@@ -6,9 +6,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,8 +36,6 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileCreate;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
-import org.eclipse.lsp4j.MessageParams;
-import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
@@ -69,7 +64,6 @@ import common.javainterop.ConsCellCollection;
 import edu.umn.cs.melt.lsp4jutil.CopperParserNodeFactory;
 import edu.umn.cs.melt.lsp4jutil.CopperSemanticTokenEncoder;
 import edu.umn.cs.melt.lsp4jutil.Util;
-import silver.compiler.composed.Default.Parser_silver_compiler_composed_Default_svParse;
 import silver.compiler.definition.core.NRoot;
 import silver.compiler.driver.PbuildRun;
 import silver.compiler.driver.PparseArgsOrError;
@@ -95,9 +89,6 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private boolean buildInProgress = false, buildTriggered = false;
     private boolean cleanBuild = false;
     private boolean enableMWDA = false;
-    private String compilerJar = "";
-    private String parserName = "";
-    private FileTime compilerJarTime;
     private String silverGen;
     private String silverStdlibGrammars = null;
     private DecoratedNode comp = null;
@@ -110,7 +101,6 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         } catch (IOException e) {
             e.printStackTrace();
         }
-        setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
     }
 
     public void setClient(LanguageClient client) {
@@ -242,62 +232,21 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         "declaration", "definition", "documentation", "defaultLibrary", "modification"
     });
 
-    private CopperSemanticTokenEncoder semanticTokenEncoder;
-    private CopperParserNodeFactory parserFn;
-    private void setParserFactory(Supplier<SilverCopperParser<NRoot>> parserFactory) {
+    private CopperSemanticTokenEncoder semanticTokenEncoder = null;
+    private CopperParserNodeFactory parserFn = null;
+    public void setParserFactory(Supplier<SilverCopperParser<NRoot>> parserFactory) {
         semanticTokenEncoder = new CopperSemanticTokenEncoder(parserFactory, tokenTypes, tokenModifiers);
         parserFn = new CopperParserNodeFactory(parserFactory);
     }
 
-    // This method is meant to deal with jsonNull, an element that is technically
-    // not null according to java but is a null element passed through json.
-    // It gets a string from a list containing json elements and returns "" if the element
-    // is null.
-    private String getJsonStringFromConfigList(List<Object> configs, int index){
-        Object itemGet = configs.get(index);
-        if (itemGet != null && !((JsonElement)itemGet).isJsonNull()) {
-            return ((JsonPrimitive)itemGet).getAsString();
-        } else {
-            return "";
-        }
-    }
-
-    private CompletableFuture<Void> reloadParser() {
-        ConfigurationItem compilerJarConfigItem = new ConfigurationItem();
-        compilerJarConfigItem.setSection("silver.compilerJar");
-        ConfigurationItem parserNameConfigItem = new ConfigurationItem();
-        parserNameConfigItem.setSection("silver.parserName");
-        ConfigurationParams configParams = new ConfigurationParams(
-            List.of(compilerJarConfigItem, parserNameConfigItem));
-        return client.configuration(configParams).thenAccept((configs) -> {
-            String oldParserJar = compilerJar;
-            String oldParserName = parserName;
-            compilerJar = this.getJsonStringFromConfigList(configs, 0);
-            parserName = this.getJsonStringFromConfigList(configs, 1);
-            if (compilerJar.isEmpty() || parserName.isEmpty()) {
-                if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName)) {
-                    setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
-                }
-            } else {
-                try {
-                    Path compilerJarPath = Paths.get(compilerJar);
-                    FileTime newParserJarTime = Files.readAttributes(compilerJarPath, BasicFileAttributes.class).lastModifiedTime();
-                    if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName) || !newParserJarTime.equals(compilerJarTime)) {
-                        compilerJarTime = newParserJarTime;
-                        System.err.println("Loading parser " + compilerJar + " " + parserName);
-                        setParserFactory(Util.loadCopperParserFactory(compilerJarPath, parserName, NRoot.class));
-                    }
-                } catch (SecurityException | ReflectiveOperationException | IOException e) {
-                    client.showMessage(new MessageParams(MessageType.Error, "Error loading parser from jar: " + e.toString()));
-                }
-            }
-        });
-    }
-
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
+        if (semanticTokenEncoder == null) {
+            throw new IllegalStateException("Semantic tokens requested when parser has not been initialized");
+        }
+
         String uri = params.getTextDocument().getUri();
-        return reloadParser().thenApply((arg) -> {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
             List<Integer> tokens;
             int requestVersion;
             // Recompute tokens if the file is changed while tokens are being computed
@@ -333,7 +282,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private void findGrammars(File root) {
         // Workaround to avoid copied resource grammars in the maven build
         // directory in this LSP plugin under the Silver repo.
-        // We might want to add a more intelegent way of specifying grammars to
+        // We might want to add a more intelligent way of specifying grammars to
         // exclude in case duplicates are found.
         if (root.getPath().contains("/target/classes/")) return;
 
@@ -354,7 +303,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         this.cleanBuild = cleanBuild;
 
         buildTriggered = true;
-        if (!buildInProgress) {
+        if (!buildInProgress && parserFn != null) {
             buildInProgress = true;
             new Thread(() -> {
                 while(true) {
@@ -377,6 +326,9 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     private void doBuild(Map<String, Integer> buildVersions) {
         System.err.println("Building");
+        if (parserFn == null) {
+            throw new IllegalStateException("Build requested when parser has not been loaded");
+        }
 
         String silverHome = "";  // Not needed since we aren't doing translation
         List<String> args = new ArrayList<>();
