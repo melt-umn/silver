@@ -48,7 +48,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         System.err.println("Initializing Silver language server");
 
         // Initialize the Silver runtime
-		common.Util.init();
+		//common.Util.init();
 
         // Get the initialization options
         String compilerJar = "", parserName = "";
@@ -84,7 +84,9 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         // Load the specified parser
         boolean loadedParser = false;
         try {
-            service.setParserFactory(Util.loadCopperParserFactory(loader, parserName, NRoot.class));
+            @SuppressWarnings("unchecked")
+            Class<NRoot> nRootClass = (Class<NRoot>) loader.loadClass("silver.compiler.definition.core.NRoot");
+            service.setParserFactory(Util.loadCopperParserFactory(loader, parserName, nRootClass));
             loadedParser = true;
         } catch (SecurityException | ReflectiveOperationException e) {
             client.showMessage(new MessageParams(MessageType.Error, "Error loading parser " + parserName + " from jar: " + e.toString()));

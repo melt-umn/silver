@@ -1,6 +1,7 @@
 package edu.umn.cs.melt.lsp4jutil;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -9,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -31,7 +31,9 @@ import org.eclipse.lsp4j.Range;
 import common.ConsCell;
 import common.DecoratedNode;
 import common.SilverCopperParser;
+import common.Terminal;
 import common.javainterop.ConsCellCollection;
+import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import silver.core.NLocation;
 import silver.langutil.NMessage;
 
@@ -154,7 +156,9 @@ public class Util {
      */
     public static void initGrammar(final String grammar, final ClassLoader loader)
         throws SecurityException, ReflectiveOperationException {
+        System.err.println("Loading " + grammar + " from " + loader);
         Class<?> initClass = Class.forName(grammarToPackage(grammar) + ".Init", true, loader);
+        System.err.println(initClass.getClassLoader());
         initClass.getMethod("initAllStatics").invoke(null);
         initClass.getMethod("init").invoke(null);
         initClass.getMethod("postInit").invoke(null);
@@ -166,11 +170,90 @@ public class Util {
      * @param jarPath The path to the jar
      * @return A ClassLoader for the jar
      */
-    public static URLClassLoader getJarClassLoader(final Path jarPath) {
+    public static ChildFirstClassLoader getJarClassLoader(final Path jarPath) {
         try {
-            return new URLClassLoader(new URL[] {jarPath.toUri().toURL()}, Util.class.getClassLoader());
+            return new ChildFirstClassLoader(new URL[] {jarPath.toUri().toURL()}, Util.class.getClassLoader());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static <ROOT> SilverCopperParser<ROOT> instantiateSilverCopperParser(final Constructor<? extends SilverCopperParser<ROOT>> constructor) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        Class<? extends SilverCopperParser<ROOT>> parserClass = constructor.getDeclaringClass();
+        if (parserClass.equals(SilverCopperParser.class)) {
+            return constructor.newInstance();
+        } else {
+            Object parser = constructor.newInstance();
+            return new SilverCopperParser<ROOT>() {
+
+                @Override
+                public ROOT parse(Reader input) throws IOException, CopperParserException {
+                    try {
+                        return (ROOT) parserClass.getMethod("parse", Reader.class).invoke(parser, input);
+                    } catch (IllegalAccessException | IllegalArgumentException
+                            | NoSuchMethodException | SecurityException e) {
+                        throw new RuntimeException("Error invoking Copper parser", e);
+                    } catch (InvocationTargetException e) {
+                        throw (CopperParserException)e.getTargetException();
+                    }
+                }
+
+                @Override
+                public ROOT parse(String text) throws IOException, CopperParserException {
+                    try {
+                        return (ROOT) parserClass.getMethod("parse", String.class).invoke(parser, text);
+                    } catch (IllegalAccessException | IllegalArgumentException
+                            | NoSuchMethodException | SecurityException e) {
+                        throw new RuntimeException("Error invoking Copper parser", e);
+                    } catch (InvocationTargetException e) {
+                        throw (CopperParserException)e.getTargetException();
+                    }
+                }
+
+                @Override
+                public ROOT parse(Reader input, String inputName) throws IOException, CopperParserException {
+                    try {
+                        return (ROOT) parserClass.getMethod("parse", Reader.class, String.class).invoke(parser, input, inputName);
+                    } catch (IllegalAccessException | IllegalArgumentException
+                            | NoSuchMethodException | SecurityException e) {
+                        throw new RuntimeException("Error invoking Copper parser", e);
+                    } catch (InvocationTargetException e) {
+                        throw (CopperParserException)e.getTargetException();
+                    }
+                }
+
+                @Override
+                public ROOT parse(String text, String inputName) throws IOException, CopperParserException {
+                    try {
+                        return (ROOT) parserClass.getMethod("parse", String.class, String.class).invoke(parser, text, inputName);
+                    } catch (IllegalAccessException | IllegalArgumentException
+                            | NoSuchMethodException | SecurityException e) {
+                        throw new RuntimeException("Error invoking Copper parser", e);
+                    } catch (InvocationTargetException e) {
+                        throw (CopperParserException)e.getTargetException();
+                    }
+                }
+
+                @Override
+                public List<Terminal> getTokens() {
+                    try {
+                        return (List<Terminal>) parserClass.getMethod("getTokens").invoke(parser);
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                            | NoSuchMethodException | SecurityException e) {
+                        throw new RuntimeException("Error invoking Copper parser", e);
+                    }
+                }
+
+                @Override
+                public void setTabStop(int width) {
+                    try {
+                        parserClass.getMethod("setTabStop", int.class).invoke(parser, width);
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
+                            | NoSuchMethodException | SecurityException e) {
+                        throw new RuntimeException("Error invoking Copper parser", e);
+                    }
+                }
+            };
         }
     }
 
@@ -193,10 +276,14 @@ public class Util {
         String grammar = name.substring(0, Math.max(name.lastIndexOf(":"), 0));
         String pkg = grammarToPackage(grammar);
         String parserClassName = pkg + ".Parser_" + String.join("_", name.split(":"));
-        Class<?> parserClass = Class.forName(parserClassName, true, loader);
+        Class<? extends SilverCopperParser<ROOT>> parserClass = (Class<? extends SilverCopperParser<ROOT>>) Class.forName(parserClassName, true, loader);
+
+        Class<?> silverCopperParserIface = Class.forName("common.SilverCopperParser", true, loader);
+        System.err.println(silverCopperParserIface.getClassLoader());
+        System.err.println(parserClass.getClassLoader());
 
         // Sanity check: make sure it's actually a Silver-declared Copper parser
-        if (!SilverCopperParser.class.isAssignableFrom(parserClass)) {
+        if (!silverCopperParserIface.isAssignableFrom(parserClass)) {
             throw new ReflectiveOperationException("Loaded class is not a Silver-generated Copper parser");
         }
 
@@ -218,12 +305,12 @@ public class Util {
         initGrammar(grammar, loader);
 
         // Set up the parser factory
-        Constructor<?> constructor = parserClass.getConstructor();
+        Constructor<? extends SilverCopperParser<ROOT>> constructor = parserClass.getConstructor();
         return () -> {
             try {
                 // Invoke the constructor.
                 // This unchecked cast should be safe due to the above sanity checks.
-                return (SilverCopperParser<ROOT>)constructor.newInstance();
+                return instantiateSilverCopperParser(constructor);
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
                     | InvocationTargetException e) {
                 throw new RuntimeException("Error instantiating Copper parser", e);

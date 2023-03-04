@@ -29,6 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
 		let jvmArgs: string = config.get('jvmArgs') || "";
 		const args: string[] = [
 			'-cp', classPath,
+			'-Xlog:class+load=info:classloading.txt',
+			'-Xlog:class+resolve=debug:classresolve.txt',
+			'-Xlog:class+init=info:classinit.txt'
 		].concat(jvmArgs.split(' '));
 
 		// Set the server options 
