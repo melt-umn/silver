@@ -147,8 +147,9 @@ top::ProductionStmt ::= attr::QName
 }
 
 abstract production propagateError
-top::ProductionStmt ::= attr::PartiallyDecorated QName
+top::ProductionStmt ::= attr::Decorated! QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   forwards to
     errorProductionStmt(
       [err(attr.location, s"Attribute ${attr.name} cannot be propagated")],

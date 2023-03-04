@@ -103,14 +103,14 @@ equalityTest(
   SStmt, silver_tests);
 
 
-autocopy attribute target::String occurs on SStmt, SExpr;
+inherited attribute target::String occurs on SStmt, SExpr;
 strategy attribute incTargetConsts =
   allTopDown(
     rule on top::SStmt of
     | assignSStmt(n, _) when n == top.target -> top
     end <* incConsts)
   occurs on SStmt, SExpr;
-propagate incTargetConsts on SStmt, SExpr;
+propagate target, incTargetConsts on SStmt, SExpr;
 
 equalityTest(
   decorate

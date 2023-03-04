@@ -14,7 +14,7 @@ syn keyword svlangDeclarations parser attribute annotation function local closed
 
 syn keyword svlangPrimitiveTypes IO Boolean Decorated Float Function Integer Production String
 
-syn keyword svlangStorageClass abstract aspect concrete inherited synthesized autocopy functor monoid ignore
+syn keyword svlangStorageClass abstract aspect concrete inherited synthesized functor monoid ignore
 
 syn keyword svlangScopeDeclarations association precedence operator dominates submits classes
 

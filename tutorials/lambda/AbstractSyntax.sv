@@ -322,5 +322,6 @@ Boolean ::= t1::Type t2::Type
                    | int() -> true
                    | type_err() -> false
                    end
+        | type_err() -> false
         end;
 }

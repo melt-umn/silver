@@ -7,7 +7,7 @@ propagate upSubst, downSubst
    excluding
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
-     decorateExprWith, exprInh, presentAppExpr,
+     decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
@@ -19,7 +19,7 @@ top::Expr ::=
 }
 
 aspect production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
@@ -28,7 +28,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
@@ -37,7 +37,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
@@ -46,7 +46,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   instHead.contextLoc = q.location;
   instHead.contextSource = "the use of " ++ q.name;
@@ -80,7 +80,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -98,7 +98,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
   propagate upSubst, downSubst, finalSubst;
 }
@@ -118,7 +118,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -362,7 +362,21 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   errCheck1 = checkDecorable(top.env, e.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a nonterminal or partially decorated type.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [err(top.location, "Operand to decorate must be a nonterminal or unique reference type.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
+}
+
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, e, errCheck1, top;
+
+  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 

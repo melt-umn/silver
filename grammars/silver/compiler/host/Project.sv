@@ -19,7 +19,6 @@ exports silver:compiler:modification:let_fix;
 exports silver:compiler:modification:lambda_fn;
 exports silver:compiler:modification:collection;
 exports silver:compiler:modification:primitivepattern;
-exports silver:compiler:modification:autocopyattr;
 exports silver:compiler:modification:ffi;
 exports silver:compiler:modification:copper;
 exports silver:compiler:modification:defaultattr;

@@ -4,9 +4,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 --import silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:ast;
-imports silver:compiler:analysis:warnings:flow only isOccursSynthesized, isAutocopy;
-
-imports silver:compiler:modification:autocopyattr;
+imports silver:compiler:analysis:warnings:flow only isOccursSynthesized;
 
 imports silver:util:treemap as rtm;
 imports silver:util:graph as g;

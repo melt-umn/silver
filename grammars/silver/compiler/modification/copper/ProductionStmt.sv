@@ -87,8 +87,9 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
+  undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
@@ -234,8 +235,9 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
 
 
 abstract production parserAttributeDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -253,8 +255,9 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
+  undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 

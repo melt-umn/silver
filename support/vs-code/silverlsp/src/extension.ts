@@ -46,6 +46,10 @@ export function activate(context: vscode.ExtensionContext) {
 			synchronize: {
 				configurationSection: 'Silver'
 			},
+			initializationOptions: {
+				'compilerJar': config.get('compilerJar'),
+				'parserName': config.get('parserName')
+			}
 		};
 
 		// Create the language client and start the client.

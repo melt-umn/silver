@@ -8,7 +8,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from synDcl
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
@@ -28,7 +28,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from inhDcl
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
@@ -50,7 +50,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from synDcl
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
@@ -70,7 +70,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from inhDcl
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;

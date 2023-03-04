@@ -38,7 +38,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.errors ++ ns.errors)
     && top.config.warnFwd
     -- If this production does not forward
-    && null(body.uniqueSignificantExpression)
+    && null(body.forwardExpr)
     -- AND this is not a closed nonterminal
     && !isClosedNt
     -- AND this production is not exported by the nonterminal definition grammar... even including options

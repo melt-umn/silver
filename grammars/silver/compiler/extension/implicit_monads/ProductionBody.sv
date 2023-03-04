@@ -17,7 +17,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -47,9 +49,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
-global partialDefaultAttributeDef::(ProductionStmt ::= PartiallyDecorated DefLHS  PartiallyDecorated QNameAttrOccur  Expr  Location) =
-  \ dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr loc::Location ->
-    attributeDef(newPartial(dl), '.', newPartial(attr), '=', e, ';', location=loc);
+global partialDefaultAttributeDef::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
+  \ dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr loc::Location ->
+    attributeDef(newUnique(dl), '.', newUnique(attr), '=', e, ';', location=loc);
 
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
@@ -59,7 +61,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -77,14 +81,13 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  local fwd::ProductionStmt =
+  forwards to
            (if null(merrors)
             then if attr.found
                  then attr.attrDcl.attrDefDispatcher
                       --if not found, let the normal dispatcher handle it
                  else partialDefaultAttributeDef
             else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
-  forwards to fwd;
 }
 
 
@@ -99,7 +102,9 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -117,15 +122,13 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  local fwd::ProductionStmt =
+  forwards to
            (if null(merrors)
             then if attr.found
                  then attr.attrDcl.attrDefDispatcher
                       --if not found, let the normal dispatcher handle it
                  else partialDefaultAttributeDef
             else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
-
-  forwards to fwd;
 }
 
 
@@ -139,7 +142,9 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -154,7 +159,7 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
            [err(top.location,
                 "Unrestricted equations can only be used for attributes " ++
                 "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit")];
-  local fwd::ProductionStmt =
+  forwards to
             (if attr.found
              then case attr.attrDcl of
                   | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _, location=_)
@@ -165,7 +170,6 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
                   end
                  --if not found, let the normal dispatcher handle it
              else partialDefaultAttributeDef)(dl, attr, e, top.location);
-  forwards to fwd;
 }
 
 
@@ -189,8 +193,9 @@ function buildExplicitAttrErrors
 
 --productions for error checking on restricted attributes
 abstract production restrictedSynAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
@@ -198,23 +203,25 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.isRoot = true;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
-  local fwd::ProductionStmt =
+  forwards to
     (if null(merrors)
      then synthesizedAttributeDef(_, _, _, location=_)
      else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
-  forwards to fwd;
 }
 
 
 abstract production restrictedInhAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
@@ -222,17 +229,18 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.isRoot = true;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
-  local fwd::ProductionStmt =
+  forwards to
     (if null(merrors)
      then inheritedAttributeDef(_, _, _, location=_)
      else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
-  forwards to fwd;
 }
 
 
@@ -240,8 +248,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 
 --productions for error checking on implicit attributes
 abstract production implicitSynAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
@@ -253,9 +262,11 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
-  local fwd::ProductionStmt =
+  forwards to
          (if null(e.merrors)
           then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
                then synthesizedAttributeDef(_, _, e.monadRewritten, location=_)
@@ -264,13 +275,13 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
                                                         ($Expr {e.monadRewritten})
                                                   }, location=_)
           else errorAttributeDef(e.merrors, _, _, e.monadRewritten, location=_))(dl, attr, top.location);
-  forwards to fwd;
 }
 
 
 abstract production implicitInhAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
 {
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
@@ -282,9 +293,11 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
-  local fwd::ProductionStmt =
+  forwards to
          (if null(e.merrors)
           then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
                then inheritedAttributeDef(_, _, e.monadRewritten, location=_)
@@ -293,6 +306,5 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
                                                       ($Expr {e.monadRewritten})
                                                 }, location=_)
           else errorAttributeDef(e.merrors, _, _, e.monadRewritten, location=_))(dl, attr, top.location);
-  forwards to fwd;
 }
 

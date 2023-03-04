@@ -6,8 +6,10 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 
+imports silver:compiler:analysis:uniqueness;
+
 import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;
-import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
+import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
@@ -23,12 +25,12 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, finalSubst, isUnique,
   scrutineeType, returnType, translation, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, finalSubst, isUnique,
   scrutineeType, returnType, translation, originRules;
 
 inherited attribute scrutineeType :: Type;
@@ -56,8 +58,17 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
+  -- We are wrapping 'e' in 'exprRef' which suppresses errors
+  top.errors <- e.errors;
+  
+  forwards to
+    matchPrimitiveReal(
+      if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
+      then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
+      else exprRef(e, location=e.location),
+      t, pr, f, location=top.location);
 }
+
 {--
  - @param e  The value to match against (should be DECORATED if it's nonterminal type at all)
  - @param t  The RETURN TYPE, explicitly.
@@ -97,6 +108,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
+  
+  top.isUnique = pr.isUnique || f.isUnique;
 
   e.isRoot = false;
   f.isRoot = false;
@@ -116,9 +129,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
          then
           "while(true) {" ++
            "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- our Lazy needs a final variable
-           "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
+           "final common.Node scrutineeNode = scrutinee.getNode(); " ++
             pr.translation ++
-           "if(!scrutineeIter.undecorate().hasForward()) break;" ++ 
+           "if(!scrutineeIter.getNode().hasForward()) break;" ++ 
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else
@@ -138,8 +151,9 @@ top::PrimPatterns ::= p::PrimPattern
   
   top.translation = p.translation;
   
-  p.downSubst = top.downSubst;
-  top.upSubst = p.upSubst;
+  propagate downSubst, upSubst;
+
+  top.isUnique = p.isUnique;
 }
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
@@ -148,9 +162,9 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
   
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
 
-  p.downSubst = top.downSubst;
-  ps.downSubst = p.upSubst;
-  top.upSubst = ps.upSubst;
+  propagate downSubst, upSubst;
+
+  top.isUnique = p.isUnique || ps.isUnique;
 }
 
 -- TODO: Long term, I'd like to switch to having a PrimRule and rename PrimPatterns PrimRules.
@@ -243,6 +257,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
   propagate finalSubst;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
@@ -330,6 +346,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Okay, now update the finalSubst....
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
+
+  top.isUnique = e.isUnique;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -374,6 +392,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  top.isUnique = e.isUnique;
+
   e.isRoot = false;
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
@@ -398,6 +418,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
 
   e.isRoot = false;
 
@@ -424,6 +446,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  top.isUnique = e.isUnique;
+
   e.isRoot = false;
 
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
@@ -449,6 +473,8 @@ top::PrimPattern ::= i::String '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  top.isUnique = e.isUnique;
+
   e.isRoot = false;
 
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
@@ -473,6 +499,8 @@ top::PrimPattern ::= e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
 
   e.isRoot = false;
 
@@ -503,6 +531,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
   propagate finalSubst;
   
   local consdefs :: [Def] =

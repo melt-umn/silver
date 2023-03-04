@@ -2,13 +2,13 @@ grammar silver:compiler:definition:core;
 
 nonterminal ProductionBody with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression;
+  productionAttributes, forwardExpr, returnExpr, undecorateExpr;
 nonterminal ProductionStmts with 
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression, originRules;
+  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
 nonterminal ProductionStmt with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression, originRules;
+  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody;
@@ -42,10 +42,12 @@ inherited attribute frame :: BlockContext;
  -}
 monoid attribute productionAttributes :: [Def];
 {--
- - Either the 'forward' expression, or the 'return' expression.
- - I gave it an obtuse name so it could easily be renamed in the future.
+ - The forward, return and undecorate expressions for production/function bodies.
+ - These are lists since we check for duplicates at the top level
  -}
-monoid attribute uniqueSignificantExpression :: [Decorated Expr];
+monoid attribute forwardExpr :: [Decorated Expr];
+monoid attribute returnExpr :: [Decorated Expr];
+monoid attribute undecorateExpr :: [Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.
@@ -58,7 +60,7 @@ synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStm
 
 propagate config, grammarName, env, errors, frame, compiledGrammars on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
-propagate defs, productionAttributes, uniqueSignificantExpression on ProductionBody, ProductionStmts;
+propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr on ProductionBody, ProductionStmts;
 propagate originRules on ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding attachNoteStmt;
 
@@ -95,7 +97,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
-  propagate defs, productionAttributes, uniqueSignificantExpression;
+  propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr;
 }
 
 abstract production errorProductionStmt
@@ -113,7 +115,9 @@ top::ProductionStmt ::=
   -- as is usual for defaults ("base classes")
   -- can't provide unparse or location, errors should NOT be defined!
   top.productionAttributes := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
   
   top.defs := [];
 
@@ -134,7 +138,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.unparse = "\treturn " ++ e.unparse ++ ";";
   
-  top.uniqueSignificantExpression := [e];
+  top.returnExpr := [e];
   
   top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
@@ -191,7 +195,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   e.isRoot = true;
 
   top.productionAttributes := [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
-  top.uniqueSignificantExpression := [e];
+  top.forwardExpr := [e];
 
   top.errors <- if !top.frame.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
@@ -254,6 +258,21 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   q.attrFor = top.frame.signature.outputElement.typerep;
 }
 
+concrete production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  top.unparse = "\tundecorates to " ++ e.unparse;
+
+  e.isRoot = true;
+  
+  top.undecorateExpr := [e];
+
+  top.errors <-
+    if !top.frame.permitForward  -- Permitted in the same place as forwards to
+    then [err(top.location, "Undecorates is not permitted in this context. (Only permitted in non-aspect productions.)")]
+    else [];
+}
+
 concrete production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
@@ -285,8 +304,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
 abstract production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
+  undecorates to errorProductionStmt(msg, location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, config, env, frame, compiledGrammars, originRules;
   e.isRoot = true;
@@ -295,16 +315,18 @@ top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::Part
 }
 
 abstract production synthesizedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
 }
 
 abstract production inheritedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -327,8 +349,9 @@ top::DefLHS ::= q::QName
 }
 
 abstract production errorDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -336,7 +359,7 @@ top::DefLHS ::= q::PartiallyDecorated QName
   top.errors <- q.lookupValue.errors;
   top.errors <-
     if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
-  top.typerep = q.lookupValue.typeScheme.monoType;
+  top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 concrete production concreteDefLHSfwd
@@ -346,8 +369,9 @@ top::DefLHS ::= q::'forward'
 }
 
 abstract production childDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -362,8 +386,9 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production lhsDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -378,8 +403,9 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production localDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -394,8 +420,9 @@ top::DefLHS ::= q::PartiallyDecorated QName
 }
 
 abstract production forwardDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -429,8 +456,9 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 }
 
 abstract production errorValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
+  undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -441,8 +469,9 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 }
 
 abstract production localValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
+  undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here

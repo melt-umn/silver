@@ -23,9 +23,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
         else [];
 
   top.errors <-
-        if null(body.uniqueSignificantExpression)
+        if null(body.returnExpr)
         then [err(top.location, "Function '" ++ id.name ++ "' does not have a return value.")]
-        else if length(body.uniqueSignificantExpression) > 1
+        else if length(body.returnExpr) > 1
         then [err(top.location, "Function '" ++ id.name ++ "' has more than one declared return value.")]
         else [];
 

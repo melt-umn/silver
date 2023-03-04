@@ -58,10 +58,12 @@ terminal Terminal_kwd    'terminal'     lexer classes {KEYWORD,RESERVED};
 terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal Type_t          'type'         lexer classes {KEYWORD};
+terminal Undecorates_t   'undecorates'  lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, precedence = 3; -- Precedence to fix Decorated Decorated Expr with {}, which is a semantic error either way
 
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
+terminal DecSite_t     '@'  lexer classes {OP}, precedence = 2;
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' lexer classes {OP}, precedence = 5, association = left;
 terminal And_t         '&&' lexer classes {OP}, precedence = 6, association = left;
@@ -92,7 +94,7 @@ terminal CCEQ_t        '::=' lexer classes {SPECOP};
 terminal Equal_t       '='   lexer classes {SPECOP};
 terminal CtxArrow_t    '=>'  lexer classes {SPECOP};
 
--- Unused infix operators: ~ ` @ # % ^ & | \
+-- Unused infix operators: ~ ` # % ^ & | \
 -- $ is used by convenience.
 
  -- this is a very careful regex. beware:

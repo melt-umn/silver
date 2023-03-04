@@ -75,4 +75,4 @@ terminal IntegerLiteral /[0-9]+/  repeatProb = 0.5;
 terminal FloatLiteral   /[0-9]+\.[0-9]+/ repeatProb = 0.5;
 terminal BooleanLiteral /(True)|(False)/ lexer classes { KEYWORDS };
 
-terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/  repeatProb=0.95;
+terminal StringLiteral /"([^"\n\r\\]|\\"|\\\\|\\n|\\r|\\t)*"/  repeatProb=0.95;

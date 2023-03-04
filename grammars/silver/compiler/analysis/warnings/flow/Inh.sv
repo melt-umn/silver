@@ -62,23 +62,9 @@ Boolean ::= f::([FlowDef] ::= String)  attr::String
 }
 
 {--
- - False if 'attr' is an autocopy attribute, occurs on the LHS nonterminal,
- - and child 'sigName' is a nonterminal (not a type var with an occurs-on context);
- - true otherwise.  Used in conjunction with 'filter' to get
- - remove "missing equations" that are actually implicit autocopies.
- -}
-function ignoreIfAutoCopyOnLhs
-Boolean ::= sigName::String  ns::NamedSignature  env::Decorated Env  attr::String
-{
-  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, ns.outputElement.typerep.typeName, env)) &&
-           -- Only ignore autocopies if the sig item is a nonterminal and not a type variable with an occurs-on context
-           findNamedSigElemType(sigName, ns.inputElements).isNonterminal);
-}
-
-{--
- - Given a name of a child, return whether it has a fully decorated nonterminal
+ - Given a name of a child, return whether it has a normal decorated nonterminal
  - type (covered by the more specific checks on accesses from references) or a
- - partially decorated nonterminal type decorated with the attr.
+ - unique decorated nonterminal type decorated with the attr.
  - True if nonsensicle.
  -}
 function sigAttrViaReference
@@ -89,9 +75,9 @@ Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Decorated 
 }
 
 {--
- - Given a name of a local, return whether it has a fully decorated nonterminal
+ - Given a name of a local, return whether it has a normal decorated nonterminal
  - type (covered by the more specific checks on accesses from references) or a
- - partially decorated nonterminal type decorated with the attr.
+ - unique decorated nonterminal type decorated with the attr.
  - True if nonsensicle.
  -}
 function localAttrViaReference
@@ -109,8 +95,7 @@ Boolean ::= sigName::String  attrName::String  e::Decorated Env
  - ensure such an equation exists, accounting for:
  -  1. Defaults
  -  2. Forwards
- -  3. Autocopy
- -  4. Reference accesses
+ -  3. Reference accesses
  - 
  - This gives rise to 'missing transitive dependency' errors.
  - The reason this exists is to handle 'taking a reference'
@@ -146,11 +131,10 @@ function checkEqDeps
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
-  -- Filter missing equations for autocopy or for RHS that are references.
+  -- Filter missing equations for RHS that are references.
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-           || !ignoreIfAutoCopyOnLhs(sigName, ns, realEnv, attrName)
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
@@ -160,7 +144,7 @@ function checkEqDeps
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   -- Ignore the FORWARD (a special case of LOCAL), which always has both SYN/INH.
-  -- And again ignore references. Autocopy isn't relevant to locals, though.
+  -- And again ignore references.
   | localVertex(fName, attrName) -> 
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
@@ -257,7 +241,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -277,7 +261,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -293,7 +277,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 
 ----- WARNING TODO BEGIN MASSIVE COPY & PASTE SESSION
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -312,7 +296,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
     else [];
 }
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -331,7 +315,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
     else [];
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -343,7 +327,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
     else [];
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -404,8 +388,27 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     else [];
 }
 
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
+  local transitiveDeps :: [FlowVertex] =
+    expandGraph(e.flowDeps, top.frame.flowGraph);
+  
+  local lhsInhDeps :: [String] = set:toList(onlyLhsInh(transitiveDeps));
+
+  top.errors <-
+    if top.config.warnMissingInh
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+         if null(lhsInhDeps) then []
+         else [mwdaWrn(top.config, top.location, "Undecorates equation has dependencies on " ++ implode(", ", lhsInhDeps))]
+    else [];
+}
+
 aspect production localValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -445,7 +448,7 @@ top::ProductionStmt ::= 'attachNote' e::Expr ';'
 -- Partially skipping `appendCollectionValueDef`: it likewise forwards
 -- But we do have a special "exceeds check" to do here:
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   local productionFlowGraph :: ProductionGraph = top.frame.flowGraph;
   local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, productionFlowGraph);
@@ -482,7 +485,7 @@ Step 2: Let's go check on expressions. This has two purposes:
 -}
 
 aspect production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
@@ -493,7 +496,7 @@ top::Expr ::= q::PartiallyDecorated QName
     else [];
 }
 aspect production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
@@ -503,7 +506,7 @@ top::Expr ::= q::PartiallyDecorated QName
     else [];
 }
 aspect production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
@@ -514,7 +517,7 @@ top::Expr ::= q::PartiallyDecorated QName
     else [];
 }
 aspect production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
@@ -531,7 +534,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -590,16 +593,13 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
       | childReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
           then
-            let inhs :: [String] = 
-                  -- N.B. we're filtering out autocopies here
+            let inhs :: [String] =
                   filter(
-                    ignoreIfAutoCopyOnLhs(lq.name, top.frame.signature, top.env, _),
-                    filter(
-                      isEquationMissing(
-                        lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                        _),
-                      removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                        set:toList(inhDeps))))
+                    isEquationMissing(
+                      lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
+                      _),
+                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
+                      set:toList(inhDeps)))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -624,7 +624,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's
@@ -741,9 +741,7 @@ top::VarBinder ::= n::Name
 function remoteProdMissingEq
 Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::FlowEnv
 {
-  return
-    null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
-    ignoreIfAutoCopyOnLhs(sigName, prod.namedSignature, realEnv, attrName); -- not autocopy (and on lhs)
+  return null(lookupInh(prod.fullName, sigName, attrName, flowEnv)); -- no equation
 }
 
 -- In places where we solve a synthesized attribute occurs-on context,

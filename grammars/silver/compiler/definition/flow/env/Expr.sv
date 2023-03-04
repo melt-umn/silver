@@ -40,7 +40,7 @@ top::Expr ::=
 }
 
 aspect production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   -- Note that q should find the actual type written in the signature, and so
   -- isDecorable on that indeed tells us whether it's something autodecorated.
@@ -58,14 +58,14 @@ top::Expr ::= q::PartiallyDecorated QName
 
   top.flowDefs <-
     case finalTy, refSet of
-    | partiallyDecoratedType(_, _), just(inhs)
+    | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [partialRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
+      [uniqueRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
     | _, _ -> []
     end;
 }
 aspect production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   -- Always a decorable type, so just check how it's being used:
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
@@ -80,7 +80,7 @@ top::Expr ::= q::PartiallyDecorated QName
     else noVertex();
 }
 aspect production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   -- Again, q give the actual type written.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
@@ -98,14 +98,14 @@ top::Expr ::= q::PartiallyDecorated QName
 
   top.flowDefs <-
     case finalTy, refSet of
-    | partiallyDecoratedType(_, _), just(inhs)
+    | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [partialRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
+      [uniqueRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
     | _, _ -> []
     end;
 }
 aspect production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   -- Again, always a decorable type.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
@@ -134,7 +134,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
   propagate flowEnv;
 }
@@ -152,7 +152,7 @@ top::Expr ::= e::Expr '.' 'forward'
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
@@ -161,7 +161,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
     end;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
@@ -223,7 +223,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 }
 
 aspect production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
+top::Expr ::= e::Decorated! Expr
 {
   top.flowVertexInfo = e.flowVertexInfo;
 }
@@ -239,7 +239,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   -- Because of the auto-undecorate behavior, we need to check for the case
   -- where `t` should be equivalent to `new(t)` and report accoringly.

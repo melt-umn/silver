@@ -174,7 +174,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
         \ i::Integer item::(String, TypeExpr) ->
           letDoBinding(
             'let', name(item.1, top.location), '::', item.2, '=',
-            select(Silver_Expr { $name{recVarName} }, 1, i + 1, length(top.recBindings)), ';',
+            select(Silver_Expr { $name{recVarName} }, 1, i + 1, length(top.recBindings), location=top.location), ';',
             location=top.location),
         range(0, length(top.recBindings)),
         top.recBindings));

@@ -43,7 +43,7 @@ top::Expr ::= e::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
+top::Expr ::= msg::[Message]  q::Decorated! QName
 {
   top.merrors := msg;
   propagate mDownSubst, mUpSubst;
@@ -53,7 +53,7 @@ top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 }
 
 aspect production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -67,7 +67,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -79,7 +79,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -93,7 +93,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -106,7 +106,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -118,7 +118,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -130,7 +130,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -142,7 +142,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -269,7 +269,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 }
 
 aspect production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   local t::Expr = application(e, '(', es, ',', anns, ')', location=top.location);
   t.mDownSubst = top.mDownSubst;
@@ -379,7 +379,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wr
 
 
 aspect production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.merrors := error("merrors not defined on partial applications");
   top.mUpSubst = error("mUpSubst not defined on partial applications");
@@ -391,7 +391,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 aspect production errorApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.merrors := [];
 
@@ -459,7 +459,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -534,7 +534,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -606,7 +606,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -655,7 +655,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -727,7 +727,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -799,7 +799,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -972,7 +972,25 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 }
 
 
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.mtyperep = e.mtyperep.decoratedType;
+  top.merrors := e.merrors;
+  top.monadicNames = e.monadicNames;
+  top.monadRewritten = decorationSiteExpr('@', e.monadRewritten, location=top.location);
+  e.monadicallyUsed = false;
 
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  e.mDownSubst = top.mDownSubst;
+  errCheck1.downSubst = e.mUpSubst;
+  top.mUpSubst = errCheck1.upSubst;
+  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  top.merrors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
+}
 
 aspect production trueConst
 top::Expr ::= 'true'
@@ -2041,7 +2059,7 @@ top::AppExprs ::=
 
 
 aspect production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
+top::Expr ::= e::Decorated! Expr
 {
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
@@ -2053,8 +2071,6 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.monadicNames = e.monadicNames;
   top.monadRewritten = e.monadRewritten;
 }
-
-
 
 
 --Copper Expressions
@@ -2070,7 +2086,7 @@ top::Expr ::= 'disambiguationFailure'
 
 
 aspect production lexerClassReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.typerep;
