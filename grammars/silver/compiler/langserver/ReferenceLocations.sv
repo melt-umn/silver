@@ -214,15 +214,14 @@ map:Map<String (String, Location)> ::= accessor::([(Location, a)] ::= Decorated 
     (r.declaredName, r.grammarSource),
     rs));
 
-  -- Tries to look up path given the sourceGrammar, but this approach does not work
-  -- I think does the same thing as grammarToPath
   return directBuildTree(flatMap(\ r::Decorated RootSpec ->
-    (flatMap(\item::(Location, a) ->
-    (map(\grammarPath::String -> (item.2.fullName, grammarPath ++ item.1.filename, item.1), map:lookup(item.2.sourceGrammar, grammarMap))),
-      accessor(r))) ++ 
-    (map(\item::(Location, a) ->
-      (item.2.fullName, r.grammarSource ++ item.1.filename, item.2.sourceLocation),
-      accessor(r))),
+    (flatMap(\item::(Location, a) -> 
+      [(item.2.fullName, r.grammarSource ++ item.1.filename, item.1)] ++
+      -- Include source location & file of reference dcl
+      (map(\grammarPath::String -> 
+          (item.2.fullName, grammarPath ++ item.2.sourceLocation.filename, item.2.sourceLocation), 
+          map:lookup(item.2.sourceGrammar, grammarMap))),
+      accessor(r))), 
     rs));  
 
 }
