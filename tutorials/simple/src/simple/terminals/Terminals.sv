@@ -18,15 +18,15 @@ terminal Slash  '/'   precedence = 12, association = left;
 terminal Plus   '+'   precedence = 10, association = left;
 terminal Dash   '-'   precedence = 10, association = left;
 
-terminal EqEq   '=='  precedence =  8;
-terminal NEq    '!='  precedence =  8;
-terminal Lt     '<'   precedence =  8;
-terminal LtEq   '<='  precedence =  8;
-terminal Gt     '>'   precedence =  8;
-terminal GtEq   '>='  precedence =  8;
+terminal EqEq   '=='  precedence =  8, association = none;
+terminal NEq    '!='  precedence =  8, association = none;
+terminal Lt     '<'   precedence =  8, association = none;
+terminal LtEq   '<='  precedence =  8, association = none;
+terminal Gt     '>'   precedence =  8, association = none;
+terminal GtEq   '>='  precedence =  8, association = none;
 
-terminal And    '&&'  precedence =  6;
-terminal Or     '||'  precedence =  6;
+terminal And    '&&'  precedence =  6, association = left;
+terminal Or     '||'  precedence =  6, association = left;
 
 terminal Eq     '=';
 
