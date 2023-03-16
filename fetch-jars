@@ -3,26 +3,56 @@
 set -eu
 
 # Usage: ./fetch-jars [rev-name] [--copper]
+# If a revision is not specified, the script fetches the latest jars from the current branch,
+# falling back to develop.
+# If --copper is specified, only fetch the Copper jars.
 
+COMMIT_ARTIFACTS="https://foundry.remexre.xyz/commit-artifacts/"
 
+function has_jars {
+  test_rev=$(git rev-parse $1)
+  wget --spider -q "$COMMIT_ARTIFACTS/$test_rev"
+}
+
+rev=""
+
+# Look for jars in the specified revision
 if [[ $* != *--copper* && $# -gt 0 || $# -gt 1 ]]; then
-    rev=$(git rev-parse $1)
-    echo "Warning: Fetching unstable jars!  (commit $rev)"
+  rev=$(git rev-parse $1)
+  if ! has_jars $rev; then
+    echo "Cound not find jars for $1 (commit $rev)"
+    exit 1
+  fi
+fi
 
-    LOCAL_STORE=
-    REMOTE_STORE="https://foundry.remexre.xyz/commit-artifacts/$rev"
-    JARS_BAK="JARS-BAK/$rev"
+# Look for jars in the current commit and its parents
+if [ -z $rev ]; then
+  for test_rev in $(git rev-list HEAD ^develop); do
+    if has_jars $test_rev; then
+      echo "Found jars in commit $test_rev"
+      rev=$test_rev
+      break
+    fi
+  done
+fi
+
+if [ -z $rev ]; then
+  echo "Fetching latest stable jars..."
+  LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
+  REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
+  JARS_BAK=JARS-BAK
 else
-    LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
-    REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
-    JARS_BAK=JARS-BAK
+  echo "Warning: Fetching unstable jars!  (commit $rev)"
+  LOCAL_STORE=
+  REMOTE_STORE="$COMMIT_ARTIFACTS/$rev"
+  JARS_BAK="JARS-BAK/$rev"
 fi
 
 if [[ $* == *--copper* ]]; then
-    # Only fetch the Copper jars, if requested
-    FILES="CopperCompiler.jar"
+  # Only fetch the Copper jars, if requested
+  FILES="CopperCompiler.jar"
 else
-    FILES="CopperCompiler.jar commonmark-0.17.1.jar silver.compiler.composed.Default.jar SilverRuntime.jar"
+  FILES="CopperCompiler.jar commonmark-0.17.1.jar silver.compiler.composed.Default.jar SilverRuntime.jar"
 fi
 
 mkdir -p jars
