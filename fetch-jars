@@ -10,8 +10,7 @@ set -eu
 COMMIT_ARTIFACTS="https://foundry.remexre.xyz/commit-artifacts/"
 
 function has_jars {
-  test_rev=$(git rev-parse $1)
-  wget --spider -q "$COMMIT_ARTIFACTS/$test_rev"
+  wget --spider -q "$COMMIT_ARTIFACTS/$1"
 }
 
 rev=""
@@ -19,21 +18,23 @@ rev=""
 # Look for jars in the specified revision
 if [[ $* != *--copper* && $# -gt 0 || $# -gt 1 ]]; then
   rev=$(git rev-parse $1)
-  if ! has_jars $rev; then
-    echo "Cound not find jars for $1 (commit $rev)"
-    exit 1
-  fi
 fi
 
 # Look for jars in the current commit and its parents
 if [ -z $rev ]; then
-  for test_rev in $(git rev-list HEAD ^develop); do
-    if has_jars $test_rev; then
-      echo "Found jars in commit $test_rev"
-      rev=$test_rev
+  for commit in $(git rev-list HEAD ^develop); do
+    if has_jars $commit; then
+      echo "Found jars from past commit"
+      rev=$commit
       break
     fi
   done
+fi
+
+git --no-pager show --quiet $rev
+if ! has_jars $rev; then
+  echo "Cound not find jars for commit"
+  exit 1
 fi
 
 if [[ -z $rev || $rev == $(git rev-parse develop) ]]; then
@@ -42,7 +43,7 @@ if [[ -z $rev || $rev == $(git rev-parse develop) ]]; then
   REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
   JARS_BAK=JARS-BAK
 else
-  echo "Warning: Fetching unstable jars!  (commit $rev)"
+  echo "Warning: Fetching unstable jars!"
   LOCAL_STORE=
   REMOTE_STORE="$COMMIT_ARTIFACTS/$rev"
   JARS_BAK="JARS-BAK/$rev"
