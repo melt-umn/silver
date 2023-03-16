@@ -36,7 +36,7 @@ if [ -z $rev ]; then
   done
 fi
 
-if [ -z $rev ]; then
+if [[ -z $rev || $rev == $(git rev-parse develop) ]]; then
   echo "Fetching latest stable jars..."
   LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
   REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
