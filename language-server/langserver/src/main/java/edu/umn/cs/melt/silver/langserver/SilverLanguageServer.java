@@ -1,6 +1,7 @@
 package edu.umn.cs.melt.silver.langserver;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +23,7 @@ import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.WorkspaceServerCapabilities;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
@@ -70,9 +72,20 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         }
 
         // Initialize grammars from the specified compiler jar (or default classloader)
-        ClassLoader loader = compilerJar.isEmpty()? 
-            ClassLoader.getSystemClassLoader() :
-            Util.getJarClassLoader(Paths.get(compilerJar));
+        ClassLoader loader = ClassLoader.getSystemClassLoader();
+        if (!compilerJar.isEmpty()) {
+            List<WorkspaceFolder> workspaceFolders = initializeParams.getWorkspaceFolders();
+            Path jarPath;
+            try {
+                // Compute the absolute jar path based on the workspace folder, if a relative path is specified.
+                jarPath = workspaceFolders != null && workspaceFolders.size() > 0?
+                    Paths.get(new URI(initializeParams.getWorkspaceFolders().get(0).getUri()).getPath()).resolve(compilerJar) :
+                    Paths.get(compilerJar);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+            loader = Util.getJarClassLoader(jarPath);
+        }
         try {
             // The grammar silver:compiler:langserver contains language server-specific
             // compiler utilities, and imports silver:compiler:host.
