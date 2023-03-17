@@ -20,18 +20,15 @@ if [[ $* != *--copper* && $# -gt 0 || $# -gt 1 ]]; then
   rev=$(git rev-parse $1)
 fi
 
+# Get the hash of the latest commit on develop.
+# This always gives the latest commit regardless of if the repo is up to date,
+# and works in a Jenkins checkout.
+DEVELOP=$(git ls-remote https://github.com/melt-umn/silver develop | cut -f1)
+
 # Look for jars in the current commit and its parents.
 # First, check that we are inside a git repo.
-if git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/null && [[ -z $rev ]]; then
-  # List all cantidate commits
-  if git rev-parse develop 1> /dev/null 2> /dev/null; then
-    # We see develop, only list commits not on develop
-    commits=$(git rev-list HEAD ^develop)
-  else
-    # We don't see develop (checked out by Jenkins?), list all commits
-    commits=$(git rev-list HEAD)
-  fi
-  for commit in $commits; do
+if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/null; then
+  for commit in $(git rev-list HEAD ^$DEVELOP); do
     if has_jars $commit; then
       echo "Found jars from past commit"
       rev=$commit
@@ -40,7 +37,7 @@ if git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/null && [[ -z $rev ]
   done
 fi
 
-if [[ -z $rev || $rev == $(git rev-parse develop) ]]; then
+if [[ -z $rev || $rev == $DEVELOP ]]; then
   echo "Fetching latest stable jars..."
   LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
   REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
