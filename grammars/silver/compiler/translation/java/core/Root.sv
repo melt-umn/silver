@@ -9,7 +9,7 @@ monoid attribute genFiles :: [Pair<String String>];
  -}
 monoid attribute genBinaryFiles :: [Pair<String ByteArray>];
 {--
- - Early initializers: occurs.add, local's inh attr map creation, decorators.add, collection object creation
+ - Early initializers: occurs.add, local's inh attr map creation, collection object creation
  -}
 monoid attribute setupInh :: String;
 {--
@@ -22,7 +22,7 @@ monoid attribute initProd :: String;
  -}
 monoid attribute initValues :: String;
 {--
- - Late initializers. Decorator application (late because we want all attribute equations to be posted first!!)
+ - Late initializers.
  -}
 monoid attribute postInit :: String;
 

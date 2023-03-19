@@ -36,7 +36,7 @@ public final class OriginsUtil {
 
 	private static String sexprifyObj(List<String> seen, Object arg) {
 
-		if (arg instanceof DecoratedNode) arg = ((DecoratedNode)arg).undecorate();
+		if (arg instanceof DecoratedNode) arg = ((DecoratedNode)arg).getNode();
 
 		String id = ids(arg);
 		if (seen.contains(id)) return "[" + id + "]";
@@ -83,7 +83,7 @@ public final class OriginsUtil {
 					r += sexprifyObj(seen, cc.head());
 					r += ",";
 					next = cc.tail();
-					if (next instanceof DecoratedNode) next = ((DecoratedNode)next).undecorate();
+					if (next instanceof DecoratedNode) next = ((DecoratedNode)next).getNode();
 					if (!(next instanceof ConsCell)) {
 						throw new SilverInternalError("ConsCell.tail() evaluated to not a ConsCell");
 					}
@@ -115,7 +115,7 @@ public final class OriginsUtil {
 	// Implementation of the stdlib origins helpers
 
 	public static silver.core.NMaybe polyGetOrigin(Object o) {
-		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
+		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).getNode();
 		NOriginInfo r = getOriginOrNull(o);
 		if (r == null) return new silver.core.Pnothing();
 		return new silver.core.Pjust(r);

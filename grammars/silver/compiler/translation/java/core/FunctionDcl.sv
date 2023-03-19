@@ -19,8 +19,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
-			//${head(body.uniqueSignificantExpression).unparse}
-			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
+			//${head(body.returnExpr).unparse}
+			return (${namedSig.outputElement.typerep.transType})(${head(body.returnExpr).translation});
 """;
 
   top.genFiles :=
@@ -179,7 +179,10 @@ ${contexts.contextInitTrans}
 
 		@Override
 		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
+			return ${className}.invoke(${implode(", ",
+			  ["originCtx"] ++
+			  map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++
+			  unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override

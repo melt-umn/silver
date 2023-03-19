@@ -2,7 +2,7 @@
   "name": "silverlsp",
   "displayName": "Silver LSP",
   "description": "Plugin for Silver Language Server Protocol support",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.67.0"
   },
@@ -61,12 +61,12 @@
           },
           "silver.compilerJar": {
             "type": "string",
-            "description": "Path to the jar containing an alternate version of the Silver compiler"
+            "description": "Path to the jar containing an alternate version of the Silver compiler. This can be a relative path from the first workspace folder."
           },
           "silver.parserName": {
             "type": "string",
             "default": "silver:compiler:composed:Default:svParse",
-            "description": "Full name of the Silver parser to use, must be set if compiler jar is specified"
+            "description": "Full name of the Silver parser to use"
           }
         }
       }

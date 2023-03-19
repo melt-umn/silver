@@ -28,7 +28,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     findProductionGraph(fName, myGraphs);
 
   top.flowDefs <-
-    if null(body.uniqueSignificantExpression)
+    if null(body.forwardExpr)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
 

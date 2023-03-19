@@ -20,9 +20,9 @@ monoid attribute freeFlexibleVars :: [TyVar] with [], setUnionTyVars;
 -- Also used by 'new()'
 synthesized attribute isDecorated :: Boolean;
 
--- Determines whether a type is a partially decorated nonterminal type
+-- Determines whether a type is a unique decorated nonterminal type
 -- Used in determining whether a type may be supplied with inherited attributes.
-synthesized attribute isPartiallyDecorated :: Boolean;
+synthesized attribute isUniqueDecorated :: Boolean;
 
 -- Determines whether a type is an (undecorated) nonterminal type
 -- Used in determining whether a type may be supplied with inherited attributes.
@@ -43,9 +43,9 @@ synthesized attribute defaultSpecialization :: Type;
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
-synthesized attribute unifyInstanceDecorable :: Substitution;  -- NT or partially decorated
+synthesized attribute unifyInstanceDecorable :: Substitution;  -- NT or unique decorated
 
-attribute arity, isError, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
+attribute arity, isError, isDecorated, isUniqueDecorated, isNonterminal, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -53,7 +53,7 @@ top::PolyType ::= ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isPartiallyDecorated = ty.isPartiallyDecorated;
+  top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = ty.asNtOrDecType;
@@ -70,7 +70,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isPartiallyDecorated = ty.isPartiallyDecorated;
+  top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
@@ -88,7 +88,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isPartiallyDecorated = ty.isPartiallyDecorated;
+  top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
@@ -100,7 +100,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     top.compareTo.typerep == performRenaming(ty, eqSub);
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isUniqueDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 
@@ -116,7 +116,7 @@ top::Type ::=
   top.inhSetMembers = [];
   
   top.isDecorated = false;
-  top.isPartiallyDecorated = false;
+  top.isUniqueDecorated = false;
   top.isNonterminal = false;
   top.isTerminal = false;
   top.isError = false;
@@ -230,11 +230,11 @@ top::Type ::= te::Type i::Type
   top.unifyInstanceDecorated = emptySubst();
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
-  top.isPartiallyDecorated = true;
+  top.isUniqueDecorated = true;
   top.decoratedType = te;
   top.asNtOrDecType = ntOrDecType(te, freshInhSet(), freshType());
   top.inhSetMembers = i.inhSetMembers;

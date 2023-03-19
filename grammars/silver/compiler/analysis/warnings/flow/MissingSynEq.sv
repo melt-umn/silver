@@ -94,7 +94,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.errors ++ ns.errors)
     && top.config.warnMissingSyn
     -- Forwarding productions do no have missing synthesized equations:
-    && null(body.uniqueSignificantExpression)
+    && null(body.forwardExpr)
     -- Otherwise, examine them all:
     then flatMap(raiseMissingAttrs(top.config, top.location, fName, _, top.flowEnv), attrs)
     else [];

@@ -10,8 +10,8 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, uniqueRefContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, uniqueRefContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -19,8 +19,7 @@ nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwd
 monoid attribute synTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production, sig, attribute) to find inherited equation
- - Used to ensure a necessary rhs.inh equation exists.
- - Also decides whether to add a copy equation for autocopy attributes to rhs elements. -}
+ - Used to ensure a necessary rhs.inh equation exists. -}
 monoid attribute inhTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (nonterminal, attribute) to find default syn equations
@@ -68,9 +67,9 @@ monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
 {-- A list of decoration sites where partial references are taken, and the attributes on those partial references -}
-monoid attribute partialRefContribs :: [(String, String, Location, [String])];
+monoid attribute uniqueRefContribs :: [(String, String, Location, [String])];
 
-propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, partialRefContribs
+propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, uniqueRefContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -101,7 +100,7 @@ top::FlowDef ::=
   top.hostSynTreeContribs := [];
   top.nonSuspectContribs := [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
-  top.partialRefContribs := [];
+  top.uniqueRefContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -359,8 +358,8 @@ top::PatternVarProjection ::= child::String  typeName::String  patternVar::Strin
 }
 
 {--
- - The taking of a partially decorated reference to a child or local/production attribute.
- - Since taking a partially decorated reference means that inherited equations
+ - The taking of a unique reference to a child or local/production attribute.
+ - Since taking a unique reference means that inherited equations
  - on the decoration site for attributes not in the reference set are forbidden,
  - this info tracks what decoration sites have partial references taken.
  -
@@ -370,10 +369,10 @@ top::PatternVarProjection ::= child::String  typeName::String  patternVar::Strin
  - @param loc   the location of where the reference was taken
  - @param attrs the attributes in the type of the taken reference
  -}
-abstract production partialRef
+abstract production uniqueRef
 top::FlowDef ::= prod::String  fName::String  gram::String  loc::Location  attrs::[String]
 {
-  top.partialRefContribs := [(crossnames(prod, fName), gram, loc, attrs)];
+  top.uniqueRefContribs := [(crossnames(prod, fName), gram, loc, attrs)];
   top.prodGraphContribs := [];
   top.flowEdges = [];
 }

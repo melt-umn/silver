@@ -215,10 +215,10 @@ top::Type ::= t::Type i::Type
   top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= t::Type i::Type
 {
-  top.typepp = s"PartiallyDecorated ${t.typepp} with ${i.typepp}";
+  top.typepp = s"Decorated! ${t.typepp} with ${i.typepp}";
 }
 
 aspect production ntOrDecType

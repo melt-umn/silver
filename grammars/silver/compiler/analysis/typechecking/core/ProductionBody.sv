@@ -3,7 +3,7 @@ grammar silver:compiler:analysis:typechecking:core;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
-  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, undecoratesTo, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
 propagate finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr excluding productionStmtAppend;
 
 {--
@@ -75,6 +75,19 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
        else [];
 }
 
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  
+  thread downSubst, upSubst on top, e, errCheck1, top;
+  
+  errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
+  top.errors <- if errCheck1.typeerror
+                then [err(e.location, "Undecorates's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
+                else [];
+}
+
 aspect production attachNoteStmt
 top::ProductionStmt ::= 'attachNote' e::Expr ';'
 {
@@ -104,7 +117,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -118,7 +131,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -132,23 +145,23 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   propagate downSubst, upSubst, finalSubst;
 }
 
 aspect production childDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
-                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and partially decorated types, not ${prettyType(top.typerep)}.")];
+                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
-                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and partially decorated types, not ${prettyType(top.typerep)}.")];
+                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localAttributeDcl
@@ -164,7 +177,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 

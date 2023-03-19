@@ -14,7 +14,7 @@ monoid attribute flowDefs :: [FlowDef];
 monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, partialRefTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, uniqueRefTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 
 annotation synTree :: EnvTree<FlowDef>;
 annotation inhTree :: EnvTree<FlowDef>;
@@ -23,7 +23,7 @@ annotation fwdTree :: EnvTree<FlowDef>;
 annotation fwdInhTree :: EnvTree<FlowDef>;
 annotation prodTree :: EnvTree<FlowDef>;
 annotation refTree :: EnvTree<[String]>;
-annotation partialRefTree :: EnvTree<(String, Location, [String])>;
+annotation uniqueRefTree :: EnvTree<(String, Location, [String])>;
 annotation localInhTree ::EnvTree<FlowDef>;
 annotation localTree :: EnvTree<FlowDef>;
 annotation nonSuspectTree :: EnvTree<[String]>;
@@ -48,7 +48,7 @@ FlowEnv ::=
     fwdInhTree = directBuildTree(d.fwdInhTreeContribs),
     prodTree = directBuildTree(d.prodTreeContribs),
     refTree = directBuildTree(refContribs),
-    partialRefTree = directBuildTree(d.partialRefContribs),
+    uniqueRefTree = directBuildTree(d.uniqueRefContribs),
     localInhTree = directBuildTree(d.localInhTreeContribs),
     localTree = directBuildTree(d.localTreeContribs),
     nonSuspectTree = directBuildTree(d.nonSuspectContribs),
@@ -114,11 +114,11 @@ function getInhsForNtRef
   return searchEnvTree(nt, e.refTree);
 }
 
--- partially decorated references taken for a child/local/production attribute
+-- unique references taken for a child/local/production attribute
 function getPartialRefs
 [(String, Location, [String])] ::= prod::String  fName::String  e::FlowEnv
 {
-  return searchEnvTree(crossnames(prod, fName), e.partialRefTree);
+  return searchEnvTree(crossnames(prod, fName), e.uniqueRefTree);
 }
 
 -- implicit forward syn copy equations that are allowed to affect the flow type

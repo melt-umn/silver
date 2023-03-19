@@ -10,7 +10,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.setupInh := body.setupInh;
   top.initProd := s"\t\t${className}.initProductionAttributeDefinitions();\n"
                ++ s"\t\tcommon.RTTIManager.registerProduction(${className}.prodleton);\n\n";
-  top.postInit := s"\t\tcommon.Decorator.applyDecorators(${fnnt}.decorators, ${className}.prodleton);\n";
+  top.postInit := s"";
 
   top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
   top.valueWeaving := body.valueWeaving;
@@ -24,17 +24,26 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
 
-  local dupX :: (String ::= NamedSignatureElement String) =
-    (\x::NamedSignatureElement gc::String -> 
-        (if x.typerep.transType == "Object" then s"(${gc} instanceof common.Tracked?((common.Tracked)${gc}).duplicate(null, notes):${gc})"
-            else if !x.typerep.tracked then gc
-            else gc++".duplicate(null, notes)"));
+  local decorableChildren :: [NamedSignatureElement] =
+    filter(\ x::NamedSignatureElement -> isDecorable(x.typerep, body.env), namedSig.inputElements);
+
+  local undecChild :: (String ::= NamedSignatureElement) =
+    \ x::NamedSignatureElement ->
+      if x.typerep.isDecorated
+      then if isDecorable(x.typerep, body.env)
+        then error("Production " ++ fName ++ " has a decorable decorated child but no 'undecorates to'.")  -- TODO: Remove this when this becomes a uniqueness analysis warning 
+        else s"context.childDecoratedLazy(i_${x.elementName})"
+      else if isDecorable(x.typerep, body.env)
+      then s"context.childUndecoratedLazy(i_${x.elementName})"
+      else s"child_${x.elementName}";
 
   local dupChild :: (String ::= NamedSignatureElement) =
-    (\x::NamedSignatureElement -> dupX(x, s"getChild_${x.elementName}()"));
-
-  local dupAnno :: (String ::= NamedSignatureElement) =
-    (\x::NamedSignatureElement -> dupX(x, s"getAnno_${makeIdName(x.elementName)}()"));
+    \ x::NamedSignatureElement ->
+      if x.typerep.transType == "Object"
+      then s"(getChild_${x.elementName}() instanceof common.Tracked?((common.Tracked)child_${x.elementName}).duplicate(null, notes):child_${x.elementName})"
+      else if x.typerep.tracked
+      then s"getChild_${x.elementName}().duplicate(null, notes)"
+      else s"child_${x.elementName}";
 
   local copyChild :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> s"child_${x.elementName}");
@@ -86,16 +95,34 @@ ${namedSig.inhOccursIndexDecls}
 ${namedSig.childStatic}
     }
 
-    public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
-        super(${implode(", ", (if wantsTracking then ["origin"] else []) ++ map((.annoRefElem), namedSig.namedInputElements))});
+    public ${className}(final NOriginInfo origin, final boolean isUnique ${commaIfAny} ${namedSig.javaSignature}) {
+        super(${implode(", ",
+        	(if wantsTracking then ["origin"] else []) ++
+        	"isUnique" ::
+        	map((.annoRefElem), namedSig.namedInputElements))});
+		this.isUnique = ${
+		  if any(map(\ x::NamedSignatureElement -> x.typerep.isUnique, namedSig.inputElements))
+		  then "true"
+		  else "isUnique"};
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
+    }
+
+    public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
+        this(origin, false ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
+    }
+
+
+    public ${className}(final boolean isUnique ${commaIfAny} ${namedSig.javaSignature}) {
+        this(null, isUnique ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
 
 
     public ${className}(${namedSig.javaSignature}) {
         this(null ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
+    
+    public final boolean isUnique;
 
 ${namedSig.childDecls}
 
@@ -140,17 +167,35 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     }
 
     @Override
+    public common.Node evalUndecorate(final common.DecoratedNode context) {
+    	${if !null(body.undecorateExpr)
+          then s"return (common.Node)${head(body.undecorateExpr).translation};"
+          else if !null(decorableChildren)
+          then s"return new ${className}(${implode(", ",
+            -- A production node with no special undecoration behavior has the same origin as the
+            -- original node when implicitly undecorated.
+            -- This will be overidden by duplicate when calling new().
+            (if wantsTracking then ["this.origin"] else []) ++
+            namedSig.contextRefElems ++
+            map(undecChild, namedSig.inputElements) ++
+            map(copyAnno, namedSig.namedInputElements))});"
+             -- TODO: Consider if all decorable children are directly undecorable.
+             -- This must avoid forcing children that are thunks, and probably also should be cached.
+          else "return this;"}
+    }
+
+    @Override
     public boolean hasForward() {
-        return ${(if null(body.uniqueSignificantExpression) then "false" else "true")};
+        return ${(if null(body.forwardExpr) then "false" else "true")};
     }
 
     @Override
     public common.Node evalForward(final common.DecoratedNode context) {
-        ${if null(body.uniqueSignificantExpression) 
+        ${if null(body.forwardExpr)
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
-          else s"return ((common.Node)${head(body.uniqueSignificantExpression).translation}${
+          else s"return ((common.Node)${head(body.forwardExpr).translation}${
             if wantsTracking && !top.config.noRedex
-            then s".duplicateForForwarding(context.undecorate(), \"${escapeString(hackUnparse(head(body.uniqueSignificantExpression).location))}\")"
+            then s".duplicateForForwarding(context.getNode(), \"${escapeString(hackUnparse(head(body.forwardExpr).location))}\")"
             else ""})"};
     }
 
@@ -271,7 +316,10 @@ ${contexts.contextInitTrans}
 	
 		@Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++ map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(
+              ${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++
+              map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++
+              unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
 		
         @Override
@@ -292,53 +340,29 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
   local otImpl :: String = if wantsTracking then s"""
     @Override
     public ${fnnt} duplicate(common.Node redex, common.ConsCell notes) {
+        silver.core.NOriginInfo oi;
         if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
-            return new ${className}(${implode(", ",
-              "new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true)" ::
-              map(dupChild, namedSig.inputElements) ++
-              map(dupAnno, namedSig.namedInputElements))});
+            oi = new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true);
         } else {
-            return new ${className}(${implode(", ",
-              "new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true)" ::
-              map(dupChild, namedSig.inputElements) ++
-              map(dupAnno, namedSig.namedInputElements))});
+            oi = new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true);
         }
+        return new ${className}(
+            ${implode(", ",
+                "oi" ::
+                namedSig.contextRefElems ++
+                map(dupChild, namedSig.inputElements) ++
+                map(copyAnno, namedSig.namedInputElements))});
     }
 
     @Override
-    public ${fnnt} copy(common.Node redex, common.ConsCell redexNotes) {
-        Object origin;
-        common.ConsCell originNotes;
-        Boolean newlyConstructed;
-        Object roi = this.origin;
-        if (roi instanceof PoriginOriginInfo) {
-            PoriginOriginInfo oi = (PoriginOriginInfo)roi;
-            origin = oi.getChild_origin();
-            originNotes = oi.getChild_originNotes();
-            newlyConstructed = oi.getChild_newlyConstructed();
-        } else if (roi instanceof PoriginAndRedexOriginInfo) {
-            PoriginAndRedexOriginInfo oi = (PoriginAndRedexOriginInfo)roi;
-            origin = oi.getChild_origin();
-            originNotes = oi.getChild_originNotes();
-            newlyConstructed = oi.getChild_newlyConstructed();
-        } else {
-            return this;
-        }
-
-        return new ${className}(${implode(", ",
-          "new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed)" ::
-          map(copyChild, namedSig.inputElements) ++
-          map(copyAnno, namedSig.namedInputElements))});
+    public ${fnnt} updateOriginInfo(silver.core.NOriginInfo oi) {
+        return new ${className}(
+            ${implode(", ",
+                "oi" ::
+                namedSig.contextRefElems ++
+                map(copyChild, namedSig.inputElements) ++
+                map(copyAnno, namedSig.namedInputElements))});
     }
-
-    @Override
-    public ${fnnt} duplicateForForwarding(common.Node redex, String note) {
-        return new ${className}(${implode(", ",
-          "new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new silver.core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true)" ::
-          map(copyChild, namedSig.inputElements) ++
-          map(copyAnno, namedSig.namedInputElements))});
-    }
-
     """ else "";
 
   -- main function signature check TODO: this should probably be elsewhere!

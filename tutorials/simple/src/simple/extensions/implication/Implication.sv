@@ -5,7 +5,7 @@ imports silver:langutil:pp;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 
-terminal Implies  '=>'  precedence = 6;
+terminal Implies  '=>'  precedence = 6, association = left;
 
 concrete productions e::cst:Expr
  | l::cst:Expr '=>' r::cst:Expr
