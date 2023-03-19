@@ -7,6 +7,16 @@ set -eu
 # falling back to develop.
 # If --copper is specified, only fetch the Copper jars.
 
+# Parse command line argumants.
+# Hacky, but getopts seems like overkill for this...
+if [[ $# -gt 1 && $1 == --copper ]]; then
+  REV_NAME=$2
+elif [[ $# -gt 0 && $1 != --copper ]]; then
+  REV_NAME=$1
+else
+  REV_NAME=""
+fi
+
 COMMIT_ARTIFACTS="https://foundry.remexre.xyz/commit-artifacts/"
 
 function has_jars {
@@ -16,8 +26,8 @@ function has_jars {
 rev=""
 
 # Look for jars in the specified revision
-if [[ $* != *--copper* && $# -gt 0 || $# -gt 1 ]]; then
-  rev=$(git rev-parse $1)
+if [[ -n $REV_NAME ]]; then
+  rev=$(git rev-parse "$REV_NAME")
 fi
 
 # Get the hash of the latest commit on develop.
@@ -28,8 +38,8 @@ DEVELOP=$(git ls-remote https://github.com/melt-umn/silver develop | cut -f1)
 # Look for jars in the current commit and its parents.
 # First, check that we are inside a git repo.
 if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/null; then
-  for commit in $(git rev-list HEAD ^$DEVELOP); do
-    if has_jars $commit; then
+  for commit in $(git rev-list HEAD "^$DEVELOP"); do
+    if has_jars "$commit"; then
       echo "Found jars from past commit"
       rev=$commit
       break
@@ -37,14 +47,14 @@ if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/nul
   done
 fi
 
-if [[ -z $rev || $rev == $DEVELOP ]]; then
+if [[ -z $rev || $rev == "$DEVELOP" ]]; then
   echo "Fetching latest stable jars..."
   LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
   REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
   JARS_BAK=JARS-BAK
 else
-  git --no-pager show --quiet $rev
-  if ! has_jars $rev; then
+  git --no-pager show --quiet "$rev"
+  if ! has_jars "$rev"; then
     echo "Cound not find jars for commit"
     exit 1
   fi
@@ -65,7 +75,7 @@ mkdir -p jars
 
 if [[ -n "$LOCAL_STORE" && -d $LOCAL_STORE ]]; then
   for file in $FILES; do
-      cp $LOCAL_STORE/$file jars/
+      cp "$LOCAL_STORE/$file" jars/
   done
 else
   # There's probably a better way to do this!
@@ -78,16 +88,16 @@ else
   done
   
   # We're going to download them to here
-  mkdir -p $JARS_BAK
+  mkdir -p "$JARS_BAK"
   
   # -N Pay attention to timestamps, to avoid needless redownloads.
   # -P jars/  Put the files in jars/
   # -nv Don't be so verbose!
-  wget -N -P $JARS_BAK/ -nv $URLS
+  wget -N -P "$JARS_BAK/" -nv $URLS
   
   # Always overwrite all the files in jars.
   for file in $FILES; do
-      cp $JARS_BAK/$file jars/
+      cp "$JARS_BAK/$file" jars/
   done
 fi
 
