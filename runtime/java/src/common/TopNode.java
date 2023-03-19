@@ -32,11 +32,6 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	protected Object inheritedForwarded(final int attribute) {
-		throw new SilverInternalError("TopNode does not provided inherited attributes.");
-	}
-
-	@Override
 	public <T> T synthesized(final int attribute) {
 		throw new SilverInternalError("No synthesized attributes defined on TopNode.");
 	}

@@ -12,6 +12,7 @@ import silver:compiler:definition:flow:ast only nilFlow, consFlow, FlowDef;
 import silver:compiler:definition:core only jarName;
 
 import silver:compiler:analysis:warnings:flow only warnMissingInh;
+import silver:compiler:analysis:uniqueness;
 
 {--
  - A representation of a grammar, from an unknown source. TODO: rename GrammarSpec
@@ -88,6 +89,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
     fromFlowDefs(
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
+      flatMap((.uniqueRefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
   production newInterface::InterfaceItems = packInterfaceItems(top);

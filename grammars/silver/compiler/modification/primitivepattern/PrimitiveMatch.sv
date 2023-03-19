@@ -25,12 +25,12 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst, isUnique,
+  downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst, isUnique,
+  downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, originRules;
 
 inherited attribute scrutineeType :: Type;
@@ -58,14 +58,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  -- We are wrapping 'e' in 'exprRef' which suppresses errors
-  top.errors <- e.errors;
-  
   forwards to
     matchPrimitiveReal(
       if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
-      then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
-      else exprRef(e, location=e.location),
+      then decorateExprWithEmpty('decorate', @e, 'with', '{', '}', location=e.location)
+      else @e,
       t, pr, f, location=top.location);
 }
 
@@ -108,8 +105,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
-  
-  top.isUnique = pr.isUnique || f.isUnique;
 
   e.isRoot = false;
   f.isRoot = false;
@@ -152,8 +147,6 @@ top::PrimPatterns ::= p::PrimPattern
   top.translation = p.translation;
   
   propagate downSubst, upSubst;
-
-  top.isUnique = p.isUnique;
 }
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
@@ -163,8 +156,6 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
 
   propagate downSubst, upSubst;
-
-  top.isUnique = p.isUnique || ps.isUnique;
 }
 
 -- TODO: Long term, I'd like to switch to having a PrimRule and rename PrimPatterns PrimRules.
@@ -257,8 +248,6 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
-
-  top.isUnique = e.isUnique;
   propagate finalSubst;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
@@ -346,8 +335,6 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Okay, now update the finalSubst....
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
-
-  top.isUnique = e.isUnique;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -392,8 +379,6 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
-  top.isUnique = e.isUnique;
-
   e.isRoot = false;
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
@@ -418,8 +403,6 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
-
-  top.isUnique = e.isUnique;
 
   e.isRoot = false;
 
@@ -446,8 +429,6 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
-  top.isUnique = e.isUnique;
-
   e.isRoot = false;
 
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
@@ -473,8 +454,6 @@ top::PrimPattern ::= i::String '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
-  top.isUnique = e.isUnique;
-
   e.isRoot = false;
 
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
@@ -499,8 +478,6 @@ top::PrimPattern ::= e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
-
-  top.isUnique = e.isUnique;
 
   e.isRoot = false;
 
@@ -532,12 +509,11 @@ top::PrimPattern ::= h::Name t::Name e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
-  top.isUnique = e.isUnique;
   propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),
-     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [])];
+    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), [], []),
+     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [], [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   e.isRoot = false;

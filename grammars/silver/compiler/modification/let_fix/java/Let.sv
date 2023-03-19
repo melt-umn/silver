@@ -10,8 +10,6 @@ import silver:compiler:definition:type:syntax;
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
-
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
@@ -63,7 +61,7 @@ String ::= fn::String  et::String  ty::String
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  _ _ _
 {
   -- To account for a magic case where we generate a let expression with a type
   -- that is, for example, a ntOrDecType or something,

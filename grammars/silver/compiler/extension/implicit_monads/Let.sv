@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:implicit_monads;
 
-
+import silver:compiler:analysis:uniqueness;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
@@ -116,7 +116,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
-                               e.flowVertexInfo, e.flowDeps)];
+                               e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                    then [pair(id, t)]
@@ -134,7 +134,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  _ _ _
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

@@ -3,6 +3,7 @@ grammar silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:core;
+imports silver:compiler:analysis:uniqueness;
 
 import silver:compiler:definition:type;
 
@@ -23,7 +24,7 @@ annotation fwdTree :: EnvTree<FlowDef>;
 annotation fwdInhTree :: EnvTree<FlowDef>;
 annotation prodTree :: EnvTree<FlowDef>;
 annotation refTree :: EnvTree<[String]>;
-annotation uniqueRefTree :: EnvTree<(String, Location, [String])>;
+annotation uniqueRefTree :: EnvTree<UniqueRefSite>;
 annotation localInhTree ::EnvTree<FlowDef>;
 annotation localTree :: EnvTree<FlowDef>;
 annotation nonSuspectTree :: EnvTree<[String]>;
@@ -38,6 +39,7 @@ top::FlowEnv ::=
 function fromFlowDefs
 FlowEnv ::=
   specContribs::[(String, String, [String], [String])] refContribs::[(String, [String])]
+  uniqueRefContribs::[(String, UniqueRefSite)]
   d::FlowDefs
 {
   return flowEnv(
@@ -48,7 +50,7 @@ FlowEnv ::=
     fwdInhTree = directBuildTree(d.fwdInhTreeContribs),
     prodTree = directBuildTree(d.prodTreeContribs),
     refTree = directBuildTree(refContribs),
-    uniqueRefTree = directBuildTree(d.uniqueRefContribs),
+    uniqueRefTree = directBuildTree(uniqueRefContribs),
     localInhTree = directBuildTree(d.localInhTreeContribs),
     localTree = directBuildTree(d.localTreeContribs),
     nonSuspectTree = directBuildTree(d.nonSuspectContribs),
@@ -115,10 +117,10 @@ function getInhsForNtRef
 }
 
 -- unique references taken for a child/local/production attribute
-function getPartialRefs
-[(String, Location, [String])] ::= prod::String  fName::String  e::FlowEnv
+function getUniqueRefs
+[UniqueRefSite] ::= fName::String  e::FlowEnv
 {
-  return searchEnvTree(crossnames(prod, fName), e.uniqueRefTree);
+  return searchEnvTree(fName, e.uniqueRefTree);
 }
 
 -- implicit forward syn copy equations that are allowed to affect the flow type

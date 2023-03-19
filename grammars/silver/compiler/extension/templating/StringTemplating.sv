@@ -45,15 +45,26 @@ top::Expr ::= a::Expr b::Expr
   top.translation = s"new common.StringCatter(${a.translation}, ${b.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
   
+  -- TODO: Avoid directly decorating a and b when we have decoration site flow projections
   thread downSubst, upSubst on top, a, b, forward;
 
   a.isRoot = false;
   b.isRoot = false;
   
-  forwards to
-    mkStrFunctionInvocation(
-      top.location, "silver:core:stringAppend",
-      [exprRef(a, location=a.location), exprRef(b, location=b.location)]);
+  forwards to application(
+    baseExpr(
+      qName(top.location, "silver:core:stringAppend"),
+      location=top.location), '(',
+    snocAppExprs(
+      snocAppExprs(
+        emptyAppExprs(location=top.location), ',',
+        presentAppExpr(@a, location=top.location),
+        location=top.location), ',',
+      presentAppExpr(@b, location=top.location),
+      location=top.location),
+    ',',
+    emptyAnnoAppExprs(location=top.location),
+    ')', location=top.location);
 }
 
 terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL, lsp:String_};

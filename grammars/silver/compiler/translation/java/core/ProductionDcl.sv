@@ -95,34 +95,28 @@ ${namedSig.inhOccursIndexDecls}
 ${namedSig.childStatic}
     }
 
-    public ${className}(final NOriginInfo origin, final boolean isUnique ${commaIfAny} ${namedSig.javaSignature}) {
+    public ${className}(final NOriginInfo origin, final boolean isUniqueInvocation${commaIfAny} ${namedSig.javaSignature}) {
         super(${implode(", ",
         	(if wantsTracking then ["origin"] else []) ++
-        	"isUnique" ::
+        	(if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
+		     then "true"
+		     else "isUniqueInvocation") ::
         	map((.annoRefElem), namedSig.namedInputElements))});
-		this.isUnique = ${
-		  if any(map(\ x::NamedSignatureElement -> x.typerep.isUnique, namedSig.inputElements))
-		  then "true"
-		  else "isUnique"};
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
     }
 
-    public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
-        this(origin, false ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
+    public ${className}(final NOriginInfo origin${commaIfAny} ${namedSig.javaSignature}) {
+        this(origin, false${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
 
-
-    public ${className}(final boolean isUnique ${commaIfAny} ${namedSig.javaSignature}) {
-        this(null, isUnique ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
+    public ${className}(final boolean isUniqueInvocation${commaIfAny} ${namedSig.javaSignature}) {
+        this(null, isUniqueInvocation${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
-
 
     public ${className}(${namedSig.javaSignature}) {
-        this(null ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
+        this(null${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
-    
-    public final boolean isUnique;
 
 ${namedSig.childDecls}
 
@@ -179,8 +173,8 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-             -- TODO: Consider if all decorable children are directly undecorable.
-             -- This must avoid forcing children that are thunks, and probably also should be cached.
+          -- TODO: Consider if all decorable children are directly undecorable.
+          -- This must avoid forcing children that are thunks, and probably also should be cached.
           else "return this;"}
     }
 

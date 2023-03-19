@@ -12,9 +12,9 @@ top::Expr ::= q::Decorated! QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(q, location=top.location)]
                      else [];
-  top.monadRewritten = baseExpr(new(q), location=top.location);
+  top.monadRewritten = baseExpr(q, location=top.location);
 }
 
 aspect production pluckTerminalReference
@@ -24,9 +24,9 @@ top::Expr ::= q::Decorated! QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = terminalIdType();
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(q, location=top.location)]
                      else [];
-  top.monadRewritten = baseExpr(new(q), location=top.location);
+  top.monadRewritten = baseExpr(q, location=top.location);
 }
 
 aspect production terminalIdReference
@@ -36,9 +36,9 @@ top::Expr ::= q::Decorated! QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = terminalIdType();
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(q, location=top.location)]
                      else [];
-  top.monadRewritten = baseExpr(new(q), location=top.location);
+  top.monadRewritten = baseExpr(q, location=top.location);
 }
 
 aspect production parserAttributeReference
@@ -48,9 +48,9 @@ top::Expr ::= q::Decorated! QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(q, location=top.location)]
                      else [];
-  top.monadRewritten = baseExpr(new(q), location=top.location);
+  top.monadRewritten = baseExpr(q, location=top.location);
 }
 
 aspect production termAttrValueReference
@@ -60,9 +60,7 @@ top::Expr ::= q::Decorated! QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(q, location=top.location)]
                      else [];
-  --this is just a Silver name (e.g. lexeme), not a user-defined name,
-  --   so it should be fine to leave it decorated
-  top.monadRewritten = termAttrValueReference(q, location=top.location);
+  top.monadRewritten = baseExpr(q, location=top.location);
 }

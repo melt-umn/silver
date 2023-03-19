@@ -1,5 +1,6 @@
 package common;
 
+import common.exceptions.SilverException;
 import common.exceptions.TraceException;
 
 /**
@@ -43,15 +44,17 @@ public abstract class Node implements Decorable, Typed {
 	 * (fwd only)
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
+	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A "decorated" form of this Node 
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+	@Override
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, null, fwdParent);
+                                 this, parent, inhs, fwdParent);
 	}
 
 	/**
@@ -63,17 +66,24 @@ public abstract class Node implements Decorable, Typed {
 	public DecoratedNode decorate() {
 		return decorate(TopNode.singleton, (Lazy[])null);
 	}
-	
+
 	private Node undecoratedValue = null;
 	public final Node undecorate(final DecoratedNode context) {
 		if (undecoratedValue == null) {
 			try {
 				undecoratedValue = evalUndecorate(context);
 			} catch(Throwable t) {
-				throw new TraceException("While undecorating " + context.getDebugID(), t);
+				throw handleUndecorateError(context, t);
 			}
 		}
 		return undecoratedValue;
+	}
+
+	/** 
+	 * Attempt at factoring out the slow path.
+	 */
+	private final SilverException handleUndecorateError(final DecoratedNode context, final Throwable t) {
+		return new TraceException("While undecorating " + context.getDebugID(), t);
 	}
 
 	// These methods are to be provided by the *nonterminal*
