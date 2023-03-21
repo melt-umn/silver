@@ -2,20 +2,21 @@
 
 set -eu
 
-# Usage: ./fetch-jars [rev-name] [--copper]
+# Usage: ./fetch-jars [rev-name] [--unstable] [--copper]
 # If a revision is not specified, the script fetches the latest jars from the current branch,
 # falling back to develop.
+# If --unstable is specified, always fetch from commit artifacts on foundry.
 # If --copper is specified, only fetch the Copper jars.
 
 # Parse command line argumants.
 # Hacky, but getopts seems like overkill for this...
-if [[ $# -gt 1 && $1 == --copper ]]; then
-  REV_NAME=$2
-elif [[ $# -gt 0 && $1 != --copper ]]; then
-  REV_NAME=$1
-else
-  REV_NAME=""
-fi
+rev_name=develop
+for arg in "$@"; do
+  if [[ $arg != -* ]]; then
+    rev_name=$arg
+    break
+  fi
+done
 
 COMMIT_ARTIFACTS="https://foundry.remexre.xyz/commit-artifacts/"
 
@@ -26,8 +27,8 @@ function has_jars {
 rev=""
 
 # Look for jars in the specified revision
-if [[ -n $REV_NAME ]]; then
-  rev=$(git rev-parse "$REV_NAME")
+if [[ -n $rev_name ]]; then
+  rev=$(git rev-parse "$rev_name")
 fi
 
 # Get the hash of the latest commit on develop.
@@ -47,7 +48,7 @@ if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/nul
   done
 fi
 
-if [[ -z $rev || $rev == "$DEVELOP" ]]; then
+if [[ $* != *--unstable* && (-z $rev || $rev == "$DEVELOP") ]]; then
   echo "Fetching latest stable jars..."
   LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
   REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
