@@ -198,3 +198,15 @@ equalityTest(
   case decorate ocPolyWrap(ocThing()) with {prodName = "blah";} of
   | ocPolyWrap(thing) -> thing.prodName
   end, "blah", String, silver_tests);
+
+
+nonterminal OCWrapDec<a> with prodName;
+
+production ocWrapDec
+attribute prodName i occurs on a =>
+top::OCWrapDec<a> ::= x::Decorated a with i
+{}
+
+aspect production ocWrapDec
+top::OCWrapDec<a> ::= x::Decorated a with i
+{ top.prodName = x.prodName; }
