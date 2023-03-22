@@ -20,18 +20,17 @@ melt.trynode('silver') {
       def source = params.OVERRIDE_JARS
       if (source == 'develop') {
         source = "${silver.SILVER_WORKSPACE}/jars"
+      }
+      String branchJob = "/melt-umn/silver/${hudson.Util.rawEncode(source)}"
+      if(melt.doesJobExist(branchJob)) {
+        // Obtain jars from specified branch
+        melt.annotate("Jars overidden from branch.")
+        copyArtifacts(projectName: branchJob, selector: lastCompleted())
       } else {
-        String branchJob = "/melt-umn/silver/${hudson.Util.rawEncode(source)}"
-        if(melt.doesJobExist(branchJob)) {
-          // Obtain jars from specified branch
-          melt.annotate("Jars overidden from branch.")
-          copyArtifacts(projectName: branchJob, selector: lastCompleted())
-        } else {
-          // Obtain jars from specified location
-          melt.annotate("Jars overridden from path.")
-          sh "mkdir -p jars"
-          sh "cp ${source}/* jars/"
-        }
+        // Obtain jars from specified location
+        melt.annotate("Jars overridden from path.")
+        sh "mkdir -p jars"
+        sh "cp ${source}/* jars/"
       }
     } else {
       // We start by obtaining normal jars, but we potentially overwrite them:
