@@ -183,22 +183,34 @@ attribute valueFileRefLocs, typeFileRefLocs, attributeFileRefLocs, allValueRefs,
 aspect production compilation
 top::Compilation ::= g::Grammars r::Grammars _ _
 {
-  top.valueFileRefLocs = buildFileRefs((.valueRefLocs), g.grammarList);
-  top.typeFileRefLocs = buildFileRefs((.typeRefLocs), g.grammarList);
-  top.attributeFileRefLocs = buildFileRefs((.attributeRefLocs), g.grammarList);
+  top.valueFileRefLocs = buildFileRefs((.valueRefLocs), (.valueList), g.grammarList);
+  top.typeFileRefLocs = buildFileRefs((.typeRefLocs), (.typeList), g.grammarList);
+  top.attributeFileRefLocs = buildFileRefs((.attributeRefLocs), (.attrList), g.grammarList);
   top.allValueRefs = buildAllRefs((.valueRefLocs), g.grammarList);
   top.allTypeRefs = buildAllRefs((.typeRefLocs), g.grammarList);
   top.allAttributeRefs = buildAllRefs((.attributeRefLocs), g.grammarList);
 }
 
 function buildFileRefs
+annotation sourceLocation occurs on a,
 annotation sourceGrammar occurs on a =>
-map:Map<String (Location, Decorated RootSpec, a)> ::= accessor::([(Location, a)] ::= Decorated RootSpec) rs::[Decorated RootSpec]
+map:Map<String (Location, Decorated RootSpec, a)> ::= 
+accessor::([(Location, a)] ::= Decorated RootSpec)  
+accessList::([EnvItem<a>] ::= Def)
+rs::[Decorated RootSpec]
 {
   return directBuildTree(flatMap(\ r::Decorated RootSpec ->
     map(\ item::(Location, a) ->
       (r.grammarSource ++ item.1.filename, item.1, head(map:lookup(item.2.sourceGrammar, r.compiledGrammars)), item.2),
-      accessor(r)),
+      accessor(r)) ++
+    flatMap(\def::Def ->
+      map(\item::EnvItem<a> ->
+        (grammarToPath(item.dcl.sourceGrammar) ++ (item.dcl.sourceLocation.filename), 
+        item.dcl.sourceLocation, 
+        head(map:lookup(item.dcl.sourceGrammar, r.compiledGrammars)),
+        item.dcl),
+      (accessList(def))),
+      r.defs),
     rs));
 }
 
