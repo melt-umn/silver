@@ -10,7 +10,7 @@ set -eu
 
 # Parse command line argumants.
 # Hacky, but getopts seems like overkill for this...
-rev_name=develop
+rev_name=""
 for arg in "$@"; do
   if [[ $arg != -* ]]; then
     rev_name=$arg
