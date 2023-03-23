@@ -194,20 +194,22 @@ top::Compilation ::= g::Grammars r::Grammars _ _
 function buildFileRefs
 annotation sourceLocation occurs on a,
 annotation sourceGrammar occurs on a =>
-map:Map<String (Location, Decorated RootSpec, a)> ::= 
-accessor::([(Location, a)] ::= Decorated RootSpec)  
-accessList::([EnvItem<a>] ::= Def)
-rs::[Decorated RootSpec]
+  map:Map<String (Location, Decorated RootSpec, a)> ::= 
+  accessor::([(Location, a)] ::= Decorated RootSpec)  
+  accessList::([EnvItem<a>] ::= Def)
+  rs::[Decorated RootSpec]
 {
   return directBuildTree(flatMap(\ r::Decorated RootSpec ->
     map(\ item::(Location, a) ->
       (r.grammarSource ++ item.1.filename, item.1, head(map:lookup(item.2.sourceGrammar, r.compiledGrammars)), item.2),
       accessor(r)) ++
+    -- We add the declaration sites of all global defs as reference locations here as a shortcut
+    -- instead of adding aspects for them in RefLocs
     flatMap(\def::Def ->
       map(\item::EnvItem<a> ->
         (grammarToPath(item.dcl.sourceGrammar) ++ (item.dcl.sourceLocation.filename), 
         item.dcl.sourceLocation, 
-        head(map:lookup(item.dcl.sourceGrammar, r.compiledGrammars)),
+        r,
         item.dcl),
       (accessList(def))),
       r.defs),
@@ -310,7 +312,7 @@ attribute fullName {} occurs on a =>
 {
   return flatMap(\ item::(Decorated RootSpec, a) -> 
     map( \loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
-    (map:lookup(item.2.fullName, refs))), 
+    map:lookup(item.2.fullName, refs)), 
     lookupPos(line, col, map:lookup(fileName, decls)));
 }
 
