@@ -170,6 +170,48 @@ aspect attributeRefLocs on StrategyExpr using := of
 | totalRef(a) -> if attrDclFound then [(a.location, attrDcl)] else []
 end;
 
+-- Productions
+-- LHS
+aspect valueRefLocs on top::ProductionLHS using <- of
+| productionLHS(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+end;
+
+aspect valueRefLocs on top::AspectProductionLHS using <- of
+| aspectProductionLHSTyped(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectProductionLHSId(id) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+end;
+
+aspect typeRefLocs on ProductionLHS using <- of
+| productionLHS(_, _, t) -> t.typeRefLocs
+end;
+
+aspect typeRefLocs on AspectProductionLHS using <- of
+| aspectProductionLHSTyped(_, _, t) -> t.typeRefLocs
+end;
+
+attribute typeRefLocs occurs on AspectDefaultProductionSignature;
+propagate typeRefLocs on AspectDefaultProductionSignature;
+aspect typeRefLocs on top::AspectDefaultProductionSignature using <- of
+| aspectDefaultProductionSignature(_,_,t,_) -> t.typeRefLocs
+end;
+
+--RHS
+aspect valueRefLocs on top::ProductionRHSElem using <- of
+| productionRHSElem(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+end;
+
+aspect valueRefLocs on top::AspectRHSElem using <- of
+| aspectRHSElemTyped(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+end;
+
+aspect typeRefLocs on ProductionRHSElem using <- of
+| productionRHSElem(_, _, t) -> t.typeRefLocs
+end;
+
+aspect typeRefLocs on AspectRHSElem using <- of
+| aspectRHSElemTyped(_, _, t) -> t.typeRefLocs
+end;
+
 synthesized attribute valueFileRefLocs::map:Map<String (Location, Decorated RootSpec, ValueDclInfo)>;
 synthesized attribute typeFileRefLocs::map:Map<String (Location, Decorated RootSpec, TypeDclInfo)>;
 synthesized attribute attributeFileRefLocs::map:Map<String (Location, Decorated RootSpec, AttributeDclInfo)>;
