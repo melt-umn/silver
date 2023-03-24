@@ -161,45 +161,71 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 }
 
 abstract production threadedInhDcl
-top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::Maybe<Operation> rev::Boolean
 {
   top.fullName = inh;
   propagate compareKey;
   top.isEqual =
     case top.compareTo of
-    | threadedInhDcl(inh2, syn2, _, _, rev2) ->
+    | threadedInhDcl(inh2, syn2, _, _, _, rev2) ->
       inh == inh2 && syn == syn2 && top.typeScheme == top.compareTo.typeScheme && rev == rev2
     | _ -> false
     end;
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
+  top.isCollection = o.isJust;
+  top.operation = o.fromJust;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
+  top.attrDefDispatcher =
+    if o.isJust
+    then collectionAttrDefError
+    else inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
+  top.attrBaseDefDispatcher = 
+    if o.isJust
+    then inhBaseColAttributeDef(_, _, _, location=_) -- Allow normal inh base equations
+    else nonCollectionAttrBaseDefError;
+  top.attrAppendDefDispatcher = 
+    if o.isJust
+    then inhAppendColAttributeDef(_, _, _, location=_)  -- Allow normal inh append equations
+    else nonCollectionAttrAppendDefError;
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateThreadedInh(rev, _, syn, location=_);
+  top.propagateDispatcher = propagateThreadedInh(o.isJust, rev, _, syn, location=_);
 }
 
 abstract production threadedSynDcl
-top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::Maybe<Operation> rev::Boolean
 {
   top.fullName = syn;
   propagate compareKey;
   top.isEqual =
     case top.compareTo of
-    | threadedSynDcl(inh2, syn2, _, _, rev2) ->
+    | threadedSynDcl(inh2, syn2, _, _, _, rev2) ->
       inh == inh2 && syn == syn2 && top.typeScheme == top.compareTo.typeScheme && rev == rev2
     | _ -> false
     end;
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
+  top.isCollection = o.isJust;
+  top.operation = o.fromJust;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attrDefDispatcher =
+    if o.isJust
+    then collectionAttrDefError
+    else synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attrBaseDefDispatcher = 
+    if o.isJust
+    then synBaseColAttributeDef(_, _, _, location=_) -- Allow normal syn base equations
+    else nonCollectionAttrBaseDefError;
+  top.attrAppendDefDispatcher = 
+    if o.isJust
+    then synAppendColAttributeDef(_, _, _, location=_)  -- Allow normal syn append equations
+    else nonCollectionAttrAppendDefError;
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateThreadedSyn(rev, inh, _, location=_);
+  top.propagateDispatcher = propagateThreadedSyn(o.isJust, rev, inh, _, location=_);
 }
