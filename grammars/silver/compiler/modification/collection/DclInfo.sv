@@ -47,7 +47,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.operation = o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = 
     \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
@@ -72,7 +72,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.operation = o;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_); -- TODO: above should probably be an error handler!
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
   top.attrDefDispatcher =
     \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);

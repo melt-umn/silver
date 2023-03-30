@@ -55,14 +55,6 @@ top::Expr ::= q::Decorated! QName
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
-
-  top.flowDefs <-
-    case finalTy, refSet of
-    | uniqueDecoratedType(_, _), just(inhs)
-      when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [uniqueRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
-    | _, _ -> []
-    end;
 }
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
@@ -95,14 +87,6 @@ top::Expr ::= q::Decorated! QName
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
-
-  top.flowDefs <-
-    case finalTy, refSet of
-    | uniqueDecoratedType(_, _), just(inhs)
-      when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [uniqueRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
-    | _, _ -> []
-    end;
 }
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
@@ -222,12 +206,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     
 }
 
-aspect production exprRef
-top::Expr ::= e::Decorated! Expr
-{
-  top.flowVertexInfo = e.flowVertexInfo;
-}
-
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
 propagate flowDefs, flowEnv on AssignExpr;
@@ -239,7 +217,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  _
 {
   -- Because of the auto-undecorate behavior, we need to check for the case
   -- where `t` should be equivalent to `new(t)` and report accoringly.

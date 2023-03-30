@@ -216,7 +216,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
   top.translation = e.invokeTranslation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
-  e.invokeIsUnique = top.isUnique;
+  e.invokeIsUnique = !null(top.uniqueRefs);
   e.invokeArgs = es;
   e.invokeNamedArgs = annos;
   e.sameProdAsProductionDefinedOn =
@@ -569,13 +569,6 @@ aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
-}
-
-aspect production exprRef
-top::Expr ::= e::Decorated! Expr
-{
-  top.translation = e.translation;
-  top.lazyTranslation = e.lazyTranslation;
 }
 
 function wrapThunk

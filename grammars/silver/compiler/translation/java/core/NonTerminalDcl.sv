@@ -110,8 +110,8 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.DecoratedNode fwdParent) {
-			return ref.decorate(parent, fwdParent);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.DecoratedNode fwdParent) {
+			return ref.decorate(parent, inhs, fwdParent);
 		}
 
 		// Accessors used in reflection and debugging.

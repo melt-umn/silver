@@ -410,5 +410,5 @@ top::AppExpr ::= e::Expr
             " but argument is of type " ++ errCheck1.leftpp)];  
 }
 
--- See documentation for major restriction on use of exprRef.
+-- See documentation for major restriction on use of @.
 -- Essentially, the referred expression MUST have already been type checked.

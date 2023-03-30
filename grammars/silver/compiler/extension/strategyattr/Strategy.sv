@@ -84,33 +84,40 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  forwards to
-    foldr(
-      appendAGDcl(_, _, location=top.location),
-      defaultAttributionDcl(
-        at,
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-              end,
-              location=top.location),
-            '>', location=top.location),
-          location=top.location),
-        nt, nttl,
-        location=top.location),
-      map(
-        \ n::String ->
-          attributionDcl(
-            'attribute', qName(top.location, n), attl, 'occurs', 'on', nt, nttl, ';',
+  local atOccursDcl::AGDcl =
+    defaultAttributionDcl(
+      at,
+      botlSome(
+        bTypeList(
+          '<',
+          typeListSingle(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType, location=top.location),
+                tl, location=top.location)
+            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+            end,
             location=top.location),
-        at.lookupAttribute.dcl.liftedStrategyNames));
+          '>', location=top.location),
+        location=top.location),
+      nt, nttl,
+      location=top.location);
+
+  forwards to
+    if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl
+    else
+      appendAGDcl(
+        @atOccursDcl,
+        foldr1(
+          appendAGDcl(_, _, location=top.location),
+          map(
+            \ n::String ->
+              attributionDcl(
+                'attribute', qName(top.location, n), attl, 'occurs', 'on', nt, nttl, ';',
+                location=top.location),
+            at.lookupAttribute.dcl.liftedStrategyNames)),
+        location=top.location);
 }
 
 {--

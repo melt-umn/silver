@@ -314,6 +314,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> []
+    | varType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <-
@@ -342,6 +343,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
+    | varType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
 }
@@ -360,6 +362,7 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> []
+    | varType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
   top.errors <-
@@ -388,6 +391,7 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
+    | varType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
 }

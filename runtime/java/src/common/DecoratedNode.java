@@ -21,7 +21,7 @@ public class DecoratedNode implements Decorable, Typed {
 	// Please note: the methods in this file have been refined to be quite small
 	// because the JVM makes inlining decisions on a per-method basis (of course!)
 	// So we try to keep the "slow paths" in a separate method, so the hot paths
-	// can be inlined. (Things are designed around 37 bytes of bytecode as the limit.)
+	// can be inlined. (Things are designed around 35 bytes of bytecode as the limit.)
 
 	// Error reporting note: we don't attempt to identify and report errors for
 	// mis-generated code.  e.g. asking for synthesized attributes that
@@ -101,8 +101,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * <p> 'self' and 'parent' are not null (except for TopNode)
 	 * 
-	 * <p> Only one or none of 'inhs' and 'forwardParent' should be supplied.
-	 * 
 	 * @param cc  Child count
 	 * @param ic  Inherited attribute count
 	 * @param sc  Synthesized attribute count
@@ -110,7 +108,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param self  The Node to decorate.
 	 * @param parent  The DecoratedNode creating this one, to evaluate inhs in.
 	 * @param inhs  The inherited attributes to decorate this node with.
-	 * @param forwardParent  The node to request inherited attributes from instead of using 'inhs'.
+	 * @param forwardParent  The node to request inherited attributes from if not supplied in 'inhs'.
 	 * 
 	 * @see Node#decorate(DecoratedNode, DecoratedNode)
 	 * @see Node#decorate(DecoratedNode, Lazy[])
@@ -145,7 +143,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	DecoratedNode(final int cc, final int lc, final FunctionNode self) {
 		// TODO: I added this constructor largely because I wanted to
-		// see if I could make all this fit under the 37 byte inline limit.
+		// see if I could make all this fit under the 35 byte inline limit.
 		// This doesn't. :(  Leaving it, because it certainly doesn't hurt.
 		this.self = self;
 		this.parent = TopNode.singleton;
@@ -178,27 +176,21 @@ public class DecoratedNode implements Decorable, Typed {
 
 	/**
 	 * Decorate this (unique decorated) node with additional inherited attributes.
+	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)
-	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'.
 	 */
 	@Override
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
-		if (forwardParent != null) {
-			throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inhs since it is the forward of " + forwardParent.getDebugID() + ".");
-		}
-		if (inhs != null) {
+		if (forwardParent == null && inhs != null) {
 			inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
 			for(int i = 0; i < inhs.length; i++) {
 				final int attribute = i;
-				if(inhs[attribute] != null) {
-					if(inheritedAttributes[attribute] == null) {
-						inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
-					} else {
-						throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided by " + this.parent.getDebugID() + ".");
-					}
+				if(inhs[attribute] != null && inheritedAttributes[attribute] == null) {
+					inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
 				}
 			}
 		}
@@ -207,21 +199,19 @@ public class DecoratedNode implements Decorable, Typed {
 
 	/**
 	 * Decorate this node with a forward parent.
-	 * This node should not have been supplied with any inherited attributes!
+	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
-		if (inheritedAttributes != null) {
-			for(int attribute = 0; attribute < inheritedAttributes.length; attribute++) {
-				if(inheritedAttributes[attribute] != null) {
-					throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " via forwarding as it has already been provided with inh '" + self.getNameOfInhAttr(attribute) + "' by " + this.parent.getDebugID() + ".");
-				}
-			}
+	@Override
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent) {
+		if (forwardParent == null) {
+			decorate(parent, inhs);
+			forwardParent = fwdParent;
 		}
-		forwardParent = fwdParent;
 		return this;
 	}
 
@@ -381,7 +371,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalSyn(final int attribute) {
-		// TODO: Try to break this up into < 37 byte methods?
+		// TODO: Try to break this up into < 35 byte methods?
 		Lazy l = self.getSynthesized(attribute);
 		if(l != null) {
 			try {
@@ -450,10 +440,26 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	private final DecoratedNode evalForward() {
 		try {
-			return self.evalForward(this).decorate(parent, this);
+			return self.evalForward(this).decorate(parent, getForwardInheritedAttributes(), this);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
+	}
+
+	private final Lazy[] getForwardInheritedAttributes() {
+		boolean hasForwardInh = false;
+		Lazy[] result = new Lazy[self.getNumberOfInhAttrs()];
+		for(int i = 0; i < result.length; i++) {
+			final int attribute = i;
+			Lazy l = self.getForwardInheritedAttributes(attribute);
+			if (l != null) {
+				hasForwardInh = true;
+				// The Lazys in self.getForwardInheritedAttributes expect this (forwarding) DecoratedNode as context,
+				// but will be passed the parent of this node instead.
+				result[attribute] = (context) -> l.eval(this);
+			}
+		}
+		return hasForwardInh? result : null;
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
@@ -490,23 +496,22 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
-		if(forwardParent == null)
+		if(hasExplicitInhEq(attribute))
 			return evalInhHere(attribute);
 		else
 			return evalInhViaFwdP(attribute);
 	}
 	private final Object evalInhViaFwdP(final int attribute) {
 		try {
-			return forwardParent.inheritedForwarded(attribute);
+			return forwardParent.inherited(attribute);
 		} catch(Throwable t) {
 			throw handleInhFwdPError(attribute, t); 
 		}
 	}
 	private final SilverException handleInhFwdPError(final int attribute, Throwable t) {
-		//This seems impossible since we're checking if forwardParent==null earlier up there!
-		//if(forwardParent == null) {
-		//	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
-		//}
+		if(forwardParent == null) {
+			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+		}
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' via forward in " + getDebugID(), t);
 	}
 	private final Object evalInhHere(final int attribute) {
@@ -517,6 +522,16 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	}
 	private final SilverException handleInhHereError(final int attribute, Throwable t) {
+		// This seems impossible since we're checking if hasExplicitInhEq(attribute) earlier up there!
+		// if(!hasExplicitInhEq(attribute)) {
+		// 	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+		// }
+		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
+	}
+	/** 
+	 * Is there an explicit equation for this attribute (not considering forward copy equations)?
+	 */
+	private final boolean hasExplicitInhEq(final int attribute) {
 		// We specifically have to check here for inheritedAttributes == null, because
 		// that's what happens when we don't supply any inherited attributes...
 		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
@@ -528,40 +543,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// only the largest supplied attribute index, 
 		// so the user omitting some inherited equations for attributes with higher indices
 		// could mean the resulting array that we are passed is too short.  Sigh.
-		if(inheritedAttributes == null || attribute >= inheritedAttributes.length || inheritedAttributes[attribute] == null) {
-			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
-		}
-		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
-	}
-	
-	/**
-	 * Only called by {@link #inherited(String)}, when it doesn't have an inherited attribute,
-	 * and it wants to request that value from this DecorateNode (its {@link #forwardParent}).
-	 * 
-	 * @param attribute The full name of the attribute.
-	 * @return The value of the attribute.
-	 */
-	protected Object inheritedForwarded(final int attribute) {
-		// common.Util.stackProbe();
-		// System.err.println("TRACE: " + getDebugID() + " demanding FORWARDED inh attribute: " + self.getNameOfInhAttr(attribute));
-		
-		// No cache look up here. There is only one forward production. It will call this method
-		// a maximum of once for each attribute, since it will cache the result.
-		
-		Lazy l = self.getForwardInheritedAttributes(attribute);
-		if(l == null) {
-			return inherited(attribute);
-		}
-		try {
-			// No need for caching here, it'll be cached by the inherited() that called us
-			return l.eval(this);
-		} catch(Throwable t) {
-			throw handleInhFwdError(attribute, t);
-		}
-	}
-	
-	private final SilverException handleInhFwdError(final int attribute, Throwable t) {
-		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' for forward in " + getDebugID(), t);
+		return inheritedAttributes != null && attribute < inheritedAttributes.length && inheritedAttributes[attribute] != null;
 	}
 
 	// The following are very common types of thunks.
