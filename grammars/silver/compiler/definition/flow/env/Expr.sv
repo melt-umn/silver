@@ -98,7 +98,7 @@ top::Expr ::= q::Decorated! QName
     if finalTy.isDecorated
     then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
     else [];
-    
+
   top.flowVertexInfo =
     if finalTy.isDecorated
     then hasVertex(forwardVertexType)
@@ -109,6 +109,27 @@ aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate flowEnv;
+}
+
+aspect production functionInvocation
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+{
+  top.flowVertexInfo =
+    case top.exprDecSite of
+    | just(ds) -> hasVertex(ds.decSiteFlowVertexInfo)
+    | nothing() -> noVertex()
+    end;
+}
+
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
+{
+  top.flowDefs <-
+    case top.exprDecSite, e.flowVertexInfo, top.appProd of
+    | just(parent), hasVertex(vertex), just(ns) ->
+      [subtermDecSiteEq(top.frame.fullName, parent.decSiteFlowVertexInfo, ns.fullName, sigName, vertex)]
+    | _, _, _ -> []
+    end;
 }
 
 aspect production access
@@ -204,6 +225,12 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     | exprLhsExpr(q) -> [anonInhEq(top.frame.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
     end;
     
+}
+
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.flowVertexInfo = e.flowVertexInfo;
 }
 
 -- FROM LET TODO

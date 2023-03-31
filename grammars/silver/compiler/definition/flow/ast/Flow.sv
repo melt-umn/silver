@@ -345,12 +345,26 @@ top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[
   top.flowEdges = [];
 }
 
-
 nonterminal PatternVarProjection;
-
 abstract production patternVarProjection
 top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
+{}
+
+{--
+ - A sub-term with a flow vertex, that has a known decoration site.
+ - Like patternRuleEq, this is only used in creating stich points.
+ -
+ - @param prod     the full name of the production
+ - @param parent   the flow vertex of the enclosing production call
+ - @param termProd the applied production
+ - @param sigName  the name of the child under which this term appears
+ - @param child    the vertex of the sub-term
+ -}
+abstract production subtermDecSiteEq
+top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::String  child::VertexType
 {
+  top.prodGraphContribs := [pair(prod, top)];
+  top.flowEdges = [];
 }
 
 --

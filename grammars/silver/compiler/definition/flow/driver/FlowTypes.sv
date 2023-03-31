@@ -5,6 +5,7 @@ imports silver:compiler:definition:env;
 --import silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:ast;
 imports silver:compiler:analysis:warnings:flow only isOccursSynthesized;
+imports silver:compiler:analysis:uniqueness;
 
 imports silver:util:treemap as rtm;
 imports silver:util:graph as g;
@@ -201,4 +202,9 @@ aspect production anonVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
+}
+aspect production subtermVertex
+top::FlowVertex ::= parent::ExprDecSite prodName::String sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm inherited attributes?");
 }

@@ -3,17 +3,20 @@ grammar silver:compiler:analysis:uniqueness;
 monoid attribute uniqueRefs::[(String, UniqueRefSite)];
 
 {--
- - Rerpesents taking of a unique reference to a child or local/production attribute.
+ - Represents taking of a unique reference to a child or local/production attribute.
  - Since taking a unique reference means that inherited equations
  - on the decoration site for attributes not in the reference set are forbidden,
  - this info tracks what decoration sites have partial references taken.
  -}
-nonterminal UniqueRefSite with refSet,
+nonterminal UniqueRefSite with refSet, decSite,
   sourceGrammar,  -- The grammar of where the reference was taken
   sourceLocation; -- The location of where the reference was taken
 
 -- The attributes in the type of the taken reference
 annotation refSet::[String];
+
+-- Where we know this reference is decorated
+annotation decSite::Maybe<ExprDecSite>;
 
 abstract production uniqueRefSite
 top::UniqueRefSite ::=
@@ -26,10 +29,10 @@ function unionMutuallyExclusiveRefs
   return rs1 ++ filter(\ r::(String, UniqueRefSite) -> !lookup(r.1, rs1).isJust, rs2);
 }
 
--- Compare unique ref sites based on ref set.
+-- Compare unique ref sites based on ref set and decoration site.
 -- Source location doesn't matter, and we should never be comparing unique ref sites from different grammars.
 instance Eq UniqueRefSite {
-  eq = \ r1::UniqueRefSite r2::UniqueRefSite -> r1.refSet == r2.refSet;
+  eq = \ r1::UniqueRefSite r2::UniqueRefSite -> r1.refSet == r2.refSet && r1.decSite == r2.decSite;
 }
 
 global uniqueContextErrors::([Message] ::= [(String, UniqueRefSite)]) =

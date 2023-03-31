@@ -87,4 +87,14 @@ top::VertexType ::= x::String
   top.eqVertex = [anonEqVertex(x)];
 }
 
-
+{--
+ - Represents the vertexes corresponding to sub-terms of an expression with a known decoration site.
+ -}
+abstract production subtermVertexType
+top::VertexType ::= parent::ExprDecSite prodName::String sigName::String
+{
+  top.synVertex = subtermVertex(parent, prodName, sigName, _);
+  top.inhVertex = subtermVertex(parent, prodName, sigName, _);
+  top.fwdVertex = subtermVertex(parent, prodName, sigName, "forward");
+  top.eqVertex = [];
+}

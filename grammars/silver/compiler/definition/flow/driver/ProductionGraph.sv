@@ -149,7 +149,7 @@ function computeAllProductionGraphs
  - @param flowEnv  A full flow environment
  -         (used to discover what explicit equations exist, find info on nonterminals)
  - @param realEnv  A full real environment
- -         (used to discover attribute occurrences, whether inh/syn/auto)
+ -         (used to discover attribute occurrences, whether inh/syn)
  - @return A fixed up graph.
  -}
 function constructProductionGraph
@@ -196,7 +196,8 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local stitchPoints :: [StitchPoint] =
     flatMap(rhsStitchPoints, dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs) ++
-    patternStitchPoints(realEnv, defs);
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(realEnv, defs);
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -244,7 +245,8 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env
   local stitchPoints :: [StitchPoint] =
     flatMap(rhsStitchPoints, ns.inputElements) ++
     localStitchPoints(error("functions shouldn't have a forwarding equation?"), defs) ++
-    patternStitchPoints(realEnv, defs);
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(realEnv, defs);
 
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
 
@@ -455,14 +457,29 @@ function patVarStitchPoints
   return case var of
   | patternVarProjection(child, typeName, patternVar) -> 
       [nonterminalStitchPoint(typeName, anonVertexType(patternVar)),
-       projectionStitchPoint(matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child), getInhsForNtForPatternVars(typeName, realEnv))]
+       projectionStitchPoint(matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child), getInhsForNtForProjections(typeName, realEnv))]
   end;
+}
+function subtermDecSiteStitchPoints
+[StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
+{
+  return flatMap(\ d::FlowDef ->
+    case d of
+    | subtermDecSiteEq(_, parent, prod, sigName, child) ->
+      map(\ prodDcl::ValueDclInfo ->
+        projectionStitchPoint(
+          prod, child, parent, rhsVertexType(sigName),
+          getInhsForNtForProjections(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
+        getValueDcl(prod, realEnv))
+    | _ -> []
+    end,
+    defs);
 }
 
 -- fudge :(
 -- This is an annoying thing to have to write here.
 -- I wish for a better way to discover this info.
-function getInhsForNtForPatternVars
+function getInhsForNtForProjections
 [String] ::= nt::String  realEnv::Decorated Env
 {
   return map((.attrOccurring), filter(isOccursInherited(_, realEnv), getAttrsOn(nt, realEnv)));

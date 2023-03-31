@@ -168,4 +168,11 @@ top::FlowVertex ::= fName::String  attrName::String
 {
   top.dotName = fName ++ "/" ++ attrName;
 }
+aspect production subtermVertex
+top::FlowVertex ::= parent::ExprDecSite prodName::String sigName::String  attrName::String
+{
+  top.dotName = parent.decSiteFlowVertexInfo.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
+}
+
+
 

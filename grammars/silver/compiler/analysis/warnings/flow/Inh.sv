@@ -136,6 +136,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
+           || getChildDecSite(prodName, sigName, flowEnv).isJust
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -150,6 +151,7 @@ function checkEqDeps
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
            || localAttrViaReference(fName, attrName, realEnv)
+           || getLocalDecSite(fName, flowEnv).isJust
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -170,6 +172,12 @@ function checkEqDeps
               then [mwdaWrn(config, anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".")]
               else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
            end
+      else []
+  | subtermVertex(parent, termProdName, sigName, attrName) ->
+      if isInherited(attrName, realEnv)
+      then if !null(lookupInh(termProdName, sigName, attrName, flowEnv))
+           then []
+           else [mwdaWrn(config, l, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
       else []
   end;
 }
@@ -591,7 +599,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     then
       case e of
       | childReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
+          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
+             !getChildDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] =
                   filter(
@@ -605,7 +614,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
             end
           else []
       | localReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
+          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
+             !getLocalDecSite(lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] = 
                   filter(
