@@ -1,8 +1,5 @@
 grammar silver:compiler:analysis:uniqueness;
 
-attribute exprDecSite occurs on Expr, AppExprs, AppExpr;
-propagate exprDecSite on AppExprs;
-
 attribute uniqueRefs occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
 propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern
   excluding
@@ -27,7 +24,7 @@ top::Expr ::= q::Decorated! QName
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.exprDecSite))]
+      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
@@ -56,7 +53,7 @@ top::Expr ::= q::Decorated! QName
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.exprDecSite))]
+      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
@@ -143,11 +140,6 @@ top::Expr ::= q::Decorated! QName
     top.typerep.freeVariables);
 }
 
--- The named signature of the applied production.
--- Note that we don't project functions at the moment, since we don't build function flow graphs during inference.
-inherited attribute appProd::Maybe<NamedSignature> occurs on AppExprs, AppExpr;
-propagate appProd on AppExprs;
-
 -- Whether nonterminal uniqueness is preserved for this argument position,
 -- i.e. this is an argument to a direct function or production application
 -- that will be copied upon undecoration.
@@ -157,24 +149,10 @@ propagate isNtUniquenessPreserving on AppExprs;
 monoid attribute appExprUniquenessErrors::[Message] occurs on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 propagate appExprUniquenessErrors on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
-aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
-{
-  e.exprDecSite = nothing();
-  es.exprDecSite = nothing();
-  es.appProd = nothing();
-}
 aspect production functionInvocation
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
-  e.exprDecSite = nothing();
-  es.exprDecSite = top.exprDecSite;
   top.errors <- es.appExprUniquenessErrors ++ anns.appExprUniquenessErrors;
-  es.appProd =
-    case e of
-    | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
-    | _ -> nothing()
-    end;
   es.isNtUniquenessPreserving =
     case e of
     | functionReference(_) -> true
@@ -186,14 +164,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 aspect production partialApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
-  e.exprDecSite = nothing();
-  es.exprDecSite = nothing();
   top.errors <- es.appExprUniquenessErrors ++ anns.appExprUniquenessErrors;
-  es.appProd =
-    case e of
-    | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
-    | _ -> nothing()
-    end;
   es.isNtUniquenessPreserving =
     case e of
     | functionReference(_) -> true
@@ -205,26 +176,12 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
-  e.exprDecSite = nothing();
-  e.appProd = nothing();
   e.isNtUniquenessPreserving = false;
 }
 
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  production sigName::String =
-    case top.appProd of
-    | just(ns) when top.appExprIndex < length(ns.inputNames) -> head(drop(top.appExprIndex, ns.inputNames))
-    | _ -> "err"
-    end;
-  e.exprDecSite = do {
-    parent::ExprDecSite <- top.exprDecSite;
-    ns::NamedSignature <- top.appProd;
-    if top.appExprIndex < length(ns.inputNames)
-      then just(subtermDecSite(parent, ns.fullName, sigName))
-      else nothing();
-  };
   top.appExprUniquenessErrors <-
     case top.appExprTyperep.baseType of
     | varType(_) -> uniqueContextErrors(e.uniqueRefs)  -- Would need linear types to make this work...
@@ -233,153 +190,43 @@ top::AppExpr ::= e::Expr
     end;
 }
 
-aspect production noteAttachment
-top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
-{
-  note.exprDecSite = nothing();
-  e.exprDecSite = nothing();
-}
-
-aspect production forwardAccess
-top::Expr ::= e::Expr '.' 'forward'
-{
-  e.exprDecSite = nothing();
-}
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := e.accessUniqueRefs;
-}
-
-aspect production decorateExprWith
-top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
-{
-  e.exprDecSite = just(anonDecSite(inh.decorationVertex));
-}
-aspect production exprInh
-top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
-{
-  e.exprDecSite = nothing();
-}
-
-aspect production decorationSiteExpr
-top::Expr ::= '@' e::Expr
-{
-  e.exprDecSite = top.exprDecSite;
-}
-
-aspect production and
-top::Expr ::= e1::Expr '&&' e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production or
-top::Expr ::= e1::Expr '||' e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production notOp
-top::Expr ::= '!' e::Expr
-{
-  e.exprDecSite = nothing();
 }
 
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-  e3.exprDecSite = nothing();
   top.uniqueRefs :=
     e1.uniqueRefs ++
     unionMutuallyExclusiveRefs(e1.uniqueRefs, e2.uniqueRefs);
-}
-
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production divide
-top::Expr ::= e1::Expr _ e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  e1.exprDecSite = nothing();
-  e2.exprDecSite = nothing();
-}
-aspect production neg
-top::Expr ::= '-' e::Expr
-{
-  e.exprDecSite = nothing();
-}
-
-aspect production terminalConstructor
-top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
-{
-  es.exprDecSite = nothing();
-  el.exprDecSite = nothing();
-}
-
-aspect production exprsSingle
-top::Exprs ::= e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production exprsCons
-top::Exprs ::= e1::Expr ',' e2::Exprs
-{
-  e1.exprDecSite = nothing();
 }
 
 aspect production lambdaParamReference
@@ -388,7 +235,7 @@ top::Expr ::= q::Decorated! QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.uniqueRefs <-
     if finalTy.isUniqueDecorated
-    then [(q.name, uniqueRefSite(refSet=finalTy.inhSetMembers, decSite=nothing(), sourceGrammar=top.grammarName, sourceLocation=top.location))]
+    then [(q.name, uniqueRefSite(refSet=finalTy.inhSetMembers, decSite=noVertex(), sourceGrammar=top.grammarName, sourceLocation=top.location))]
     else [];
   top.accessUniqueRefs = [];
 }
@@ -396,7 +243,6 @@ top::Expr ::= q::Decorated! QName
 aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
-  e.exprDecSite = nothing();
   top.uniqueRefs := filter(\ r::(String, UniqueRefSite) -> !contains(r.1, params.lambdaBoundVars), e.uniqueRefs);
   top.errors <- flatMap(\ n::String ->
     let rs::[UniqueRefSite] = lookupAll(n, e.uniqueRefs)
@@ -425,7 +271,7 @@ top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  rs::[(S
   
   top.uniqueRefs <- map(
     \ r::(String, UniqueRefSite) ->
-      (r.1, uniqueRefSite(refSet=r.2.refSet, decSite=top.exprDecSite, sourceGrammar=top.grammarName, sourceLocation=top.location)),
+      (r.1, uniqueRefSite(refSet=r.2.refSet, decSite=top.decSiteVertexInfo, sourceGrammar=top.grammarName, sourceLocation=top.location)),
     rs);
   top.accessUniqueRefs = [];
 }
@@ -433,22 +279,12 @@ top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  rs::[(S
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
-  e.exprDecSite = top.exprDecSite;
   -- Excluding refs from la, they flow up through the lexicalLocalReferences in e
   top.uniqueRefs := e.uniqueRefs;
 }
-
-aspect production assignExpr
-top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
-{
-  e.exprDecSite = nothing();
-}
-
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  e.exprDecSite = nothing();
-  f.exprDecSite = nothing();
   top.uniqueRefs := e.uniqueRefs ++ unionMutuallyExclusiveRefs(pr.uniqueRefs, f.uniqueRefs);
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
@@ -456,44 +292,4 @@ aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern _ ps::PrimPatterns
 {
   top.uniqueRefs := unionMutuallyExclusiveRefs(p.uniqueRefs, ps.uniqueRefs);
-}
-aspect production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production integerPattern
-top::PrimPattern ::= i::Int_t _ e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production floatPattern
-top::PrimPattern ::= f::Float_t _ e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production stringPattern
-top::PrimPattern ::= i::String_t _ e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production booleanPattern
-top::PrimPattern ::= i::String _ e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production nilPattern
-top::PrimPattern ::= e::Expr
-{
-  e.exprDecSite = nothing();
-}
-aspect production conslstPattern
-top::PrimPattern ::= h::Name t::Name e::Expr
-{
-  e.exprDecSite = nothing();
 }

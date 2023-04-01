@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:flow:driver;
 
 import silver:compiler:definition:type only isNonterminal, typerep;
+import silver:compiler:analysis:warnings:flow only sigAttrViaReference, localAttrViaReference;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
@@ -159,12 +160,10 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
-  -- All attributes occurrences
-  local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
-  local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
+  local syns :: [String] = map((.attrOccurring), getSynAttrsOn(nt, realEnv));
   -- Just inherited.
-  local inhs :: [String] = map((.attrOccurring), filter(isOccursInherited(_, realEnv), attrs));
+  local inhs :: [String] = map((.attrOccurring), getInhAttrsOn(nt, realEnv));
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
     
@@ -197,7 +196,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
     flatMap(rhsStitchPoints, dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs) ++
     patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(realEnv, defs);
+    subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -246,7 +245,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env
     flatMap(rhsStitchPoints, ns.inputElements) ++
     localStitchPoints(error("functions shouldn't have a forwarding equation?"), defs) ++
     patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(realEnv, defs);
+    subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
 
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
 
@@ -342,10 +341,8 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
 function constructPhantomProductionGraph
 ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
 {
-  -- All attributes occurrences
-  local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
-  local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
+  local syns :: [String] = map((.attrOccurring), getSynAttrsOn(nt, realEnv));
   -- Those syns that are not part of the host, and so should have edges to fwdeq
   local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);
 
@@ -457,32 +454,25 @@ function patVarStitchPoints
   return case var of
   | patternVarProjection(child, typeName, patternVar) -> 
       [nonterminalStitchPoint(typeName, anonVertexType(patternVar)),
-       projectionStitchPoint(matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child), getInhsForNtForProjections(typeName, realEnv))]
+       projectionStitchPoint(
+         matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
+         map((.attrOccurring), getInhAttrsOn(typeName, realEnv)))]
   end;
 }
 function subtermDecSiteStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
+[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Decorated Env  defs::[FlowDef]
 {
   return flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecSiteEq(_, parent, prod, sigName, child) ->
+    | subtermDecEq(prodName, parent, termProdName, sigName) ->
       map(\ prodDcl::ValueDclInfo ->
         projectionStitchPoint(
-          prod, child, parent, rhsVertexType(sigName),
-          getInhsForNtForProjections(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
-        getValueDcl(prod, realEnv))
+          termProdName, subtermVertexType(parent, termProdName, sigName), parent, rhsVertexType(sigName),
+          map((.attrOccurring), getInhAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv))),
+        getValueDcl(termProdName, realEnv))
     | _ -> []
     end,
     defs);
-}
-
--- fudge :(
--- This is an annoying thing to have to write here.
--- I wish for a better way to discover this info.
-function getInhsForNtForProjections
-[String] ::= nt::String  realEnv::Decorated Env
-{
-  return map((.attrOccurring), filter(isOccursInherited(_, realEnv), getAttrsOn(nt, realEnv)));
 }
 
 ---- End helpers for figuring our stitch points --------------------------------
@@ -491,14 +481,6 @@ function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
   return pair(p.prod, p);
-}
-function isOccursInherited
-Boolean ::= occs::OccursDclInfo  e::Decorated Env
-{
-  return case getAttrDcl(occs.attrOccurring, e) of
-         | at :: _ -> at.isInherited
-         | _ -> false
-         end;
 }
 
 ---- Begin Suspect edge handling -----------------------------------------------

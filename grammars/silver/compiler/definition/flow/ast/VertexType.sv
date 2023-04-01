@@ -7,7 +7,10 @@ grammar silver:compiler:definition:flow:ast;
  - lhsVertexType, rhsVertexType(sigName), localVertexType(fName),
  - forwardVertexType, anonVertexType(x)
  -}
-nonterminal VertexType with synVertex, inhVertex, fwdVertex, eqVertex;
+nonterminal VertexType with
+  compareTo, isEqual, compareKey, compare,
+  synVertex, inhVertex, fwdVertex, eqVertex;
+propagate compareTo, isEqual, compareKey, compare on VertexType;
 
 {-- FlowVertex for a synthesized attribute for this FlowVertex -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
@@ -91,7 +94,7 @@ top::VertexType ::= x::String
  - Represents the vertexes corresponding to sub-terms of an expression with a known decoration site.
  -}
 abstract production subtermVertexType
-top::VertexType ::= parent::ExprDecSite prodName::String sigName::String
+top::VertexType ::= parent::VertexType prodName::String sigName::String
 {
   top.synVertex = subtermVertex(parent, prodName, sigName, _);
   top.inhVertex = subtermVertex(parent, prodName, sigName, _);

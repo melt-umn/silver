@@ -352,19 +352,32 @@ top::PatternVarProjection ::= child::String  typeName::String  patternVar::Strin
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.
- - Like patternRuleEq, this is only used in creating stich points.
+ - Like patternRuleEq, this is only used in creating stitch points.
  -
  - @param prod     the full name of the production
  - @param parent   the flow vertex of the enclosing production call
  - @param termProd the applied production
  - @param sigName  the name of the child under which this term appears
- - @param child    the vertex of the sub-term
  -}
-abstract production subtermDecSiteEq
-top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::String  child::VertexType
+abstract production subtermDecEq
+top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::String
 {
   top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = [];
+}
+
+abstract production childDecSiteEq
+top::FlowDef ::= prod::String  sigName::String  decSite::VertexType  attrs::[String]
+{
+  top.prodGraphContribs := [pair(prod, top)];
+  top.flowEdges = map(\ attr::String -> (rhsVertex(sigName, attr), decSite.inhVertex(attr)), attrs);
+}
+
+abstract production localDecSiteEq
+top::FlowDef ::= prod::String  fName::String  decSite::VertexType  attrs::[String]
+{
+  top.prodGraphContribs := [pair(prod, top)];
+  top.flowEdges = map(\ attr::String -> (localVertex(fName, attr), decSite.inhVertex(attr)), attrs);
 }
 
 --

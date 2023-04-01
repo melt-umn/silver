@@ -109,6 +109,20 @@ function lookupLocalEq
   return searchEnvTree(crossnames(prod, fName), e.localTree);
 }
 
+{--
+ - This is a glorified lambda function, to help look for equations.
+ - Literally, we're just checking for null here.
+ -
+ - @param f  The lookup function for the appropriate type of equation
+ -           e.g. `lookupInh(prod, rhs, _, env)`
+ - @param attr  The attribute to look up.
+ -}
+function isEquationMissing
+Boolean ::= f::([FlowDef] ::= String)  attr::String
+{
+  return null(f(attr));
+}
+
 -- default set of inherited attributes required/assumed to exist for references
 function getInhsForNtRef
 [[String]] ::= nt::String  e::FlowEnv
@@ -121,6 +135,25 @@ function getUniqueRefs
 [UniqueRefSite] ::= fName::String  e::FlowEnv
 {
   return searchEnvTree(fName, e.uniqueRefTree);
+}
+
+function getChildDecSite
+ExprVertexInfo ::= prodName::String sigName::String flowEnv::FlowEnv
+{
+  return
+    case getUniqueRefs(prodName ++ ":" ++ sigName, flowEnv) of
+    | r :: _ -> r.decSite  -- Duplicates should already be an error, anyway
+    | [] -> noVertex()
+    end;
+}
+function getLocalDecSite
+ExprVertexInfo::= fName::String flowEnv::FlowEnv
+{
+  return
+    case getUniqueRefs(fName, flowEnv) of
+    | r :: _ -> r.decSite  -- Duplicates should already be an error, anyway
+    | [] -> noVertex()
+    end;
 }
 
 -- implicit forward syn copy equations that are allowed to affect the flow type

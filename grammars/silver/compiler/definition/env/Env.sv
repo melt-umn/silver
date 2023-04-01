@@ -269,6 +269,28 @@ function getAttrsOn
 {
   return searchEnvTree(fnnt, e.occursTree);
 }
+function getSynAttrsOn
+[OccursDclInfo] ::= fnnt::String e::Decorated Env
+{
+  return filter(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, e) of
+      | at :: _ -> at.isSynthesized
+      | _ -> false
+      end,
+    getAttrsOn(fnnt, e));
+}
+function getInhAttrsOn
+[OccursDclInfo] ::= fnnt::String e::Decorated Env
+{
+  return filter(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, e) of
+      | at :: _ -> at.isInherited
+      | _ -> false
+      end,
+    getAttrsOn(fnnt, e));
+}
 
 -- This ensure the annotation list is in the properly sorted order!
 function annotationsForNonterminal

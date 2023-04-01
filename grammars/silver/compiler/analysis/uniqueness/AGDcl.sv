@@ -6,18 +6,15 @@ propagate uniqueRefs on Grammar, Root, AGDcls, AGDcl;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
 {
-  e.exprDecSite = nothing();
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
-  e.exprDecSite = nothing();
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
-  e.exprDecSite = nothing();
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }

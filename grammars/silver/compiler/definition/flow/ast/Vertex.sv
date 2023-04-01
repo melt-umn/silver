@@ -113,5 +113,5 @@ top::FlowVertex ::= fName::String  attrName::String
  - @param attrName  the full name of an attribute on this subterm, when decorated
  -}
 abstract production subtermVertex
-top::FlowVertex ::= parent::ExprDecSite prodName::String sigName::String  attrName::String
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
 {}

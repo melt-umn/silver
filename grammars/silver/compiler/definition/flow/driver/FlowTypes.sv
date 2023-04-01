@@ -204,7 +204,7 @@ top::FlowVertex ::= fName::String  attrName::String
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
 }
 aspect production subtermVertex
-top::FlowVertex ::= parent::ExprDecSite prodName::String sigName::String  attrName::String
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm inherited attributes?");
 }

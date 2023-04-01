@@ -6,6 +6,7 @@ import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
 import silver:compiler:driver:util only isExportedBy, RootSpec;
+import silver:compiler:translation:java:core only finalType;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
@@ -29,6 +30,12 @@ Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d
   return isExportedBy(prodgram, [ntgram, d.sourceGrammar], cg);
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' note::Expr ';'
+{
+  note.decSiteVertexInfo = noVertex();
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
@@ -47,6 +54,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     implicitFwdAffects(top.frame.fullName, map((.attrOccurring),
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
         getAttrsOn(top.frame.lhsNtName, top.env))))];
+
+  e.decSiteVertexInfo = hasVertex(forwardVertexType);
 }
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
@@ -57,6 +66,17 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.frame.fullName, q.attrDcl.fullName, e.flowDeps)]
     end;
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
 }
 
 aspect production attributeDef
@@ -84,6 +104,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
+  e.decSiteVertexInfo = noVertex();
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
@@ -95,6 +116,12 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
     end;
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production errorValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = noVertex();
 }
 
 aspect production localValueDef
@@ -108,6 +135,11 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));
+
+  e.decSiteVertexInfo =
+    if isDecorable(finalType(e), top.env)
+    then hasVertex(localVertexType(val.lookupValue.fullName))
+    else noVertex();
 }
 
 -- FROM COLLECTIONS TODO
@@ -122,6 +154,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 
   top.flowDefs <-
     [extraEq(top.frame.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
+  e.decSiteVertexInfo = noVertex();
 }
 
 aspect production inhAppendColAttributeDef
@@ -136,6 +169,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     end;
   top.flowDefs <-
     [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
+  e.decSiteVertexInfo = noVertex();
 }
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
@@ -152,6 +186,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
+  e.decSiteVertexInfo = noVertex();
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
@@ -163,6 +198,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
     end;
+  e.decSiteVertexInfo = noVertex();
 }
 
 
@@ -186,9 +222,45 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
     if mayAffectFlowType
     then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
+  e.decSiteVertexInfo = noVertex();
 }
 
--- TODO: Copper ProductionStmts
+-- TODO: flowDefs for Copper ProductionStmts
+aspect production pluckDef
+top::ProductionStmt ::= 'pluck' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production printStmt
+top::ProductionStmt ::= 'print' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production parserAttributeValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production pushTokenStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
+{
+  lexeme.decSiteVertexInfo = noVertex();
+}
+aspect production insertSemanticTokenStmt
+top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
+{
+  loc.decSiteVertexInfo = noVertex();
+}
+aspect production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  condition.decSiteVertexInfo = noVertex();
+}
+aspect production termAttrValueValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = noVertex();
+}
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
 -- even if there are errors in the larger grammar, as remote errors in binding

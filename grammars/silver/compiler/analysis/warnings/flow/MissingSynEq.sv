@@ -87,8 +87,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   -- All locally known synthesized attributes. This does not need to be exhaustive,
   -- because this error message is a courtesy, not the basis of the analysis.
   local attrs :: [OccursDclInfo] = 
-    filter(isOccursSynthesized(_, top.env),
-      getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
+    getSynAttrsOn(namedSig.outputElement.typerep.typeName, top.env);
 
   top.errors <-
     if null(body.errors ++ ns.errors)

@@ -19,3 +19,19 @@ top::AGDcl ::=
   top.refDefs := [];
   top.specDefs := [];
 }
+
+aspect production globalValueDclConcrete
+top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production defaultConstraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
+}
+aspect production instanceBodyItem
+top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
+{
+  e.decSiteVertexInfo = noVertex();
+}
