@@ -9,27 +9,31 @@ propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPatter
 -- Unique references taken when this expression is wrapped in an attribute access
 synthesized attribute accessUniqueRefs::[(String, UniqueRefSite)] occurs on Expr;
 
+attribute decSiteName occurs on Expr;
+
 aspect default production
 top::Expr ::=
 {
   top.accessUniqueRefs = top.uniqueRefs;
+
+  top.decSiteName = error("Not a decoration site");
 }
 
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local refSiteName::String = top.frame.fullName ++ ":" ++ q.lookupValue.fullName;
+  top.decSiteName = top.frame.fullName ++ ":" ++ q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
+      [(top.decSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(refSiteName, top.flowEnv);
+  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(top.decSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -48,17 +52,17 @@ aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local refSiteName::String = q.lookupValue.fullName;
+  top.decSiteName = q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
+      [(top.decSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(refSiteName, top.flowEnv);
+  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(top.decSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->

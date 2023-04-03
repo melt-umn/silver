@@ -1,6 +1,11 @@
 grammar silver:compiler:analysis:uniqueness;
 
+-- Unique references taken in this tree
 monoid attribute uniqueRefs::[(String, UniqueRefSite)];
+
+-- Unique identifier for this decoration site
+synthesized attribute decSiteName::String;
+
 
 {--
  - Represents taking of a unique reference to a child or local/production attribute.
@@ -37,3 +42,10 @@ instance Eq UniqueRefSite {
 
 global uniqueContextErrors::([Message] ::= [(String, UniqueRefSite)]) =
   map(\ r::(String, UniqueRefSite) -> err(r.2.sourceLocation, s"Unique reference to ${r.1} taken outside of a unique context."), _);
+
+attribute decSiteName occurs on DefLHS;
+aspect decSiteName on top::DefLHS of
+| localDefLHS(q) -> q.lookupValue.fullName
+| childDefLHS(q) -> top.frame.fullName ++ ":" ++ q.lookupValue.fullName
+| _ -> error("Not a decoration site")
+end;

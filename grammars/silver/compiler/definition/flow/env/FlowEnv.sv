@@ -137,23 +137,10 @@ function getUniqueRefs
   return searchEnvTree(fName, e.uniqueRefTree);
 }
 
-function getChildDecSite
-Maybe<VertexType> ::= prodName::String sigName::String flowEnv::FlowEnv
-{
-  return
-    case getUniqueRefs(prodName ++ ":" ++ sigName, flowEnv) of
-    | r :: _ -> r.decSite  -- Duplicates should already be an error, anyway
-    | [] -> nothing()
-    end;
-}
-function getLocalDecSite
+function getDecSite
 Maybe<VertexType>::= fName::String flowEnv::FlowEnv
 {
-  return
-    case getUniqueRefs(fName, flowEnv) of
-    | r :: _ -> r.decSite  -- Duplicates should already be an error, anyway
-    | [] -> nothing()
-    end;
+  return flatMap((.decSite), getUniqueRefs(fName, flowEnv));
 }
 
 -- implicit forward syn copy equations that are allowed to affect the flow type

@@ -121,7 +121,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
-           || !getChildDecSite(prodName, sigName, flowEnv).isJust
+           || getDecSite(prodName ++ ":" ++ sigName, flowEnv).isJust
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -136,7 +136,7 @@ function checkEqDeps
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
            || localAttrViaReference(fName, attrName, realEnv)
-           || !getLocalDecSite(fName, flowEnv).isJust
+           || getDecSite(fName, flowEnv).isJust
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -585,7 +585,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       case e of
       | childReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             !getChildDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
+             !getDecSite(e.decSiteName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] =
                   filter(
@@ -600,7 +600,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           else []
       | localReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             getLocalDecSite(lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
+             !getDecSite(e.decSiteName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] = 
                   filter(
