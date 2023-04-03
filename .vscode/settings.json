@@ -1,3 +1,4 @@
 {
-    "silver.jvmArgs": "-Xmx10G -Xss40M"
+    "silver.jvmArgs": "-Xmx10G -Xss40M",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable"
 }
