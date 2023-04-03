@@ -16,7 +16,7 @@ nonterminal UniqueRefSite with refSet, decSite,
 annotation refSet::[String];
 
 -- Where we know this reference is decorated
-annotation decSite::ExprVertexInfo;
+annotation decSite::Maybe<VertexType>;
 
 abstract production uniqueRefSite
 top::UniqueRefSite ::=

@@ -15,14 +15,23 @@ import silver:compiler:translation:java:core only finalType;
  - Direct (potential) dependencies this expression has on nodes in the production flow graph.
  -}
 monoid attribute flowDeps :: [FlowVertex];
+
 {--
  - Determines whether this expression corresponds to a node in the flow graph, and how
  - to treat it specially if so.
+ - 
+ - Do not forget we also need to address its equation (but vertexType takes care of that too)
+ -
+ - e.g. new(decorate rhs.a with {}) needs to emit 'rhs.a' still, even while
+ -      ignoring the decorate vertex. That happens when we refer to the anonEq.
+ -
+ - When this is nothing(), the expression does not have a corresponding vertex in the
+ - production graph and so much be treated as any value.
  -}
-synthesized attribute flowVertexInfo :: ExprVertexInfo;
+synthesized attribute flowVertexInfo :: Maybe<VertexType>;
 
 
-inherited attribute decSiteVertexInfo :: ExprVertexInfo;
+inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
 
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints
 attribute flowDeps, flowDefs, flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
@@ -44,7 +53,7 @@ top::Expr ::=
   -- We go with using default here because
   -- (a) it's safe. vertexInfo is for being less conservative and more precise.
   -- (b) only a few productions actually provide it.
-  top.flowVertexInfo = noVertex();
+  top.flowVertexInfo = nothing();
 }
 
 aspect production childReference
@@ -61,8 +70,8 @@ top::Expr ::= q::Decorated! QName
     else [];
   top.flowVertexInfo = 
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
-    then hasVertex(rhsVertexType(q.lookupValue.fullName))
-    else noVertex();
+    then just(rhsVertexType(q.lookupValue.fullName))
+    else nothing();
 
   -- Inherited attributes on q's NT that aren't in the reference set and don't have an equation:
   local notSuppliedInhs::[String] =
@@ -74,8 +83,8 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | hasVertex(decSite) -> [childDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
-    | noVertex() -> []
+    | just(decSite) -> [childDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
+    | nothing() -> []
     end;
 }
 aspect production lhsReference
@@ -90,8 +99,8 @@ top::Expr ::= q::Decorated! QName
     else [];
   top.flowVertexInfo = 
     if finalTy.isDecorated
-    then hasVertex(lhsVertexType)
-    else noVertex();
+    then just(lhsVertexType)
+    else nothing();
 }
 aspect production localReference
 top::Expr ::= q::Decorated! QName
@@ -106,8 +115,8 @@ top::Expr ::= q::Decorated! QName
     else [];
   top.flowVertexInfo =
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
-    then hasVertex(localVertexType(q.lookupValue.fullName))
-    else noVertex();
+    then just(localVertexType(q.lookupValue.fullName))
+    else nothing();
 
   -- Inherited attributes on q's NT that aren't in the reference set and don't have an equation:
   local notSuppliedInhs::[String] =
@@ -119,8 +128,8 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | hasVertex(decSite) -> [localDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
-    | noVertex() -> []
+    | just(decSite) -> [localDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
+    | nothing() -> []
     end;
 }
 aspect production forwardReference
@@ -135,8 +144,8 @@ top::Expr ::= q::Decorated! QName
     else [];
   top.flowVertexInfo =
     if finalTy.isDecorated
-    then hasVertex(forwardVertexType)
-    else noVertex();
+    then just(forwardVertexType)
+    else nothing();
 }
 
 -- The named signature of the applied production.
@@ -153,8 +162,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 aspect production errorApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
-  e.decSiteVertexInfo = noVertex();
-  es.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
+  es.decSiteVertexInfo = nothing();
   es.appProd = nothing();
 }
 
@@ -167,7 +176,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
     end;
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
 }
 
@@ -179,14 +188,14 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
     end;
-  e.decSiteVertexInfo = noVertex();
-  es.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
+  es.decSiteVertexInfo = nothing();
 }
 
 aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
   e.appProd = nothing();
 }
 
@@ -200,23 +209,23 @@ top::AppExpr ::= e::Expr
     end;
   top.flowDefs <-
     case e.decSiteVertexInfo of
-    | hasVertex(subtermVertexType(parent, prodName, sigName)) ->
+    | just(subtermVertexType(parent, prodName, sigName)) ->
       [subtermDecEq(top.frame.fullName, parent, prodName, sigName)]
     | _ -> []
     end;
   e.decSiteVertexInfo =
     case top.decSiteVertexInfo, top.appProd of
-    | hasVertex(parent), just(ns) when isDecorable(finalType(e), top.env) ->
-      hasVertex(subtermVertexType(parent, ns.fullName, sigName))
-    | _, _ -> noVertex()
+    | just(parent), just(ns) when isDecorable(finalType(e), top.env) ->
+      just(subtermVertexType(parent, ns.fullName, sigName))
+    | _, _ -> nothing()
     end;
 }
 
 aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
-  note.decSiteVertexInfo = noVertex();
-  e.decSiteVertexInfo = noVertex();
+  note.decSiteVertexInfo = nothing();
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production access
@@ -236,27 +245,27 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.flowDeps := 
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.fwdVertex :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
+    | just(vertex) -> vertex.fwdVertex :: vertex.eqVertex
+    | nothing() -> e.flowDeps
     end;
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 
 
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
@@ -265,25 +274,25 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
+    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | nothing() -> e.flowDeps
     end;
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
+    | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | nothing() -> e.flowDeps
     end;
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production decorateExprWith
@@ -311,8 +320,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
-  top.flowVertexInfo = hasVertex(anonVertexType(inh.decorationVertex));
-  e.decSiteVertexInfo = hasVertex(anonVertexType(inh.decorationVertex));
+  top.flowVertexInfo = just(anonVertexType(inh.decorationVertex));
+  e.decSiteVertexInfo = just(anonVertexType(inh.decorationVertex));
 
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
@@ -336,7 +345,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     case lhs of
     | exprLhsExpr(q) -> [anonInhEq(top.frame.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
     end;
-  e1.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
 }
 
 aspect production decorationSiteExpr
@@ -349,87 +358,87 @@ top::Expr ::= '@' e::Expr
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production notOp
 top::Expr ::= '!' e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
-  e3.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
+  e3.decSiteVertexInfo = nothing();
 }
 
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production divide
 top::Expr ::= e1::Expr _ e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
-  e1.decSiteVertexInfo = noVertex();
-  e2.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
-  es.decSiteVertexInfo = noVertex();
-  el.decSiteVertexInfo = noVertex();
+  es.decSiteVertexInfo = nothing();
+  el.decSiteVertexInfo = nothing();
 }
 
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  e1.decSiteVertexInfo = noVertex();
+  e1.decSiteVertexInfo = nothing();
 }
 
 aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 
 -- FROM LET TODO
@@ -447,11 +456,11 @@ top::Expr ::= la::AssignExpr  e::Expr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  _
+top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 {
   -- Because of the auto-undecorate behavior, we need to check for the case
   -- where `t` should be equivalent to `new(t)` and report accoringly.
@@ -464,12 +473,12 @@ top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  _
 
   top.flowDeps := 
     case fi of
-    | hasVertex(vertex) ->
+    | just(vertex) ->
         if performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated &&
            !performSubstitution(top.typerep, top.finalSubst).isDecorated
         then vertex.eqVertex -- we're a `t` emulating `new(t)`
         else fd -- we're passing along our vertex-ness to the outer expression
-    | noVertex() -> fd -- we're actually being used as a ref-set-taking decorated var
+    | nothing() -> fd -- we're actually being used as a ref-set-taking decorated var
     end;
   top.flowVertexInfo = fi;
 }
@@ -498,8 +507,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex
-    | noVertex() -> anonVertexType(anonName)
+    | just(vertex) -> vertex
+    | nothing() -> anonVertexType(anonName)
     end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
@@ -510,13 +519,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local eTy::Type = performSubstitution(e.typerep, top.finalSubst);
   top.flowDefs <-
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> []
-    | noVertex() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)]
+    | just(vertex) -> []
+    | nothing() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)]
     end;
   -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 
-  e.decSiteVertexInfo = noVertex();
-  f.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
+  f.decSiteVertexInfo = nothing();
 }
 
 aspect production prodPatternNormal
@@ -524,42 +533,42 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDefs <-
     [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDefs <-
     [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production integerPattern
 top::PrimPattern ::= i::Int_t _ e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production floatPattern
 top::PrimPattern ::= f::Float_t _ e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production stringPattern
 top::PrimPattern ::= i::String_t _ e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production booleanPattern
 top::PrimPattern ::= i::String _ e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production nilPattern
 top::PrimPattern ::= e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }

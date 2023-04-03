@@ -7,7 +7,7 @@ import silver:compiler:translation:java:type;
 
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex, inhVertex;
+import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, anonVertexType, VertexType, FlowVertex, inhVertex;
 -- also unfortunately placed references to flowEnv
 
 import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
@@ -142,10 +142,10 @@ top::VarBinder ::= n::Name
   -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
   -- and the correct value is computed based on how this gets used.
   -- (e.g. if 'new'
-  local vt :: ExprVertexInfo =
+  local vt :: Maybe<VertexType> =
     if isDecorable(top.bindingType, top.env)
-    then hasVertex(anonVertexType(fName))
-    else noVertex();
+    then just(anonVertexType(fName))
+    else nothing();
   local deps :: [FlowVertex] =
     if isDecorable(top.bindingType, top.env)
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))

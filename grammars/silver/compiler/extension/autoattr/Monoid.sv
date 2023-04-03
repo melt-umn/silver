@@ -54,7 +54,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   e.frame = globalExprContext(fName, nilContext(), te.typerep, myFlowGraph, sourceGrammar=top.grammarName);
   e.isRoot = false;
   e.originRules = [];
-  --e.decSiteVertexInfo = noVertex();
+  --e.decSiteVertexInfo = nothing();
   
   forwards to
     collectionAttributeDclSyn(

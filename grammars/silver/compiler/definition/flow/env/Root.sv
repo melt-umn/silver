@@ -23,15 +23,15 @@ top::AGDcl ::=
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
-  e.decSiteVertexInfo = noVertex();
+  e.decSiteVertexInfo = nothing();
 }

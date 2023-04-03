@@ -1,6 +1,6 @@
 grammar silver:compiler:modification:let_fix;
 
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
+import silver:compiler:definition:flow:ast only VertexType, FlowVertex;
 import silver:util:treeset as ts;
 
 --- Concrete Syntax for lets
@@ -120,7 +120,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 abstract production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;

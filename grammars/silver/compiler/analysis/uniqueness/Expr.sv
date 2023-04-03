@@ -235,7 +235,7 @@ top::Expr ::= q::Decorated! QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.uniqueRefs <-
     if finalTy.isUniqueDecorated
-    then [(q.name, uniqueRefSite(refSet=finalTy.inhSetMembers, decSite=noVertex(), sourceGrammar=top.grammarName, sourceLocation=top.location))]
+    then [(q.name, uniqueRefSite(refSet=finalTy.inhSetMembers, decSite=nothing(), sourceGrammar=top.grammarName, sourceLocation=top.location))]
     else [];
   top.accessUniqueRefs = [];
 }
@@ -255,7 +255,7 @@ top::Expr ::= params::ProductionRHS e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-

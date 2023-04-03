@@ -138,21 +138,21 @@ function getUniqueRefs
 }
 
 function getChildDecSite
-ExprVertexInfo ::= prodName::String sigName::String flowEnv::FlowEnv
+Maybe<VertexType> ::= prodName::String sigName::String flowEnv::FlowEnv
 {
   return
     case getUniqueRefs(prodName ++ ":" ++ sigName, flowEnv) of
     | r :: _ -> r.decSite  -- Duplicates should already be an error, anyway
-    | [] -> noVertex()
+    | [] -> nothing()
     end;
 }
 function getLocalDecSite
-ExprVertexInfo::= fName::String flowEnv::FlowEnv
+Maybe<VertexType>::= fName::String flowEnv::FlowEnv
 {
   return
     case getUniqueRefs(fName, flowEnv) of
     | r :: _ -> r.decSite  -- Duplicates should already be an error, anyway
-    | [] -> noVertex()
+    | [] -> nothing()
     end;
 }
 

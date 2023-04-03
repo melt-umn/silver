@@ -121,7 +121,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
-           || getChildDecSite(prodName, sigName, flowEnv) != noVertex()
+           || !getChildDecSite(prodName, sigName, flowEnv).isJust
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -136,7 +136,7 @@ function checkEqDeps
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
            || localAttrViaReference(fName, attrName, realEnv)
-           || getLocalDecSite(fName, flowEnv) != noVertex()
+           || !getLocalDecSite(fName, flowEnv).isJust
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -556,11 +556,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       case e.flowVertexInfo of
       -- We don't track dependencies on inh sets transitively, so we need to check that the inh deps are bounded here;
       -- an access with unbounded inh deps only ever makes sense on a reference. 
-      | hasVertex(_) ->
+      | just(_) ->
           if deps.1.isJust then []
           else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
       -- without a vertex, we're accessing from a reference, and so...
-      | noVertex() ->
+      | nothing() ->
           if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
           -- We didn't find the deps as an InhSet var
           else if null(diff)
@@ -585,7 +585,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       case e of
       | childReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             getChildDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv) == noVertex()  -- Covered by checkAllEqDeps
+             !getChildDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] =
                   filter(
@@ -600,7 +600,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           else []
       | localReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             getLocalDecSite(lq.lookupValue.fullName, top.flowEnv) == noVertex()  -- Covered by checkAllEqDeps
+             getLocalDecSite(lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] = 
                   filter(
@@ -629,9 +629,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     if null(e.errors) && top.config.warnMissingInh
     then
       case e.flowVertexInfo of
-      | hasVertex(_) -> [] -- no check to make, as it was done transitively
+      | just(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
-      | noVertex() ->
+      | nothing() ->
           if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
           then []
           else [mwdaWrn(top.config, top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted")]
@@ -656,7 +656,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- slightly awkward way to recover the name and whether/not it was invented
   local sinkVertexName :: Maybe<String> =
     case e.flowVertexInfo, pr.scrutineeVertexType of
-    | noVertex(), anonVertexType(n) -> just(n)
+    | nothing(), anonVertexType(n) -> just(n)
     | _, _ -> nothing()
     end;
 
