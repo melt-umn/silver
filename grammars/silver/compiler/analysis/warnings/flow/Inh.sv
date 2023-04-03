@@ -563,11 +563,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       case e.flowVertexInfo of
       -- We don't track dependencies on inh sets transitively, so we need to check that the inh deps are bounded here;
       -- an access with unbounded inh deps only ever makes sense on a reference. 
-      | hasVertex(_) ->
+      | just(_) ->
           if deps.1.isJust then []
           else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
       -- without a vertex, we're accessing from a reference, and so...
-      | noVertex() ->
+      | nothing() ->
           if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
           -- We didn't find the deps as an InhSet var
           else if null(diff)
@@ -634,9 +634,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     if null(e.errors) && top.config.warnMissingInh
     then
       case e.flowVertexInfo of
-      | hasVertex(_) -> [] -- no check to make, as it was done transitively
+      | just(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
-      | noVertex() ->
+      | nothing() ->
           if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
           then []
           else [mwdaWrn(top.config, top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted")]
@@ -661,7 +661,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- slightly awkward way to recover the name and whether/not it was invented
   local sinkVertexName :: Maybe<String> =
     case e.flowVertexInfo, pr.scrutineeVertexType of
-    | noVertex(), anonVertexType(n) -> just(n)
+    | nothing(), anonVertexType(n) -> just(n)
     | _, _ -> nothing()
     end;
 

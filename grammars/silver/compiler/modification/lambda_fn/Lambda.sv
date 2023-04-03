@@ -1,4 +1,3 @@
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
 import silver:compiler:definition:env;
 import silver:util:treeset as ts;
 
