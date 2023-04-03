@@ -165,6 +165,32 @@ top::RSExpr ::= e::RSExpr
 }
 
 warnCode "exceeds FT" {
+production uselessOverrideExceedsFT
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  local e1::RSExpr = @e;
+  e1.env1 = top.env2;
+
+  top.errors1 = e1.errors1;
+  top.errors2 = false;
+}
+}
+
+warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
+production uselessOverrideWithinFT
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env2;
+  local e1::RSExpr = @e;
+  e1.env1 = top.env1;
+
+  top.errors1 = e1.errors1;
+  top.errors2 = false;
+}
+}
+
+warnCode "exceeds FT" {
 production fwrdDecSiteExceedsFT
 top::RSExpr ::= e::RSExpr
 {
