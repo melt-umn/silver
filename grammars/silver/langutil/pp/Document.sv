@@ -152,7 +152,8 @@ nonterminal Document with indent, width,
 
 inherited attribute indent :: Integer;
 inherited attribute width :: Integer;
-propagate indent, width on Document;
+propagate indent on Document excluding box;
+propagate width on Document;
 
 -- The scanning process
 inherited attribute inPosition :: Integer;
@@ -302,9 +303,19 @@ top::Document ::=
 abstract production box
 top::Document ::= d::Document
 {
-  forwards to d;
   -- top.inPosition doesn't represent our horizontal position in actual printing
-  forward.indent = top.width - top.inRemaining;
+  d.inPosition = top.inPosition;
+  d.inDq = top.inDq;
+  d.inCHorizontals = top.inCHorizontals;
+  d.inRemaining = top.inRemaining;
+  d.indent = top.width - top.inRemaining;
+  
+  top.outPosition = d.outPosition;
+  top.outDq = d.outDq;
+  top.outCHorizontals = d.outCHorizontals;
+  top.outRemaining = d.outRemaining;
+  top.result = d.result;
+  top.horizontals = d.horizontals;
 }
 
 abstract production realLine
