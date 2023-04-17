@@ -3,6 +3,10 @@ grammar silver:compiler:analysis:warnings:flow;
 -- Flow type check: the implicitly generated copy equations for synthesized
 -- attributes due to forwarding may exceed their flow type.
 
+-- This can happen when the forward equation itself exceeds the flow type,
+-- or when a forward inh equation for an inh that the syn depends on exceeds
+-- the syn's flow type.
+
 -- This can only occur with *host-language attributes* as extension
 -- attribute are required to have ft(syn) > ft(fwd).
 
@@ -15,9 +19,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-  
-  local transitiveDeps :: [FlowVertex] = expandGraph([forwardEqVertex()], findProductionGraph(fName, myGraphs));
-  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+  local myGraph :: ProductionGraph = findProductionGraph(fName, myGraphs);
 
   local lhsNt :: String = namedSig.outputElement.typerep.typeName;
   local hostSyns :: [String] = getHostSynsFor(lhsNt, top.flowEnv);
@@ -29,14 +31,16 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     && top.config.warnMissingInh
     -- Must be a forwarding production
     && !null(body.forwardExpr)
-    then flatMap(raiseImplicitFwdEqFlowTypes(top.config, top.location, lhsNt, fName, _, top.flowEnv, fwdFlowDeps, myFlow), hostSyns)
+    then flatMap(raiseImplicitFwdEqFlowTypes(top.config, top.location, lhsNt, fName, _, top.flowEnv, myGraph, myFlow), hostSyns)
     else [];
 }
 
 
 function raiseImplicitFwdEqFlowTypes
-[Message] ::= config::Decorated CmdArgs  l::Location  lhsNt::String  prod::String  attr::String  e::FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType> 
+[Message] ::= config::Decorated CmdArgs  l::Location  lhsNt::String  prod::String  attr::String  e::FlowEnv  myGraph::ProductionGraph  myFlow::EnvTree<FlowType> 
 {
+  -- The actual dependencies for `forward.attr`
+  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(expandGraph([forwardVertex(attr)], myGraph));
   -- The flow type for `attr` on `lhsNt`
   local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);
   -- Actual forwards equation deps not in the flow type for `attr`
@@ -46,7 +50,7 @@ function raiseImplicitFwdEqFlowTypes
   | eq :: _ -> []
   | [] ->
       if null(diff) then []
-      else [mwdaWrn(config, l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type because the production forward equation depends on ${implode(", ", diff)}")]
+      else [mwdaWrn(config, l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type with dependencies on ${implode(", ", diff)}")]
   end;
 }
 
