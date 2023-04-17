@@ -3,22 +3,21 @@ grammar silver:compiler:analysis:uniqueness;
 -- Unique references taken in this tree
 monoid attribute uniqueRefs::[(String, UniqueRefSite)];
 
--- Unique identifier for this decoration site
-synthesized attribute decSiteName::String;
-
-
 {--
  - Represents taking of a unique reference to a child or local/production attribute.
  - Since taking a unique reference means that inherited equations
  - on the decoration site for attributes not in the reference set are forbidden,
  - this info tracks what decoration sites have partial references taken.
  -}
-nonterminal UniqueRefSite with refSet, decSite,
+nonterminal UniqueRefSite with refSet, refFlowDeps, decSite,
   sourceGrammar,  -- The grammar of where the reference was taken
   sourceLocation; -- The location of where the reference was taken
 
 -- The attributes in the type of the taken reference
 annotation refSet::[String];
+
+-- The flow dependencies of taking this reference
+annotation refFlowDeps::[FlowVertex];
 
 -- Where we know this reference is decorated
 annotation decSite::Maybe<VertexType>;
@@ -42,10 +41,3 @@ instance Eq UniqueRefSite {
 
 global uniqueContextErrors::([Message] ::= [(String, UniqueRefSite)]) =
   map(\ r::(String, UniqueRefSite) -> err(r.2.sourceLocation, s"Unique reference to ${r.1} taken outside of a unique context."), _);
-
-attribute decSiteName occurs on DefLHS;
-aspect decSiteName on top::DefLHS of
-| localDefLHS(q) -> q.lookupValue.fullName
-| childDefLHS(q) -> top.frame.fullName ++ ":" ++ q.lookupValue.fullName
-| _ -> error("Not a decoration site")
-end;

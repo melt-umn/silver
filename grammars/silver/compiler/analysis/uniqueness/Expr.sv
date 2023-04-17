@@ -9,31 +9,34 @@ propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPatter
 -- Unique references taken when this expression is wrapped in an attribute access
 synthesized attribute accessUniqueRefs::[(String, UniqueRefSite)] occurs on Expr;
 
-attribute decSiteName occurs on Expr;
-
 aspect default production
 top::Expr ::=
 {
   top.accessUniqueRefs = top.uniqueRefs;
-
-  top.decSiteName = error("Not a decoration site");
 }
 
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.decSiteName = top.frame.fullName ++ ":" ++ q.lookupValue.fullName;
+  local decSiteName::String = top.frame.fullName ++ ":" ++ q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(top.decSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
+        [(decSiteName,
+          uniqueRefSite(
+            sourceGrammar=top.grammarName,
+            sourceLocation=q.location,
+            refSet=inhs,
+            refFlowDeps=top.flowDeps,
+            decSite=top.decSiteVertexInfo
+          ))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(top.decSiteName, top.flowEnv);
+  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(decSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -52,17 +55,24 @@ aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.decSiteName = q.lookupValue.fullName;
+  local decSiteName::String = q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(top.decSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs, decSite=top.decSiteVertexInfo))]
+        [(decSiteName,
+          uniqueRefSite(
+            sourceGrammar=top.grammarName,
+            sourceLocation=q.location,
+            refSet=inhs,
+            refFlowDeps=top.flowDeps,
+            decSite=top.decSiteVertexInfo
+          ))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(top.decSiteName, top.flowEnv);
+  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(decSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -239,7 +249,13 @@ top::Expr ::= q::Decorated! QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.uniqueRefs <-
     if finalTy.isUniqueDecorated
-    then [(q.name, uniqueRefSite(refSet=finalTy.inhSetMembers, decSite=nothing(), sourceGrammar=top.grammarName, sourceLocation=top.location))]
+    then [(q.name, uniqueRefSite(
+        refSet=finalTy.inhSetMembers,
+        refFlowDeps=top.flowDeps,
+        decSite=nothing(),
+        sourceGrammar=top.grammarName,
+        sourceLocation=top.location
+      ))]
     else [];
   top.accessUniqueRefs = [];
 }
@@ -275,7 +291,13 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
   
   top.uniqueRefs <- map(
     \ r::(String, UniqueRefSite) ->
-      (r.1, uniqueRefSite(refSet=r.2.refSet, decSite=top.decSiteVertexInfo, sourceGrammar=top.grammarName, sourceLocation=top.location)),
+      (r.1, uniqueRefSite(
+          refSet=r.2.refSet,
+          refFlowDeps=top.flowDeps,
+          decSite=top.decSiteVertexInfo,
+          sourceGrammar=top.grammarName,
+          sourceLocation=top.location
+        )),
     rs);
   top.accessUniqueRefs = [];
 }

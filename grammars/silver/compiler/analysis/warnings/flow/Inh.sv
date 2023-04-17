@@ -263,6 +263,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+
   -- problem = lhsinh deps - fwd flow type - this inh attribute
   local lhsInhExceedsForwardFlowType :: [String] = 
     set:toList(
@@ -272,13 +273,58 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
           lhsInhDeps,
           inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
+  -- problem = lhsinh deps - inh deps on dec site
+  local lhsInhExceedsRefDecSiteDeps :: [String] =
+    case dl.refDecSiteInhDeps of
+    | just(deps) ->
+        -- A unique reference is taken that doesn't include this attribute,
+        -- make sure we aren't introducing any hidden transitive dependencies.
+        set:toList(
+          set:difference(
+            lhsInhDeps,
+            onlyLhsInh(expandGraph(deps, top.frame.flowGraph))))
+    | _ -> []
+    end;
+
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
-         if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
-         else [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    else [];
+  top.errors <-
+    if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
+    then [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+    else [];
+  top.errors <-
+    if top.config.warnMissingInh && !null(lhsInhExceedsRefDecSiteDeps)
+    then [mwdaWrn(top.config, top.location, "Inherited equation introduces hidden transitive dependencies on " ++ implode(", ", lhsInhExceedsRefDecSiteDeps))]
     else [];
 }
+
+-- Minimum flow deps of this inherited attribute on any unique references to this decoration site
+synthesized attribute refDecSiteInhDeps::Maybe<[FlowVertex]> occurs on DefLHS;
+aspect refDecSiteInhDeps on top::DefLHS of
+| localDefLHS(q) ->
+    case getUniqueRefs(q.lookupValue.fullName, top.flowEnv) of
+    | u :: _ when !contains(top.defLHSattr.attrDcl.fullName, u.refSet) -> just(
+        u.refFlowDeps ++
+        case u.decSite of
+        | just(v) -> [v.inhVertex(top.defLHSattr.attrDcl.fullName)]
+        | nothing() -> []
+        end)
+    | _ -> nothing()
+    end
+| childDefLHS(q) ->
+    case getUniqueRefs(top.frame.fullName ++ ":" ++ q.lookupValue.fullName, top.flowEnv) of
+    | u :: _ when !contains(top.defLHSattr.attrDcl.fullName, u.refSet) -> just(
+        u.refFlowDeps ++
+        case u.decSite of
+        | just(v) -> [v.inhVertex(top.defLHSattr.attrDcl.fullName)]
+        | nothing() -> []
+        end)
+    | _ -> nothing()
+    end
+| _ -> nothing()
+end;
 
 ----- WARNING TODO BEGIN MASSIVE COPY & PASTE SESSION
 aspect production synBaseColAttributeDef
@@ -625,7 +671,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       case e of
       | childReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             !getDecSite(e.decSiteName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
+             !getDecSite(top.frame.fullName ++ ":" ++ lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] =
                   filter(
@@ -640,7 +686,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           else []
       | localReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             !getDecSite(e.decSiteName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
+             !getDecSite(lq.lookupValue.fullName, top.flowEnv).isJust  -- Covered by checkAllEqDeps
           then
             let inhs :: [String] = 
                   filter(

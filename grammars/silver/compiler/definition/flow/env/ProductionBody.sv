@@ -118,6 +118,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     end;
   e.decSiteVertexInfo = nothing();
 }
+
 aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
