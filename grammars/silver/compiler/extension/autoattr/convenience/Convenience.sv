@@ -135,12 +135,26 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 }
 
 concrete production threadedAttributeDclMultiple
-top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames  d::OptDirectionMod ';'
+top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr  d::OptDirectionMod 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "threaded attribute " ++ inh.unparse ++ ", " ++ syn.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "threaded attribute " ++ inh.unparse ++ ", " ++ syn.name ++ tl.unparse ++ " :: " ++ te.unparse ++ d.unparse ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
       threadedAttributeDcl($1, $2, inh, $4, syn, tl, $7, te, d, ';', location=top.location),
+      appendAGDcl(
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        location=top.location),
+      location=top.location);
+}
+
+concrete production collectionThreadedAttributeDclMultiple
+top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator  d::OptDirectionMod 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "threaded attribute " ++ inh.unparse ++ ", " ++ syn.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ d.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      collectionThreadedAttributeDcl($1, $2, inh, $4, syn, tl, $7, te, 'with', q, d, ';', location=top.location),
       appendAGDcl(
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
