@@ -138,6 +138,15 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = e.errors2;
 }
 
+production implProd
+top::RSExpr ::= e::Decorated! RSExpr with {env1}
+{
+  undecorates to e;
+  e.env2 = top.env2;
+  top.errors1 = e.errors1;
+  top.errors2 = e.errors2;
+}
+
 warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
 production remoteExceeds
 top::RSExpr ::= e::RSExpr
@@ -208,6 +217,108 @@ top::RSExpr ::= e::RSExpr
   local e1::RSExpr = copy12(@e);
   e1.env1 = top.env2;
   forwards to @e1;
+}
+}
+
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+production condDecExceedsFT
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env2;
+  forwards to
+    if top.env1 == [] then copy12(@e) else base();
+}
+}
+
+production condDecDoesntExceedsFT
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env2;
+  forwards to
+    if top.env1 == [] then copy12From2(@e) else base();
+}
+
+production overrideInRefSet
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  e.env2 = top.env1;
+  local e1::Decorated! RSExpr with {env1} = e;
+  e1.env2 = [];
+  top.errors1 = e1.errors1;
+  top.errors2 = e1.errors2;
+}
+
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+production overrideNotInRefSet
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  e.env2 = top.env2;
+  local e1::Decorated! RSExpr with {env1} = e;
+  e1.env2 = [];
+  top.errors1 = e1.errors1;
+  top.errors2 = e1.errors2;
+}
+}
+
+production dispatchGood
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  local implProdRef::(RSExpr ::= Decorated! RSExpr with {env1}) = implProd;
+  forwards to implProdRef(e); 
+}
+
+production dispatchOverrideKnownProd
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  e.env2 = top.env2;
+  forwards to implProd(e); 
+}
+
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+production dispatchOverrideUnknownProd
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  e.env2 = top.env2;
+  local implProdRef::(RSExpr ::= Decorated! RSExpr with {env1}) = implProd;
+  forwards to implProdRef(e); 
+}
+}
+
+warnCode "Access of syn attribute errors2 on e requires missing inherited attributes flow:env2 to be supplied" {
+production anonDecSuppliedMissing
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = [];
+  local d::Decorated RSExpr with {env2} = decorate @e with {env2 = top.env2;};
+  top.errors1 = e.errors1;
+  top.errors2 = e.errors2;
+}
+}
+
+production anonDecOverrideOk
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = [];
+  e.env2 = top.env2;
+  local d::Decorated RSExpr with {env2} = decorate @e with {env2 = top.env2;};
+  top.errors1 = e.errors1;
+  top.errors2 = e.errors2;
+}
+
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+production anonDecOverrideExceedsFT
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = [];
+  e.env2 = top.env1 ++ top.env2;
+  local d::Decorated RSExpr with {env2} = decorate @e with {env2 = top.env2;};
+  top.errors1 = e.errors1;
+  top.errors2 = e.errors2;
 }
 }
 

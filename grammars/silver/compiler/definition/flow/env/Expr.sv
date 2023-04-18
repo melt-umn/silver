@@ -339,7 +339,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- as though we were a reference to this anonymous local
   top.flowVertexInfo = just(anonVertexType(inh.decorationVertex));
   e.decSiteVertexInfo = just(anonVertexType(inh.decorationVertex));
-  e.alwaysDecorated = true;
+  -- The type of decorate ... with ... is a normal reference for now, so this should always be false, but that could change.
+  e.alwaysDecorated = top.alwaysDecorated;
 
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
