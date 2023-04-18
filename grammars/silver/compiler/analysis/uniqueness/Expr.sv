@@ -19,24 +19,21 @@ aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local decSiteName::String = top.frame.fullName ++ ":" ++ q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-        [(decSiteName,
+        [(top.frame.fullName ++ ":" ++ q.lookupValue.fullName,
           uniqueRefSite(
             sourceGrammar=top.grammarName,
             sourceLocation=q.location,
             refSet=inhs,
-            refFlowDeps=top.flowDeps,
-            decSite=top.decSiteVertexInfo
+            refFlowDeps=top.flowDeps
           ))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(decSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -45,7 +42,7 @@ top::Expr ::= q::Decorated! QName
       && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
       then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       -- Check that there is at most one partial reference taken to this decoration site.
-      else if length(allUniqueRefs) > 1
+      else if length(lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)) > 1
       then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       else []
     | _ -> []
@@ -55,24 +52,21 @@ aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local decSiteName::String = q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-        [(decSiteName,
+        [(q.lookupValue.fullName,
           uniqueRefSite(
             sourceGrammar=top.grammarName,
             sourceLocation=q.location,
             refSet=inhs,
-            refFlowDeps=top.flowDeps,
-            decSite=top.decSiteVertexInfo
+            refFlowDeps=top.flowDeps
           ))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(decSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -81,7 +75,7 @@ top::Expr ::= q::Decorated! QName
       && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
       then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       -- Check that there is at most one partial reference taken to this decoration site.
-      else if length(allUniqueRefs) > 1
+      else if length(lookupLocalUniqueRefs(q.lookupValue.fullName, top.flowEnv)) > 1
       then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       else []
     | _ -> []
@@ -252,7 +246,6 @@ top::Expr ::= q::Decorated! QName
     then [(q.name, uniqueRefSite(
         refSet=finalTy.inhSetMembers,
         refFlowDeps=top.flowDeps,
-        decSite=nothing(),
         sourceGrammar=top.grammarName,
         sourceLocation=top.location
       ))]
@@ -294,7 +287,6 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
       (r.1, uniqueRefSite(
           refSet=r.2.refSet,
           refFlowDeps=top.flowDeps,
-          decSite=top.decSiteVertexInfo,
           sourceGrammar=top.grammarName,
           sourceLocation=top.location
         )),

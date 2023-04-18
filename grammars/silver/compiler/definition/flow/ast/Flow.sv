@@ -10,8 +10,8 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs;
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, refDecSiteContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, refDecSiteContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -66,7 +66,9 @@ monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 {-- A list of attributes for a production that are non-suspect -}
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
-propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs
+monoid attribute refDecSiteContribs :: [(String, VertexType)];
+
+propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, refDecSiteContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -97,6 +99,7 @@ top::FlowDef ::=
   top.hostSynTreeContribs := [];
   top.nonSuspectContribs := [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
+  top.refDecSiteContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -366,18 +369,20 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::St
   top.flowEdges = [];
 }
 
-abstract production childDecSiteEq
+abstract production childRefDecSiteEq
 top::FlowDef ::= prod::String  sigName::String  decSite::VertexType  attrs::[String]
 {
   top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(\ attr::String -> (rhsVertex(sigName, attr), decSite.inhVertex(attr)), attrs);
+  top.refDecSiteContribs := [(s"${prod}:${sigName}", decSite)];
 }
 
-abstract production localDecSiteEq
+abstract production localRefDecSiteEq
 top::FlowDef ::= prod::String  fName::String  decSite::VertexType  attrs::[String]
 {
   top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(\ attr::String -> (localVertex(fName, attr), decSite.inhVertex(attr)), attrs);
+  top.refDecSiteContribs := [(fName, decSite)];
 }
 
 --

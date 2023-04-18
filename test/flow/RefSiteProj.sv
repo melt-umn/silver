@@ -151,6 +151,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production remoteExceedsOverride
 top::RSExpr ::= e::RSExpr
 {
@@ -163,8 +164,9 @@ top::RSExpr ::= e::RSExpr
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
 }
+}
 
-warnCode "exceeds FT" {
+warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
 production uselessOverrideExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -177,7 +179,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production uselessOverrideWithinFT
 top::RSExpr ::= e::RSExpr
 {
@@ -190,7 +192,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "exceeds FT" {
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production fwrdDecSiteExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -199,7 +201,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "exceeds FT" {
+warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production projExceedsFT
 top::RSExpr ::= e::RSExpr
 {

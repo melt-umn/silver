@@ -776,6 +776,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       location=top.location);
   checkExpr.env = top.env;
   checkExpr.flowEnv = top.flowEnv;
+  checkExpr.decSiteVertexInfo = nothing();
   checkExpr.downSubst = emptySubst();
   checkExpr.finalSubst = checkExpr.upSubst;
   checkExpr.grammarName = top.grammarName;

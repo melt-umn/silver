@@ -41,8 +41,9 @@ propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
-propagate flowDefs, flowEnv on
-  Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
+  excluding ifThenElse, matchPrimitiveReal;
+propagate flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 attribute decSiteVertexInfo occurs on Expr, AppExprs, AppExpr;
 propagate decSiteVertexInfo on AppExprs;
@@ -83,7 +84,7 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) -> [childDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
+    | just(decSite) -> [childRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
     | nothing() -> []
     end;
 }
@@ -128,7 +129,7 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) -> [localDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
+    | just(decSite) -> [localRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
     | nothing() -> []
     end;
 }
@@ -376,9 +377,10 @@ top::Expr ::= '!' e::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
+  top.flowDefs := e1.flowDefs ++ intersectRefDecSiteEqs(e2.flowDefs, e3.flowDefs);
   e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e3.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = top.decSiteVertexInfo;
+  e3.decSiteVertexInfo = top.decSiteVertexInfo;
 }
 
 aspect production plus
@@ -485,8 +487,9 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowDefs, flowEnv, scrutineeVertexType on PrimPatterns, PrimPattern;
+attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
+propagate flowDeps, flowEnv, decSiteVertexInfo, scrutineeVertexType on PrimPatterns, PrimPattern;
+propagate flowDefs on PrimPatterns, PrimPattern excluding consPattern;
 
 inherited attribute scrutineeVertexType :: VertexType;
 
@@ -524,8 +527,15 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     end;
   -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 
+  top.flowDefs := e.flowDefs ++ intersectRefDecSiteEqs(pr.flowDefs, f.flowDefs);
   e.decSiteVertexInfo = nothing();
-  f.decSiteVertexInfo = nothing();
+  pr.decSiteVertexInfo = top.decSiteVertexInfo;
+  f.decSiteVertexInfo = top.decSiteVertexInfo;
+}
+aspect production consPattern
+top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
+{
+  top.flowDefs := intersectRefDecSiteEqs(p.flowDefs, ps.flowDefs);
 }
 
 aspect production prodPatternNormal
@@ -533,42 +543,10 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDefs <-
     [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
-  e.decSiteVertexInfo = nothing();
 }
 aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.flowDefs <-
     [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
-  e.decSiteVertexInfo = nothing();
-}
-aspect production integerPattern
-top::PrimPattern ::= i::Int_t _ e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production floatPattern
-top::PrimPattern ::= f::Float_t _ e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production stringPattern
-top::PrimPattern ::= i::String_t _ e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production booleanPattern
-top::PrimPattern ::= i::String _ e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production nilPattern
-top::PrimPattern ::= e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production conslstPattern
-top::PrimPattern ::= h::Name t::Name e::Expr
-{
-  e.decSiteVertexInfo = nothing();
 }

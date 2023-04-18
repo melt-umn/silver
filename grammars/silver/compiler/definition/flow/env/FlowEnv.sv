@@ -15,7 +15,7 @@ monoid attribute flowDefs :: [FlowDef];
 monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, uniqueRefTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, uniqueRefTree, refDecSiteTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 
 annotation synTree :: EnvTree<FlowDef>;
 annotation inhTree :: EnvTree<FlowDef>;
@@ -25,6 +25,7 @@ annotation fwdInhTree :: EnvTree<FlowDef>;
 annotation prodTree :: EnvTree<FlowDef>;
 annotation refTree :: EnvTree<[String]>;
 annotation uniqueRefTree :: EnvTree<UniqueRefSite>;
+annotation refDecSiteTree :: EnvTree<VertexType>;
 annotation localInhTree ::EnvTree<FlowDef>;
 annotation localTree :: EnvTree<FlowDef>;
 annotation nonSuspectTree :: EnvTree<[String]>;
@@ -51,6 +52,7 @@ FlowEnv ::=
     prodTree = directBuildTree(d.prodTreeContribs),
     refTree = directBuildTree(refContribs),
     uniqueRefTree = directBuildTree(uniqueRefContribs),
+    refDecSiteTree = directBuildTree(d.refDecSiteContribs),
     localInhTree = directBuildTree(d.localInhTreeContribs),
     localTree = directBuildTree(d.localTreeContribs),
     nonSuspectTree = directBuildTree(d.nonSuspectContribs),
@@ -109,6 +111,48 @@ function lookupLocalEq
   return searchEnvTree(crossnames(prod, fName), e.localTree);
 }
 
+-- unique references taken for a child
+function lookupUniqueRefs
+[UniqueRefSite] ::= prod::String sigName::String  e::FlowEnv
+{
+  return searchEnvTree(prod ++ ":" ++ sigName, e.uniqueRefTree);
+}
+
+-- unique references taken for a local/production attribute
+function lookupLocalUniqueRefs
+[UniqueRefSite] ::= fName::String  e::FlowEnv
+{
+  return searchEnvTree(fName, e.uniqueRefTree);
+}
+
+-- decoration sites for unique references taken for a child
+function lookupRefDecSite
+[VertexType] ::= prod::String  sigName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${prod}:${sigName}", e.refDecSiteTree);
+}
+
+-- decoration sites for unique references taken for a local/production attribute
+function lookupLocalRefDecSite
+[VertexType] ::= fName::String  e::FlowEnv
+{
+  return searchEnvTree(fName, e.refDecSiteTree);
+}
+
+{--
+ - Combine lists of flow defs from mutually-exclusive subexpressions,
+ - by only keeping decoration site equations that appear in both places.
+ -}
+function intersectRefDecSiteEqs
+[FlowDef] ::= d1::[FlowDef] d2::[FlowDef]
+{
+  local decSites1::[(String, VertexType)] = flatMap((.refDecSiteContribs), d1);
+  local decSites2::[(String, VertexType)] = flatMap((.refDecSiteContribs), d2);
+  return
+    filter(\ d::FlowDef -> all(map(\ ds::(String, VertexType) -> lookup(ds.1, decSites2).isJust, d.refDecSiteContribs)), d1) ++
+    filter(\ d::FlowDef -> all(map(\ ds::(String, VertexType) -> lookup(ds.1, decSites1).isJust, d.refDecSiteContribs)), d2);
+}
+
 {--
  - This is a glorified lambda function, to help look for equations.
  - Literally, we're just checking for null here.
@@ -128,19 +172,6 @@ function getInhsForNtRef
 [[String]] ::= nt::String  e::FlowEnv
 {
   return searchEnvTree(nt, e.refTree);
-}
-
--- unique references taken for a child/local/production attribute
-function getUniqueRefs
-[UniqueRefSite] ::= fName::String  e::FlowEnv
-{
-  return searchEnvTree(fName, e.uniqueRefTree);
-}
-
-function getDecSite
-Maybe<VertexType>::= fName::String flowEnv::FlowEnv
-{
-  return flatMap((.decSite), getUniqueRefs(fName, flowEnv));
 }
 
 -- implicit forward syn copy equations that are allowed to affect the flow type
