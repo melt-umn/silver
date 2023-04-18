@@ -30,8 +30,21 @@ monoid attribute flowDeps :: [FlowVertex];
  -}
 synthesized attribute flowVertexInfo :: Maybe<VertexType>;
 
-
+{--
+ - Where this expression is known to ultimately get decorated, if at all.
+ - The supplied inherited attributes correspond to the inherited vertices for this vertex type.
+ -}
 inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
+
+{--
+ - Is this expression unconditionally decorated.  For example:
+ -
+ - local foo::Expr = if cond then @e else bar;
+ - foo.env = top.env;
+ -
+ - we know that e's decoration site vertex is foo, and e.env can depend on top.env,
+ - but we can't gurantee that e.env is defined in case cond is false.
+ -}
 inherited attribute alwaysDecorated :: Boolean;
 
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints

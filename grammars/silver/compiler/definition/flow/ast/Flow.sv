@@ -375,6 +375,15 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::St
   top.flowEdges = [];
 }
 
+{--
+ - A unique reference to a child that is decorated with additional inherited attributes.
+ -
+ - @param prod      the full name of the production
+ - @param sigName   the name of the child
+ - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
+ - @param decSite   the vertex type that is supplying the attributes
+ - @param attrs     the inherited attributes that are being supplied
+ -}
 abstract production childRefDecSiteEq
 top::FlowDef ::= prod::String  sigName::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
 {
@@ -384,6 +393,15 @@ top::FlowDef ::= prod::String  sigName::String  alwaysDec::Boolean  decSite::Ver
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
 }
 
+{--
+ - A unique reference to a local/production attribute that is decorated with additional inherited attributes.
+ -
+ - @param prod      the full name of the production
+ - @param fName     the full name of the local/production attribute
+ - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
+ - @param decSite   the vertex type that is supplying the attributes
+ - @param attrs     the inherited attributes that are being supplied
+ -}
 abstract production localRefDecSiteEq
 top::FlowDef ::= prod::String  fName::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
 {
