@@ -24,14 +24,17 @@ aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }

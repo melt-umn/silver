@@ -325,7 +325,7 @@ top::DefLHS ::= q::Decorated! QName
         u.refFlowDeps ++
         map(
           \ v::VertexType -> v.inhVertex(top.defLHSattr.attrDcl.fullName),
-          lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)))
+          lookupRefPossibleDecSites(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)))
     | _ -> nothing()
     end;
 }
@@ -339,7 +339,7 @@ top::DefLHS ::= q::Decorated! QName
         u.refFlowDeps ++
         map(
           \ v::VertexType -> v.inhVertex(top.defLHSattr.attrDcl.fullName),
-          lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv)))
+          lookupLocalRefPossibleDecSites(q.lookupValue.fullName, top.flowEnv)))
     | _ -> nothing()
     end;
 }

@@ -32,6 +32,7 @@ synthesized attribute flowVertexInfo :: Maybe<VertexType>;
 
 
 inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
+inherited attribute alwaysDecorated :: Boolean;
 
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints
 attribute flowDeps, flowDefs, flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
@@ -41,12 +42,10 @@ propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
-propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
-  excluding ifThenElse, matchPrimitiveReal;
-propagate flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
-attribute decSiteVertexInfo occurs on Expr, AppExprs, AppExpr;
-propagate decSiteVertexInfo on AppExprs;
+attribute decSiteVertexInfo, alwaysDecorated occurs on Expr, AppExprs, AppExpr;
+propagate decSiteVertexInfo, alwaysDecorated on AppExprs;
 
 aspect default production
 top::Expr ::=
@@ -84,7 +83,7 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) -> [childRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
+    | just(decSite) -> [childRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
     | nothing() -> []
     end;
 }
@@ -129,7 +128,7 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) -> [localRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, decSite, notSuppliedInhs)]
+    | just(decSite) -> [localRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
     | nothing() -> []
     end;
 }
@@ -165,6 +164,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 {
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+  es.alwaysDecorated = false;
   es.appProd = nothing();
 }
 
@@ -179,6 +180,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
+  e.alwaysDecorated = false;
+  es.alwaysDecorated = top.alwaysDecorated;
 }
 
 aspect production partialApplication
@@ -191,12 +194,15 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+  es.alwaysDecorated = false;
 }
 
 aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
   e.appProd = nothing();
 }
 
@@ -220,6 +226,7 @@ top::AppExpr ::= e::Expr
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
     end;
+  e.alwaysDecorated = top.alwaysDecorated && e.decSiteVertexInfo.isJust;
 }
 
 aspect production noteAttachment
@@ -227,6 +234,8 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   note.decSiteVertexInfo = nothing();
   e.decSiteVertexInfo = nothing();
+  note.alwaysDecorated = false;
+  e.alwaysDecorated = false;
 }
 
 aspect production access
@@ -250,6 +259,7 @@ top::Expr ::= e::Expr '.' 'forward'
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 
@@ -257,16 +267,19 @@ aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
@@ -279,6 +292,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
@@ -289,11 +303,13 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production decorateExprWith
@@ -323,6 +339,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- as though we were a reference to this anonymous local
   top.flowVertexInfo = just(anonVertexType(inh.decorationVertex));
   e.decSiteVertexInfo = just(anonVertexType(inh.decorationVertex));
+  e.alwaysDecorated = true;
 
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
@@ -347,6 +364,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     | exprLhsExpr(q) -> [anonInhEq(top.frame.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
     end;
   e1.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
 }
 
 aspect production decorationSiteExpr
@@ -354,6 +372,7 @@ top::Expr ::= '@' e::Expr
 {
   top.flowVertexInfo = e.flowVertexInfo;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
+  e.alwaysDecorated = top.alwaysDecorated;
 }
 
 aspect production and
@@ -361,26 +380,33 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  top.flowDefs := e1.flowDefs ++ intersectRefDecSiteEqs(e2.flowDefs, e3.flowDefs);
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = top.decSiteVertexInfo;
   e3.decSiteVertexInfo = top.decSiteVertexInfo;
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
+  e3.alwaysDecorated = false;
 }
 
 aspect production plus
@@ -388,35 +414,46 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production divide
 top::Expr ::= e1::Expr _ e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production terminalConstructor
@@ -424,23 +461,28 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   es.decSiteVertexInfo = nothing();
   el.decSiteVertexInfo = nothing();
+  es.alwaysDecorated = false;
+  el.alwaysDecorated = false;
 }
 
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   e1.decSiteVertexInfo = nothing();
+  e1.alwaysDecorated = false;
 }
 
 aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 -- FROM LET TODO
@@ -453,12 +495,14 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.flowDeps := e.flowDeps;
   top.flowVertexInfo = e.flowVertexInfo;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
+  e.alwaysDecorated = top.alwaysDecorated;
 }
 
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production lexicalLocalReference
@@ -487,9 +531,8 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowEnv, decSiteVertexInfo, scrutineeVertexType on PrimPatterns, PrimPattern;
-propagate flowDefs on PrimPatterns, PrimPattern excluding consPattern;
+attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
+propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType on PrimPatterns, PrimPattern;
 
 inherited attribute scrutineeVertexType :: VertexType;
 
@@ -527,15 +570,12 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     end;
   -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 
-  top.flowDefs := e.flowDefs ++ intersectRefDecSiteEqs(pr.flowDefs, f.flowDefs);
   e.decSiteVertexInfo = nothing();
   pr.decSiteVertexInfo = top.decSiteVertexInfo;
   f.decSiteVertexInfo = top.decSiteVertexInfo;
-}
-aspect production consPattern
-top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
-{
-  top.flowDefs := intersectRefDecSiteEqs(p.flowDefs, ps.flowDefs);
+  e.alwaysDecorated = false;
+  pr.alwaysDecorated = false;
+  f.alwaysDecorated = false;
 }
 
 aspect production prodPatternNormal
