@@ -1,5 +1,3 @@
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
-
 synthesized attribute lambdaId::Integer occurs on ValueDclInfo;
 synthesized attribute lambdaParamIndex::Integer occurs on ValueDclInfo;
 

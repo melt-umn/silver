@@ -10,8 +10,6 @@ import silver:compiler:definition:type:syntax;
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
-
 aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
