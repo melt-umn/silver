@@ -73,6 +73,27 @@ String ::=
 
 equalityTest ( testLocalInheritedCollections(), "(x)", String, silver_tests ) ;
 
+
+-- Threaded collection attributes
+--------------------------------------------------------------------------------
+
+threaded attribute colTInh, colTSyn::[Integer] with ++ occurs on ColNT;
+propagate colTInh, colTSyn on ColNT;
+
+aspect production colNode
+top::ColNT ::= c1::ColNT c2::ColNT
+{
+  c2.colTInh <- [1];
+  top.colTSyn <- [2];
+}
+
+aspect colTSyn on ColNT using <- of
+| colLeaf() -> [3]
+end;
+
+
+equalityTest ( decorate colNode(colLeaf(), colNode(colLeaf(), colLeaf())) with {colTInh = [];}.colTSyn, [3, 1, 3, 1, 3, 2, 2], [Integer], silver_tests ) ;
+
 -- Tests involving collection/noncollection assignments
 --------------------------------------------------------------------------------
 
