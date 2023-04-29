@@ -7,7 +7,7 @@ nonterminal Grammar with
   grammarName, env, globalImports, grammarDependencies,
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, occursDefs, importedDefs, importedOccursDefs, grammarErrors, allFileErrors, jarName;
+  defs, occursDefs, importedDefs, importedOccursDefs, allFileErrors, jarName;
 
 flowtype Grammar = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarName, env, flowEnv, globalImports, grammarDependencies};
 
@@ -51,7 +51,6 @@ top::Grammar ::=
   -- A value here is actually used. Grammars without any .sv files
   -- turn into this, and this "aren't found". TODO verify this is true?
   top.declaredName = ":null";
-  top.grammarErrors = [];
   top.allFileErrors = [];
 }
 
@@ -59,10 +58,10 @@ abstract production consGrammar
 top::Grammar ::= h::Root  t::Grammar
 {
   top.declaredName = if h.declaredName == t.declaredName then h.declaredName else top.grammarName;
-  top.grammarErrors =
-    if null(h.errors ++ jarNameErrors) then t.grammarErrors
-     else pair(h.location.filename, h.errors ++ jarNameErrors) :: t.grammarErrors;
-  top.allFileErrors = (h.location.filename, h.errors ++ jarNameErrors) :: t.allFileErrors;
 
-  local jarNameErrors :: [Message] = warnIfMultJarName(h.jarName, t.jarName, h.location);
+  production attribute rootErrors::[Message] with ++;
+  rootErrors := h.errors;
+  top.allFileErrors = (h.location.filename, rootErrors) :: t.allFileErrors;
+
+  rootErrors <- warnIfMultJarName(h.jarName, t.jarName, h.location);
 }
