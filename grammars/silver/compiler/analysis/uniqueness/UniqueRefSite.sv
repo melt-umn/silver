@@ -30,7 +30,7 @@ function unionMutuallyExclusiveRefs
   return rs1 ++ filter(\ r::(String, UniqueRefSite) -> !lookup(r.1, rs1).isJust, rs2);
 }
 
--- Compare unique ref sites based on ref set and decoration site.
+-- Compare unique ref sites based on ref set.
 -- Source location doesn't matter, and we should never be comparing unique ref sites from different grammars.
 instance Eq UniqueRefSite {
   eq = \ r1::UniqueRefSite r2::UniqueRefSite -> r1.refSet == r2.refSet;

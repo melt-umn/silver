@@ -49,6 +49,8 @@ top::NameOrBOperator ::= e::Expr
   e.frame = bogusContext(myFlowGraph, sourceGrammar=top.grammarName);
   e.originRules = [];
   e.isRoot = false;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 concrete production plusplusOperator
