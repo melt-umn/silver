@@ -96,8 +96,9 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) -> [childRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
-    | nothing() -> []
+    | just(decSite) when finalTy.isUniqueDecorated ->
+      [childRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
+    | _ -> []
     end;
 }
 aspect production lhsReference
@@ -141,8 +142,9 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) -> [localRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
-    | nothing() -> []
+    | just(decSite) when finalTy.isUniqueDecorated ->
+      [localRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
+    | _ -> []
     end;
 }
 aspect production forwardReference
