@@ -228,21 +228,23 @@ abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
+  top.errors := e.errors;
+
   top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
-  
-  -- TODO: this production also produces an error message, so we'll produce two errors for one flaw.
-  -- We don't want to use := for the errors, because we'd miss any errors in e, and we don't want to repeat
-  -- it because that will produce duplicate trees.
-  forwards to errorValueDef(val, e, location=top.location);
+
+  forwards to errorValueDef(val, @e, location=top.location);
 }
 abstract production errorColNormalValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
+  -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
+  top.errors := e.errors;
+
   top.errors <- [err(top.location, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
-  
-  -- TODO: same problem
-  forwards to errorValueDef(val, e, location=top.location);
+
+  forwards to errorValueDef(val, @e, location=top.location);
 }
 
 -- NON-ERRORS for PRODUCTIONS
@@ -252,35 +254,18 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
-  e.isRoot = false;
-
-  e.downSubst = top.downSubst;
-  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
-  -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
-  
-  -- TODO: We actually don't want reference site flow projections in e,
-  -- since we don't actually know the entire tree in which it is decorated.
-  -- This probably shouldn't be a forwarding production...
-  forwards to localValueDef(val, e, location=top.location);
+  -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
+  forwards to localValueDef(val, @e, location=top.location);
 }
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
-  e.isRoot = false;
-
-  e.downSubst = top.downSubst;
-  -- the real type checking is done by the forward, but we must ensure things are tied up nicely
-  -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
-  
-  forwards to localValueDef(val, e, location=top.location);
+  -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
+  forwards to localValueDef(val, @e, location=top.location);
 }
 
 -- NON-ERRORS for SYN ATTRS
