@@ -49,6 +49,9 @@ monoid attribute docErrors :: [Message];
 attribute docErrors occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 propagate docErrors on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
+@{-
+ - All file names in a grammar, paired with their documentation-related error messages.
+ -}
 synthesized attribute allFileDocErrors::[(String, [Message])] occurs on Grammar;
 
 aspect production root
