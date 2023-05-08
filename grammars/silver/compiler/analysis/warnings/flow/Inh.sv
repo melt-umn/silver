@@ -263,15 +263,27 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
-  -- TODO: if LHS is forward, we have to check that we aren't exceeding flow type!! (BUG)
-  
-  -- check transitive deps only. Nothing to check for flow types
+  local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+  -- problem = lhsinh deps - fwd flow type - this inh attribute
+  local lhsInhExceedsForwardFlowType :: [String] = 
+    set:toList(
+      set:removeAll(
+        [attr.attrDcl.fullName],
+        set:difference(
+          lhsInhDeps,
+          inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
+
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+         if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
+         else [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
 }
 
@@ -317,25 +329,53 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  local transitiveDeps :: [FlowVertex] =
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
+  local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
-  -- check transitive deps only. Nothing to be done for flow types
+  local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+  -- problem = lhsinh deps - fwd flow type - this inh attribute
+  local lhsInhExceedsForwardFlowType :: [String] = 
+    set:toList(
+      set:removeAll(
+        [attr.attrDcl.fullName],
+        set:difference(
+          lhsInhDeps,
+          inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
+
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+         if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
+         else [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
 }
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
-  -- check transitive deps only. Nothing to be done for flow types
+  local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+  -- problem = lhsinh deps - fwd flow type - this inh attribute
+  local lhsInhExceedsForwardFlowType :: [String] = 
+    set:toList(
+      set:removeAll(
+        [attr.attrDcl.fullName],
+        set:difference(
+          lhsInhDeps,
+          inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
+
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+         if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
+         else [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
 }
 ------ END AWFUL COPY & PASTE SESSION
@@ -376,9 +416,9 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
         [case lhs of
          | forwardLhsExpr(q) -> q.attrDcl.fullName
          end],
-      set:difference(
-        lhsInhDeps,
-        inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
+        set:difference(
+          lhsInhDeps,
+          inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
   top.errors <-
     if top.config.warnMissingInh
@@ -563,11 +603,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       case e.flowVertexInfo of
       -- We don't track dependencies on inh sets transitively, so we need to check that the inh deps are bounded here;
       -- an access with unbounded inh deps only ever makes sense on a reference. 
-      | hasVertex(_) ->
+      | just(_) ->
           if deps.1.isJust then []
           else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
       -- without a vertex, we're accessing from a reference, and so...
-      | noVertex() ->
+      | nothing() ->
           if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
           -- We didn't find the deps as an InhSet var
           else if null(diff)
@@ -634,9 +674,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     if null(e.errors) && top.config.warnMissingInh
     then
       case e.flowVertexInfo of
-      | hasVertex(_) -> [] -- no check to make, as it was done transitively
+      | just(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
-      | noVertex() ->
+      | nothing() ->
           if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
           then []
           else [mwdaWrn(top.config, top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted")]
@@ -661,7 +701,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- slightly awkward way to recover the name and whether/not it was invented
   local sinkVertexName :: Maybe<String> =
     case e.flowVertexInfo, pr.scrutineeVertexType of
-    | noVertex(), anonVertexType(n) -> just(n)
+    | nothing(), anonVertexType(n) -> just(n)
     | _, _ -> nothing()
     end;
 

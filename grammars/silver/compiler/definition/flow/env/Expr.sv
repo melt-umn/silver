@@ -13,11 +13,20 @@ import silver:compiler:driver:util only isExportedBy;
  - Direct (potential) dependencies this expression has on nodes in the production flow graph.
  -}
 monoid attribute flowDeps :: [FlowVertex];
+
 {--
  - Determines whether this expression corresponds to a node in the flow graph, and how
  - to treat it specially if so.
+ - 
+ - Do not forget we also need to address its equation (but vertexType takes care of that too)
+ -
+ - e.g. new(decorate rhs.a with {}) needs to emit 'rhs.a' still, even while
+ -      ignoring the decorate vertex. That happens when we refer to the anonEq.
+ -
+ - When this is nothing(), the expression does not have a corresponding vertex in the
+ - production graph and so much be treated as any value.
  -}
-synthesized attribute flowVertexInfo :: ExprVertexInfo;
+synthesized attribute flowVertexInfo :: Maybe<VertexType>;
 
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints
 attribute flowDeps, flowDefs, flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
@@ -36,7 +45,7 @@ top::Expr ::=
   -- We go with using default here because
   -- (a) it's safe. vertexInfo is for being less conservative and more precise.
   -- (b) only a few productions actually provide it.
-  top.flowVertexInfo = noVertex();
+  top.flowVertexInfo = nothing();
 }
 
 aspect production childReference
@@ -53,8 +62,8 @@ top::Expr ::= q::Decorated! QName
     else [];
   top.flowVertexInfo = 
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
-    then hasVertex(rhsVertexType(q.lookupValue.fullName))
-    else noVertex();
+    then just(rhsVertexType(q.lookupValue.fullName))
+    else nothing();
 }
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
@@ -68,8 +77,8 @@ top::Expr ::= q::Decorated! QName
     else [];
   top.flowVertexInfo = 
     if finalTy.isDecorated
-    then hasVertex(lhsVertexType)
-    else noVertex();
+    then just(lhsVertexType)
+    else nothing();
 }
 aspect production localReference
 top::Expr ::= q::Decorated! QName
@@ -85,8 +94,8 @@ top::Expr ::= q::Decorated! QName
     
   top.flowVertexInfo =
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
-    then hasVertex(localVertexType(q.lookupValue.fullName))
-    else noVertex();
+    then just(localVertexType(q.lookupValue.fullName))
+    else nothing();
 }
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
@@ -101,8 +110,8 @@ top::Expr ::= q::Decorated! QName
     
   top.flowVertexInfo =
     if finalTy.isDecorated
-    then hasVertex(forwardVertexType)
-    else noVertex();
+    then just(forwardVertexType)
+    else nothing();
 }
 
 aspect production application
@@ -128,8 +137,8 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.flowDeps := 
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.fwdVertex :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
+    | just(vertex) -> vertex.fwdVertex :: vertex.eqVertex
+    | nothing() -> e.flowDeps
     end;
 }
 
@@ -140,8 +149,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
+    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | nothing() -> e.flowDeps
     end;
 }
 aspect production inhDecoratedAccessHandler
@@ -149,8 +158,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
-    | noVertex() -> e.flowDeps
+    | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | nothing() -> e.flowDeps
     end;
 }
 
@@ -179,7 +188,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
-  top.flowVertexInfo = hasVertex(anonVertexType(inh.decorationVertex));
+  top.flowVertexInfo = just(anonVertexType(inh.decorationVertex));
 
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
@@ -217,7 +226,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  _
+top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 {
   -- Because of the auto-undecorate behavior, we need to check for the case
   -- where `t` should be equivalent to `new(t)` and report accoringly.
@@ -230,12 +239,12 @@ top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  _
 
   top.flowDeps := 
     case fi of
-    | hasVertex(vertex) ->
+    | just(vertex) ->
         if performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated &&
            !performSubstitution(top.typerep, top.finalSubst).isDecorated
         then vertex.eqVertex -- we're a `t` emulating `new(t)`
         else fd -- we're passing along our vertex-ness to the outer expression
-    | noVertex() -> fd -- we're actually being used as a ref-set-taking decorated var
+    | nothing() -> fd -- we're actually being used as a ref-set-taking decorated var
     end;
   top.flowVertexInfo = fi;
 }
@@ -264,8 +273,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> vertex
-    | noVertex() -> anonVertexType(anonName)
+    | just(vertex) -> vertex
+    | nothing() -> anonVertexType(anonName)
     end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
@@ -276,8 +285,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local eTy::Type = performSubstitution(e.typerep, top.finalSubst);
   top.flowDefs <-
     case e.flowVertexInfo of
-    | hasVertex(vertex) -> []
-    | noVertex() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)]
+    | just(vertex) -> []
+    | nothing() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)]
     end;
   -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 }

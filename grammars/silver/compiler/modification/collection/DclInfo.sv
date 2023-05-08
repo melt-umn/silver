@@ -1,7 +1,9 @@
 grammar silver:compiler:modification:collection;
 
-attribute operation, attrBaseDefDispatcher, attrAppendDefDispatcher occurs on AttributeDclInfo;
+attribute isCollection, operation, attrBaseDefDispatcher, attrAppendDefDispatcher occurs on AttributeDclInfo;
 attribute operation, baseDefDispatcher, appendDefDispatcher occurs on ValueDclInfo;
+
+synthesized attribute isCollection::Boolean;
 
 synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location);
 synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location);
@@ -12,14 +14,11 @@ synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated! QNam
 aspect default production
 top::AttributeDclInfo ::=
 {
+  top.isCollection = false;
   top.operation = error("Internal compiler error: must be defined for all collection attribute declarations");
   
-  top.attrBaseDefDispatcher =
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
-  top.attrAppendDefDispatcher =
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+  top.attrBaseDefDispatcher = nonCollectionAttrBaseDefError;
+  top.attrAppendDefDispatcher = nonCollectionAttrAppendDefError;
 }
 
 aspect default production
@@ -44,13 +43,12 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
+  top.isCollection = true;
   top.operation = o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.attrDefDispatcher = 
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+  top.attrDefDispatcher = collectionAttrDefError;
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
@@ -69,13 +67,12 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
+  top.isCollection = true;
   top.operation = o;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
-  top.attrDefDispatcher =
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+  top.attrDefDispatcher = collectionAttrDefError;
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef(_, _, _, location=_);
@@ -104,6 +101,18 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   -- We shouldn't be forwarding here
   forwards to localDcl(fn,ty,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
 }
+
+global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
+    errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+
+global nonCollectionAttrAppendDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
+    errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+
+global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
+    errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
 
 
 -- Defs
