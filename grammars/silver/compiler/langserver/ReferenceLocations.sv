@@ -255,7 +255,7 @@ map:Map<String (Location, Decorated RootSpec, a)> ::=
     rs));
 }
 
--- Create a map from a reference's full name to its path & location
+-- Create a map from a reference's unique id to its path & location
 function buildAllRefs
 annotation sourceGrammar occurs on a,
 annotation sourceLocation occurs on a,
@@ -263,20 +263,28 @@ attribute fullName {} occurs on a =>
 map:Map<String (String, Location)> ::= accessor::([(Location, a)] ::= Decorated RootSpec) rs::[Decorated RootSpec]
 {
   local grammarMap :: map:Map<String String> =
-    directBuildTree(map(\ r::Decorated RootSpec ->
-    (r.declaredName, r.grammarSource),
-    rs));
+    directBuildTree(map(\ r::Decorated RootSpec -> (r.declaredName, r.grammarSource), rs));
 
   return directBuildTree(flatMap(\ r::Decorated RootSpec ->
     (flatMap(\item::(Location, a) -> 
-      [(item.2.fullName, r.grammarSource ++ item.1.filename, item.1)] ++
+      [(makeRefId(item.2), r.grammarSource ++ item.1.filename, item.1)] ++
       -- Include source location & file of reference dcl
       (map(\grammarPath::String -> 
-          (item.2.fullName, grammarPath ++ item.2.sourceLocation.filename, item.2.sourceLocation), 
+          (makeRefId(item.2), grammarPath ++ item.2.sourceLocation.filename, item.2.sourceLocation), 
           map:lookup(item.2.sourceGrammar, grammarMap))),
       accessor(r))), 
     rs));  
+}
 
+-- Compute a unique identifier for a decl including its sourceGrammar and sourceLocation,
+-- since fullName might not be globally unique.
+function makeRefId
+annotation sourceGrammar occurs on a,
+annotation sourceLocation occurs on a,
+attribute fullName {} occurs on a =>
+String ::= dcl::a
+{
+  return s"${dcl.fullName}@${dcl.sourceGrammar}@${dcl.sourceLocation.unparse}";
 }
 
 attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on InterfaceItems, InterfaceItem;
@@ -344,14 +352,16 @@ function findDeclLocation
 -- Looks up all references to symbol at the given location
 -- Returns a list of all reference locations
 -- Input is filename, line & col number, & decl map to resolve the symbol
--- Uses refs map to lookup the reference paths & locations from the symbol fullName  
+-- Uses refs map to lookup the reference paths & locations from the symbol unique id  
 function lookupReferenceLocations
+annotation sourceGrammar occurs on a,
+annotation sourceLocation occurs on a,
 attribute fullName {} occurs on a =>
 [Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)>
 {
   return flatMap(\ item::(Decorated RootSpec, a) -> 
-    map( \loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
-      map:lookup(item.2.fullName, refs)), 
+    map(\ loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
+      map:lookup(makeRefId(item.2), refs)), 
     lookupPos(line, col, map:lookup(fileName, decls)));
 }
 
