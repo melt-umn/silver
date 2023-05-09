@@ -6,7 +6,7 @@ monoid attribute attributeRefLocs::[(Location, AttributeDclInfo)];
 
 attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on
   RootSpec, Grammar, Root, NameList, AGDcls, AGDcl,
-  ProductionSignature, FunctionSignature, AspectProductionSignature, AspectFunctionSignature,
+  ProductionSignature, FunctionSignature, AspectProductionSignature, AspectFunctionSignature, AspectDefaultProductionSignature,
   ConstraintList, Constraint, ProductionLHS, FunctionLHS, AspectProductionLHS, AspectFunctionLHS,
   ProductionRHS, AspectRHS, ProductionRHSElem, AspectRHSElem,
   TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs,
@@ -17,7 +17,7 @@ attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on
 
 propagate valueRefLocs, typeRefLocs, attributeRefLocs on
   RootSpec, Grammar, Root, NameList, AGDcls, AGDcl,
-  ProductionSignature, FunctionSignature, AspectProductionSignature, AspectFunctionSignature,
+  ProductionSignature, FunctionSignature, AspectProductionSignature, AspectFunctionSignature, AspectDefaultProductionSignature,
   ConstraintList, Constraint, ProductionLHS, FunctionLHS, AspectProductionLHS, AspectFunctionLHS,
   ProductionRHS, AspectRHS, ProductionRHSElem, AspectRHSElem,
   TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs,
@@ -177,8 +177,7 @@ aspect valueRefLocs on top::ProductionLHS using <- of
 end;
 
 aspect valueRefLocs on top::AspectProductionLHS using <- of
-| aspectProductionLHSTyped(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
-| aspectProductionLHSId(id) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectProductionLHSFull(id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionLHS using <- of
@@ -189,8 +188,6 @@ aspect typeRefLocs on AspectProductionLHS using <- of
 | aspectProductionLHSTyped(_, _, t) -> t.typeRefLocs
 end;
 
-attribute typeRefLocs occurs on AspectDefaultProductionSignature;
-propagate typeRefLocs on AspectDefaultProductionSignature;
 aspect typeRefLocs on top::AspectDefaultProductionSignature using <- of
 | aspectDefaultProductionSignature(_,_,t,_) -> t.typeRefLocs
 end;
@@ -201,7 +198,7 @@ aspect valueRefLocs on top::ProductionRHSElem using <- of
 end;
 
 aspect valueRefLocs on top::AspectRHSElem using <- of
-| aspectRHSElemTyped(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectRHSElemFull(id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionRHSElem using <- of
@@ -236,7 +233,7 @@ top::Compilation ::= g::Grammars r::Grammars _ _
 function buildFileRefs
 annotation sourceLocation occurs on a,
 annotation sourceGrammar occurs on a =>
-  map:Map<String (Location, Decorated RootSpec, a)> ::= 
+map:Map<String (Location, Decorated RootSpec, a)> ::= 
   accessor::([(Location, a)] ::= Decorated RootSpec)  
   accessList::([EnvItem<a>] ::= Def)
   rs::[Decorated RootSpec]
@@ -354,7 +351,7 @@ attribute fullName {} occurs on a =>
 {
   return flatMap(\ item::(Decorated RootSpec, a) -> 
     map( \loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
-    map:lookup(item.2.fullName, refs)), 
+      map:lookup(item.2.fullName, refs)), 
     lookupPos(line, col, map:lookup(fileName, decls)));
 }
 
