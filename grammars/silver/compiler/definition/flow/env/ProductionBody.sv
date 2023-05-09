@@ -215,7 +215,14 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   e.alwaysDecorated = false;
 }
 
-
+aspect production baseCollectionValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  -- We actually don't want reference site flow projections in e,
+  -- since we don't actually know the entire tree in which it is decorated.
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
