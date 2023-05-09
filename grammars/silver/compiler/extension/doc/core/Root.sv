@@ -49,6 +49,11 @@ monoid attribute docErrors :: [Message];
 attribute docErrors occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 propagate docErrors on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
+@{-
+ - All file names in a grammar, paired with their documentation-related error messages.
+ -}
+synthesized attribute allFileDocErrors::[(String, [Message])] occurs on Grammar;
+
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
@@ -61,7 +66,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
   ags.downDocConfig = filter((\x::DocConfigSetting -> x.fileScope), ags.upDocConfig) ++ top.downDocConfig;
   ags.docEnv = tm:add(flatMap((.docDcls), searchEnvTree(top.grammarName, top.compiledGrammars)), tm:empty());
-  top.errors <- ags.docErrors;
 }
 
 aspect production nilAGDcls
@@ -109,6 +113,7 @@ top::Grammar ::=
   top.docDcls := [];
   top.undocumentedNamed = [];
   top.documentedNamed = [];
+  top.allFileDocErrors = [];
 }
 
 aspect production consGrammar
@@ -121,6 +126,7 @@ top::Grammar ::= c1::Root  c2::Grammar
   top.docDcls := c1.docDcls ++ c2.docDcls;
   top.undocumentedNamed = c1.undocumentedNamed ++ c2.undocumentedNamed;
   top.documentedNamed = c1.documentedNamed ++ c2.documentedNamed;
+  top.allFileDocErrors = (c1.location.filename, c1.docErrors) :: c2.allFileDocErrors;
 }
 
 -- consGrammar(FILE1, consGrammar(FILE2, nilGrammar()))

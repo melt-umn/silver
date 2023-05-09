@@ -129,9 +129,17 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.declaredName = g.declaredName;
   top.moduleNames := nub(g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
   top.allGrammarDependencies := actualDependencies;
-  top.grammarErrors = g.grammarErrors;
+
+  top.grammarErrors = filter(\ fe::(String, [Message]) -> !null(fe.2), top.allFileErrors);
   top.parsingErrors = [];
-  top.allFileErrors = g.allFileErrors;
+
+  production attribute extraFileErrors::[(String, [Message])] with ++;
+  extraFileErrors := [];
+  top.allFileErrors = map(
+    \ fe::(String, [Message]) -> case fe of (fileName, fileErrors) ->
+      (fileName, fileErrors ++ concat(lookupAll(fileName, extraFileErrors)))
+    end,
+    g.allFileErrors);
 
   top.jarName := g.jarName;
 }

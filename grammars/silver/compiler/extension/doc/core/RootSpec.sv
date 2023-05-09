@@ -24,6 +24,7 @@ top::RootSpec ::= g::Grammar  _ _ _ _ _
 {
   top.genFiles := toSplitFiles(g, g.upDocConfig, [], []);
   top.docDcls := g.docDcls;
+  extraFileErrors <- g.allFileDocErrors;
 
   g.downDocConfig = g.upDocConfig;
 }
