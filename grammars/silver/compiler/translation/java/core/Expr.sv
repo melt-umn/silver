@@ -71,22 +71,27 @@ top::Expr ::= q::Decorated! QName
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
-    if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-    then s"context.<${finalType(top).transType}>childAsIs(${childIDref})"
-    else if !finalType(top).isDecorated
-    -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
-    -- this is a potential source of minor inefficiency for functions that do not decorate.
-    then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
+    if !isDecorable(q.lookupValue.typeScheme.typerep, top.env) then
+      -- Reference to a primitive (not decorated or undecorated):
+      s"context.<${finalType(top).transType}>childAsIs(${childIDref})"
+    else if !finalType(top).isDecorated then
+      -- Undecorated reference to a nonterminal:
+      -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
+      -- this is a potential source of minor inefficiency for functions that do not decorate.
+      s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
     else
+      -- Decorated reference to a nonterminal:
       case lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv) of
       -- This is *not* a unique reference site, but there is one for this child,
       -- and here we might depend on some attributes supplied there.
       -- Instead of directly accessing the child, access it through the unique
-      -- reference's decoration site to ensure that all equations get supplied.
+      -- reference's decoration site to ensure that all equations get supplied:
       | [v] when !finalType(top).isUniqueDecorated -> refAccessTranslation(top.frame, top.env, v)
+      -- This is a unique reference, or there is no unique reference site for this child:
       | _ -> s"context.childDecorated(${childIDref})"
       end;
 
+  -- Mirrors the above, but with lazyness:
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
@@ -128,13 +133,15 @@ top::Expr ::= q::Decorated! QName
       end;
 }
 
--- Get the decorated tree corresponding to a decoration site's VertexType
+-- Get the decorated tree corresponding to a decoration site's VertexType.
+-- This is required when accessing a child that has a unique reference elsewhere,
+-- through which attributes might be supplied.
 function refAccessTranslation
 String ::= frame::BlockContext env::Decorated Env v::VertexType
 {
   return
     case v of
-    | lhsVertexType_real() -> "context"
+    | lhsVertexType_real() -> "context"  -- For completeness, but shouldn't ever happen?
     | rhsVertexType(sigName) -> s"context.childDecorated(${frame.className}.i_${sigName})"
     | localVertexType(fName) ->
       case getValueDcl(fName, env) of
@@ -152,7 +159,7 @@ String ::= frame::BlockContext env::Decorated Env v::VertexType
 {
   return
     case v of
-    | lhsVertexType_real() -> "context"
+    | lhsVertexType_real() -> "context"  -- For completeness, but shouldn't ever happen?
     | rhsVertexType(sigName) -> s"context.childDecoratedLazy(${frame.className}.i_${sigName})"
     | localVertexType(fName) ->
       case getValueDcl(fName, env) of

@@ -37,7 +37,8 @@ synthesized attribute flowVertexInfo :: Maybe<VertexType>;
 inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
 
 {--
- - Is this expression unconditionally decorated.  For example:
+ - Is this expression unconditionally decorated.
+ - Can be false when decSiteVertexInfo is just(...)! For example:
  -
  - local foo::Expr = if cond then @e else bar;
  - foo.env = top.env;
