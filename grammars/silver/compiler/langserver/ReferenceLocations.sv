@@ -246,11 +246,8 @@ map:Map<String (Location, Decorated RootSpec, a)> ::=
     -- instead of adding aspects for them in RefLocs
     flatMap(\def::Def ->
       map(\item::EnvItem<a> ->
-        (grammarToPath(item.dcl.sourceGrammar) ++ (item.dcl.sourceLocation.filename), 
-        item.dcl.sourceLocation, 
-        r,
-        item.dcl),
-      (accessList(def))),
+        (r.grammarSource ++ item.dcl.sourceLocation.filename, item.dcl.sourceLocation, r, item.dcl),
+        accessList(def)),
       r.defs),
     rs));
 }
