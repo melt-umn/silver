@@ -59,7 +59,20 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
 
-  forwards to mkStrFunctionInvocation(top.location, "silver:core:cons", [h, t]);
+  forwards to application(
+    baseExpr(
+      qName(top.location, "silver:core:cons"),
+      location=top.location), '(',
+    snocAppExprs(
+      snocAppExprs(
+        emptyAppExprs(location=top.location), ',',
+        presentAppExpr(@h, location=top.location),
+        location=top.location), ',',
+      presentAppExpr(@t, location=top.location),
+      location=top.location),
+    ',',
+    emptyAnnoAppExprs(location=top.location),
+    ')', location=top.location);
 }
 
 concrete production fullList
@@ -81,11 +94,11 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = mkStrFunctionInvocation(e.location, "silver:core:cons", [e, emptyList('[',']', location=top.location)]);
+  top.listtrans = consListOp(e, '::', emptyList('[',']', location=top.location), location=top.location);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = mkStrFunctionInvocation(e1.location, "silver:core:cons", [e1, e2.listtrans]);
+  top.listtrans = consListOp(e1, '::', e2.listtrans, location=top.location);
 }
