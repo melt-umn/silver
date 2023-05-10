@@ -100,6 +100,11 @@ aspect attributeRefLocs on Constraint using <- of
 | annoOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
 end;
 
+aspect valueRefLocs on top::ProductionStmt using <- of
+| localAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| productionAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+end;
+
 aspect valueRefLocs on ProductionStmt using := of
 | propagateOneAttr(_) -> []
 end;
