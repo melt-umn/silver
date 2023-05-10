@@ -129,10 +129,16 @@ end;
 
 aspect valueRefLocs on Expr using := of
 | access(q, _, _) -> q.valueRefLocs
+| attributeSection(_, _, _, _) -> []
 end;
 
 aspect attributeRefLocs on Expr using := of
 | access(_, _, a) -> a.attributeRefLocs
+| attributeSection(_, _, a, _) -> a.attributeRefLocs
+end;
+
+aspect typeRefLocs on Expr using := of
+| attributeSection(_, _, _, _) -> []
 end;
 
 aspect attributeRefLocs on AnnoExpr using <- of
