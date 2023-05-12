@@ -76,6 +76,10 @@ ag::AGDcl ::= kwd::'equalityTest'
   expected.isRoot = true;
   value.originRules = [];
   expected.originRules = [];
+  value.decSiteVertexInfo = nothing();
+  expected.decSiteVertexInfo = nothing();
+  value.alwaysDecorated = false;
+  expected.alwaysDecorated = false;
 
 {- Causes some circularities with the environment. TODO
   forwards to if !errCheck1.typeerror && !errCheck2.typeerror && !errCheck3.typeerror

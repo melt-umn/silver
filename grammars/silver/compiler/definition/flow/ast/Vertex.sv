@@ -101,3 +101,17 @@ top::FlowVertex ::= fName::String
 abstract production anonVertex
 top::FlowVertex ::= fName::String  attrName::String
 {}
+
+{--
+ - A vertex corresponding to a sub-terms of an expression with a known decoration site.
+ - e.g. 'local foo::Foo = bar(baz(@x));', we need a vertex for the attributes on baz(@x)
+ - for decoration site projections.
+ -
+ - @param parent  the decoration site of the enclosing term
+ - @param prodName  the full name of the applied production
+ - @param sigName  the name given to the corresponding child
+ - @param attrName  the full name of an attribute on this subterm, when decorated
+ -}
+abstract production subtermVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{}

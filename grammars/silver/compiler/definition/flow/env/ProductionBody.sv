@@ -6,6 +6,7 @@ import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
 import silver:compiler:driver:util only isExportedBy, RootSpec;
+import silver:compiler:translation:java:core only finalType;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
@@ -29,6 +30,13 @@ Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d
   return isExportedBy(prodgram, [ntgram, d.sourceGrammar], cg);
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' note::Expr ';'
+{
+  note.decSiteVertexInfo = nothing();
+  note.alwaysDecorated = false;
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
@@ -47,6 +55,9 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     implicitFwdAffects(top.frame.fullName, map((.attrOccurring),
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
         getAttrsOn(top.frame.lhsNtName, top.env))))];
+
+  e.decSiteVertexInfo = just(forwardVertexType);
+  e.alwaysDecorated = true;
 }
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
@@ -57,6 +68,20 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.frame.fullName, q.attrDcl.fullName, e.flowDeps)]
     end;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production attributeDef
@@ -84,6 +109,8 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
@@ -95,6 +122,15 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
     end;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+
+aspect production errorValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production localValueDef
@@ -108,6 +144,12 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));
+
+  e.decSiteVertexInfo =
+    if e.alwaysDecorated
+    then just(localVertexType(val.lookupValue.fullName))
+    else nothing();
+  e.alwaysDecorated = isDecorable(finalType(e), top.env);
 }
 
 -- FROM COLLECTIONS TODO
@@ -122,6 +164,8 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 
   top.flowDefs <-
     [extraEq(top.frame.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production inhAppendColAttributeDef
@@ -136,6 +180,8 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     end;
   top.flowDefs <-
     [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
@@ -152,6 +198,8 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
@@ -163,9 +211,18 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
     end;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
-
+aspect production baseCollectionValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  -- We actually don't want reference site flow projections in e,
+  -- since we don't actually know the entire tree in which it is decorated.
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
@@ -186,9 +243,53 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
     if mayAffectFlowType
     then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
--- TODO: Copper ProductionStmts
+-- TODO: flowDefs for Copper ProductionStmts
+aspect production pluckDef
+top::ProductionStmt ::= 'pluck' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production printStmt
+top::ProductionStmt ::= 'print' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production parserAttributeValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production pushTokenStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
+{
+  lexeme.decSiteVertexInfo = nothing();
+  lexeme.alwaysDecorated = false;
+}
+aspect production insertSemanticTokenStmt
+top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
+{
+  loc.decSiteVertexInfo = nothing();
+  loc.alwaysDecorated = false;
+}
+aspect production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  condition.decSiteVertexInfo = nothing();
+  condition.alwaysDecorated = false;
+}
+aspect production termAttrValueValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
 -- even if there are errors in the larger grammar, as remote errors in binding

@@ -1,6 +1,5 @@
 grammar silver:compiler:analysis:uniqueness;
 
-
 attribute uniqueRefs occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
 propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern
   excluding
@@ -20,17 +19,21 @@ aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local refSiteName::String = top.frame.fullName ++ ":" ++ q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs))]
+        [(top.frame.fullName ++ ":" ++ q.lookupValue.fullName,
+          uniqueRefSite(
+            sourceGrammar=top.grammarName,
+            sourceLocation=q.location,
+            refSet=inhs,
+            refFlowDeps=top.flowDeps
+          ))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(refSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -39,7 +42,7 @@ top::Expr ::= q::Decorated! QName
       && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
       then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       -- Check that there is at most one partial reference taken to this decoration site.
-      else if length(allUniqueRefs) > 1
+      else if length(lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)) > 1
       then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       else []
     | _ -> []
@@ -49,17 +52,21 @@ aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local refSiteName::String = q.lookupValue.fullName;
   top.uniqueRefs <-
     case finalTy, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [(refSiteName, uniqueRefSite(sourceGrammar=top.grammarName, sourceLocation=q.location, refSet=inhs))]
+        [(q.lookupValue.fullName,
+          uniqueRefSite(
+            sourceGrammar=top.grammarName,
+            sourceLocation=q.location,
+            refSet=inhs,
+            refFlowDeps=top.flowDeps
+          ))]
     | _, _ -> []
     end;
   top.accessUniqueRefs = [];
 
-  local allUniqueRefs::[UniqueRefSite] = getUniqueRefs(refSiteName, top.flowEnv);
   top.errors <-
     case finalTy of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
@@ -68,7 +75,7 @@ top::Expr ::= q::Decorated! QName
       && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
       then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       -- Check that there is at most one partial reference taken to this decoration site.
-      else if length(allUniqueRefs) > 1
+      else if length(lookupLocalUniqueRefs(q.lookupValue.fullName, top.flowEnv)) > 1
       then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
       else []
     | _ -> []
@@ -141,12 +148,13 @@ top::Expr ::= q::Decorated! QName
     top.typerep.freeVariables);
 }
 
-monoid attribute appExprUniquenessErrors::[Message] occurs on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 -- Whether nonterminal uniqueness is preserved for this argument position,
 -- i.e. this is an argument to a direct function or production application
 -- that will be copied upon undecoration.
 inherited attribute isNtUniquenessPreserving::Boolean occurs on AppExprs, AppExpr;
 propagate isNtUniquenessPreserving on AppExprs;
+
+monoid attribute appExprUniquenessErrors::[Message] occurs on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 propagate appExprUniquenessErrors on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 aspect production functionInvocation
@@ -235,7 +243,12 @@ top::Expr ::= q::Decorated! QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.uniqueRefs <-
     if finalTy.isUniqueDecorated
-    then [(q.name, uniqueRefSite(refSet=finalTy.inhSetMembers, sourceGrammar=top.grammarName, sourceLocation=top.location))]
+    then [(q.name, uniqueRefSite(
+        refSet=finalTy.inhSetMembers,
+        refFlowDeps=top.flowDeps,
+        sourceGrammar=top.grammarName,
+        sourceLocation=top.location
+      ))]
     else [];
   top.accessUniqueRefs = [];
 }
@@ -271,7 +284,12 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
   
   top.uniqueRefs <- map(
     \ r::(String, UniqueRefSite) ->
-      (r.1, uniqueRefSite(refSet=r.2.refSet, sourceGrammar=top.grammarName, sourceLocation=top.location)),
+      (r.1, uniqueRefSite(
+          refSet=r.2.refSet,
+          refFlowDeps=top.flowDeps,
+          sourceGrammar=top.grammarName,
+          sourceLocation=top.location
+        )),
     rs);
   top.accessUniqueRefs = [];
 }
@@ -282,14 +300,12 @@ top::Expr ::= la::AssignExpr  e::Expr
   -- Excluding refs from la, they flow up through the lexicalLocalReferences in e
   top.uniqueRefs := e.uniqueRefs;
 }
-
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.uniqueRefs := e.uniqueRefs ++ unionMutuallyExclusiveRefs(pr.uniqueRefs, f.uniqueRefs);
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
-
 aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern _ ps::PrimPatterns
 {

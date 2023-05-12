@@ -49,6 +49,8 @@ top::NameOrBOperator ::= e::Expr
   e.frame = bogusContext(myFlowGraph, sourceGrammar=top.grammarName);
   e.originRules = [];
   e.isRoot = false;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 concrete production plusplusOperator
@@ -259,6 +261,9 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   -- otherwise we don't specialize ntOrDecs in OUR e
   forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
   
+  -- TODO: We actually don't want reference site flow projections in e,
+  -- since we don't actually know the entire tree in which it is decorated.
+  -- This probably shouldn't be a forwarding production...
   forwards to localValueDef(val, e, location=top.location);
 }
 abstract production appendCollectionValueDef

@@ -47,7 +47,64 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
+
+-- Modifications
+aspect production synAppendColAttributeDef
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production inhAppendColAttributeDef
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production synBaseColAttributeDef
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production inhBaseColAttributeDef
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production appendCollectionValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production pluckDef
+top::ProductionStmt ::= 'pluck' e::Expr ';'
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production printStmt
+top::ProductionStmt ::= 'print' e::Expr ';'
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
 aspect production parserAttributeValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  top.errors <- uniqueContextErrors(e.uniqueRefs);
+}
+aspect production pushTokenStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
+{
+  top.errors <- uniqueContextErrors(lexeme.uniqueRefs);
+}
+aspect production insertSemanticTokenStmt
+top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
+{
+  top.errors <- uniqueContextErrors(loc.uniqueRefs);
+}
+aspect production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  top.errors <- uniqueContextErrors(condition.uniqueRefs);
+}
+aspect production termAttrValueValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);

@@ -46,21 +46,6 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 
 --------------------------------------------------------------------------------
 
-
-{--
- - This is a glorified lambda function, to help look for equations.
- - Literally, we're just checking for null here.
- -
- - @param f  The lookup function for the appropriate type of equation
- -           e.g. `lookupInh(prod, rhs, _, env)`
- - @param attr  The attribute to look up.
- -}
-function isEquationMissing
-Boolean ::= f::([FlowDef] ::= String)  attr::String
-{
-  return null(f(attr));
-}
-
 {--
  - Given a name of a child, return whether it has a normal decorated nonterminal
  - type (covered by the more specific checks on accesses from references) or a
@@ -136,6 +121,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
+           || !null(lookupRefDecSite(prodName, sigName, flowEnv))
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -150,6 +136,7 @@ function checkEqDeps
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
            || localAttrViaReference(fName, attrName, realEnv)
+           || !null(lookupLocalRefDecSite(fName, flowEnv))
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -170,6 +157,12 @@ function checkEqDeps
               then [mwdaWrn(config, anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".")]
               else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
            end
+      else []
+  | subtermVertex(parent, termProdName, sigName, attrName) ->
+      if isInherited(attrName, realEnv)
+      then if !null(lookupInh(termProdName, sigName, attrName, flowEnv))
+           then []
+           else [mwdaWrn(config, l, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
       else []
   end;
 }
@@ -270,6 +263,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+
   -- problem = lhsinh deps - fwd flow type - this inh attribute
   local lhsInhExceedsForwardFlowType :: [String] = 
     set:toList(
@@ -279,12 +273,77 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
           lhsInhDeps,
           inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
+  local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
+    map(\ deps::[FlowVertex] -> onlyLhsInh(expandGraph(deps, top.frame.flowGraph)), dl.refDecSiteInhDeps);
+
+  -- problem = lhsinh deps - inh deps on dec site
+  local lhsInhExceedsRefDecSiteDeps :: [String] =
+    case refDecSiteInhDepsLhsInh of
+      -- A unique reference is taken that doesn't include this attribute,
+      -- make sure we aren't introducing any hidden transitive dependencies.
+    | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
+    | _ -> []
+    end;
+
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
-         if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
-         else [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
+  top.errors <-
+    if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
+    then [mwdaWrn(top.config, top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+    else [];
+  top.errors <-
+    case dl.lhsUniqueRefs of
+    | u :: _ when top.config.warnMissingInh && !null(lhsInhExceedsRefDecSiteDeps) ->
+      [mwdaWrn(top.config, top.location,
+        s"Inherited override equation may exceed a flow type with hidden transitive dependencies on ${implode(", ", lhsInhExceedsRefDecSiteDeps)}; " ++
+        s"${attr.attrDcl.fullName} on the reference taken at ${u.sourceGrammar}:${u.sourceLocation.unparse} may be expected to depend only on ${implode(", ", set:toList(refDecSiteInhDepsLhsInh.fromJust))}")]
+    | _ -> []
+    end;
+}
+
+-- All unique references to the LHS's decoration site
+synthesized attribute lhsUniqueRefs::[UniqueRefSite] occurs on DefLHS;
+
+-- Minimum flow deps of this inherited attribute on any unique references to this decoration site
+synthesized attribute refDecSiteInhDeps::Maybe<[FlowVertex]> occurs on DefLHS;
+
+flowtype DefLHS = lhsUniqueRefs {frame, env, flowEnv}, refDecSiteInhDeps {frame, env, flowEnv, defLHSattr};
+
+aspect default production
+top::DefLHS ::=
+{
+  top.lhsUniqueRefs = [];
+  top.refDecSiteInhDeps = nothing();
+}
+aspect production childDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.lhsUniqueRefs = lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
+  top.refDecSiteInhDeps =
+    case top.lhsUniqueRefs of
+    | u :: _ when !contains(top.defLHSattr.attrDcl.fullName, u.refSet) -> just(
+        u.refFlowDeps ++
+        map(
+          \ v::VertexType -> v.inhVertex(top.defLHSattr.attrDcl.fullName),
+          lookupRefPossibleDecSites(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)))
+    | _ -> nothing()
+    end;
+}
+aspect production localDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.lhsUniqueRefs = lookupLocalUniqueRefs(q.lookupValue.fullName, top.flowEnv);
+  top.refDecSiteInhDeps =
+    case top.lhsUniqueRefs of
+    | u :: _ when !contains(top.defLHSattr.attrDcl.fullName, u.refSet) -> just(
+        u.refFlowDeps ++
+        map(
+          \ v::VertexType -> v.inhVertex(top.defLHSattr.attrDcl.fullName),
+          lookupLocalRefPossibleDecSites(q.lookupValue.fullName, top.flowEnv)))
+    | _ -> nothing()
+    end;
 }
 
 ----- WARNING TODO BEGIN MASSIVE COPY & PASTE SESSION
@@ -631,7 +690,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     then
       case e of
       | childReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
+          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
+             null(lookupRefDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
           then
             let inhs :: [String] =
                   filter(
@@ -645,7 +705,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
             end
           else []
       | localReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
+          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
+             null(lookupLocalRefDecSite(lq.lookupValue.fullName, top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
           then
             let inhs :: [String] = 
                   filter(

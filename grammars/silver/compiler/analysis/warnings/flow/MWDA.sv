@@ -19,20 +19,14 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 
+-- uniqueness analysis
+imports silver:compiler:analysis:uniqueness;
+
 -- the modifications we need to be aware of
 imports silver:compiler:modification:collection;
 imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
-
-function isOccursSynthesized
-Boolean ::= occs::OccursDclInfo  e::Decorated Env
-{
-  return case getAttrDcl(occs.attrOccurring, e) of
-  | at :: _ -> at.isSynthesized
-  | _ -> false
-  end;
-}
 
 -- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
 -- The real fix is for our vertexes to remember whether they are syn/inh.

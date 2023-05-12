@@ -1,19 +1,23 @@
 grammar silver:compiler:analysis:uniqueness;
 
+-- Unique references taken in this tree
 monoid attribute uniqueRefs::[(String, UniqueRefSite)];
 
 {--
- - Rerpesents taking of a unique reference to a child or local/production attribute.
+ - Represents taking of a unique reference to a child or local/production attribute.
  - Since taking a unique reference means that inherited equations
  - on the decoration site for attributes not in the reference set are forbidden,
  - this info tracks what decoration sites have partial references taken.
  -}
-nonterminal UniqueRefSite with refSet,
+nonterminal UniqueRefSite with refSet, refFlowDeps,
   sourceGrammar,  -- The grammar of where the reference was taken
   sourceLocation; -- The location of where the reference was taken
 
 -- The attributes in the type of the taken reference
 annotation refSet::[String];
+
+-- The flow dependencies of taking this reference
+annotation refFlowDeps::[FlowVertex];
 
 abstract production uniqueRefSite
 top::UniqueRefSite ::=

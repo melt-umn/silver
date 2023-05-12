@@ -964,6 +964,11 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, originRules;
+flowtype AppExprs =
+  decorate {
+    config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied, originRules,
+    downSubst, finalSubst, flowEnv
+  };
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,

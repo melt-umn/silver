@@ -36,8 +36,6 @@ top::Expr ::= params::ProductionRHS e::Expr
 
   propagate downSubst, upSubst, finalSubst;
   
-  propagate flowDeps, flowDefs, flowEnv;
-  
   params.env = newScopeEnv(sigDefs, top.env);
   params.givenLambdaParamIndex = 0;
   params.givenLambdaId = genInt();
@@ -87,7 +85,4 @@ top::Expr ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 
   propagate downSubst, upSubst;
-  
-  -- TODO?
-  propagate flowDeps, flowDefs;
 }
