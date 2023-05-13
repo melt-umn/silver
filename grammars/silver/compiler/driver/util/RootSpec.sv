@@ -136,7 +136,9 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   production attribute extraFileErrors::[(String, [Message])] with ++;
   extraFileErrors := [];
   top.allFileErrors = map(
-    \ fe::(String, [Message]) -> (fe.1, fe.2 ++ concat(lookupAll(fe.1, extraFileErrors))),
+    \ fe::(String, [Message]) -> case fe of (fileName, fileErrors) ->
+      (fileName, fileErrors ++ concat(lookupAll(fileName, extraFileErrors)))
+    end,
     g.allFileErrors);
 
   top.jarName := g.jarName;
