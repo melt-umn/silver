@@ -17,7 +17,7 @@ concrete production attributeSection
 top::Expr ::= '(' '.' q::QNameAttrOccur ')'
 {
   top.unparse = s"(.${q.unparse})";
-  propagate freeVars, env;
+  propagate freeVars, env, grammarName;
 ```
 
 In constructing the forward we need to know on what type the attribute will be accessed.
@@ -54,6 +54,8 @@ Determine the actual final input and output types that were computed elsewhere d
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   local inputTy::Type = head(finalTy.inputTypes);
   local outputTy::Type = finalTy.outputType;
+
+  q.attrFor = inputTy;
 ```
 
 The inferred output type must be unambiguous: otherwise it is possible that a consumer of this

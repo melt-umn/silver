@@ -130,7 +130,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
-  top.defs := [lhsDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.defs := [lhsDef(top.grammarName, id.location, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1
@@ -167,7 +167,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
-  top.defs := [childDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.defs := [childDef(top.grammarName, id.location, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1 

@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -39,6 +40,7 @@ import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameFilesParams;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensParams;
@@ -71,6 +73,7 @@ import silver.compiler.driver.util.NBuildEnv;
 import silver.compiler.driver.util.PbuildEnv;
 import silver.compiler.driver.util.PwriteInterface;
 import silver.compiler.langserver.PfindDeclLocation;
+import silver.compiler.langserver.PfindReferences;
 import silver.core.NLocation;
 import silver.core.NPair;
 import silver.core.PunsafeEvalIO;
@@ -222,6 +225,28 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
                 .map((loc) -> new Location("file://" + Util.locationToFile(loc), Util.locationToRange(loc)))
                 .collect(Collectors.toList()));
         });
+    }
+
+    @Override
+    public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            if (comp == null) {
+                return List.of();
+            }
+
+            String fileName = "";
+            try {
+                fileName = new URI(params.getTextDocument().getUri()).getPath();
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            return new ConsCellCollection<NLocation>(
+                PfindReferences.invoke(OriginContext.FFI_CONTEXT,
+                    new StringCatter(fileName), params.getPosition().getLine() + 1, params.getPosition().getCharacter(), comp))
+                .stream()
+                .map((loc) -> new Location("file://" + Util.locationToFile(loc), Util.locationToRange(loc)))
+                .collect(Collectors.toList());
+          });
     }
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {

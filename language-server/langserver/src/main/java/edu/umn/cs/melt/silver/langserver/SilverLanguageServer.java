@@ -132,6 +132,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
             "silver.clean"
         )));
         capabilities.setDeclarationProvider(true);
+        capabilities.setReferencesProvider(true);
 
         FileOperationOptions fileOperationOptions = new FileOperationOptions(
             List.of(new FileOperationFilter(new FileOperationPattern("**/*.{sv,ag,sv.md,ag.md}")))
