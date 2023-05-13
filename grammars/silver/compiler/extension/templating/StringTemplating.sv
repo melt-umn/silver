@@ -36,21 +36,14 @@ production stringAppendCall
 top::Expr ::= a::Expr b::Expr
 {
   top.unparse = s"${a.unparse} ++ ${b.unparse}";
-  propagate grammarName, config, compiledGrammars, frame, env, flowEnv, finalSubst, originRules, freeVars;
 
-  -- TODO: We really need eagerness analysis in Silver.
+  -- TODO: We really need strictness analysis in Silver.
   -- Otherwise the translation for a large string template block contains
   -- new common.Thunk<Object>(new common.Thunk.Evaluable() { public final Object eval() { return ((common.StringCatter)silver.core.PstringAppend.invoke(${a.translation}, ${b.translation}); } })
   -- a ridiculous number of times, when it can just be translated as:
   top.translation = s"new common.StringCatter(${a.translation}, ${b.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-  
-  -- TODO: Avoid directly decorating a and b when we have decoration site flow projections
-  thread downSubst, upSubst on top, a, b, forward;
 
-  a.isRoot = false;
-  b.isRoot = false;
-  
   forwards to application(
     baseExpr(
       qName(top.location, "silver:core:stringAppend"),

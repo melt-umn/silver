@@ -130,6 +130,8 @@ end;
 aspect valueRefLocs on Expr using := of
 | access(q, _, _) -> q.valueRefLocs
 | attributeSection(_, _, _, _) -> []
+| consListOp(h, _, t) -> h.valueRefLocs ++ t.valueRefLocs
+| emptyList(_, _) -> []
 end;
 
 aspect attributeRefLocs on Expr using := of
