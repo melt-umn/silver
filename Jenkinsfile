@@ -89,6 +89,20 @@ melt.trynode('silver') {
     melt.archiveCommitArtifacts("jars/*.jar")
   }
 
+  stage("Language server") {
+    dir ("${WS}/runtime/lsp4j") {
+      sh "mvn clean"
+    }
+    dir ("${WS}/language-server") {
+      sh "mvn clean"
+      sh "./build.sh"
+    }
+    dir ("${WS}/support/vs-code/silverlsp") {
+      sh "npm install --dev"
+      sh "vsce package"
+    }
+  }
+
   stage("Modular Analyses") {
     sh "./self-compile --clean --mwda --dont-translate"
   }
