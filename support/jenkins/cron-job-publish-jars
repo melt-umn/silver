@@ -30,6 +30,7 @@ newgrp cs-melt << EOF
   umask 002
   cp -u --remove-destination $JENKINS_DUMP/*.jar $WEB_STORE/jars
   cp -u --remove-destination $JENKINS_DUMP/silver-latest.tar.gz $WEB_STORE
+  cp -u --remove-destination $JENKINS_DUMP/silverlsp-latest.vsix $WEB_STORE
 EOF
 
 echo "Success"
