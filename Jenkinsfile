@@ -81,12 +81,28 @@ melt.trynode('silver') {
     sh "./deep-clean -delete"
     // Generate docs
     sh "./make-docs"
-    // Package
-    sh "rm -rf silver-latest* || true" // Robustness to past failures
-    sh "./make-dist latest"
     // Upon succeeding at initial build, archive for future builds
     archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
     melt.archiveCommitArtifacts("jars/*.jar")
+  }
+
+  stage("Language server") {
+    dir ("${WS}/runtime/lsp4j") {
+      sh "mvn clean"
+    }
+    dir ("${WS}/language-server") {
+      sh "mvn clean"
+      sh "./build.sh"
+    }
+    dir ("${WS}/support/vs-code/silverlsp") {
+      sh "npm install --dev"
+      sh "node_modules/@vscode/vsce/vsce package -o silverlsp-latest.vsix"
+    }
+  }
+
+  stage("Package") {
+    sh "rm -rf silver-latest* || true" // Robustness to past failures
+    sh "./make-dist latest"
   }
 
   stage("Modular Analyses") {
@@ -153,6 +169,7 @@ melt.trynode('silver') {
 
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
+      sh "cp support/vs-code/silverlsp/silverlsp-latest.vsix ${melt.ARTIFACTS}/"
 
       build "/melt-umn/melt-website/master"
     }
