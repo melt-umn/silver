@@ -99,7 +99,7 @@ melt.trynode('silver') {
     }
     dir ("${WS}/support/vs-code/silverlsp") {
       sh "npm install --dev"
-      sh "vsce package"
+      sh "node_modules/@vscode/vsce/vsce package"
     }
   }
 
