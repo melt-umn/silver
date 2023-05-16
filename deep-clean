@@ -32,6 +32,7 @@ find "silver.testing.bin.jar" $1
 find ./runtime/lsp4j/target $1
 find ./language-server/langserver/target $1
 find ./language-server/launcher/target $1
+find ./support/vs-code/silverlsp/out $1
 
 if [ "$2" == "all" ]; then
   rm -rf generated/src/* generated/bin/* runtime/java/bin/* generated/doc/*

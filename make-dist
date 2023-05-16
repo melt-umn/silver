@@ -32,6 +32,7 @@ tar -zcvf $SV.tar.gz \
  $SV/support/vim \
  $SV/support/gedit \
  $SV/support/nailgun \
+ $SV/support/vs-code/*.vsix \
  $SV/tutorials/ \
  $SV/grammars/silver/core/ \
  $SV/grammars/silver/xml/ \
