@@ -132,6 +132,7 @@ aspect valueRefLocs on Expr using := of
 | attributeSection(_, _, _, _) -> []
 | consListOp(h, _, t) -> h.valueRefLocs ++ t.valueRefLocs
 | emptyList(_, _) -> []
+| stringAppendCall(a, b) -> a.valueRefLocs ++ b.valueRefLocs
 end;
 
 aspect attributeRefLocs on Expr using := of
