@@ -1,5 +1,7 @@
 grammar silver:compiler:translation:java:core;
 
+import silver:compiler:definition:flow:ast;
+
 {--
  - The java translation of the *input parameters* signature.
  -}
@@ -322,6 +324,33 @@ function makeChildAccessCaseLazy
 String ::= n::NamedSignatureElement
 {
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
+}
+function makeChildDecSiteAccessCase
+String ::= env::Decorated Env flowEnv::FlowEnv prodName::String n::NamedSignatureElement
+{
+  return
+    case lookupRefDecSite(prodName, n.elementName, flowEnv) of
+    | [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, v)};\n"
+    | _ -> ""
+    end;
+}
+function refAccessTranslation
+String ::= env::Decorated Env flowEnv::FlowEnv v::VertexType
+{
+  return
+    case v of
+    | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
+    | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
+    | localVertexType(fName) ->
+      case getValueDcl(fName, env) of
+      | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
+      | [] -> error("Couldn't find decl for local " ++ fName)
+      end
+    | forwardVertexType_real() -> s"context.forward()"
+    | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
+    | subtermVertexType(parent, prodName, sigName) ->
+      s"${refAccessTranslation(env, flowEnv, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+    end;
 }
 
 function makeAnnoAssign

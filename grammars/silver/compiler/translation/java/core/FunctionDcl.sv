@@ -24,7 +24,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 """;
 
   top.genFiles :=
-    [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
+    [pair(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" 
 	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
     else [];
@@ -53,7 +53,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 }
 
 function generateFunctionClassString
-String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
+String ::= env::Decorated Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
   local className :: String = "P" ++ whatName;
 
@@ -80,6 +80,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][];
 
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
+    public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
 ${whatSig.inhOccursIndexDecls}
@@ -117,6 +118,14 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 	}
 
 	@Override
+	public common.Lazy getChildDecSite(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecSiteAccessCase(env, flowEnv, whatSig.fullName, _), whatSig.inputElements))}
+            default: return null;
+        }
+    }
+
+	@Override
 	public final int getNumberOfChildren() {
 		return ${toString(length(whatSig.inputElements))};
 	}
@@ -136,6 +145,11 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
 	@Override
 	public common.Lazy getLocal(final int key) {
 		return localAttributes[key];
+	}
+
+	@Override
+	public common.Lazy getLocalDecSite(final int key) {
+		return localDecSites[key];
 	}
 
 	@Override

@@ -2,8 +2,6 @@ grammar silver:compiler:translation:java:core;
 
 
 import silver:compiler:analysis:typechecking:core only finalSubst;
-import silver:compiler:definition:flow:ast;
-
 import silver:compiler:driver only noOrigins;
 
 function finalType
@@ -80,14 +78,12 @@ top::Expr ::= q::Decorated! QName
       -- this is a potential source of minor inefficiency for functions that do not decorate.
       s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
     else
-      -- Decorated reference to a nonterminal:
       case lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv) of
-      -- This is *not* a unique reference site, but there is one for this child,
-      -- and here we might depend on some attributes supplied there.
-      -- Instead of directly accessing the child, access it through the unique
-      -- reference's decoration site to ensure that all equations get supplied:
-      | [v] when !finalType(top).isUniqueDecorated -> refAccessTranslation(top.frame, top.env, v)
-      -- This is a unique reference, or there is no unique reference site for this child:
+      -- Unique reference to a child that is a remote decoration site:
+      -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
+      | [v] when finalType(top).isUniqueDecorated -> s"context.createDecoratedChild(${childIDref})"
+      -- Normal decorated reference:
+      -- This may create the child, or demand it via the remote decoration site if the child has one.
       | _ -> s"context.childDecorated(${childIDref})"
       end;
 
@@ -100,7 +96,7 @@ top::Expr ::= q::Decorated! QName
     then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
     else
       case lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv) of
-      | [v] when !finalType(top).isUniqueDecorated -> refAccessLazyTranslation(top.frame, top.env, v)
+      | [v] when finalType(top).isUniqueDecorated -> wrapThunk(top.translation, true)
       | _ -> s"context.childDecoratedLazy(${childIDref})"
       end;
 }
@@ -115,7 +111,7 @@ top::Expr ::= q::Decorated! QName
     then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
     else
       case lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv) of
-      | [v] when !finalType(top).isUniqueDecorated -> refAccessTranslation(top.frame, top.env, v)
+      | [v] when !finalType(top).isUniqueDecorated -> s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
       | _ -> s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})"
       end;
   -- reminder: look at comments for childReference
@@ -127,51 +123,10 @@ top::Expr ::= q::Decorated! QName
     else if !finalType(top).isDecorated
     then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
     else
-      case lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv) of
-      | [v] when !finalType(top).isUniqueDecorated -> refAccessLazyTranslation(top.frame, top.env, v)
+      case lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv) of
+      | [v] when !finalType(top).isUniqueDecorated -> wrapThunk(top.translation, true)
       | _ -> s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
       end;
-}
-
--- Get the decorated tree corresponding to a decoration site's VertexType.
--- This is required when accessing a child that has a unique reference elsewhere,
--- through which attributes might be supplied.
-function refAccessTranslation
-String ::= frame::BlockContext env::Decorated Env v::VertexType
-{
-  return
-    case v of
-    | lhsVertexType_real() -> "context"  -- For completeness, but shouldn't ever happen?
-    | rhsVertexType(sigName) -> s"context.childDecorated(${frame.className}.i_${sigName})"
-    | localVertexType(fName) ->
-      case getValueDcl(fName, env) of
-      | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
-      | [] -> error("Couldn't decl for local " ++ fName)
-      end
-    | forwardVertexType_real() -> "context.forward()"
-    | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
-    | subtermVertexType(parent, prodName, sigName) ->
-      s"${refAccessTranslation(frame, env, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
-    end;
-}
-function refAccessLazyTranslation
-String ::= frame::BlockContext env::Decorated Env v::VertexType
-{
-  return
-    case v of
-    | lhsVertexType_real() -> "context"  -- For completeness, but shouldn't ever happen?
-    | rhsVertexType(sigName) -> s"context.childDecoratedLazy(${frame.className}.i_${sigName})"
-    | localVertexType(fName) ->
-      case getValueDcl(fName, env) of
-      | dcl :: _ -> s"context.localDecoratedLazy(${dcl.attrOccursIndex})"
-      | [] -> error("Couldn't decl for local " ++ fName)
-      end
-    -- this might evaluate the forward equation, so suspend it as a thunk
-    | forwardVertexType_real() -> wrapThunk("context.forward()", true)
-    | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
-    | subtermVertexType(parent, prodName, sigName) ->
-      wrapThunk(s"${refAccessTranslation(frame, env, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})", true)
-    end;
 }
 
 aspect production lhsReference

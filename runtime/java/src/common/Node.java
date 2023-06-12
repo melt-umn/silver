@@ -174,6 +174,15 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The child object, WITHOUT forcing the Thunk, if any.
 	 */
 	public abstract Object getChildLazy(final int child);
+
+	/**
+	 * Access the decorated form of this child through its reference decoration site, if it has one.
+	 * 
+	 * @param child A number in the range <code>0 - getNumberofChildren()</code>
+	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated child,
+	 * 	or null if it has no reference decoration site
+	 */
+	public abstract Lazy getChildDecSite(final int child);
 	
 	/**
 	 * @param key The child index to look up the inherited attributes.
@@ -201,6 +210,15 @@ public abstract class Node implements Decorable, Typed {
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getLocal(final int index);
+
+	/**
+	 * Access the decorated form of this local through its reference decoration site, if it has one.
+	 * 
+	 * @param child The index of a local or production attribute on this Node
+	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated child,
+	 * 	or null if it has no reference decoration site
+	 */
+	public abstract Lazy getLocalDecSite(final int index);
 
 	/**
 	 * @param key The index for a local, to retrieve inherited attributes for.

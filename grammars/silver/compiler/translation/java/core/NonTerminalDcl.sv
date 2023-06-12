@@ -146,8 +146,13 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 			return ref.getNode().getProdleton();
 		}
 
-		// Accessors only by DecoratedNode.
+		// Accessors used only by DecoratedNode.
 		// This should never happen.
+		@Override
+		public common.Lazy getChildDecSite(final int child) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
 		@Override
 		public common.Lazy[] getChildInheritedAttributes(final int index) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
@@ -165,6 +170,11 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 
 		@Override
 		public common.Lazy getLocal(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Lazy getLocalDecSite(final int index) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}
 

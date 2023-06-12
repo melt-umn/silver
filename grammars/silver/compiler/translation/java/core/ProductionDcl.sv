@@ -84,6 +84,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
+    public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
 ${namedSig.inhOccursIndexDecls}
@@ -134,6 +135,14 @@ ${implode("", map(makeChildAccessCase, namedSig.inputElements))}
     public Object getChildLazy(final int index) {
         switch(index) {
 ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
+            default: return null;
+        }
+    }
+
+	@Override
+	public common.Lazy getChildDecSite(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecSiteAccessCase(body.env, top.flowEnv, fName, _), namedSig.inputElements))}
             default: return null;
         }
     }
@@ -201,6 +210,11 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     @Override
     public common.Lazy getLocal(final int key) {
         return localAttributes[key];
+    }
+
+    @Override
+    public common.Lazy getLocalDecSite(final int key) {
+        return localDecSites[key];
     }
 
     @Override

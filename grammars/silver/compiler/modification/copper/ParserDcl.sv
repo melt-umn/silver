@@ -131,7 +131,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   -- do generate files for the lifted dcl. Needed to generate terminal class files.
   top.genFiles := m.genFiles ++
     [pair(className ++ ".java",
-          generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
+          generateFunctionClassString(top.env, top.flowEnv, top.grammarName, n.name, namedSig, parseResult))];
   
   local parseResult :: String =
     s"""return common.Util.callCopperParser(new ${packageName}.${parserName}(), c_stringToParse, c_filenameToReport);""";
