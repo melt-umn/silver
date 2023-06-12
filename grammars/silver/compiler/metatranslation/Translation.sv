@@ -76,8 +76,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   
   -- "Collection" antiquote productions
   -- Key: antiquote production name
-  -- Value: (nonterminal short name, cons production name, append production name)
-  production attribute collectionAntiquoteProductions::[(String, String, String, String)] with ++;
+  -- Value: (nonterminal short name, cons production name, nil production name, append production name)
+  production attribute collectionAntiquoteProductions::[(String, String, String, String, String)] with ++;
   collectionAntiquoteProductions := [];
   antiquoteTranslation <-
     do {
@@ -85,26 +85,34 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       antiquote::(String, AST, Decorated AST with {givenLocation}) <-
         case children of
         | consAST(
-            nonterminalAST(n, consAST(a, _), _),
-            consAST(rest, nilAST())) -> just((n, a, let decRest :: Decorated AST with {givenLocation} = rest in decRest end))  -- let is a workaround for type inference bug with case
+            nonterminalAST(p, consAST(a, _), _),
+            consAST(rest, nilAST())) ->
+          just((p, a, rest))
         | _ -> nothing()
         end;
-      -- (nonterminal short name, cons production name, append production name)
-      trans::(String, String, String) <-
+      -- (nonterminal short name, cons production name, nil production name, append production name)
+      trans::(String, String, String, String) <-
         lookup(antiquote.1, collectionAntiquoteProductions);
-      if prodName == trans.2 then just(unit()) else nothing(); -- require prodName == trans.2
-      return
+      guard(prodName == trans.2);
+      let antiquoteExpr::Expr =
         case reify(antiquote.2) of
-        | right(e) ->
-          mkStrFunctionInvocation(
-            givenLocation, trans.3, [e, antiquote.3.translation])
+        | right(e) -> e
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
+        end;
+      return
+        case antiquote.3 of
+        -- The next item in the list is the nil production, no need to insert an append.
+        | nonterminalAST(p, _, _) when p == trans.3 -> antiquoteExpr
+        -- There are more items that need to be appended to the antiquoted expression.
+        | _ ->
+          mkStrFunctionInvocation(
+            givenLocation, trans.4, [antiquoteExpr, antiquote.3.translation])
         end;
     };
   antiquoteTranslation <-
     do {
       -- (nonterminal short name, cons production name, append production name)
-      trans::(String, String, String) <-
+      trans::(String, String, String, String) <-
         lookup(prodName, collectionAntiquoteProductions);
       return
         errorExpr([err(givenLocation, s"$$${trans.1} may only occur as a member of ${trans.1}")], location=givenLocation);
