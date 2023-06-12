@@ -116,7 +116,7 @@ function checkEqDeps
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
-  -- Filter missing equations for RHS that are references.
+  -- Filter missing equations for RHS that are references or supplied through another decoration site.
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
@@ -130,7 +130,7 @@ function checkEqDeps
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   -- Ignore the FORWARD (a special case of LOCAL), which always has both SYN/INH.
-  -- And again ignore references.
+  -- And again ignore references and additional decoration sites.
   | localVertex(fName, attrName) -> 
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
@@ -160,7 +160,7 @@ function checkEqDeps
       else []
   | subtermVertex(parent, termProdName, sigName, attrName) ->
       if isInherited(attrName, realEnv)
-      then if !null(lookupInh(termProdName, sigName, attrName, flowEnv))
+      then if !remoteProdMissingInhEq(termProdName, sigName, attrName, flowEnv)
            then []
            else [mwdaWrn(config, l, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
       else []
@@ -827,7 +827,7 @@ top::VarBinder ::= n::Name
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
   local missingInhs :: [String] =
-    filter(remoteProdMissingEq(top.matchingAgainst.fromJust, top.bindingName, _, top.env, top.flowEnv),
+    filter(remoteProdMissingInhEq(top.matchingAgainst.fromJust.fullName, top.bindingName, _, top.flowEnv),
       removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs));
 
   top.errors <-
@@ -839,10 +839,51 @@ top::VarBinder ::= n::Name
     else [];
 }
 
-function remoteProdMissingEq
-Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::FlowEnv
+-- Is this there an equation for this inh attr on any decoration site for this child?
+function remoteProdMissingInhEq
+Boolean ::= prodName::String  sigName::String  attrName::String  flowEnv::FlowEnv
 {
-  return null(lookupInh(prod.fullName, sigName, attrName, flowEnv)); -- no equation
+  return !any(unzipWith(
+    vertexHasInhEq(_, _, attrName, flowEnv),
+    lookupAllDecSites(prodName, rhsVertexType(sigName), flowEnv)));
+}
+
+-- Find all decoration sites productions/vertices for this vertex
+function lookupAllDecSites
+[(String, VertexType)] ::= prodName::String  vt::VertexType  flowEnv::FlowEnv
+{
+  return
+    (prodName, vt) ::
+    case vt of
+    | lhsVertexType_real() -> []
+    | rhsVertexType(sigName) ->
+      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupRefDecSite(prodName, sigName, flowEnv))
+    | localVertexType(fName) ->
+      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalRefDecSite(fName, flowEnv))
+    | anonVertexType(fName) -> []
+    | forwardVertexType_real() -> []
+    | subtermVertexType(_, remoteProdName, sigName) ->
+      lookupAllDecSites(remoteProdName, rhsVertexType(sigName), flowEnv)
+    end;
+}
+
+function vertexHasInhEq
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv
+{
+  return
+    case vt of
+    | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
+    | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+    | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+    | subtermVertexType(_, remoteProdName, sigName) ->
+      vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
+    -- This is a tricky case since we don't know what decorated this prod.
+    -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
+    -- but here we are remotely looking for equations that might not be the direct dependency of
+    -- anything in the prod flow graph.
+    | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+    | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
+    end;
 }
 
 -- In places where we solve a synthesized attribute occurs-on context,

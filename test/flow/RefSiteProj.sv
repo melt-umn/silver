@@ -322,3 +322,25 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
+production projChain
+top::RSExpr ::= e::RSExpr
+{
+  local foo::RSExpr = @e;
+  forwards to copy1(@foo);
+}
+
+production projChain1Present
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = !null(e.env1);
+  forwards to projChain(@e);
+}
+
+warnCode "missing remote equation" {
+production projChain2Missing
+top::RSExpr ::= e::RSExpr
+{
+  top.errors2 = !null(e.env2);
+  forwards to projChain(@e);
+}
+}

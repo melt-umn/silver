@@ -423,6 +423,13 @@ function zipWith
          else f(head(l1), head(l2)) :: zipWith(f, tail(l1), tail(l2));
 }
 
+function unzipWith
+[c] ::= f::(c ::= a b)  l::[(a, b)]
+{
+  return if null(l) then []
+         else f(head(l).1, head(l).2) :: unzipWith(f, tail(l));
+}
+
 function reverse
 [a] ::= lst::[a]
 {
