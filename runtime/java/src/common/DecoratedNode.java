@@ -304,8 +304,9 @@ public class DecoratedNode implements Decorable, Typed {
 		if(childCreated[child]) {
 			throw new SilverInternalError("Decorated child created more than once!");
 		}
+		DecoratedNode result = ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
 		childCreated[child] = true;
-		return ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
+		return result;
 	}
 
 	/**
@@ -365,7 +366,7 @@ public class DecoratedNode implements Decorable, Typed {
 	public DecoratedNode localDecorated(final int attribute) {
 		Object o = this.localValues[attribute];
 		if(o == null) {
-			o = evalLocalDecorated(attribute);
+			o = obtainDecoratedLocal(attribute);
 			
 			assert(o != null);
 
@@ -398,10 +399,11 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	public final DecoratedNode evalLocalDecorated(final int attribute) {
 		if(localCreated[attribute]) {
-			throw new SilverInternalError("Decorated local created more than once!");
+			throw new SilverInternalError("Decorated local " + self.getNameOfLocalAttr(attribute) + " created more than once!");
 		}
+		DecoratedNode result = ((Decorable)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
 		localCreated[attribute] = true;
-		return ((Decorable)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
+		return result;
 	}
 
 	/**

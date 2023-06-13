@@ -111,7 +111,7 @@ top::Expr ::= q::Decorated! QName
     then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
     else
       case lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv) of
-      | [v] when !finalType(top).isUniqueDecorated -> s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
+      | [v] when finalType(top).isUniqueDecorated -> s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
       | _ -> s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})"
       end;
   -- reminder: look at comments for childReference
@@ -124,7 +124,7 @@ top::Expr ::= q::Decorated! QName
     then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
     else
       case lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv) of
-      | [v] when !finalType(top).isUniqueDecorated -> wrapThunk(top.translation, true)
+      | [v] when finalType(top).isUniqueDecorated -> wrapThunk(top.translation, true)
       | _ -> s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
       end;
 }
