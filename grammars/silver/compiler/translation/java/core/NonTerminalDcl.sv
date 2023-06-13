@@ -179,6 +179,11 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 
 		@Override
+		public boolean getLocalIsForward(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
 		public common.Lazy[] getLocalInheritedAttributes(final int index) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}

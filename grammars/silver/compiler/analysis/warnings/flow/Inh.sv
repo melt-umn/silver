@@ -135,6 +135,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
+           || isForwardProdAttr(fName, realEnv)
            || localAttrViaReference(fName, attrName, realEnv)
            || !null(lookupLocalRefDecSite(fName, flowEnv))
            then []

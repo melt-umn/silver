@@ -140,7 +140,9 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
   -- I think we should forbid that syntactically, later on...
   top.flowDefs <-
-    [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName, val.lookupValue.typeScheme.typerep.isNonterminal, e.flowDeps)];
+    [localEq(
+      top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName,
+      val.lookupValue.typeScheme.typerep.isNonterminal, val.lookupValue.found && val.lookupValue.dcl.hasForward, e.flowDeps)];
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));

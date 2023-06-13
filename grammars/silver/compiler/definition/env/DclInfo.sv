@@ -78,13 +78,14 @@ top::ValueDclInfo ::= fn::String ty::Type
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type isForward::Boolean
 {
   top.fullName = fn;
   
   top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.hasForward = isForward;
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), isForward, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
 top::ValueDclInfo ::= ty::Type

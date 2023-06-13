@@ -52,7 +52,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.defLHSDispatcher = lhsDefLHS(_, location=_);
 }
 aspect production localDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type _
 {
   top.refDispatcher = localReference(_, location=_);
   top.defDispatcher = localValueDef(_, _, location=_);

@@ -3,7 +3,7 @@ grammar silver:compiler:analysis:typechecking:core;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
-  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, undecoratesTo, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, undecoratesTo, returnDef, synthesizedAttributeDef, inheritedAttributeDef, forwardProductionAttributeDcl, localValueDef;
 propagate finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr excluding productionStmtAppend;
 
 {--
@@ -174,6 +174,22 @@ aspect production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   top.errors <- te.errorsKindStar;
+}
+
+aspect production forwardProductionAttributeDcl
+top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.errors <- te.errorsKindStar;
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, errCheck1, top;
+
+  errCheck1 = check(top.frame.signature.outputElement.typerep, te.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(top.location, "Forward production attribute " ++ a.name ++ " has type " ++ errCheck1.rightpp ++ " that does not match the production left side " ++ errCheck1.leftpp)]
+    else [];
 }
 
 aspect production localValueDef

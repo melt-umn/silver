@@ -155,7 +155,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   production attribute fName :: String;
   fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", top.location.filename)))}:${toString(top.location.line)}:${toString(top.location.column)}:${a.name}";
 
-  top.defs := [localDef(top.grammarName, a.location, fName, te.typerep)];
+  top.defs := [localDef(top.grammarName, a.location, fName, te.typerep, false)];
 
   top.errors <-
         if length(getValueDclInScope(a.name, top.env)) > 1 
@@ -175,7 +175,27 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
 
-  top.productionAttributes := [localDef(top.grammarName, a.location, fName, te.typerep)];
+  top.productionAttributes := [localDef(top.grammarName, a.location, fName, te.typerep, false)];
+
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1 
+        then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
+        else [];
+
+  top.errors <- if !top.frame.permitProductionAttributes
+                then [err(top.location, "Production attributes are not valid in this context.")]
+                else [];
+}
+
+concrete production forwardProductionAttributeDcl
+top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.unparse = "\tforward production attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
+
+  production attribute fName :: String;
+  fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
+
+  top.productionAttributes := [localDef(top.grammarName, a.location, fName, te.typerep, true)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1 

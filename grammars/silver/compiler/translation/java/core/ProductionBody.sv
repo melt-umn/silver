@@ -156,6 +156,28 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     end;
 }
 
+aspect production forwardProductionAttributeDcl
+top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  local attribute ugh_dcl_hack :: ValueDclInfo;
+  ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...
+  
+  top.valueWeaving := s"public static final int ${ugh_dcl_hack.attrOccursIndexName} = ${top.frame.prodLocalCountName}++;\n";
+
+  top.setupInh :=
+    s"\t\t//${top.unparse}\n" ++
+    s"\t\t${top.frame.className}.localIsForward[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n" ++ 
+    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
+    if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
+    then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
+    else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n";
+
+  top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
+
+  -- Decoration through a remote reference has no effect, since all inhs are supplied here via a forward parent
+  top.translation = "";
+}
+
 aspect production childDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
