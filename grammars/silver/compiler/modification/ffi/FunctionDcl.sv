@@ -9,26 +9,16 @@ concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {
   top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse ++ " foreign {\n" ++ ffidefs.unparse ++ "}";
-  propagate grammarName, flowEnv;
+  propagate grammarName;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
   top.errors <- ffidefs.errors;
 
-  -- Quick copy & paste to make signatures look right. Otherwise they contain errorTypes for
-  -- type parameters
-  production attribute sigDefs :: [Def] with ++;
-  sigDefs := ns.defs;
-  ns.signatureName = fName;
-  ns.env = newScopeEnv(sigDefs, top.env);
-  production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = nub(ns.lexicalTypeVariables);
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
-
-  -- TODO this is a BS use of forwarding and should be eliminated. body.env and .frame are all wrong locally...
+  -- TODO this is a BS use of forwarding and should be eliminated.
   
-  forwards to functionDcl($1, id, ns, body, location=top.location);
+  forwards to functionDcl($1, @id, @ns, @body, location=top.location);
 } action {
   insert semantic token IdFnProdDcl_t at id.location;
   sigNames = [];
