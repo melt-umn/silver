@@ -116,7 +116,14 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
-  top.translation = "";
+  top.translation = 
+    case lookupLocalRefDecSite(fName, top.flowEnv) of
+    | [v] ->
+        s"\t\t//${top.unparse}\n" ++
+        s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, v)};\n"
+    | _ -> ""
+    end;
 }
 
 aspect production productionAttributeDcl
@@ -139,7 +146,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
-  top.translation = "";
+  top.translation = 
+    case lookupLocalRefDecSite(fName, top.flowEnv) of
+    | [v] ->
+        s"\t\t//${top.unparse}\n" ++
+        s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, v)};\n"
+    | _ -> ""
+    end;
 }
 
 aspect production childDefLHS

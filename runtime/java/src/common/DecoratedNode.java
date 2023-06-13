@@ -2,6 +2,7 @@ package common;
 
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
+import common.exceptions.SilverInternalError;
 import common.exceptions.TraceException;
 
 /**
@@ -39,7 +40,7 @@ public class DecoratedNode implements Decorable, Typed {
 	protected final Node self;
 	/**
 	 * The node that forwards to this one. (May be null)
-	 * Not final, because we may set this when forwarding to a (unique) reference.
+	 * Not final, because we may set this when forwarding to a decorated tree via a unique reference.
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
@@ -95,6 +96,17 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	protected final Object[] localValues;
 
+	/**
+	 * Track whether a decorated child has already been created, for sanity checking.
+	 * This may be true when childrenValues[i] == null, because of how unique references are translated.
+	 */
+	protected final boolean[] childCreated;
+	/**
+	 * Track whether a decorated local has already been created, for sanity checking.
+	 * This may be true when localValues[i] == null, because of how unique references are translated.
+	 */
+	protected final boolean[] localCreated;
+
 	
 	/**
 	 * Construct a decorated form of a Node. Called only via Node.
@@ -128,6 +140,8 @@ public class DecoratedNode implements Decorable, Typed {
 		this.inheritedValues =   (ic > 0) ? new Object[ic] : null;
 		this.synthesizedValues = (sc > 0) ? new Object[sc] : null;
 		this.localValues =       (lc > 0) ? new Object[lc] : null;
+		this.childCreated =      (cc > 0) ? new boolean[cc] : null;
+		this.localCreated =      (lc > 0) ? new boolean[lc] : null;
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
@@ -154,6 +168,8 @@ public class DecoratedNode implements Decorable, Typed {
 		this.inheritedValues = null;
 		this.synthesizedValues = null;
 		this.localValues = (lc > 0) ? new Object[lc] : null;
+		this.childCreated = new boolean[cc];
+		this.localCreated = (lc > 0) ? new boolean[lc] : null;
 	}
 	
 	// STATS: Uncomment to enable statistics
@@ -252,7 +268,7 @@ public class DecoratedNode implements Decorable, Typed {
 	public DecoratedNode childDecorated(final int child) {
 		Object o = this.childrenValues[child]; 
 		if(o == null) {
-			o = createDecoratedChild(child);
+			o = obtainDecoratedChild(child);
 			
 			assert(o != null);
 
@@ -263,12 +279,34 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
-	 * Create the DecoratedNode for a child.
+	 * Create or retrieve the DecoratedNode for a child.
 	 * Separate function to keep {@link #childDecorated} small and inlineable.
 	 * This is, after all, the "slow path."
 	 */
-	private final DecoratedNode createDecoratedChild(final int child) {
-		return ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
+	private final DecoratedNode obtainDecoratedChild(final int child) { 
+		Lazy decSite = self.getChildDecSite(child);
+		if(decSite == null) {
+			return createDecoratedChild(child);
+		} else {
+			return (DecoratedNode)decSite.eval(this);
+		}
+	}
+
+	/**
+	 * Create the DecoratedNode for a child.
+	 * This can also be called directly in the translation of taking a unique reference.
+	 * Invariant: should never be called more than once for a child!
+	 * 
+	 * @param child The number of the child to create.
+	 * @return The decorated value of the child.
+	 */
+	public final DecoratedNode createDecoratedChild(final int child) {
+		if(childCreated[child]) {
+			throw new SilverInternalError("Decorated child created more than once!");
+		}
+		DecoratedNode result = ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
+		childCreated[child] = true;
+		return result;
 	}
 
 	/**
@@ -322,13 +360,13 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * <p>Warning: do not mix {@link #localAsIs} and {@link #localDecorated} on the same local attribute!
 	 * 
-	 * @param attribute The full name of the local to obtain.
+	 * @param attribute The index of the local to obtain.
 	 * @return The value of the local.
 	 */
 	public DecoratedNode localDecorated(final int attribute) {
 		Object o = this.localValues[attribute];
 		if(o == null) {
-			o = evalLocalDecorated(attribute);
+			o = obtainDecoratedLocal(attribute);
 			
 			assert(o != null);
 
@@ -338,12 +376,34 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		return (DecoratedNode)o;
 	}
-	
+
 	/**
 	 * Another case of keeping the slow paths out of here, so it can be inlined.
 	 */
-	private final DecoratedNode evalLocalDecorated(final int attribute) {
-		return ((Decorable)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
+	private final DecoratedNode obtainDecoratedLocal(final int attribute) { 
+		Lazy decSite = self.getLocalDecSite(attribute);
+		if(decSite == null) {
+			return evalLocalDecorated(attribute);
+		} else {
+			return (DecoratedNode)decSite.eval(this);
+		}
+	}
+
+	/**
+	 * Evaluate a local and decorate it.
+	 * This can also be called directly in the translation of taking a unique reference.
+	 * Invariant: should never be called more than once for a local!
+	 * 
+	 * @param attribute The index of the local to obtain.
+	 * @return The decorated value of the local.
+	 */
+	public final DecoratedNode evalLocalDecorated(final int attribute) {
+		if(localCreated[attribute]) {
+			throw new SilverInternalError("Decorated local " + self.getNameOfLocalAttr(attribute) + " created more than once!");
+		}
+		DecoratedNode result = ((Decorable)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
+		localCreated[attribute] = true;
+		return result;
 	}
 
 	/**
