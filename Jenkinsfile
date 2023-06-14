@@ -98,6 +98,8 @@ melt.trynode('silver') {
       sh "npm install --dev"
       sh "node_modules/@vscode/vsce/vsce package -o silverlsp-latest.vsix"
     }
+    archiveArtifacts(artifacts: "support/vs-code/silverlsp/*.vsix", fingerprint: true)
+    melt.archiveCommitArtifacts("support/vs-code/silverlsp/*.vsix")
   }
 
   stage("Package") {
