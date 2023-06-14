@@ -99,7 +99,7 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   
   -- TODO: attrOccursIndex
   -- We shouldn't be forwarding here
-  forwards to localDcl(fn,ty,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
+  forwards to localDcl(fn,ty,false,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
 }
 
 global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =

@@ -214,11 +214,17 @@ public abstract class Node implements Decorable, Typed {
 	/**
 	 * Access the decorated form of this local through its reference decoration site, if it has one.
 	 * 
-	 * @param child The index of a local or production attribute on this Node
+	 * @param index The index of a local or production attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated child,
 	 * 	or null if it has no reference decoration site
 	 */
 	public abstract Lazy getLocalDecSite(final int index);
+
+	/**
+	 * @param index The index of a local or production attribute on this Node
+	 * @return true if this is a forward production attribute.
+	 */
+	public abstract boolean getLocalIsForward(final int index);
 
 	/**
 	 * @param key The index for a local, to retrieve inherited attributes for.

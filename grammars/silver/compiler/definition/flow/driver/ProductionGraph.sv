@@ -179,7 +179,8 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
      else -- This first pair is used sometimes as an alias:
           pair(lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
-          addFwdInhEqs(prod, inhs, flowEnv));
+          addFwdInhEqs(prod, inhs, flowEnv)) ++
+    flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs));
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
@@ -395,6 +396,26 @@ function addFwdInhEqs
     addFwdInhEqs(prod, tail(inhs), flowEnv);
 }
 {--
+ - Introduces implicit 'fwrd.inh = lhs.inh' equations for forward production attributes.
+ - Inherited equations are never suspect.
+ -}
+function addFwdProdAttrInhEqs
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv
+{
+  return if null(inhs) then []
+  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [pair(localVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+    addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
+}
+function allFwdProdAttrs
+[String] ::= d::[FlowDef]
+{
+  return case d of
+  | [] -> []
+  | localEq(_, fN, _, true, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
+  | _ :: rest -> allFwdProdAttrs(rest)
+  end;
+}
+{--
  - Introduces default equations deps. Realistically, should be empty, always.
  -}
 function addDefEqs
@@ -421,7 +442,7 @@ function localStitchPoints
   -- We add the forward stitch point here, too!
   | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, true, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Add anon decoration sites that are nonterminal types
   | anonEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info

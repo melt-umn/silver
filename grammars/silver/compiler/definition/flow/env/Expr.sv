@@ -133,8 +133,12 @@ top::Expr ::= q::Decorated! QName
     then just(localVertexType(q.lookupValue.fullName))
     else nothing();
 
+  -- If this is a forward production attribute, then all inh attributes have an equation here.
+  local isForwardProdAttr::Boolean = q.lookupValue.found && q.lookupValue.dcl.hasForward;
+
   -- Inherited attributes on q's NT that aren't in the reference set and don't have an equation:
   local notSuppliedInhs::[String] =
+    if isForwardProdAttr then [] else
     filter(
       isEquationMissing(lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
@@ -143,7 +147,7 @@ top::Expr ::= q::Decorated! QName
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(decSite) when finalTy.isUniqueDecorated ->
+    | just(decSite) when finalTy.isUniqueDecorated && !isForwardProdAttr ->
       [localRefDecSiteEq(top.frame.fullName, q.lookupValue.fullName, top.alwaysDecorated, decSite, notSuppliedInhs)]
     | _ -> []
     end;

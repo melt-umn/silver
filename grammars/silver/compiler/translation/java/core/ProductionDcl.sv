@@ -85,6 +85,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
+    public static final boolean[] localIsForward = new boolean[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
 ${namedSig.inhOccursIndexDecls}
@@ -215,6 +216,11 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     @Override
     public common.Lazy getLocalDecSite(final int key) {
         return localDecSites[key];
+    }
+
+    @Override
+    public boolean getLocalIsForward(final int key) {
+        return localIsForward[key];
     }
 
     @Override

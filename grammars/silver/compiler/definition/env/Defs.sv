@@ -131,9 +131,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function localDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
+Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean
 {
-  return valueDef(defaultEnvItem(localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+  return valueDef(defaultEnvItem(localDcl(fn,ty,isForward,sourceGrammar=sg,sourceLocation=sl)));
 }
 function prodDef
 Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean

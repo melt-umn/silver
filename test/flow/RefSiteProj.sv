@@ -344,3 +344,13 @@ top::RSExpr ::= e::RSExpr
   forwards to projChain(@e);
 }
 }
+
+production fwrdProdAttrThing
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = null(e.env1);
+
+  forward fwrd = copy12(@e);
+
+  forwards to if e.errors1 then base() else @fwrd;
+}

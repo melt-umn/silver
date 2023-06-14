@@ -34,6 +34,11 @@ public abstract class FunctionNode extends Node {
 	}
 
 	@Override
+	public final boolean getLocalIsForward(final int index) {
+		return false;
+	}
+
+	@Override
 	public final boolean hasForward() {
 		// Functions should never even have this consulted. Ever.
 		throw new SilverInternalError("Functions do not forward!");

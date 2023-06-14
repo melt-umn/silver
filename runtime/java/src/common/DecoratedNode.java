@@ -401,7 +401,14 @@ public class DecoratedNode implements Decorable, Typed {
 		if(localCreated[attribute]) {
 			throw new SilverInternalError("Decorated local " + self.getNameOfLocalAttr(attribute) + " created more than once!");
 		}
-		DecoratedNode result = ((Decorable)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
+		Decorable localAsIs = (Decorable)evalLocalAsIs(attribute);
+		Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
+		DecoratedNode result;
+		if(self.getLocalIsForward(attribute)) {
+			result = localAsIs.decorate(this, inhs, this);
+		} else {
+			result = localAsIs.decorate(this, inhs);
+		}
 		localCreated[attribute] = true;
 		return result;
 	}

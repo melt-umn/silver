@@ -102,7 +102,7 @@ top::ValueDclInfo ::=
 }
 
 aspect production localDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type _
 {
   local attribute li :: Integer;
   li = lastIndexOf(":local:", fn);

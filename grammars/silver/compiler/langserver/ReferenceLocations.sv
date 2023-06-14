@@ -103,6 +103,7 @@ end;
 aspect valueRefLocs on top::ProductionStmt using <- of
 | localAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
 | productionAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| forwardProductionAttributeDcl(_, _, _, id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
 end;
 
 aspect valueRefLocs on ProductionStmt using := of

@@ -29,3 +29,24 @@ t::ForwardKeyword ::=
 equalityTest ( bar().fkSyn1, "foobar", String, silver_tests ) ;
 equalityTest ( bar().fkSyn2, "foobar", String, silver_tests ) ;
 
+abstract production bar3
+t::ForwardKeyword ::=
+{
+  forward production attribute fwrd = bar2();
+
+  t.fkSyn1 = fwrd.fkSyn1;
+  t.fkSyn2 = fwrd.fkSyn2;
+}
+
+equalityTest ( decorate bar3() with {fkInh1 = "foobar";}.fkSyn1, "foobar", String, silver_tests ) ;
+
+wrongCode "Forward production attributes are not valid in this context." {
+function forwardProdAttrFn
+ForwardKeyword ::=
+{
+  forward production attribute fwrd;
+  fwrd = bar2();
+
+  return fwrd;
+}
+}
