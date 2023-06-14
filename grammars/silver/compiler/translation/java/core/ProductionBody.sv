@@ -157,7 +157,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 aspect production forwardProductionAttributeDcl
-top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
 {
   local attribute ugh_dcl_hack :: ValueDclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...
@@ -168,9 +168,7 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name '::' te::Type
     s"\t\t//${top.unparse}\n" ++
     s"\t\t${top.frame.className}.localIsForward[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n" ++ 
     s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
-    if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
-    then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
-    else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n";
+    s"new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 

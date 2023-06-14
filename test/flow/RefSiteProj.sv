@@ -350,7 +350,7 @@ top::RSExpr ::= e::RSExpr
 {
   top.errors1 = null(e.env1);
 
-  forward fwrd::RSExpr = copy12(@e);
+  forward fwrd = copy12(@e);
 
   forwards to if e.errors1 then base() else @fwrd;
 }

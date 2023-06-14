@@ -32,7 +32,7 @@ equalityTest ( bar().fkSyn2, "foobar", String, silver_tests ) ;
 abstract production bar3
 t::ForwardKeyword ::=
 {
-  forward production attribute fwrd::ForwardKeyword = bar2();
+  forward production attribute fwrd = bar2();
 
   t.fkSyn1 = fwrd.fkSyn1;
   t.fkSyn2 = fwrd.fkSyn2;
@@ -40,12 +40,13 @@ t::ForwardKeyword ::=
 
 equalityTest ( decorate bar3() with {fkInh1 = "foobar";}.fkSyn1, "foobar", String, silver_tests ) ;
 
-nonterminal OtherForwardNT with fkInh1, fkInh2;
-wrongCode "Forward production attribute fwrd has type silver_features:ForwardKeyword that does not match the production left side silver_features:OtherForwardNT" {
-production wrongLHSType
-top::OtherForwardNT ::=
+wrongCode "Forward production attributes are not valid in this context." {
+function forwardProdAttrFn
+ForwardKeyword ::=
 {
-  forward production attribute fwrd::ForwardKeyword;
+  forward production attribute fwrd;
   fwrd = bar2();
+
+  return fwrd;
 }
 }

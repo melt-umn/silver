@@ -45,23 +45,23 @@ top::ProductionStmt ::= pk::'production' ak::'attribute'
 }
 
 concrete production shortForwardProductionDecl
-top::ProductionStmt ::= fk::'forward' a::Name ht::'::' te::TypeExpr 
+top::ProductionStmt ::= fk::'forward' a::Name
                         eq::'=' v::Expr sm::';'
 {
   forwards to
     productionStmtAppend(
-      forwardProductionAttributeDcl(fk, 'production', 'attribute', a, ht, te, sm, location=top.location),
+      forwardProductionAttributeDcl(fk, 'production', 'attribute', a, sm, location=top.location),
       valueEq(qNameId(a, location=a.location), eq, v, sm, location=v.location),
       location=top.location);
 }
 
 concrete production shortForwardProductionDeclwKwds
 top::ProductionStmt ::= fk::'forward' pk::'production' ak::'attribute' 
-                        a::Name ht::'::' te::TypeExpr eq::'=' v::Expr sm::';'
+                        a::Name eq::'=' v::Expr sm::';'
 {
   forwards to
     productionStmtAppend(
-      forwardProductionAttributeDcl(fk, pk, ak, a, ht, te, sm, location=top.location),
+      forwardProductionAttributeDcl(fk, pk, ak, a, sm, location=top.location),
       valueEq(qNameId(a, location=a.location), eq, v, sm, location=v.location),
       location=top.location);
 }
