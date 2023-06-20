@@ -175,9 +175,9 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 {
   local vertex :: FlowVertex =
     case dl of
-    | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | localDefLHS(q) -> localVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | forwardDefLHS(q) -> forwardVertex(attr.attrDcl.fullName)
+    | childDefLHS(q) -> rhsInhVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
+    | localDefLHS(q) -> localInhVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
+    | forwardDefLHS(q) -> forwardInhVertex(attr.attrDcl.fullName)
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
   top.flowDefs <-
