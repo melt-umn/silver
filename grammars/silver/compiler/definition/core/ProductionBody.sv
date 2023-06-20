@@ -456,6 +456,100 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
+concrete production concreteTransAttrDefLHS
+top::DefLHS ::= q::QName '.' attr::QNameAttrOccur
+{
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  propagate env;
+  attr.attrFor = q.lookupValue.typeScheme.monoType;
+  
+  forwards to (if null(q.lookupValue.dcls) || !attr.attrDcl.isTranslation 
+               then errorTransAttrDefLHS(_, _, location=_)
+               else q.lookupValue.dcl.transDefLHSDispatcher)(q, attr, top.location);
+} action {
+  if (contains(q.name, sigNames)) {
+    insert semantic token IdSigName_t at q.baseNameLoc;
+  }
+}
+
+abstract production errorTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = false;
+  
+  top.errors <- q.lookupValue.errors;
+  top.errors <-
+    if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ top.unparse)];
+  top.typerep = q.lookupValue.typeScheme.typerep;
+}
+
+abstract production childTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
+  
+  local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
+
+  top.errors <-
+    if existingProblems then []
+    else if !attr.attrDcl.isSynthesized
+    then [err(attr.location, s"Translation attribute '${attr.name}' is not synthesized, and cannot have attributes defined on it for child '${q.name}'")]
+    else if !top.defLHSattr.attrDcl.isInherited
+    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    else [];
+
+  top.typerep = q.lookupValue.typeScheme.monoType;
+}
+
+abstract production lhsTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = !existingProblems && attr.attrDcl.isInherited && top.defLHSattr.attrDcl.isInherited;
+  
+  local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
+
+  top.errors <-
+    if existingProblems then []
+    else if !attr.attrDcl.isInherited
+    then [err(attr.location, s"Translation attribute '${attr.name}' is not inherited, and cannot have attributes defined on it for the lhs '${q.name}'")]
+    else if !top.defLHSattr.attrDcl.isInherited
+    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    else [];
+
+  top.typerep = q.lookupValue.typeScheme.monoType;
+}
+
+abstract production localTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
+  
+  local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
+
+  top.errors <-
+    if existingProblems then []
+    else if !attr.attrDcl.isSynthesized
+    then [err(attr.location, s"Translation attribute '${attr.name}' is not synthesized, and cannot have attributes defined on it for local '${q.name}'")]
+    else if !top.defLHSattr.attrDcl.isInherited
+    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    else [];
+
+  top.typerep = q.lookupValue.typeScheme.monoType;
+}
+
 ----- done with DefLHS
 
 concrete production valueEq

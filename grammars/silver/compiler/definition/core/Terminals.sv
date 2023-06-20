@@ -34,7 +34,6 @@ terminal Aspect_kwd      'aspect'       lexer classes {KEYWORD,RESERVED};
 terminal Attribute_kwd   'attribute'    lexer classes {KEYWORD,RESERVED};
 terminal Class_kwd       'class'        lexer classes {KEYWORD};
 terminal Closed_kwd      'closed'       lexer classes {KEYWORD};
-terminal Tracked_kwd     'tracked'      lexer classes {KEYWORD};
 terminal Concrete_kwd    'concrete'     lexer classes {KEYWORD,RESERVED};
 terminal Decorate_kwd    'decorate'     lexer classes {KEYWORD,RESERVED};
 terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4, association = left; -- Association needed for dangling else in action code.
@@ -57,6 +56,8 @@ terminal Synthesized_kwd 'synthesized'  lexer classes {KEYWORD,RESERVED};
 terminal Terminal_kwd    'terminal'     lexer classes {KEYWORD,RESERVED};
 terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
+terminal Tracked_kwd     'tracked'      lexer classes {KEYWORD};
+terminal Translation_kwd 'translation'  lexer classes {KEYWORD};
 terminal Type_t          'type'         lexer classes {KEYWORD};
 terminal Undecorates_t   'undecorates'  lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, precedence = 3; -- Precedence to fix Decorated Decorated Expr with {}, which is a semantic error either way

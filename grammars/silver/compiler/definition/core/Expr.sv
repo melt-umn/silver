@@ -546,6 +546,35 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
+abstract production synTransDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+}
+
+abstract production inhTransDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+}
+
+abstract production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+
+  top.errors <- [err(top.location, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
+}
+
 -- TODO: change name. really "unknownDclAccessHandler"
 abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
