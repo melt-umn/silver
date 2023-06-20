@@ -380,7 +380,7 @@ function addFwdSynEqs
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
-    then [pair(lhsSynVertex(head(syns)), forwardVertex(head(syns))),
+    then [pair(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
           pair(lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 }
@@ -392,7 +392,7 @@ function addFwdInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
 }
 {--
@@ -403,7 +403,7 @@ function addFwdProdAttrInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [pair(localVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [pair(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
 }
 function allFwdProdAttrs

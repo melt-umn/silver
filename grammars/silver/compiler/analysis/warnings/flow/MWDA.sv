@@ -28,17 +28,6 @@ imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
 
--- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
--- The real fix is for our vertexes to remember whether they are syn/inh.
-function isInherited
-Boolean ::= a::String  e::Decorated Env
-{
-  return case getAttrDclAll(a, e) of
-  | at :: _ -> at.isInherited
-  | _ -> false
-  end;
-}
-
 function isLhsInh
 Boolean ::= v::FlowVertex
 {

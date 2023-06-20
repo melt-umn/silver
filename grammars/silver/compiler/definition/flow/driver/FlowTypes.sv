@@ -178,17 +178,27 @@ top::FlowVertex ::= attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for inherited attributes?");
 }
-aspect production rhsVertex
+aspect production rhsSynVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child attributes?");
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child synthesized attributes?");
+}
+aspect production rhsInhVertex
+top::FlowVertex ::= sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child inherited attributes?");
 }
 aspect production localEqVertex
 top::FlowVertex ::= fName::String
 {
   top.flowTypeName = fName; -- secretly only ever "forward" when we actually demand flowTypeName
 }
-aspect production localVertex
+aspect production localSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local synthesized attributes?");
+}
+aspect production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local inherited attributes?");
@@ -198,12 +208,22 @@ top::FlowVertex ::= fName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon equations?");
 }
-aspect production anonVertex
+aspect production anonSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon synthesized attributes?");
+}
+aspect production anonInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
 }
-aspect production subtermVertex
+aspect production subtermSynVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm synthesized attributes?");
+}
+aspect production subtermInhVertex
 top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm inherited attributes?");
