@@ -4,7 +4,7 @@
 set -eu
 
 # Defaults overridable by setting an environment variable:
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx6G -Xss16M"}
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx6G -Xss25M"}
   # These can be fun sometimes:
   # -XX:+PrintCompilation -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining
 SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:compiler:composed:Default"}

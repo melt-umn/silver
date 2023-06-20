@@ -7,7 +7,7 @@ import silver:langutil:pp only show;
 
 import silver:compiler:definition:core only Grammar, grammarErrors, allFileErrors, grammarName, importedDefs, importedOccursDefs, grammarDependencies, globalImports;
 import silver:compiler:definition:flow:env only flowEnv, flowDefs, specDefs, refDefs, fromFlowDefs;
-import silver:compiler:definition:flow:ast only nilFlow, consFlow, FlowDef;
+import silver:compiler:definition:flow:ast only FlowDefs;
 
 import silver:compiler:definition:core only jarName;
 
@@ -21,13 +21,13 @@ nonterminal RootSpec with
   -- compiler-wide inherited attributes
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- driver-specific inherited attributes
-  dependentGrammars,
+  dependentGrammars, allFlowDefs,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
   defs, occursDefs, grammarErrors, grammarSource, grammarTime, dirtyGrammars, recompiledGrammars,
   parsingErrors, allFileErrors, jarName, generateLocation, serInterface;
 
-flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
+flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars, allFlowDefs};
 
 propagate productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
 
@@ -35,6 +35,11 @@ propagate productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGram
  - Grammars (a, b) where b depends on a
  -}
 inherited attribute dependentGrammars :: [(String, String)];
+
+{--
+ - All flow defs for the compilation
+ -}
+inherited attribute allFlowDefs :: FlowDefs;
 
 {--
  - Grammars that must be recompiled
@@ -90,7 +95,12 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
       flatMap((.uniqueRefs), rootSpecs),
-      foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
+      -- The production flow graphs computed during flow type inference are built from the global
+      -- flow defs, which may include transitive deps on attributes that aren't in grammars depended
+      -- upon by this grammar.  So we need to use the same global flow defs in error checking.
+      -- Note that we don't compare flow defs in comparing interface file equality, so this doesn't
+      -- cause any circularity issues.
+      top.allFlowDefs);
   
   production newInterface::InterfaceItems = packInterfaceItems(top);
   top.serInterface =
