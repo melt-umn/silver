@@ -240,7 +240,8 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   -- If we do, we'll have to come back here to add 'location' info anyway,
   -- so if we do that, uhhh... fix this! Because you're here! Reading this!
 
-  top.flowDefs <-
+  -- TODO: This shouldn't be a forwarding prod!
+  top.flowDefs := e.flowDefs ++
     if mayAffectFlowType
     then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
