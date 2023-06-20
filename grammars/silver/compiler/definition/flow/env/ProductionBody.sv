@@ -229,7 +229,6 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
-  -- TODO: possible bug? this would include ":local" in the gram wouldn't it?
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);
