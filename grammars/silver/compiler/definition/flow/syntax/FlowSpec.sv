@@ -2,6 +2,7 @@ grammar silver:compiler:definition:flow:syntax;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:driver only FlowType, inhDepsForSyn;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;

@@ -10,8 +10,7 @@ imports silver:compiler:modification:list;
 
 --Get mwdaWrn production for completeness analysis
 import silver:compiler:analysis:warnings:flow;
---Get getNonforwardingProds to check all are covered
-import silver:compiler:definition:flow:env only getNonforwardingProds;
+import silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type:syntax only typerepTypeExpr;
 import silver:compiler:modification:let_fix;

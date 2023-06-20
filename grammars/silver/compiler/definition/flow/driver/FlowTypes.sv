@@ -2,7 +2,7 @@ grammar silver:compiler:definition:flow:driver;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
---import silver:compiler:definition:flow:env;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:ast;
 imports silver:compiler:analysis:warnings:flow only isOccursSynthesized;
 imports silver:compiler:analysis:uniqueness;

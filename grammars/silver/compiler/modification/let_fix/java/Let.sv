@@ -6,6 +6,7 @@ import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
+import silver:compiler:analysis:typechecking:core;
 
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
