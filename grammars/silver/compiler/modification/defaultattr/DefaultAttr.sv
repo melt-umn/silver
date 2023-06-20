@@ -5,9 +5,10 @@ import silver:compiler:definition:origins;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
---import silver:compiler:analysis:typechecking:core;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:translation:java;
 
+import silver:compiler:definition:flow:env;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructDefaultProductionGraph; -- for the "oh no again!" hack below
 import silver:compiler:driver:util only RootSpec; -- ditto
 

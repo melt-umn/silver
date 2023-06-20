@@ -1,5 +1,6 @@
 grammar silver:compiler:analysis:typechecking:core;
 
+import silver:compiler:definition:flow:env only getFlowTypeSpecFor, flowEnv;
 import silver:compiler:analysis:warnings:flow only inhDepsForSynOnType;
 import silver:util:treeset as set;
 

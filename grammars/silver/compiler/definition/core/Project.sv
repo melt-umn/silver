@@ -10,8 +10,14 @@ imports silver:compiler:definition:type:syntax;
 -- Type Representation
 imports silver:compiler:definition:type;
 
+-- Type Checking
+imports silver:compiler:analysis:typechecking:core;
+
 -- Environment Representation
 imports silver:compiler:definition:env;
+
+-- Flow Information
+imports silver:compiler:definition:flow:env;
 
 -- Utilities
 
@@ -33,6 +39,7 @@ option silver:compiler:modification:copper_mda;
 option silver:compiler:extension:testing; -- TODO this is about that buggy experiment of Eric's...
 
 -- These are somewhat less than desirable exports, due to the modularity analysis.
-exports silver:compiler:analysis:typechecking:core;
-exports silver:compiler:definition:flow:env;
+option silver:compiler:definition:type:syntax;
+option silver:compiler:analysis:typechecking:core;
+option silver:compiler:definition:flow:env;
 

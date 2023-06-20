@@ -3,7 +3,7 @@ grammar silver:compiler:modification:collection;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:list;
 
---import silver:compiler:analysis:typechecking:core;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:driver:util;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
 import silver:compiler:translation:java:core;

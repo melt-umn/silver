@@ -78,9 +78,9 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   top.postOps := [];
 }
 
-nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars, allFlowDefs, grammarList, dirtyGrammars, recompiledGrammars, jarName;
+nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars, grammarList, dirtyGrammars, recompiledGrammars, jarName;
 
-propagate config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars, allFlowDefs on Grammars;
+propagate config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars on Grammars;
 
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars

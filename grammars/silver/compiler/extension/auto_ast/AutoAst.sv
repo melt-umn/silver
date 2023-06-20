@@ -3,7 +3,7 @@ grammar silver:compiler:extension:auto_ast;
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
---import silver:compiler:analysis:typechecking:core;
+import silver:compiler:analysis:typechecking:core;
 
 
 concrete production autoAstDcl

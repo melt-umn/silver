@@ -4,10 +4,12 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:flow:driver;
 imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:driver:util;
 
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
+imports silver:compiler:analysis:typechecking:core;
 
 imports silver:util:cmdargs;
 

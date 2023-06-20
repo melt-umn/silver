@@ -96,6 +96,9 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
   production attribute keepFiles :: [String] with ++;
   keepFiles := [];
 
+  -- Seed flow deps with {config}
+  keepFiles <- if false then error(hackUnparse(top.config)) else [];
+
   top.postOps <-
     [genBuild(buildXmlLocation, buildXml)] ++
     (if top.config.noJavaGeneration then []

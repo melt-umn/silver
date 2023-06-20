@@ -1105,6 +1105,10 @@ nonterminal AnnoExpr with
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
+flowtype decorate {
+    grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config,
+    appExprApplied, remainingFuncAnnotations, funcAnnotations
+  } on AnnoAppExprs, AnnoExpr;
 
 propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, appExprApplied, originRules
   on AnnoAppExprs, AnnoExpr;

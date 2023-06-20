@@ -51,11 +51,9 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   
   g.productionFlowGraphs = finalGraphEnv;
   g.grammarFlowTypes = flowTypes;
-  g.allFlowDefs = allFlowDefs;
   
   r.productionFlowGraphs = finalGraphEnv;
   r.grammarFlowTypes = flowTypes;
-  r.allFlowDefs = allFlowDefs;
 }
 
 function getProdNt
