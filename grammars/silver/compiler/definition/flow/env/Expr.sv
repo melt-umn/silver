@@ -56,7 +56,7 @@ attribute flowVertexInfo occurs on Expr;
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess,
-    synDecoratedAccessHandler, inhDecoratedAccessHandler, synTransDecoratedAccessHandler, inhTransDecoratedAccessHandler,
+    synDecoratedAccessHandler, inhDecoratedAccessHandler, synTransDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
@@ -336,20 +336,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.flowDeps := 
     case e.flowVertexInfo of
     | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
-    | nothing() -> e.flowDeps
-    end;
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
-}
-aspect production inhTransDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
-  top.flowVertexInfo = map(inhTransAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
-  top.flowDeps :=
-    case e.flowVertexInfo of
-    | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();

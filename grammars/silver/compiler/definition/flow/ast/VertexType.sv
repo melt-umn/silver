@@ -79,18 +79,6 @@ top::VertexType ::= v::VertexType  transAttr::String
 }
 
 {--
- - Represents the vertexes for each inherited translation attribute on a production lhs/rhs/local.
- -}
-abstract production inhTransAttrVertexType
-top::VertexType ::= v::VertexType  transAttr::String
-{
-  top.synVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
-  top.inhVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
-  top.fwdVertex = v.inhVertex(s"${transAttr}.forward");
-  top.eqVertex = [v.inhVertex(transAttr)];
-}
-
-{--
  - Represents the vertexes for the forward of a production. You can use forwardVertexType instead of this production directly.
  -}
 abstract production forwardVertexType_real

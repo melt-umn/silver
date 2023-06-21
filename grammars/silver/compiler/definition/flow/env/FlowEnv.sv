@@ -141,13 +141,6 @@ function lookupLocalSynTransUniqueRefs
   return searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
 }
 
--- unique references taken for a synthesized translation attribute on a child
-function lookupInhTransUniqueRefs
-[UniqueRefSite] ::= prod::String attrName::String e::FlowEnv
-{
-  return searchEnvTree(prod ++ "." ++ attrName, e.uniqueRefTree);
-}
-
 -- possible decoration sites for unique references taken for a child
 function lookupRefPossibleDecSites
 [VertexType] ::= prod::String  sigName::String  e::FlowEnv
@@ -188,13 +181,6 @@ function lookupLocalSynTransRefDecSite
 [VertexType] ::= fName::String  attrName::String  e::FlowEnv
 {
   return searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);
-}
-
--- unconditional decoration sites for unique references taken for an inherited translation attribute on the lhs
-function lookupInhTransRefDecSite
-[VertexType] ::= prod::String  attrName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${prod}.${attrName}", e.refDecSiteTree);
 }
 
 {--

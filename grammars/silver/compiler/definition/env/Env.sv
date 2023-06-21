@@ -272,7 +272,7 @@ function getAttrOccursOn
 
 {--
  - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
- - Also includes all inherited attributes occuring on inherited translation attributes on the
+ - Also includes all synthesized attributes occuring on synthesized translation attributes on the
  - nonterminal, since those are treated like synthesized attributes.
  -}
 function getSynAttrsOn
@@ -286,15 +286,17 @@ function getSynAttrsOn
   return flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
-      | at :: _ when at.isSynthesized -> [o.attrOccurring]
-      | at :: _ when at.isInherited && at.isTranslation ->
-        flatMap(
+      | at :: _ when at.isSynthesized -> 
+        o.attrOccurring ::
+        if at.isTranslation
+        then flatMap(
           \ o2::OccursDclInfo ->
             case getAttrDcl(o2.attrOccurring, e) of
-            | at :: _ when at.isInherited -> [s"${o.attrOccurring}.${o2.attrOccurring}"]
+            | at :: _ when at.isSynthesized -> [s"${o.attrOccurring}.${o2.attrOccurring}"]
             | _ -> []
             end,
           getAttrOccursOn(determineAttributeType(o, ntty).typeName, e))
+        else []
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));

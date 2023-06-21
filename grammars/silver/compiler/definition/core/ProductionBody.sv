@@ -528,30 +528,6 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production lhsTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
-{
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
-  top.name = q.name;
-  top.unparse = s"${q.unparse}.${attr.unparse}";
-  top.found = !existingProblems && attr.attrDcl.isInherited && top.defLHSattr.attrDcl.isInherited;
-  top.isTranslation = true;
-  
-  local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
-
-  top.errors <-
-    if existingProblems then []
-    else if !attr.attrDcl.isInherited
-    then [err(attr.location, s"Translation attribute '${attr.name}' is not inherited, and cannot have attributes defined on it for the lhs '${q.name}'")]
-    else if !top.defLHSattr.attrDcl.isInherited
-    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
-    else if top.frame.hasPartialSignature
-    then [err(top.location, s"Inherited equations on inherited translation attributes in default productions are not supported")]
-    else [];
-
-  top.typerep = q.lookupValue.typeScheme.monoType;
-}
-
 abstract production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {

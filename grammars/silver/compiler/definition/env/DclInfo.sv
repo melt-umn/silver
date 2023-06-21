@@ -276,15 +276,6 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isSynthesized = true;
   top.isTranslation = true;
 }
-abstract production inhTransDcl
-top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
-{
-  top.fullName = fn;
-
-  top.typeScheme = polyType(bound, ty);
-  top.isInherited = true;
-  top.isTranslation = true;
-}
 abstract production annoDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {

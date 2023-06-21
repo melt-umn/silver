@@ -120,10 +120,7 @@ aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
-  e.decSiteVertexInfo =
-    if attr.found && attr.attrDcl.isTranslation
-    then just(inhTransAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
-    else nothing();
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }
 
@@ -168,27 +165,13 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.defLHSVertex = inhTransAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSVertex = synTransAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
   top.defLHSInhEq = [synTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
-}
-aspect production lhsTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
-{
-  top.defLHSVertex = inhTransAttrVertexType(lhsVertexType, attr.attrDcl.fullName);
-  
-  local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
-
-  local srcGrams :: [String] = [ntDefGram, hackGramFromDcl(top.defLHSattr)];
-
-  local mayAffectFlowType :: Boolean =
-    isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
-
-  top.defLHSInhEq = [inhTransInhEq(top.frame.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _, mayAffectFlowType)];
 }
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.defLHSVertex = inhTransAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSVertex = synTransAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
   top.defLHSInhEq = [localSynTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
 }
 

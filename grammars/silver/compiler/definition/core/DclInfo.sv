@@ -55,7 +55,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = lhsDefLHS(_, location=_);
-  top.transDefLHSDispatcher = lhsTransAttrDefLHS(_, _, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 aspect production localDcl
 top::ValueDclInfo ::= fn::String ty::Type _
@@ -144,14 +144,6 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = synTransDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = transUndecoratedAccessErrorHandler(_, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
-  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-}
-aspect production inhTransDcl
-top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
-{
-  top.decoratedAccessHandler = inhTransDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = transUndecoratedAccessErrorHandler(_, _, location=_);
-  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production annoDcl

@@ -160,7 +160,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
-  -- Just synthesized and inherited on inherited translation attributes.
+  -- Just synthesized attributes.
   local syns :: [String] = getSynAttrsOn(nt, realEnv);
   -- Just inherited and inherited on synthesized translation attributes.
   local inhs :: [String] = getInhAttrsOn(nt, realEnv);
@@ -342,7 +342,7 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
 function constructPhantomProductionGraph
 ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
 {
-  -- Just synthesized and inherited on inherited translation attributes.
+  -- Just synthesized attributes.
   local syns :: [String] = getSynAttrsOn(nt, realEnv);
   -- Those syns that are not part of the host, and so should have edges to fwdeq
   local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);

@@ -277,26 +277,6 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 }
 
 {--
- - The definition of an inherited attribute for an inherited translation attribute
- - on the production lhs.
- - Note that this is effectively a synthesized equation, since it is the input to an input.
- -
- - @param prod  the full name of the production
- - @param transAttr  the full name of the translation attribute
- - @param attr  the full name of the attribute
- - @param deps  the dependencies of this equation on other flow graph elements
- -}
-abstract production inhTransInhEq
-top::FlowDef ::= prod::String  transAttr::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
-{
-  top.synTreeContribs := [pair(crossnames(prod, s"${transAttr}.${attr}"), top)];
-  top.prodGraphContribs := [pair(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(lhsInhVertex(s"${transAttr}.${attr}"), _), deps);
-  top.flowEdges = if mayAffectFlowType then edges else [];
-  top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
-}
-
-{--
  - The definition of an inherited attribute for a synthesized translation attribute
  - on an rhs signature element in a production.
  -

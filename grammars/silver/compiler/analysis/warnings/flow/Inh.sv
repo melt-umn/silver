@@ -858,9 +858,6 @@ function lookupAllDecSites
     | synTransAttrVertexType(localVertexType(fName), transAttr) ->
       flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalSynTransRefDecSite(fName, transAttr, flowEnv))
     | synTransAttrVertexType(_, _) -> []
-    | inhTransAttrVertexType(lhsVertexType_real(), transAttr) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupInhTransRefDecSite(prodName, transAttr, flowEnv))
-    | inhTransAttrVertexType(_, _) -> []
     | anonVertexType(fName) -> []
     | forwardVertexType_real() -> []
     | subtermVertexType(_, remoteProdName, sigName) ->
@@ -880,7 +877,6 @@ Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv
     | synTransAttrVertexType(localVertexType(fName), transAttr) ->
       !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
     | synTransAttrVertexType(_, _) -> false
-    | inhTransAttrVertexType(_, _) -> false  -- Inh equations on these are considered as syns.
     | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
     | subtermVertexType(_, remoteProdName, sigName) ->
       vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)

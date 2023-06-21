@@ -555,15 +555,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep.asNtOrDecType;
 }
 
-abstract production inhTransDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
-{
-  undecorates to access(e, '.', q, location=top.location);
-  top.unparse = e.unparse ++ "." ++ q.unparse;
-  
-  top.typerep = q.typerep.asNtOrDecType;
-}
-
 abstract production transUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
