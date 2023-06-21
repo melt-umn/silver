@@ -352,6 +352,22 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   e.isRoot = true;
 }
 
+-- The grammar needs to be structured in this way to avoid a shift/reduce conflict...
+concrete production transAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ transAttr.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  forwards to
+    attributeDef(
+      transAttrDefLHS(
+        case dl of
+        | concreteDefLHS(q) -> q
+        | _ -> error("Unexpected concrete DefLHS")
+        end, transAttr, location=top.location),
+      $4, attr, $6, e, $8,
+      location=top.location);
+}
+
 concrete production concreteDefLHS
 top::DefLHS ::= q::QName
 {
@@ -461,8 +477,9 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-concrete production concreteTransAttrDefLHS
-top::DefLHS ::= q::QName '.' attr::QNameAttrOccur
+-- See transAttributeDef above - this is abstract to avoid a shift/reduce conflict.
+abstract production transAttrDefLHS
+top::DefLHS ::= q::QName attr::QNameAttrOccur
 {
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
@@ -472,16 +489,12 @@ top::DefLHS ::= q::QName '.' attr::QNameAttrOccur
   forwards to (if null(q.lookupValue.dcls) || !attr.attrDcl.isTranslation 
                then errorTransAttrDefLHS(_, _, location=_)
                else q.lookupValue.dcl.transDefLHSDispatcher)(q, attr, top.location);
-} action {
-  if (contains(q.name, sigNames)) {
-    insert semantic token IdSigName_t at q.baseNameLoc;
-  }
 }
 
 abstract production errorTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = false;
@@ -496,7 +509,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 abstract production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -518,7 +531,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 abstract production lhsTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isInherited && top.defLHSattr.attrDcl.isInherited;
@@ -542,7 +555,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 abstract production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to concreteTransAttrDefLHS(q, '.', attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
