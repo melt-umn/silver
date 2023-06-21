@@ -156,7 +156,6 @@ function collectInhs
 {
   return case f of
   | lhsInhVertex(a) -> a::l
-  | transAttrInhVertex(lhsSynVertex(ta), a) -> s"${ta}.${a}"::l
   | _ -> l
   end;
 }
@@ -201,20 +200,6 @@ aspect production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local inherited attributes?");
-}
-aspect production transAttrSynVertex
-top::FlowVertex ::= v::FlowVertex  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for translation attribute synthesized attributes?");
-}
-aspect production transAttrInhVertex
-top::FlowVertex ::= v::FlowVertex  attrName::String
-{
-  top.flowTypeName =
-    case v of
-    | lhsInhVertex(transAttrName) -> s"${transAttrName}.${attrName}"
-    | _ -> error("Internal compiler error: should only be solving flow types for inherited attributes on inherited translation attributes?")
-    end;
 }
 aspect production anonEqVertex
 top::FlowVertex ::= fName::String

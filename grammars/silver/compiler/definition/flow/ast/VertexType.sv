@@ -70,24 +70,24 @@ top::VertexType ::= fName::String
  - Represents the vertexes for each synthesized translation attribute on a production lhs/rhs/local.
  -}
 abstract production synTransAttrVertexType
-top::VertexType ::= v::VertexType  attr::String
+top::VertexType ::= v::VertexType  transAttr::String
 {
-  top.synVertex = transAttrSynVertex(v.synVertex(attr), _);
-  top.inhVertex = transAttrInhVertex(v.synVertex(attr), _);
-  top.fwdVertex = transAttrSynVertex(v.synVertex(attr), "forward");
-  top.eqVertex = [v.synVertex(attr)];
+  top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
+  top.inhVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
+  top.fwdVertex = v.synVertex(s"${transAttr}.forward");
+  top.eqVertex = [v.synVertex(transAttr)];
 }
 
 {--
  - Represents the vertexes for each inherited translation attribute on a production lhs/rhs/local.
  -}
 abstract production inhTransAttrVertexType
-top::VertexType ::= v::VertexType  attr::String
+top::VertexType ::= v::VertexType  transAttr::String
 {
-  top.synVertex = transAttrSynVertex(v.inhVertex(attr), _);
-  top.inhVertex = transAttrInhVertex(v.inhVertex(attr), _);
-  top.fwdVertex = transAttrSynVertex(v.inhVertex(attr), "forward");
-  top.eqVertex = [v.inhVertex(attr)];
+  top.synVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
+  top.inhVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
+  top.fwdVertex = v.inhVertex(s"${transAttr}.forward");
+  top.eqVertex = [v.inhVertex(transAttr)];
 }
 
 {--

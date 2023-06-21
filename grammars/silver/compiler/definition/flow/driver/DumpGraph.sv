@@ -168,16 +168,6 @@ top::FlowVertex ::= fName::String  attrName::String
 {
   top.dotName = fName ++ "/" ++ attrName;
 }
-aspect production transAttrSynVertex
-top::FlowVertex ::= v::FlowVertex  attrName::String
-{
-  top.dotName = v.dotName ++ "." ++ attrName;
-}
-aspect production transAttrInhVertex
-top::FlowVertex ::= v::FlowVertex  attrName::String
-{
-  top.dotName = v.dotName ++ "." ++ attrName;
-}
 aspect production anonEqVertex
 top::FlowVertex ::= fName::String
 {

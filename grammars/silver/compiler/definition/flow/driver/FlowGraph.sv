@@ -70,7 +70,6 @@ Boolean ::= v::FlowVertex  inhSet::set:Set<String>
 {
   return case v of
   | lhsInhVertex(a) -> set:contains(a, inhSet)
-  | transAttrInhVertex(lhsSynVertex(ta), a) -> set:contains(s"${ta}.${a}", inhSet)
   | _ -> false
   end;
 }

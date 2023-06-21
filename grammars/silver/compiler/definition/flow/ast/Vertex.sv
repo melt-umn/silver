@@ -85,30 +85,6 @@ abstract production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {}
 
-{--
- - A vertex representing a synthesized attribute on a (syn or inh) translation attribute
- - on an lhs/rhs/local.
- -
- - @param v  the flow vertex of the translation attribute instance.
- - @param attrName  the full name of the attribute on that element
- -}
-abstract production transAttrSynVertex
-top::FlowVertex ::= v::FlowVertex  attrName::String
-{}
-
-{--
- - A vertex representing an inherited attribute on a (syn or inh) translation attribute
- - on an lhs/rhs/local.
- -
- - @param v  the flow vertex of the translation attribute instance.
- - @param attrName  the full name of the attribute on that element
- -}
-abstract production transAttrInhVertex
-top::FlowVertex ::= v::FlowVertex  attrName::String
-{}
-
-
--- TODO: we should distinguish these!
 
 -- The forward equation for this production. We do not care to distinguish it.
 function forwardEqVertex
