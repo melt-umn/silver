@@ -160,10 +160,10 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
-  -- Just synthesized attributes.
-  local syns :: [String] = map((.attrOccurring), getSynAttrsOn(nt, realEnv));
-  -- Just inherited.
-  local inhs :: [String] = map((.attrOccurring), getInhAttrsOn(nt, realEnv));
+  -- Just synthesized and inherited on inherited translation attributes.
+  local syns :: [String] = getSynAttrsOn(nt, realEnv);
+  -- Just inherited and inherited on synthesized translation attributes.
+  local inhs :: [String] = getInhAttrsOn(nt, realEnv);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
     
@@ -342,8 +342,8 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
 function constructPhantomProductionGraph
 ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
 {
-  -- Just synthesized attributes.
-  local syns :: [String] = map((.attrOccurring), getSynAttrsOn(nt, realEnv));
+  -- Just synthesized and inherited on inherited translation attributes.
+  local syns :: [String] = getSynAttrsOn(nt, realEnv);
   -- Those syns that are not part of the host, and so should have edges to fwdeq
   local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);
 
@@ -477,7 +477,7 @@ function patVarStitchPoints
       [nonterminalStitchPoint(typeName, anonVertexType(patternVar)),
        projectionStitchPoint(
          matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
-         map((.attrOccurring), getInhAttrsOn(typeName, realEnv)))]
+         getInhAttrsOn(typeName, realEnv))]
   end;
 }
 function subtermDecSiteStitchPoints
@@ -489,7 +489,7 @@ function subtermDecSiteStitchPoints
       map(\ prodDcl::ValueDclInfo ->
         projectionStitchPoint(
           termProdName, subtermVertexType(parent, termProdName, sigName), parent, rhsVertexType(sigName),
-          map((.attrOccurring), getInhAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv))),
+          getInhAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
         getValueDcl(termProdName, realEnv))
     | _ -> []
     end,

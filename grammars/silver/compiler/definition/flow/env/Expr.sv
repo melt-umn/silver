@@ -55,7 +55,8 @@ attribute flowVertexInfo occurs on Expr;
 
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
-    childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
+    childReference, lhsReference, localReference, forwardReference, forwardAccess,
+    synDecoratedAccessHandler, inhDecoratedAccessHandler, synTransDecoratedAccessHandler, inhTransDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
@@ -94,7 +95,7 @@ top::Expr ::= q::Decorated! QName
       isEquationMissing(lookupInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
         origRefSet,
-        map((.attrOccurring), getInhAttrsOn(finalTy.decoratedType.typeName, top.env))));
+        getInhAttrsOn(finalTy.decoratedType.typeName, top.env)));
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
@@ -144,7 +145,7 @@ top::Expr ::= q::Decorated! QName
       isEquationMissing(lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
         origRefSet,
-        map((.attrOccurring), getInhAttrsOn(finalTy.decoratedType.typeName, top.env))));
+        getInhAttrsOn(finalTy.decoratedType.typeName, top.env)));
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
@@ -318,6 +319,30 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  top.flowDeps :=
+    case e.flowVertexInfo of
+    | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | nothing() -> e.flowDeps
+    end;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production synTransDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.flowVertexInfo = map(synTransAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
+  top.flowDeps := 
+    case e.flowVertexInfo of
+    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | nothing() -> e.flowDeps
+    end;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production inhTransDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.flowVertexInfo = map(inhTransAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
   top.flowDeps :=
     case e.flowVertexInfo of
     | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex

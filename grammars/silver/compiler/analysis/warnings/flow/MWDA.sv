@@ -32,15 +32,6 @@ imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
 
-function isLhsInh
-Boolean ::= v::FlowVertex
-{
-  return case v of
-  | lhsInhVertex(_) -> true
-  | _ -> false
-  end;
-}
-
 function isForwardProdAttr
 Boolean ::= a::String  e::Decorated Env
 {

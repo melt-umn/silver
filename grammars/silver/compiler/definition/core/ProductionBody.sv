@@ -19,7 +19,7 @@ flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, d
 flowtype forward {decorate} on ProductionBody, ProductionStmts, ProductionStmt;
 
 nonterminal DefLHS with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, isTranslation, defLHSattr, found, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, defLHSattr, originRules}
   on DefLHS;
@@ -375,6 +375,7 @@ top::DefLHS ::= q::Decorated! QName
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
+  top.isTranslation = false;
   
   top.errors <- q.lookupValue.errors;
   top.errors <-
@@ -395,6 +396,7 @@ top::DefLHS ::= q::Decorated! QName
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
+  top.isTranslation = false;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
@@ -412,6 +414,7 @@ top::DefLHS ::= q::Decorated! QName
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
+  top.isTranslation = false;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
@@ -429,6 +432,7 @@ top::DefLHS ::= q::Decorated! QName
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
+  top.isTranslation = false;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
@@ -446,6 +450,7 @@ top::DefLHS ::= q::Decorated! QName
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
+  top.isTranslation = false;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
@@ -480,6 +485,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = false;
+  top.isTranslation = true;
   
   top.errors <- q.lookupValue.errors;
   top.errors <-
@@ -494,6 +500,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
+  top.isTranslation = true;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
 
@@ -515,6 +522,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isInherited && top.defLHSattr.attrDcl.isInherited;
+  top.isTranslation = true;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
 
@@ -524,6 +532,8 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
     then [err(attr.location, s"Translation attribute '${attr.name}' is not inherited, and cannot have attributes defined on it for the lhs '${q.name}'")]
     else if !top.defLHSattr.attrDcl.isInherited
     then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    else if top.frame.hasPartialSignature
+    then [err(top.location, s"Inherited equations on inherited translation attributes in default productions are not supported")]
     else [];
 
   top.typerep = q.lookupValue.typeScheme.monoType;
@@ -536,6 +546,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
+  top.isTranslation = true;
   
   local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
 

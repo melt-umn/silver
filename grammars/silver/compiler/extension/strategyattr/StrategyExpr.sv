@@ -237,15 +237,12 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       exprInhsCons(_, _, location=top.location),
       exprInhsEmpty(location=top.location),
       map(
-        \ a::AttributeDclInfo ->
+        \ attr::String ->
+          -- TODO: translation attributes!
           Silver_ExprInh {
-            $name{a.fullName} = $name{top.frame.signature.outputElement.elementName}.$name{a.fullName};
+            $name{attr} = $name{top.frame.signature.outputElement.elementName}.$name{attr};
           },
-        filter(
-          (.isInherited),
-          flatMap(
-            getAttrDcl(_, top.env),
-            map((.attrOccurring), getAttrsOn(top.frame.lhsNtName, top.env))))));
+        getInhAttrsOn(top.frame.lhsNtName, top.env)));
   top.partialTranslation =
     -- Optimizations when one or both of these is total, in this case a
     -- monadic bind may not be required.

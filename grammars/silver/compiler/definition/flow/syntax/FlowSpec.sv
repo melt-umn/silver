@@ -132,6 +132,26 @@ top::FlowSpecId ::= syn::QNameAttrOccur
     else [err(syn.location, syn.name ++ " is not a synthesized attribute, and so cannot have a flow type")];
 }
 
+concrete production transSpecId
+top::FlowSpecId ::= transInh::QNameAttrOccur '.' inh::QNameAttrOccur
+{
+  top.name = s"${transInh.name}.${inh.name}";
+  top.unparse = s"${transInh.unparse}.${inh.unparse}";
+  top.synName = s"${transInh.attrDcl.fullName}.${inh.attrDcl.fullName}";
+  top.authorityGrammar = inh.dcl.sourceGrammar;
+  top.found = transInh.found && transInh.attrDcl.isInherited && inh.found && inh.attrDcl.isInherited;
+  
+  transInh.attrFor = top.onNt;
+  inh.attrFor = transInh.typerep;
+  
+  top.errors <-
+    if !transInh.found || transInh.attrDcl.isInherited && transInh.attrDcl.isTranslation then []
+    else [err(transInh.location, transInh.name ++ " is not an inherited translation attribute, and so cannot appear in a flow type identifer")];
+  top.errors <-
+    if !inh.found || inh.attrDcl.isInherited then []
+    else [err(inh.location, inh.name ++ " is not an inherited attribute, and so cannot appear in a flow type identifer")];
+}
+
 concrete production forwardSpecId
 top::FlowSpecId ::= 'forward'
 {
@@ -191,6 +211,27 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
   
   inh.attrFor = top.onNt;
 
+  top.errors <-
+    if !inh.found || inh.attrDcl.isInherited then []
+    else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
+}
+
+concrete production flowSpecTrans
+top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::QNameAttrOccur
+{
+  top.unparse = s"${transSyn.unparse}.${inh.unparse}";
+  top.inhList :=
+    if transSyn.attrFound && inh.attrFound
+    then [s"${transSyn.attrDcl.fullName}.${inh.attrDcl.fullName}"]
+    else [];
+  top.refList := [];
+
+  transSyn.attrFor = top.onNt;
+  inh.attrFor = transSyn.typerep;
+
+  top.errors <-
+    if !transSyn.found || transSyn.attrDcl.isSynthesized && transSyn.attrDcl.isTranslation then []
+    else [err(transSyn.location, transSyn.name ++ " is not a synthesized translation attribute and so cannot be within a flow type")];
   top.errors <-
     if !inh.found || inh.attrDcl.isInherited then []
     else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
