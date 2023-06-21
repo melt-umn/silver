@@ -330,6 +330,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production synTransDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowVertexInfo = map(synTransAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
   top.flowDeps := 
     case e.flowVertexInfo of
@@ -342,6 +344,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production inhTransDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowVertexInfo = map(inhTransAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
   top.flowDeps :=
     case e.flowVertexInfo of

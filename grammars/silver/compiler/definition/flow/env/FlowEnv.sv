@@ -127,6 +127,27 @@ function lookupLocalUniqueRefs
   return searchEnvTree(fName, e.uniqueRefTree);
 }
 
+-- unique references taken for a synthesized translation attribute on a child
+function lookupSynTransUniqueRefs
+[UniqueRefSite] ::= prod::String sigName::String attrName::String e::FlowEnv
+{
+  return searchEnvTree(prod ++ ":" ++ sigName ++ "." ++ attrName, e.uniqueRefTree);
+}
+
+-- unique references taken for a synthesized translation attribute on a local
+function lookupLocalSynTransUniqueRefs
+[UniqueRefSite] ::= fName::String attrName::String e::FlowEnv
+{
+  return searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
+}
+
+-- unique references taken for a synthesized translation attribute on a child
+function lookupInhTransUniqueRefs
+[UniqueRefSite] ::= prod::String attrName::String e::FlowEnv
+{
+  return searchEnvTree(prod ++ "." ++ attrName, e.uniqueRefTree);
+}
+
 -- possible decoration sites for unique references taken for a child
 function lookupRefPossibleDecSites
 [VertexType] ::= prod::String  sigName::String  e::FlowEnv
