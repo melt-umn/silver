@@ -176,6 +176,27 @@ function lookupLocalRefDecSite
   return searchEnvTree(fName, e.refDecSiteTree);
 }
 
+-- unconditional decoration sites for unique references taken for a synthesized translation attribute on a child
+function lookupSynTransRefDecSite
+[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refDecSiteTree);
+}
+
+-- unconditional decoration sites for unique references taken for a synthesized translation attribute on a local/production attribute
+function lookupLocalSynTransRefDecSite
+[VertexType] ::= fName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);
+}
+
+-- unconditional decoration sites for unique references taken for an inherited translation attribute on the lhs
+function lookupInhTransRefDecSite
+[VertexType] ::= prod::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${prod}.${attrName}", e.refDecSiteTree);
+}
+
 {--
  - This is a glorified lambda function, to help look for equations.
  - Literally, we're just checking for null here.

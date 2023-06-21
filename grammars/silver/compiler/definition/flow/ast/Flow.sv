@@ -289,7 +289,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 abstract production inhTransInhEq
 top::FlowDef ::= prod::String  transAttr::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.synTreeContribs := [pair(crossnames(prod, crossnames(transAttr, attr)), top)];
+  top.synTreeContribs := [pair(crossnames(prod, s"${transAttr}.${attr}"), top)];
   top.prodGraphContribs := [pair(prod, top)];
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(lhsInhVertex(s"${transAttr}.${attr}"), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
@@ -309,7 +309,7 @@ top::FlowDef ::= prod::String  transAttr::String  attr::String  deps::[FlowVerte
 abstract production synTransInhEq
 top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String  deps::[FlowVertex]
 {
-  top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, crossnames(transAttr, attr))), top)];
+  top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = map(pair(rhsInhVertex(sigName, s"${transAttr}.${attr}"), _), deps);
 }
@@ -327,7 +327,7 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
 abstract production localSynTransInhEq
 top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  deps::[FlowVertex]
 {
-  top.inhTreeContribs := [(crossnames(prod, crossnames(fName, crossnames(transAttr, attr))), top)];
+  top.inhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = map(pair(localSynVertex(fName, s"${transAttr}.${attr}"), _), deps);
 }
