@@ -95,7 +95,7 @@ top::Expr ::= q::Decorated! QName
       isEquationMissing(lookupInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
         origRefSet,
-        getInhAttrsOn(finalTy.decoratedType.typeName, top.env)));
+        getInhAndInhOnTransAttrsOn(finalTy.decoratedType.typeName, top.env)));
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
@@ -145,7 +145,7 @@ top::Expr ::= q::Decorated! QName
       isEquationMissing(lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
         origRefSet,
-        getInhAttrsOn(finalTy.decoratedType.typeName, top.env)));
+        getInhAndInhOnTransAttrsOn(finalTy.decoratedType.typeName, top.env)));
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of

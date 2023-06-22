@@ -23,6 +23,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 }
 
 -- If it is inherited and exported by this grammar (according to authority)
+-- Also includes inherited on translation attributes
 function getInhAttrsOnForReferences
 [String] ::= nt::String  e::Decorated Env  authority::(Boolean ::= String)
 {

@@ -163,7 +163,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   -- Just synthesized attributes.
   local syns :: [String] = getSynAttrsOn(nt, realEnv);
   -- Just inherited and inherited on synthesized translation attributes.
-  local inhs :: [String] = getInhAttrsOn(nt, realEnv);
+  local inhs :: [String] = getInhAndInhOnTransAttrsOn(nt, realEnv);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
     
@@ -194,8 +194,8 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
-    flatMap(rhsStitchPoints, dcl.namedSignature.inputElements) ++
-    localStitchPoints(nt, defs) ++
+    flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements) ++
+    localStitchPoints(realEnv, nt, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
   
@@ -243,8 +243,8 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
-    flatMap(rhsStitchPoints, ns.inputElements) ++
-    localStitchPoints(error("functions shouldn't have a forwarding equation?"), defs) ++
+    flatMap(rhsStitchPoints(realEnv, _), ns.inputElements) ++
+    localStitchPoints(realEnv, error("functions shouldn't have a forwarding equation?"), defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
 
@@ -282,7 +282,7 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<Pr
 
   -- There can still be anonEq, but there's no RHS anymore
   local stitchPoints :: [StitchPoint] =
-    localStitchPoints(error("global expressions shouldn't have a forwarding equation?"), defs) ++
+    localStitchPoints(realEnv, error("global expressions shouldn't have a forwarding equation?"), defs) ++
     patternStitchPoints(realEnv, defs);
 
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
@@ -317,8 +317,8 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
   -- There can still be anonEq, but there's no RHS anymore
   -- However, we do behave like phantom graphs and create an LHS stitch point!
   local stitchPoints :: [StitchPoint] =
-    [nonterminalStitchPoint(nt, lhsVertexType)] ++ 
-    localStitchPoints(error("default production shouldn't have a forwarding equation?"), defs) ++
+    nonterminalStitchPoints(realEnv, nt, lhsVertexType) ++ 
+    localStitchPoints(realEnv, error("default production shouldn't have a forwarding equation?"), defs) ++
     patternStitchPoints(realEnv, defs);
 
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
@@ -354,7 +354,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
     map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
-  local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
+  local stitchPoints :: [StitchPoint] = nonterminalStitchPoints(realEnv, nt, lhsVertexType);
     
   local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
@@ -434,28 +434,45 @@ function addDefEqs
 
 ---- Begin helpers for figuring out stitch points ------------------------------
 
-function localStitchPoints
-[StitchPoint] ::= nt::NtName  d::[FlowDef]
+{--
+ - Stitch points for the flow type of 'nt', and the flow types of all translation attributes on 'nt'.
+ -}
+function nonterminalStitchPoints
+[StitchPoint] ::= realEnv::Decorated Env  nt::NtName  vertexType::VertexType
 {
-  return case d of
-  | [] -> []
-  -- We add the forward stitch point here, too!
-  | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
-  -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
-  -- Add anon decoration sites that are nonterminal types
-  | anonEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
-  -- Ignore all other flow def info
-  | _ :: rest -> localStitchPoints(nt, rest)
-  end;
+  return flatMap(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, realEnv) of
+      | at :: _ when at.isSynthesized && at.isTranslation ->
+        [nonterminalStitchPoint(
+           at.typeScheme.typeName,
+           synTransAttrVertexType(vertexType, o.attrOccurring))]
+      | _ -> []
+      end,
+    getAttrOccursOn(nt, realEnv));
+}
+function localStitchPoints
+[StitchPoint] ::= realEnv::Decorated Env  nt::NtName  ds::[FlowDef]
+{
+  return flatMap(\ d::FlowDef ->
+    case d of
+    -- We add the forward stitch point here, too!
+    | fwdEq(_, _, _) -> nonterminalStitchPoints(realEnv, nt, forwardVertexType)
+    -- Add locals that are nonterminal types.
+    | localEq(_, fN, tN, true, _, _) -> nonterminalStitchPoints(realEnv, tN, localVertexType(fN))
+    -- Add anon decoration sites that are nonterminal types
+    | anonEq(_, fN, tN, true, _, _) -> nonterminalStitchPoints(realEnv, tN, anonVertexType(fN))
+    -- Ignore all other flow def info
+    | _ -> []
+    end, ds);
 }
 function rhsStitchPoints
-[StitchPoint] ::= rhs::NamedSignatureElement
+[StitchPoint] ::= realEnv::Decorated Env  rhs::NamedSignatureElement
 {
   return
     -- We want only NONTERMINAL stitch points!
     if rhs.typerep.isNonterminal
-    then [nonterminalStitchPoint(rhs.typerep.typeName, rhsVertexType(rhs.elementName))]
+    then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
     else [];
 }
 function patternStitchPoints
@@ -474,10 +491,10 @@ function patVarStitchPoints
 {
   return case var of
   | patternVarProjection(child, typeName, patternVar) -> 
-      [nonterminalStitchPoint(typeName, anonVertexType(patternVar)),
-       projectionStitchPoint(
-         matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
-         getInhAttrsOn(typeName, realEnv))]
+      projectionStitchPoint(
+        matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
+        getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
+      nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
 }
 function subtermDecSiteStitchPoints
@@ -489,7 +506,7 @@ function subtermDecSiteStitchPoints
       map(\ prodDcl::ValueDclInfo ->
         projectionStitchPoint(
           termProdName, subtermVertexType(parent, termProdName, sigName), parent, rhsVertexType(sigName),
-          getInhAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
+          getInhAndInhOnTransAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
         getValueDcl(termProdName, realEnv))
     | _ -> []
     end,

@@ -272,60 +272,73 @@ function getAttrOccursOn
 
 {--
  - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
- - Also includes all synthesized attributes occuring on synthesized translation attributes on the
- - nonterminal, since those are treated like synthesized attributes.
  -}
 function getSynAttrsOn
 [String] ::= fnnt::String e::Decorated Env
 {
-  local ntty::Type =
-    case getTypeDcl(fnnt, e) of
-    | ty :: _ -> ty.typeScheme.monoType
-    | [] -> errorType()
-    end;
+  return flatMap(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, e) of
+      | at :: _ when at.isSynthesized -> [o.attrOccurring]
+      | _ -> []
+      end,
+    getAttrOccursOn(fnnt, e));
+}
+
+{--
+ - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
+ - Also includes all synthesized attributes occuring on synthesized translation attributes on the
+ - nonterminal, when we want to treat these like synthesized attributes.
+ -}
+function getSynAndSynOnTransAttrsOn
+[String] ::= fnnt::String e::Decorated Env
+{
   return flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
       | at :: _ when at.isSynthesized -> 
         o.attrOccurring ::
         if at.isTranslation
-        then flatMap(
-          \ o2::OccursDclInfo ->
-            case getAttrDcl(o2.attrOccurring, e) of
-            | at :: _ when at.isSynthesized -> [s"${o.attrOccurring}.${o2.attrOccurring}"]
-            | _ -> []
-            end,
-          getAttrOccursOn(determineAttributeType(o, ntty).typeName, e))
+        then map(
+          \ syn::String -> s"${o.attrOccurring}.${syn}",
+          getSynAttrsOn(at.typeScheme.typeName, e))
         else []
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));
 }
+
 {--
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
- - Also includes all inherited attributes occuring on synthesized translation attributes on the
- - nonterminal, since those are treated like inherited attributes.
  -}
 function getInhAttrsOn
 [String] ::= fnnt::String e::Decorated Env
 {
-  local ntty::Type =
-    case getTypeDcl(fnnt, e) of
-    | ty :: _ -> ty.typeScheme.monoType
-    | [] -> errorType()
-    end;
+  return flatMap(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, e) of
+      | at :: _ when at.isInherited -> [o.attrOccurring]
+      | _ -> []
+      end,
+    getAttrOccursOn(fnnt, e));
+}
+
+{--
+ - Returns the names of all inherited attributes known locally to occur on a nonterminal.
+ - Also includes all inherited attributes occuring on synthesized translation attributes on the
+ - nonterminal, when we want to treat these like inherited attributes.
+ -}
+function getInhAndInhOnTransAttrsOn
+[String] ::= fnnt::String e::Decorated Env
+{
   return flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
       | at :: _ when at.isInherited -> [o.attrOccurring]
       | at :: _ when at.isSynthesized && at.isTranslation ->
-        flatMap(
-          \ o2::OccursDclInfo ->
-            case getAttrDcl(o2.attrOccurring, e) of
-            | at :: _ when at.isInherited -> [s"${o.attrOccurring}.${o2.attrOccurring}"]
-            | _ -> []
-            end,
-          getAttrOccursOn(determineAttributeType(o, ntty).typeName, e))
+        map(
+          \ inh::String -> s"${o.attrOccurring}.${inh}",
+          getInhAttrsOn(at.typeScheme.typeName, e))
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));
