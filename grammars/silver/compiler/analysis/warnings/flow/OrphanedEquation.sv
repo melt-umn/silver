@@ -56,7 +56,14 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     -- Exported by the declaration of the thing we're giving inh to, or to the occurs
     | localDefLHS(q) -> [q.lookupValue.dcl.sourceGrammar, attr.dcl.sourceGrammar]
     -- For rhs or forwards, that's the production.
-    | _ -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | childDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | forwardDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    -- Eqs on translation attributes can be with the thing we're giving inh to, or either attr occurs
+    | localTransAttrDefLHS(q, transAttr) ->
+      [q.lookupValue.dcl.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | childTransAttrDefLHS(_, transAttr) ->
+      [top.frame.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | _ -> []
     end;
 
   top.errors <-
@@ -68,7 +75,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
     
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
+    if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
@@ -106,7 +113,14 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     -- Exported by the declaration of the thing we're giving inh to, or to the occurs
     | localDefLHS(q) -> [q.lookupValue.dcl.sourceGrammar, attr.dcl.sourceGrammar]
     -- For rhs or forwards, that's the production.
-    | _ -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | childDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | forwardDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    -- Eqs on translation attributes can be with the thing we're giving inh to, or either attr occurs
+    | localTransAttrDefLHS(q, transAttr) ->
+      [q.lookupValue.dcl.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | childTransAttrDefLHS(_, transAttr) ->
+      [top.frame.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | _ -> []
     end;
 
   top.errors <-
@@ -118,7 +132,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
     
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
+    if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }

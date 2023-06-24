@@ -271,9 +271,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there isn't also a unique reference taken to e
         else []) ++
-        if !null(lookupLocalUniqueRefs(fName, top.flowEnv))
-        then [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse}.")]
-        else []
+        case lookupLocalUniqueRefs(fName, top.flowEnv) of
+        | u :: _ ->
+          [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse} at ${u.sourceGrammar}:${u.sourceLocation.unparse}.")]
+        | [] -> []
+        end
       | _ -> [err(top.location, s"Cannot take a unique reference (of type ${prettyType(finalTy)}) to ${top.unparse}")]
       end
     | _ -> []

@@ -155,6 +155,20 @@ function lookupLocalRefPossibleDecSites
   return searchEnvTree(fName, e.refPossibleDecSiteTree);
 }
 
+-- possible decoration sites for unique references taken for a synthesized translation attribute on a child
+function lookupSynTransRefPossibleDecSites
+[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refPossibleDecSiteTree);
+}
+
+-- possible decoration sites for unique references taken for a synthesized translation attribute on a local/production attribute
+function lookupLocalSynTransRefPossibleDecSites
+[VertexType] ::= fName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${fName}.${attrName}", e.refPossibleDecSiteTree);
+}
+
 -- unconditional decoration sites for unique references taken for a child
 function lookupRefDecSite
 [VertexType] ::= prod::String  sigName::String  e::FlowEnv

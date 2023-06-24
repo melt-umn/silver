@@ -335,7 +335,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.flowVertexInfo = map(synTransAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
   top.flowDeps := 
     case e.flowVertexInfo of
-    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex ++
+      if finalTy.isDecorated then map(vertex.inhVertex, fromMaybe([], refSet)) else []
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();

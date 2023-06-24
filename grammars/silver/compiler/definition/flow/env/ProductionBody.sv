@@ -124,55 +124,70 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   e.alwaysDecorated = false;
 }
 
+-- The flow vertex type corresponding to attributes on this DefLHS
 synthesized attribute defLHSVertex::VertexType occurs on DefLHS;
+
+-- The constructor for inherited equations on this DefLHS
 synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS;
+
+-- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
+synthesized attribute inhAttrName::String occurs on DefLHS;
+
 aspect production errorDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.defLHSVertex = localVertexType("bogus:lhs:vertex");
   top.defLHSInhEq = [];
+  top.inhAttrName = "";
 }
 aspect production childDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.defLHSVertex = rhsVertexType(q.lookupValue.fullName);
   top.defLHSInhEq = [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production lhsDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.defLHSVertex = lhsVertexType;
   top.defLHSInhEq = [];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.defLHSVertex = localVertexType(q.lookupValue.fullName);
   top.defLHSInhEq = [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production forwardDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.defLHSVertex = forwardVertexType;
   top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production errorTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
   top.defLHSVertex = localVertexType("bogus:lhs:vertex");
   top.defLHSInhEq = [];
+  top.inhAttrName = "";
 }
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
   top.defLHSVertex = synTransAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
   top.defLHSInhEq = [synTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
 }
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
   top.defLHSVertex = synTransAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
   top.defLHSInhEq = [localSynTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
 }
 
 aspect production errorValueDef
