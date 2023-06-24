@@ -211,7 +211,7 @@ top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::QNameAttrOccur
 
   top.errors <-
     if !transSyn.found || transSyn.attrDcl.isSynthesized && transSyn.attrDcl.isTranslation then []
-    else [err(transSyn.location, transSyn.name ++ " is not a synthesized translation attribute and so cannot be within a flow type")];
+    else [err(transSyn.location, transSyn.name ++ " is not a translation attribute and so cannot be within a flow type")];
   top.errors <-
     if !inh.found || inh.attrDcl.isInherited then []
     else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];

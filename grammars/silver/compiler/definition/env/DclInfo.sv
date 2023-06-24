@@ -267,7 +267,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
 }
-abstract production synTransDcl
+abstract production transDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;

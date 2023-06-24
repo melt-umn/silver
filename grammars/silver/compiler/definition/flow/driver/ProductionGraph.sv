@@ -162,7 +162,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- Just synthesized attributes.
   local syns :: [String] = getSynAttrsOn(nt, realEnv);
-  -- Just inherited and inherited on synthesized translation attributes.
+  -- Just inherited and inherited on translation attributes.
   local inhs :: [String] = getInhAndInhOnTransAttrsOn(nt, realEnv);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
@@ -446,7 +446,7 @@ function nonterminalStitchPoints
       | at :: _ when at.isSynthesized && at.isTranslation ->
         [nonterminalStitchPoint(
            at.typeScheme.typeName,
-           synTransAttrVertexType(vertexType, o.attrOccurring))]
+           transAttrVertexType(vertexType, o.attrOccurring))]
       | _ -> []
       end,
     getAttrOccursOn(nt, realEnv));

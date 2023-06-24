@@ -350,7 +350,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   local childUniqueRefs::[UniqueRefSite] =
     lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
   local childTransAttrUniqueRefs::[UniqueRefSite] =
-    lookupSynTransUniqueRefs(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv);
+    lookupTransUniqueRefs(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv);
   top.lhsUniqueRefs = if !null(childUniqueRefs) then childUniqueRefs else childTransAttrUniqueRefs;
   top.refDecSiteInhDeps =
     case childUniqueRefs, childTransAttrUniqueRefs of
@@ -363,7 +363,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
         u.refFlowDeps ++
         map(
           \ v::VertexType -> v.inhVertex(top.defLHSattr.attrDcl.fullName),
-          lookupSynTransRefPossibleDecSites(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv)))
+          lookupTransRefPossibleDecSites(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv)))
     | _, _ -> nothing()
     end;
 }
@@ -373,7 +373,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   local localUniqueRefs::[UniqueRefSite] =
     lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
   local localTransAttrUniqueRefs::[UniqueRefSite] =
-    lookupSynTransUniqueRefs(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv);
+    lookupTransUniqueRefs(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv);
   top.lhsUniqueRefs = if !null(localUniqueRefs) then localUniqueRefs else localTransAttrUniqueRefs;
   top.refDecSiteInhDeps =
     case localUniqueRefs, localTransAttrUniqueRefs of
@@ -386,7 +386,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
         u.refFlowDeps ++
         map(
           \ v::VertexType -> v.inhVertex(top.defLHSattr.attrDcl.fullName),
-          lookupLocalSynTransRefPossibleDecSites(q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv)))
+          lookupLocalTransRefPossibleDecSites(q.lookupValue.fullName, attr.attrDcl.fullName, top.flowEnv)))
     | _, _ -> nothing()
     end;
 }
@@ -790,7 +790,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     else [];
 }
 
-aspect production synTransDecoratedAccessHandler
+aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- oh no again
@@ -1006,11 +1006,11 @@ function lookupAllDecSites
       flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupRefDecSite(prodName, sigName, flowEnv))
     | localVertexType(fName) ->
       flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalRefDecSite(fName, flowEnv))
-    | synTransAttrVertexType(rhsVertexType(sigName), transAttr) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupSynTransRefDecSite(prodName, sigName, transAttr, flowEnv))
-    | synTransAttrVertexType(localVertexType(fName), transAttr) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalSynTransRefDecSite(fName, transAttr, flowEnv))
-    | synTransAttrVertexType(_, _) -> []
+    | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupTransRefDecSite(prodName, sigName, transAttr, flowEnv))
+    | transAttrVertexType(localVertexType(fName), transAttr) ->
+      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalTransRefDecSite(fName, transAttr, flowEnv))
+    | transAttrVertexType(_, _) -> []
     | anonVertexType(fName) -> []
     | forwardVertexType_real() -> []
     | subtermVertexType(_, remoteProdName, sigName) ->
@@ -1025,11 +1025,11 @@ Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv
     case vt of
     | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
     | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-    | synTransAttrVertexType(rhsVertexType(sigName), transAttr) ->
+    | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
       !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
-    | synTransAttrVertexType(localVertexType(fName), transAttr) ->
+    | transAttrVertexType(localVertexType(fName), transAttr) ->
       !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
-    | synTransAttrVertexType(_, _) -> false
+    | transAttrVertexType(_, _) -> false
     | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
     | subtermVertexType(_, remoteProdName, sigName) ->
       vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)

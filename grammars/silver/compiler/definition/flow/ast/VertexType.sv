@@ -67,9 +67,9 @@ top::VertexType ::= fName::String
 }
 
 {--
- - Represents the vertexes for each synthesized translation attribute on a production lhs/rhs/local.
+ - Represents the vertexes for each translation attribute on a production lhs/rhs/local.
  -}
-abstract production synTransAttrVertexType
+abstract production transAttrVertexType
 top::VertexType ::= v::VertexType  transAttr::String
 {
   top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");

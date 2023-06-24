@@ -12,8 +12,8 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   top.errors <- te.errorsKindStar;
 }
 
-aspect production attributeDclSynTrans
-top::AGDcl ::= 'synthesized' 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+aspect production attributeDclTrans
+top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.errors <- te.errorsKindStar;
 

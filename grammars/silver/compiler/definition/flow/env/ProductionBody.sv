@@ -112,7 +112,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
   e.decSiteVertexInfo =
     if attr.found && attr.attrDcl.isTranslation
-    then just(synTransAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
+    then just(transAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
     else nothing();
   e.alwaysDecorated = false;
 }
@@ -178,15 +178,15 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.defLHSVertex = synTransAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
-  top.defLHSInhEq = [synTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.defLHSVertex = transAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSInhEq = [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
 }
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.defLHSVertex = synTransAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
-  top.defLHSInhEq = [localSynTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.defLHSVertex = transAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSInhEq = [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
 }
 

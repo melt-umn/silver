@@ -127,15 +127,15 @@ function lookupLocalUniqueRefs
   return searchEnvTree(fName, e.uniqueRefTree);
 }
 
--- unique references taken for a synthesized translation attribute on a child
-function lookupSynTransUniqueRefs
+-- unique references taken for a translation attribute on a child
+function lookupTransUniqueRefs
 [UniqueRefSite] ::= prod::String sigName::String attrName::String e::FlowEnv
 {
   return searchEnvTree(prod ++ ":" ++ sigName ++ "." ++ attrName, e.uniqueRefTree);
 }
 
--- unique references taken for a synthesized translation attribute on a local
-function lookupLocalSynTransUniqueRefs
+-- unique references taken for a translation attribute on a local
+function lookupLocalTransUniqueRefs
 [UniqueRefSite] ::= fName::String attrName::String e::FlowEnv
 {
   return searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
@@ -155,15 +155,15 @@ function lookupLocalRefPossibleDecSites
   return searchEnvTree(fName, e.refPossibleDecSiteTree);
 }
 
--- possible decoration sites for unique references taken for a synthesized translation attribute on a child
-function lookupSynTransRefPossibleDecSites
+-- possible decoration sites for unique references taken for a translation attribute on a child
+function lookupTransRefPossibleDecSites
 [VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
 {
   return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refPossibleDecSiteTree);
 }
 
--- possible decoration sites for unique references taken for a synthesized translation attribute on a local/production attribute
-function lookupLocalSynTransRefPossibleDecSites
+-- possible decoration sites for unique references taken for a translation attribute on a local/production attribute
+function lookupLocalTransRefPossibleDecSites
 [VertexType] ::= fName::String  attrName::String  e::FlowEnv
 {
   return searchEnvTree(s"${fName}.${attrName}", e.refPossibleDecSiteTree);
@@ -183,15 +183,15 @@ function lookupLocalRefDecSite
   return searchEnvTree(fName, e.refDecSiteTree);
 }
 
--- unconditional decoration sites for unique references taken for a synthesized translation attribute on a child
-function lookupSynTransRefDecSite
+-- unconditional decoration sites for unique references taken for a translation attribute on a child
+function lookupTransRefDecSite
 [VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
 {
   return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refDecSiteTree);
 }
 
--- unconditional decoration sites for unique references taken for a synthesized translation attribute on a local/production attribute
-function lookupLocalSynTransRefDecSite
+-- unconditional decoration sites for unique references taken for a translation attribute on a local/production attribute
+function lookupLocalTransRefDecSite
 [VertexType] ::= fName::String  attrName::String  e::FlowEnv
 {
   return searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);

@@ -138,10 +138,10 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
-aspect production synTransDcl
+aspect production transDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.decoratedAccessHandler = synTransDecoratedAccessHandler(_, _, location=_);
+  top.decoratedAccessHandler = transDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = transUndecoratedAccessErrorHandler(_, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);

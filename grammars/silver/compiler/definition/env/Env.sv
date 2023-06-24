@@ -287,7 +287,7 @@ function getSynAttrsOn
 
 {--
  - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
- - Also includes all synthesized attributes occuring on synthesized translation attributes on the
+ - Also includes all synthesized attributes occuring on translation attributes on the
  - nonterminal, when we want to treat these like synthesized attributes.
  -}
 function getSynAndSynOnTransAttrsOn
@@ -325,7 +325,7 @@ function getInhAttrsOn
 
 {--
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
- - Also includes all inherited attributes occuring on synthesized translation attributes on the
+ - Also includes all inherited attributes occuring on translation attributes on the
  - nonterminal, when we want to treat these like inherited attributes.
  -}
 function getInhAndInhOnTransAttrsOn

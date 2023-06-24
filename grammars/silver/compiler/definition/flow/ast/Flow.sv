@@ -277,7 +277,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 }
 
 {--
- - The definition of an inherited attribute for a synthesized translation attribute
+ - The definition of an inherited attribute for a translation attribute
  - on an rhs signature element in a production.
  -
  - @param prod  the full name of the production
@@ -286,7 +286,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  -}
-abstract production synTransInhEq
+abstract production transInhEq
 top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String  deps::[FlowVertex]
 {
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), top)];
@@ -295,7 +295,7 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
 }
 
 {--
- - The definition of an inherited attribute for a synthesized translation attribute
+ - The definition of an inherited attribute for a translation attribute
  - on an local attribute.
  -
  - @param prod  the full name of the production
@@ -304,7 +304,7 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  -}
-abstract production localSynTransInhEq
+abstract production localTransInhEq
 top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  deps::[FlowVertex]
 {
   top.inhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];

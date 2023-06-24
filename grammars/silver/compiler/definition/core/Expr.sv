@@ -546,7 +546,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
-abstract production synTransDecoratedAccessHandler
+abstract production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);

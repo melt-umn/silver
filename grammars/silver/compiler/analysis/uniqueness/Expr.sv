@@ -5,7 +5,7 @@ propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPatter
   excluding
     errorAccessHandler, annoAccessHandler, terminalAccessHandler,
     synDecoratedAccessHandler, inhDecoratedAccessHandler,
-    synTransDecoratedAccessHandler,
+    transDecoratedAccessHandler,
     errorDecoratedAccessHandler,
     ifThenElse, lambdap, letp, matchPrimitiveReal, consPattern;
 
@@ -224,7 +224,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
-aspect production synTransDecoratedAccessHandler
+aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
@@ -255,7 +255,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         if !isExportedBy(top.grammarName, [top.frame.sourceGrammar], top.compiledGrammars)
         then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there is at most one unique reference taken to this decoration site.
-        else (if length(lookupSynTransUniqueRefs(top.frame.fullName, sigName, q.attrDcl.fullName, top.flowEnv)) > 1
+        else (if length(lookupTransUniqueRefs(top.frame.fullName, sigName, q.attrDcl.fullName, top.flowEnv)) > 1
         then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there isn't also a unique reference taken to e
         else []) ++
@@ -267,7 +267,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         if !isExportedBy(top.grammarName, [top.frame.sourceGrammar], top.compiledGrammars)
         then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there is at most one unique reference taken to this decoration site.
-        else (if length(lookupLocalSynTransUniqueRefs(fName, q.attrDcl.fullName, top.flowEnv)) > 1
+        else (if length(lookupLocalTransUniqueRefs(fName, q.attrDcl.fullName, top.flowEnv)) > 1
         then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there isn't also a unique reference taken to e
         else []) ++

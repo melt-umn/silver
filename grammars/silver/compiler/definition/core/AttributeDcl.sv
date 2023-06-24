@@ -44,15 +44,15 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   top.errors <- tl.errorsTyVars;
 }
 
-concrete production attributeDclSynTrans
-top::AGDcl ::= 'synthesized' 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+concrete production attributeDclTrans
+top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.unparse = "synthesized translation attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  top.unparse = "translation attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [synTransDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [transDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
