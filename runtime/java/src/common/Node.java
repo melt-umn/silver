@@ -28,15 +28,22 @@ public abstract class Node implements Decorable, Typed {
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
+	 *   access the decorated translation attribute through its decoration site.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public DecoratedNode decorate(
+		final DecoratedNode parent,
+		final Lazy[] inhs, final Lazy[][] transInhs, final Lazy[] transDecSites) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, null);
+				                 this, parent, inhs, transInhs, transDecSites, null, false);
 	}
 
 	/**
@@ -44,17 +51,30 @@ public abstract class Node implements Decorable, Typed {
 	 * (fwd only)
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
-	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.  These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
+	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
+	 *   access the decorated translation attribute through its decoration site.
+	 *   These override any decoration sites from forwardParent, when fwdTrans is true.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
+	 *   We will pass inherited attribute access requests to this node.
+	 * @param fwdTrans Do translation attributes on this node have decoration sites in fwdParent?
+	 * 	 (This is false for forward production attributes.)
 	 * @return A "decorated" form of this Node 
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent) {
+	public DecoratedNode decorate(
+		final DecoratedNode parent,
+		final Lazy[] inhs,  final Lazy[][] transInhs, final Lazy[] transDecSites,
+		final DecoratedNode fwdParent, final boolean forwardTrans) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, fwdParent);
+                                 this, parent, inhs, transInhs, transDecSites, fwdParent, forwardTrans);
 	}
 
 	/**
@@ -64,7 +84,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @return  A node decorated with no inherited attributes, without a parent.
 	 */
 	public DecoratedNode decorate() {
-		return decorate(TopNode.singleton, (Lazy[])null);
+		return decorate(TopNode.singleton, null, null, null);
 	}
 
 	private Node undecoratedValue = null;
@@ -185,10 +205,27 @@ public abstract class Node implements Decorable, Typed {
 	public abstract Lazy getChildDecSite(final int child);
 	
 	/**
-	 * @param key The child index to look up the inherited attributes.
+	 * @param index The child index to look up the inherited attributes.
 	 * @return An array containing the inherited attributes supplied to that child 
 	 */
 	public abstract Lazy[] getChildInheritedAttributes(final int index);
+	
+	/**
+	 * @param index The child index to look up the translation attribute inherited attributes.
+	 * @param attribute The translation attribute to look up inherited attributes.
+	 * @return An array containing the inherited attributes supplied to translation attributes that child 
+	 */
+	public abstract Lazy[][] getChildTransInheritedAttributes(final int index);
+
+	/**
+	 * Access the decorated form of a child's translation attribute through its reference decoration site, if it has one.
+	 * 
+	 * @param index The child index to look up the translation attribute decoration sites.
+	 * @return An array of Lazys to evaluate on a decorated form of this Node,
+	 *  to get the decorated trees for the translation attributes,
+	 * 	or null if it has no reference decoration site.
+	 */
+	public abstract Lazy[] getChildTransDecSites(final int index);
 
 	/**
 	 * Used to create arrays of appropriate size in DecoratedNode.
@@ -215,7 +252,7 @@ public abstract class Node implements Decorable, Typed {
 	 * Access the decorated form of this local through its reference decoration site, if it has one.
 	 * 
 	 * @param index The index of a local or production attribute on this Node
-	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated child,
+	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated local,
 	 * 	or null if it has no reference decoration site
 	 */
 	public abstract Lazy getLocalDecSite(final int index);
@@ -231,6 +268,23 @@ public abstract class Node implements Decorable, Typed {
 	 * @return An array containing the inherited attributes supplied to that local 
 	 */
 	public abstract Lazy[] getLocalInheritedAttributes(final int index);
+	
+	/**
+	 * @param index The index for a local, to look up the translation attribute inherited attributes.
+	 * @param attribute The translation attribute to look up inherited attributes.
+	 * @return An array containing inherited attributes supplied to translation attributes on that child 
+	 */
+	public abstract Lazy[][] getLocalTransInheritedAttributes(final int index);
+
+	/**
+	 * Access the decorated form of a local's translation attribute through its reference decoration site, if it has one.
+	 * 
+	 * @param index The index for a local, to look up the translation attribute decoration sites.
+	 * @return An array of Lazys to evaluate on a decorated form of this Node,
+	 *  to get the decorated trees for the translation attributes,
+	 * 	or null if it has no reference decoration site.
+	 */
+	public abstract Lazy[] getLocalTransDecSites(final int index);
 	
 	/**
 	 * Reports whether or not this production forwards.

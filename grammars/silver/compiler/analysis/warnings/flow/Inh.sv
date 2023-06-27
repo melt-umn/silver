@@ -133,7 +133,7 @@ function checkEqDeps
   | localInhVertex(fName, attrName) -> 
       if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
       || fName == "forward"
-      || isForwardProdAttr(fName, realEnv)
+      || isForwardProdAttr(fName, realEnv) && indexOf(".", attrName) == -1  -- Forward prod attribute, not inh on trans
       || localAttrViaReference(fName, attrName, realEnv)
       || !null(lookupLocalRefDecSite(fName, flowEnv))
       then []

@@ -341,6 +341,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
+
+  top.errors <-
+    case getValueDcl(top.frame.fullName, top.env) of
+    | dcl :: _ when dcl.hasForward && attr.found && attr.attrDcl.isTranslation ->
+      [err(top.location, s"Overriding translation attribute ${attr.attrDcl.fullName} in a forwarding production is not currently supported.")]
+    | _ -> []
+    end;
 }
 
 abstract production inheritedAttributeDef

@@ -70,14 +70,14 @@ public class DecoratedNode implements Decorable, Typed {
 	/**
 	 * The cache of the inherited attribute supplied to this node.
 	 * 
-	 * @see #inherited(String)
+	 * @see #inherited(int)
 	 * @see #inheritedAttributes
 	 */
 	protected final Object[] inheritedValues;
 	/**
 	 * The cache of the synthesized attributes on this node.
 	 * 
-	 * @see #synthesized(String)
+	 * @see #synthesized(int)
 	 * @see #local(String)
 	 */
 	protected final Object[] synthesizedValues;
@@ -86,10 +86,33 @@ public class DecoratedNode implements Decorable, Typed {
 	 * The inherited attributes supplied to this DecoratedNode, to be evaluated with context 'parent'.
 	 * Not final, because we make a copy of the array if this DecoratedNode is extra-decorated.
 	 * 
-	 * @see #inherited(String)
+	 * @see #inherited(int)
 	 * @see #inheritedValues
 	 */
 	protected Lazy[] inheritedAttributes;
+
+	/**
+	 * The inherited attributes supplied to translation attributes on this DecoratedNode, to be evaluated with context 'this'.
+	 * Not final, because we make a copy of the array if this DecoratedNode is extra-decorated.
+	 * 
+	 * @see #translation(int)
+	 */
+	protected Lazy[][] transInheritedAttributes;
+
+	/**
+	 * Accessors for the decoration sites of translation attributes on this DecoratedNode, to be evaluated with context 'this'.
+	 * Not final, because we make a copy of the array if this DecoratedNode is extra-decorated.
+	 * 
+	 * @see #translation(int)
+	 */
+	protected Lazy[] transDecorationSites;
+
+	/**
+	 * Should translation attributes on this node default to having the same decoration sites as fwdParent?
+	 * This is true for normal forwarding, where there will be syn copy equations,
+	 * but false for forward production attributes, which only forward inhs.
+	 */
+	protected boolean forwardTrans;
 
 	/**
 	 * A cache of the values of local attributes on this node. (incl. locals and prod)
@@ -106,6 +129,11 @@ public class DecoratedNode implements Decorable, Typed {
 	 * This may be true when localValues[i] == null, because of how unique references are translated.
 	 */
 	protected final boolean[] localCreated;
+	/**
+	 * Track whether a decorated translation attribute has already been created, for sanity checking.
+	 * This may be true when synthesizedValues[i] == null, because of how unique references are translated.
+	 */
+	protected final boolean[] transCreated;
 
 	
 	/**
@@ -120,20 +148,28 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param self  The Node to decorate.
 	 * @param parent  The DecoratedNode creating this one, to evaluate inhs in.
 	 * @param inhs  The inherited attributes to decorate this node with.
+	 * @param transInhs  The inherited attributes to decorate translation attributes on this node with.
+	 * @param transDecSites  The decoration sites for translation attributes on this node.
 	 * @param forwardParent  The node to request inherited attributes from if not supplied in 'inhs'.
+	 * @param forwardTrans Do translation attributes on this node have decoration sites in forwardParent?
+	 * 	 (This is false for forward production attributes.)
 	 * 
-	 * @see Node#decorate(DecoratedNode, DecoratedNode)
-	 * @see Node#decorate(DecoratedNode, Lazy[])
+	 * @see Node#decorate(DecoratedNode, Lazy[], Lazy[][], Lazy[])
+	 * @see Node#decorate(DecoratedNode, Lazy[], Lazy[][], Lazy[], DecoratedNode, boolean)
 	 */
 	DecoratedNode(
 			final int cc, final int ic, final int sc, final int lc,
 			final Node self, final DecoratedNode parent,
-			final Lazy[] inhs, final DecoratedNode forwardParent) {
+			final Lazy[] inhs, final Lazy[][] transInhs, final Lazy[] transDecSites,
+			final DecoratedNode forwardParent, final boolean forwardTrans) {
 		this.self = self;
 		this.parent = parent;
 		this.originCtx = parent!=null?parent.originCtx:null;
 		this.inheritedAttributes = inhs;
+		this.transInheritedAttributes = transInhs;
+		this.transDecorationSites = transDecSites;
 		this.forwardParent = forwardParent;
+		this.forwardTrans = forwardTrans;
 		
 		// create caches
 		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
@@ -142,6 +178,7 @@ public class DecoratedNode implements Decorable, Typed {
 		this.localValues =       (lc > 0) ? new Object[lc] : null;
 		this.childCreated =      (cc > 0) ? new boolean[cc] : null;
 		this.localCreated =      (lc > 0) ? new boolean[lc] : null;
+		this.transCreated =      (sc > 0) ? new boolean[sc] : null;
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
@@ -162,7 +199,10 @@ public class DecoratedNode implements Decorable, Typed {
 		this.self = self;
 		this.parent = TopNode.singleton;
 		this.inheritedAttributes = null;
+		this.transInheritedAttributes = null;
+		this.transDecorationSites = null;
 		this.forwardParent = null;
+		this.forwardTrans = false;
 		
 		this.childrenValues = new Object[cc];
 		this.inheritedValues = null;
@@ -170,6 +210,7 @@ public class DecoratedNode implements Decorable, Typed {
 		this.localValues = (lc > 0) ? new Object[lc] : null;
 		this.childCreated = new boolean[cc];
 		this.localCreated = (lc > 0) ? new boolean[lc] : null;
+		this.transCreated = null;
 	}
 	
 	// STATS: Uncomment to enable statistics
@@ -195,18 +236,64 @@ public class DecoratedNode implements Decorable, Typed {
 	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)
-	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
+	 *   access the decorated translation attribute through its decoration site.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
 	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'.
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public DecoratedNode decorate(
+		final DecoratedNode parent,
+		final Lazy[] inhs, final Lazy[][] transInhs, final Lazy[] transDecSites) {
 		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
-		if (forwardParent == null && inhs != null) {
-			inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
-			for(int i = 0; i < inhs.length; i++) {
-				final int attribute = i;
-				if(inhs[attribute] != null && inheritedAttributes[attribute] == null) {
-					inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
+		if (forwardParent == null) {
+			if (inhs != null) {
+				if (inheritedAttributes == null) {
+					inheritedAttributes = new Lazy[self.getNumberOfInhAttrs()];
+				} else {
+					inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
+				}
+				for(int i = 0; i < inhs.length; i++) {
+					final int attribute = i;
+					if(inhs[attribute] != null && inheritedAttributes[attribute] == null) {
+						inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
+					}
+				}
+			}
+			if (transInhs != null) {
+				if (transInheritedAttributes == null) {
+					transInheritedAttributes = new Lazy[self.getNumberOfSynAttrs()][];
+				} else {
+					transInheritedAttributes = transInheritedAttributes.clone();  // Avoid modifying the static trans inh array from the original parent Node
+				}
+				for(int i = 0; i < transInhs.length; i++) {
+					final int transAttribute = i;
+					if (transInheritedAttributes[transAttribute] == null && transInhs[transAttribute] != null) {
+						transInheritedAttributes[transAttribute] = new Lazy[transInhs[transAttribute].length];
+					}
+					for(int j = 0; j < transInhs[i].length; j++) {
+						final int attribute = i;
+						if(transInhs[transAttribute][attribute] != null && transInheritedAttributes[transAttribute][attribute] == null) {
+							transInheritedAttributes[transAttribute][attribute] = (context) -> transInhs[transAttribute][attribute].eval(parent);
+						}
+					}
+				}
+			}
+			if (transDecSites != null) {
+				if (transDecorationSites == null) {
+					transDecorationSites = new Lazy[self.getNumberOfSynAttrs()];
+				} else {
+					transDecorationSites = transDecorationSites.clone();  // Avoid modifying the static dec site array from the original parent Node
+				}
+				for(int i = 0; i < transDecSites.length; i++) {
+					final int attribute = i;
+					if(transDecSites[attribute] != null && transDecorationSites[attribute] == null) {
+						transDecorationSites[attribute] = (context) -> transDecSites[attribute].eval(parent);
+					}
 				}
 			}
 		}
@@ -217,16 +304,28 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Decorate this node with a forward parent.
 	 * This has no effect if the node already has a forward parent.
 	 * 
-	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
+	 *   access the decorated translation attribute through its decoration site.
+	 *   These override any decoration sites from forwardParent, when fwdTrans is true.
+	 *   These Lazys will be supplied with 'this' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
+	 * @param fwdTrans Do translation attributes on this node have decoration sites in fwdParent?
+	 * 	 (This is false for forward production attributes.)
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent) {
+	public DecoratedNode decorate(
+		final DecoratedNode parent,
+		final Lazy[] inhs, final Lazy[][] transInhs, final Lazy[] transDecSites,
+		final DecoratedNode fwdParent, final boolean fwdTrans) {
 		if (forwardParent == null) {
-			decorate(parent, inhs);
+			decorate(parent, inhs, transInhs, transDecSites);
 			forwardParent = fwdParent;
+			forwardTrans = fwdTrans;
 		}
 		return this;
 	}
@@ -304,7 +403,8 @@ public class DecoratedNode implements Decorable, Typed {
 		if(childCreated[child]) {
 			throw new SilverInternalError("Decorated child created more than once!");
 		}
-		DecoratedNode result = ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
+		DecoratedNode result = ((Decorable)self.getChild(child))
+			.decorate(this, self.getChildInheritedAttributes(child), self.getChildTransInheritedAttributes(child), self.getChildTransDecSites(child));
 		childCreated[child] = true;
 		return result;
 	}
@@ -405,9 +505,12 @@ public class DecoratedNode implements Decorable, Typed {
 		Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
 		DecoratedNode result;
 		if(self.getLocalIsForward(attribute)) {
-			result = localAsIs.decorate(this, inhs, this);
+			result = localAsIs.decorate(
+				this, inhs, self.getLocalTransInheritedAttributes(attribute), self.getLocalTransDecSites(attribute),
+				this, false);
 		} else {
-			result = localAsIs.decorate(this, inhs);
+			result = localAsIs.decorate(
+				this, inhs, self.getLocalTransInheritedAttributes(attribute), self.getLocalTransDecSites(attribute));
 		}
 		localCreated[attribute] = true;
 		return result;
@@ -471,14 +574,93 @@ public class DecoratedNode implements Decorable, Typed {
 				try {
 					return l.eval(this);
 				} catch(Throwable t) {
-					throw new TraceException("While evaling default for '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
+					throw new TraceException("While evaling default for syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 				}
 			} else {
 				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());
 			}
 		}
 	}
-	
+
+	/**
+	 * Obtain a translation attribute from this DecoratedNode.
+	 * Evaluate it as a synthesized attribute, then decorate it.
+	 * 
+	 * @param attribute The full name of the attribute.
+	 * @return The value of the attribute.
+	 */
+	@SuppressWarnings("unchecked")
+	public DecoratedNode translation(final int attribute) {
+		// common.Util.stackProbe();
+		// System.err.println("TRACE: " + getDebugID() + " demanding trans attribute: " + self.getNameOfSynAttr(attribute));
+		
+		DecoratedNode o = (DecoratedNode)this.synthesizedValues[attribute];
+		if(o == null) {
+			o = obtainDecoratedTrans(attribute);
+			
+			assert(o != null);
+
+			// CACHE : comment out to disable caching for translation attributes
+			this.synthesizedValues[attribute] = o;
+		}
+		return o;
+	}
+
+	private final DecoratedNode obtainDecoratedTrans(final int attribute) { 
+		Lazy decSite = transDecorationSites == null? null : transDecorationSites[attribute];
+		if(decSite != null) {
+			return (DecoratedNode)decSite.eval(this);
+		} else if(forwardParent != null && forwardTrans) {
+			return forwardParent.obtainDecoratedTrans(attribute);
+		} else {
+			return evalTrans(attribute);
+		}
+	}
+
+	/**
+	 * Evaluate a translation attribute and decorate it.
+	 * This can also be called directly in the translation of taking a unique reference.
+	 * Invariant: should never be called more than once for an attribute!
+	 * 
+	 * @param attribute The index of the translation attribute to obtain.
+	 * @return The decorated value of the translation attribute.
+	 */
+	public final DecoratedNode evalTrans(final int attribute) {
+		if(transCreated[attribute]) {
+			throw new SilverInternalError("Decorated translation attribute " + self.getNameOfSynAttr(attribute) + " created more than once!");
+		}
+		Lazy l = self.getSynthesized(attribute);
+		Decorable d;
+		if(l != null) {
+			try {
+				d = (Decorable)l.eval(this);
+			} catch(Throwable t) {
+				throw new TraceException("While evaling trans '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
+			}
+		} else if(self.hasForward()) {
+			try {
+				d = forward().evalTrans(attribute);
+			} catch(Throwable t) {
+				throw new TraceException("While evaling trans '" + self.getNameOfSynAttr(attribute) + "' via forward in " + getDebugID(), t);
+			}
+		} else {
+			l = self.getDefaultSynthesized(attribute);
+			if(l != null) {
+				try {
+					d = (Decorable)l.eval(this);
+				} catch(Throwable t) {
+					throw new TraceException("While evaling default for trans '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
+				}
+			} else {
+				throw new MissingDefinitionException("Translation attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());
+			}
+		}
+		DecoratedNode result =
+			d.decorate(this, transInheritedAttributes == null? null : transInheritedAttributes[attribute], null, null);
+		transCreated[attribute] = true;
+		return result;
+	}
+
 	/**
 	 * Get the forwarded-to DecoratedNode.  Cached.  There is no need for an "AsIs" vs "Decorated"
 	 * variant of this function, since we always know it's a Node.
@@ -507,7 +689,8 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	private final DecoratedNode evalForward() {
 		try {
-			return self.evalForward(this).decorate(parent, getForwardInheritedAttributes(), this);
+			return self.evalForward(this).decorate(
+				parent, getForwardInheritedAttributes(), null, null, this, true);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
@@ -690,7 +873,7 @@ public class DecoratedNode implements Decorable, Typed {
 		if(self == null) {
 			return "<top>";
 		} else if(self instanceof silver.core.Alocation) {
-			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate();
 			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
 			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
 			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
