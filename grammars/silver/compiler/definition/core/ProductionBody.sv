@@ -360,7 +360,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 }
 
 -- The grammar needs to be structured in this way to avoid a shift/reduce conflict...
-concrete production transAttributeDef
+concrete production transInhAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ transAttr.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
