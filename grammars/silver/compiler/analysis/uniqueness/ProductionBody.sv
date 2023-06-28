@@ -40,7 +40,9 @@ top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  top.errors <- uniqueContextErrors(e.uniqueRefs);
+  top.errors <-
+    if !attr.found || attr.attrDcl.isTranslation then []
+    else uniqueContextErrors(e.uniqueRefs);
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
