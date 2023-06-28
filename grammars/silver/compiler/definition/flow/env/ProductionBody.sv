@@ -133,8 +133,8 @@ synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS
 -- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
 synthesized attribute inhAttrName::String occurs on DefLHS;
 
-aspect production errorDefLHS
-top::DefLHS ::= q::Decorated! QName
+aspect default production
+top::DefLHS ::=
 {
   top.defLHSVertex = localVertexType("bogus:lhs:vertex");
   top.defLHSInhEq = [];
@@ -152,7 +152,7 @@ top::DefLHS ::= q::Decorated! QName
 {
   top.defLHSVertex = lhsVertexType;
   top.defLHSInhEq = [];
-  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+  top.inhAttrName = "";
 }
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated! QName
@@ -167,13 +167,6 @@ top::DefLHS ::= q::Decorated! QName
   top.defLHSVertex = forwardVertexType;
   top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
-}
-aspect production errorTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
-{
-  top.defLHSVertex = localVertexType("bogus:lhs:vertex");
-  top.defLHSInhEq = [];
-  top.inhAttrName = "";
 }
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur

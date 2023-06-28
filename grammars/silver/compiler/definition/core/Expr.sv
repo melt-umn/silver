@@ -476,6 +476,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                else q.attrDcl.undecoratedAccessHandler)(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
+  -- transUndecoratedAccessErrorHandler
 }
 
 {--

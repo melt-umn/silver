@@ -79,6 +79,13 @@ function lookupInh
   return searchEnvTree(crossnames(prod, crossnames(sigName, attr)), e.inhTree);
 }
 
+-- inherited equation for a translation attribute on a child in a production
+function lookupTransInh
+[FlowDef] ::= prod::String  sigName::String  transAttr::String  attr::String  e::FlowEnv
+{
+  return searchEnvTree(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), e.inhTree);
+}
+
 -- default equation for a nonterminal
 function lookupDef
 [FlowDef] ::= nt::String  attr::String  e::FlowEnv
@@ -105,6 +112,13 @@ function lookupLocalInh
 [FlowDef] ::= prod::String  fName::String  attr::String  e::FlowEnv
 {
   return searchEnvTree(crossnames(prod, crossnames(fName, attr)), e.localInhTree);
+}
+
+-- inherited equation for a translation attribute on a local in a production
+function lookupLocalTransInh
+[FlowDef] ::= prod::String  fName::String  transAttr::String  attr::String  e::FlowEnv
+{
+  return searchEnvTree(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), e.inhTree);
 }
 
 function lookupLocalEq

@@ -9,6 +9,7 @@ import silver:compiler:analysis:typechecking:core;
 import silver:compiler:translation:java;
 
 import silver:compiler:definition:flow:env;
+import silver:compiler:definition:flow:ast only lhsVertexType;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructDefaultProductionGraph; -- for the "oh no again!" hack below
 import silver:compiler:driver:util only RootSpec; -- ditto
 
@@ -98,6 +99,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = defaultLhsDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 abstract production defaultLhsDefLHS
@@ -115,6 +117,10 @@ top::DefLHS ::= q::Decorated! QName
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
   top.typerep = q.lookupValue.typeScheme.monoType;
+
+  top.defLHSVertex = lhsVertexType;
+  top.defLHSInhEq = [];
+  top.inhAttrName = "";
 
   top.translation = makeNTName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }

@@ -22,6 +22,8 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = parserAttributeReference(_, location=_);
   top.defDispatcher = parserAttributeValueDef(_, _, location=_);
   top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
+  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur  l::Location ->
+    parserAttributeDefLHS(q, location=l);
 }
 
 {--
@@ -40,6 +42,7 @@ top::ValueDclInfo ::= fn::String
   top.refDispatcher = pluckTerminalReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 {--
@@ -59,6 +62,7 @@ top::ValueDclInfo ::= fn::String  superClasses::[String]
   top.refDispatcher = lexerClassReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 {--
@@ -75,6 +79,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = termAttrValueReference(_, location=_);
   top.defDispatcher = termAttrValueValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 {--
@@ -91,6 +96,8 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = actionChildReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = parserAttributeDefLHS(_, location=_); -- TODO: specialize this
+  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur  l::Location ->
+    parserAttributeDefLHS(q, location=l);
 }
 
 {--
@@ -108,4 +115,6 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = parserAttributeReference(_, location=_);
   top.defDispatcher = parserAttributeValueDef(_, _, location=_);
   top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
+  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur  l::Location ->
+    parserAttributeDefLHS(q, location=l);
 }

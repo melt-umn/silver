@@ -798,6 +798,64 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                else [];
 }
 
+-- TODO: restricted translation attributes?
+aspect production transDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
+
+  propagate mDownSubst, mUpSubst;
+  top.merrors := [];
+  top.merrors <- case q.attrDcl of
+                 -- TODO: restricted translation attributes?
+                 -- | restrictedSynDcl(_, _, _) -> []
+                 -- | restrictedInhDcl(_, _, _) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
+
+  local eUnDec::Expr =
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
+  local isEMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(top.location)}
+      ($Expr {eUnDec},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
+          $Expr {monadReturn(top.location)}
+          (x.$QName {qName(q.location, q.name)})
+       )
+      )
+    };
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                       then isEMonad
+                       else noMonad;
+
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                 then monadOfType(top.expectedMonad, q.typerep)
+                 else q.typerep;
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               if q.found
+                               then case q.attrDcl of
+                                    -- TODO: restricted translation attributes?
+                                    -- | restrictedSynDcl(_, _, _) -> []
+                                    -- | restrictedInhDcl(_, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
+}
+
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
@@ -871,6 +929,66 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                else [];
 }
 
+-- TODO: restricted translation attributes?
+aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
+
+  propagate mDownSubst, mUpSubst;
+  top.merrors := [];
+  top.merrors <- case q.attrDcl of
+                 -- TODO: restricted translation attributes?
+                 -- | restrictedSynDcl(_, _, _) -> []
+                 -- | restrictedInhDcl(_, _, _) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
+
+  --Why do we rewrite here, in an error production?  We can get here from the basic access
+  --   production based on normal typechecking failing even though our typechecking will
+  --   succeed, and we then need to be able to go back.
+  local eUnDec::Expr =
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
+  local isEMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(top.location)}
+      ($Expr {eUnDec},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
+          $Expr {monadReturn(top.location)}
+          (x.$QName {qName(q.location, q.name)})
+       )
+      )
+    };
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                       then isEMonad
+                       else noMonad;
+
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                 then monadOfType(top.expectedMonad, q.typerep)
+                 else q.typerep;
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               if q.found
+                               then case q.attrDcl of
+                                    -- TODO: restricted translation attributes?
+                                    -- | restrictedSynDcl(_, _, _) -> []
+                                    -- | restrictedInhDcl(_, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
+}
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'

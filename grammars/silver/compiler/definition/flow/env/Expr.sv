@@ -348,6 +348,12 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }
+aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
