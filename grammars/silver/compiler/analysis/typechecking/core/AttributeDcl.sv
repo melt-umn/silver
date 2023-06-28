@@ -16,14 +16,5 @@ aspect production attributeDclTrans
 top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.errors <- te.errorsKindStar;
-
-  local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
-  checkNT.downSubst = emptySubst();
-  checkNT.finalSubst = emptySubst();
-  
-  top.errors <-
-    if checkNT.typeerror
-    then [err(top.location, "Translation attribute type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
-    else [];
 }
 
