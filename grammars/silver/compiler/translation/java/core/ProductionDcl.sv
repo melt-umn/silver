@@ -185,12 +185,12 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     }
 
     @Override
-    public common.Lazy[] getLocalTransDecSite(final int key) {
+    public common.Lazy[] getLocalTransDecSites(final int key) {
         return localTransDecSites[key];
     }
 
     @Override
-    public common.Lazy[][] getChildTransDecSite(final int key) {
+    public common.Lazy[] getChildTransDecSites(final int key) {
         return childTransDecSites[key];
     }
 

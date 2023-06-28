@@ -157,12 +157,12 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
     }
 
     @Override
-    public common.Lazy[] getLocalTransDecSite(final int key) {
+    public common.Lazy[] getLocalTransDecSites(final int key) {
         return localTransDecSites[key];
     }
 
     @Override
-    public common.Lazy[][] getChildTransDecSite(final int key) {
+    public common.Lazy[] getChildTransDecSites(final int key) {
         return childTransDecSites[key];
     }
 
@@ -266,7 +266,7 @@ public class Main {
 
 		try {
 			common.Node rv = (common.Node) ${if isIOValReturn then invocationIOVal else invokationEvalIO};
-			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
+			common.DecoratedNode drv = rv.decorate();
 			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
 		} catch(Throwable t) {

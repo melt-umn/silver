@@ -270,13 +270,15 @@ public class DecoratedNode implements Decorable, Typed {
 				}
 				for(int i = 0; i < transInhs.length; i++) {
 					final int transAttribute = i;
-					if (transInheritedAttributes[transAttribute] == null && transInhs[transAttribute] != null) {
-						transInheritedAttributes[transAttribute] = new Lazy[transInhs[transAttribute].length];
-					}
-					for(int j = 0; j < transInhs[i].length; j++) {
-						final int attribute = i;
-						if(transInhs[transAttribute][attribute] != null && transInheritedAttributes[transAttribute][attribute] == null) {
-							transInheritedAttributes[transAttribute][attribute] = (context) -> transInhs[transAttribute][attribute].eval(parent);
+					if(transInhs[transAttribute] != null) {
+						if(transInheritedAttributes[transAttribute] == null) {
+							transInheritedAttributes[transAttribute] = new Lazy[transInhs[transAttribute].length];
+						}
+						for(int j = 0; j < transInhs[transAttribute].length; j++) {
+							final int attribute = i;
+							if(transInhs[transAttribute][attribute] != null && transInheritedAttributes[transAttribute][attribute] == null) {
+								transInheritedAttributes[transAttribute][attribute] = (context) -> transInhs[transAttribute][attribute].eval(parent);
+							}
 						}
 					}
 				}

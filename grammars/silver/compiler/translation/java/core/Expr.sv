@@ -418,7 +418,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.translation = s"((common.Decorable)${e.translation})" ++ 
     case inh of
-    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
+    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null, (common.Lazy[][])null, (common.Lazy[])null)"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
       -- When the user forgets to provide inherited attributes
       -- (especially important because we're implicitly inserted when accessing attributes
@@ -431,7 +431,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
-      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
+      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}), " ++
+      "(common.Lazy[][])null, (common.Lazy[])null)"  -- TODO: permit supplying inhs on translation attributes
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
