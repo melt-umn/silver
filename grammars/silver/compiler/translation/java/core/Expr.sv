@@ -269,8 +269,6 @@ String ::= e::Decorated AnnoAppExprs
   else s"new Object[]{${implode(", ", map((.lazyTranslation), e.exprs))}}";
 }
 
-function int2str String ::= i::Integer { return toString(i); }
-
 aspect production partialApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
@@ -281,16 +279,16 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
   local step2 :: String =
     if !null(es.appExprIndicies) then
       step1 ++ ".invokePartial(" ++
-      s"new int[]{${implode(", ", map(int2str, es.appExprIndicies))}}, " ++
+      s"new int[]{${implode(", ", map(toString, es.appExprIndicies))}}, " ++
       s"new Object[]{${argsTranslation(es)}})"
     else step1;
   local step3 :: String =
     if !null(annos.annoIndexConverted) || !null(annos.annoIndexSupplied) then
       step2 ++ ".invokeNamedPartial(" ++
       (if null(annos.annoIndexConverted) then "null"
-       else s"new int[]{${implode(", ", map(int2str, annos.annoIndexConverted))}}") ++ ", " ++
+       else s"new int[]{${implode(", ", map(toString, annos.annoIndexConverted))}}") ++ ", " ++
       (if null(annos.annoIndexSupplied) then "null"
-       else s"new int[]{${implode(", ", map(int2str, annos.annoIndexSupplied))}}") ++ ", " ++
+       else s"new int[]{${implode(", ", map(toString, annos.annoIndexSupplied))}}") ++ ", " ++
       namedargsTranslationNOReorder(annos) ++ ")"
     else step2;
 
@@ -308,6 +306,13 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
+aspect production transUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
@@ -350,6 +355,33 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | lhsReference(_), true -> s"context.contextInheritedLazy(${q.attrOccursIndex})"
     | _, _ -> wrapThunk(top.translation, top.frame.lazyApplication)
     end;
+}
+
+aspect production transDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  -- TODO: Origin tracking?
+  top.translation =
+    if !finalType(top).isDecorated then
+      s"((${finalType(top).transType})${e.translation}.translation(${q.attrOccursIndex}).undecorate())"
+    else if finalType(top).isUniqueDecorated then
+      case e of
+      -- Unique reference to a translation attribute on a child that is a remote decoration site:
+      -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
+      | childReference(cqn) when lookupRefDecSite(top.frame.fullName, cqn.lookupValue.fullName, top.flowEnv) matches [v] ->
+        s"${e.translation}.evalTrans(${q.attrOccursIndex})"
+      -- Unique reference to a translation attribute on a child that is a remote decoration site:
+      -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
+      | localReference(lqn) when lookupLocalRefDecSite(lqn.lookupValue.fullName, top.flowEnv) matches [v] ->
+        s"${e.translation}.evalTrans(${q.attrOccursIndex})"
+      -- Normal decorated reference:
+      -- This may create the child, or demand it via the remote decoration site if the child has one.
+      | _ -> s"${e.translation}.translation(${q.attrOccursIndex})"
+      end
+    else s"${e.translation}.translation(${q.attrOccursIndex})";
+
+  -- TODO: Specialized thunks for accesses on child/local, for efficency
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production terminalAccessHandler

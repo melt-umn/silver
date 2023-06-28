@@ -82,11 +82,15 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 
     public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
+    public static final common.Lazy[][][] childTransInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][][];
+    public static final common.Lazy[][] childTransDecSites = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
     public static final boolean[] localIsForward = new boolean[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
+    public static final common.Lazy[][][] localTransInheritedAttributes = new common.Lazy[num_local_attrs][][];
+    public static final common.Lazy[][] localTransDecSites = new common.Lazy[num_local_attrs][];
 
 ${namedSig.inhOccursIndexDecls}
 
@@ -143,7 +147,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	@Override
 	public common.Lazy getChildDecSite(final int index) {
 		switch(index) {
-${implode("", map(makeChildDecSiteAccessCase(body.env, top.flowEnv, fName, _), namedSig.inputElements))}
+${implode("", map(makeChildDecSiteAccessCase(body.env, top.flowEnv, body.frame.lhsNtName, fName, _), namedSig.inputElements))}
             default: return null;
         }
     }
@@ -168,6 +172,26 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     public common.Lazy[] getChildInheritedAttributes(final int key) {
 ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInhOccurs, "childInhContextTypeVars", "childInheritedAttributes", _), namedSig.inhOccursContextTypes)}
         return childInheritedAttributes[key];
+    }
+
+    @Override
+    public common.Lazy[][] getLocalTransInheritedAttributes(final int key) {
+        return localTransInheritedAttributes[key];
+    }
+
+    @Override
+    public common.Lazy[][] getChildTransInheritedAttributes(final int key) {
+        return childTransInheritedAttributes[key];
+    }
+
+    @Override
+    public common.Lazy[] getLocalTransDecSite(final int key) {
+        return localTransDecSites[key];
+    }
+
+    @Override
+    public common.Lazy[][] getChildTransDecSite(final int key) {
+        return childTransDecSites[key];
     }
 
     @Override

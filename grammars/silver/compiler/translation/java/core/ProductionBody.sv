@@ -10,6 +10,8 @@ attribute           translation               occurs on DefLHS, ForwardInhs, For
 
 propagate setupInh, valueWeaving on ProductionBody, ProductionStmts;
 
+synthesized attribute initTransInh :: String occurs on DefLHS;
+
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
@@ -108,21 +110,23 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     if isDecorable(te.typerep, top.env)
     then
       s"\t\t//${top.unparse}\n" ++
-      s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
       if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
-      then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
-      else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
+      then
+        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n" ++
+        s"\t\tchildTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.num_syn_attrs][];\n" ++
+        s"\t\tchildTransDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.num_syn_attrs];\n"
+      else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
   top.translation = 
-    case lookupLocalRefDecSite(fName, top.flowEnv) of
-    | [v] ->
+    case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
+    | [u], [v] ->
         s"\t\t//${top.unparse}\n" ++
         s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, v)};\n"
-    | _ -> ""
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, u.sourceGrammar, top.frame.fullName, v)};\n"
+    | _, _ -> ""
     end;
 }
 
@@ -138,21 +142,23 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     if isDecorable(te.typerep, top.env)
     then
       s"\t\t//${top.unparse}\n" ++
-      s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
       if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
-      then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
-      else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
+      then
+        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n" ++
+        s"\t\tchildTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.num_syn_attrs][];\n" ++
+        s"\t\tchildTransDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.num_syn_attrs];\n"
+      else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
   top.translation = 
-    case lookupLocalRefDecSite(fName, top.flowEnv) of
-    | [v] ->
+    case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
+    | [u], [v] ->
         s"\t\t//${top.unparse}\n" ++
         s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, v)};\n"
-    | _ -> ""
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, u.sourceGrammar, top.frame.fullName, v)};\n"
+    | _, _ -> ""
     end;
 }
 
@@ -174,6 +180,12 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
 
   -- Decoration through a remote reference has no effect, since all inhs are supplied here via a forward parent
   top.translation = "";
+}
+
+aspect default production
+top::DefLHS ::=
+{
+  top.initTransInh = "";
 }
 
 aspect production childDefLHS
@@ -206,6 +218,26 @@ top::DefLHS ::= q::Decorated! QName
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
+aspect production childTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.translation = s"${top.frame.className}.childTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}][${attr.attrOccursIndex}]";
+  top.initTransInh = s"if (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+}
+
+aspect production localTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.translation = s"${top.frame.className}.localTransInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}][${attr.attrOccursIndex}]";
+  top.initTransInh = s"if (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+}
+
+aspect production errorTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+}
+
 aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
@@ -217,6 +249,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
+    dl.initTransInh ++
     s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
@@ -225,6 +258,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
+    dl.initTransInh ++
     s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 

@@ -10,7 +10,7 @@ import common.exceptions.TraceException;
  * 
  * <p>Here be dragons, unfortunately. Don't modify at all without running it past me.
  * 
- * @author tedinski
+ * @author tedinski, krame505
  * @see Node
  */
 public class DecoratedNode implements Decorable, Typed {
@@ -41,8 +41,6 @@ public class DecoratedNode implements Decorable, Typed {
 	/**
 	 * The node that forwards to this one. (May be null)
 	 * Not final, because we may set this when forwarding to a decorated tree via a unique reference.
-	 * 
-	 * @see #inheritedForwarded(String)
 	 */
 	protected DecoratedNode forwardParent;
 	/**
@@ -722,8 +720,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * @param attribute The full name of the attribute.
 	 * @return The value of the attribute.
-	 * 
-	 * @see #inheritedForwarded(String)
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> T inherited(final int attribute) {

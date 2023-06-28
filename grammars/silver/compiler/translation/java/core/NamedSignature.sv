@@ -265,7 +265,9 @@ s"""private Object child_${n};
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
     else if ty.isNonterminal || ty.isUniqueDecorated && ntType.isNonterminal
-    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n" ++
+      s"\t\tchildTransInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_syn_attrs][];\n" ++
+      s"\t\tchildTransDecSites[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_syn_attrs];\n"
     else "";
 
   top.typeChildren := [(ty, top.childRefElem)];
@@ -326,16 +328,16 @@ String ::= n::NamedSignatureElement
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
 function makeChildDecSiteAccessCase
-String ::= env::Decorated Env flowEnv::FlowEnv prodName::String n::NamedSignatureElement
+String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
-    case lookupRefDecSite(prodName, n.elementName, flowEnv) of
-    | [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, v)};\n"
-    | _ -> ""
+    case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
+    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, u.sourceGrammar, lhsNtName, v)};\n"
+    | _, _ -> ""
     end;
 }
 function refAccessTranslation
-String ::= env::Decorated Env flowEnv::FlowEnv v::VertexType
+String ::= env::Decorated Env flowEnv::FlowEnv grammarName::String ntName::String v::VertexType
 {
   return
     case v of
@@ -346,10 +348,13 @@ String ::= env::Decorated Env flowEnv::FlowEnv v::VertexType
       | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
       | [] -> error("Couldn't find decl for local " ++ fName)
       end
+    | transAttrVertexType(lhsVertexType_real(), transAttr) ->
+      s"context.translation(${makeName(grammarName)}.Init.${makeIdName(transAttr)}__ON__${makeIdName(ntName)})"
+    | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
     | forwardVertexType_real() -> s"context.forward()"
     | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
     | subtermVertexType(parent, prodName, sigName) ->
-      s"${refAccessTranslation(env, flowEnv, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+      s"${refAccessTranslation(env, flowEnv, grammarName, ntName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
     end;
 }
 
