@@ -440,16 +440,18 @@ function addDefEqs
 function nonterminalStitchPoints
 [StitchPoint] ::= realEnv::Decorated Env  nt::NtName  vertexType::VertexType
 {
-  return flatMap(
-    \ o::OccursDclInfo ->
-      case getAttrDcl(o.attrOccurring, realEnv) of
-      | at :: _ when at.isSynthesized && at.isTranslation ->
-        [nonterminalStitchPoint(
-           at.typeScheme.typeName,
-           transAttrVertexType(vertexType, o.attrOccurring))]
-      | _ -> []
-      end,
-    getAttrOccursOn(nt, realEnv));
+  return
+    nonterminalStitchPoint(nt, vertexType) ::
+    flatMap(
+      \ o::OccursDclInfo ->
+        case getAttrDcl(o.attrOccurring, realEnv) of
+        | at :: _ when at.isSynthesized && at.isTranslation ->
+          [nonterminalStitchPoint(
+            at.typeScheme.typeName,
+            transAttrVertexType(vertexType, o.attrOccurring))]
+        | _ -> []
+        end,
+      getAttrOccursOn(nt, realEnv));
 }
 function localStitchPoints
 [StitchPoint] ::= realEnv::Decorated Env  nt::NtName  ds::[FlowDef]
