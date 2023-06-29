@@ -7,10 +7,8 @@ set -eu
 
 SILVERLSP_VSIX="silverlsp-latest.vsix"
 
-if [ $0 != "./make-silverlsp-vsix" ]; then
-  echo "Run as ./make-silverlsp-vsix"
-  exit 1
-fi
+# Make sure we are in the root of the silver repo
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 echo "Cleaning..."
 cd runtime/lsp4j/
