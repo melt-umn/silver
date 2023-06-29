@@ -87,7 +87,7 @@ melt.trynode('silver') {
   }
 
   stage("Language server") {
-    sh "./make-silverlsp-vsix"
+    sh "./make-vscode-extension"
     archiveArtifacts(artifacts: "support/vs-code/silverlsp/*.vsix", fingerprint: true)
     melt.archiveCommitArtifacts("support/vs-code/silverlsp/*.vsix")
   }
