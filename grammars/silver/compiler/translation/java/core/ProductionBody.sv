@@ -57,7 +57,7 @@ top::ProductionStmt ::=
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  top.translation = "";
+  top.translation = e.initTransDecSites;
 }
 
 aspect production forwardingWith
@@ -173,8 +173,9 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
   top.setupInh :=
     s"\t\t//${top.unparse}\n" ++
     s"\t\t${top.frame.className}.localIsForward[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n" ++ 
-    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
-    s"new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n";
+    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n" ++
+    s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_syn_attrs][];\n" ++
+    s"\t\t${top.frame.className}.localTransDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_syn_attrs];\n";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
@@ -249,7 +250,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    dl.initTransInh ++
+    dl.initTransInh ++ e.initTransDecSites ++
     s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
@@ -274,6 +275,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   top.translation =
 	s"\t\t// ${val.unparse} = ${e.unparse}\n" ++
+  e.initTransDecSites ++
 	s"\t\t${top.frame.className}.localAttributes[${val.lookupValue.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 

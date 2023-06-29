@@ -15,10 +15,10 @@ public interface Decorable {
 	 * @param inhs A map from inh attribute indexes to Lazys that define them.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
-	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
 	 *   access the decorated translation attribute through its decoration site.
-	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
 	public DecoratedNode decorate(
@@ -34,11 +34,11 @@ public interface Decorable {
 	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
-	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
 	 *   access the decorated translation attribute through its decoration site.
 	 *   These override any decoration sites from forwardParent, when fwdTrans is true.
-	 *   These Lazys will be supplied with 'this' as their context for evaluation.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
 	 *   We will pass inherited attribute access requests to this node.
 	 * @param fwdTrans Do translation attributes on this node have decoration sites in fwdParent?

@@ -509,7 +509,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.errors <- q.lookupValue.errors;
   top.errors <-
     if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ top.unparse)];
-  top.typerep = q.lookupValue.typeScheme.typerep;
+  top.typerep = attr.typerep;
 }
 
 abstract production childTransAttrDefLHS
@@ -536,7 +536,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
     then [err(q.location, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(ty)} are not supported")]
     else [];
 
-  top.typerep = q.lookupValue.typeScheme.monoType;
+  top.typerep = attr.typerep;
 }
 
 abstract production localTransAttrDefLHS
@@ -563,7 +563,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
     then [err(q.location, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(ty)} are not supported")]
     else [];
 
-  top.typerep = q.lookupValue.typeScheme.monoType;
+  top.typerep = attr.typerep;
 }
 
 ----- done with DefLHS

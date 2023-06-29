@@ -3,6 +3,7 @@ grammar silver:compiler:translation:java:core;
 
 import silver:compiler:analysis:typechecking:core only finalSubst;
 import silver:compiler:driver only noOrigins;
+import silver:compiler:definition:flow:ast;
 
 function finalType
 Type ::= e::Decorated Expr
@@ -18,6 +19,12 @@ synthesized attribute lazyTranslation :: String;
 
 attribute lazyTranslation, translation occurs on Expr;
 attribute lazyTranslation occurs on Exprs;
+
+-- Record decoration sites for translation attributes.
+monoid attribute initTransDecSites::String occurs on
+  Expr, Exprs, AppExprs, AppExpr, ExprInhs, ExprInh;
+propagate initTransDecSites on
+  Expr, Exprs, AppExprs, AppExpr, ExprInhs, ExprInh;
 
 -- `translation` should yield an expression of the appropriate Java type.
 --   e.g. `NodeFactory<StringCatter>` for a (String ::= ...)
@@ -77,15 +84,14 @@ top::Expr ::= q::Decorated! QName
       -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
       -- this is a potential source of minor inefficiency for functions that do not decorate.
       s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
-    else
-      case lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv) of
+    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
       -- Unique reference to a child that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      | [v] when finalType(top).isUniqueDecorated -> s"context.createDecoratedChild(${childIDref})"
+      s"context.createDecoratedChild(${childIDref})"
+    else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
-      | _ -> s"context.childDecorated(${childIDref})"
-      end;
+      s"context.childDecorated(${childIDref})";
 
   -- Mirrors the above, but with lazyness:
   top.lazyTranslation =
@@ -94,11 +100,10 @@ top::Expr ::= q::Decorated! QName
     then s"context.childAsIsLazy(${childIDref})"
     else if !finalType(top).isDecorated
     then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
+    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+      wrapThunk(top.translation, true)
     else
-      case lookupRefDecSite(top.frame.fullName, q.lookupValue.fullName, top.flowEnv) of
-      | [v] when finalType(top).isUniqueDecorated -> wrapThunk(top.translation, true)
-      | _ -> s"context.childDecoratedLazy(${childIDref})"
-      end;
+      s"context.childDecoratedLazy(${childIDref})";
 }
 
 aspect production localReference
@@ -109,11 +114,10 @@ top::Expr ::= q::Decorated! QName
     then s"context.<${finalType(top).transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
     else if !finalType(top).isDecorated
     then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
+    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+      s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
     else
-      case lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv) of
-      | [v] when finalType(top).isUniqueDecorated -> s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
-      | _ -> s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})"
-      end;
+      s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
   -- reminder: look at comments for childReference
 
   top.lazyTranslation =
@@ -122,11 +126,10 @@ top::Expr ::= q::Decorated! QName
     then s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})"
     else if !finalType(top).isDecorated
     then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
+    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+      wrapThunk(top.translation, true)
     else
-      case lookupLocalRefDecSite(q.lookupValue.fullName, top.flowEnv) of
-      | [v] when finalType(top).isUniqueDecorated -> wrapThunk(top.translation, true)
-      | _ -> s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
-      end;
+      s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
 }
 
 aspect production lhsReference
@@ -361,19 +364,18 @@ aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- TODO: Origin tracking?
+  local finalTy::Type = finalType(top);
   top.translation =
-    if !finalType(top).isDecorated then
-      s"((${finalType(top).transType})${e.translation}.translation(${q.attrOccursIndex}).undecorate())"
-    else if finalType(top).isUniqueDecorated then
+    if !finalTy.isDecorated then
+      s"((${finalTy.transType})${e.translation}.translation(${q.attrOccursIndex}).undecorate())"
+    else if finalTy.isUniqueDecorated && top.alwaysDecorated then
       case e of
       -- Unique reference to a translation attribute on a child that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      | childReference(cqn) when lookupRefDecSite(top.frame.fullName, cqn.lookupValue.fullName, top.flowEnv) matches [v] ->
-        s"${e.translation}.evalTrans(${q.attrOccursIndex})"
+      | childReference(cqn) -> s"${e.translation}.evalTrans(${q.attrOccursIndex})"
       -- Unique reference to a translation attribute on a child that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      | localReference(lqn) when lookupLocalRefDecSite(lqn.lookupValue.fullName, top.flowEnv) matches [v] ->
-        s"${e.translation}.evalTrans(${q.attrOccursIndex})"
+      | localReference(lqn) -> s"${e.translation}.evalTrans(${q.attrOccursIndex})"
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
       | _ -> s"${e.translation}.translation(${q.attrOccursIndex})"
@@ -382,6 +384,21 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
   -- TODO: Specialized thunks for accesses on child/local, for efficency
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+
+  top.initTransDecSites <-
+    case top.decSiteVertexInfo of
+    | just(decSite) when finalTy.isUniqueDecorated && top.alwaysDecorated ->
+      case e of
+      | childReference(cqn) ->
+        s"\t\t${top.frame.className}.childTransDecSites[${top.frame.className}.i_${cqn.lookupValue.fullName}][${q.attrOccursInitIndex}] = " ++
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.grammarName, top.frame.lhsNtName, decSite)};\n"
+      | localReference(lqn) ->
+        s"\t\t${top.frame.className}.localTransDecSites[${lqn.lookupValue.dcl.attrOccursIndex}][${q.attrOccursInitIndex}] = " ++
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.grammarName, top.frame.lhsNtName, decSite)};\n"
+      | _ -> ""
+      end
+    | _ -> ""
+    end;
 }
 
 aspect production terminalAccessHandler

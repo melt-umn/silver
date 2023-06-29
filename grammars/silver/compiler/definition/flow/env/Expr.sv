@@ -344,18 +344,18 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.flowDefs <-
     case top.decSiteVertexInfo of
     | just(decSite) when finalTy.isUniqueDecorated ->
-      case e.flowVertexInfo of
-      | just(rhsVertexType(sigName)) ->
+      case e of
+      | childReference(cqn) ->
         [childTransRefDecSiteEq(
-          top.frame.fullName, sigName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
+          top.frame.fullName, cqn.lookupValue.fullName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
           filter(
-            isEquationMissing(lookupInh(top.frame.fullName, sigName, _, top.flowEnv), _),
+            isEquationMissing(lookupInh(top.frame.fullName, cqn.lookupValue.fullName, _, top.flowEnv), _),
             allInhs))]
-      | just(localVertexType(fName)) ->
+      | localReference(lqn) ->
         [localTransRefDecSiteEq(
-          top.frame.fullName, fName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
+          top.frame.fullName, lqn.lookupValue.fullName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
           filter(
-            isEquationMissing(lookupLocalInh(top.frame.fullName, fName, _, top.flowEnv), _),
+            isEquationMissing(lookupLocalInh(top.frame.fullName, lqn.lookupValue.fullName, _, top.flowEnv), _),
             allInhs))]
       | _ -> []
       end

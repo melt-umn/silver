@@ -48,6 +48,8 @@ ${makeTyVarDecls(5, finTy.freeVariables)}
   -- (e.g. global id :: (a ::= a) = \ x::a -> x;)
   -- so freshen all skolem type vars in the run-time type representation.
   top.generalizedTranslation = lambdaTrans(transFreshTypeRep(finTy));
+
+  propagate initTransDecSites;
 }
 
 aspect production lambdaParamReference
@@ -55,4 +57,5 @@ top::Expr ::= q::Decorated! QName
 {
   top.translation = s"common.Util.<${finalType(top).transType}>demandIndex(lambda_${toString(q.lookupValue.dcl.lambdaId)}_args, ${toString(q.lookupValue.dcl.lambdaParamIndex)})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  top.initTransDecSites := "";
 }
