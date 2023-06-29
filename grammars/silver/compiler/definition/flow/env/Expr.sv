@@ -339,6 +339,28 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       if finalTy.isDecorated then map(vertex.inhVertex, fromMaybe([], refSet)) else []
     | nothing() -> e.flowDeps
     end;
+
+  local allInhs::[String] = getInhAndInhOnTransAttrsOn(finalTy.decoratedType.typeName, top.env);
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(decSite) when finalTy.isUniqueDecorated ->
+      case e.flowVertexInfo of
+      | just(rhsVertexType(sigName)) ->
+        [childTransRefDecSiteEq(
+          top.frame.fullName, sigName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
+          filter(
+            isEquationMissing(lookupInh(top.frame.fullName, sigName, _, top.flowEnv), _),
+            allInhs))]
+      | just(localVertexType(fName)) ->
+        [localTransRefDecSiteEq(
+          top.frame.fullName, fName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
+          filter(
+            isEquationMissing(lookupLocalInh(top.frame.fullName, fName, _, top.flowEnv), _),
+            allInhs))]
+      | _ -> []
+      end
+    | _ -> []
+    end;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }

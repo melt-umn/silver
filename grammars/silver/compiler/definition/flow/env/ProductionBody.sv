@@ -114,7 +114,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if attr.found && attr.attrDcl.isTranslation
     then just(transAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
     else nothing();
-  e.alwaysDecorated = false;
+  e.alwaysDecorated = attr.found && attr.attrDcl.isTranslation;
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr

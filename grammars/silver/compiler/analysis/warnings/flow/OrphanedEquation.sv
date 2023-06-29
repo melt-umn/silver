@@ -159,13 +159,13 @@ aspect lookupEqDefLHS on top::DefLHS of
   -- prod, child, attr
 | childDefLHS(q) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, child, trans attr, attr
-| childTransAttrDefLHS(q, attr) -> lookupTransInh(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
+| childTransAttrDefLHS(q, attr) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}", top.flowEnv)
   -- prod, attr
 | lhsDefLHS(q) -> lookupSyn(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, local, attr
 | localDefLHS(q) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, local, trans attr, attr
-| localTransAttrDefLHS(q, attr) -> lookupLocalTransInh(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
+| localTransAttrDefLHS(q, attr) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}", top.flowEnv)
   -- prod, attr
 | forwardDefLHS(q) -> lookupFwdInh(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- nt, attr

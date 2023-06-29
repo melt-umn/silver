@@ -121,6 +121,10 @@ function checkEqDeps
       if !null(lookupInh(prodName, sigName, attrName, flowEnv))
       || sigAttrViaReference(sigName, attrName, ns, realEnv)
       || !null(lookupRefDecSite(prodName, sigName, flowEnv))
+      || case splitTransAttrInh(attrName) of
+         | just((transAttr, _)) -> !null(lookupTransRefDecSite(prodName, sigName, transAttr, flowEnv))
+         | nothing() -> false
+         end
       then []
       else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
   | rhsSynVertex(sigName, attrName) -> []
@@ -136,6 +140,10 @@ function checkEqDeps
       || isForwardProdAttr(fName, realEnv) && indexOf(".", attrName) == -1  -- Forward prod attribute, not inh on trans
       || localAttrViaReference(fName, attrName, realEnv)
       || !null(lookupLocalRefDecSite(fName, flowEnv))
+      || case splitTransAttrInh(attrName) of
+         | just((transAttr, _)) -> !null(lookupLocalTransRefDecSite(fName, transAttr, flowEnv))
+         | nothing() -> false
+         end
       then []
       else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
   | localSynVertex(fName, attrName) -> []
@@ -739,12 +747,18 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
              null(lookupRefDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
           then
             let inhs :: [String] =
+                filter(\ attr::String ->
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
+                  case splitTransAttrInh(attr) of
+                  | just((transAttr, _)) -> null(lookupTransRefDecSite(top.frame.fullName, lq.lookupValue.fullName, transAttr, top.flowEnv))
+                  | _ -> true
+                  end,
                   filter(
                     isEquationMissing(
                       lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
                     removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps)))
+                      set:toList(inhDeps))))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -754,12 +768,18 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
              null(lookupLocalRefDecSite(lq.lookupValue.fullName, top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
           then
             let inhs :: [String] = 
+                filter(\ attr::String ->
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
+                  case splitTransAttrInh(attr) of
+                  | just((transAttr, _)) -> null(lookupLocalTransRefDecSite(lq.lookupValue.fullName, transAttr, top.flowEnv))
+                  | _ -> true
+                  end,
                   filter(
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
                     removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps)))
+                      set:toList(inhDeps))))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -867,12 +887,18 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
              null(lookupRefDecSite(top.frame.fullName, lq.lookupValue.fullName, top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
           then
             let inhs :: [String] =
+                filter(\ attr::String ->
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
+                  case splitTransAttrInh(attr) of
+                  | just((transAttr, _)) -> null(lookupTransRefDecSite(top.frame.fullName, lq.lookupValue.fullName, transAttr, top.flowEnv))
+                  | _ -> true
+                  end,
                   filter(
                     isEquationMissing(
                       lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
                     removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps)))
+                      set:toList(inhDeps))))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -882,12 +908,18 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
              null(lookupLocalRefDecSite(lq.lookupValue.fullName, top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
           then
             let inhs :: [String] = 
+                filter(\ attr::String ->
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
+                  case splitTransAttrInh(attr) of
+                  | just((transAttr, _)) -> null(lookupLocalTransRefDecSite(lq.lookupValue.fullName, transAttr, top.flowEnv))
+                  | _ -> true
+                  end,
                   filter(
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
                     removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps)))
+                      set:toList(inhDeps))))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
