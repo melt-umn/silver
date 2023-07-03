@@ -125,7 +125,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     | [u], [v] ->
         s"\t\t//${top.unparse}\n" ++
         s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, u.sourceGrammar, top.frame.fullName, v)};\n"
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, u.sourceGrammar, top.frame.lhsNtName, v)};\n"
     | _, _ -> ""
     end;
 }
@@ -157,7 +157,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     | [u], [v] ->
         s"\t\t//${top.unparse}\n" ++
         s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, u.sourceGrammar, top.frame.fullName, v)};\n"
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, u.sourceGrammar, top.frame.lhsNtName, v)};\n"
     | _, _ -> ""
     end;
 }
