@@ -79,13 +79,11 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 
 	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][];
     public static final common.Lazy[][][] childTransInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][][];
-    public static final common.Lazy[][] childTransDecSites = new common.Lazy[${toString(length(whatSig.inputElements))}][];
 
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
     public static final common.Lazy[][][] localTransInheritedAttributes = new common.Lazy[num_local_attrs][][];
-    public static final common.Lazy[][] localTransDecSites = new common.Lazy[num_local_attrs][];
 
 ${whatSig.inhOccursIndexDecls}
 
@@ -154,16 +152,6 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
     @Override
     public common.Lazy[][] getChildTransInheritedAttributes(final int key) {
         return childTransInheritedAttributes[key];
-    }
-
-    @Override
-    public common.Lazy[] getLocalTransDecSites(final int key) {
-        return localTransDecSites[key];
-    }
-
-    @Override
-    public common.Lazy[] getChildTransDecSites(final int key) {
-        return childTransDecSites[key];
     }
 
 	@Override

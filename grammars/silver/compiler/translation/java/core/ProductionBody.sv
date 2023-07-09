@@ -113,8 +113,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
       if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
       then
         s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n" ++
-        s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs][];\n" ++
-        s"\t\t${top.frame.className}.localTransDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs];\n"
+        s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs][];\n"
       else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
@@ -145,8 +144,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
       if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
       then
         s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n" ++
-        s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs][];\n" ++
-        s"\t\t${top.frame.className}.localTransDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs];\n"
+        s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs][];\n"
       else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
@@ -174,8 +172,7 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
     s"\t\t//${top.unparse}\n" ++
     s"\t\t${top.frame.className}.localIsForward[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n" ++ 
     s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n" ++
-    s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_syn_attrs][];\n" ++
-    s"\t\t${top.frame.className}.localTransDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_syn_attrs];\n";
+    s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_syn_attrs][];\n";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 

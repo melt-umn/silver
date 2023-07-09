@@ -105,13 +105,13 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy[][] transInhs, final common.Lazy[] transDecSites) {
-			return ref.decorate(parent, inhs, transInhs, transDecSites);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy[][] transInhs) {
+			return ref.decorate(parent, inhs, transInhs);
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy[][] transInhs, final common.Lazy[] transDecSites, final common.DecoratedNode fwdParent, final boolean fwdTrans) {
-			return ref.decorate(parent, inhs, transInhs, transDecSites, fwdParent, fwdTrans);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy[][] transInhs, final common.DecoratedNode fwdParent, final boolean fwdTrans) {
+			return ref.decorate(parent, inhs, transInhs, fwdParent, fwdTrans);
 		}
 
 		// Accessors used in reflection and debugging.
@@ -164,11 +164,6 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 
 		@Override
-		public common.Lazy[] getChildTransDecSites(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
-		}
-
-		@Override
 		public int getNumberOfLocalAttrs() {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}
@@ -200,11 +195,6 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 
 		@Override
 		public common.Lazy[][] getLocalTransInheritedAttributes(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
-		}
-
-		@Override
-		public common.Lazy[] getLocalTransDecSites(final int index) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}
 

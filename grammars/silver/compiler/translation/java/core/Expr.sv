@@ -367,20 +367,20 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   local finalTy::Type = finalType(top);
   top.translation =
     if !finalTy.isDecorated then
-      s"((${finalTy.transType})${e.translation}.translation(${q.attrOccursIndex}).undecorate())"
-    else if finalTy.isUniqueDecorated && top.alwaysDecorated then
-      case e of
-      -- Unique reference to a translation attribute on a child that is a remote decoration site:
+      s"((${finalTy.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_dec_site).undecorate())"
+    else if finalTy.isUniqueDecorated && top.alwaysDecorated &&
+        case e of
+        | childReference(cqn) -> true
+        | localReference(lqn) -> true
+        | _ -> false
+        end then
+      -- Unique reference to a translation attribute on a child or local that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      | childReference(cqn) -> s"${e.translation}.evalTrans(${q.attrOccursIndex})"
-      -- Unique reference to a translation attribute on a child that is a remote decoration site:
-      -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      | localReference(lqn) -> s"${e.translation}.evalTrans(${q.attrOccursIndex})"
+      s"${e.translation}.evalTrans(${q.attrOccursIndex}, ${q.attrOccursIndex}_dec_site)"
+    else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
-      | _ -> s"${e.translation}.translation(${q.attrOccursIndex})"
-      end
-    else s"${e.translation}.translation(${q.attrOccursIndex})";
+      s"${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_dec_site)";
 
   -- TODO: Specialized thunks for accesses on child/local, for efficency
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -390,10 +390,12 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | just(decSite) when finalTy.isUniqueDecorated && top.alwaysDecorated ->
       case e of
       | childReference(cqn) ->
-        s"\t\t${top.frame.className}.childTransDecSites[${top.frame.className}.i_${cqn.lookupValue.fullName}][${q.attrOccursInitIndex}] = " ++
+	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
+        s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${cqn.lookupValue.fullName}][${q.attrOccursInitIndex}_dec_site] = " ++
         s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.grammarName, top.frame.lhsNtName, decSite)};\n"
       | localReference(lqn) ->
-        s"\t\t${top.frame.className}.localTransDecSites[${lqn.lookupValue.dcl.attrOccursIndex}][${q.attrOccursInitIndex}] = " ++
+	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
+        s"\t\t${top.frame.className}.localInheritedAttributes[${lqn.lookupValue.dcl.attrOccursIndex}][${q.attrOccursInitIndex}_dec_site] = " ++
         s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.grammarName, top.frame.lhsNtName, decSite)};\n"
       | _ -> ""
       end
@@ -435,7 +437,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.translation = s"((common.Decorable)${e.translation})" ++ 
     case inh of
-    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null, (common.Lazy[][])null, (common.Lazy[])null)"
+    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null, (common.Lazy[][])null)"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
       -- When the user forgets to provide inherited attributes
       -- (especially important because we're implicitly inserted when accessing attributes
@@ -449,7 +451,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
       s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}), " ++
-      "(common.Lazy[][])null, (common.Lazy[])null)"  -- TODO: permit supplying inhs on translation attributes
+      "(common.Lazy[][])null)"  -- TODO: permit supplying inhs on translation attributes
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

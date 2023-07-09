@@ -30,20 +30,16 @@ public abstract class Node implements Decorable, Typed {
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
-	 *   access the decorated translation attribute through its decoration site.
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
 	public DecoratedNode decorate(
-		final DecoratedNode parent,
-		final Lazy[] inhs, final Lazy[][] transInhs, final Lazy[] transDecSites) {
+		final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, transInhs, transDecSites, null, false);
+				                 this, parent, inhs, transInhs, null, false);
 	}
 
 	/**
@@ -67,14 +63,13 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	@Override
 	public DecoratedNode decorate(
-		final DecoratedNode parent,
-		final Lazy[] inhs,  final Lazy[][] transInhs, final Lazy[] transDecSites,
+		final DecoratedNode parent, final Lazy[] inhs,  final Lazy[][] transInhs,
 		final DecoratedNode fwdParent, final boolean forwardTrans) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, transInhs, transDecSites, fwdParent, forwardTrans);
+                                 this, parent, inhs, transInhs, fwdParent, forwardTrans);
 	}
 
 	/**
@@ -84,7 +79,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @return  A node decorated with no inherited attributes, without a parent.
 	 */
 	public DecoratedNode decorate() {
-		return decorate(TopNode.singleton, null, null, null);
+		return decorate(TopNode.singleton, null, null);
 	}
 
 	private Node undecoratedValue = null;
@@ -218,16 +213,6 @@ public abstract class Node implements Decorable, Typed {
 	public abstract Lazy[][] getChildTransInheritedAttributes(final int index);
 
 	/**
-	 * Access the decorated form of a child's translation attribute through its reference decoration site, if it has one.
-	 * 
-	 * @param index The child index to look up the translation attribute decoration sites.
-	 * @return An array of Lazys to evaluate on a decorated form of this Node,
-	 *  to get the decorated trees for the translation attributes,
-	 * 	or null if it has no reference decoration site.
-	 */
-	public abstract Lazy[] getChildTransDecSites(final int index);
-
-	/**
 	 * Used to create arrays of appropriate size in DecoratedNode.
 	 * 
 	 * @return The number of local and production attributes that occur on this <b>production</b>
@@ -275,16 +260,6 @@ public abstract class Node implements Decorable, Typed {
 	 * @return An array containing inherited attributes supplied to translation attributes on that child 
 	 */
 	public abstract Lazy[][] getLocalTransInheritedAttributes(final int index);
-
-	/**
-	 * Access the decorated form of a local's translation attribute through its reference decoration site, if it has one.
-	 * 
-	 * @param index The index for a local, to look up the translation attribute decoration sites.
-	 * @return An array of Lazys to evaluate on a decorated form of this Node,
-	 *  to get the decorated trees for the translation attributes,
-	 * 	or null if it has no reference decoration site.
-	 */
-	public abstract Lazy[] getLocalTransDecSites(final int index);
 	
 	/**
 	 * Reports whether or not this production forwards.
