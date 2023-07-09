@@ -286,29 +286,6 @@ function getSynAttrsOn
 }
 
 {--
- - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
- - Also includes all synthesized attributes occuring on translation attributes on the
- - nonterminal, when we want to treat these like synthesized attributes.
- -}
-function getSynAndSynOnTransAttrsOn
-[String] ::= fnnt::String e::Decorated Env
-{
-  return flatMap(
-    \ o::OccursDclInfo ->
-      case getAttrDcl(o.attrOccurring, e) of
-      | at :: _ when at.isSynthesized -> 
-        o.attrOccurring ::
-        if at.isTranslation
-        then map(
-          \ syn::String -> s"${o.attrOccurring}.${syn}",
-          getSynAttrsOn(at.typeScheme.typeName, e))
-        else []
-      | _ -> []
-      end,
-    getAttrOccursOn(fnnt, e));
-}
-
-{--
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
  -}
 function getInhAttrsOn
