@@ -13,7 +13,7 @@ propagate expectedMonad on Expr;
 
 
 type MonadInhs = {
-  downSubst, finalSubst, frame, grammarName, isRoot, originRules,
+  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot, originRules,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 };
 
@@ -172,6 +172,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.alwaysDecorated = false;
+  ne.decSiteVertexInfo = nothing();
   ne.originRules = top.originRules;
   ne.isRoot = false;
   local nes::AppExprs = new(es);
@@ -184,6 +186,9 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.frame = top.frame;
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
+  nes.alwaysDecorated = false;
+  nes.decSiteVertexInfo = nothing();
+  nes.appProd = nothing();
   nes.originRules = top.originRules;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
@@ -271,21 +276,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 aspect production functionInvocation
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
-  local t::Expr = application(e, '(', es, ',', anns, ')', location=top.location);
-  t.mDownSubst = top.mDownSubst;
-  t.env = top.env;
-  t.flowEnv = top.flowEnv;
-  t.config = top.config;
-  t.compiledGrammars = top.compiledGrammars;
-  t.grammarName = top.grammarName;
-  t.frame = top.frame;
-  t.finalSubst = top.finalSubst;
-  t.downSubst = top.downSubst;
-  t.isRoot = top.isRoot;
-  t.originRules = top.originRules;
-  t.expectedMonad = top.expectedMonad;
-
-  t.monadicallyUsed = top.monadicallyUsed;
+  forward t = application(e, '(', es, ',', anns, ')', location=top.location);
 
   top.merrors := t.merrors;
   top.mUpSubst = t.mUpSubst;
@@ -433,6 +424,7 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.config = top.config;
   ne.env = top.env;
   ne.flowEnv = top.flowEnv;
+  ne.alwaysDecorated = false;
   ne.originRules = top.originRules;
   ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
@@ -447,6 +439,7 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.config = top.config;
   res_e.env = top.env;
   res_e.flowEnv = top.flowEnv;
+  res_e.alwaysDecorated = false;
   res_e.isRoot = false;
   res_e.originRules = top.originRules;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
@@ -1382,6 +1375,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                      then e1.mtyperep
                      else top.expectedMonad;
   
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
   e1.isRoot = false;
   e2.isRoot = false;
 

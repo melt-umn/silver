@@ -8,7 +8,7 @@ propagate boundVars on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAp
 
 attribute transform<ASTExpr> occurs on Expr;
 
-synthesized attribute decRuleExprs::[(String, Decorated Expr with {decorate, boundVars})] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
+synthesized attribute decRuleExprs::[(String, Decorated Expr with {decorate, decSiteVertexInfo, boundVars})] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
 
 aspect default production
 top::Expr ::=

@@ -35,7 +35,7 @@ propagate initTransDecSites on
 
 synthesized attribute invokeTranslation :: String occurs on Expr;
 inherited attribute invokeIsUnique :: Boolean occurs on Expr;
-inherited attribute invokeArgs :: Decorated AppExprs occurs on Expr;
+inherited attribute invokeArgs :: Decorated AppExprs with {decorate, decSiteVertexInfo, alwaysDecorated, appProd} occurs on Expr;
 inherited attribute invokeNamedArgs :: Decorated AnnoAppExprs occurs on Expr;
 inherited attribute sameProdAsProductionDefinedOn :: Boolean occurs on Expr;
 
@@ -252,7 +252,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
 }
 
 function argsTranslation
-String ::= e::Decorated AppExprs
+String ::= e::Decorated AppExprs with {decorate, decSiteVertexInfo, alwaysDecorated, appProd}
 {
   -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
   return implode(", ", map((.lazyTranslation), e.exprs));

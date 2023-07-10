@@ -179,6 +179,7 @@ aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate flowEnv;
+  e.alwaysDecorated = false;
 }
 
 aspect production errorApplication
@@ -186,7 +187,6 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 {
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
   es.alwaysDecorated = false;
   es.appProd = nothing();
 }
@@ -202,7 +202,6 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
-  e.alwaysDecorated = false;
   es.alwaysDecorated = top.alwaysDecorated;
 }
 
@@ -216,7 +215,6 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
   es.alwaysDecorated = false;
 }
 
@@ -224,8 +222,8 @@ aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
   e.appProd = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production presentAppExpr
@@ -264,12 +262,14 @@ aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   propagate flowEnv;
+  e.alwaysDecorated = false;
 }
 
 aspect production accessBouncer
 top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
   propagate flowEnv;
+  e.alwaysDecorated = false;
 }
 
 aspect production forwardAccess
@@ -289,19 +289,16 @@ aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
@@ -314,7 +311,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
@@ -325,7 +321,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
@@ -362,19 +357,16 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | _ -> []
     end;
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production transUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 
 aspect production decorateExprWith

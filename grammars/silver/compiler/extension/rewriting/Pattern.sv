@@ -37,7 +37,7 @@ inherited attribute namedTypesHaveUniversalVars :: [(String, Boolean)] occurs on
 
 synthesized attribute wrappedMatchRuleList :: [AbstractMatchRule] occurs on MRuleList, MatchRule;
 
-inherited attribute decRuleExprsIn::[(String, Decorated Expr with {decorate, boundVars})] occurs on MRuleList, MatchRule;
+inherited attribute decRuleExprsIn::[(String, Decorated Expr with {decorate, decSiteVertexInfo, boundVars})] occurs on MRuleList, MatchRule;
 inherited attribute ruleIndex::Integer occurs on MRuleList, MatchRule;
 
 propagate decRuleExprsIn on MRuleList;
