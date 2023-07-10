@@ -579,7 +579,7 @@ public class DecoratedNode implements Decorable, Typed {
 		if(decSite != null) {
 			return (DecoratedNode)decSite.eval(parent);
 		} else if(forwardParent != null && forwardTrans) {
-			return forwardParent.obtainDecoratedTrans(attribute, decSiteAttribute);  // TODO: Not cached, should this be .translation?  
+			return forwardParent.translation(attribute, decSiteAttribute);
 		} else {
 			return evalTrans(attribute);
 		}
