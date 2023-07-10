@@ -748,8 +748,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           then
             let inhs :: [String] =
                 filter(\ attr::String ->
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   case splitTransAttrInh(attr) of
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   | just((transAttr, _)) -> null(lookupTransRefDecSite(top.frame.fullName, lq.lookupValue.fullName, transAttr, top.flowEnv))
                   | _ -> true
                   end,
@@ -769,10 +769,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           then
             let inhs :: [String] = 
                 filter(\ attr::String ->
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   case splitTransAttrInh(attr) of
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   | just((transAttr, _)) -> null(lookupLocalTransRefDecSite(lq.lookupValue.fullName, transAttr, top.flowEnv))
-                  | _ -> true
+                  -- If the dep is for a normal inh attribute, ignore if the local is a forward production attribute
+                  | nothing() -> !lq.lookupValue.dcl.hasForward
                   end,
                   filter(
                     isEquationMissing(
@@ -888,8 +889,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           then
             let inhs :: [String] =
                 filter(\ attr::String ->
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   case splitTransAttrInh(attr) of
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   | just((transAttr, _)) -> null(lookupTransRefDecSite(top.frame.fullName, lq.lookupValue.fullName, transAttr, top.flowEnv))
                   | _ -> true
                   end,
@@ -909,10 +910,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           then
             let inhs :: [String] = 
                 filter(\ attr::String ->
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   case splitTransAttrInh(attr) of
+                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
                   | just((transAttr, _)) -> null(lookupLocalTransRefDecSite(lq.lookupValue.fullName, transAttr, top.flowEnv))
-                  | _ -> true
+                  -- If the dep is for a normal inh attribute, ignore if the local is a forward production attribute
+                  | nothing() -> !lq.lookupValue.dcl.hasForward
                   end,
                   filter(
                     isEquationMissing(
