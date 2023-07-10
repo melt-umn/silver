@@ -23,7 +23,9 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 }
 
 -- If it is inherited and exported by this grammar (according to authority)
--- Also includes inherited on translation attributes
+-- Also includes inherited on translation attributes.
+-- Note that we only include trans.inh when both trans and inh are exported by nt's grammar.
+-- We might want to consider including all trans.inh where inh is in the ref set of trans's nonterminal.
 function getInhAttrsOnForReferences
 [String] ::= nt::String  e::Decorated Env  authority::(Boolean ::= String)
 {
@@ -37,7 +39,7 @@ function getInhAttrsOnForReferences
     | at :: _ when authority(occ.sourceGrammar) ->
         if at.isInherited
         then [occ.attrOccurring]
-        else if at.isSynthesized
+        else if at.isSynthesized && at.isTranslation
         then flatMap(\ occ2::OccursDclInfo ->
           case getAttrDcl(occ2.attrOccurring, e) of
           | at2 :: _ when authority(occ2.sourceGrammar) && at2.isInherited ->
