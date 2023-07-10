@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+# Utility to clean-rebuild and package the Silver language server
+# and VS Code extension.
+
+set -eu
+
+SILVERLSP_VSIX="silverlsp-latest.vsix"
+
+# Make sure we are in the root of the silver repo
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+echo "Cleaning..."
+cd runtime/lsp4j/
+mvn clean
+cd ../..
+
+cd language-server/
+mvn clean
+
+echo
+echo "Building language server..."
+./build.sh
+cd ..
+
+echo "Packaging $SILVERLSP_VSIX..."
+cd support/vs-code/silverlsp/
+npm install --dev
+node_modules/@vscode/vsce/vsce package -o "$SILVERLSP_VSIX"
+
+echo "Packaged Silver LSP extension: $(realpath "$SILVERLSP_VSIX")"

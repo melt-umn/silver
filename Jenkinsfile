@@ -87,17 +87,7 @@ melt.trynode('silver') {
   }
 
   stage("Language server") {
-    dir ("${WS}/runtime/lsp4j") {
-      sh "mvn clean"
-    }
-    dir ("${WS}/language-server") {
-      sh "mvn clean"
-      sh "./build.sh"
-    }
-    dir ("${WS}/support/vs-code/silverlsp") {
-      sh "npm install --dev"
-      sh "node_modules/@vscode/vsce/vsce package -o silverlsp-latest.vsix"
-    }
+    sh "./make-vscode-extension"
     archiveArtifacts(artifacts: "support/vs-code/silverlsp/*.vsix", fingerprint: true)
     melt.archiveCommitArtifacts("support/vs-code/silverlsp/*.vsix")
   }
