@@ -27,7 +27,7 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs, final DecoratedNode fwdParent, final boolean fwdTrans) {
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs, final DecoratedNode fwdParent, final boolean prodFwrd) {
 		throw new SilverInternalError("TopNode cannot be decorated.");
 	}
 

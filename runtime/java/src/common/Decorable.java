@@ -33,8 +33,7 @@ public interface Decorable {
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
 	 *   We will pass inherited attribute access requests to this node.
-	 * @param fwdTrans Do translation attributes on this node have decoration sites in fwdParent?
-	 * 	 (This is false for forward production attributes.)
+	 * @param prodFwrd Is this the forward for fwdParent's prod?  False for forward prod attributes.
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
 	public DecoratedNode decorate(
@@ -42,5 +41,5 @@ public interface Decorable {
 		final Lazy[] inhs,
 		final Lazy[][] transInhs,
 		final DecoratedNode fwdParent,
-		final boolean fwdTrans);
+		final boolean prodFwrd);
 }

@@ -98,11 +98,13 @@ public class DecoratedNode implements Decorable, Typed {
 	protected Lazy[][] transInheritedAttributes;
 
 	/**
-	 * Should translation attributes on this node default to having the same decoration sites as fwdParent?
+	 * Is this the forward for the production of forwardParent?
 	 * This is true for normal forwarding, where there will be syn copy equations,
 	 * but false for forward production attributes, which only forward inhs.
+	 * Thus this determines whether translation attributes on this node
+	 * default to having the same decoration sites as forwardParent.
 	 */
-	protected boolean forwardTrans;
+	protected boolean isProdForward;
 
 	/**
 	 * A cache of the values of local attributes on this node. (incl. locals and prod)
@@ -140,8 +142,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param inhs  The inherited attributes to decorate this node with.
 	 * @param transInhs  The inherited attributes to decorate translation attributes on this node with.
 	 * @param forwardParent  The node to request inherited attributes from if not supplied in 'inhs'.
-	 * @param forwardTrans Do translation attributes on this node have decoration sites in forwardParent?
-	 * 	 (This is false for forward production attributes.)
+	 * @param isProdForward  Is this the forward for forwardParent's prod?  False for forward prod attributes.
 	 * 
 	 * @see Node#decorate(DecoratedNode, Lazy[], Lazy[][], Lazy[])
 	 * @see Node#decorate(DecoratedNode, Lazy[], Lazy[][], Lazy[], DecoratedNode, boolean)
@@ -150,14 +151,14 @@ public class DecoratedNode implements Decorable, Typed {
 			final int cc, final int ic, final int sc, final int lc,
 			final Node self, final DecoratedNode parent,
 			final Lazy[] inhs, final Lazy[][] transInhs,
-			final DecoratedNode forwardParent, final boolean forwardTrans) {
+			final DecoratedNode forwardParent, final boolean isProdForward) {
 		this.self = self;
 		this.parent = parent;
 		this.originCtx = parent!=null?parent.originCtx:null;
 		this.inheritedAttributes = inhs;
 		this.transInheritedAttributes = transInhs;
 		this.forwardParent = forwardParent;
-		this.forwardTrans = forwardTrans;
+		this.isProdForward = isProdForward;
 		
 		// create caches
 		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
@@ -189,7 +190,7 @@ public class DecoratedNode implements Decorable, Typed {
 		this.inheritedAttributes = null;
 		this.transInheritedAttributes = null;
 		this.forwardParent = null;
-		this.forwardTrans = false;
+		this.isProdForward = false;
 		
 		this.childrenValues = new Object[cc];
 		this.inheritedValues = null;
@@ -282,19 +283,18 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
-	 * @param fwdTrans Do translation attributes on this node have decoration sites in fwdParent?
-	 * 	 (This is false for forward production attributes.)
+	 * @param prodFwrd  Is this the forward for fwdParent's prod?  False for forward prod attributes.
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
 	@Override
 	public DecoratedNode decorate(
 		final DecoratedNode parent,
 		final Lazy[] inhs, final Lazy[][] transInhs,
-		final DecoratedNode fwdParent, final boolean fwdTrans) {
+		final DecoratedNode fwdParent, final boolean prodFwrd) {
 		if (forwardParent == null) {
 			decorate(parent, inhs, transInhs);
 			forwardParent = fwdParent;
-			forwardTrans = fwdTrans;
+			isProdForward = prodFwrd;
 		}
 		return this;
 	}
@@ -578,7 +578,7 @@ public class DecoratedNode implements Decorable, Typed {
 		Lazy decSite = inheritedAttributes == null? null : inheritedAttributes[decSiteAttribute];
 		if(decSite != null) {
 			return (DecoratedNode)decSite.eval(parent);
-		} else if(forwardParent != null && forwardTrans) {
+		} else if(forwardParent != null && isProdForward) {
 			return forwardParent.translation(attribute, decSiteAttribute);
 		} else {
 			return evalTrans(attribute);

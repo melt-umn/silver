@@ -51,25 +51,20 @@ public abstract class Node implements Decorable, Typed {
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transDecSites A map from trans (syn) attribute indexes, to Lazys that when evaluated,
-	 *   access the decorated translation attribute through its decoration site.
-	 *   These override any decoration sites from forwardParent, when fwdTrans is true.
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
 	 *   We will pass inherited attribute access requests to this node.
-	 * @param fwdTrans Do translation attributes on this node have decoration sites in fwdParent?
-	 * 	 (This is false for forward production attributes.)
+	 * @param prodFwrd  Is this the forward for fwdParent's prod?  False for forward prod attributes.
 	 * @return A "decorated" form of this Node 
 	 */
 	@Override
 	public DecoratedNode decorate(
 		final DecoratedNode parent, final Lazy[] inhs,  final Lazy[][] transInhs,
-		final DecoratedNode fwdParent, final boolean forwardTrans) {
+		final DecoratedNode fwdParent, final boolean isProdForward) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, transInhs, fwdParent, forwardTrans);
+                                 this, parent, inhs, transInhs, fwdParent, isProdForward);
 	}
 
 	/**
