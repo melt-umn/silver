@@ -262,7 +262,7 @@ public class DecoratedNode implements Decorable, Typed {
 							transInheritedAttributes[transAttribute] = new Lazy[transInhs[transAttribute].length];
 						}
 						for(int j = 0; j < transInhs[transAttribute].length; j++) {
-							final int attribute = i;
+							final int attribute = j;
 							if(transInhs[transAttribute][attribute] != null && transInheritedAttributes[transAttribute][attribute] == null) {
 								transInheritedAttributes[transAttribute][attribute] = (context) -> transInhs[transAttribute][attribute].eval(parent);
 							}
