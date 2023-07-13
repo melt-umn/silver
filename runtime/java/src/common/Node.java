@@ -27,7 +27,7 @@ public abstract class Node implements Decorable, Typed {
 	 * (child and local)
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
-	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
@@ -283,10 +283,9 @@ public abstract class Node implements Decorable, Typed {
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })
 	 * 
-	 * @param index The inherited attribute requested by a forwarded-to Node. 
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of this attribute provided to the forward.
 	 */
-	public abstract Lazy getForwardInheritedAttributes(final int index);
+	public abstract Lazy[] getForwardInheritedAttributes();
 
 	/**
 	 * @param index Any synthesized attribute on this Node

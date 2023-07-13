@@ -214,7 +214,7 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 
 		@Override
-		public common.Lazy getForwardInheritedAttributes(final int index) {
+		public common.Lazy[] getForwardInheritedAttributes() {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}
 

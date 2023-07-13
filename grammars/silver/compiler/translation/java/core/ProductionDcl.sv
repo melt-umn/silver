@@ -216,8 +216,8 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     }
 
     @Override
-    public common.Lazy getForwardInheritedAttributes(final int index) {
-        return forwardInheritedAttributes[index];
+    public common.Lazy[] getForwardInheritedAttributes() {
+        return forwardInheritedAttributes;
     }
 
     @Override

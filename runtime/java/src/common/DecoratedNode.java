@@ -1,5 +1,7 @@
 package common;
 
+import java.util.Arrays;
+
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
 import common.exceptions.SilverInternalError;
@@ -44,7 +46,8 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	protected DecoratedNode forwardParent;
 	/**
-	 * The DecoratedNode to use as a context for evaluating inherited attributes. (Never null except for TopNode)
+	 * The DecoratedNode creating this one. (Never null except for TopNode)
+	 * This is only used for debugging and origins.
 	 * 
 	 * <p> May be actual parent. Or production this is a local in. Or just a production that
 	 * called 'decorate' to create this one.
@@ -52,7 +55,14 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @see TopNode
 	 */
 	protected final DecoratedNode parent;
-	
+	/**
+	 * Is this the forward for the production of forwardParent?
+	 * This is true for normal forwarding, where there will be syn copy equations,
+	 * but false for forward production attributes, which only forward inhs.
+	 * Thus this determines whether translation attributes on this node
+	 * default to having the same decoration sites as forwardParent.
+	 */
+	protected boolean isProdForward;
 	/**
 	 * The cache of children (e.g. the DecoratedNodes)
 	 * 
@@ -91,20 +101,11 @@ public class DecoratedNode implements Decorable, Typed {
 
 	/**
 	 * The inherited attributes supplied to translation attributes on this DecoratedNode, to be evaluated with context 'this'.
-	 * Not final, because we make a copy of the array if this DecoratedNode is extra-decorated.
+	 * Not final, because we make a copy of the array if the DecoratedNode ultimately supplied with these attributes is extra-decorated.
 	 * 
 	 * @see #translation(int)
 	 */
 	protected Lazy[][] transInheritedAttributes;
-
-	/**
-	 * Is this the forward for the production of forwardParent?
-	 * This is true for normal forwarding, where there will be syn copy equations,
-	 * but false for forward production attributes, which only forward inhs.
-	 * Thus this determines whether translation attributes on this node
-	 * default to having the same decoration sites as forwardParent.
-	 */
-	protected boolean isProdForward;
 
 	/**
 	 * A cache of the values of local attributes on this node. (incl. locals and prod)
@@ -155,10 +156,18 @@ public class DecoratedNode implements Decorable, Typed {
 		this.self = self;
 		this.parent = parent;
 		this.originCtx = parent!=null?parent.originCtx:null;
-		this.inheritedAttributes = inhs;
 		this.transInheritedAttributes = transInhs;
 		this.forwardParent = forwardParent;
 		this.isProdForward = isProdForward;
+
+		if(inhs != null && inhs.length < ic) {
+			// TODO: Due to the implementation of inherited occurs-on constraints, we might
+			// get passed a shorter array when decorating a polymorphic type.
+			// This seems like it should be avoidable?
+			this.inheritedAttributes = Arrays.copyOf(inhs, ic);
+		} else {
+			this.inheritedAttributes = inhs;
+		}
 		
 		// create caches
 		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
@@ -279,7 +288,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
-	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
@@ -665,19 +674,18 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	private final Lazy[] getForwardInheritedAttributes() {
-		boolean hasForwardInh = false;
+		Lazy[] forwardInhs = self.getForwardInheritedAttributes();
+		if(forwardInhs == null) return null;
 		Lazy[] result = new Lazy[self.getNumberOfInhAttrs()];
 		for(int i = 0; i < result.length; i++) {
-			final int attribute = i;
-			Lazy l = self.getForwardInheritedAttributes(attribute);
+			Lazy l = forwardInhs[i];
 			if (l != null) {
-				hasForwardInh = true;
 				// The Lazys in self.getForwardInheritedAttributes expect this (forwarding) DecoratedNode as context,
 				// but will be passed the parent of this node instead.
-				result[attribute] = (context) -> l.eval(this);
+				result[i] = (context) -> l.eval(this);
 			}
 		}
-		return hasForwardInh? result : null;
+		return result;
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
@@ -712,7 +720,13 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
-		if(hasExplicitInhEq(attribute))
+		// We specifically have to check here for inheritedAttributes == null, because
+		// that's what happens when we don't supply any inherited attributes...
+		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
+		// (which could be null if *no inherited attributes occur at all* on this
+		// node), this could be the result of correctly compiled, but wrongly written user
+		// code.
+		if(inheritedAttributes != null && inheritedAttributes[attribute] != null)
 			return evalInhHere(attribute);
 		else
 			return evalInhViaFwdP(attribute);
@@ -738,28 +752,11 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	}
 	private final SilverException handleInhHereError(final int attribute, Throwable t) {
-		// This seems impossible since we're checking if hasExplicitInhEq(attribute) earlier up there!
-		// if(!hasExplicitInhEq(attribute)) {
+		// This seems impossible since we're checking if it has an equation earlier up there!
+		// if(inheritedAttributes == null || inheritedAttributes[attribute] == null) {
 		// 	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		// }
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
-	}
-	/** 
-	 * Is there an explicit equation for this attribute (not considering forward copy equations)?
-	 */
-	private final boolean hasExplicitInhEq(final int attribute) {
-		// We specifically have to check here for inheritedAttributes == null, because
-		// that's what happens when we don't supply any inherited attributes...
-		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
-		// (which could be null if *no inherited attributes occur at all* on this
-		// node), this could be the result of correctly compiled, but wrongly written user
-		// code.
-		// Also, we need to check for attribute >= inheritedAttributes.length, because
-		// with inherited occurs-on constraints don't know how big to make the array,
-		// only the largest supplied attribute index, 
-		// so the user omitting some inherited equations for attributes with higher indices
-		// could mean the resulting array that we are passed is too short.  Sigh.
-		return inheritedAttributes != null && attribute < inheritedAttributes.length && inheritedAttributes[attribute] != null;
 	}
 
 	// The following are very common types of thunks.
