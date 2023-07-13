@@ -581,10 +581,18 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
+		if(inhDemanded[attribute]) {
+			handleInhCycleError(attribute);
+		}
+		inhDemanded[attribute] = true;
+
 		if(hasExplicitInhEq(attribute))
 			return evalInhHere(attribute);
 		else
 			return evalInhViaFwdP(attribute);
+	}
+	private final void handleInhCycleError(final int attribute) {
+		throw new AttributeCycleException("Cycle detected for inherited attribute '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID());
 	}
 	private final Object evalInhViaFwdP(final int attribute) {
 		try {
