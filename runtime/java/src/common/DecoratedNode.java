@@ -1,5 +1,6 @@
 package common;
 
+import common.exceptions.AttributeCycleException;
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
 import common.exceptions.SilverInternalError;
@@ -97,6 +98,15 @@ public class DecoratedNode implements Decorable, Typed {
 	protected final Object[] localValues;
 
 	/**
+	 * Track whether a synthesized attribute has already been demanded, for cycle detection.
+	 */
+	protected final boolean[] synDemanded;
+	/**
+	 * Track whether an inherited attribute has already been demanded, for cycle detection.
+	 */
+	protected final boolean[] inhDemanded;
+
+	/**
 	 * Track whether a decorated child has already been created, for sanity checking.
 	 * This may be true when childrenValues[i] == null, because of how unique references are translated.
 	 */
@@ -140,6 +150,8 @@ public class DecoratedNode implements Decorable, Typed {
 		this.inheritedValues =   (ic > 0) ? new Object[ic] : null;
 		this.synthesizedValues = (sc > 0) ? new Object[sc] : null;
 		this.localValues =       (lc > 0) ? new Object[lc] : null;
+		this.synDemanded =       (sc > 0) ? new boolean[sc] : null;
+		this.inhDemanded =       (ic > 0) ? new boolean[ic] : null;
 		this.childCreated =      (cc > 0) ? new boolean[cc] : null;
 		this.localCreated =      (lc > 0) ? new boolean[lc] : null;
 		
@@ -168,6 +180,8 @@ public class DecoratedNode implements Decorable, Typed {
 		this.inheritedValues = null;
 		this.synthesizedValues = null;
 		this.localValues = (lc > 0) ? new Object[lc] : null;
+		this.synDemanded = null;
+		this.inhDemanded = null;
 		this.childCreated = new boolean[cc];
 		this.localCreated = (lc > 0) ? new boolean[lc] : null;
 	}
@@ -439,6 +453,10 @@ public class DecoratedNode implements Decorable, Typed {
 	
 	private final Object evalSyn(final int attribute) {
 		// TODO: Try to break this up into < 35 byte methods?
+		if(synDemanded[attribute]) {
+			throw new AttributeCycleException("Cycle detected for synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID());
+		}
+		synDemanded[attribute] = true;
 		Lazy l = self.getSynthesized(attribute);
 		if(l != null) {
 			try {
