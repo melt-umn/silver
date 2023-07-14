@@ -112,8 +112,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
       s"\t\t//${top.unparse}\n" ++
       if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
       then
-        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n" ++
-        s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs][];\n"
+        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
       else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
@@ -143,8 +142,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
       s"\t\t//${top.unparse}\n" ++
       if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
       then
-        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n" ++
-        s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_syn_attrs][];\n"
+        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
       else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
@@ -171,8 +169,7 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
   top.setupInh :=
     s"\t\t//${top.unparse}\n" ++
     s"\t\t${top.frame.className}.localIsForward[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n" ++ 
-    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n" ++
-    s"\t\t${top.frame.className}.localTransInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_syn_attrs][];\n";
+    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
@@ -219,15 +216,21 @@ top::DefLHS ::= q::Decorated! QName
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.translation = s"${top.frame.className}.childTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}][${attr.attrOccursIndex}]";
-  top.initTransInh = s"if (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+  local transArray::String = s"${top.frame.className}.childTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
+  top.translation = s"${transArray}[${attr.attrOccursIndex}]";
+  top.initTransInh =
+    s"\t\tif (${transArray} == null) ${transArray} = new common.Lazy[${makeNTName(q.lookupValue.typeScheme.typeName)}.num_syn_attrs];\n" ++
+    s"\t\tif (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
 }
 
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.translation = s"${top.frame.className}.localTransInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}][${attr.attrOccursIndex}]";
-  top.initTransInh = s"if (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+  local transArray::String = s"${top.frame.className}.localTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
+  top.translation = s"${transArray}[${attr.attrOccursIndex}]";
+  top.initTransInh =
+    s"\t\tif (${transArray} == null) ${transArray} = new common.Lazy[${makeNTName(q.lookupValue.typeScheme.typeName)}.num_syn_attrs];\n" ++
+    s"\t\tif (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
 }
 
 aspect production errorTransAttrDefLHS
