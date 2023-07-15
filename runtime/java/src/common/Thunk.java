@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.CycleException;
+
 /**
  * A thunk that ensures an expression is evaluated once, and memoizes the result.
  * 
@@ -17,6 +19,9 @@ public class Thunk<T> {
 	// Either T or Evaluable<T>
 	private Object o;
 
+	// Flag used to check if we are about to demand a thunk that we are currently evaluating
+	private boolean demanded = false;
+
 	public Thunk(final Evaluable<T> e) {
 		assert(e != null);
 		o = e;
@@ -25,10 +30,17 @@ public class Thunk<T> {
 	@SuppressWarnings("unchecked")
 	public T eval() {
 		if(o instanceof Evaluable) {
+			if(demanded) {
+				handleCycleError();
+			}
+			demanded = true;
 			o = ((Evaluable<T>)o).eval();
 			assert(o != null);
 		}
 		return (T)o;
+	}
+	private void handleCycleError() {
+		throw new CycleException("Cycle detected in execution!");
 	}
 	
 	public static Thunk<Object> fromLazy(Lazy l, DecoratedNode ctx) {
