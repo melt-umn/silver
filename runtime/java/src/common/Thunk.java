@@ -31,20 +31,27 @@ public class Thunk<T> {
 	@SuppressWarnings("unchecked")
 	public T eval() {
 		if(o instanceof Evaluable) {
-			demanded++;
-			if(demanded > 1) {
-				throw new CycleException("Cycle detected in execution");
-			}
-			try {
-				o = ((Evaluable<T>)o).eval();
-			} catch(Throwable t) {
-				handleEvalError(t);
-			}
-			assert(o != null);
+			doEval();
 		}
 		return (T)o;
 	}
-	private void handleEvalError(Throwable t) {
+	@SuppressWarnings("unchecked")
+	private void doEval() {
+		demanded++;
+		if(demanded > 1) {
+			handleCycleError();
+		}
+		try {
+			o = ((Evaluable<T>)o).eval();
+		} catch(Throwable t) {
+			traceCycleError(t);
+		}
+		assert(o != null);
+	}
+	private void handleCycleError() {
+		throw new CycleException("Cycle detected in execution");
+	}
+	private void traceCycleError(Throwable t) {
 		// If we caught a cycle, report the start of it here.
 		// Otherwise just re-throw the exception.
 		if (demanded > 1) {
