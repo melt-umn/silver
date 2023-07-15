@@ -1,6 +1,7 @@
 package common;
 
 import common.exceptions.CycleException;
+import common.exceptions.CycleTraceException;
 
 /**
  * A thunk that ensures an expression is evaluated once, and memoizes the result.
@@ -19,8 +20,8 @@ public class Thunk<T> {
 	// Either T or Evaluable<T>
 	private Object o;
 
-	// Flag used to check if we are about to demand a thunk that we are currently evaluating
-	private boolean demanded = false;
+	// Used to check if we are about to demand a thunk that we are currently evaluating
+	private int demanded = 0;
 
 	public Thunk(final Evaluable<T> e) {
 		assert(e != null);
@@ -30,17 +31,29 @@ public class Thunk<T> {
 	@SuppressWarnings("unchecked")
 	public T eval() {
 		if(o instanceof Evaluable) {
-			if(demanded) {
-				handleCycleError();
+			demanded++;
+			if(demanded > 1) {
+				throw new CycleException("Cycle detected in execution");
 			}
-			demanded = true;
-			o = ((Evaluable<T>)o).eval();
+			try {
+				o = ((Evaluable<T>)o).eval();
+			} catch(Throwable t) {
+				handleEvalError(t);
+			}
 			assert(o != null);
 		}
 		return (T)o;
 	}
-	private void handleCycleError() {
-		throw new CycleException("Cycle detected in execution!");
+	private void handleEvalError(Throwable t) {
+		// If we caught a cycle, report the start of it here.
+		// Otherwise just re-throw the exception.
+		if (demanded > 1) {
+			throw new CycleTraceException("Cycle begins here", t);
+		} else if (t instanceof RuntimeException) {
+			throw (RuntimeException)t;
+		} else {
+			throw new RuntimeException(t);
+		}
 	}
 	
 	public static Thunk<Object> fromLazy(Lazy l, DecoratedNode ctx) {
