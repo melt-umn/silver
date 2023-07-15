@@ -11,6 +11,7 @@ package common.exceptions;
  *   <ul>
  *   <li>MissingDefinitionException - demanded something the user didn't define
  *   <li>PatternMatchFailure - pattern matching failure (NOT YET IMPLEMENTED)
+ *   <li>CycleException - detected a cycle in attribute evaluation
  *   </ul>
  * <li>TraceException - documentation about what triggered the error.
  *   <ul>
