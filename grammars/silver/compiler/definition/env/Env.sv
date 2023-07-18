@@ -226,7 +226,7 @@ Boolean ::= t::Type e::Decorated Env
     | skolemType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))
     | varType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))  -- Can happen when pattern matching on a prod with occurs contexts
     | uniqueDecoratedType(nt, _) -> isDecorable(nt, e)
-    | _ -> t.isNonterminal
+    | _ -> t.isNonterminal && !t.isData
     end;
 }
 

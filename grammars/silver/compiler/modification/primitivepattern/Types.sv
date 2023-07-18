@@ -185,11 +185,11 @@ top::Type ::= inhs::[String]
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String ks::[Kind] _
+top::Type ::= fn::String ks::[Kind] _ _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, oks, _) ->
+    | nonterminalType(ofn, oks, _, _) ->
         if fn == ofn && ks == oks
         then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
@@ -279,7 +279,7 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   return case scrutineeType, constructorType of
          | decoratedType(t1, i1), decoratedType(t2, i2) ->
            case t1.baseType, t2.baseType of
-           | nonterminalType(n1, _, _), nonterminalType(n2, _, _) when n1 == n2 ->
+           | nonterminalType(n1, _, _, _), nonterminalType(n2, _, _, _) when n1 == n2 ->
              refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
            | _, _ -> emptySubst()
            end

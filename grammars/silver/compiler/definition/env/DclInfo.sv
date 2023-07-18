@@ -167,11 +167,11 @@ top::TypeDclInfo ::=
 }
 
 abstract production ntDcl
-top::TypeDclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
+top::TypeDclInfo ::= fn::String ks::[Kind] data::Boolean closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(nonterminalType(fn, ks, tracked));
+  top.typeScheme = monoType(nonterminalType(fn, ks, data, tracked));
   top.kindrep = foldr(arrowKind, starKind(), ks);
   top.isType = true;
 }

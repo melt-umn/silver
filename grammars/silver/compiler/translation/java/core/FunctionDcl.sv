@@ -35,14 +35,14 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
       functionType(2, []),
         [appType(listCtrType(), stringType()),
           ioForeignType,
-          appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure;
+          appType(nonterminalType("silver:core:IOVal", [starKind()], false, false), intType())])).failure;
 
   -- For main functions which return IO<Integer>
   local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
     appTypes(
       functionType(1, []),
         [appType(listCtrType(), stringType()),
-          appType(nonterminalType("silver:core:IO", [starKind()], false), intType())])).failure;
+          appType(nonterminalType("silver:core:IO", [starKind()], false, false), intType())])).failure;
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <- 

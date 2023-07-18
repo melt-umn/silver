@@ -8,11 +8,12 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local inhVar :: String = "count_inh__ON__" ++ id.name;
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
+  local ntty::Type = nonterminalType(fName, map((.kindrep), tl.types), quals.data, quals.tracked);
   local myAnnos :: [NamedSignatureElement] =
-    annotationsForNonterminal(nonterminalType(fName, map((.kindrep), tl.types), quals.tracked), top.env);
+    annotationsForNonterminal(ntty, top.env);
 
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
-  local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, map((.kindrep), tl.types), quals.tracked), top.config, top.env);
+  local wantsTracking :: Boolean = typeWantsTracking(ntty, top.config, top.env);
 
   top.initProd := s"\t\tcommon.RTTIManager.registerNonterminal(${className}.nonterminalton);\n\n";
   top.initWeaving := s"""
@@ -29,7 +30,7 @@ package ${makeName(top.grammarName)};
 import java.util.*;
 import silver.core.*;
 
-public abstract class ${className} extends common.Node ${
+public abstract class ${className} extends ${if quals.data then "common.DataNode" else "common.Node"} ${
   (if null(interfaces) then "" else 
     " implements " ++ implode(", ", interfaces)
   )} {
@@ -44,39 +45,14 @@ public abstract class ${className} extends common.Node ${
 
 	protected ${className}(${implode(", ",
 			(if wantsTracking then ["final NOriginInfo origin"] else []) ++
-			"final boolean isUnique" ::
+			(if quals.data then [] else ["final boolean isUnique"]) ++
 			map((.annoSigElem), myAnnos))}) {
-		super(isUnique);
+${if quals.data then "" else "		super(isUnique);"}
 		${if wantsTracking then "this.origin = origin;" else ""}
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 
 ${implode("", map((.annoDeclElem), myAnnos))}
-
-	@Override
-	public final int getNumberOfInhAttrs() {
-		return num_inh_attrs;
-	}
-
-	@Override
-	public final int getNumberOfSynAttrs() {
-		return num_syn_attrs;
-	}
-
-	@Override
-	public final common.Lazy getDefaultSynthesized(final int index) {
-		return defaultSynthesizedAttributes[index];
-	}
-
-	@Override
-	public final String getNameOfInhAttr(final int index) {
-		return occurs_inh[index];
-	}
-	
-	@Override
-	public final String getNameOfSynAttr(final int index) {
-		return occurs_syn[index];
-	}
 
 	@Override
 	public final String[] getAnnoNames() {
@@ -88,6 +64,31 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		${concat(map((.annoLookupElem), myAnnos))}{
 			throw new common.exceptions.SilverInternalError("Invalid annotation " + name);
 		}
+	}
+
+	@Override
+	public final int getNumberOfSynAttrs() {
+		return num_syn_attrs;
+	}
+
+	@Override
+	public final common.Lazy getDefaultSynthesized(final int index) {
+		return defaultSynthesizedAttributes[index];
+	}
+	
+	@Override
+	public final String getNameOfSynAttr(final int index) {
+		return occurs_syn[index];
+	}
+${if quals.data then "" else s"""
+	@Override
+	public final int getNumberOfInhAttrs() {
+		return num_inh_attrs;
+	}
+
+	@Override
+	public final String getNameOfInhAttr(final int index) {
+		return occurs_inh[index];
 	}
 
 	public static final class DecorationSiteWrapper extends ${className} {
@@ -234,7 +235,7 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 			return new DecorationSiteWrapper(oi, ref);
 		}
 """ else ""}
-	}
+	}"""}
 
 	public static final common.RTTIManager.Nonterminalton<${className}> nonterminalton = new Nonterminalton();
 

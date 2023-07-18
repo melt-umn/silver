@@ -163,8 +163,13 @@ top::VarBinder ::= n::Name
   local actualTy :: Type = performSubstitution(ty, top.finalSubst);
 
   top.translation = 
-    makeSpecialLocalBinding(fName, 
-      "scrutinee." ++ 
+    makeSpecialLocalBinding(fName,
+      if top.matchingAgainst.fromJust.namedSignature.outputElement.typerep.isData
+      then
+        if isDecorable(top.bindingType, top.env)
+        then s"scrutineeNode.childDecorated(${toString(top.bindingIndex)})"
+        else s"((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}()"
+      else "scrutinee." ++
         (if isDecorable(top.bindingType, top.env)
          then "childDecorated("
          else s"<${actualTy.transType}>childAsIs(") ++

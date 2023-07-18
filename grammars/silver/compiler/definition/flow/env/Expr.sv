@@ -290,11 +290,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
-aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
-}
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
@@ -358,12 +353,29 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     end;
   e.decSiteVertexInfo = nothing();
 }
-aspect production errorDecoratedAccessHandler
+aspect production annoAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.decSiteVertexInfo = nothing();
+}
+aspect production synDataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  -- No flow vertex, since there are never any inh deps
+
+  e.decSiteVertexInfo = nothing();
+}
+aspect production inhUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
 aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.decSiteVertexInfo = nothing();
+}
+aspect production unknownDclAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();

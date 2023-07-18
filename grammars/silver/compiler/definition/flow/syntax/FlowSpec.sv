@@ -244,8 +244,8 @@ top::FlowSpecInh ::= 'decorate'
   -- so be sufficiently general here.
   top.errors <-
     case top.onNt, decSpec of
-    | nonterminalType(_, _, _), just(_) -> []
-    | nonterminalType(_, _, _), nothing() -> 
+    | nonterminalType(_, _, _, _), just(_) -> []
+    | nonterminalType(_, _, _, _), nothing() -> 
       [err(top.location, s"to use the default reference set for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")]
     | errorType(), _ -> []
     | _, _ -> [err(top.location, s"default reference set can only be used with nonterminal types, not ${prettyType(top.onNt)}")]

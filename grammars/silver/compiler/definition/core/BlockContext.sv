@@ -112,11 +112,11 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.signature = sig;
   top.flowGraph = g;
 
-  top.permitForward = true;
+  top.permitForward = !sig.outputElement.typerep.isData;
   top.hasPartialSignature = true;
   top.hasFullSignature = true;
   top.permitProductionAttributes = true;
-  top.permitForwardProductionAttributes = true;
+  top.permitForwardProductionAttributes = !sig.outputElement.typerep.isData;
   top.permitLocalAttributes = true;
 }
 

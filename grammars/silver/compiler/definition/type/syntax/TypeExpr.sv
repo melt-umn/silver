@@ -313,7 +313,8 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,_) -> []
+    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> []
     | varType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
@@ -342,7 +343,8 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,_) -> []
+    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
     | varType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
@@ -361,7 +363,8 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,_) -> []
+    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> []
     | varType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
@@ -390,7 +393,8 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr
   
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,_) -> []
+    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
     | varType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]

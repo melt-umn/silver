@@ -25,7 +25,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       functionType(length(elems), if hasLoc then ["location"] else []),
       map(astType(_, top.env), elems) ++
       (if hasLoc
-       then [ nonterminalType("silver:core:Location", [], false)]
+       then [ nonterminalType("silver:core:Location", [], false, false)]
        else []) ++
       [astType(top.frame.signature.outputElement, top.env)]);
   

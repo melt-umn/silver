@@ -161,7 +161,7 @@ top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr 
 
   thread downSubst, upSubst on top, loc, errCheck1, top;
 
-  errCheck1 = check(loc.typerep, nonterminalType("silver:core:Location", [], false));
+  errCheck1 = check(loc.typerep, nonterminalType("silver:core:Location", [], false, false));
   top.errors <-
     if errCheck1.typeerror
     then [err(loc.location, s"Semantic token position expected a ${errCheck1.rightpp}, but got ${errCheck1.leftpp}")]

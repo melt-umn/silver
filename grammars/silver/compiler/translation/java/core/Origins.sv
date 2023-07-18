@@ -85,7 +85,7 @@ Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 {
   return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
-              | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
+              | nonterminalType(fn, _, _, tracked) -> conf.forceOrigins || tracked
               | appType(c, _) -> typeWantsTracking(c, conf, env)
               | _ -> false
               end;

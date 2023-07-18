@@ -331,7 +331,53 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   e.boundVars = top.boundVars;
 }
 
-aspect production errorDecoratedAccessHandler
+aspect production inhUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  -- Flow analysis has no way to track what e is decorated with across reflect/reify,
+  -- so if the inh set is unspecialized, assume that it has the reference set.
+  local finalTy::Type =
+    case finalType(e) of
+    | decoratedType(nt, varType(_)) ->
+      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | t -> t
+    end;
+  top.transform =
+    applyASTExpr(
+      antiquoteASTExpr(
+        Silver_Expr {
+          silver:rewrite:anyASTExpr(
+            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+        }),
+      consASTExpr(e.transform, nilASTExpr()),
+      nilNamedASTExpr());
+  e.boundVars = top.boundVars;
+}
+
+aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  -- Flow analysis has no way to track what e is decorated with across reflect/reify,
+  -- so if the inh set is unspecialized, assume that it has the reference set.
+  local finalTy::Type =
+    case finalType(e) of
+    | decoratedType(nt, varType(_)) ->
+      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | t -> t
+    end;
+  top.transform =
+    applyASTExpr(
+      antiquoteASTExpr(
+        Silver_Expr {
+          silver:rewrite:anyASTExpr(
+            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+        }),
+      consASTExpr(e.transform, nilASTExpr()),
+      nilNamedASTExpr());
+  e.boundVars = top.boundVars;
+}
+
+aspect production unknownDclAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,

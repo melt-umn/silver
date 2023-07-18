@@ -115,7 +115,7 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
     case t of
     -- Monomorphic nonterminals that don't have an explicit Arbitrary instance,
     -- call the appropriate local generator function.
-    | nonterminalType(ntName, [], _)
+    | nonterminalType(ntName, [], _, _)
       when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
       matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName), loc)}($Expr{depth}) }
     
@@ -147,7 +147,7 @@ Boolean ::= env::Decorated Env  specEnv::Decorated Env  t::Type
 {
   return
     case t of
-    | nonterminalType(ntName, [], _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
+    | nonterminalType(ntName, [], _, _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | terminalType(ntName) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, elemT)
     | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", t, env))

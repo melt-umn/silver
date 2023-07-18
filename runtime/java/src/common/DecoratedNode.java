@@ -393,7 +393,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * <p>Warning: do not mix {@link #localAsIs} and {@link #localDecorated} on the same local attribute!
 	 * 
-	 * @param attribute The full name of the local to obtain.
+	 * @param attribute The index of the local to obtain.
 	 * @return The value of the local.
 	 */
 	@SuppressWarnings("unchecked")
@@ -497,7 +497,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Obtain a synthesized attribute from this DecoratedNode. First, look for definitions on this node,
 	 * and if that fails, request it from whatever we forward to, if anything.
 	 * 
-	 * @param attribute The full name of the attribute.
+	 * @param attribute The index of the attribute.
 	 * @return The value of the attribute.
 	 */
 	@SuppressWarnings("unchecked")
@@ -697,7 +697,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Get the value of an inherited attribute on this DN.  First, try the inherited attributes we were given.
 	 * If that fails, ask our {@link #forwardParent}, if any, for whatever they may give us.
 	 * 
-	 * @param attribute The full name of the attribute.
+	 * @param attribute The index of the attribute.
 	 * @return The value of the attribute.
 	 */
 	@SuppressWarnings("unchecked")

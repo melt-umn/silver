@@ -27,7 +27,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
 {
   local isClosedNt :: Boolean =
     case nt.lookupType.dcls of
-    | ntDcl(_, _, closed, _) :: _ -> closed
+    | ntDcl(_, _, _, closed, _) :: _ -> closed
     | _ -> false -- default, if the lookup fails
     end;
 

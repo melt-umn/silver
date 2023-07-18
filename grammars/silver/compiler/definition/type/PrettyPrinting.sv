@@ -186,7 +186,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String _ _ _
 {
   top.typepp = fn;
 }

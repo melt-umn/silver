@@ -26,7 +26,8 @@ top::Type ::=
   top.isNonterminal = false;
   top.isDecorated = false;
 
-  top.tracked = false;
+  top.isData = false;
+  top.isTracked = false;
   top.kindrep = arrowKind(starKind(),starKind());
 
   top.unify =

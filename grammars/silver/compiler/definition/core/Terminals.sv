@@ -35,6 +35,7 @@ terminal Attribute_kwd   'attribute'    lexer classes {KEYWORD,RESERVED};
 terminal Class_kwd       'class'        lexer classes {KEYWORD};
 terminal Closed_kwd      'closed'       lexer classes {KEYWORD};
 terminal Concrete_kwd    'concrete'     lexer classes {KEYWORD,RESERVED};
+terminal Data_kwd        'data'         lexer classes {KEYWORD};
 terminal Decorate_kwd    'decorate'     lexer classes {KEYWORD,RESERVED};
 terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4, association = left; -- Association needed for dangling else in action code.
 terminal End_kwd         'end'          lexer classes {KEYWORD,RESERVED};

@@ -41,7 +41,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   -- Make sure we get the number and kind of type variables correct for the NT
   local ntParamKinds :: [Kind] =
     case nt.lookupType.dcls of
-    | ntDcl(_, ks, _, _) :: _ -> ks
+    | ntDcl(_, ks, _, _, _) :: _ -> ks
     | _ -> []
     end;
   top.errors <-
@@ -116,14 +116,24 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     else [];
 
   top.errors <-
-    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !isDecorable(ntTypeScheme.typerep, top.env))
+    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isNonterminal)
     then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
-                
+
   top.errors <-
     if !nt.lookupType.found || !at.lookupAttribute.found || !at.lookupAttribute.dcl.isAnnotation ||
        isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars) then []
     else [err(top.location, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
+  
+  top.errors <-
+    if nt.lookupType.found && ntTypeScheme.isData && at.lookupAttribute.found
+    then
+      if at.lookupAttribute.dcl.isInherited
+      then [err(top.location, "Inherited attributes may not occur on data nonterminals.")]
+      else if at.lookupAttribute.dcl.isTranslation
+      then [err(top.location, "Translation attributes may not occur on data nonterminals.")]
+      else []
+    else [];
 }
 
 abstract production errorAttributionDcl
@@ -149,11 +159,11 @@ top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs n
   -- Make sure we get the number and kinds of tyvars correct for the NT
   top.errors <-
     case nt.lookupType.dcls of
-    | ntDcl(_, ks, _, _) :: _ when length(ks) != length(nttl.types) ->
+    | ntDcl(_, ks, _, _, _) :: _ when length(ks) != length(nttl.types) ->
       [err(nt.location,
         nt.name ++ " expects " ++ toString(length(ks)) ++
         " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
-    | ntDcl(_, ks, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
+    | ntDcl(_, ks, _, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
       [err(nt.location,
         nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ks).typepp ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]

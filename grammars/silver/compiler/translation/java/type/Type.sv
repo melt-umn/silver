@@ -143,7 +143,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String _ _ _
 {
   -- untightened version would be "common.Node", but we prefer the generated
   -- class, e.g. silver.definition.core.NExpr

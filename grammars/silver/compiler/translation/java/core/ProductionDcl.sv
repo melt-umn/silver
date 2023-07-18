@@ -19,6 +19,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local ntName :: String = namedSig.outputElement.typerep.typeName;
 
   local fnnt :: String = makeNTName(ntName);
+  local isData :: Boolean = namedSig.outputElement.typerep.isData;
   local wantsTracking :: Boolean = typeWantsTracking(namedSig.outputElement.typerep, top.config, top.env);
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
@@ -41,7 +42,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     \ x::NamedSignatureElement ->
       if x.typerep.transType == "Object"
       then s"(getChild_${x.elementName}() instanceof common.Tracked?((common.Tracked)child_${x.elementName}).duplicate(null, notes):child_${x.elementName})"
-      else if x.typerep.tracked
+      else if x.typerep.isTracked
       then s"getChild_${x.elementName}().duplicate(null, notes)"
       else s"child_${x.elementName}";
 
@@ -53,7 +54,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local getChildTypes :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> case x.typerep of
-                                  | nonterminalType(fn, _, _) -> s"\"${fn}\""
+                                  | nonterminalType(fn, _, _, _) -> s"\"${fn}\""
                                   | _ -> "null"
                                   end);
 
@@ -78,17 +79,18 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final int num_local_attrs = Init.${localVar};
     public static final String[] occurs_local = new String[num_local_attrs];
 
-    public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[${fnnt}.num_inh_attrs];
-
     public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
     public static final common.Lazy[][][] childTransInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][][];
 
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
-    public static final boolean[] localIsForward = new boolean[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
     public static final common.Lazy[][][] localTransInheritedAttributes = new common.Lazy[num_local_attrs][][];
+
+${if isData then "" else s"""
+    public static final common.Lazy[] forwardInheritedAttributes = new common.Lazy[${fnnt}.num_inh_attrs];
+    public static final boolean[] localIsForward = new boolean[num_local_attrs];"""}
 
 ${namedSig.inhOccursIndexDecls}
 
@@ -102,9 +104,10 @@ ${namedSig.childStatic}
     public ${className}(final NOriginInfo origin, final boolean isUniqueInvocation${commaIfAny} ${namedSig.javaSignature}) {
         super(${implode(", ",
         	(if wantsTracking then ["origin"] else []) ++
-        	(if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
-		     then "true"
-		     else "isUniqueInvocation") ::
+        	(if isData then []
+             else if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
+		     then ["true"]
+		     else ["isUniqueInvocation"]) ++
         	map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
@@ -182,6 +185,7 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
         return childTransInheritedAttributes[key];
     }
 
+${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
     	${if !null(body.undecorateExpr)
@@ -221,6 +225,11 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     }
 
     @Override
+    public boolean getLocalIsForward(final int key) {
+        return localIsForward[key];
+    }"""}
+
+    @Override
     public common.Lazy getLocal(final int key) {
         return localAttributes[key];
     }
@@ -228,11 +237,6 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     @Override
     public common.Lazy getLocalDecSite(final int key) {
         return localDecSites[key];
-    }
-
-    @Override
-    public boolean getLocalIsForward(final int key) {
-        return localIsForward[key];
     }
 
     @Override
