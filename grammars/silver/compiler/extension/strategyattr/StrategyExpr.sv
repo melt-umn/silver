@@ -756,25 +756,21 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
   -- so we need to decorate one of those here.
   production checkExpr::Expr =
-    letp(
-      assignExpr(
-        id, '::', typerepTypeExpr(decoratedType(ty.typerep, inhSetType([])), location=top.location),
-        '=', errorExpr([], location=top.location), location=top.location),
-      caseExpr(
-        [hackExprType(ty.typerep, location=top.location)],
-        -- TODO: matchRuleList on MRuleList depends on frame for some reason.
-        -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
-        decorate ml with {
-          env = top.env;
-          config = top.config;
-          matchRulePatternSize = 1;
-          frame = error("not needed");
-        }.matchRuleList, false,
-        errorExpr([], location=top.location),
-        ty.typerep,
-        location=top.location),
+    caseExpr(
+      [hackExprType(ty.typerep, location=top.location)],
+      -- TODO: matchRuleList on MRuleList depends on frame for some reason.
+      -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
+      decorate ml with {
+        env = top.env;
+        config = top.config;
+        matchRulePatternSize = 1;
+        frame = error("not needed");
+      }.matchRuleList, false,
+      errorExpr([], location=top.location),
+      ty.typerep,
       location=top.location);
-  checkExpr.env = top.env;
+  checkExpr.env =
+    newScopeEnv([lhsDef(top.grammarName, id.location, id.name, ty.typerep)], top.env);
   checkExpr.flowEnv = top.flowEnv;
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.alwaysDecorated = false;
