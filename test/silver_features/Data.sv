@@ -5,7 +5,7 @@ inherited attribute dItemsIn::[Integer];
 annotation dId::Integer;
 
 data nonterminal FooData with dItems;
-data nonterminal BarData with dItems, dId;
+data nonterminal BarData<a> with dItems, dId;
 nonterminal BazNonData with dItems, dItemsIn;
 
 production aFD
@@ -13,7 +13,7 @@ top::FooData ::= i::Integer x::FooData
 { top.dItems = i :: x.dItems; }
 
 production bFD
-top::FooData ::= x::BarData
+top::FooData ::= x::BarData<FooData>
 { top.dItems = x.dId :: x.dItems; }
 
 production cFD
@@ -24,7 +24,8 @@ top::FooData ::= x::BazNonData
 }
 
 production bBD
-top::BarData ::= i::Integer x::FooData
+attribute dItems {} occurs on a =>
+top::BarData<a> ::= i::Integer x::a
 {
   top.dItems = i :: x.dItems;
 }

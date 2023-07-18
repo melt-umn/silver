@@ -49,6 +49,25 @@ public abstract class DataNode extends Node {
         return context.childDecorated(child);
 	}
 
+	/**
+	 * We might still need to produce a DecoratedNode in polymorphic contexts with synthesized occurs-on constraints.
+	 * 
+	 * @param inhs The inherited attributes supplied, should always be null.
+	 * @param transInhs The inherited attributes supplied on translation attributes, should always be null.
+	 * @return The "decorated" form of this DataNode.
+	 */
+	@Override
+	public final DecoratedNode decorate(
+            final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs) {
+		if (inhs != null || transInhs != null) {
+        	throw new SilverInternalError("Data nonterminals cannot be decorated with inherited attributes!");
+		}
+		if (context == null) {
+			context = createContext();
+		}
+		return context;
+    }
+
 	private DecoratedNode createContext() {
 		return new DecoratedNode(
 			getNumberOfChildren(), 0, getNumberOfSynAttrs(), getNumberOfLocalAttrs(),
@@ -74,15 +93,9 @@ public abstract class DataNode extends Node {
     // Overrides for methods that should never be consulted on data nonterminals:
 	@Override
 	public final DecoratedNode decorate(
-            final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs) {
-        throw new SilverInternalError("Data nonterminals cannot be decorated");
-    }
-
-	@Override
-	public final DecoratedNode decorate(
             final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs,
             final DecoratedNode fwdParent, final boolean isProdForward) {
-        throw new SilverInternalError("Data nonterminals cannot be decorated");
+        throw new SilverInternalError("Data nonterminals should never be decorated with a forward parent!");
     }
 
 	@Override

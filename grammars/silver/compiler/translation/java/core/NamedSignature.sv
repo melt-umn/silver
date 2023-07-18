@@ -374,9 +374,10 @@ String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhAr
   t.boundVariables = bv;
   local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
-			common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
+			${if null(inhs) then "return null;" else
+s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
 ${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
-			return res;
+			return res;"""}
 		}
 """;
 }
