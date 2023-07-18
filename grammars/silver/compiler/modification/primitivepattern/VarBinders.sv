@@ -169,7 +169,7 @@ top::VarBinder ::= n::Name
         then s"scrutineeNode.childDecorated(${toString(top.bindingIndex)})"
         else if top.bindingType.transType == finalTy.transType
         then s"((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}()"
-        else s"uncheckedCast<${finalTy.transType}>((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}())"
+        else s"uncheckedCast<${finalTy.transType}>(((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}())"
       else "scrutinee." ++
         (if isDecorable(top.bindingType, top.env)
          then "childDecorated("
