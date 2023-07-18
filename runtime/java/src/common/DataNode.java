@@ -2,6 +2,18 @@ package common;
 
 import common.exceptions.SilverInternalError;
 
+/**
+ * A specialized version of Nodes that do not have any inherited attributes.
+ * 
+ * <p>Data nonterminals subclass this class instead of Node.
+ * Since data nonterminals do not forward or get decorated with inherited attributes,
+ * the relevant methods do not have implementations supplied by the nonterminal subclass.
+ * Since data nonterminals are not decorated, DataNode has methods to directly demand
+ * synthesized attributes or decorated children.
+ * 
+ * @author lkramer
+ * @see Node
+ */
 public abstract class DataNode extends Node {
     // The DecoratedNode used as context for evaluating syn/production attributes, if ever demanded.
     // Since we have no inh attributes, syn attribute values are always the same and are cached here. 
@@ -43,6 +55,7 @@ public abstract class DataNode extends Node {
 			this, TopNode.singleton, null, null, null, false);
 	}
 
+	// These methods have implementations here since we never forward or supply inherited attributes:
 	@Override
 	public final boolean getLocalIsForward(final int index) {
 		return false;
