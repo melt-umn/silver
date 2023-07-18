@@ -3,7 +3,7 @@ grammar silver:core;
 synthesized attribute fromJust<a> :: a;
 synthesized attribute isJust :: Boolean;
 
-nonterminal Maybe<a> with fromJust<a>, isJust;
+data nonterminal Maybe<a> with fromJust<a>, isJust;
 
 abstract production just
 top::Maybe<a> ::= v::a
@@ -83,7 +83,7 @@ instance MonadFix Maybe {
  - @param m The monad type to be transformed
  - @param a The optional result type
  -}
-nonterminal MaybeT<(m :: * -> *) a> with run<m<Maybe<a>>>;
+data nonterminal MaybeT<(m :: * -> *) a> with run<m<Maybe<a>>>;
 abstract production maybeT
 top::MaybeT<m a> ::= x::m<Maybe<a>>
 {
