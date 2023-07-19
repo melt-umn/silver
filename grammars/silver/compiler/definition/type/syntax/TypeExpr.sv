@@ -313,7 +313,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> []
     | varType(_) -> []
@@ -343,7 +343,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
     | varType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
@@ -363,7 +363,7 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> []
     | varType(_) -> []
@@ -393,7 +393,7 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr
   
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(_,_,true,_) -> [err(t.location, "Data nonterminals cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
     | varType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
