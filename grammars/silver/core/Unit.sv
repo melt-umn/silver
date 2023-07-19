@@ -1,6 +1,6 @@
 grammar silver:core;
 
-nonterminal Unit;
+data nonterminal Unit;
 
 abstract production unit
 top::Unit ::=
