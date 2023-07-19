@@ -55,9 +55,8 @@ top::Expr ::= tuple::Expr '.' a::IntConst
 
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
 
-  -- Ensure that we extract the tupleElems from the underlying chain of pair types if the tuple type is decorated.
   local ty :: Type = performSubstitution(tuple.typerep, tuple.upSubst);
-  local len::Integer = length((if ty.isDecorated then ty.decoratedType else ty).tupleElems);
+  local len::Integer = length(ty.tupleElems);
   
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
