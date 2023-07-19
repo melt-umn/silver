@@ -190,7 +190,7 @@ public final class Util {
 	public static void printStackCauses(Throwable e) {
 		freeThisToPrintErrors = null;
 
-		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
+		System.err.println("\nAn error occurred.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
 			Throwable t = e;
@@ -201,7 +201,9 @@ public final class Util {
 				if(msg == null) // Some exceptions have no message... apparently.
 					msg = t.toString();
 
-				if(st.length == 0) {
+				if(t instanceof CycleTraceException) {
+					System.err.println("\tCycle begins here:");
+				} else if(st.length == 0) {
 					// Some exceptions don't seem to occur anywhere... somehow.
 					System.err.println("(??): " + msg);
 				} else if(st[0].getClassName().startsWith("common.")) {
@@ -413,7 +415,7 @@ public final class Util {
 			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
 			return new PparseFailed(err, null);
 		} catch(Throwable t) {
-			throw new TraceException("An error occured while parsing", t);
+			throw new TraceException("An error occurred while parsing", t);
 		}
 	}
 

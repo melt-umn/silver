@@ -1,5 +1,6 @@
 package common;
 
+import common.exceptions.CycleException;
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
 import common.exceptions.SilverInternalError;
