@@ -5,8 +5,16 @@ synthesized attribute lexerClasses :: [String];
 synthesized attribute terminalLocation :: Location;
 synthesized attribute terminalName :: String;
 
-nonterminal TerminalDescriptor with lexeme, lexerClasses, terminalLocation, terminalName, compareTo, isEqual;
-propagate compareTo, isEqual on TerminalDescriptor;
+data nonterminal TerminalDescriptor with lexeme, lexerClasses, terminalLocation, terminalName;
+
+-- TODO: Derive this
+instance Eq TerminalDescriptor {
+  eq = \ x::TerminalDescriptor y::TerminalDescriptor ->
+    x.lexeme == y.lexeme &&
+    x.lexerClasses == y.lexerClasses &&
+    x.terminalName == y.terminalName &&
+    x.terminalLocation == y.terminalLocation;
+}
 
 abstract production terminalDescriptor
 top::TerminalDescriptor ::= lexeme::String lexerClasses::[String] terminalName::String terminalLocation::Location

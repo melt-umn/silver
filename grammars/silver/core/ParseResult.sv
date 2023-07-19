@@ -30,7 +30,7 @@ synthesized attribute parseTerminals :: [TerminalDescriptor];
  -
  - @param a  The start nonterminal type.
  -}
-nonterminal ParseResult<a> with parseSuccess, parseError, parseErrors, parseTree<a>, parseTerminals;
+data nonterminal ParseResult<a> with parseSuccess, parseError, parseErrors, parseTree<a>, parseTerminals;
 
 @{--
  - Parse failure constructor.
@@ -84,7 +84,7 @@ a ::= pr::ParseResult<a>
 @{--
  - Representation of a parser error.
  -}
-nonterminal ParseError with parseErrors;
+data nonterminal ParseError with parseErrors;
 
 @{--
  - This production as currently designed matches up exactly with what copper raises in its syntax error exception.
