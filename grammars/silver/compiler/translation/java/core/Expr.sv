@@ -376,7 +376,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         end then
       -- Unique reference to a translation attribute on a child or local that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      s"${e.translation}.evalTrans(${q.attrOccursIndex}, ${q.attrOccursIndex}_dec_site)"
+      s"${e.translation}.evalTrans(${q.attrOccursIndex})"
     else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
