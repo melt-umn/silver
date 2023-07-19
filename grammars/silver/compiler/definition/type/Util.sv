@@ -221,7 +221,7 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
   top.isTracked = tracked;
   top.asNtOrDecType = if data then top else ntOrDecType(top, freshInhSet(), freshType());
   top.unifyInstanceNonterminal = emptySubst();
-  top.unifyInstanceDecorable = emptySubst();
+  top.unifyInstanceDecorable = if data then errorSubst("data") else emptySubst();
 }
 
 aspect production terminalType
