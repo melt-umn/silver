@@ -347,7 +347,9 @@ String ::= env::Decorated Env flowEnv::FlowEnv grammarName::String ntName::Strin
       | [] -> error("Couldn't find decl for local " ++ fName)
       end
     | transAttrVertexType(lhsVertexType_real(), transAttr) ->
-      s"context.translation(${makeName(grammarName)}.Init.${makeIdName(transAttr)}__ON__${makeIdName(ntName)})"
+      let transIndexName::String = s"${makeName(grammarName)}.Init.${makeIdName(transAttr)}__ON__${makeIdName(ntName)}"
+      in s"context.translation(${transIndexName}, ${transIndexName}_dec_site)"
+      end
     | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
     | forwardVertexType_real() -> s"context.forward()"
     | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
