@@ -146,7 +146,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   thread downSubst, upSubst on top, note, e, errCheck1, top;
   
-  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], false, false));  -- TODO: This should be data?
+  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], true, false));
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
