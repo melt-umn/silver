@@ -159,6 +159,7 @@ instance Eq a => Eq [a] {
   neq = \ x::[a] y::[a] -> length(x) != length(y) || any(zipWith(neq, x, y));
 }
 
+-- TODO: Derive these instances
 instance Eq a => Eq Maybe<a> {
   eq = \ x::Maybe<a> y::Maybe<a> ->
     case x, y of
@@ -184,15 +185,6 @@ instance Eq a, Eq b => Eq Either<a b> {
 
 instance Eq Unit {
   eq = \ Unit Unit -> true;
-}
-
-instance Eq Location {
-  eq = \ l1::Location l2::Location ->
-    -- TODO: We could probably just compare based on filename and index
-    -- For the moment, though, use line & column instead.
-    l1.filename == l2.filename &&
-    l1.line == l2.line &&
-    l1.column == l2.column;
 }
 
 @{-
