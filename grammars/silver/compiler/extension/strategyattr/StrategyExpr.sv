@@ -757,7 +757,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   -- so we need to decorate one of those here.
   production checkExpr::Expr =
     caseExpr(
-      [hackExprType(ty.typerep, location=top.location)],
+      [hackExprType(ty.typerep.asNtOrDecType, location=top.location)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
       decorate ml with {
