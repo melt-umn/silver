@@ -2,6 +2,7 @@ grammar silver:compiler:extension:strategyattr;
 
 import silver:compiler:metatranslation;
 import silver:compiler:definition:flow:syntax;
+import silver:compiler:definition:flow:ast only lhsVertexType;
 
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
 import silver:compiler:driver:util;
@@ -757,7 +758,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   -- so we need to decorate one of those here.
   production checkExpr::Expr =
     caseExpr(
-      [hackExprType(ty.typerep.asNtOrDecType, location=top.location)],
+      [hackLHSExprType(ty.typerep.asNtOrDecType, location=top.location)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
       decorate ml with {
@@ -816,10 +817,11 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
 }
 
 -- Hack dummy expr with a given type
-abstract production hackExprType
+abstract production hackLHSExprType
 top::Expr ::= t::Type
 {
   top.typerep = t;
+  top.flowVertexInfo = just(lhsVertexType);
   forwards to errorExpr([], location=top.location);
 }
 
