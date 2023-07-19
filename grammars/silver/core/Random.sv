@@ -3,7 +3,7 @@ grammar silver:core;
 -- Monad for computations involving random number generation.
 -- This must live in silver:core because the runtime depends on these productions.
 -- Associated utilities are defined in silver:util:random.
-nonterminal RandomGen<a>;
+data nonterminal RandomGen<a>;
 
 -- Pure random "token" for use with threaded attributes, represented as just a seed value.
 -- Unlike IOToken, this is essentially safe to reuse, besides the possibility of
