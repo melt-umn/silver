@@ -227,6 +227,21 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   e.boundVars = top.boundVars;
 }
 
+aspect production synDataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.transform =
+    applyASTExpr(
+      antiquoteASTExpr(
+        Silver_Expr {
+          silver:rewrite:anyASTExpr(
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
+        }),
+      consASTExpr(e.transform, nilASTExpr()),
+      nilNamedASTExpr());
+  e.boundVars = top.boundVars;
+}
+
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
