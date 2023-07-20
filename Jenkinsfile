@@ -101,6 +101,8 @@ melt.trynode('silver') {
     sh "./self-compile --clean --mwda --dont-translate"
   }
 
+  waitUntil { melt.isExecutorAvailable() }
+
   stage("Test") {
     // These test cases and tutorials are run as seperate tasks to allow for parallelism
     def tests = ["silver_features", "copper_features", "patt", "flow", "stdlib", "performance", "csterrors", "silver_construction", "origintracking", "implicit_monads"]
@@ -124,6 +126,8 @@ melt.trynode('silver') {
     // Clean
     sh "rm -rf silver-latest"
   }
+
+  waitUntil { melt.isExecutorAvailable() }
 
   stage("Integration") {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
