@@ -101,6 +101,8 @@ melt.trynode('silver') {
     sh "./self-compile --clean --mwda --dont-translate"
   }
 
+  // Avoid deadlock condition from all executor slots being filled with builds
+  // that are waiting for downstream builds to finish.
   waitUntil { melt.isExecutorAvailable() }
 
   stage("Test") {
@@ -127,6 +129,8 @@ melt.trynode('silver') {
     sh "rm -rf silver-latest"
   }
 
+  // Avoid deadlock condition from all executor slots being filled with builds
+  // that are waiting for downstream builds to finish.
   waitUntil { melt.isExecutorAvailable() }
 
   stage("Integration") {
