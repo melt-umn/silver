@@ -216,21 +216,23 @@ top::DefLHS ::= q::Decorated! QName
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  local transArray::String = s"${top.frame.className}.childTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
-  top.translation = s"${transArray}[${attr.attrOccursIndex}]";
+  local inhsIndex::String = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}][${attr.attrOccursIndex}_inhs]";
+  top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
   top.initTransInh =
-    s"\t\tif (${transArray} == null) ${transArray} = new common.Lazy[${makeNTName(q.lookupValue.typeScheme.typeName)}.num_syn_attrs];\n" ++
-    s"\t\tif (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+    s"\t\tif (${inhsIndex} == null) {\n" ++
+    s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    "\t\t}\n";
 }
 
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  local transArray::String = s"${top.frame.className}.localTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
-  top.translation = s"${transArray}[${attr.attrOccursIndex}]";
+  local inhsIndex::String = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}][${attr.attrOccursIndex}_inhs]";
+  top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
   top.initTransInh =
-    s"\t\tif (${transArray} == null) ${transArray} = new common.Lazy[${makeNTName(q.lookupValue.typeScheme.typeName)}.num_syn_attrs];\n" ++
-    s"\t\tif (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+    s"\t\tif (${inhsIndex} == null) {\n" ++
+    s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    "\t\t}\n";
 }
 
 aspect production errorTransAttrDefLHS

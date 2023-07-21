@@ -348,7 +348,7 @@ String ::= env::Decorated Env flowEnv::FlowEnv grammarName::String ntName::Strin
       end
     | transAttrVertexType(lhsVertexType_real(), transAttr) ->
       let transIndexName::String = s"${makeName(grammarName)}.Init.${makeIdName(transAttr)}__ON__${makeIdName(ntName)}"
-      in s"context.translation(${transIndexName}, ${transIndexName}_dec_site)"
+      in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
       end
     | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
     | forwardVertexType_real() -> s"context.forward()"

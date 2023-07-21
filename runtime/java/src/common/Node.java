@@ -34,12 +34,12 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	@Override
 	public DecoratedNode decorate(
-		final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs) {
+		final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, transInhs, null, false);
+				                 this, parent, inhs, null, false);
 	}
 
 	/**
@@ -58,13 +58,13 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	@Override
 	public DecoratedNode decorate(
-		final DecoratedNode parent, final Lazy[] inhs,  final Lazy[][] transInhs,
+		final DecoratedNode parent, final Lazy[] inhs,
 		final DecoratedNode fwdParent, final boolean isProdForward) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, transInhs, fwdParent, isProdForward);
+                                 this, parent, inhs, fwdParent, isProdForward);
 	}
 
 	/**
@@ -74,7 +74,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @return  A node decorated with no inherited attributes, without a parent.
 	 */
 	public DecoratedNode decorate() {
-		return decorate(TopNode.singleton, null, null);
+		return decorate(TopNode.singleton, null);
 	}
 
 	private Node undecoratedValue = null;
@@ -199,13 +199,6 @@ public abstract class Node implements Decorable, Typed {
 	 * @return An array containing the inherited attributes supplied to that child 
 	 */
 	public abstract Lazy[] getChildInheritedAttributes(final int index);
-	
-	/**
-	 * @param index The child index to look up the translation attribute inherited attributes.
-	 * @param attribute The translation attribute to look up inherited attributes.
-	 * @return An array containing the inherited attributes supplied to translation attributes that child 
-	 */
-	public abstract Lazy[][] getChildTransInheritedAttributes(final int index);
 
 	/**
 	 * Used to create arrays of appropriate size in DecoratedNode.
@@ -248,13 +241,6 @@ public abstract class Node implements Decorable, Typed {
 	 * @return An array containing the inherited attributes supplied to that local 
 	 */
 	public abstract Lazy[] getLocalInheritedAttributes(final int index);
-	
-	/**
-	 * @param index The index for a local, to look up the translation attribute inherited attributes.
-	 * @param attribute The translation attribute to look up inherited attributes.
-	 * @return An array containing inherited attributes supplied to translation attributes on that child 
-	 */
-	public abstract Lazy[][] getLocalTransInheritedAttributes(final int index);
 	
 	/**
 	 * Reports whether or not this production forwards.

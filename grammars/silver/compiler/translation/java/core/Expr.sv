@@ -374,7 +374,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   local finalTy::Type = finalType(top);
   top.translation =
     if !finalTy.isDecorated then
-      s"((${finalTy.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_dec_site).undecorate())"
+      s"((${finalTy.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site).undecorate())"
     else if finalTy.isUniqueDecorated && top.alwaysDecorated &&
         case e of
         | childReference(cqn) -> true
@@ -383,11 +383,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         end then
       -- Unique reference to a translation attribute on a child or local that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      s"${e.translation}.evalTrans(${q.attrOccursIndex})"
+      s"${e.translation}.evalTrans(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs)"
     else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
-      s"${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_dec_site)";
+      s"${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site)";
 
   -- TODO: Specialized thunks for accesses on child/local, for efficency
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -452,7 +452,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.translation = s"((common.Decorable)${e.translation})" ++ 
     case inh of
-    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null, (common.Lazy[][])null)"
+    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
       -- When the user forgets to provide inherited attributes
       -- (especially important because we're implicitly inserted when accessing attributes
@@ -465,8 +465,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
-      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}), " ++
-      "(common.Lazy[][])null)"  -- TODO: permit supplying inhs on translation attributes
+      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

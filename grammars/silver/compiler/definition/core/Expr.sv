@@ -682,6 +682,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   e.isRoot = false;
 }
 
+-- TODO: permit supplying inhs on translation attributes
 concrete production exprLhsExpr
 top::ExprLHSExpr ::= q::QNameAttrOccur
 {
