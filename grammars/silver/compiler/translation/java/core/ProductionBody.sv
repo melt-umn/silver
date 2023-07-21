@@ -216,20 +216,22 @@ top::DefLHS ::= q::Decorated! QName
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.translation = s"((TransInhs)${top.frame.className}.childInheritedAttributes[${attr.attrOccursIndex}_inhs]).inhs";
+  local inhsIndex::String = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}][${attr.attrOccursIndex}_inhs]";
+  top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
   top.initTransInh =
-    s"\t\tif (${top.frame.className}.childInheritedAttributes[${attr.attrOccursIndex}_inhs] == null) {\n" ++
-    s"\t\t\t${top.translation} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    s"\t\tif (${inhsIndex} == null) {\n" ++
+    s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
     "\t\t}\n";
 }
 
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  top.translation = s"((TransInhs)${top.frame.className}.localInheritedAttributes[${attr.attrOccursIndex}_inhs]).inhs";
+  local inhsIndex::String = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}][${attr.attrOccursIndex}_inhs]";
+  top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
   top.initTransInh =
-    s"\t\tif (${top.frame.className}.localInheritedAttributes[${attr.attrOccursIndex}_inhs] == null) {\n" ++
-    s"\t\t\t${top.translation} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    s"\t\tif (${inhsIndex} == null) {\n" ++
+    s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
     "\t\t}\n";
 }
 
