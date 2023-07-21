@@ -137,8 +137,8 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param forwardParent  The node to request inherited attributes from if not supplied in 'inhs'.
 	 * @param isProdForward  Is this the forward for forwardParent's prod?  False for forward prod attributes.
 	 * 
-	 * @see Node#decorate(DecoratedNode, Lazy[], Lazy[][], Lazy[])
-	 * @see Node#decorate(DecoratedNode, Lazy[], Lazy[][], Lazy[], DecoratedNode, boolean)
+	 * @see Node#decorate(DecoratedNode, Lazy[])
+	 * @see Node#decorate(DecoratedNode, Lazy[], DecoratedNode, boolean)
 	 */
 	DecoratedNode(
 			final int cc, final int ic, final int sc, final int lc,
