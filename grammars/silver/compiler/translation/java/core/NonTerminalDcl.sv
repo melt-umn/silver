@@ -106,13 +106,13 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy[][] transInhs) {
-			return ref.decorate(parent, inhs, transInhs);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs) {
+			return ref.decorate(parent, inhs);
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy[][] transInhs, final common.DecoratedNode fwdParent, final boolean prodFwrd) {
-			return ref.decorate(parent, inhs, transInhs, fwdParent, prodFwrd);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.DecoratedNode fwdParent, final boolean prodFwrd) {
+			return ref.decorate(parent, inhs, fwdParent, prodFwrd);
 		}
 
 		// Accessors used in reflection and debugging.
@@ -160,11 +160,6 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
-		public common.Lazy[][] getChildTransInheritedAttributes(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
-		}
-
-		@Override
 		public int getNumberOfLocalAttrs() {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}
@@ -191,11 +186,6 @@ ${if quals.data then "" else s"""
 
 		@Override
 		public common.Lazy[] getLocalInheritedAttributes(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
-		}
-
-		@Override
-		public common.Lazy[][] getLocalTransInheritedAttributes(final int index) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
 		}
 

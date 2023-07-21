@@ -216,21 +216,21 @@ top::DefLHS ::= q::Decorated! QName
 aspect production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  local transArray::String = s"${top.frame.className}.childTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
-  top.translation = s"${transArray}[${attr.attrOccursIndex}]";
+  top.translation = s"((TransInhs)${top.frame.className}.childInheritedAttributes[${attr.attrOccursIndex}_inhs]).inhs";
   top.initTransInh =
-    s"\t\tif (${transArray} == null) ${transArray} = new common.Lazy[${makeNTName(q.lookupValue.typeScheme.typeName)}.num_syn_attrs];\n" ++
-    s"\t\tif (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+    s"\t\tif (${top.frame.className}.childInheritedAttributes[${attr.attrOccursIndex}_inhs] == null) {\n" ++
+    s"\t\t\t${top.translation} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    "\t\t}\n";
 }
 
 aspect production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  local transArray::String = s"${top.frame.className}.localTransInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
-  top.translation = s"${transArray}[${attr.attrOccursIndex}]";
+  top.translation = s"((TransInhs)${top.frame.className}.localInheritedAttributes[${attr.attrOccursIndex}_inhs]).inhs";
   top.initTransInh =
-    s"\t\tif (${transArray} == null) ${transArray} = new common.Lazy[${makeNTName(q.lookupValue.typeScheme.typeName)}.num_syn_attrs];\n" ++
-    s"\t\tif (${top.translation} == null) ${top.translation} = new common.Lazy[${makeNTName(attr.typerep.typeName)}.num_inh_attrs];\n";
+    s"\t\tif (${top.frame.className}.localInheritedAttributes[${attr.attrOccursIndex}_inhs] == null) {\n" ++
+    s"\t\t\t${top.translation} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    "\t\t}\n";
 }
 
 aspect production errorTransAttrDefLHS

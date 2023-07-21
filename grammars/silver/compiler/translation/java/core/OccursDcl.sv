@@ -30,8 +30,8 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
 
   top.valueWeaving <-
     if at.lookupAttribute.dcl.isTranslation then
-      s"public static final int ${head(occursCheck).attrOccursIndexName}_dec_site = " ++
-      s"${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n"
+      s"public static final int ${head(occursCheck).attrOccursIndexName}_dec_site = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n" ++
+      s"public static final int ${head(occursCheck).attrOccursIndexName}_inhs = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n"
     else "";
 }
 
