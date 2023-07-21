@@ -5,7 +5,7 @@ imports silver:langutil:pp;
 
 nonterminal Root with pp, errors;
 
-inherited attribute env :: Decorated Env;
+inherited attribute env :: Env;
 synthesized attribute defs :: [Def];
 synthesized attribute type :: Type;
 

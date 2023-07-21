@@ -364,7 +364,7 @@ top::ConstraintPosition ::= tvs::[TyVar]
 }
 
 function transitiveSuperContexts
-[Context] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
+[Context] ::= env::Env ty::Type seenClasses::[String] className::String
 {
   local dcls::[TypeDclInfo] = getTypeDcl(className, env);
   local dcl::TypeDclInfo = head(dcls);
@@ -394,7 +394,7 @@ Boolean ::= c1::Context c2::Context
 }
 
 function transitiveSuperDefs
-[Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::InstDclInfo
+[Def] ::= env::Env ty::Type seenClasses::[String] instDcl::InstDclInfo
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);
@@ -415,7 +415,7 @@ function transitiveSuperDefs
 }
 
 function transitiveSuperOccursDefs
-[OccursDclInfo] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::InstDclInfo
+[OccursDclInfo] ::= env::Env ty::Type seenClasses::[String] instDcl::InstDclInfo
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);

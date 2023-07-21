@@ -215,7 +215,7 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
  -    primitive match).
 -}
 function splitPatternGroups
-[[AbstractMatchRule]] ::= ml::[AbstractMatchRule] env::Decorated Env
+[[AbstractMatchRule]] ::= ml::[AbstractMatchRule] env::Env
 {
   local firstPatt::Decorated Pattern = head(ml).headPattern;
 
@@ -283,7 +283,7 @@ function splitPatternGroups
 --Compile a case expression `case es of ml` down into primitive matches
 function compileCaseExpr
 Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
-         loc::Location env::Decorated Env
+         loc::Location env::Env
 {
   --Split rules into segments of non-forwarding constructors, all same
   --   forwarding constructor, and variables based on first pattern
@@ -333,7 +333,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 --implement the match
 function compilePatternGroups
 Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
-         retType::Type loc::Location env::Decorated Env
+         retType::Type loc::Location env::Env
 {
   local compileRest::Expr =
         compilePatternGroups(matchEs, tail(ruleGroups), finalFail,
@@ -407,7 +407,7 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
  -}
 function allConCaseTransform
 PrimPattern ::= currExpr::Expr restExprs::[Expr] failCase::Expr
-                retType::Type mrs::[AbstractMatchRule] env::Decorated Env
+                retType::Type mrs::[AbstractMatchRule] env::Env
 {
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
@@ -561,7 +561,7 @@ function allConCaseCheckOverlapping
   set (matching over multiple values at once).
 -}
 function checkCompleteness
-Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Env
                      flowEnv::FlowEnv
 {
   local pattGroups::([[Decorated Pattern]], [[Decorated Pattern]]) =
@@ -738,7 +738,7 @@ Pattern ::= lst::[String] initial::String
 --The first match can only be completed by a variable
 function checkPrimitiveCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
-                     env::Decorated Env flowEnv::FlowEnv
+                     env::Env flowEnv::FlowEnv
 {
   local firstPatts::[Decorated Pattern] = map(head, conPatts);
   local firstPattMissing::Maybe<Pattern> =
@@ -783,7 +783,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 --The first match can be completed by a variable or patterns for true and false
 function checkBooleanCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
-                     env::Decorated Env flowEnv::FlowEnv
+                     env::Env flowEnv::FlowEnv
 {
   --create groups for true and false
   local grouped::([[Decorated Pattern]], [[Decorated Pattern]]) =
@@ -832,7 +832,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 --The first match can be completed by a variable or patterns for cons and nil
 function checkListCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
-                     env::Decorated Env flowEnv::FlowEnv
+                     env::Env flowEnv::FlowEnv
 {
   --create groups for nil and cons
   local grouped::([[Decorated Pattern]], [[Decorated Pattern]]) =
@@ -896,7 +896,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 --   by having a pattern for each non-forwarding production
 function checkNonterminalCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
-                     env::Decorated Env flowEnv::FlowEnv
+                     env::Env flowEnv::FlowEnv
 {
   local numPatts::Integer = length(head(conPatts));
 
@@ -971,7 +971,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 --Check every set of patterns in conGrps is complete, when varPatts is added to it
 function checkAllProdGroupsComplete
 Maybe<[Pattern]> ::= conGrps::[ [[Decorated Pattern]] ] varPatts::[[Decorated Pattern]]
-                     env::Decorated Env flowEnv::FlowEnv
+                     env::Env flowEnv::FlowEnv
 {
   local hdProdPatt::Decorated Pattern = head(head(head(conGrps)));
   local numChildren::Integer = length(hdProdPatt.patternSubPatternList);
@@ -1003,7 +1003,7 @@ Maybe<[Pattern]> ::= conGrps::[ [[Decorated Pattern]] ] varPatts::[[Decorated Pa
 
 --check that all required productions are present
 function checkAllProdsRepresented
-Maybe<Pattern> ::= givenPatts::[Decorated Pattern] requiredProds::[String] env::Decorated Env
+Maybe<Pattern> ::= givenPatts::[Decorated Pattern] requiredProds::[String] env::Env
 {
   {-
     We walk down through requiredProds rather than pattGroups.  We

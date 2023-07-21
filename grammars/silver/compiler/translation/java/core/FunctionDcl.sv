@@ -53,7 +53,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 }
 
 function generateFunctionClassString
-String ::= env::Decorated Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
+String ::= env::Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
   local className :: String = "P" ++ whatName;
 

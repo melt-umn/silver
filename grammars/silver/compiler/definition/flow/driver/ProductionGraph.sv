@@ -108,7 +108,7 @@ ProductionGraph ::=
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Env
 {
   return if null(prods) then []
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
@@ -154,7 +154,7 @@ function computeAllProductionGraphs
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
@@ -225,7 +225,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
  - @param ntEnv  The flow types we've previously computed
  -}
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local prod :: String = ns.fullName;
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
@@ -264,7 +264,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env
  -
  -}
 function constructAnonymousGraph
-ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   -- Actually very unclear to me right now if these dummy names matter.
   -- Presently duplicating what appears in BlockContext
@@ -300,7 +300,7 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<Pr
  -
  -}
 function constructDefaultProductionGraph
-ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local prod :: String = ns.fullName;
   local nt :: NtName = ns.outputElement.typerep.typeName;
@@ -340,7 +340,7 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
  - @return A fixed up graph.
  -}
 function constructPhantomProductionGraph
-ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
 {
   -- Just synthesized attributes.
   local syns :: [String] = getSynAttrsOn(nt, realEnv);
@@ -438,7 +438,7 @@ function addDefEqs
  - Stitch points for the flow type of 'nt', and the flow types of all translation attributes on 'nt'.
  -}
 function nonterminalStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  nt::NtName  vertexType::VertexType
+[StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType
 {
   return
     nonterminalStitchPoint(nt, vertexType) ::
@@ -454,7 +454,7 @@ function nonterminalStitchPoints
       getAttrOccursOn(nt, realEnv));
 }
 function localStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  nt::NtName  ds::[FlowDef]
+[StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef]
 {
   return flatMap(\ d::FlowDef ->
     case d of
@@ -469,7 +469,7 @@ function localStitchPoints
     end, ds);
 }
 function rhsStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  rhs::NamedSignatureElement
+[StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement
 {
   return
     -- We want only NONTERMINAL stitch points!
@@ -478,7 +478,7 @@ function rhsStitchPoints
     else [];
 }
 function patternStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
+[StitchPoint] ::= realEnv::Env  defs::[FlowDef]
 {
   return case defs of
   | [] -> []
@@ -489,7 +489,7 @@ function patternStitchPoints
   end;
 }
 function patVarStitchPoints
-[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Decorated Env  var::PatternVarProjection
+[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection
 {
   return case var of
   | patternVarProjection(child, typeName, patternVar) -> 
@@ -500,7 +500,7 @@ function patVarStitchPoints
   end;
 }
 function subtermDecSiteStitchPoints
-[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Decorated Env  defs::[FlowDef]
+[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef]
 {
   return flatMap(\ d::FlowDef ->
     case d of

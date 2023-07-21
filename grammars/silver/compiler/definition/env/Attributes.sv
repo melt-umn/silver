@@ -66,7 +66,7 @@ monoid attribute defs :: [Def];
 {--
  - The environment. Dun dun dunnn.
  -}
-inherited attribute env :: Decorated Env;
+inherited attribute env :: Env;
 
 --
 -- Top-level, compiler-wide information passed down by the build process

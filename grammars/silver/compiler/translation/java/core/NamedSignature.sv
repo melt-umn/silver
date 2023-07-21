@@ -326,7 +326,7 @@ String ::= n::NamedSignatureElement
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
 function makeChildDecSiteAccessCase
-String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
+String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
     case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
@@ -335,7 +335,7 @@ String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String prodName::Strin
     end;
 }
 function refAccessTranslation
-String ::= env::Decorated Env flowEnv::FlowEnv grammarName::String ntName::String v::VertexType
+String ::= env::Env flowEnv::FlowEnv grammarName::String ntName::String v::VertexType
 {
   return
     case v of

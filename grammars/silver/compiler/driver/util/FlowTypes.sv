@@ -26,7 +26,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   -- It's possible (likely) we could do better than using the overall env here.
   local allRealDefs :: [Def] = flatMap((.defs), allLatestGrammars);
   local allRealOccursDefs :: [OccursDclInfo] = flatMap((.occursDefs), allLatestGrammars);
-  local allRealEnv :: Decorated Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
+  local allRealEnv :: Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
   
   -- List of all productions
   local allProds :: [ValueDclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;

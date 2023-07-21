@@ -289,7 +289,7 @@ top::Context ::= syn::String _ _ inhs::Type ntty::Type
 
 -- Defs for the dependencies introduced by syn occurs-on contexts at a decoration site
 function occursContextDeps
-[FlowDef] ::= ns::NamedSignature env::Decorated Env t::Type vt::VertexType
+[FlowDef] ::= ns::NamedSignature env::Env t::Type vt::VertexType
 {
   local contexts::Contexts = foldContexts(ns.contexts);
   contexts.env = env;

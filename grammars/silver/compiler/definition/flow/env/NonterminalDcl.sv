@@ -27,7 +27,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 -- Note that we only include trans.inh when both trans and inh are exported by nt's grammar.
 -- We might want to consider including all trans.inh where inh is in the ref set of trans's nonterminal.
 function getInhAttrsOnForReferences
-[String] ::= nt::String  e::Decorated Env  authority::(Boolean ::= String)
+[String] ::= nt::String  e::Env  authority::(Boolean ::= String)
 {
   local ntty::Type =
     case getTypeDcl(nt, e) of

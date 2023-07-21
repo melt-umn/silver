@@ -1039,7 +1039,7 @@ top::QNameAttrOccur ::= at::QName
 }
 
 function attrIsTotal
-Boolean ::= env::Decorated Env attrName::String
+Boolean ::= env::Env attrName::String
 {
   local dcls::[AttributeDclInfo] = getAttrDcl(attrName, env);
   return
@@ -1054,7 +1054,7 @@ Boolean ::= env::Decorated Env attrName::String
 }
 
 function attrMatchesFrame
-Boolean ::= env::Decorated Env attrName::String attrFor::Type
+Boolean ::= env::Env attrName::String attrFor::Type
 {
   return
     decorate qNameAttrOccur(qName(loc("", -1, -1, -1, -1, -1, -1), attrName), location=loc("", -1, -1, -1, -1, -1, -1))
@@ -1062,7 +1062,7 @@ Boolean ::= env::Decorated Env attrName::String attrFor::Type
 }
 
 function attrMatchesChild
-Boolean ::= env::Decorated Env attrName::String frame::BlockContext
+Boolean ::= env::Env attrName::String frame::BlockContext
 {
   return
     any(
