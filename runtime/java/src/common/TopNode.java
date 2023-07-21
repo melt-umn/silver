@@ -17,17 +17,17 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	public static final TopNode singleton = new TopNode();
 	
 	private TopNode() {
-		super(0,0,0,0,null,null,null,null,null,false);
+		super(0,0,0,0,null,null,null,null,false);
 		this.originCtx = OriginContext.GLOBAL_CONTEXT;
 	}
 
 	@Override
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs) {
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		throw new SilverInternalError("TopNode cannot be decorated.");
 	}
 
 	@Override
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy[][] transInhs, final DecoratedNode fwdParent, final boolean prodFwrd) {
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent, final boolean prodFwrd) {
 		throw new SilverInternalError("TopNode cannot be decorated.");
 	}
 
