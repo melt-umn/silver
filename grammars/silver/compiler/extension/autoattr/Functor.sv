@@ -107,7 +107,8 @@ Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureE
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
-  local validTypeHead :: Boolean = isDecorable(input.typerep, env) && !input.typerep.isUniqueDecorated;
+  local validTypeHead :: Boolean = 
+    (isDecorable(input.typerep, env) || input.typerep.isNonterminal) && !input.typerep.isUniqueDecorated;
   
   return
     if validTypeHead && attrOccursOnHead

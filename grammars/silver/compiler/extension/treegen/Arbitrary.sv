@@ -127,12 +127,10 @@ Expr ::= loc::Location  env::Env  specEnv::Env  depth::Expr  t::Type
     -- e.g. lists of nonterminals in a production RHS.
     | appType(listCtrType(), elemT) ->
       Silver_Expr {
-        silver:core:bind(random, \ len::Integer ->
-          silver:core:sequence(
+        silver:core:bind(silver:util:random:randomRange(0, $Expr{depth}), \ len::Integer ->
+          silver:core:traverseA(
             \ depth::Integer -> $Expr{genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, elemT)},
-            silver:core:take(
-              silver:core:toInteger(len * silver:core:toFloat($Expr{depth}))),
-              silver:core:reverse(silver:core:range(0, $Expr{depth}))))
+            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{depth})))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
