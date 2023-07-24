@@ -65,9 +65,9 @@ top::AGDcl ::= tc::QName nt::QName
 
   forwards to
     -- TODO: Yuck, can't forward based on env here since we need the defs from the forward.
-    case "silver:core:" ++ tc.name of  -- tc.lookupType.fullName
+    case if startsWith("silver:core:", tc.name) then tc.name else "silver:core:" ++ tc.name of  -- tc.lookupType.fullName
     | "silver:core:Eq" -> deriveEqDcl(nt, location=top.location)
-    --| "silver:core:Ord" -> deriveOrdDcl(nt, location=top.location)
+    | "silver:core:Ord" -> deriveOrdDcl(nt, location=top.location)
     | fn -> errorAGDcl([err(tc.location, s"Cannot derive type class ${fn}")], location=top.location)
     end;
 }
@@ -138,7 +138,7 @@ top::AGDcl ::= nt::Decorated! QName
                     location=top.location),
                   includedProds),
                 top.location),
-              Silver_Expr {error("Unexpected production in derived Eq instance!")},
+              Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")},
               location=top.location),
             map(
               \ anno::NamedSignatureElement ->
@@ -185,11 +185,102 @@ top::AGDcl ::= nt::Decorated! QName
                     location=top.location),
                   includedProds),
                 top.location),
-              Silver_Expr {error("Unexpected production in derived Eq instance!")},
+              Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")},
               location=top.location),
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { x.$name{anno.elementName} != y.$name{anno.elementName} },
+              annotationsForNonterminal(ntty, top.env)))};
+      }
+  };
+}
+
+production deriveOrdDcl
+top::AGDcl ::= nt::Decorated! QName
+{
+  undecorates to deriveDcl(qName(top.location, "silver:core:Ord"), nt, location=top.location);
+  top.unparse = s"derive silver:core:Ord on ${nt.unparse};";
+
+  local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
+  local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
+  
+  local includedProds::[ValueDclInfo] =
+    filter(
+      \ d::ValueDclInfo -> !d.hasForward,
+      getKnownProds(nt.lookupType.fullName, top.env));
+
+  forwards to Silver_AGDcl {
+    instance $ConstraintList{
+      foldr(
+        consConstraint(_, ',', _, location=top.location),
+        nilConstraint(location=top.location),
+        map(
+          \ tv::TyVar ->
+            classConstraint(
+              qName(top.location, "silver:core:Ord").qNameType,
+              typerepTypeExpr(skolemType(tv), location=top.location),
+              location=top.location),
+          tvs))} => silver:core:Ord $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
+        compare = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+          if null(includedProds) then Silver_Expr { 0 } else
+          foldr(
+            \ e1::Expr e2::Expr ->
+              Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
+            matchPrimitive(
+              Silver_Expr {x},
+              Silver_TypeExpr {Integer},
+              foldPrimPatterns(
+                map(
+                  \ prod::ValueDclInfo ->
+                    prodPattern(qName(top.location, prod.fullName), '(',
+                    foldr(
+                      consVarBinder(_, ',', _, location=top.location),
+                      nilVarBinder(location=top.location),
+                      map(\ i::Integer ->
+                        varVarBinder(name(s"a${toString(i)}", top.location), location=top.location),
+                        range(0, length(prod.namedSignature.inputElements)))), ')', '->',
+                    matchPrimitive(
+                      Silver_Expr {y},
+                      Silver_TypeExpr {Integer},
+                      foldPrimPatterns(
+                        map(
+                          \ prod2::ValueDclInfo ->
+                            prodPattern(
+                              qName(top.location, prod2.fullName), '(',
+                              foldr(
+                                consVarBinder(_, ',', _, location=top.location),
+                                nilVarBinder(location=top.location),
+                                map(
+                                  \ i::Integer ->
+                                    if prod.fullName == prod2.fullName
+                                    then varVarBinder(name(s"b${toString(i)}", top.location), location=top.location)
+                                    else ignoreVarBinder('_', location=top.location),
+                                  range(0, length(prod2.namedSignature.inputElements)))), ')', '->',
+                              if prod.fullName < prod2.fullName
+                              then Silver_Expr { -1 }
+                              else if prod.fullName > prod2.fullName
+                              then Silver_Expr { 1 }
+                              else if null(prod2.namedSignature.inputElements)
+                              then Silver_Expr { 0 }
+                              else foldr1(
+                                \ e1::Expr e2::Expr ->
+                                  Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
+                                map(
+                                  \ i::Integer -> Silver_Expr { silver:core:compare($name{s"a${toString(i)}"}, $name{s"b${toString(i)}"}) },
+                                  range(0, length(prod2.namedSignature.inputElements)))),
+                              location=top.location),
+                          includedProds),
+                        top.location),
+                      Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")},
+                      location=top.location),
+                    location=top.location),
+                  includedProds),
+                top.location),
+              Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")},
+              location=top.location),
+            map(
+              \ anno::NamedSignatureElement ->
+                Silver_Expr { silver:core:compare(x.$name{anno.elementName}, y.$name{anno.elementName}) },
               annotationsForNonterminal(ntty, top.env)))};
       }
   };
