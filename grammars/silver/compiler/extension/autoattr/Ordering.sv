@@ -80,7 +80,7 @@ top::ProductionStmt ::= inh::String keySyn::String syn::Decorated! QName
             else
               foldr1(
                 \ e1::Expr e2::Expr ->
-                  Silver_Expr { if $Expr{e1} == 0 then $Expr{e2} else $Expr{e1} },
+                  Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
                 map(
                   \ ie::NamedSignatureElement ->
                     if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))

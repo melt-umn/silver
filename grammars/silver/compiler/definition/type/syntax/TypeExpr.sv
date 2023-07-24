@@ -104,6 +104,13 @@ top::TypeExpr ::= t::Type
   top.unparse = prettyType(t);
 
   top.typerep = t;
+
+  top.errorsTyVars :=
+    case t of
+    | varType(_) -> []
+    | skolemType(_) -> []
+    | _ -> [err(top.location, top.unparse ++ " is not permitted here, only type variables are")]
+    end;
 }
 
 concrete production integerTypeExpr
