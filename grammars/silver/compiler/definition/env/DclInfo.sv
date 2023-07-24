@@ -18,6 +18,7 @@ synthesized attribute isType :: Boolean;
 synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
+synthesized attribute isClosed :: Boolean;
 
 -- instances
 inherited attribute givenInstanceType :: Type;
@@ -150,7 +151,7 @@ top::ValueDclInfo ::= fn::String
 
 closed nonterminal TypeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts;
+  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts, isClosed;
 propagate isEqual, compareTo on TypeDclInfo excluding typeAliasDcl, clsDcl;
 
 aspect default production
@@ -163,6 +164,7 @@ top::TypeDclInfo ::=
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
+  top.isClosed = false;
 }
 
 abstract production ntDcl
@@ -173,6 +175,7 @@ top::TypeDclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
   top.typeScheme = monoType(nonterminalType(fn, ks, tracked));
   top.kindrep = foldr(arrowKind, starKind(), ks);
   top.isType = true;
+  top.isClosed = closed;
 }
 abstract production termDcl
 top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
