@@ -4,6 +4,7 @@ synthesized attribute fromJust<a> :: a;
 synthesized attribute isJust :: Boolean;
 
 data nonterminal Maybe<a> with fromJust<a>, isJust;
+derive Eq, Ord on Maybe;
 
 abstract production just
 top::Maybe<a> ::= v::a

@@ -24,6 +24,15 @@ instance Eq Location {
     l1.column == l2.column;
 }
 
+instance Ord Location {
+  lte = \ l1::Location l2::Location ->
+    -- TODO: We could probably just compare based on filename and index
+    -- For the moment, though, use line & column instead.
+    l1.filename < l2.filename || (l1.filename == l2.filename &&
+    (l1.line < l2.line || (l1.line == l2.line &&
+    (l1.column < l2.column))));
+}
+
 @{--
  - The main constructor for location information.
  -

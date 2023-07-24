@@ -154,39 +154,6 @@ Boolean ::= x::ByteArray  y::ByteArray
   "java" : return "java.util.Arrays.equals(%x%, %y%)";
 }
 
-instance Eq a => Eq [a] {
-  eq = \ x::[a] y::[a] -> length(x) == length(y) && all(zipWith(eq, x, y));
-  neq = \ x::[a] y::[a] -> length(x) != length(y) || any(zipWith(neq, x, y));
-}
-
--- TODO: Derive these instances
-instance Eq a => Eq Maybe<a> {
-  eq = \ x::Maybe<a> y::Maybe<a> ->
-    case x, y of
-    | just(w), just(z) -> w == z
-    | nothing(), nothing() -> true
-    | _, _ -> false
-    end;
-}
-
-instance Eq a, Eq b => Eq Pair<a b> {
-  eq = \ x::Pair<a b> y::Pair<a b> -> x.fst == y.fst && x.snd == y.snd;
-  neq = \ x::Pair<a b> y::Pair<a b> -> x.fst != y.fst || x.snd != y.snd;
-}
-
-instance Eq a, Eq b => Eq Either<a b> {
-  eq = \ x::Either<a b> y::Either<a b> ->
-    case x, y of
-    | left(w), left(z) -> w == z
-    | right(w), right(z) -> w == z
-    | _, _ -> false
-    end;
-}
-
-instance Eq Unit {
-  eq = \ Unit Unit -> true;
-}
-
 @{-
   - Compute the fixed point of a function by repeatedly applying it
   - until its result remains constant.

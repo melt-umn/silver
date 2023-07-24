@@ -17,6 +17,7 @@ synthesized attribute isRight :: Boolean;
  - access it's state with fromLeft::a, fromRight::b (which panic if incorrect)
  -}
 data nonterminal Either<a b> with fromLeft<a>, fromRight<b>, isLeft, isRight;
+derive Eq, Ord on Either;
 
 @{-
   - Left case for Either.
