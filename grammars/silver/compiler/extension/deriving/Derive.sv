@@ -90,12 +90,15 @@ top::AGDcl ::= nt::Decorated! QName
       foldr(
         consConstraint(_, ',', _, location=top.location),
         nilConstraint(location=top.location),
-        map(
+        filterMap(
           \ tv::TyVar ->
-            classConstraint(
-              qName(top.location, "silver:core:Eq").qNameType,
-              typerepTypeExpr(skolemType(tv), location=top.location),
-              location=top.location),
+            if tv.kindrep == starKind()
+            then just(
+              classConstraint(
+                qName(top.location, "silver:core:Eq").qNameType,
+                typerepTypeExpr(skolemType(tv), location=top.location),
+                location=top.location))
+            else nothing(),
           tvs))} => silver:core:Eq $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
         eq = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
           if null(includedProds) then Silver_Expr {true} else
@@ -214,12 +217,15 @@ top::AGDcl ::= nt::Decorated! QName
       foldr(
         consConstraint(_, ',', _, location=top.location),
         nilConstraint(location=top.location),
-        map(
+        filterMap(
           \ tv::TyVar ->
-            classConstraint(
-              qName(top.location, "silver:core:Ord").qNameType,
-              typerepTypeExpr(skolemType(tv), location=top.location),
-              location=top.location),
+            if tv.kindrep == starKind()
+            then just(
+              classConstraint(
+                qName(top.location, "silver:core:Ord").qNameType,
+                typerepTypeExpr(skolemType(tv), location=top.location),
+                location=top.location))
+            else nothing(),
           tvs))} => silver:core:Ord $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
         compare = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
           if null(includedProds) then Silver_Expr { 0 } else
