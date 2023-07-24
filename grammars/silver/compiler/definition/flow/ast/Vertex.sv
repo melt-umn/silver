@@ -5,8 +5,8 @@ grammar silver:compiler:definition:flow:ast;
  -
  - See VertexType for some extra information organizing these vertexes somewhat.
  -}
-nonterminal FlowVertex with compareTo, isEqual, compareKey, compare;
-propagate compareTo, isEqual, compareKey, compare on FlowVertex;
+data nonterminal FlowVertex;
+derive Eq, Ord on FlowVertex;
 
 {--
  - A vertex representing a synthesized attribute on the nonterminal being constructed by this production.
