@@ -86,7 +86,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   local rootSpecs :: [Decorated RootSpec] = flatMap(searchEnvTree(_, top.compiledGrammars), depsPlusOptions);
   g.grammarDependencies = actualDependencies;
   g.flowEnv =
-    fromFlowDefs(
+    flowEnv(
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
       flatMap((.uniqueRefs), rootSpecs),

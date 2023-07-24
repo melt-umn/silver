@@ -17,7 +17,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), allLatestGrammars);
   local allRefDefs :: [(String, [String])] = flatMap((.refDefs), allLatestGrammars);
   local allUniqueRefs :: [(String, UniqueRefSite)] = flatMap((.uniqueRefs), allLatestGrammars);
-  local allFlowEnv :: FlowEnv = fromFlowDefs(allSpecDefs, allRefDefs, allUniqueRefs, allFlowDefs);
+  local allFlowEnv :: FlowEnv = flowEnv(allSpecDefs, allRefDefs, allUniqueRefs, allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);

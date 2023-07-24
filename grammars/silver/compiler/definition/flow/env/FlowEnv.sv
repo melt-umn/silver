@@ -17,51 +17,45 @@ monoid attribute refDefs :: [(String, [String])];
 
 data nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, uniqueRefTree, refPossibleDecSiteTree, refDecSiteTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 
-annotation synTree :: EnvTree<FlowDef>;
-annotation inhTree :: EnvTree<FlowDef>;
-annotation defTree :: EnvTree<FlowDef>;
-annotation fwdTree :: EnvTree<FlowDef>;
-annotation fwdInhTree :: EnvTree<FlowDef>;
-annotation prodTree :: EnvTree<FlowDef>;
-annotation refTree :: EnvTree<[String]>;
-annotation uniqueRefTree :: EnvTree<UniqueRefSite>;
-annotation refPossibleDecSiteTree :: EnvTree<VertexType>;
-annotation refDecSiteTree :: EnvTree<VertexType>;
-annotation localInhTree ::EnvTree<FlowDef>;
-annotation localTree :: EnvTree<FlowDef>;
-annotation nonSuspectTree :: EnvTree<[String]>;
-annotation hostSynTree :: EnvTree<FlowDef>;
-annotation specTree :: EnvTree<(String, [String], [String])>;
-annotation prodGraphTree :: EnvTree<FlowDef>;
+synthesized attribute synTree :: EnvTree<FlowDef>;
+synthesized attribute inhTree :: EnvTree<FlowDef>;
+synthesized attribute defTree :: EnvTree<FlowDef>;
+synthesized attribute fwdTree :: EnvTree<FlowDef>;
+synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
+synthesized attribute prodTree :: EnvTree<FlowDef>;
+synthesized attribute refTree :: EnvTree<[String]>;
+synthesized attribute uniqueRefTree :: EnvTree<UniqueRefSite>;
+synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
+synthesized attribute refDecSiteTree :: EnvTree<VertexType>;
+synthesized attribute localInhTree ::EnvTree<FlowDef>;
+synthesized attribute localTree :: EnvTree<FlowDef>;
+synthesized attribute nonSuspectTree :: EnvTree<[String]>;
+synthesized attribute hostSynTree :: EnvTree<FlowDef>;
+synthesized attribute specTree :: EnvTree<(String, [String], [String])>;
+synthesized attribute prodGraphTree :: EnvTree<FlowDef>;
 
 abstract production flowEnv
 top::FlowEnv ::=
-{}
-
-function fromFlowDefs
-FlowEnv ::=
   specContribs::[(String, String, [String], [String])] refContribs::[(String, [String])]
   uniqueRefContribs::[(String, UniqueRefSite)]
   d::FlowDefs
 {
-  return flowEnv(
-    synTree = directBuildTree(d.synTreeContribs),
-    inhTree = directBuildTree(d.inhTreeContribs),
-    defTree = directBuildTree(d.defTreeContribs),
-    fwdTree = directBuildTree(d.fwdTreeContribs),
-    fwdInhTree = directBuildTree(d.fwdInhTreeContribs),
-    prodTree = directBuildTree(d.prodTreeContribs),
-    refTree = directBuildTree(refContribs),
-    uniqueRefTree = directBuildTree(uniqueRefContribs),
-    refPossibleDecSiteTree = directBuildTree(d.refPossibleDecSiteContribs),
-    refDecSiteTree = directBuildTree(d.refDecSiteContribs),
-    localInhTree = directBuildTree(d.localInhTreeContribs),
-    localTree = directBuildTree(d.localTreeContribs),
-    nonSuspectTree = directBuildTree(d.nonSuspectContribs),
-    hostSynTree = directBuildTree(d.hostSynTreeContribs),
-    specTree = directBuildTree(specContribs),
-    prodGraphTree = directBuildTree(d.prodGraphContribs)
-  );
+  top.synTree = directBuildTree(d.synTreeContribs);
+  top.inhTree = directBuildTree(d.inhTreeContribs);
+  top.defTree = directBuildTree(d.defTreeContribs);
+  top.fwdTree = directBuildTree(d.fwdTreeContribs);
+  top.fwdInhTree = directBuildTree(d.fwdInhTreeContribs);
+  top.prodTree = directBuildTree(d.prodTreeContribs);
+  top.refTree = directBuildTree(refContribs);
+  top.uniqueRefTree = directBuildTree(uniqueRefContribs);
+  top.refPossibleDecSiteTree = directBuildTree(d.refPossibleDecSiteContribs);
+  top.refDecSiteTree = directBuildTree(d.refDecSiteContribs);
+  top.localInhTree = directBuildTree(d.localInhTreeContribs);
+  top.localTree = directBuildTree(d.localTreeContribs);
+  top.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
+  top.hostSynTree = directBuildTree(d.hostSynTreeContribs);
+  top.specTree = directBuildTree(specContribs);
+  top.prodGraphTree = directBuildTree(d.prodGraphContribs);
 }
 
 
