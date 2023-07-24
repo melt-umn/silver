@@ -343,7 +343,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	public final DecoratedNode createDecoratedChild(final int child) {
 		if(childCreated[child]) {
-			throw new SilverInternalError("Decorated child created more than once!");
+			throw new SilverInternalError("Decorated child " + child + " created more than once in " + getDebugID());
 		}
 		DecoratedNode result = ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
 		childCreated[child] = true;
@@ -440,7 +440,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	public final DecoratedNode evalLocalDecorated(final int attribute) {
 		if(localCreated[attribute]) {
-			throw new SilverInternalError("Decorated local " + self.getNameOfLocalAttr(attribute) + " created more than once!");
+			throw new SilverInternalError("Decorated local '" + self.getNameOfLocalAttr(attribute) + "' created more than once in " + getDebugID());
 		}
 		Decorable localAsIs = (Decorable)evalLocalAsIs(attribute);
 		Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
