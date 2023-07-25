@@ -468,6 +468,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                  | restrictedInhDcl(_, _, _) -> []
                  | implicitSynDcl(_, _, _) -> []
                  | implicitInhDcl(_, _, _) -> []
+                 | annoDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -521,6 +522,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
+                                    | annoDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -583,6 +585,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                  | restrictedInhDcl(_, _, _) -> []
                  | implicitSynDcl(_, _, _) -> []
                  | implicitInhDcl(_, _, _) -> []
+                 | annoDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -593,6 +596,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
+                                    | annoDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -655,6 +659,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                  | restrictedInhDcl(_, _, _) -> []
                  | implicitSynDcl(_, _, _) -> []
                  | implicitInhDcl(_, _, _) -> []
+                 | annoDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -665,6 +670,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
+                                    | annoDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -776,6 +782,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                  | restrictedInhDcl(_, _, _) -> []
                  | implicitSynDcl(_, _, _) -> []
                  | implicitInhDcl(_, _, _) -> []
+                 | annoDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -786,6 +793,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
+                                    | annoDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -848,6 +856,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                  | restrictedInhDcl(_, _, _) -> []
                  | implicitSynDcl(_, _, _) -> []
                  | implicitInhDcl(_, _, _) -> []
+                 | annoDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -858,6 +867,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
+                                    | annoDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -978,6 +988,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                  | restrictedInhDcl(_, _, _) -> []
                  | implicitSynDcl(_, _, _) -> []
                  | implicitInhDcl(_, _, _) -> []
+                 | annoDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -989,6 +1000,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
+                                    | annoDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
