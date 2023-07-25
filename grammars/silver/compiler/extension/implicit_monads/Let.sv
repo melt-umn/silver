@@ -120,7 +120,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
-                   then [pair(id, t)]
+                   then [(id, t)]
                    else [];
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))

@@ -197,9 +197,9 @@ Pair<[a] [b]> ::= l::[Either<a b>]
   local recurse :: Pair<[a] [b]> = partitionEithers(tail(l));
   
   return case l of
-  | [] -> pair([], [])
-  | left(a) :: _ -> pair(a :: recurse.fst, recurse.snd)
-  | right(b) :: _ -> pair(recurse.fst, b :: recurse.snd)
+  | [] -> ([], [])
+  | left(a) :: _ -> (a :: recurse.fst, recurse.snd)
+  | right(b) :: _ -> (recurse.fst, b :: recurse.snd)
   end;
 }
 

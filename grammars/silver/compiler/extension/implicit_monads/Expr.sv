@@ -523,7 +523,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -597,7 +597,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -671,7 +671,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -794,7 +794,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -868,7 +868,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -926,7 +926,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     -- TODO: restricted translation attributes?
                                     -- | restrictedSynDcl(_, _, _) -> []
                                     -- | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -1001,7 +1001,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -1057,7 +1057,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
-                               then [pair(q.unparse, top.location)]
+                               then [(q.unparse, top.location)]
                                else [];
 }
 
@@ -1117,7 +1117,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     -- TODO: restricted translation attributes?
                                     -- | restrictedSynDcl(_, _, _) -> []
                                     -- | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -2217,7 +2217,7 @@ top::AppExpr ::= e::Expr
 
   top.realTypes = [e.mtyperep];
   top.monadTypesLocations = if isMonadic
-                            then [pair(e.mtyperep, top.appExprIndex+1)]
+                            then [(e.mtyperep, top.appExprIndex+1)]
                             else [];
   e.monadicallyUsed = isMonadic;
   top.monadicNames = e.monadicNames;

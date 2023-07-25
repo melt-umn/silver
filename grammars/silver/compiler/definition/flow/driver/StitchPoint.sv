@@ -105,8 +105,8 @@ function flowTypeEdge
 Pair<FlowVertex FlowVertex> ::= vt::VertexType  edge::Pair<String String>
 {
   return if edge.fst == "forward" then
-    pair(vt.fwdVertex, vt.inhVertex(edge.snd))
+    (vt.fwdVertex, vt.inhVertex(edge.snd))
   else
-    pair(vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
+    (vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
 }
 

@@ -125,7 +125,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
-  top.genFiles := [pair(className ++ ".java",
+  top.genFiles := [(className ++ ".java",
 s"""
 package ${makeName(top.grammarName)};
 
@@ -159,7 +159,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
-  top.genFiles := [pair(className ++ ".java",
+  top.genFiles := [(className ++ ".java",
 s"""
 package ${makeName(top.grammarName)};
 

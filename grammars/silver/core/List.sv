@@ -232,10 +232,10 @@ Pair<[a] [a]> ::= f::(Boolean ::= a) lst::[a]
   local attribute recurse :: Pair<[a] [a]>;
   recurse = partition(f, tail(lst));
 
-  return if null(lst) then pair([],[])
+  return if null(lst) then ([],[])
          else if f(head(lst))
-              then pair(head(lst) :: recurse.fst, recurse.snd)
-              else pair(recurse.fst, head(lst) :: recurse.snd);
+              then (head(lst) :: recurse.fst, recurse.snd)
+              else (recurse.fst, head(lst) :: recurse.snd);
 }
 
 @{--
@@ -530,8 +530,8 @@ Pair<[a] [a]> ::= eq::(Boolean ::= a a) f::a l::[a]
   recurse = groupByHelp(eq, f, tail(l));
 
   return if null(l) || !eq(f, head(l))
-         then pair([], l)
-         else pair(head(l) :: recurse.fst, recurse.snd);
+         then ([], l)
+         else (head(l) :: recurse.fst, recurse.snd);
 }
 
 function group

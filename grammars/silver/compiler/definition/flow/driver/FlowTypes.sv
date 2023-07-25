@@ -31,7 +31,7 @@ EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
 function initialFlowType
 Pair<NtName FlowType> ::= x::(NtName, [(String, [String])])
 {
-  return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
+  return (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
 }
 function ntListLte
 Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
@@ -47,7 +47,7 @@ function ntListCoalesce
 [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]]
 {
   return if null(l) then []
-  else pair(head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
+  else (head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
 }
 function toFlatEdges
 [Pair<String String>] ::= x::Pair<String [String]>
@@ -107,7 +107,7 @@ function solveFlowTypes
   local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<FlowType>>> =
     solveFlowTypes(tail(graphs), prodEnv, rtm:update(updatedGraph.lhsNt, [newFlowType], ntEnv));
     
-  return if null(graphs) then pair(false, pair([], ntEnv))
+  return if null(graphs) then (false, ([], ntEnv))
   else (!null(brandNewEdges) || recurse.fst, updatedGraph :: recurse.snd.fst, recurse.snd.snd);
 }
 
@@ -132,7 +132,7 @@ Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
 {
   -- TODO: we might return 'Pair<String Set<String>>' instead of [String] and gain speed?
   -- Have set:filter, don't have "set:map" yet... (FlowVertex->String)
-  return pair(ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
+  return (ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
 }
 
 {--

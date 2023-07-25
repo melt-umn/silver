@@ -60,7 +60,7 @@ top::ParserSpec ::=
   production componentGrammarMarkingTerminals::[Pair<String [String]>] =
     map(
       \ g::String ->
-        pair(g,
+        (g,
           foldr(consSyntax, nilSyntax(),
             moduleExportedDefs(top.location, top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
       grams);

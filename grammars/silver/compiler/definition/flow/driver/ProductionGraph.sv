@@ -177,7 +177,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
      else -- This first pair is used sometimes as an alias:
-          pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+          (lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs));
@@ -350,7 +350,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
-    pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+    (lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
@@ -366,7 +366,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
 function getPhantomEdge
 Pair<FlowVertex FlowVertex> ::= at::String
 {
-  return pair(lhsSynVertex(at), forwardEqVertex());
+  return (lhsSynVertex(at), forwardEqVertex());
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
@@ -380,8 +380,8 @@ function addFwdSynEqs
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
-    then [pair(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
-          pair(lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
+    then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
+          (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 }
 {--
@@ -392,7 +392,7 @@ function addFwdInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
 }
 {--
@@ -403,7 +403,7 @@ function addFwdProdAttrInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [pair(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
 }
 function allFwdProdAttrs
@@ -520,7 +520,7 @@ function subtermDecSiteStitchPoints
 function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
-  return pair(p.prod, p);
+  return (p.prod, p);
 }
 
 ---- Begin Suspect edge handling -----------------------------------------------

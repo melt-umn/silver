@@ -86,8 +86,8 @@ Pair<[a] [b]> ::= lst::[Pair<a b>]
 {
   local recurse :: Pair<[a] [b]> = unzipPairs(tail(lst));
   
-  return if null(lst) then pair([], [])
-  else pair(head(lst).fst :: recurse.fst, head(lst).snd :: recurse.snd);
+  return if null(lst) then ([], [])
+  else (head(lst).fst :: recurse.fst, head(lst).snd :: recurse.snd);
 }
 
 

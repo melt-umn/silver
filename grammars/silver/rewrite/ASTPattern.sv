@@ -112,7 +112,7 @@ abstract production varASTPattern
 top::ASTPattern ::= n::String
 {
   top.pp = text(n);
-  top.substitution = just([pair(n, top.matchWith)]);
+  top.substitution = just([(n, top.matchWith)]);
 }
 
 abstract production wildASTPattern

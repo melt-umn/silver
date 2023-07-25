@@ -24,9 +24,9 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 """;
 
   top.genFiles :=
-    [pair(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
+    [(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" 
-	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
+	then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
     else [];
 
   -- For main functions which return IOVal<Integer>

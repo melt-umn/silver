@@ -12,7 +12,7 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
   top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
   top.terminalPrefixes <- map(pair(_, s.terminalPrefix), ts.prefixItemNames);
   top.grammarTerminalPrefixes <-
-    if ts.isAllMarking then [pair(top.componentGrammarName, s.terminalPrefix)] else [];
+    if ts.isAllMarking then [(top.componentGrammarName, s.terminalPrefix)] else [];
   s.prefixedTerminals = ts.prefixItemNames;
   s.prefixedGrammars = if ts.isAllMarking then [top.componentGrammarName] else [];
 }

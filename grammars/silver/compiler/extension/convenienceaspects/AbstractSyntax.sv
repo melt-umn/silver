@@ -327,7 +327,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
     -- Handling for production patterns
     let paramNames :: [Name] = makeGeneratedNamesFromMatchRule(head(rules),location)
     in
-    pair(
+    (
       makeAspectProduction(
         makeParamsCaseExpr(
             makeBaseExprFromQNames(makeQNamesFromNames(paramNames)),
@@ -343,7 +343,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
     ->
     let paramNames :: [Name] = makeGeneratedNamesFromMatchRule(head(rules),location)
     in
-    pair(
+    (
       makeAspectProduction(
         makeParamsCaseExpr(
             makeBaseExprFromQNames(makeQNamesFromNames(paramNames)),
@@ -357,7 +357,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
     end
     -- Handling for wildcard patterns
     | matchRule_c(patternList_one(wildcPattern(_)),_,e) :: _ ->
-      pair(
+      (
         Silver_AGDcl {
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
@@ -371,7 +371,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       },
       [])
     | matchRule_c(patternList_more(wildcPattern(_),_,_),_,e) :: _ ->
-      pair(
+      (
         Silver_AGDcl {
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
@@ -386,7 +386,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       [])
       -- Handling for varpatterns
     | matchRule_c(patternList_one(varPattern(name)),_,e) :: _ ->
-      pair(
+      (
         Silver_AGDcl {
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
@@ -400,7 +400,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       },
       [])
     | matchRule_c(patternList_more(varPattern(name),_,_),_,e) :: _ ->
-      pair(
+      (
         Silver_AGDcl {
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
@@ -414,7 +414,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       },
       [])
     | _ ->
-      pair(
+      (
         emptyAGDcl(location=location),
         [err(location,"Patterns in aspect convenience syntax should be productions,wildcards, or varpatterns only")])
     end;

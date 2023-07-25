@@ -130,7 +130,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      expectedMonad=top.expectedMonad; alwaysDecorated = false; isRoot=top.isRoot; originRules=top.originRules;}.monadicNames
                 else []
              end ++ l,
-           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> pair(x,y), es.rawExprs, ml.patternTypeList));
+           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> (x,y), es.rawExprs, ml.patternTypeList));
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
@@ -171,8 +171,8 @@ function monadicMatchTypesNames
                           then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genInt())
                           else head(names);
   return case elst, tylst of
-         | [], _ -> pair([], [])
-         | _, [] -> pair([], map(new, elst))
+         | [], _ -> ([], [])
+         | _, [] -> ([], map(new, elst))
          | decE::etl, t::ttl ->
            let ety::Type = decE.mtyperep
            in
