@@ -368,12 +368,14 @@ public final class Util {
 		}
 		String[] annos = n.getAnnoNames();
 		for(int i = 0; i < annos.length; i++) {
-			if(nc != 0 || i != 0) {
-				sb.append(", ");
+			if(!annos[i].equals("silver:core:location")) {
+				if(nc != 0 || i != 0) {
+					sb.append(", ");
+				}
+				sb.append(annos[i] + "=");
+				hackyhackyUnparseObject(n.getAnno(annos[i]), sb);
+				//System.out.println(sb.toString());
 			}
-			sb.append(annos[i] + "=");
-			hackyhackyUnparseObject(n.getAnno(annos[i]), sb);
-			//System.out.println(sb.toString());
 		}
 		sb.append(")");
 	}
