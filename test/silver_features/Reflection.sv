@@ -264,11 +264,11 @@ global terminalReifyRes::Either<String Pair<[Foo_t] Maybe<Bar_t>>> = reify(case 
 
 equalityTest(
   lessHackyUnparse(terminalTestValue),
-  s"""silver:core:([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], silver:core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
+  s"""silver:core:pair(silver:core:fst=[terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], silver:core:snd=silver:core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
   String, silver_tests);
 equalityTest(
   case terminalSerializeRes of left(msg) -> msg | right(a) -> a end,
-  s"""silver:core:([terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1))], silver:core:just(terminal(silver_features:Bar_t, "bar42", silver:core:loc("a", 1, 2, 3, 4, 5, 6))))""",
+  s"""silver:core:pair(silver:core:fst=[terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1))], silver:core:snd=silver:core:just(terminal(silver_features:Bar_t, "bar42", silver:core:loc("a", 1, 2, 3, 4, 5, 6))))""",
   String, silver_tests);
 equalityTest(case terminalDeserializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(terminalTestValue), String, silver_tests);
 equalityTest(reifyResToString(terminalReifyRes), lessHackyUnparse(terminalTestValue), String, silver_tests);
@@ -277,7 +277,7 @@ global reifyRes10::Either<String Baz> = reify(terminalAST("silver_features:Foo_t
 equalityTest(reifyResToString(reifyRes10), "Reification error at ?:\nreify is constructing silver_features:Baz, but found terminal silver_features:Foo_t AST.", String, silver_tests);
 
 global reifyRes11::Either<String Pair<String Location>> = reify(reflect(("asdf", 'foo')));
-equalityTest(reifyResToString(reifyRes11), "Reification error at silver:core:(_, ?):\nreify is constructing silver:core:Location, but found terminal silver_features:Foo_t AST.", String, silver_tests);
+equalityTest(reifyResToString(reifyRes11), "Reification error at silver:core:pair(silver:core:snd=?):\nreify is constructing silver:core:Location, but found terminal silver_features:Foo_t AST.", String, silver_tests);
 
 equalityTest(
   case deserializeAST("test", "terminal(asdf, \"a\", silver:core:loc(\"a\", 2, 3.14, 4, 5, 6, 7))") of left(msg) -> msg | right(a) -> show(80, a.pp) end,
@@ -289,11 +289,11 @@ global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", f
 
 equalityTest(
   case serializeRes1 of left(msg) -> msg | right(a) -> a end,
-  s"""silver:core:("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair(silver:core:fst="hello", silver:core:snd=[1, 2, 3, 4])""",
   String, silver_tests);
 equalityTest(
   reifyResToString(reifyRes12),
-  s"""silver:core:("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair(silver:core:fst="hello", silver:core:snd=[1, 2, 3, 4])""",
   String, silver_tests);
 
 type ForeignString foreign = "String";

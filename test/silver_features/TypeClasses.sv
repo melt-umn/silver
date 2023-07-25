@@ -95,7 +95,7 @@ synthesized attribute isEq2::Boolean occurs on EqPair<a b>;
 aspect production eqPair
 top::EqPair<a b> ::= x::a y::b
 {
-  top.isEq2 = myeq(top.isEqTo.eqfst, x) && myeq(top.isEqTo.snd, y);
+  top.isEq2 = myeq(top.isEqTo.eqfst, x) && myeq(top.isEqTo.eqsnd, y);
 }
 
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq2, true, Boolean, silver_tests);
@@ -363,7 +363,7 @@ instance MyTypeable Integer {
 }
 
 instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
-  myreify = \ a::AST -> case a of AST { silver:core:pair(fst=fst, snd=snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
+  myreify = \ a::AST -> case a of AST { silver:core:pair(silver:core:fst=fst, silver:core:snd=snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
 }
 
 equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
@@ -438,11 +438,11 @@ instance typeError "Not decorated" => NotDecThing Decorated a with i {
   consumeNDT = error("type error");
 }
 
-global ndt1::String = consumeNDT((12, false));
-equalityTest(ndt1, "silver:core:Pair<Integer Boolean>", String, silver_tests);
+global ndt1::String = consumeNDT(eqPair(12, false));
+equalityTest(ndt1, "silver_features:EqPair<Integer Boolean>", String, silver_tests);
 
-wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated silver:core:Pair<Integer Boolean> with {}, arising from the use of consumeNDT)" {
-  global ndt2::String = consumeNDT(decorate (12, false) with {});
+wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated silver_features:EqPair<Integer Boolean> with {}, arising from the use of consumeNDT)" {
+  global ndt2::String = consumeNDT(decorate eqPair(12, false) with {});
 }
 
 function ndtMaybeDec
