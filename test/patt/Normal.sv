@@ -134,32 +134,36 @@ wrongCode "doesnotexist" {
  }
 }
 
-wrongCode "pair has 2 parameters but 0 patterns" {
+nonterminal IntPair;
+production intPair
+top::IntPair ::= Integer Integer {}
+
+wrongCode "intPair has 2 parameters but 0 patterns" {
  function fooDontCare
  String ::=
  {
-   return case (1,2) of
-            () -> ""
+   return case intPair(1,2) of
+            intPair() -> ""
           end;
  }
 }
 
-wrongCode "pair has 2 parameters but 3 patterns" {
+wrongCode "intPair has 2 parameters but 3 patterns" {
  function fooDontCare
  String ::=
  {
-   return case (1,2) of
-            (b,c,d) -> ""
+   return case intPair(1,2) of
+            intPair(b,c,d) -> ""
           end;
  }
 }
 
-wrongCode "pair has 2 parameters but 1 patterns" {
+wrongCode "intPair has 2 parameters but 1 patterns" {
  function fooDontCare
  String ::=
  {
-   return case (1,2) of
-            (d) -> ""
+   return case intPair(1,2) of
+            intPair(d) -> ""
           end;
  }
 }
@@ -234,40 +238,40 @@ wrongCode "Pattern has overlapping cases" {
 -- Make sure Silver doesn't crash compiling this:
 wrongCode "2 parameters but 1 patterns" {
   global normalCrashTest225 :: Integer =
-    case (1,2) of
-    | (_, _) -> 2
-    | (_) -> 3 -- oops!
+    case intPair(1,2) of
+    | intPair(_, _) -> 2
+    | intPair(_) -> 3 -- oops!
     end;
 }
 
 -- Make sure an error is raised for this:
 wrongCode "2 parameters but 1 patterns" {
   global normalErrorTest234 :: Integer =
-    case (1,2) of
-    | (2, 3) -> 2
-    | (_) -> 3 -- oops!
+    case intPair(1,2) of
+    | intPair(2, 3) -> 2
+    | intPair(_) -> 3 -- oops!
     end;
 }
 
 wrongCode "2 parameters but 3 patterns" {
   global normalErrorTest243 :: Integer =
-    case (1,2) of
-    | (2, 3) -> 2
-    | (_, _, _) -> 3 -- oops!
+    case intPair(1,2) of
+    | intPair(2, 3) -> 2
+    | intPair(_, _, _) -> 3 -- oops!
     end;
 }
 
 wrongCode "2 parameters but 3 patterns" {
   global normalErrorTest257 :: Integer =
-    case (1,2) of
-    | (_, _, _) -> 3 -- oops!
-    | (2, 3) -> 2
+    case intPair(1,2) of
+    | intPair(_, _, _) -> 3 -- oops!
+    | intPair(2, 3) -> 2
     end;
 }
 
 wrongCode "Undeclared value" {
   global normalErrorTest265 :: Integer =
-    case (1,2) of
+    case intPair(1,2) of
     | skdjhfkljshfkjsdh(_, _, _) -> 3 -- oops!
     end;
 }
