@@ -360,7 +360,7 @@ instance MyTypeable Integer {
 }
 
 instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
-  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
+  myreify = \ a::AST -> case a of AST { silver:core:pair(fst=fst, snd=snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
 }
 
 equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
