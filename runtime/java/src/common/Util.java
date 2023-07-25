@@ -358,11 +358,21 @@ public final class Util {
 	}
 	private static void hackyhackyUnparseNode(Node n, StringBuilder sb) {
 		sb.append(n.getName() + "(");
-		for(int i = 0; i < n.getNumberOfChildren(); i++) {
+		int nc = n.getNumberOfChildren();
+		for(int i = 0; i < nc; i++) {
 			if(i != 0) {
 				sb.append(", ");
 			}
 			hackyhackyUnparseObject(n.getChild(i), sb);
+			//System.out.println(sb.toString());
+		}
+		String[] annos = n.getAnnoNames();
+		for(int i = 0; i < annos.length; i++) {
+			if(nc != 0 || i != 0) {
+				sb.append(", ");
+			}
+			sb.append(annos[i] + "=");
+			hackyhackyUnparseObject(n.getAnno(annos[i]), sb);
 			//System.out.println(sb.toString());
 		}
 		sb.append(")");
