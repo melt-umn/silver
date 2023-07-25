@@ -73,14 +73,17 @@ MyEq a => [a] ::= x::a xs::[a]
 }
 equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
+synthesized attribute eqfst<a>::a;
+synthesized attribute eqsnd<a>::a;
+
 inherited attribute isEqTo<a>::a;
 synthesized attribute isEq::Boolean;
-nonterminal EqPair<a b> with fst<a>, snd<b>, isEqTo<EqPair<a b>>, isEq;
+nonterminal EqPair<a b> with eqfst<a>, eqsnd<b>, isEqTo<EqPair<a b>>, isEq;
 production eqPair
 MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
 {
-  top.fst = x;
-  top.snd = y;
+  top.eqfst = x;
+  top.eqsnd = y;
   top.isEq = case top.isEqTo of eqPair(x1, y1) -> myeq(x1, x) && myeq(y1, y) end;
 }
 
@@ -92,7 +95,7 @@ synthesized attribute isEq2::Boolean occurs on EqPair<a b>;
 aspect production eqPair
 top::EqPair<a b> ::= x::a y::b
 {
-  top.isEq2 = myeq(top.isEqTo.fst, x) && myeq(top.isEqTo.snd, y);
+  top.isEq2 = myeq(top.isEqTo.eqfst, x) && myeq(top.isEqTo.snd, y);
 }
 
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq2, true, Boolean, silver_tests);
@@ -264,7 +267,7 @@ class CDefaultVal a {
 }
 
 instance CDefaultVal String {
-  cdv1 = pair(42, "abc");
+  cdv1 = (42, "abc");
 }
 
 equalityTest(cdv2, "abc", String, silver_tests);

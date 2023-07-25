@@ -388,7 +388,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 
   --we need fresh names for the expressions being matched on, which we will use to only evaluate them once
   local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
-  local params::[Pair<String Type>] = zipWith(pair, newNames, ml.patternTypeList);
+  local params::[Pair<String Type>] = zip(newNames, ml.patternTypeList);
   local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
                                 newNames);
 
@@ -571,7 +571,7 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
   --   it and not incorrectly identify something as being used non-monadically
   top.mUpSubst = foldl(\s::Substitution p::Pair<Type Type> ->
                        decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
-                      t.mUpSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
+                      t.mUpSubst, zip(h.patternTypeList, t.patternTypeList));
 }
 
 aspect production matchRule_c

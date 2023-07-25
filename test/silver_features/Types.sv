@@ -98,7 +98,7 @@ wrongCode "(a1, a)" {
   global foo::(a1, a) = 42;
 }
 wrongCode "(a, b) has initialization expression with type (silver:core:Pair<c a> ::= c a)" {
-  global foo::(a, b) = pair(_, _);
+  global foo::(a, b) = pair(fst=_, snd=_);
 }
 
 -------------------------------------- Type Decls

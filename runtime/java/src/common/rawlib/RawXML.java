@@ -378,8 +378,8 @@ public final class RawXML {
 			resolver = new TreeMap<String, String>();
 			
 			for(NPair elem : new ConsCellCollection<NPair>(current)) {
-				String fst = elem.getChild(0).toString();
-				String snd = elem.getChild(1).toString();
+				String fst = elem.getAnno_silver_core_fst().toString();
+				String snd = elem.getAnno_silver_core_snd().toString();
 				
 				resolver.put(fst, snd);
 			}

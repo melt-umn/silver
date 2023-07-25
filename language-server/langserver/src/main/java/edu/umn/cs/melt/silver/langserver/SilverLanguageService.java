@@ -441,9 +441,8 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
             Collection<NPair> allFileErrors = new ConsCellCollection<>(
                 r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_core_allFileErrors__ON__silver_compiler_driver_util_RootSpec));
             for (NPair fileErrors : allFileErrors) {
-                DecoratedNode decFileErrors = fileErrors.decorate();
-                String fileName = decFileErrors.synthesized(silver.core.Init.silver_core_fst__ON__silver_core_Pair).toString();
-                ConsCell messages = decFileErrors.synthesized(silver.core.Init.silver_core_snd__ON__silver_core_Pair);
+                String fileName = fileErrors.getAnno_silver_core_fst().toString();
+                ConsCell messages = fileErrors.getAnno_silver_core_snd();
                 String uri = "file://" + grammarSource + fileName;
 
                 // System.err.println("Reporting diagnostics for " + grammarSource + fileName);

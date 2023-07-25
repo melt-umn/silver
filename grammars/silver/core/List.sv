@@ -454,6 +454,21 @@ function unzipWith
          else f(head(l).1, head(l).2) :: unzipWith(f, tail(l));
 }
 
+function zip
+[(a, b)] ::= l1::[a]  l2::[b]
+{
+  return if null(l1) || null(l2) then []
+         else (head(l1), head(l2)) :: zip(tail(l1), tail(l2));
+}
+
+function unzip
+([a], [b]) ::= l::[(a, b)]
+{
+  local rest::([a], [b]) = unzip(tail(l));
+  return if null(l) then ([], [])
+         else (head(l).1 :: rest.1, head(l).2 :: rest.2);
+}
+
 function reverse
 [a] ::= lst::[a]
 {

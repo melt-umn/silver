@@ -71,7 +71,10 @@ top::Type ::= ts::[Type]
   top.flatRenamed = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.flatRenamed, ts));
 
   -- elements of ts need the boundVariables from the top because typepp attribute has a dependency on boundVariables
-  top.typepp = "(" ++ implode(", ", map(prettyTypeWith(_, top.boundVariables), ts)) ++ ")";
+  top.typepp = 
+    if length(ts) == 1
+    then forward.typepp
+    else "(" ++ implode(", ", map(prettyTypeWith(_, top.boundVariables), ts)) ++ ")";
   
   forwards to case ts of
     | [] -> nonterminalType("silver:core:Unit", [], true, false)

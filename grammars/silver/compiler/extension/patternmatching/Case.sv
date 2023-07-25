@@ -166,7 +166,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
   local fwdResult::Expr =
         foldr(\ p::(String, Expr) rest::Expr ->
                 makeLet(top.location, p.1, freshType(), p.2, rest),
-              compiledCase, zipWith(pair(_, _), names, es));
+              compiledCase, zip(names, es));
   forwards to fwdResult;
 }
 

@@ -292,7 +292,7 @@ Expr ::= loc::Location env::Env  specEnv::Env  nt::String index::Integer  lst::[
   local prod::ValueDclInfo = head(lst);
   local prodType::Type = prod.typeScheme.typerep;
   local args::[(String, Type)] =
-    zipWith(pair, map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
+    zip(map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
     prodType.namedTypes;
   local argGenExprs::[Expr] =
     map(genForType(loc, env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));

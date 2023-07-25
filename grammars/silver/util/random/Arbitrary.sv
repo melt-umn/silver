@@ -37,7 +37,7 @@ instance Arbitrary Location {
 }
 
 instance Arbitrary a, Arbitrary b => Arbitrary Pair<a b> {
-  genArb = \ depth::Integer -> lift2(pair, genArb(depth), genArb(depth));
+  genArb = \ depth::Integer -> lift2(pair(fst=_, snd=_), genArb(depth), genArb(depth));
 }
 
 instance Arbitrary a, Arbitrary b => Arbitrary Either<a b> {

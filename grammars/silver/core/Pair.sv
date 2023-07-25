@@ -1,7 +1,7 @@
 grammar silver:core;
 
-synthesized attribute fst<a> :: a;
-synthesized attribute snd<a> :: a;
+annotation fst<a> :: a;
+annotation snd<a> :: a;
 
 @{--
  - The basic product type, counterpart to Either.
@@ -10,11 +10,8 @@ data nonterminal Pair<a b> with fst<a>, snd<b>;
 derive Eq, Ord on Pair;
 
 abstract production pair
-top::Pair<a b> ::= f::a  s::b
-{
-  top.fst = f;
-  top.snd = s;
-}
+top::Pair<a b> ::=
+{}
 
 function fst
 a ::= p::Pair<a b>
@@ -77,7 +74,7 @@ Eq a => [b] ::= elem::a  lst::[Pair<a b>]
 @{--
  - Decomposes a list of pairs into a pair of lists.
  -
- - unzipPairs(zipWith(pair, lst)) == lst
+ - unzipPairs(zip(lst)) == lst
  -
  - @param lst  A list to decompose into two lists.
  -}

@@ -169,6 +169,6 @@ EnvTree<String> ::= allTerms::[String] layoutItems::[String] layoutContribs::[Pa
   return
     directBuildTree(
       flatMap(
-        \ item::Pair<String [String]> -> map(pair(item.fst, _), item.snd),
+        \ item::Pair<String [String]> -> map(pair(fst=item.fst, snd=_), item.snd),
         layoutTerms));
 }
