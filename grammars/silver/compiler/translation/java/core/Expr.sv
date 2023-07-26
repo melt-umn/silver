@@ -432,8 +432,12 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  local accessTrans::String = s"((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}()";
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";
+  top.translation =
+    if q.attrDcl.typeScheme.typerep.transType != finalType(top).transType
+    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${accessTrans})"
+    else accessTrans;
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
