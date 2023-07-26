@@ -392,11 +392,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       | childReference(cqn) ->
 	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
         s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${cqn.lookupValue.fullName}][${q.attrOccursInitIndex}_dec_site] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.grammarName, top.frame.lhsNtName, decSite)};\n"
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
       | localReference(lqn) ->
 	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
         s"\t\t${top.frame.className}.localInheritedAttributes[${lqn.lookupValue.dcl.attrOccursIndex}][${q.attrOccursInitIndex}_dec_site] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.grammarName, top.frame.lhsNtName, decSite)};\n"
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
       | _ -> ""
       end
     | _ -> ""
