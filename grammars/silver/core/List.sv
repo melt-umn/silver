@@ -469,6 +469,21 @@ function unzip
          else (head(l).1 :: rest.1, head(l).2 :: rest.2);
 }
 
+function zip3
+[(a, b, c)] ::= l1::[a]  l2::[b]  l3::[c]
+{
+  return if null(l1) || null(l2) || null(l3) then []
+         else (head(l1), head(l2), head(l3)) :: zip3(tail(l1), tail(l2), tail(l3));
+}
+
+function unzip3
+([a], [b], [c]) ::= l::[(a, b, c)]
+{
+  local rest::([a], [b], [c]) = unzip3(tail(l));
+  return if null(l) then ([], [], [])
+         else (head(l).1 :: rest.1, head(l).2 :: rest.2, head(l).3 :: rest.3);
+}
+
 function reverse
 [a] ::= lst::[a]
 {
