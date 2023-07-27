@@ -330,12 +330,12 @@ String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::Named
 {
   return
     case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
-    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, u.sourceGrammar, lhsNtName, v)};\n"
+    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
     | _, _ -> ""
     end;
 }
 function refAccessTranslation
-String ::= env::Env flowEnv::FlowEnv grammarName::String ntName::String v::VertexType
+String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType
 {
   return
     case v of
@@ -347,14 +347,14 @@ String ::= env::Env flowEnv::FlowEnv grammarName::String ntName::String v::Verte
       | [] -> error("Couldn't find decl for local " ++ fName)
       end
     | transAttrVertexType(lhsVertexType_real(), transAttr) ->
-      let transIndexName::String = s"${makeName(grammarName)}.Init.${makeIdName(transAttr)}__ON__${makeIdName(ntName)}"
+      let transIndexName::String = head(getOccursDcl(transAttr, lhsNtName, env)).attrGlobalOccursInitIndex
       in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
       end
     | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
     | forwardVertexType_real() -> s"context.forward()"
     | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
     | subtermVertexType(parent, prodName, sigName) ->
-      s"${refAccessTranslation(env, flowEnv, grammarName, ntName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+      s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
     end;
 }
 
