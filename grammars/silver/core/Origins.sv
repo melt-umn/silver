@@ -6,7 +6,7 @@ grammar silver:core;
 
 data nonterminal OriginInfo with originNotes, originType;
 data nonterminal OriginInfoType;
-data nonterminal OriginNote;
+closed data nonterminal OriginNote;
 
 synthesized attribute notepp :: String occurs on OriginNote;
 
