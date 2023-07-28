@@ -4,15 +4,15 @@ grammar silver:core;
 --  Don't change their names, grammar locations, or parameters unless you know what your doing
 --  (and have made the appropriate runtime and compiler changes!)
 
-data nonterminal OriginInfo;
+data nonterminal OriginInfo with originNotes, originType;
 data nonterminal OriginInfoType;
 data nonterminal OriginNote;
 
 synthesized attribute notepp :: String occurs on OriginNote;
 
 synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
-synthesized attribute originNotes :: [OriginNote] occurs on OriginInfo;
-synthesized attribute originType :: OriginInfoType occurs on OriginInfo;
+annotation originNotes :: [OriginNote];
+annotation originType :: OriginInfoType;
 
 synthesized attribute isBogus :: Boolean occurs on OriginInfoType;
 
@@ -115,20 +115,16 @@ top::OriginInfoType ::=
 
 @{- 'catchall' for origins that don't encode other info -}
 abstract production otherOriginInfo
-top::OriginInfo ::= typ::OriginInfoType source::String notes::[OriginNote]
+top::OriginInfo ::= source::String
 {
   top.isNewlyConstructed = true;
-  top.originNotes = notes;
-  top.originType = typ;
 }
 
 @{- The production originated from a sequence of tokens at `source` in Copper -}
 abstract production parsedOriginInfo
-top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
+top::OriginInfo ::= source::Location
 {
   top.isNewlyConstructed = true;
-  top.originNotes = notes;
-  top.originType = typ;
 }
 
 @@{- The following two are the same modulo if a redex is set or not
@@ -144,28 +140,20 @@ top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 
 @{- See above -}
 abstract production originOriginInfo
-top::OriginInfo ::= typ::OriginInfoType 
-                    origin :: a
-                    originNotes :: [OriginNote]
+top::OriginInfo ::= origin :: a
                     newlyConstructed :: Boolean
 {
   top.isNewlyConstructed = newlyConstructed;
-  top.originNotes = originNotes;
-  top.originType = typ;
 }
 
 @{- See above -}
 abstract production originAndRedexOriginInfo
-top::OriginInfo ::= typ::OriginInfoType 
-                    origin :: a
-                    originNotes :: [OriginNote]
+top::OriginInfo ::= origin :: a
                     redex :: b
                     redexNotes :: [OriginNote]
                     newlyConstructed :: Boolean
 {
   top.isNewlyConstructed = newlyConstructed;
-  top.originNotes = originNotes;
-  top.originType = typ;
 }
 
 
@@ -223,8 +211,8 @@ function getOriginInfoChain
   return case getOriginInfo(l) of
          | just(info) -> 
              case info of
-             | originOriginInfo(_, o, _, _) -> info :: getOriginInfoChain(o)
-             | originAndRedexOriginInfo(_, o, _, _, _, _) -> info :: getOriginInfoChain(o)
+             | originOriginInfo(o, _) -> info :: getOriginInfoChain(o)
+             | originAndRedexOriginInfo(o, _, _, _) -> info :: getOriginInfoChain(o)
              | _ -> [info]
              end
          | _ -> []
@@ -263,7 +251,7 @@ Maybe<Location> ::= chain::[OriginInfo]
          | [] -> nothing()
          | link::rest -> 
              case link of
-             | parsedOriginInfo(_, l, _) -> just(l)
+             | parsedOriginInfo(l) -> just(l)
              | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
                         | nothing() -> getParsedOriginLocation_helper(rest)
                         | x -> x

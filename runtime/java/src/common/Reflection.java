@@ -69,7 +69,7 @@ public final class Reflection {
 	 * @return The reflected AST.
 	 */
 	public static NAST reflect(final ConsCell rules, Object o) {
-		silver.core.NOriginInfo origin = (rules!=null)?new silver.core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true):null;
+		silver.core.NOriginInfo origin = (rules!=null)?new silver.core.PoriginOriginInfo(o, true, rules, OriginsUtil.SET_FROM_REFLECTION_OIT):null;
 		if(o instanceof Node) {
 			Node n = (Node)o;
 			NASTs children = new PnilAST(origin);
