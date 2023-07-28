@@ -253,9 +253,9 @@ aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   note.decSiteVertexInfo = nothing();
-  e.decSiteVertexInfo = nothing();
+  e.decSiteVertexInfo = top.decSiteVertexInfo;
   note.alwaysDecorated = false;
-  e.alwaysDecorated = false;
+  e.alwaysDecorated = top.alwaysDecorated;
 }
 
 aspect production access
