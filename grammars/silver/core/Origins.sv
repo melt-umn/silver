@@ -278,10 +278,16 @@ Maybe<Location> ::= notes::[OriginNote]
 function getParsedOriginLocationOrFallback
 Location ::= arg::a
 {
+  local fallbackString::String =
+    "arg: " ++ hackUnparse(arg) ++ 
+    " ochain: " ++ hackUnparse(getOriginInfoChain(arg));
+  local truncatedFallbackString::String =
+    if length(fallbackString) > 10000
+    then substring(0, 10000, fallbackString) ++ "... truncated at 10000 chars"
+    else fallbackString;
   return case getParsedOriginLocation(arg) of
          | just(l) -> l
-         | _ -> txtLoc("<getParsedOriginLocationOrFallback failed: arg: " ++ hackUnparse(arg) ++ 
-                       " ochain: " ++ hackUnparse(getOriginInfoChain(arg)) ++ ">")
+         | _ -> txtLoc("<getParsedOriginLocationOrFallback failed: " ++ truncatedFallbackString ++ ">")
          end;
 }
 
