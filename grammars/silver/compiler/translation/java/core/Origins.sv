@@ -83,7 +83,7 @@ function getSpecialCaseNoOrigins
 function typeWantsTracking
 Boolean ::= ty::Type conf::Decorated CmdArgs env::Env
 {
-  return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getSpecialCaseNoOrigins()) then false
+  return if conf.noOrigins || contains(ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
               | nonterminalType(fn, _, _, tracked) -> conf.forceOrigins || tracked
               | appType(c, _) -> typeWantsTracking(c, conf, env)
