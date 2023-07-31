@@ -282,8 +282,8 @@ Location ::= arg::a
     "arg: " ++ hackUnparse(arg) ++ 
     " ochain: " ++ hackUnparse(getOriginInfoChain(arg));
   local truncatedFallbackString::String =
-    if length(fallbackString) > 10000
-    then substring(0, 10000, fallbackString) ++ "... truncated at 10000 chars"
+    if length(fallbackString) > 1000
+    then substring(0, 1000, fallbackString) ++ "... truncated at 1000 chars"
     else fallbackString;
   return case getParsedOriginLocation(arg) of
          | just(l) -> l
