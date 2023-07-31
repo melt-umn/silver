@@ -188,7 +188,7 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
   top.inhTreeContribs := [pair(crossnames(prod, crossnames(sigName, attr)), top)];
   top.prodGraphContribs := [pair(prod, top)];
-  top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
+  top.flowEdges = map(pair(rhsInhVertex(sigName, attr), _), deps);
 }
 
 {--
@@ -236,7 +236,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.fwdInhTreeContribs := [pair(crossnames(prod, attr), top)];
   top.prodGraphContribs := [pair(prod, top)];
-  top.flowEdges = map(pair(forwardVertex(attr), _), deps);
+  top.flowEdges = map(pair(forwardInhVertex(attr), _), deps);
 }
 
 {--
@@ -273,7 +273,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
   top.localInhTreeContribs := [pair(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [pair(prod, top)];
-  top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
+  top.flowEdges = map(pair(localInhVertex(fName, attr), _), deps);
 }
 
 {--
@@ -325,7 +325,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
   top.localInhTreeContribs := [pair(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [pair(prod, top)];
-  top.flowEdges = map(pair(anonVertex(fName, attr), _), deps);
+  top.flowEdges = map(pair(anonInhVertex(fName, attr), _), deps);
 }
 
 {--
@@ -389,7 +389,7 @@ abstract production childRefDecSiteEq
 top::FlowDef ::= prod::String  sigName::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
 {
   top.prodGraphContribs := [pair(prod, top)];
-  top.flowEdges = map(\ attr::String -> (rhsVertex(sigName, attr), decSite.inhVertex(attr)), attrs);
+  top.flowEdges = map(\ attr::String -> (rhsInhVertex(sigName, attr), decSite.inhVertex(attr)), attrs);
   top.refPossibleDecSiteContribs := [(s"${prod}:${sigName}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
 }
@@ -407,7 +407,7 @@ abstract production localRefDecSiteEq
 top::FlowDef ::= prod::String  fName::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
 {
   top.prodGraphContribs := [pair(prod, top)];
-  top.flowEdges = map(\ attr::String -> (localVertex(fName, attr), decSite.inhVertex(attr)), attrs);
+  top.flowEdges = map(\ attr::String -> (localInhVertex(fName, attr), decSite.inhVertex(attr)), attrs);
   top.refPossibleDecSiteContribs := [(fName, decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
 }

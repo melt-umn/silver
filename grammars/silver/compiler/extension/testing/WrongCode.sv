@@ -2,6 +2,7 @@ grammar silver:compiler:extension:testing;
 
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
+import silver:compiler:definition:flow:env;
 import silver:compiler:analysis:uniqueness;
 
 terminal WrongCode_kwd 'wrongCode' lexer classes {KEYWORD};

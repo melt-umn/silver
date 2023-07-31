@@ -5,6 +5,8 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
+import silver:compiler:definition:flow:env;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
 

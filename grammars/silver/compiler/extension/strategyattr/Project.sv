@@ -6,6 +6,8 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax hiding Arrow_t;
+imports silver:compiler:definition:flow:env;
+imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:extension:autoattr;
 imports silver:compiler:extension:patternmatching;
 imports silver:compiler:modification:list;

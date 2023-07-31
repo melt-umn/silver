@@ -117,30 +117,28 @@ function checkEqDeps
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
   -- Filter missing equations for RHS that are references or supplied through another decoration site.
-  | rhsVertex(sigName, attrName) ->
-      if isInherited(attrName, realEnv)
-      then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-           || sigAttrViaReference(sigName, attrName, ns, realEnv)
-           || !null(lookupRefDecSite(prodName, sigName, flowEnv))
-           then []
-           else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
-      else []
+  | rhsInhVertex(sigName, attrName) ->
+      if !null(lookupInh(prodName, sigName, attrName, flowEnv))
+      || sigAttrViaReference(sigName, attrName, ns, realEnv)
+      || !null(lookupRefDecSite(prodName, sigName, flowEnv))
+      then []
+      else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
+  | rhsSynVertex(sigName, attrName) -> []
   -- A dependency on a LOCAL. Technically, local equations may not exist!
   -- But let's just assume they do, since `local name :: type = expr;` is the prefered syntax.
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   -- Ignore the FORWARD (a special case of LOCAL), which always has both SYN/INH.
   -- And again ignore references and additional decoration sites.
-  | localVertex(fName, attrName) -> 
-      if isInherited(attrName, realEnv)
-      then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-           || fName == "forward"
-           || isForwardProdAttr(fName, realEnv)
-           || localAttrViaReference(fName, attrName, realEnv)
-           || !null(lookupLocalRefDecSite(fName, flowEnv))
-           then []
-           else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
-      else []
+  | localInhVertex(fName, attrName) -> 
+      if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+      || fName == "forward"
+      || isForwardProdAttr(fName, realEnv)
+      || localAttrViaReference(fName, attrName, realEnv)
+      || !null(lookupLocalRefDecSite(fName, flowEnv))
+      then []
+      else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
+  | localSynVertex(fName, attrName) -> []
   -- A dependency on a ANON. This do always exist (`decorate expr with..` always has expr.)
   | anonEqVertex(fName) -> []
   -- A dependency on ANON.ATTR. Again, SYN are safe. We need to check only for INH.
@@ -148,23 +146,23 @@ function checkEqDeps
   -- missing within THIS overall equation.
   -- i.e. `top.syn1 = ... missing ...; top.syn2 = top.syn1;` should only raise
   -- the missing in the first equation.
-  | anonVertex(fName, attrName) ->
-      if isInherited(attrName, realEnv)
-      then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-           then []
-           else let
-             anonl :: Maybe<Location> = lookup(fName, anonResolve)
-           in if anonl.isJust
-              then [mwdaWrn(config, anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".")]
-              else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
-           end
-      else []
-  | subtermVertex(parent, termProdName, sigName, attrName) ->
-      if isInherited(attrName, realEnv)
-      then if !remoteProdMissingInhEq(termProdName, sigName, attrName, flowEnv)
-           then []
-           else [mwdaWrn(config, l, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
-      else []
+  | anonInhVertex(fName, attrName) ->
+      if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+      then []
+      else let
+        anonl :: Maybe<Location> = lookup(fName, anonResolve)
+      in if anonl.isJust
+        then [mwdaWrn(config, anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".")]
+        else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
+      end
+  | anonSynVertex(fName, attrName) -> []
+  -- A dependency on a projected equation in another production.
+  -- Again, SYN are safe. We need to check only for INH.
+  | subtermInhVertex(parent, termProdName, sigName, attrName) ->
+      if !remoteProdMissingInhEq(termProdName, sigName, attrName, flowEnv)
+      then []
+      else [mwdaWrn(config, l, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
+  | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
 }
 function checkAllEqDeps
@@ -774,8 +772,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.receivedDeps = transitiveDeps;
 
   -- just the deps on inhs of our sink
-  local inhDeps :: [String] =
-    toAnonInhs(transitiveDeps, sinkVertexName.fromJust, top.env);
+  local inhDeps :: [String] = toAnonInhs(transitiveDeps, sinkVertexName.fromJust);
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
@@ -792,17 +789,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 }
 
 function toAnonInhs
-[String] ::= v::[FlowVertex]  vertex::String  env::Decorated Env
+[String] ::= vs::[FlowVertex]  vertex::String
 {
-  return
+  return filterMap(\ v::FlowVertex ->
     case v of
-    | anonVertex(n, inh) :: tl ->
-        if vertex == n && isInherited(inh, env)
-        then inh :: toAnonInhs(tl, vertex, env)
-        else toAnonInhs(tl, vertex, env)
-    | _ :: tl -> toAnonInhs(tl, vertex, env)
-    | [] -> []
-    end;
+    | anonInhVertex(n, inh) when n == vertex -> just(inh)
+    | _ -> nothing()
+    end, vs);
 }
 
 inherited attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
@@ -820,8 +813,7 @@ top::VarBinder ::= n::Name
     else [];
 
   -- fName is our invented vertex name for the pattern variable
-  local requiredInhs :: [String] =
-    toAnonInhs(top.receivedDeps, fName, top.env);
+  local requiredInhs :: [String] = toAnonInhs(top.receivedDeps, fName);
 
   -- Check for equation's existence:
   -- Prod: top.matchingAgainst.fromJust.fullName

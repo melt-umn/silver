@@ -29,15 +29,23 @@ abstract production lhsInhVertex
 top::FlowVertex ::= attrName::String
 {}
 
--- TODO: we should do the above syn/inh separation for everything below too.
-
 {--
- - A vertex representing an attribute on an element of the signature RHS.
+ - A vertex representing a synthesized attribute on an element of the signature RHS.
  -
  - @param sigName  the name given to a signature nonterminal.
  - @param attrName  the full name of an attribute on that signature element.
  -}
-abstract production rhsVertex
+abstract production rhsSynVertex
+top::FlowVertex ::= sigName::String  attrName::String
+{}
+
+{--
+ - A vertex representing an inherited attribute on an element of the signature RHS.
+ -
+ - @param sigName  the name given to a signature nonterminal.
+ - @param attrName  the full name of an attribute on that signature element.
+ -}
+abstract production rhsInhVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {}
 
@@ -54,14 +62,26 @@ top::FlowVertex ::= fName::String
 {}
 
 {--
- - A vertex representing an attribute on a local equation. i.e. forward, local
+ - A vertex representing a synthesized attribute on a local equation. i.e. forward, local
  - attribute, production attribute, etc.  Note this this implies the equation
  - above IS a decorable type!
  -
  - @param fName  the full name of the NTA/FWD
  - @param attrName  the full name of the attribute on that element
  -}
-abstract production localVertex
+abstract production localSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{}
+
+{--
+ - A vertex representing an inherited attribute on a local equation. i.e. forward, local
+ - attribute, production attribute, etc.  Note this this implies the equation
+ - above IS a decorable type!
+ -
+ - @param fName  the full name of the NTA/FWD
+ - @param attrName  the full name of the attribute on that element
+ -}
+abstract production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {}
 
@@ -75,10 +95,15 @@ FlowVertex ::=
 }
 
 -- An attribute on the forward node for this production
-function forwardVertex
+function forwardSynVertex
 FlowVertex ::= attrName::String
 {
-  return localVertex("forward", attrName);
+  return localSynVertex("forward", attrName);
+}
+function forwardInhVertex
+FlowVertex ::= attrName::String
+{
+  return localInhVertex("forward", attrName);
 }
 
 {--
@@ -92,18 +117,29 @@ top::FlowVertex ::= fName::String
 {}
 
 {--
- - A vertex representing an attribute on an anonymous equation.
+ - A vertex representing a synthesized attribute on an anonymous equation.
+ - e.g. 'decorate e with { a = d } . b' this represents 'b'.
+ -
+ - @param fName  the anonymous name
+ - @param attrName  the full name of the attribute on that element
+ -}
+abstract production anonSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{}
+
+{--
+ - A vertex representing an inherited attribute on an anonymous equation.
  - e.g. 'decorate e with { a = d }' this represents 'e_nt.a's deps 'd'.
  -
  - @param fName  the anonymous name
  - @param attrName  the full name of the attribute on that element
  -}
-abstract production anonVertex
+abstract production anonInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {}
 
 {--
- - A vertex corresponding to a sub-terms of an expression with a known decoration site.
+ - A vertex corresponding to a synthesized attribute on a sub-term of an expression with a known decoration site.
  - e.g. 'local foo::Foo = bar(baz(@x));', we need a vertex for the attributes on baz(@x)
  - for decoration site projections.
  -
@@ -112,6 +148,20 @@ top::FlowVertex ::= fName::String  attrName::String
  - @param sigName  the name given to the corresponding child
  - @param attrName  the full name of an attribute on this subterm, when decorated
  -}
-abstract production subtermVertex
+abstract production subtermSynVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{}
+
+{--
+ - A vertex corresponding to an inherited synthesized attribute on a sub-term of an expression with a known decoration site.
+ - e.g. 'local foo::Foo = bar(baz(@x));', we need a vertex for the attributes on baz(@x)
+ - for decoration site projections.
+ -
+ - @param parent  the decoration site of the enclosing term
+ - @param prodName  the full name of the applied production
+ - @param sigName  the name given to the corresponding child
+ - @param attrName  the full name of an attribute on this subterm, when decorated
+ -}
+abstract production subtermInhVertex
 top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
 {}

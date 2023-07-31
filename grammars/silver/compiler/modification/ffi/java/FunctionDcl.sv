@@ -7,6 +7,7 @@ import silver:compiler:translation:java:type;
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
+import silver:compiler:definition:flow:env;
 
 synthesized attribute ffiTranslationString :: [String] occurs on FFIDef, FFIDefs;
 

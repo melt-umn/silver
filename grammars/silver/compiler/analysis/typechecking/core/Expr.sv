@@ -1,5 +1,7 @@
 grammar silver:compiler:analysis:typechecking:core;
 
+import silver:compiler:definition:flow:env;
+
 attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 propagate upSubst, downSubst

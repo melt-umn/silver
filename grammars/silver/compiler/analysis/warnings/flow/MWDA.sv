@@ -15,8 +15,12 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
 
+-- type checking
+imports silver:compiler:analysis:typechecking:core;
+
 -- flow analysis
 imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 
 -- uniqueness analysis
@@ -27,17 +31,6 @@ imports silver:compiler:modification:collection;
 imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
-
--- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
--- The real fix is for our vertexes to remember whether they are syn/inh.
-function isInherited
-Boolean ::= a::String  e::Decorated Env
-{
-  return case getAttrDclAll(a, e) of
-  | at :: _ -> at.isInherited
-  | _ -> false
-  end;
-}
 
 function isLhsInh
 Boolean ::= v::FlowVertex

@@ -48,9 +48,9 @@ top::VertexType ::=
 abstract production rhsVertexType
 top::VertexType ::= sigName::String
 {
-  top.synVertex = rhsVertex(sigName, _);
-  top.inhVertex = rhsVertex(sigName, _);
-  top.fwdVertex = rhsVertex(sigName, "forward");
+  top.synVertex = rhsSynVertex(sigName, _);
+  top.inhVertex = rhsInhVertex(sigName, _);
+  top.fwdVertex = rhsSynVertex(sigName, "forward");
   top.eqVertex = [];
 }
 
@@ -60,9 +60,9 @@ top::VertexType ::= sigName::String
 abstract production localVertexType
 top::VertexType ::= fName::String
 {
-  top.synVertex = localVertex(fName, _);
-  top.inhVertex = localVertex(fName, _);
-  top.fwdVertex = localVertex(fName, "forward");
+  top.synVertex = localSynVertex(fName, _);
+  top.inhVertex = localInhVertex(fName, _);
+  top.fwdVertex = localSynVertex(fName, "forward");
   top.eqVertex = [localEqVertex(fName)];
 }
 
@@ -72,9 +72,9 @@ top::VertexType ::= fName::String
 abstract production forwardVertexType_real
 top::VertexType ::=
 {
-  top.synVertex = localVertex("forward", _);
-  top.inhVertex = localVertex("forward", _);
-  top.fwdVertex = localVertex("forward", "forward");
+  top.synVertex = forwardSynVertex;
+  top.inhVertex = forwardInhVertex;
+  top.fwdVertex = forwardSynVertex("forward");
   top.eqVertex = [forwardEqVertex_singleton];
 }
 
@@ -84,9 +84,9 @@ top::VertexType ::=
 abstract production anonVertexType
 top::VertexType ::= x::String
 {
-  top.synVertex = anonVertex(x, _);
-  top.inhVertex = anonVertex(x, _);
-  top.fwdVertex = anonVertex(x, "forward");
+  top.synVertex = anonSynVertex(x, _);
+  top.inhVertex = anonInhVertex(x, _);
+  top.fwdVertex = anonSynVertex(x, "forward");
   top.eqVertex = [anonEqVertex(x)];
 }
 
@@ -96,8 +96,8 @@ top::VertexType ::= x::String
 abstract production subtermVertexType
 top::VertexType ::= parent::VertexType prodName::String sigName::String
 {
-  top.synVertex = subtermVertex(parent, prodName, sigName, _);
-  top.inhVertex = subtermVertex(parent, prodName, sigName, _);
-  top.fwdVertex = subtermVertex(parent, prodName, sigName, "forward");
+  top.synVertex = subtermSynVertex(parent, prodName, sigName, _);
+  top.inhVertex = subtermInhVertex(parent, prodName, sigName, _);
+  top.fwdVertex = subtermSynVertex(parent, prodName, sigName, "forward");
   top.eqVertex = [];
 }
