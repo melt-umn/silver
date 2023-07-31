@@ -134,12 +134,39 @@ Boolean ::= l::[Message] wError::Boolean
 }
 
 @{--
+ - Show a message as a string, specially reporting undesired errors from extension-generated code.
+ -}
+function showMessage
+String ::= m::Message
+{
+  local fromExt::Maybe<String> = originatesInExt(getOriginInfoChain(m));
+  local originsSource::Maybe<Location> = getParsedOriginLocation(m);
+  local fromExtMessage::String = 
+    "\n\n" ++
+    "\nINTERNAL ERROR: The following error message originated in extension-generated code." ++
+    "\nThis is probably indicative of a bug in the extension as opposed to your code." ++
+    "\nThe offending extension was: '" ++ fromExt.fromJust ++ "' - please report this to it's developers." ++
+    "\nThe error was: " ++ m.noLocOutput ++ "." ++ -- We do not expect the location to be useful/correct
+    (if originsSource.isJust
+     then "\nOrigins reports the following source location: " ++ originsSource.fromJust.unparse ++ "."
+     else "\nOrigins chain terminates without location.") ++
+    "\nOrigins chain follows:" ++
+    "\n  -> " ++ implode("\n  -> ", map(hackUnparse, getOriginInfoChain(m))) ++
+    "\n\n";
+
+
+  return if fromExt.isJust
+         then fromExtMessage
+         else m.output;
+}
+
+@{--
  - Returns a list of strings, ready to be printed to the command line.
  -}
 function messagesToString
 String ::= msgs::[Message]
 {
-  return implode("\n", map((.output), sortBy(messageLte, msgs)));
+  return implode("\n", map(showMessage, sortBy(messageLte, msgs)));
 }
 
 -- for use with sortBy
