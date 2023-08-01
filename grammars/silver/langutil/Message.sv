@@ -151,7 +151,7 @@ String ::= m::Message
      then "\nOrigins reports the following source location: " ++ originsSource.fromJust.unparse ++ "."
      else "\nOrigins chain terminates without location.") ++
     "\nOrigins chain follows:" ++
-    "\n  -> " ++ implode("\n  -> ", map(hackUnparse, getOriginInfoChain(m))) ++
+    "\n" ++ showOriginInfoChain(m) ++
     "\n\n";
 
 

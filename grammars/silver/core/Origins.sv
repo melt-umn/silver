@@ -8,8 +8,6 @@ data nonterminal OriginInfo with originNotes, originType;
 data nonterminal OriginInfoType;
 closed data nonterminal OriginNote;
 
-synthesized attribute notepp :: String occurs on OriginNote;
-
 synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
 annotation originNotes :: [OriginNote];
 annotation originType :: OriginInfoType;
@@ -161,12 +159,6 @@ top::OriginInfo ::= origin :: a
 -- These are some simple builtin node types, and may be generated automatically
 --  inside the compiler.
 
-aspect default production
-top::OriginNote ::=
-{
-  top.notepp = "<" ++ hackUnparse(top) ++ ">";
-}
-
 abstract production traceNote
 top::OriginNote ::= loc::String
 {
@@ -268,26 +260,6 @@ Maybe<Location> ::= notes::[OriginNote]
          | [] -> nothing()
          | logicalLocationNote(l)::_ -> just(l)
          | x::r -> getParsedOriginLocation_findLogicalLocationNote(r)
-         end;
-}
-
-@{-
-  - Try to walk back to a parsedOriginInfo and extract the location the node came from in the source,
-  - giving diagnostic garbage if failed.
-  -}
-function getParsedOriginLocationOrFallback
-Location ::= arg::a
-{
-  local fallbackString::String =
-    "arg: " ++ hackUnparse(arg) ++ 
-    " ochain: " ++ hackUnparse(getOriginInfoChain(arg));
-  local truncatedFallbackString::String =
-    if length(fallbackString) > 1000
-    then substring(0, 1000, fallbackString) ++ "... truncated at 1000 chars"
-    else fallbackString;
-  return case getParsedOriginLocation(arg) of
-         | just(l) -> l
-         | _ -> txtLoc("<getParsedOriginLocationOrFallback failed: " ++ truncatedFallbackString ++ ">")
          end;
 }
 
