@@ -139,8 +139,12 @@ Boolean ::= l::[Message] wError::Boolean
 function showMessage
 String ::= m::Message
 {
-  local fromExt::Maybe<String> = originatesInExt(getOriginInfoChain(m));
-  local originsSource::Maybe<Location> = getParsedOriginLocation(m);
+  local chain::[OriginInfo] = getOriginInfoChain(m);
+  local fromExt::Maybe<String> =
+    -- The first item in the chain is the message itself;
+    -- we don't want to complain about messages raised directly in extension productions as "extension generated".
+    if null(chain) then nothing() else originatesInExt(tail(chain));
+  local originsSource::Maybe<Location> = getParsedOriginLocationFromChain(chain);
   local fromExtMessage::String = 
     "\n\n" ++
     "\nINTERNAL ERROR: The following error message originated in extension-generated code." ++
@@ -151,7 +155,7 @@ String ::= m::Message
      then "\nOrigins reports the following source location: " ++ originsSource.fromJust.unparse ++ "."
      else "\nOrigins chain terminates without location.") ++
     "\nOrigins chain follows:" ++
-    "\n" ++ showOriginInfoChain(m) ++
+    "\n" ++ showOriginInfoChain(chain) ++
     "\n\n";
 
 

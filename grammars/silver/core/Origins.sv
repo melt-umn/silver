@@ -232,11 +232,10 @@ Maybe<OriginInfo> ::= arg::a
 function getParsedOriginLocation
 Maybe<Location> ::= arg::a
 {
-  return getParsedOriginLocation_helper(getOriginInfoChain(arg));
+  return getParsedOriginLocationFromChain(getOriginInfoChain(arg));
 }
 
-@{- @hide -}
-function getParsedOriginLocation_helper
+function getParsedOriginLocationFromChain
 Maybe<Location> ::= chain::[OriginInfo]
 {
   return case chain of
@@ -245,7 +244,7 @@ Maybe<Location> ::= chain::[OriginInfo]
              case link of
              | parsedOriginInfo(l) -> just(l)
              | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
-                        | nothing() -> getParsedOriginLocation_helper(rest)
+                        | nothing() -> getParsedOriginLocationFromChain(rest)
                         | x -> x
                         end
              end
