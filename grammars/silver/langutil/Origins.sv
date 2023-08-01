@@ -95,7 +95,7 @@ top::OriginInfo ::= origin :: a
       if newlyConstructed then pp"" else pp" (preserved)"
     | oit -> pp" (from ${oit})"
     end;
-  top.pp = pp"${reflect(origin)}${constructionNote}${originNotesPP(top.originNotes)}";
+  top.pp = pp"${genericPP(origin)}${constructionNote}${originNotesPP(top.originNotes)}";
 }
 
 aspect production originAndRedexOriginInfo
@@ -110,7 +110,7 @@ top::OriginInfo ::= origin :: a
       if newlyConstructed then pp"" else pp" (preserved)"
     | oit -> pp" (from ${oit})"
     end;
-  top.pp = pp"${reflect(origin)}${constructionNote}${originNotesPP(top.originNotes)}, redex ${reflect(redex)}${originNotesPP(redexNotes)}";
+  top.pp = pp"${genericPP(origin)}${constructionNote}${originNotesPP(top.originNotes)}, redex ${genericPP(redex)}${originNotesPP(redexNotes)}";
 }
 
 function originNotesPP
