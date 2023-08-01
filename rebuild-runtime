@@ -2,6 +2,11 @@
 
 set -eu
 
+# Make sure this one annoying random dependency is built
+if [[ ! -d generated/src/silver/xml/ast ]]; then
+  SV_BUILD_TARGET="silver:xml:ast" ./self-compile
+fi
+
 echo    === BUILD JAVA RUNTIME ===
 cd runtime/java
 ant
