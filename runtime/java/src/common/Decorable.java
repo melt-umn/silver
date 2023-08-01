@@ -34,4 +34,14 @@ public interface Decorable {
 		final Lazy[] inhs,
 		final DecoratedNode fwdParent,
 		final boolean prodFwrd);
+
+	/**
+	 * A convenience method unused by generate Silver code, but useful when working with
+	 * the Silver runtime from Java.
+	 * 
+	 * @return  A node decorated with no inherited attributes, without a parent.
+	 */
+	public default DecoratedNode decorate() {
+		return decorate(TopNode.singleton, null);
+	}
 }

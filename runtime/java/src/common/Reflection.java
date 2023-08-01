@@ -672,4 +672,65 @@ public final class Reflection {
 			throw new NativeSerializationException("Unknown type id (" + Integer.toString(typeId) + ")");
 		}
 	}
+
+	/**
+	 * Try to access an inherited attribute from a DecoratedNode, by name.
+	 * @param node  A DecoratedNode on which to compute the attribute.
+	 * @param attr  The name of the inherited attribute to access. 
+	 * @return An Either<String a> object containing either an error message or the reflected result of evaluating the attribute.
+	 */
+	public static NEither getInherited(final TypeRep expected, final DecoratedNode d, final String attr) {
+		RTTIManager.Nonterminalton<?> nt = d.getNode().getProdleton().getNonterminalton();
+		if (!nt.hasAttr(attr)) {
+			return new Pleft(new StringCatter("Attribute " + attr + " does not occur on " + nt.getName()));
+		}
+		int i = nt.getOccursIndex(attr);
+		Object res;
+		try {
+			res = d.inherited(i);
+		} catch (SilverException e) {
+			Throwable rootCause = SilverException.getRootCause(e);
+			if (e instanceof SilverError) {
+				return new Pleft(new StringCatter(SilverException.getRootCause(e).getMessage()));
+			} else {
+				throw e;
+			}
+		}
+		if (!TypeRep.unify(expected, getType(res))) {
+			return new Pleft(new StringCatter("getInherited expected " + expected.toString() + ", but " + attr + " on " + nt.getName() + " gave type " + getType(res).toString()));
+		}
+		return new Pright(res);
+	}
+
+	/**
+	 * Try to access a synthesized attribute from a node, by name.
+	 * @param node  A Node or DecoratedNode on which to compute the attribute.
+	 * @param attr  The name of the synthesized attribute to access. 
+	 * @return An Either<String a> object containing either an error message or the reflected result of evaluating the attribute.
+	 */
+	public static NEither getSynthesized(final TypeRep expected, final Object o, final String attr) {
+		if (!(o instanceof Decorable)) {
+			return new Pleft(new StringCatter(getType(o).toString() + " does not have attributes"));
+		}
+		DecoratedNode d = ((Decorable)o).decorate();
+		RTTIManager.Nonterminalton<?> nt = d.getNode().getProdleton().getNonterminalton();
+		if (!nt.hasAttr(attr)) {
+			return new Pleft(new StringCatter("Attribute " + attr + " does not occur on " + nt.getName()));
+		}
+		int i = nt.getOccursIndex(attr);
+		Object res;
+		try {
+			res = d.synthesized(i);
+		} catch (SilverException e) {
+			if (SilverException.getRootCause(e) instanceof MissingDefinitionException) {
+				return new Pleft(new StringCatter(SilverException.getRootCause(e).getMessage()));
+			} else {
+				throw e;
+			}
+		}
+		if (!TypeRep.unify(expected, getType(res))) {
+			return new Pleft(new StringCatter("getSynthesized expected " + expected.toString() + ", but " + attr + " on " + nt.getName() + " gave type " + getType(res).toString()));
+		}
+		return new Pright(res);
+	}
 }

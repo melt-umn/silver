@@ -106,8 +106,11 @@ public final class RTTIManager {
 		public abstract String getName();
 
 		private final Map<String, Integer> occursIndices = new HashMap<String, Integer>(16, 0.5f);
-		public int getOccursIndex(String attrName) {
-			if (!occursIndices.containsKey(attrName)) {
+		public final boolean hasAttr(String attrName) {
+			return occursIndices.containsKey(attrName);
+		}
+		public final int getOccursIndex(String attrName) {
+			if (!hasAttr(attrName)) {
 				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
 			}
 			return occursIndices.get(attrName);
