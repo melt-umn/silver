@@ -51,3 +51,19 @@ runtimeTypeable a => a ::= x::AST
     | right(a) -> a
     end;
 }
+
+function getInherited
+runtimeTypeable a => Either<String a> ::= x::Decorated b with i  attr::String
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "common.Reflection.getInherited(%@0@%, %x%, %attr%.toString())";
+}
+
+function getSynthesized
+runtimeTypeable a => Either<String a> ::= x::b  attr::String
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "common.Reflection.getSynthesized(%@0@%, %x%, %attr%.toString())";
+}
