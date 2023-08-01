@@ -807,6 +807,7 @@ public class DecoratedNode implements Decorable, Typed {
 			return "<top>";
 		}
 		NLocation loc = null;
+		String notes = "";
 		if(self instanceof silver.core.Alocation) {
 			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
 		} else if(self instanceof Tracked) {
@@ -814,15 +815,19 @@ public class DecoratedNode implements Decorable, Typed {
 			if(maybeLoc instanceof silver.core.Pjust) {
 				loc = (silver.core.NLocation)maybeLoc.getChild(0);
 			}
+			notes = silver.core.PgetOriginNotesString.invoke(OriginContext.FFI_CONTEXT, self).toString();
 		}
-		String qualifier = "";
+		String qualifier = Integer.toHexString(System.identityHashCode(this));
 		if(loc != null) {
 			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
 			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
 			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
-			qualifier = ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
+			qualifier += ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
 		}
-		return "'" + self.getName() + "' (" + Integer.toHexString(System.identityHashCode(this)) + qualifier + ")";
+		if(!notes.isEmpty()) {
+			qualifier += ", " + notes;
+		}
+		return "'" + self.getName() + "' (" + qualifier + ")";
 	}
 	
 	public final String toString() {

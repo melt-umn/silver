@@ -8,6 +8,8 @@ data nonterminal OriginInfo with originNotes, originType;
 data nonterminal OriginInfoType;
 closed data nonterminal OriginNote;
 
+synthesized attribute notepp :: Maybe<String> occurs on OriginNote;
+
 synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
 annotation originNotes :: [OriginNote];
 annotation originType :: OriginInfoType;
@@ -155,6 +157,12 @@ top::OriginInfo ::= origin :: a
 }
 
 
+aspect default production
+top::OriginNote ::=
+{
+  top.notepp = nothing();
+}
+
 
 -- These are some simple builtin node types, and may be generated automatically
 --  inside the compiler.
@@ -162,25 +170,25 @@ top::OriginInfo ::= origin :: a
 abstract production traceNote
 top::OriginNote ::= loc::String
 {
-  
+  top.notepp = just(s"at ${loc}");
 }
 
 abstract production originDbgNote
 top::OriginNote ::= string::String
 {
-  
+  top.notepp = nothing();
 }
 
 abstract production dbgNote
 top::OriginNote ::= string::String
 {
-  
+  top.notepp = just(s"debug ${string}");
 }
 
 abstract production logicalLocationNote
 top::OriginNote ::= loc::Location
 {
-  
+  top.notepp = just(s"logical ${loc.filename}:${toString(loc.line)}:${toString(loc.column)}");
 }
 
 @{-
@@ -250,7 +258,6 @@ Maybe<Location> ::= chain::[OriginInfo]
              end
          end;
 }
-
 @{- @hide -}
 function getParsedOriginLocation_findLogicalLocationNote
 Maybe<Location> ::= notes::[OriginNote]
@@ -260,6 +267,22 @@ Maybe<Location> ::= notes::[OriginNote]
          | logicalLocationNote(l)::_ -> just(l)
          | x::r -> getParsedOriginLocation_findLogicalLocationNote(r)
          end;
+}
+
+function originNotesToString
+String ::= ns::[OriginNote]
+{
+  return implode(", ", filterMap((.notepp), ns));
+}
+
+function getOriginNotesString
+String ::= arg::a
+{
+  return
+    case getOriginInfo(arg) of
+    | just(oi) -> originNotesToString(oi.originNotes)
+    | nothing() -> ""
+    end;
 }
 
 @{-
