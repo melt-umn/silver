@@ -116,7 +116,7 @@ top::OriginInfo ::= origin :: a
 function originNotesPP
 Document ::= ns::[OriginNote]
 {
-  return if null(ns) then pp"" else pp", ${text(originNotesToString(ns))}";
+  return if null(ns) then pp"" else pp": ${text(originNotesToString(ns))}";
 }
 
 @{-
@@ -152,6 +152,15 @@ function showOriginInfoChain
 String ::= chain::[OriginInfo]
 {
   return show(80, ppImplode(pp"${line()} -> ", map((.pp), chain)));
+}
+
+@{-
+ - Shorthand for note specifying logical location as some object's origin
+ -}
+function logicalLocationFromOrigin
+OriginNote ::= arg::a
+{
+  return logicalLocationNote(getParsedOriginLocationOrFallback(arg));
 }
 
 @{-
