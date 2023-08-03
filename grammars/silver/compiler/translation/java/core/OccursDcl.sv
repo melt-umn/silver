@@ -19,7 +19,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     if at.lookupAttribute.dcl.isAnnotation then
       ""
     else
-      s"\t\tcommon.RTTIManager.registerOccurs(\"${ntfn}\", \"${at.lookupAttribute.fullName}\", ${head(occursCheck).attrGlobalOccursInitIndex});\n";
+      s"\t\tcommon.RTTIManager.registerOccurs(\"${ntfn}\", \"${at.lookupAttribute.fullName}\", ${toString(at.lookupAttribute.dcl.isInherited)}, ${head(occursCheck).attrGlobalOccursInitIndex});\n";
 
   top.valueWeaving :=
     if at.lookupAttribute.dcl.isAnnotation then

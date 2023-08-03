@@ -681,10 +681,10 @@ public final class Reflection {
 	 */
 	public static NEither getInherited(final TypeRep expected, final DecoratedNode d, final String attr) {
 		RTTIManager.Nonterminalton<?> nt = d.getNode().getProdleton().getNonterminalton();
-		if (!nt.hasAttr(attr)) {
-			return new Pleft(new StringCatter("Attribute " + attr + " does not occur on " + nt.getName()));
+		if (!nt.hasInh(attr)) {
+			return new Pleft(new StringCatter("Inherited attribute " + attr + " does not occur on " + nt.getName()));
 		}
-		int i = nt.getOccursIndex(attr);
+		int i = nt.getInhOccursIndex(attr);
 		Object res;
 		try {
 			res = d.inherited(i);
@@ -714,15 +714,15 @@ public final class Reflection {
 		}
 		DecoratedNode d = ((Decorable)o).decorate();
 		RTTIManager.Nonterminalton<?> nt = d.getNode().getProdleton().getNonterminalton();
-		if (!nt.hasAttr(attr)) {
-			return new Pleft(new StringCatter("Attribute " + attr + " does not occur on " + nt.getName()));
+		if (!nt.hasSyn(attr)) {
+			return new Pleft(new StringCatter("Synthesized attribute " + attr + " does not occur on " + nt.getName()));
 		}
-		int i = nt.getOccursIndex(attr);
+		int i = nt.getSynOccursIndex(attr);
 		Object res;
 		try {
 			res = d.synthesized(i);
 		} catch (SilverException e) {
-			if (SilverException.getRootCause(e) instanceof MissingDefinitionException) {
+			if (SilverException.getRootCause(e) instanceof SilverError) {
 				return new Pleft(new StringCatter(SilverException.getRootCause(e).getMessage()));
 			} else {
 				throw e;
