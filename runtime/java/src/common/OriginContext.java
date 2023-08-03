@@ -46,7 +46,7 @@ public final class OriginContext {
 	}
 
 	public OriginContext(final OriginContext old, final NOriginNote[] newRules) {
-		this(old.variety, old.lhs, mergeRulesArr(old.rules, newRules));
+		this(old.variety, old.lhs, mergeRulesArr(newRules, old.rules));
 	}
 
 	private static NOriginNote[] mergeRulesArr(final NOriginNote[] a, final NOriginNote[] b) {
