@@ -688,6 +688,7 @@ public final class Reflection {
 		Object res;
 		try {
 			res = d.inherited(i);
+			traverseTerm(res);
 		} catch (Throwable t) {
 			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
 		}
@@ -716,6 +717,7 @@ public final class Reflection {
 		Object res;
 		try {
 			res = d.synthesized(i);
+			traverseTerm(res);
 		} catch (Throwable t) {
 			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
 		}
