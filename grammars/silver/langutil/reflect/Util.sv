@@ -10,10 +10,10 @@ Document ::= x::a
   return
     fromRight(
       alt(
-        getSynthesized(x, "silver:langutil:pp"),
+        bind(getSynthesized(x, "silver:langutil:pp"), tryForceTerm),
         alt(
           map(\ pps::[Document] -> pp"[${ppImplode(pp", ", pps)}]",
-            getSynthesized(x, "silver:langutil:pps")),
+            bind(getSynthesized(x, "silver:langutil:pps"), tryForceTerm)),
           map(text, getSynthesized(x, "silver:langutil:unparse")))),
       reflect(x).pp);
 }

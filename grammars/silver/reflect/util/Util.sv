@@ -67,3 +67,16 @@ runtimeTypeable a => Either<String a> ::= x::b  attr::String
 } foreign {
   "java" : return "common.Reflection.getSynthesized(%@0@%, %x%, %attr%.toString())";
 }
+
+@{-
+ - Force the evaluation of a term down to non-term leaves, catching any thrown errors.
+ - Use with caution!
+ -}
+function tryForceTerm
+Either<String a> ::= x::a
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "common.Reflection.tryForceTerm(%?x?%)";
+}
+

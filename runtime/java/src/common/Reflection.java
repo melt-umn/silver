@@ -688,13 +688,8 @@ public final class Reflection {
 		Object res;
 		try {
 			res = d.inherited(i);
-		} catch (SilverException e) {
-			Throwable rootCause = SilverException.getRootCause(e);
-			if (e instanceof SilverError) {
-				return new Pleft(new StringCatter(SilverException.getRootCause(e).getMessage()));
-			} else {
-				throw e;
-			}
+		} catch (Throwable t) {
+			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
 		}
 		if (!TypeRep.unify(expected, getType(res))) {
 			return new Pleft(new StringCatter("getInherited expected " + expected.toString() + ", but " + attr + " on " + nt.getName() + " gave type " + getType(res).toString()));
@@ -721,16 +716,42 @@ public final class Reflection {
 		Object res;
 		try {
 			res = d.synthesized(i);
-		} catch (SilverException e) {
-			if (SilverException.getRootCause(e) instanceof SilverError) {
-				return new Pleft(new StringCatter(SilverException.getRootCause(e).getMessage()));
-			} else {
-				throw e;
-			}
+		} catch (Throwable t) {
+			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
 		}
 		if (!TypeRep.unify(expected, getType(res))) {
 			return new Pleft(new StringCatter("getSynthesized expected " + expected.toString() + ", but " + attr + " on " + nt.getName() + " gave type " + getType(res).toString()));
 		}
 		return new Pright(res);
+	}
+
+	/**
+	 * Recursively force the evaluation of a term, catching any errors.
+	 * @param o  A Thunk or Node to force
+	 * @return An Either<String a> containing either an error message or the forced input.
+	 */
+	public static NEither tryForceTerm(Object o) {
+		try {
+			traverseTerm(o);
+		} catch (Throwable t) {
+			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
+		}
+		return new Pright(o);
+	}
+	private static void traverseTerm(Object o) {
+		if (o instanceof Thunk) {
+			o = Util.demand(o);
+		}
+		if (o instanceof Node) {
+			Node n = (Node)o;
+			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
+				traverseTerm(n.getChild(i));
+			}
+			String[] annotationNames = n.getAnnoNames();
+			for (int i = annotationNames.length - 1; i >= 0; i--) {
+				String name = annotationNames[i];
+				traverseTerm(n.getAnno(name));
+			}
+		}
 	}
 }
