@@ -7,13 +7,16 @@ grammar silver:langutil:reflect;
 function genericPP
 Document ::= x::a
 {
+  local typeNamePP::Document = text(fromMaybe("<OBJ>", reflectTypeName(x)));
   return
     fromRight(
       alt(
-        getSynthesized(x, "silver:langutil:pp"),
+        map(\ pp::Document -> pp"${typeNamePP} { ${pp} }",
+          getSynthesized(x, "silver:langutil:pp")),
         alt(
-          map(\ pps::[Document] -> pp"[${ppImplode(pp", ", pps)}]",
+          map(\ pps::[Document] -> pp"${typeNamePP} [ ${ppImplode(pp", ", pps)} ]",
             getSynthesized(x, "silver:langutil:pps")),
-          map(text, getSynthesized(x, "silver:langutil:unparse")))),
+          map(\ unparse::String -> pp"${typeNamePP} { ${text(unparse)} }",
+            getSynthesized(x, "silver:langutil:unparse")))),
       reflect(x).pp);
 }
