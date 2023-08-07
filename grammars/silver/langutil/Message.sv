@@ -145,15 +145,14 @@ String ::= m::Message
     -- we don't want to complain about messages raised directly in extension productions as "extension generated".
     if null(chain) then nothing() else originatesInExt(tail(chain));
   local originsSource::Maybe<Location> = getParsedOriginLocationFromChain(chain);
-  local fromExtMessage::String = 
-    "\n\n" ++
-    "\nINTERNAL ERROR: The following error message originated in extension-generated code." ++
+  local fromExtMessage::String =
+    "INTERNAL ERROR: The following error message originated in extension-generated code." ++
     "\nThis is probably indicative of a bug in the extension as opposed to your code." ++
     "\nThe offending extension was: '" ++ fromExt.fromJust ++ "' - please report this to it's developers." ++
-    "\nThe error was: " ++ m.noLocOutput ++ "." ++ -- We do not expect the location to be useful/correct
     (if originsSource.isJust
      then "\nOrigins reports the following source location: " ++ originsSource.fromJust.unparse ++ "."
      else "\nOrigins chain terminates without location.") ++
+    "\nThe error was: " ++ m.noLocOutput ++ "." ++ -- We do not expect the location to be useful/correct
     "\nOrigins chain follows:" ++
     "\n" ++ showOriginInfoChain(chain) ++
     "\n\n";
