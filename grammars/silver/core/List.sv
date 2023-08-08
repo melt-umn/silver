@@ -601,6 +601,19 @@ Boolean ::= l::[Boolean]
   return foldr(\ a::Boolean b::Boolean -> a || b, false, l);
 }
 
+-- Integer list operations
+function sum
+Integer ::= l::[Integer]
+{
+  return foldr(\ a::Integer b::Integer -> a + b, 0, l);
+}
+
+function product
+Integer ::= l::[Integer]
+{
+  return foldr(\ a::Integer b::Integer -> a * b, 1, l);
+}
+
 --------------------------------------------------------------------------------
 
 function nil
