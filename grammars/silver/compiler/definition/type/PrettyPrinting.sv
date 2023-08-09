@@ -137,9 +137,10 @@ top::Type ::= c::Type a::Type
          else "_") ++ " ::= " ++
          implode(" ", map(prettyTypeWith(_, top.boundVariables), take(params, top.argTypes))) ++
          (if length(top.argTypes) < params then replicate(params - length(top.argTypes), " _") else "") ++
+         (if null(namedParams) then "" else ";") ++
          concat(
-           zipWith(\ np::String t::Type -> s"; ${np}::${prettyTypeWith(t, top.boundVariables)}", namedParams, drop(params, top.argTypes)) ++
-           map(\ np::String -> s"; ${np}::_", drop(length(top.argTypes) - (params + length(namedParams)), namedParams))) ++ ")" ++
+           zipWith(\ np::String t::Type -> s" ${np}::${prettyTypeWith(t, top.boundVariables)}", namedParams, drop(params, top.argTypes)) ++
+           map(\ np::String -> s" ${np}::_", drop(length(top.argTypes) - params, namedParams))) ++ ")" ++
          if length(top.argTypes) <= params + length(namedParams) + 1 then ""
          else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), drop(params + length(namedParams) + 1, top.argTypes))) ++ ">"
     | _ -> prettyTypeWith(top.baseType, top.boundVariables) ++
