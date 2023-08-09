@@ -15,7 +15,7 @@ runtimeTypeable a => Maybe<a> ::= s::Strategy x::a
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;
 
-nonterminal Strategy with pp, term, result;
+tracked nonterminal Strategy with pp, term, result;
 
 -- Basic combinators
 abstract production id
