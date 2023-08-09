@@ -154,7 +154,7 @@ String ::= m::Message
      else "\nOrigins chain terminates without location.") ++
     "\nThe error was: " ++ m.noLocOutput ++ "." ++ -- We do not expect the location to be useful/correct
     "\nOrigins chain follows:" ++
-    "\n" ++ showOriginInfoChain(chain) ++
+    "\n" ++ showOriginInfoChain(m) ++
     "\n\n";
 
 

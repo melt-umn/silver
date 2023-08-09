@@ -137,11 +137,10 @@ top::OriginNote ::= extName::String
 function getParsedOriginLocationOrFallback
 Location ::= arg::a
 {
-  local chain::[OriginInfo] = getOriginInfoChain(arg);
   return
-    case getParsedOriginLocationFromChain(chain) of
+    case getParsedOriginLocationFromChain(getOriginInfoChain(arg)) of
     | just(l) -> l
-    | _ -> txtLoc("<getParsedOriginLocationOrFallback failed: " ++ showOriginInfoChain(chain) ++ ">")
+    | _ -> txtLoc("<getParsedOriginLocationOrFallback failed: " ++ showOriginInfoChain(arg) ++ ">")
     end;
 }
 
@@ -149,9 +148,9 @@ Location ::= arg::a
  - Render the origin chain for a term as a human-readable string.
  -}
 function showOriginInfoChain
-String ::= chain::[OriginInfo]
+String ::= arg::a
 {
-  return show(80, ppImplode(pp"${line()} -> ", map((.pp), chain)));
+  return show(80, ppImplode(pp"${line()} -> ", genericPP(arg) :: map((.pp), getOriginInfoChain(arg))));
 }
 
 @{-
