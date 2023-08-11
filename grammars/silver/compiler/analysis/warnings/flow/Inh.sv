@@ -137,12 +137,11 @@ function checkEqDeps
   | localInhVertex(fName, attrName) -> 
       if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
       || fName == "forward"
-      || isForwardProdAttr(fName, realEnv) && indexOf(".", attrName) == -1  -- Forward prod attribute, not inh on trans
       || localAttrViaReference(fName, attrName, realEnv)
       || !null(lookupLocalRefDecSite(fName, flowEnv))
       || case splitTransAttrInh(attrName) of
          | just((transAttr, _)) -> !null(lookupLocalTransRefDecSite(fName, transAttr, flowEnv))
-         | nothing() -> false
+         | nothing() -> isForwardProdAttr(fName, realEnv)  -- Inh on trans are not copied with forwarding
          end
       then []
       else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
