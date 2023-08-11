@@ -254,27 +254,29 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         if !isExportedBy(top.grammarName, [q.dcl.sourceGrammar, top.frame.sourceGrammar], top.compiledGrammars)
         then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there is at most one unique reference taken to this decoration site.
-        else (if length(lookupTransUniqueRefs(top.frame.fullName, sigName, q.attrDcl.fullName, top.flowEnv)) > 1
-        then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
-        -- Check that there isn't also a unique reference taken to e
-        else []) ++
-        if !null(lookupUniqueRefs(top.frame.fullName, sigName, top.flowEnv))
-        then [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse}.")]
-        else []
+        else
+         (if length(lookupTransUniqueRefs(top.frame.fullName, sigName, q.attrDcl.fullName, top.flowEnv)) > 1
+          then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+          -- Check that there isn't also a unique reference taken to e
+          else []) ++
+          if !null(lookupUniqueRefs(top.frame.fullName, sigName, top.flowEnv))
+          then [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse}.")]
+          else []
       | just(localVertexType(fName)) ->
         -- Check that we are exported by the occurs-on or the local.
         if !isExportedBy(top.grammarName, [q.dcl.sourceGrammar, head(getValueDcl(fName, top.env)).sourceGrammar], top.compiledGrammars)
         then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
         -- Check that there is at most one unique reference taken to this decoration site.
-        else (if length(lookupLocalTransUniqueRefs(fName, q.attrDcl.fullName, top.flowEnv)) > 1
-        then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
-        -- Check that there isn't also a unique reference taken to e
-        else []) ++
-        case lookupLocalUniqueRefs(fName, top.flowEnv) of
-        | u :: _ ->
-          [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse} at ${u.sourceGrammar}:${u.sourceLocation.unparse}.")]
-        | [] -> []
-        end
+        else
+         (if length(lookupLocalTransUniqueRefs(fName, q.attrDcl.fullName, top.flowEnv)) > 1
+          then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+          -- Check that there isn't also a unique reference taken to e
+          else []) ++
+          case lookupLocalUniqueRefs(fName, top.flowEnv) of
+          | u :: _ ->
+            [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse} at ${u.sourceGrammar}:${u.sourceLocation.unparse}.")]
+          | [] -> []
+          end
       | _ -> [err(top.location, s"Cannot take a unique reference (of type ${prettyType(finalTy)}) to ${top.unparse}")]
       end
     | _ -> []
