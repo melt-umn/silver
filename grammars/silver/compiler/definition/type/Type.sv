@@ -319,7 +319,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
 
 {--
  - Function type. (Whether production or function.)
- - Note that this is the *unapplied* type constructor for a nonterminal type,
+ - Note that this is the *unapplied* type constructor for a function type,
  - and argument types are provided before the result type;
  - e.g. `(Integer ::= String Boolean)` would be represented as
  - `apType(apType(apType(functionType(3, []), stringType()), booleanType()), integerType())`.
