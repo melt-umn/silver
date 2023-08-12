@@ -67,6 +67,7 @@ top::QName ::= msg::[Message]
   top.lookupAttribute = decorate errorLookup(msg) with {};
 }
 
+
 nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
 
 synthesized attribute lookupValue :: Decorated QNameLookup<ValueDclInfo> occurs on QName;

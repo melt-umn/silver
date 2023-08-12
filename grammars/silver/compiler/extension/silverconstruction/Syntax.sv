@@ -7,6 +7,7 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:modification:list;
 imports silver:compiler:extension:patternmatching;
+imports silver:compiler:extension:convenience;
 
 concrete production quoteAGDcl
 top::Expr ::= 'Silver_AGDcl' '{' ast::AGDcl '}'
@@ -115,6 +116,15 @@ top::QName ::= '$QName' '{' e::Expr '}'
     qNameError(
       [err(top.location, "$QName should not occur outside of quoted Silver literal")],
       location=top.location);
+}
+
+concrete production antiquoteQNames
+top::QNames ::= '$QNames' '{' e::Expr '}'
+{
+  top.unparse = s"$$QNames{${e.unparse}}";
+  forwards to
+    qNamesError(
+      [err(e.location, "$QNames should not occur outside of quoted Silver literal")]);
 }
 
 concrete production antiquoteQNameAttrOccur
