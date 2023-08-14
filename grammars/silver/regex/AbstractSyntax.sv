@@ -10,7 +10,7 @@ synthesized attribute seqPP::Document;
 synthesized attribute basePP::Document;
 implicit synthesized attribute classPP::Maybe<Document>;
 
-nonterminal Regex with pp, altPP, seqPP, basePP, classPP, compareTo, isEqual;
+tracked nonterminal Regex with pp, altPP, seqPP, basePP, classPP, compareTo, isEqual;
 
 propagate isEqual, compareTo on Regex;
 
