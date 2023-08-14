@@ -451,8 +451,8 @@ public final class Util {
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
         return new PterminalDescriptor(t.lexeme,
             convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
-            new StringCatter(t.getName()),
-            Terminal.extractLocation(t));
+            Terminal.extractLocation(t),
+            new StringCatter(t.getName()));
 	}
 
 	/**
