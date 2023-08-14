@@ -53,3 +53,11 @@ equalityTest(dItems(dataTerm), [1, 2, 3, 4, 5], [Integer], silver_tests);
 wrongCode "Inherited attributes may not occur on data nonterminals." {
   inherited attribute dataInh::Integer occurs on FooData;
 }
+
+data DataDcl1
+  = aDD1 Integer x::FooData
+  | bDD1 BarData<FooData Boolean>
+  | cDD1 x::BazNonData
+  with dId;
+
+global ddThing::DataDcl1 = aDD1(42, cFD(bND()), dId=37);
