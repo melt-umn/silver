@@ -36,8 +36,8 @@ inherited attribute ntTypeArgs::BracketedOptTypeExprs;
 
 terminal DataConstructorOr_t '|' lexer classes {SPECOP};
 
-nonterminal DataConstructors with location, unparse, ctorDcls, ntName, ntTypeArgs;
-propagate ntName, ntTypeArgs on DataConstructors;
+nonterminal DataConstructors with location, unparse, grammarName, config, ctorDcls, ntName, ntTypeArgs;
+propagate grammarName, config, ntName, ntTypeArgs on DataConstructors;
 
 concrete production consDataConstructor
 top::DataConstructors ::= h::DataConstructor '|' t::DataConstructors
@@ -60,7 +60,8 @@ top::DataConstructors ::=
   top.ctorDcls = emptyAGDcl(location=top.location);
 }
 
-nonterminal DataConstructor with location, unparse, ctorDcls, ntName, ntTypeArgs;
+nonterminal DataConstructor with location, unparse, grammarName, config, ctorDcls, ntName, ntTypeArgs;
+propagate grammarName, config on DataConstructor;
 
 concrete production dataConstructor
 top::DataConstructor ::= id::Name rhs::ProductionRHS
