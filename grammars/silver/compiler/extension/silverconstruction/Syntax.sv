@@ -96,6 +96,12 @@ top::Pattern ::= '$Pattern' '{' e::Expr '}'
       location=top.location);
 }
 
+concrete production antiquoteProductionRHS
+top::ProductionRHS ::= '$ProductionRHS' '{' e::Expr '}'
+{
+  top.unparse = s"$$ProductionRHS{${e.unparse}}";
+  forwards to productionRHSNil(location=top.location);
+}
 
 concrete production antiquoteAspectRHS
 top::AspectRHS ::= '$AspectRHS' '{' e::Expr '}'
