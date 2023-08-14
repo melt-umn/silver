@@ -50,3 +50,9 @@ Semiring a => a ::= n::Integer
     else
       add(add(fromN2, one), fromN2);
 }
+
+@{- Compute the sum of a list. -}
+global sum :: Semiring a => (a ::= [a]) = foldr(add, zero, _);
+
+@{- Compute the product of a list. -}
+global product :: Semiring a => (a ::= [a]) = foldr(mul, one, _);

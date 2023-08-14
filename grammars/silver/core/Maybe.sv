@@ -3,22 +3,21 @@ grammar silver:core;
 synthesized attribute fromJust<a> :: a;
 synthesized attribute isJust :: Boolean;
 
-data nonterminal Maybe<a> with fromJust<a>, isJust;
+data Maybe<a>
+  = just a
+  | nothing
+  with fromJust<a>, isJust;
 derive Eq, Ord on Maybe;
 
-abstract production just
-top::Maybe<a> ::= v::a
-{
-  top.fromJust = v;
-  top.isJust = true;
-}
+aspect fromJust on Maybe<a> of
+| just(v) -> v
+| nothing() -> error("fromJust accessed on a Maybe that was actually nothing!")
+end;
 
-abstract production nothing
-top::Maybe<a> ::=
-{
-  top.fromJust = error("fromJust accessed on a Maybe that was actually nothing!");
-  top.isJust = false;
-}
+aspect isJust on Maybe<a> of
+| just(_) -> true
+| nothing() -> false
+end;
 
 instance Functor Maybe {
   map = \ f::(b ::= a) m::Maybe<a> ->

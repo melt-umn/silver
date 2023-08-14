@@ -65,6 +65,13 @@ instance Bind IO {
 
 instance Monad IO {}
 
+instance MonadFail IO {
+  fail = \ msg::String -> do {
+    eprintln(msg);
+    exit(1);
+  };
+}
+
 instance MonadFix IO {
   mfix = fixIO;
 }
