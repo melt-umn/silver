@@ -99,6 +99,10 @@ terminal CtxArrow_t    '=>'  lexer classes {SPECOP};
 -- Unused infix operators: ~ ` # % ^ & | \
 -- $ is used by convenience.
 
+disambiguate IdLower_t, Data_kwd { pluck Data_kwd; }
+disambiguate IdLower_t, Closed_kwd { pluck Closed_kwd; }
+disambiguate IdLower_t, Tracked_kwd { pluck Tracked_kwd; }
+
  -- this is a very careful regex. beware:
 --ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT};
 ignore terminal BlockComments /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT}; -- Allows (one level of) nested comments.  
