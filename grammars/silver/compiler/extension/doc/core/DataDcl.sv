@@ -28,6 +28,25 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
   ctors.downDocConfig = top.downDocConfig;
 }
 
+concrete production documentedConsDataConstructor
+top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataConstructors
+{
+  forwards to
+    case t of
+    | consDataConstructor(h1, _, t1) ->
+      consDataConstructor(
+        h, '|',
+        consDataConstructor(documentedConstructor(comment, h1, location=h1.location), '|', t1, location=t.location),
+        location=top.location)
+    | oneDataConstructor(h1) ->
+      consDataConstructor(
+        h, '|',
+        oneDataConstructor(documentedConstructor(comment, h1, location=h1.location), location=t.location),
+        location=top.location)
+    | nilDataConstructor() -> consDataConstructor(h, '|', t, location=top.location)
+    end;
+}
+
 concrete production documentedConstructor
 top::DataConstructor ::= comment::DocComment_t item::DataConstructor
 {
