@@ -81,7 +81,7 @@ aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   top.docForName = id.name;
-  top.docUnparse = s"`nonterminal ${id.name}${tl.unparse}`";
+  top.docUnparse = s"`${quals.docUnparse}nonterminal ${id.name}${tl.unparse}`";
   top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
@@ -351,3 +351,11 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
   top.docUnparse = "";
   top.docs := [];
 }
+
+attribute docUnparse occurs on NTDeclQualifiers;
+aspect docUnparse on NTDeclQualifiers of
+| closedNTQualifier(_, rest) -> "closed " ++ rest.docUnparse
+| dataNTQualifier(_, rest) -> "data " ++ rest.docUnparse
+| trackedNTQualifier(_, rest) -> rest.docUnparse
+| nilNTQualifier() -> ""
+end;
