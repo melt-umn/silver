@@ -27,6 +27,7 @@ attribute lazyTranslation occurs on Exprs;
 --   to put values in a `new Object[]{...}`
 
 synthesized attribute invokeTranslation :: String occurs on Expr;
+synthesized attribute invokeLazyTranslation :: String occurs on Expr;
 inherited attribute invokeIsUnique :: Boolean occurs on Expr;
 inherited attribute invokeArgs :: Decorated AppExprs occurs on Expr;
 inherited attribute invokeNamedArgs :: Decorated AnnoAppExprs occurs on Expr;
@@ -45,6 +46,7 @@ top::Expr ::=
   top.invokeTranslation =
     -- dynamic method invocation
     s"${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)})";
+  top.invokeLazyTranslation = wrapThunk(top.invokeTranslation, top.frame.lazyApplication);
   top.generalizedTranslation = top.translation;
 }
 
@@ -167,6 +169,12 @@ top::Expr ::= q::Decorated! QName
       toString(top.invokeIsUnique) ::
       contexts.transContexts ++
       map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})";
+  -- Safe to be eager here, since the only work being done is constructing a term.
+  -- This means that large nested terms will be built eagerly, but we rarely define a term without
+  -- demanding it, so overall this is a performance win.
+  -- Note that this shouldn't create any cycles, since we still use lazyTranslation from the children;
+  -- any function calls/references inside some complex nested term will still be done lazily.
+  top.invokeLazyTranslation = top.invokeTranslation;
 }
 
 aspect production functionReference
@@ -236,7 +244,7 @@ aspect production functionInvocation
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  top.lazyTranslation = e.invokeLazyTranslation;
 
   e.invokeIsUnique = !null(top.uniqueRefs);
   e.invokeArgs = es;
