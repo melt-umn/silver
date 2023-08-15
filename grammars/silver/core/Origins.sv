@@ -4,158 +4,98 @@ grammar silver:core;
 --  Don't change their names, grammar locations, or parameters unless you know what your doing
 --  (and have made the appropriate runtime and compiler changes!)
 
-data nonterminal OriginInfo with originNotes, originType;
-data nonterminal OriginInfoType;
-closed data nonterminal OriginNote;
-
-synthesized attribute notepp :: Maybe<String> occurs on OriginNote;
-
-synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
-annotation originNotes :: [OriginNote];
-annotation originType :: OriginInfoType;
-
-synthesized attribute isBogus :: Boolean occurs on OriginInfoType;
-
-@@{- ## Origin info types
+@{- Origin info types
    -
    - Single instances of the following are constructed once in OriginsUtil.java in the runtime and used 
    -  to indicate when the origin information was computed.
    -}
-
+data OriginInfoType =
 @{- Information was computed at the site of invoking a constructor (this is "normal") -}
-abstract production setAtConstructionOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
-
+  setAtConstructionOIT
 @{- Result of calling new(x) on a tracked nonterminal (including children of x that were also new-ed) -}
-abstract production setAtNewOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
-
+| setAtNewOIT
 @{-
   - Result of forwarding to a nonterminal. This is a little weird because there's an extra indirection.
   - The attached origin info has an origin pointing to the value that was computed for the production
   - to forward to. At forwarding time (in evalForward) it's copied and has an origin attached of this
   - type. This is so that it's possible to tell something was forwarded to.
   -}
-abstract production setAtForwardingOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
-
+| setAtForwardingOIT
 @{- Result of doing foo.bar (this is "normal") -}
-abstract production setAtAccessOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
-
+| setAtAccessOIT
 @{- The origin was set when constructing a concrete production in the parser (will be a parsedOriginInfo) -}
-abstract production setFromParserOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
-
+| setFromParserOIT
 @{- The origin was set in something constructed in a parser action block -}
-abstract production setFromParserActionOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = true;
-}
-
+| setFromParserActionOIT
 @{-
   - This is a catchall for stuff constructed in java (really only used in the SilverComparator and in the XML lib)
   - where the java library dosen't keep track of origins info meaningfully
   -}
-abstract production setFromFFIOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = true;
-}
-
+| setFromFFIOIT
 @{- This originates from something via a call to `reflect` -}
-abstract production setFromReflectionOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = true;
-}
-
+| setFromReflectionOIT
 @{- This originates from it's reflective representation via a call to `reify` -}
-abstract production setFromReificationOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = true;
-}
-
+| setFromReificationOIT
 @{-
   - This was constructed in `main` or in a function called from `main` without
   - passing through a context with a meaningful nonterminal to use instead
   -}
-abstract production setFromEntryOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
-
+| setFromEntryOIT
 @{- This is a global -}
-abstract production setInGlobalOIT
-top::OriginInfoType ::=
-{
-  top.isBogus = false;
-}
+| setInGlobalOIT
+;
+
+synthesized attribute isBogus :: Boolean occurs on OriginInfoType;
+aspect isBogus on OriginInfoType of
+| setFromParserActionOIT() -> true
+| setFromFFIOIT() -> true
+| setFromReflectionOIT() -> true
+| _ -> false
+end;
 
 
-@@{- ## OriginInfo represent the origin information contained in nodes/values -}
-
+@{- OriginInfo represent the origin information contained in nodes/values.
+  - originOriginInfo and originAndRedexOriginInfo are the same modulo if a redex is set or not
+  -  `origin` is the node that this node originated from, `originNotes` are
+  -  notes set on the control-flow path to where the origin was set.
+  -  `redex` is the node that catalyzed the movement of this node to where it
+  -  is now (i.e. where a `foo.bar` happaned that 'moved' the `bar` in the new
+  -  tree. `redexNotes` are similarly the notes set on the control-flow path to
+  -  where the tree motion that set the redex occurred.
+  -  `newlyConstructed` is `er` from the paper, and represents if the node
+  -  is not the result of a basically no-op transformation.
+  -}
+data OriginInfo =
 @{- 'catchall' for origins that don't encode other info -}
-abstract production otherOriginInfo
-top::OriginInfo ::= source::String
-{
-  top.isNewlyConstructed = true;
-}
-
+  otherOriginInfo source::String
 @{- The production originated from a sequence of tokens at `source` in Copper -}
-abstract production parsedOriginInfo
-top::OriginInfo ::= source::Location
-{
-  top.isNewlyConstructed = true;
-}
-
-@@{- The following two are the same modulo if a redex is set or not
-   -  `origin` is the node that this node originated from, `originNotes` are
-   -  notes set on the control-flow path to where the origin was set.
-   -  `redex` is the node that catalyzed the movement of this node to where it
-   -  is now (i.e. where a `foo.bar` happaned that 'moved' the `bar` in the new
-   -  tree. `redexNotes` are similarly the notes set on the control-flow path to
-   -  where the tree motion that set the redex occurred.
-   -  `newlyConstructed` is `er` from the paper, and represents if the node
-   -  is not the result of a basically no-op transformation.
-   -}
+| parsedOriginInfo source::Location
 
 @{- See above -}
-abstract production originOriginInfo
-top::OriginInfo ::= origin :: a
-                    newlyConstructed :: Boolean
-{
-  top.isNewlyConstructed = newlyConstructed;
-}
-
+| originOriginInfo origin::a newlyConstructed::Boolean
 @{- See above -}
-abstract production originAndRedexOriginInfo
-top::OriginInfo ::= origin :: a
-                    redex :: b
-                    redexNotes :: [OriginNote]
-                    newlyConstructed :: Boolean
-{
-  top.isNewlyConstructed = newlyConstructed;
-}
+| originAndRedexOriginInfo origin::a redex::b redexNotes::[OriginNote] newlyConstructed::Boolean
+  with originNotes, originType;
 
+annotation originNotes :: [OriginNote];
+annotation originType :: OriginInfoType;
+
+synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
+aspect isNewlyConstructed on OriginInfo of
+| otherOriginInfo(_) -> true
+| parsedOriginInfo(_) -> true
+| originOriginInfo(_, nc) -> nc
+| originAndRedexOriginInfo(_, _, _, nc) -> nc
+end;
+
+@{-
+ - OriginNotes are various pieces of information associated with the origin of a term.
+ - A notepp can optionally be supplied, if the note should be displayed in stack traces
+ - and other diagnostic messages.
+ -}
+closed data nonterminal OriginNote with notepp;
+
+synthesized attribute notepp :: Maybe<String>;
 
 aspect default production
 top::OriginNote ::=
@@ -197,9 +137,7 @@ top::OriginNote ::= loc::Location
   -}
 abstract production ruleLocNote
 top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt::String sourceLocation::Location
-{
-  
-}
+{}
 
 
 @{-
