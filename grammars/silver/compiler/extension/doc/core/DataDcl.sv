@@ -11,7 +11,7 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
 {
   propagate grammarName, config, docEnv;
   top.docForName = id.name;
-  top.docUnparse = s"`nonterminal ${id.unparse}`";
+  top.docUnparse = s"`data nonterminal ${id.unparse}`";
   top.docDcls := (id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName)) :: ctors.docDcls;
   top.docs := mkUndocumentedItem(top.docForName, top) :: ctors.docs;
   ctors.downDocConfig = top.downDocConfig;
@@ -22,10 +22,29 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
 {
   propagate grammarName, config, docEnv;
   top.docForName = id.name;
-  top.docUnparse = s"`nonterminal ${id.unparse}`";
+  top.docUnparse = s"`data nonterminal ${id.unparse}`";
   top.docDcls := (id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName)) :: ctors.docDcls;
   top.docs := mkUndocumentedItem(top.docForName, top) :: ctors.docs;
   ctors.downDocConfig = top.downDocConfig;
+}
+
+concrete production documentedConsDataConstructor
+top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataConstructors
+{
+  forwards to
+    case t of
+    | consDataConstructor(h1, _, t1) ->
+      consDataConstructor(
+        h, '|',
+        consDataConstructor(documentedConstructor(comment, h1, location=h1.location), '|', t1, location=t.location),
+        location=top.location)
+    | oneDataConstructor(h1) ->
+      consDataConstructor(
+        h, '|',
+        oneDataConstructor(documentedConstructor(comment, h1, location=h1.location), location=t.location),
+        location=top.location)
+    | nilDataConstructor() -> consDataConstructor(h, '|', t, location=top.location)
+    end;
 }
 
 concrete production documentedConstructor
@@ -34,7 +53,7 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
   local parsed::DclComment = parseComment(top.config, comment);
 
   parsed.paramNames = nothing();
-  parsed.isForWhat = "production";
+  parsed.isForWhat = "abstract production";
   parsed.downDocConfig = top.downDocConfig;
   parsed.docEnv = top.docEnv;
   parsed.offsetLocation = comment.location;
@@ -60,7 +79,7 @@ aspect production dataConstructor
 top::DataConstructor ::= id::Name rhs::ProductionRHS
 {
   top.docForName = id.name;
-  top.docUnparse = "`" ++ id.unparse ++ " " ++ rhs.unparse ++ "`";
+  top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ top.ntName ++ top.ntTypeArgs.unparse ++ " ::= " ++ rhs.unparse ++ "`)";
   top.docDcls := [];
   top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.grammarName, top.location)];
   top.upDocConfig := [];
