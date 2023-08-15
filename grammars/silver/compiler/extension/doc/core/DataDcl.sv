@@ -53,7 +53,7 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
   local parsed::DclComment = parseComment(top.config, comment);
 
   parsed.paramNames = nothing();
-  parsed.isForWhat = "production";
+  parsed.isForWhat = "constructor";
   parsed.downDocConfig = top.downDocConfig;
   parsed.docEnv = top.docEnv;
   parsed.offsetLocation = comment.location;
@@ -79,7 +79,7 @@ aspect production dataConstructor
 top::DataConstructor ::= id::Name rhs::ProductionRHS
 {
   top.docForName = id.name;
-  top.docUnparse = "`" ++ id.unparse ++ " " ++ rhs.unparse ++ "`";
+  top.docUnparse = "`constructor " ++ id.name ++ "` &nbsp; (`" ++ top.ntName ++ top.ntTypeArgs.unparse ++ " ::= " ++ rhs.unparse ++ "`)";
   top.docDcls := [];
   top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.grammarName, top.location)];
   top.upDocConfig := [];
