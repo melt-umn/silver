@@ -315,7 +315,7 @@ synthesized attribute lhsUniqueRefs::[UniqueRefSite] occurs on DefLHS;
 -- Minimum flow deps of this inherited attribute on any unique references to this decoration site
 synthesized attribute refDecSiteInhDeps::Maybe<[FlowVertex]> occurs on DefLHS;
 
-flowtype DefLHS = lhsUniqueRefs {frame, env, flowEnv}, refDecSiteInhDeps {frame, env, flowEnv, defLHSattr};
+flowtype DefLHS = lhsUniqueRefs {grammarName, config, frame, env, flowEnv}, refDecSiteInhDeps {grammarName, config, frame, env, flowEnv, defLHSattr};
 
 aspect default production
 top::DefLHS ::=
