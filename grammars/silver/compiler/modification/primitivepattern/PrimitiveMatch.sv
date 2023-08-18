@@ -5,7 +5,9 @@ imports silver:util:treeset as ts;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:flow:env;
 
+imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:analysis:uniqueness;
 
 import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;

@@ -135,6 +135,10 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
 
   production attribute extraFileErrors::[(String, [Message])] with ++;
   extraFileErrors := [];
+
+  -- Seed flow deps with {compiledGrammars, config}
+  extraFileErrors <- if false then error(hackUnparse((top.compiledGrammars, top.config))) else [];
+
   top.allFileErrors = map(
     \ fe::(String, [Message]) -> case fe of (fileName, fileErrors) ->
       (fileName, fileErrors ++ concat(lookupAll(fileName, extraFileErrors)))

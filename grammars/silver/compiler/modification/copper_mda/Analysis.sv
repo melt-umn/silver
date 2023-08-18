@@ -4,6 +4,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:concrete_syntax;
 imports silver:compiler:definition:concrete_syntax:ast;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:modification:copper;
 
 import silver:compiler:driver:util only computeDependencies, RootSpec;

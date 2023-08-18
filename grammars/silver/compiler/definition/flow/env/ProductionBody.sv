@@ -175,9 +175,9 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 {
   local vertex :: FlowVertex =
     case dl of
-    | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | localDefLHS(q) -> localVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | forwardDefLHS(q) -> forwardVertex(attr.attrDcl.fullName)
+    | childDefLHS(q) -> rhsInhVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
+    | localDefLHS(q) -> localInhVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
+    | forwardDefLHS(q) -> forwardInhVertex(attr.attrDcl.fullName)
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
   top.flowDefs <-
@@ -229,7 +229,6 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
-  -- TODO: possible bug? this would include ":local" in the gram wouldn't it?
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);
@@ -241,7 +240,8 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   -- If we do, we'll have to come back here to add 'location' info anyway,
   -- so if we do that, uhhh... fix this! Because you're here! Reading this!
 
-  top.flowDefs <-
+  -- TODO: This shouldn't be a forwarding prod!
+  top.flowDefs := e.flowDefs ++
     if mayAffectFlowType
     then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];

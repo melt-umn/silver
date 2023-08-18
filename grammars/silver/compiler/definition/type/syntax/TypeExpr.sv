@@ -4,6 +4,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
+imports silver:compiler:definition:flow:env;
 
 nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases, onNt, errorsInhSet, typerepInhSet;
 nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
@@ -11,6 +12,7 @@ nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEn
 nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases;
 nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
 nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
+nonterminal NamedTypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, namedTypes, lexicalTypeVariables, lexicalTyVarKinds, errorsKindStar, freeVariables, mentionedAliases;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -57,13 +59,13 @@ flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
 flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
-propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr, uniqueRefTypeExpr;
+propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs excluding refTypeExpr, uniqueRefTypeExpr;
 propagate config, grammarName, env, flowEnv, lexicalTypeVariables, lexicalTyVarKinds
-  on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+  on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
-propagate errorsKindStar on TypeExprs;
-propagate mentionedAliases on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errorsKindStar on TypeExprs, NamedTypeExprs;
+propagate mentionedAliases on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs;
 
 function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
@@ -274,7 +276,7 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
 {
   top.unparse = ty.unparse ++ tl.unparse;
 
-  top.typerep = appTypes(ty.typerep, tl.types);
+  top.typerep = if null(kindErrors) then appTypes(ty.typerep, tl.types) else errorType();
 
   top.mentionedAliases <- ty.mentionedAliases;
 
@@ -282,12 +284,13 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
 
   local tlCount::Integer = length(tl.types) + tl.missingCount;
   local tlKinds::[Kind] = map((.kindrep), tl.types);
-  top.errors <-
+  local kindErrors::[Message] =
     if tlCount != length(ty.typerep.kindrep.argKinds)
     then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
     else if take(length(tlKinds), ty.typerep.kindrep.argKinds) != tlKinds
     then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but argument(s) have kind(s) " ++ implode(", ", map(prettyKind, tlKinds)))]
     else [];
+  top.errors <- kindErrors;
 
   tl.appArgKinds =
     case ty of
@@ -433,6 +436,42 @@ top::Signature ::= l::SignatureLHS '::=' list::TypeExprs
     else [];
 }
 
+concrete production signatureOnlyNamed
+top::Signature ::= l::SignatureLHS '::=' ';' namedList::NamedTypeExprs
+{
+  top.unparse = l.unparse ++ " ::= ; " ++ namedList.unparse;
+
+  local names::[String] = sort(map(fst, namedList.namedTypes));
+  top.typerep =
+    appTypes(
+      functionType(0, names),
+      map((.fromJust), map(lookup(_, namedList.namedTypes), names)) ++
+      case l.maybeType of just(t) -> [t] | nothing() -> [] end);
+
+  top.errors <- namedList.errorsKindStar;
+}
+
+concrete production signatureNamed
+top::Signature ::= l::SignatureLHS '::=' list::TypeExprs ';' namedList::NamedTypeExprs
+{
+  top.unparse = l.unparse ++ " ::= " ++ list.unparse ++ "; " ++ namedList.unparse;
+
+  local names::[String] = sort(map(fst, namedList.namedTypes));
+  top.typerep =
+    appTypes(
+      functionType(length(list.types) + list.missingCount, names),
+      list.types ++
+      map((.fromJust), map(lookup(_, namedList.namedTypes), names)) ++
+      case l.maybeType of just(t) -> [t] | nothing() -> [] end);
+  
+  top.errors <- list.errorsKindStar;
+  top.errors <- namedList.errorsKindStar;
+  top.errors <-
+    if list.missingCount > 0
+    then [err($1.location, "Named parameters cannot be present when argument types are missing")]
+    else [];
+}
+
 concrete production presentSignatureLhs
 top::SignatureLHS ::= t::TypeExpr
 {
@@ -561,4 +600,29 @@ top::TypeExprs ::= '_' list::TypeExprs
     if length(list.types) > 0
     then [err($1.location, "Missing type argument cannot be followed by a provided argument")]
     else [];
+}
+
+-- NamedTypeExprs -------------------------------------------------------------------
+
+abstract production namedTypeListNone
+top::NamedTypeExprs ::=
+{
+  top.unparse = "";
+  top.namedTypes = [];
+  top.freeVariables = [];
+}
+
+concrete production namedTypeListSingle
+top::NamedTypeExprs ::= n::Name '::' t::TypeExpr
+{
+  top.unparse = t.unparse;
+  forwards to namedTypeListCons(n, $2, t, namedTypeListNone(location=top.location), location=top.location);
+}
+
+concrete production namedTypeListCons
+top::NamedTypeExprs ::= n::Name '::' t::TypeExpr list::NamedTypeExprs
+{
+  top.unparse = n.unparse ++ "::" ++ t.unparse ++ " " ++ list.unparse;
+  top.namedTypes = (n.name, t.typerep) :: list.namedTypes;
+  top.freeVariables = t.freeVariables ++ list.freeVariables;
 }
