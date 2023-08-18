@@ -39,7 +39,10 @@ DEVELOP=$(git ls-remote https://github.com/melt-umn/silver develop | cut -f1)
 # Look for jars in the current commit and its parents.
 # First, check that we are inside a git repo.
 if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/null; then
-  for commit in $(git rev-list HEAD "^$DEVELOP"); do
+  # Walk the history in topological order, fully exploring each chain of commits
+  # before newer commits from other merged chain.
+  for commit in $(git rev-list --topo-order HEAD "^$DEVELOP"); do
+    echo "Looking for jars from past commit $commit"
     if has_jars "$commit"; then
       echo "Found jars from past commit"
       rev=$commit
@@ -48,6 +51,7 @@ if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/nul
   done
 fi
 
+# Figure out how to obtain the jars from the revision we chose.
 if [[ $* != *--unstable* && (-z $rev || $rev == "$DEVELOP") ]]; then
   echo "Fetching latest stable jars..."
   LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
@@ -72,13 +76,16 @@ else
   FILES="CopperCompiler.jar commonmark-0.17.1.jar silver.compiler.composed.Default.jar SilverRuntime.jar"
 fi
 
+
 mkdir -p jars
 
 if [[ -n "$LOCAL_STORE" && -d $LOCAL_STORE ]]; then
+  # We have downloaded the jars before, just go copy them.
   for file in $FILES; do
       cp "$LOCAL_STORE/$file" jars/
   done
 else
+  # Download the jars.
   # There's probably a better way to do this!
   # Using -r causes lots of pointless downloads of variations of the index.html
   # even if -A.jar is used they still get downloaded...
@@ -101,4 +108,3 @@ else
       cp "$JARS_BAK/$file" jars/
   done
 fi
-

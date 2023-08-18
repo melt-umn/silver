@@ -48,6 +48,7 @@ production deriveDcl
 top::AGDcl ::= tc::QName nt::QName
 {
   top.unparse = s"derive ${tc.unparse} on ${nt.unparse};";
+  top.moduleNames := [];
   propagate env;
 
   local localErrors::[Message] =
@@ -77,6 +78,7 @@ top::AGDcl ::= nt::Decorated! QName
 {
   undecorates to deriveDcl(qName(top.location, "silver:core:Eq"), nt, location=top.location);
   top.unparse = s"derive silver:core:Eq on ${nt.unparse};";
+  top.moduleNames := [];
 
   local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
   local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
@@ -203,6 +205,7 @@ top::AGDcl ::= nt::Decorated! QName
 {
   undecorates to deriveDcl(qName(top.location, "silver:core:Ord"), nt, location=top.location);
   top.unparse = s"derive silver:core:Ord on ${nt.unparse};";
+  top.moduleNames := [];
 
   local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
   local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
