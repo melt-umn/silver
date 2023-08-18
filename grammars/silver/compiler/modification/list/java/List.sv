@@ -19,3 +19,14 @@ top::Expr ::= '[' ']'
   top.translation = "(common.ConsCell)common.ConsCell.nil";
   top.lazyTranslation = top.translation;
 }
+
+aspect production consListOp
+top::Expr ::= h::Expr '::' t::Expr
+{
+  -- Also avoid an extra function call for `::` (remember, this is used in list literals)
+  top.translation = s"new common.ConsCell(${h.lazyTranslation}, ${t.lazyTranslation})";
+
+  -- Avoid wrapping the ConsCell constructor in an extra thunk.
+  -- This is analagous to the trick with invokeLazyTranslation on productionReference.
+  top.lazyTranslation = top.translation;
+}

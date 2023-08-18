@@ -404,7 +404,7 @@ String ::= i::Integer s::[NamedSignatureElement]
 function makeChildUnify
 String ::= fn::String n::NamedSignatureElement
 {
-  return
+  return if null(n.typerep.freeVariables) then "" else
 s"""try {
 			if (!common.TypeRep.unify(${transFreshTypeRep(n.typerep)}, common.Reflection.getType(getChild_${n.elementName}()))) {
 				throw new common.exceptions.SilverInternalError("Unification failed.");

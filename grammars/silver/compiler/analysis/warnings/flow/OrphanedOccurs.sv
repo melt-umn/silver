@@ -25,12 +25,6 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  local isClosedNt :: Boolean =
-    case nt.lookupType.dcls of
-    | ntDcl(_, _, closed, _) :: _ -> closed
-    | _ -> false -- default, if the lookup fails
-    end;
-
   top.errors <-
     if nt.lookupType.found && at.lookupAttribute.found
     && top.config.warnOrphaned
@@ -40,7 +34,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     else [];
   
   top.errors <-
-    if !nt.lookupType.found || !at.lookupAttribute.found || !isClosedNt || !at.lookupAttribute.dcl.isSynthesized then []
+    if !nt.lookupType.found || !at.lookupAttribute.found || !nt.lookupType.dcl.isClosed || !at.lookupAttribute.dcl.isSynthesized then []
     -- For closed nt, either we're exported by only the nt, OR there MUST be a default!
     else if !isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars)
          && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv))
