@@ -493,7 +493,7 @@ top::DefLHS ::= q::QName attr::QNameAttrOccur
   attr.config = top.config;
   attr.attrFor = q.lookupValue.typeScheme.monoType;
   
-  forwards to (if null(q.lookupValue.dcls) || !attr.attrDcl.isTranslation 
+  forwards to (if null(q.lookupValue.dcls) || !attr.found || !attr.attrDcl.isTranslation 
                then errorTransAttrDefLHS(_, _, location=_)
                else q.lookupValue.dcl.transDefLHSDispatcher)(q, attr, top.location);
 }
