@@ -78,6 +78,14 @@ top::TypeExpr ::= '$TypeExpr' '{' e::Expr '}'
       location=top.location);
 }
 
+concrete production antiquoteConstraintList
+top::ConstraintList ::= '$ConstraintList' '{' e::Expr '}'
+{
+  top.unparse = s"$$ConstraintList{${e.unparse}}";
+  -- [err(top.location, "$ConstraintList should not occur outside of quoted Silver Literal.")]
+  forwards to nilConstraint(location=top.location);
+}
+
 concrete production antiquotePattern
 top::Pattern ::= '$Pattern' '{' e::Expr '}'
 {

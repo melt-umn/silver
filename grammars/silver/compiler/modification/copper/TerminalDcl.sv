@@ -91,7 +91,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
 
   production fName::String = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
 
-  top.precTermList <- [fName];
+  top.precTermList <- if h.lookupType.found || h.lookupLexerClass.found then [fName] else [];
   
   -- Since we're looking it up in two ways, do the errors ourselves
   top.errors <- if null(h.lookupType.dcls) && null(h.lookupLexerClass.dcls)
@@ -176,7 +176,7 @@ top::LexerClassList ::= n::QName t::LexerClassList
 
   top.errors <- n.lookupLexerClass.errors;
 
-  top.lexerClasses <- [n.lookupLexerClass.dcl.fullName];
+  top.lexerClasses <- if n.lookupLexerClass.found then [n.lookupLexerClass.dcl.fullName] else [];
 }
 
 abstract production lexerClassListNull
