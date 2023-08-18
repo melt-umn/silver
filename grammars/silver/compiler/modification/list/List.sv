@@ -59,6 +59,12 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
 
+  -- Needed to satisfy flow analysis, since we demand translation of h and t.
+  h.decSiteVertexInfo = nothing();
+  t.decSiteVertexInfo = nothing();
+  h.alwaysDecorated = false;
+  t.alwaysDecorated = false;
+
   forwards to application(
     baseExpr(
       qName(top.location, "silver:core:cons"),

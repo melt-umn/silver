@@ -48,8 +48,8 @@ exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
 exports silver:compiler:extension:attrsection;
 exports silver:compiler:extension:implicit_monads;
-exports silver:compiler:extension:deriving;
 exports silver:compiler:extension:data;
+exports silver:compiler:extension:deriving;
 
 -- Other generally useful stuff:
 exports silver:compiler:translation:java;
