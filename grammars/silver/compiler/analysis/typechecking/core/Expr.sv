@@ -7,9 +7,8 @@ attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Expr
 propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
    excluding
-     undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
-     decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
+     exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
@@ -18,7 +17,7 @@ attribute contexts occurs on Expr;
 aspect default production
 top::Expr ::=
 {
-  top.finalType = performSubstitution(top.typerep, top.finalSubst);
+  top.finalType = performSubstitution(top.typerep, top.finalSubst).defaultSpecialization;
   top.contexts = [];
 }
 
@@ -66,15 +65,7 @@ top::Expr ::= q::Decorated! QName
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- If e's contexts include unrefined ntOrDecTypes at this point (arising from
-  -- es' types, presumably), then refine these ntOrDecTypes types using e's
-  -- contexts in the environment.
-  production infContexts::Contexts = foldContexts(e.contexts);
-  infContexts.env = top.env;
-  infContexts.flowEnv = top.flowEnv;
-
-  thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
-  propagate finalSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production access
@@ -86,19 +77,12 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 aspect production undecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
-  -- ensuring that type's specialization, otherwise we could end up in trouble!
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = checkNonterminal(top.env, true, e.typerep);
-
   -- TECHNICALLY, I think the current implementation makes this impossible,
   -- But let's leave it since it's the right thing to do.
   top.errors <-
-    if errCheck1.typeerror && q.found
+    if !e.finalType.isNonterminal && q.found
     then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
-  
-  thread downSubst, upSubst on top, errCheck1, forward;
 }
 
 aspect production accessBouncer
@@ -110,13 +94,8 @@ top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Loca
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = checkDecorated(e.typerep);
-
-  thread downSubst, upSubst on top, e, errCheck1, top;
-  
   top.errors <-
-    if errCheck1.typeerror
+    if !e.finalType.isDecorated
     then [err(top.location, "Attribute forward being accessed from an undecorated type.")]
     else [];
 }
@@ -124,19 +103,12 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production decoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
-  -- ensuring that type's specialization, otherwise we could end up in trouble!
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = checkDecorated(e.typerep);
-
   -- TECHNICALLY, I think the current implementation makes this impossible,
   -- But let's leave it since it's the right thing to do.
   top.errors <-
-    if errCheck1.typeerror
+    if !e.finalType.isDecorated
     then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
-
-  thread downSubst, upSubst on top, errCheck1, forward;
 }
 
 
@@ -359,14 +331,9 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e, errCheck1, inh, top;
-
-  errCheck1 = checkDecorable(top.env, e.typerep);
   top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a decorable type.  Instead it is of type " ++ errCheck1.leftpp)]
+       if !isDecorable(e.finalType, top.env)
+       then [err(top.location, "Operand to decorate must be a decorable type.  Instead it is of type " ++ prettyType(e.finalType))]
        else [];
 }
 
@@ -377,7 +344,7 @@ top::Expr ::= '@' e::Expr
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
-  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  errCheck1 = check(e.typerep, makeDecoratedType(uniqueType(), inhSetType([]), freshType()));
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]

@@ -7,8 +7,7 @@ import silver:util:treeset as set;
 inherited attribute contextLoc::Location occurs on Contexts, Context;
 inherited attribute contextSource::String occurs on Contexts, Context;
 monoid attribute contextErrors::[Message] occurs on Contexts, Context;
-attribute downSubst, upSubst occurs on Contexts, Context;
-propagate contextLoc, contextSource, contextErrors, downSubst, upSubst on Contexts;
+propagate contextLoc, contextSource, contextErrors on Contexts;
 
 flowtype contextErrors {contextLoc, contextSource, env, frame, grammarName, compiledGrammars, config} on Context;
 
@@ -31,23 +30,6 @@ top::Context ::= cls::String t::Type
     else if null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
-
-  production substT::Type = performSubstitution(t, top.downSubst);
-  top.upSubst =
-    case substT of
-    -- Only refine to the *undecorated* type based on instances, since if left
-    -- unrefined the type will be treated as decorated, anyway (and leaving it
-    -- unrefined will result in less confusing behavior.)
-    -- If there is an instance for the undecorated type, and all instances for
-    -- the decorated type are typeError instances (or there are none),
-    -- then specialize to the undecorated type, since the decorated type will
-    -- always give a type error.
-    | ntOrDecType(nt, _, _) when
-        !null(getInstanceDcl(cls, nt, top.env)) &&
-        all(map((.isTypeError), getInstanceDcl(cls, substT.defaultSpecialization, top.env))) ->
-      composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
-    | _ -> top.downSubst
-    end;
 }
 
 aspect production inhOccursContext
@@ -71,9 +53,6 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     else-} if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
-
-  -- Not refining based on occurs-on constraints for now, since the appropriate inference should happen on the associated decoration
-  top.upSubst = top.downSubst;
 }
 
 aspect production synOccursContext
@@ -105,20 +84,6 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     else-} if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
-
-  production substNtty::Type = performSubstitution(ntty, top.downSubst);
-  production substInhs::Type = performSubstitution(inhs, top.downSubst);
-  top.upSubst =
-    -- If the nonterminal type is known but the flow type inh set is unspecialized,
-    -- specialize it to the specified flow type of the attribute on the nonterminal.
-    -- This is a bit of a hack, since we don't properly support functional dependencies.
-    if null(substNtty.freeFlexibleVars) && !null(substInhs.freeFlexibleVars) && substNtty.isNonterminal
-    then
-      case lookup(attr, getFlowTypeSpecFor(substNtty.typeName, top.flowEnv)) of
-      | just((specInhs, _)) -> composeSubst(top.downSubst, unify(substInhs, inhSetType(sort(specInhs))))
-      | _ -> top.downSubst
-      end
-    else top.downSubst;
 }
 
 aspect production annoOccursContext
@@ -139,9 +104,6 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
-
-  -- Not refining based on occurs-on constraints for now, since the appropriate inference should happen on the associated decoration
-  top.upSubst = top.downSubst;
 }
 
 aspect production typeableContext
@@ -156,8 +118,6 @@ top::Context ::= t::Type
     if !t.isTypeable && null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
-
-  top.upSubst = top.downSubst; -- No effect on decoratedness
 }
 
 aspect production inhSubsetContext
@@ -178,14 +138,10 @@ top::Context ::= i1::Type i2::Type
       | (_, tvs1), (_, tvs2) when any(map(contains(_, tvs2), tvs1)) -> []
       | _, _ -> [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
       end;
-
-  top.upSubst = top.downSubst; -- No effect on decoratedness
 }
 
 aspect production typeErrorContext
 top::Context ::= msg::String
 {
   top.contextErrors := [err(top.contextLoc, msg ++ " (arising from " ++ top.contextSource ++ ")")];
-
-  top.upSubst = top.downSubst; -- No effect on decoratedness
 }

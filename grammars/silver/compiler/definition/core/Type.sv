@@ -69,13 +69,7 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type _
-{
-  top.accessHandler = decoratedAccessHandler(_, _, location=_);
-}
-
-aspect production uniqueDecoratedType
-top::Type ::= te::Type _
+top::Type ::=
 {
   top.accessHandler = decoratedAccessHandler(_, _, location=_);
 }

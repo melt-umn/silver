@@ -694,7 +694,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | appType(appType(appType(decoratedType(), _), i), _) -> getMinInhSetMembers([], i, top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -833,7 +833,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | appType(appType(appType(decoratedType(), _), i), _) -> getMinInhSetMembers([], i, top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =

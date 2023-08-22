@@ -53,7 +53,7 @@ No direct type inference happens here.
 
 Determine the actual final input and output types that were computed elsewhere during type inference.
 ```silver
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst).defaultSpecialization;
   local inputTy::Type = head(finalTy.inputTypes);
   local outputTy::Type = finalTy.outputType;
 

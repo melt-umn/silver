@@ -36,7 +36,7 @@ top::Type ::=
 aspect production appType
 top::Type ::= c::Type a::Type
 {
-  top.typeName = c.typeName;
+  top.typeName = if c.isDecorated then a.typeName else c.typeName;
 }
 
 aspect production nonterminalType
@@ -49,18 +49,6 @@ aspect production terminalType
 top::Type ::= fn::String
 {
   top.typeName = fn;
-}
-
-aspect production decoratedType
-top::Type ::= te::Type _
-{
-  top.typeName = te.typeName;
-}
-
-aspect production uniqueDecoratedType
-top::Type ::= te::Type _
-{
-  top.typeName = te.typeName;
 }
 
 aspect production varType

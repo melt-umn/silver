@@ -87,7 +87,7 @@ functor attribute flatRenamed occurs on Context, Type;
 
 propagate substitution on Context, Type;
 propagate substituted, flatRenamed on Context, Type
-  excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType, ntOrDecType;
+  excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType;
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
@@ -166,20 +166,6 @@ top::Type ::= tv::TyVar
     if partialsubst.isJust
     then partialsubst.fromJust
     else top;
-}
-
-aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
-{
-  -- We rely very carefully on eliminating ourselves once we've specialized!
-  -- Note: we're matching on hidden.subsituted, not just hidden. Important!
-  top.substituted =
-    case hidden.substituted of
-    | varType(_) -> ntOrDecType(nt.substituted, inhs.substituted, hidden.substituted)
-    | _          -> hidden.substituted
-    end;
-  -- For a renaming, we don't need to specialize.
-  propagate substitution, flatRenamed;
 }
 
 --------------------------------------------------------------------------------

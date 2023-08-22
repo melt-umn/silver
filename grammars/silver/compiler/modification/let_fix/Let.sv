@@ -126,29 +126,8 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);
-  
-  -- We're adding the "unusual" behavior that types like "Decorated Foo" in LETs
-  -- will auto-undecorate if you want a Foo.
-  
-  -- (The usual behavior is a declared Foo, but value is Decorated Foo, can
-  --  be used either way.)
-  
-  -- A note about possible unexpected behavior here: if q.lookupValue.typerep
-  -- is itself a ntOrDecType, which is only possible if for generated 'let'
-  -- expressions that use a type variable as their type, then this ntOrDecType
-  -- we're generating here means we're NOT propagating the information about the
-  -- "actual usage" backwards to expression.
-  -- i.e.  "let x :: a = someLocal in wantsUndecorated(x) end"
-  --       will mean "let x = decorated version of someLocal in wantsUndecorated(x.undecorate())"
-  --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
 
-  top.typerep = 
-    case q.lookupValue.typeScheme.monoType of
-    | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
-    | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | t -> t
-    end;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
   propagate downSubst, upSubst;
 }

@@ -143,6 +143,10 @@ top::Type ::= c::Type a::Type
            map(\ np::String -> s" ${np}::_", drop(length(top.argTypes) - params, namedParams))) ++ ")" ++
          if length(top.argTypes) <= params + length(namedParams) + 1 then ""
          else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), drop(params + length(namedParams) + 1, top.argTypes))) ++ ">"
+    | decoratedType() when c.argTypes matches [uniqueType(), i] ->
+        s"Decorated! ${a.typepp} with ${prettyTypeWith(i, top.boundVariables)}"
+    | decoratedType() when c.argTypes matches [nonUniqueType(), i] ->
+        s"Decorated ${a.typepp} with ${prettyTypeWith(i, top.boundVariables)}"
     | _ -> prettyTypeWith(top.baseType, top.boundVariables) ++
       if null(top.argTypes) then ""
       else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++
@@ -198,6 +202,18 @@ top::Type ::= fn::String
   top.typepp = fn;
 }
 
+aspect production uniqueType
+top::Type ::=
+{
+  top.typepp = "!";
+}
+
+aspect production nonUniqueType
+top::Type ::=
+{
+  top.typepp = "~";
+}
+
 aspect production inhSetType
 top::Type ::= inhs::[String]
 {
@@ -211,22 +227,9 @@ top::Type ::= inhs::[String]
 }
 
 aspect production decoratedType
-top::Type ::= t::Type i::Type
+top::Type ::=
 {
-  top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
-}
-
-aspect production uniqueDecoratedType
-top::Type ::= t::Type i::Type
-{
-  top.typepp = s"Decorated! ${t.typepp} with ${i.typepp}";
-}
-
-aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
-{
--- Sometimes useful for debugging.
---  top.typepp = "Undecorable " ++ nt.typepp ++ " with  " ++ inhs.typepp ++ " specialized " ++ prettyTypeWith(hidden, []);
+  top.typepp = "Dec";
 }
 
 aspect production functionType
@@ -239,6 +242,12 @@ aspect production starKind
 top::Kind ::=
 {
   top.typepp = "*";
+}
+
+aspect production uniquenessKind
+top::Kind ::=
+{
+  top.typepp = "Uniqueness";
 }
 
 aspect production inhSetKind

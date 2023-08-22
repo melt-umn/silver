@@ -118,7 +118,7 @@ top::Expr ::= q::Decorated! QName
   top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
+                then q.lookupValue.typeScheme.asDecoratedType
                 else q.lookupValue.typeScheme.monoType;
 }
 
@@ -130,7 +130,7 @@ top::Expr ::= q::Decorated! QName
   top.freeVars <- ts:fromList([q.name]);
   
   -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 abstract production localReference
@@ -141,7 +141,7 @@ top::Expr ::= q::Decorated! QName
   top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
+                then q.lookupValue.typeScheme.asDecoratedType
                 else q.lookupValue.typeScheme.monoType;
 }
 
@@ -153,7 +153,7 @@ top::Expr ::= q::Decorated! QName
   top.freeVars <- ts:fromList([q.name]);
   
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -559,7 +559,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 }
 
 abstract production annoAccessHandler
@@ -589,7 +589,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 
   top.errors <- [err(top.location, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
@@ -600,7 +600,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 
   top.errors <- [err(top.location, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
@@ -631,8 +631,10 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
   production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
 
-  -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
-  top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
+  top.typerep = makeDecoratedType(
+    varType(freshTyVar(uniquenessKind())),
+    inhSetType(sort(nub(inh.suppliedInhs ++ eType.refSet.inhSetMembers))),
+    ntType);
   e.isRoot = false;
   
   inh.decoratingnt = ntType;

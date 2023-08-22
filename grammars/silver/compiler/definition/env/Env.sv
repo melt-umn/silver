@@ -196,19 +196,26 @@ function occursOnHelp
               else occursOnHelp(tail(i), fnat);
 }
 
--- Determines whether a type is automatically promoted to a decorated type
--- and whether a type may be supplied with inherited attributes.
--- Used by expression (id refs), decorate type checking, and translations.
-function isDecorable
+-- Determines whether a type is a nonterminal.
+-- This includes type variables that are known to be nonterminals via occurs-on contexts.
+function isNonterminal
 Boolean ::= t::Type e::Env
 {
   return
     case t of
     | skolemType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))
     | varType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))  -- Can happen when pattern matching on a prod with occurs contexts
-    | uniqueDecoratedType(nt, _) -> isDecorable(nt, e)
-    | _ -> t.isNonterminal && !t.isData
+    | _ -> t.isNonterminal
     end;
+}
+
+-- Determines whether a type is automatically promoted to a decorated type
+-- and whether a type may be supplied with inherited attributes.
+-- Used by expression (id refs), decorate type checking, and translations.
+function isDecorable
+Boolean ::= t::Type e::Env
+{
+  return isNonterminal(t, e) && !t.isData || t.isUniqueDecorated && isDecorable(t.decoratedType, e);
 }
 
 function getProdAttrs
@@ -355,8 +362,7 @@ function getMinRefSet
 {
   return
     case t of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
-    | uniqueDecoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
+    | appType(appType(appType(decoratedType(), _), i), _) -> getMinInhSetMembers([], i, e).fst
     | _ -> []
     end;
 }
@@ -390,8 +396,7 @@ Maybe<[String]> ::= t::Type e::Env
 {
   return
     case t of
-    | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
-    | uniqueDecoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
+    | appType(appType(appType(decoratedType(), _), i), _) -> getMaxInhSetMembers([], i, e).fst
     | _ -> just([])
     end;
 }

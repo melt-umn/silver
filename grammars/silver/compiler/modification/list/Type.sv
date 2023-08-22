@@ -6,7 +6,7 @@ grammar silver:compiler:modification:list;
 abstract production listType
 top::Type ::= el::Type
 {
-  propagate substitution, substituted, flatRenamed, boundVariables;
+  propagate substitution, substituted, flatRenamed, boundVariables, defaultSpecialization;
   top.typepp = "[" ++ el.typepp ++ "]";
 
   forwards to appType(listCtrType(), el);
@@ -15,7 +15,7 @@ top::Type ::= el::Type
 abstract production listCtrType
 top::Type ::=
 {
-  propagate substituted, flatRenamed;
+  propagate substituted, flatRenamed, defaultSpecialization;
 
   top.freeVariables = [];
   top.freeSkolemVars := [];

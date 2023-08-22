@@ -36,13 +36,6 @@ top::Type ::= c::Type a::Type
 
 }
 
--- Avoid specializing possibly-decorated types
-aspect production ntOrDecType
-top::Type ::= _ _ _
-{
-  top.tupleElems = [top];
-}
-
 -- Aspect productions needed to avoid discarding 
 -- the forwarding list type when we extract tupleElems
 aspect production listType
@@ -63,7 +56,7 @@ top::Type ::=
 abstract production tupleType
 top::Type ::= ts::[Type]
 {
-  top.defaultSpecialization = top;
+  top.defaultSpecialization = tupleType(map((.defaultSpecialization), ts));
 
   -- to avoid transforming away the tupleType and turning it back 
   -- into a chain of Pairs when performing substitutions

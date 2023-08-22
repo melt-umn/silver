@@ -11,13 +11,9 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.errors <- t.errorsKindStar;
   
-  local checkNT::TypeCheck = checkNonterminal(top.env, false, t.typerep);
-  checkNT.downSubst = emptySubst();
-  checkNT.finalSubst = emptySubst();
-  
   top.errors <-
-    if checkNT.typeerror
-    then [err(top.location, "Production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    if !t.typerep.isNonterminal
+    then [err(top.location, "Production LHS type must be a nonterminal.  Instead it is of type " ++ prettyType(t.typerep))]
     else [];
 }
 

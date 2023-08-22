@@ -62,13 +62,9 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
 
   propagate config, grammarName, env, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds, flowEnv;
 
-  local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
-  checkNT.downSubst = emptySubst();
-  checkNT.finalSubst = emptySubst();
-
   top.errors <-
-    if checkNT.typeerror
-    then [err(top.location, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    if !te.typerep.isNonterminal
+    then [err(top.location, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ prettyType(te.typerep))]
     else [];
 
   top.errors <- te.errorsKindStar;

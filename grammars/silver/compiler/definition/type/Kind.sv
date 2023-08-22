@@ -17,6 +17,10 @@ abstract production starKind
 top::Kind ::=
 {}
 
+abstract production uniquenessKind
+top::Kind ::=
+{}
+
 abstract production inhSetKind
 top::Kind ::=
 {}

@@ -31,8 +31,7 @@ top::Expr ::= q::Decorated! QName _ _ _
   -- In regular pattern matching nonterminal values are always effectively decorated, but we are
   -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
   -- referenced as decorated we must seperately handle the cases of when it was already decorated
-  -- or was decorated implicitly (in which case we need to explicitly decorate it here.)  The same
-  -- problem exists when dealing with implicit undecoration.
+  -- or was decorated implicitly (in which case we need to explicitly decorate it here.)
   top.transform =
     case lookup(q.name, top.boundVars) of
     | just(bindingIsDecorated) ->
@@ -54,6 +53,7 @@ top::Expr ::= q::Decorated! QName _ _ _
           nilNamedASTExpr())
       else if isDecorable(top.finalType, top.env) && bindingIsDecorated
       -- We want the undecorated version, but the bound value is decorated
+      -- TODO
       then
         applyASTExpr(
           antiquoteASTExpr(
@@ -66,51 +66,32 @@ top::Expr ::= q::Decorated! QName _ _ _
       else varASTExpr(q.name)
     | nothing() ->
       -- The variable is bound in an enclosing let/match
-      -- Explicitly undecorate the variable, if appropriate for the final expected type
-      if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-      else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) })
+      antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) })
     end;
 }
 
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production errorApplication
@@ -182,8 +163,8 @@ top::Expr ::= e::Expr '.' 'forward'
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
     case e.finalType of
-    | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | appType(appType(appType(decoratedType(), u), varType(_)), nt) ->
+      makeDecoratedType(u, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))), nt)
     | t -> t
     end;
   top.transform =
@@ -265,8 +246,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
     case e.finalType of
-    | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | appType(appType(appType(decoratedType(), u), varType(_)), nt) ->
+      makeDecoratedType(u, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))), nt)
     | t -> t
     end;
   top.transform =
@@ -330,8 +311,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
     case e.finalType of
-    | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | appType(appType(appType(decoratedType(), u), varType(_)), nt) ->
+      makeDecoratedType(u, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))), nt)
     | t -> t
     end;
   top.transform =
@@ -353,8 +334,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
     case e.finalType of
-    | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | appType(appType(appType(decoratedType(), u), varType(_)), nt) ->
+      makeDecoratedType(u, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))), nt)
     | t -> t
     end;
   top.transform =
@@ -376,8 +357,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
     case e.finalType of
-    | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | appType(appType(appType(decoratedType(), u), varType(_)), nt) ->
+      makeDecoratedType(u, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))), nt)
     | t -> t
     end;
   top.transform =
@@ -399,8 +380,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
     case e.finalType of
-    | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+    | appType(appType(appType(decoratedType(), u), varType(_)), nt) ->
+      makeDecoratedType(u, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))), nt)
     | t -> t
     end;
   top.transform =

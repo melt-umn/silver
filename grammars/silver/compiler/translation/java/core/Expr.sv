@@ -74,11 +74,6 @@ top::Expr ::= q::Decorated! QName
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env) then
       -- Reference to a primitive (not decorated or undecorated):
       s"context.<${top.finalType.transType}>childAsIs(${childIDref})"
-    else if !top.finalType.isDecorated then
-      -- Undecorated reference to a nonterminal:
-      -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
-      -- this is a potential source of minor inefficiency for functions that do not decorate.
-      s"((${top.finalType.transType})context.childDecorated(${childIDref}).undecorate())"
     else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
       -- Unique reference to a child that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
@@ -107,8 +102,6 @@ top::Expr ::= q::Decorated! QName
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.<${top.finalType.transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !top.finalType.isDecorated
-    then s"((${top.finalType.transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
     else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
       s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
     else
@@ -130,10 +123,7 @@ top::Expr ::= q::Decorated! QName
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
 {
-  top.translation =
-    if top.finalType.isDecorated
-    then "context"
-    else s"((${top.finalType.transType})context.undecorate())";
+  top.translation = "context";
 
   top.lazyTranslation = top.translation;
 }
@@ -141,10 +131,7 @@ top::Expr ::= q::Decorated! QName
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
 {
-  top.translation =
-    if top.finalType.isDecorated
-    then "context.forward()"
-    else s"((${top.finalType.transType})context.forward().undecorate())";
+  top.translation = "context.forward()";
 
   -- this might evaluate the forward equation, so suspend it as a thunk
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -372,10 +359,8 @@ aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- TODO: Origin tracking?
-    top.translation =
-    if !top.finalType.isDecorated then
-      s"((${top.finalType.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site).undecorate())"
-    else if top.finalType.isUniqueDecorated && top.alwaysDecorated &&
+  top.translation =
+    if top.finalType.isUniqueDecorated && top.alwaysDecorated &&
         case e of
         | childReference(cqn) -> true
         | localReference(lqn) -> true

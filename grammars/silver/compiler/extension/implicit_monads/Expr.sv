@@ -58,7 +58,7 @@ top::Expr ::= q::Decorated! QName
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   top.mtyperep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-                 then q.lookupValue.typeScheme.asNtOrDecType
+                 then q.lookupValue.typeScheme.asDecoratedType
                  else q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
@@ -71,7 +71,7 @@ top::Expr ::= q::Decorated! QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
-  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.mtyperep = q.lookupValue.typeScheme.asDecoratedType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -84,7 +84,7 @@ top::Expr ::= q::Decorated! QName
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   top.mtyperep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-                 then q.lookupValue.typeScheme.asNtOrDecType
+                 then q.lookupValue.typeScheme.asDecoratedType
                  else q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
@@ -98,7 +98,7 @@ top::Expr ::= q::Decorated! QName
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.mtyperep = q.lookupValue.typeScheme.asDecoratedType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -1141,10 +1141,14 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.mtyperep = if isMonad(e.mtyperep, top.env) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst
                  then monadOfType(
                    e.mtyperep,
-                   decoratedType(
-                     performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst),
-                     inhSetType(sort(nub(inh.suppliedInhs)))))
-                 else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst), inhSetType(sort(nub(inh.suppliedInhs))));
+                   makeDecoratedType(
+                     varType(freshTyVar(uniquenessKind())),
+                     inhSetType(sort(nub(inh.suppliedInhs))),
+                     performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst)))
+                 else makeDecoratedType(
+                   varType(freshTyVar(uniquenessKind())),
+                   inhSetType(sort(nub(inh.suppliedInhs))),
+                   performSubstitution(e.mtyperep, e.mUpSubst));
 
   local newname::String = "__sv_bind_" ++ toString(genInt());
   local params::ProductionRHS =
@@ -1235,7 +1239,7 @@ top::Expr ::= '@' e::Expr
   e.mDownSubst = top.mDownSubst;
   errCheck1.downSubst = e.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
-  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  errCheck1 = check(e.typerep, makeDecoratedType(uniqueType(), inhSetType([]), freshType()));
   top.merrors <-
        if errCheck1.typeerror
        then [err(top.location, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
@@ -1570,8 +1574,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 
   --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
   --   we want to do substitution on the types before putting them into the monadRewritten
-  local e2Type::Type = performSubstitution(e2.mtyperep, top.finalSubst);
-  local e3Type::Type = performSubstitution(e3.mtyperep, top.finalSubst);
+  local e2Type::Type = performSubstitution(e2.mtyperep, top.finalSubst).defaultSpecialization;
+  local e3Type::Type = performSubstitution(e3.mtyperep, top.finalSubst).defaultSpecialization;
   --
   local e1UnDec::Expr =
         if e1.mtyperep.isDecorated

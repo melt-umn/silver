@@ -123,8 +123,10 @@ top::VarBinder ::= n::Name
   -- NOT automatically decorated!)
   -- Also, don't attempt to decorate already-decorated types.
   local ty :: Type =
-    if isDecorable(top.bindingType, top.env) && !top.bindingType.isDecorated
-    then decoratedType(top.bindingType, freshInhSet())
+    if top.bindingType.isDecorated
+    then makeDecoratedType(nonUniqueType(), freshInhSet(), top.bindingType.decoratedType)
+    else if isDecorable(top.bindingType, top.env)
+    then makeDecoratedType(nonUniqueType(), freshInhSet(), top.bindingType)
     else top.bindingType;
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
@@ -133,7 +135,7 @@ top::VarBinder ::= n::Name
   -- we need to do some substitution to connect it with the real types.
   -- (in the env above its okay, since that must always be consulted with the current substitution,
   -- but here we're rendering the translation. it's the end of the line.)
-  production finalTy :: Type = performSubstitution(ty, top.finalSubst);
+  production finalTy :: Type = performSubstitution(ty, top.finalSubst).defaultSpecialization;
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;

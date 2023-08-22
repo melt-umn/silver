@@ -4,8 +4,8 @@ aspect production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
   top.errors <-
-    if ty.typerep.kindrep == id.lookupType.typeScheme.typerep.kindrep then []
-    else [err(ty.location, s"${ty.unparse} has kind ${prettyKind(ty.typerep.kindrep)}, but the class ${id.name} expected kind ${prettyKind(id.lookupType.typeScheme.typerep.kindrep)}")];
+    if ty.typerep.kindrep == id.lookupType.typeScheme.kindrep then []
+    else [err(ty.location, s"${ty.unparse} has kind ${prettyKind(ty.typerep.kindrep)}, but the class ${id.name} expected kind ${prettyKind(id.lookupType.typeScheme.kindrep)}")];
 
   superContexts.contextLoc = id.location;
   superContexts.contextSource = "instance superclasses";

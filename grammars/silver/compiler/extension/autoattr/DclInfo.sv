@@ -72,7 +72,9 @@ top::AttributeDclInfo ::= fn::String
 
   production tyVar::TyVar = freshTyVar(starKind());
   production inhsTyVar::TyVar = freshTyVar(inhSetKind());
-  top.typeScheme = polyType([tyVar, inhsTyVar], decoratedType(varType(tyVar), varType(inhsTyVar)));
+  top.typeScheme = polyType(
+    [tyVar, inhsTyVar],
+    makeDecoratedType(nonUniqueType(), varType(inhsTyVar), varType(tyVar)));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);

@@ -18,6 +18,13 @@ top::KindExpr ::= 'InhSet'
   top.kindrep = inhSetKind();
 }
 
+concrete production uniquenessKindExpr
+top::KindExpr ::= 'Uniqueness'
+{
+  top.unparse = "Uniqueness";
+  top.kindrep = uniquenessKind();
+}
+
 concrete production arrowKindExpr
 top::KindExpr ::= k1::KindExpr '->' k2::KindExpr
 {

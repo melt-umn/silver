@@ -9,7 +9,7 @@ imports silver:langutil:pp;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
-imports silver:compiler:definition:type:syntax;
+imports silver:compiler:definition:type:syntax hiding Unique_t;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:env;
 imports silver:compiler:analysis:typechecking:core;

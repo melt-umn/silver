@@ -210,23 +210,33 @@ top::Type ::= fn::String
     end;
 }
 
-aspect production decoratedType
-top::Type ::= te::Type i::Type
+aspect production uniqueType
+top::Type ::=
 {
   top.refine = 
     case top.refineWith of
-    | decoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
-    | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
+    | uniqueType() -> emptySubst()
+    | _ -> errorSubst("Tried to refine unique type with " ++ prettyType(top.refineWith))
     end;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
+aspect production nonUniqueType
+top::Type ::=
 {
   top.refine = 
     case top.refineWith of
-    | uniqueDecoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
-    | _ -> errorSubst("Tried to refine unique decorated type with " ++ prettyType(top.refineWith))
+    | nonUniqueType() -> emptySubst()
+    | _ -> errorSubst("Tried to refine non-unique type with " ++ prettyType(top.refineWith))
+    end;
+}
+
+aspect production decoratedType
+top::Type ::=
+{
+  top.refine = 
+    case top.refineWith of
+    | decoratedType() -> emptySubst()
+    | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -276,15 +286,19 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   -- only do refinement if they're the same type constructor.
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
-  return case scrutineeType, constructorType of
-         | decoratedType(t1, i1), decoratedType(t2, i2) ->
-           case t1.baseType, t2.baseType of
-           | nonterminalType(n1, _, _, _), nonterminalType(n2, _, _, _) when n1 == n2 ->
-             refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
-           | _, _ -> emptySubst()
-           end
-         | _, _ -> emptySubst()
-         end;
+  local t1::Type = scrutineeType.decoratedType;
+  local i1::Type = scrutineeType.refSet;
+  local t2::Type = constructorType.decoratedType;
+  local i2::Type = constructorType.refSet;
+  return
+    if scrutineeType.isDecorated && constructorType.isDecorated
+    then
+      case t1.baseType, t2.baseType of
+      | nonterminalType(n1, _, _, _), nonterminalType(n2, _, _, _) when n1 == n2 ->
+        refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
+      | _, _ -> emptySubst()
+      end
+    else emptySubst();
 }
 
 function refine

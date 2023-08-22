@@ -89,7 +89,11 @@ top::Type ::= c::Type a::Type
     | _ -> c.transCovariantType
     end;
   top.transClassType = c.transClassType;
-  top.transTypeRep = s"new common.AppTypeRep(${c.transTypeRep}, ${a.transTypeRep})";
+  top.transTypeRep =
+    case c.baseType of
+    | decoratedType() -> s"new common.DecoratedTypeRep(${a.transTypeRep})"
+    | _ -> s"new common.AppTypeRep(${c.transTypeRep}, ${a.transTypeRep})"
+    end;
   top.transTypeName = c.transTypeName ++ "_" ++ a.transTypeName;
 }
 
@@ -160,6 +164,22 @@ top::Type ::= fn::String
   top.transTypeName = substitute(":", "_", fn);
 }
 
+aspect production uniqueType
+top::Type ::=
+{
+  top.transClassType = error("Demanded translation of Uniqueness type");
+  top.transTypeRep = error("Demanded TypeRep translation of Uniqueness type");
+  top.transTypeName = "unique";
+}
+
+aspect production nonUniqueType
+top::Type ::=
+{
+  top.transClassType = error("Demanded translation of Uniqueness type");
+  top.transTypeRep = error("Demanded TypeRep translation of Uniqueness type");
+  top.transTypeName = "nonunique";
+}
+
 aspect production inhSetType
 top::Type ::= inhs::[String]
 {
@@ -169,23 +189,13 @@ top::Type ::= inhs::[String]
 }
 
 aspect production decoratedType
-top::Type ::= te::Type i::Type
+top::Type ::=
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
-  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
-  top.transTypeName = "Decorated_" ++ te.transTypeName;
-}
-
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
-  top.transType = "common.DecoratedNode";
-  top.transClassType = "common.DecoratedNode";
-  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
-  top.transTypeName = "Decorated_" ++ te.transTypeName;
+  top.transTypeRep = error("Demanded TypeRep translation of Decorated type");
+  top.transTypeName = "Decorated";
 }
 
 aspect production functionType

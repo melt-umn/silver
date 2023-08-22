@@ -115,7 +115,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of (x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
-  local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst);
+  local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst).defaultSpecialization;
   local scrutineeTransType :: String = scrutineeFinalType.transType;
   
   top.translation = 
@@ -240,7 +240,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   production expectedScrutineeType :: Type =
     if prod_type.outputType.isData
     then prod_type.outputType
-    else decoratedType(prod_type.outputType, freshInhSet());
+    else freshDecoratedType(prod_type.outputType);
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -320,7 +320,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   production expectedScrutineeType :: Type =
     if prod_type.outputType.isData
     then prod_type.outputType
-    else decoratedType(prod_type.outputType, freshInhSet());
+    else freshDecoratedType(prod_type.outputType);
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
