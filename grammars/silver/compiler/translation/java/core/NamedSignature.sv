@@ -142,7 +142,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getInhOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -160,7 +160,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getSynOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -326,7 +326,7 @@ String ::= n::NamedSignatureElement
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
 function makeChildDecSiteAccessCase
-String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
+String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
     case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
@@ -335,7 +335,7 @@ String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String prodName::Strin
     end;
 }
 function refAccessTranslation
-String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String v::VertexType
+String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType
 {
   return
     case v of

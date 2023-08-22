@@ -148,7 +148,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   thread downSubst, upSubst on top, note, e, errCheck1, top;
   
-  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], false, false));  -- TODO: This should be data?
+  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], true, false));
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
@@ -339,7 +339,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
   
   errCheck1 = check(es.typerep, stringType());
-  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], false, false));
+  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], true, false));
   top.errors <-
     if errCheck1.typeerror
     then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]

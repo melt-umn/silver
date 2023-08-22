@@ -46,7 +46,7 @@ public final class OriginContext {
 	}
 
 	public OriginContext(final OriginContext old, final NOriginNote[] newRules) {
-		this(old.variety, old.lhs, mergeRulesArr(old.rules, newRules));
+		this(old.variety, old.lhs, mergeRulesArr(newRules, old.rules));
 	}
 
 	private static NOriginNote[] mergeRulesArr(final NOriginNote[] a, final NOriginNote[] b) {
@@ -72,19 +72,19 @@ public final class OriginContext {
 	public NOriginInfo makeNewConstructionOrigin(boolean isContractum) {
 		switch (this.variety) {
 			case NORMAL:
-				return new silver.core.PoriginOriginInfo(OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
+				return new silver.core.PoriginOriginInfo(this.lhs, isContractum, this.rulesAsSilverList(), OriginsUtil.SET_AT_CONSTRUCTION_OIT);
 
 			case MAINFUNCTION:
-				return new silver.core.PotherOriginInfo(OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(new common.StringCatter("Main Function"), this.rulesAsSilverList(), OriginsUtil.SET_FROM_ENTRY_OIT);
 			
 			case FFI:
-				return new silver.core.PotherOriginInfo(OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(new common.StringCatter("Called from FFI"), this.rulesAsSilverList(), OriginsUtil.SET_FROM_FFI_OIT);
 
 			case PARSERACTION:
-				return new silver.core.PotherOriginInfo(OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList(), OriginsUtil.SET_FROM_PARSER_ACTION_OIT);
 
 			case GLOBAL:
-				return new silver.core.PotherOriginInfo(OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(new common.StringCatter("Built in a global"), this.rulesAsSilverList(), OriginsUtil.SET_IN_GLOBAL_OIT);
 		}
 		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}

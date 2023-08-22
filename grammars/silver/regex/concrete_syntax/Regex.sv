@@ -41,7 +41,7 @@ disambiguate RegexChar_t, RegexWildcard_t { pluck RegexWildcard_t; }
  -
  - At lowest precedence, a regex consists of a series of choices (a|b|c)
  -}
-nonterminal Regex with unparse, ast<abs:Regex>;
+tracked nonterminal Regex with unparse, ast<abs:Regex>;
 
 concrete production regexEpsilon
 top::Regex ::=
@@ -68,7 +68,7 @@ top::Regex ::= h::RegexSeq '|' t::Regex
 {--
  - A sequence of regular expressions.
  -}
-nonterminal RegexSeq with unparse, ast<abs:Regex>;
+tracked nonterminal RegexSeq with unparse, ast<abs:Regex>;
 
 concrete production regexSeqSnoc
 top::RegexSeq ::= h::RegexSeq t::RegexRepetition
@@ -88,7 +88,7 @@ top::RegexSeq ::= t::RegexRepetition
 {--
  - A RegexItem with an optional repetition operator (*+?)
  -}
-nonterminal RegexRepetition with unparse, ast<abs:Regex>;
+tracked nonterminal RegexRepetition with unparse, ast<abs:Regex>;
 
 concrete production regexKleene
 top::RegexRepetition ::= i::RegexItem '*'
@@ -122,7 +122,7 @@ top::RegexRepetition ::= i::RegexItem
 {--
  - A single matched entity (char, wildcard, set, group)
  -}
-nonterminal RegexItem with unparse, ast<abs:Regex>;      -- characters or sequences/sets
+tracked nonterminal RegexItem with unparse, ast<abs:Regex>;      -- characters or sequences/sets
 
 concrete production regexCharItem
 top::RegexItem ::= char::RegexChar
@@ -163,7 +163,7 @@ top::RegexItem ::= '(' r::Regex ')'
 {--
  - A list of options or ranges within a regexSet.
  -}
-nonterminal RegexCharSet with unparse, ast<abs:Regex>;
+tracked nonterminal RegexCharSet with unparse, ast<abs:Regex>;
 
 concrete production regexCharSetSnoc
 top::RegexCharSet ::= h::RegexCharSet  t::RegexCharSetItem
@@ -183,7 +183,7 @@ top::RegexCharSet ::= t::RegexCharSetItem
 {--
  - An option or range within a regexSet.
  -}
-nonterminal RegexCharSetItem with unparse, ast<abs:Regex>;
+tracked nonterminal RegexCharSetItem with unparse, ast<abs:Regex>;
 
 concrete production regexSetChar
 top::RegexCharSetItem ::= char::RegexChar
@@ -203,7 +203,7 @@ top::RegexCharSetItem ::= l::RegexChar '-' u::RegexChar
 {--
  - A character, escaped or otherwise.
  -}
-nonterminal RegexChar with unparse, ast<Integer>;
+tracked nonterminal RegexChar with unparse, ast<Integer>;
 
 concrete production regexChar
 top::RegexChar ::= char::RegexChar_t

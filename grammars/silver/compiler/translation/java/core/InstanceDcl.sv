@@ -8,7 +8,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   local contexts::Contexts = foldContexts(cl.contexts);
   contexts.boundVariables = boundVars;
 
-  top.genFiles := if contexts.isTypeError then [] else [pair(className ++ ".java", s"""
+  top.genFiles := if contexts.isTypeError then [] else [(className ++ ".java", s"""
 
 package ${makeName(top.grammarName)};
 

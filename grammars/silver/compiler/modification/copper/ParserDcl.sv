@@ -34,7 +34,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       foldNamedSignatureElements([
         namedSignatureElement("stringToParse", stringType()),
         namedSignatureElement("filenameToReport", stringType())]),
-      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], false, false), t.typerep)),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], true, false), t.typerep)),
       nilNamedSignatureElement());
 
   production spec :: ParserSpec =
@@ -130,7 +130,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   -- TODO: As a hack, even though we don't propogates defs up to the top level, we
   -- do generate files for the lifted dcl. Needed to generate terminal class files.
   top.genFiles := m.genFiles ++
-    [pair(className ++ ".java",
+    [(className ++ ".java",
           generateFunctionClassString(top.env, top.flowEnv, top.grammarName, n.name, namedSig, parseResult))];
   
   local parseResult :: String =

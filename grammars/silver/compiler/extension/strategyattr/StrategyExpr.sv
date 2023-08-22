@@ -222,7 +222,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     s1.liftedStrategies ++
     if s2.attrRefName.isJust
     then []
-    else [pair(s2Name, s2)];
+    else [(s2Name, s2)];
   top.isTotal = s1.isTotal && s2.isTotal;
   top.isTotalNoEnv = s1.isTotalNoEnv && s2.isTotalNoEnv;
   
@@ -314,7 +314,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
-    else [pair(sName, s)];
+    else [(sName, s)];
   top.isTotal = s.isTotal;
   top.isTotalNoEnv = s.isTotalNoEnv;
 
@@ -323,11 +323,11 @@ top::StrategyExpr ::= s::StrategyExpr
   s.isOutermost = false;
   
   local sBaseName::String = last(explode(":", sName));
-  -- pair(child name, attr occurs on child)
+  -- (child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
-        pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.partialTranslation =
     if sTotal
@@ -373,7 +373,7 @@ top::StrategyExpr ::= s::StrategyExpr
            location=top.location)],
         false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", [starKind()], false, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal
@@ -405,17 +405,17 @@ top::StrategyExpr ::= s::StrategyExpr
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
-    else [pair(sName, s)];
+    else [(sName, s)];
   
   top.containsTraversal <- true;
 
   s.isOutermost = false;
   
-  -- pair(child name, attr occurs on child)
+  -- (child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
-        pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
   top.partialTranslation =
@@ -485,18 +485,18 @@ top::StrategyExpr ::= s::StrategyExpr
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
-    else [pair(sName, s)];
+    else [(sName, s)];
 
   top.containsTraversal <- true;
   
   s.isOutermost = false;
   
   local sBaseName::String = last(explode(":", sName));
-  -- pair(child name, attr occurs on child)
+  -- (child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
-        pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
   top.partialTranslation =
@@ -554,7 +554,7 @@ top::StrategyExpr ::= s::StrategyExpr
             range(0, length(matchingChildren))),
         false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", [starKind()], false, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
@@ -599,9 +599,9 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   
   top.containsTraversal <- true;
   
-  -- pair(child name, if attr occurs on child then just(attr name) else nothing())
+  -- (child name, if attr occurs on child then just(attr name) else nothing())
   local childAccesses::[Pair<String Maybe<String>>] =
-    zipWith(pair, top.frame.signature.inputNames, s.attrRefNames);
+    zip(top.frame.signature.inputNames, s.attrRefNames);
   top.partialTranslation = -- This is never total
     if prod.lookupValue.fullName == top.frame.fullName
     then
@@ -652,7 +652,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
            location=top.location)],
         false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", [starKind()], false, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep),
         location=top.location)
     else Silver_Expr { silver:core:nothing() };
 }
@@ -669,7 +669,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
     -- during translation - which means we will treat it as id anyway!
     (if h.attrRefName.isJust || h.isId
      then []
-     else [pair(h.genName, h)]) ++
+     else [(h.genName, h)]) ++
     t.liftedStrategies;
   
   local hType::Type = head(top.givenInputElements).typerep;
@@ -710,14 +710,14 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
   top.liftedStrategies :=
     if top.isOutermost
     then s.liftedStrategies
-    else [pair(sName, s)];
+    else [(sName, s)];
   top.freeRecVars := remove(n.name, s.freeRecVars);
 
   -- Decorate s assuming that the bound strategy is total, in order to check for totality.
   -- See Fig 4 of the strategy attributes paper (https://www-users.cse.umn.edu/~evw/pubs/kramer20sle/kramer20sle.pdf)
   local s2::StrategyExpr = s;
-  s2.recVarTotalEnv = pair(n.name, true) :: s.recVarTotalEnv;
-  s2.recVarTotalNoEnvEnv = pair(n.name, true) :: s.recVarTotalNoEnvEnv;
+  s2.recVarTotalEnv = (n.name, true) :: s.recVarTotalEnv;
+  s2.recVarTotalNoEnvEnv = (n.name, true) :: s.recVarTotalNoEnvEnv;
   s2.env = s.env;
   s2.config = s.config;
   s2.grammarName = s.grammarName;
@@ -727,9 +727,9 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
   top.isTotal = s2.isTotal;
   top.isTotalNoEnv = s2.isTotalNoEnv;
   
-  s.recVarNameEnv = pair(n.name, sName) :: top.recVarNameEnv;
-  s.recVarTotalEnv = pair(n.name, top.isTotal) :: top.recVarTotalEnv;
-  s.recVarTotalNoEnvEnv = pair(n.name, top.isTotalNoEnv) :: top.recVarTotalNoEnvEnv;
+  s.recVarNameEnv = (n.name, sName) :: top.recVarNameEnv;
+  s.recVarTotalEnv = (n.name, top.isTotal) :: top.recVarTotalEnv;
+  s.recVarTotalNoEnvEnv = (n.name, top.isTotalNoEnv) :: top.recVarTotalNoEnvEnv;
   s.isOutermost = top.isOutermost;
   
   local sTotal::Boolean = attrIsTotal(top.env, sName);
@@ -802,7 +802,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation, false,
       Silver_Expr { silver:core:nothing() },
-      appType(nonterminalType("silver:core:Maybe", [starKind()], false, false), ty.typerep),
+      appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), ty.typerep),
       location=top.location);
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure
@@ -859,7 +859,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just(pair(cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) },
+      pt.patternList, just((cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) },
       location=top.location);
 }
 
@@ -868,7 +868,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   top.translation =
     matchRule(
-      pt.patternList, just(pair(cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) },
+      pt.patternList, just((cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) },
       location=top.location);
 }
 
@@ -953,7 +953,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | appType(nonterminalType("silver:core:Maybe", _, _, _), varType(a1)), [a2] when a1 == a2 && attrDcl.isSynthesized -> []
     | appType(nonterminalType("silver:core:Maybe", _, _, _), a), _
-        when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _, _, _), true) ->
+        when (a.baseType, attrDcl.isSynthesized) matches (nonterminalType(nt, _, _, _), true) ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
@@ -1039,7 +1039,7 @@ top::QNameAttrOccur ::= at::QName
 }
 
 function attrIsTotal
-Boolean ::= env::Decorated Env attrName::String
+Boolean ::= env::Env attrName::String
 {
   local dcls::[AttributeDclInfo] = getAttrDcl(attrName, env);
   return
@@ -1054,7 +1054,7 @@ Boolean ::= env::Decorated Env attrName::String
 }
 
 function attrMatchesFrame
-Boolean ::= env::Decorated Env attrName::String attrFor::Type
+Boolean ::= env::Env attrName::String attrFor::Type
 {
   return
     decorate qNameAttrOccur(qName(loc("", -1, -1, -1, -1, -1, -1), attrName), location=loc("", -1, -1, -1, -1, -1, -1))
@@ -1062,7 +1062,7 @@ Boolean ::= env::Decorated Env attrName::String attrFor::Type
 }
 
 function attrMatchesChild
-Boolean ::= env::Decorated Env attrName::String frame::BlockContext
+Boolean ::= env::Env attrName::String frame::BlockContext
 {
   return
     any(

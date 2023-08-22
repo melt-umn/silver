@@ -130,12 +130,12 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      expectedMonad=top.expectedMonad; alwaysDecorated = false; isRoot=top.isRoot; originRules=top.originRules;}.monadicNames
                 else []
              end ++ l,
-           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> pair(x,y), es.rawExprs, ml.patternTypeList));
+           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> (x,y), es.rawExprs, ml.patternTypeList));
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
 function monadicallyUsedExpr
-Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn::String
+Boolean ::= elst::[Expr] env::Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::FlowEnv em::Type
   iR::Boolean oR::[Decorated Expr]
 {
@@ -157,7 +157,7 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
       elst::[Decorated Expr with MonadInhs]
-      tylst::[Type] names::[String] env::Decorated Env sub::Substitution em::Type
+      tylst::[Type] names::[String] env::Env sub::Substitution em::Type
       loc::Location index::Integer
 {
   local attribute subcall::([(Type, Expr, String)], [Expr]);
@@ -171,8 +171,8 @@ function monadicMatchTypesNames
                           then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genInt())
                           else head(names);
   return case elst, tylst of
-         | [], _ -> pair([], [])
-         | _, [] -> pair([], map(new, elst))
+         | [], _ -> ([], [])
+         | _, [] -> ([], map(new, elst))
          | decE::etl, t::ttl ->
            let ety::Type = decE.mtyperep
            in
@@ -218,7 +218,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
   copying the function format from the patternmatching extension.
 -}
 function monadCompileCaseExpr
-Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location env::Decorated Env
+Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location env::Env
 {
   --Split rules into segments of non-forwarding constructors, all same
   --   forwarding constructor, and variables based on first pattern
@@ -271,7 +271,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
 --   but without using lets which would end up being problematic in our implicit use
 function monadCompilePatternGroups
 Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
-         retType::Type loc::Location env::Decorated Env
+         retType::Type loc::Location env::Env
 {
   local compileRest::Expr =
         monadCompilePatternGroups(matchEs, tail(ruleGroups), finalFail,
@@ -329,7 +329,7 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
   Turn matching on all constructors into primitive matching.
 -}
 function monadAllConCaseTransform
-PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule] env::Decorated Env
+PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule] env::Env
 {
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
@@ -388,7 +388,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 
   --we need fresh names for the expressions being matched on, which we will use to only evaluate them once
   local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
-  local params::[Pair<String Type>] = zipWith(pair, newNames, ml.patternTypeList);
+  local params::[Pair<String Type>] = zip(newNames, ml.patternTypeList);
   local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
                                 newNames);
 
@@ -466,7 +466,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 -}
 function mcaseBindsApps
 Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
-         env::Decorated Env sub::Substitution f::BlockContext
+         env::Env sub::Substitution f::BlockContext
          gn::String cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs
          fe::FlowEnv em::Type iR::Boolean oR::[Decorated Expr]
 {
@@ -529,7 +529,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 --There are several thing we need for mtyperep on e which don't occur on match rules
 --Therefore we need to pass them here
 inherited attribute temp_flowEnv::FlowEnv;
-inherited attribute temp_env::Decorated Env;
+inherited attribute temp_env::Env;
 inherited attribute temp_config::Decorated CmdArgs;
 inherited attribute temp_compiledGrammars::EnvTree<Decorated RootSpec>;
 inherited attribute temp_grammarName::String;
@@ -571,7 +571,7 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
   --   it and not incorrectly identify something as being used non-monadically
   top.mUpSubst = foldl(\s::Substitution p::Pair<Type Type> ->
                        decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
-                      t.mUpSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
+                      t.mUpSubst, zip(h.patternTypeList, t.patternTypeList));
 }
 
 aspect production matchRule_c

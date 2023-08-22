@@ -99,7 +99,7 @@ top::ProductionStmt ::= attr::Decorated! QName
  - @return Either this the child, or accessing `attrName` on the child
  -}
 function makeArg
-Expr ::= loc::Location env::Decorated Env attrName::Decorated QName input::NamedSignatureElement
+Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureElement
 {
   local at::QName = qName(loc, input.elementName);
   at.env = env;
@@ -134,7 +134,7 @@ Pair<String Expr> ::= loc::Location baseName::String input::NamedSignatureElemen
   local annoName :: String = last(explode(":", input.elementName));
 
   return
-    pair(annoName,
+    (annoName,
       access(
         baseExpr(qName(loc, baseName), location=loc), '.',
         qNameAttrOccur(qName(loc, annoName), location=loc),

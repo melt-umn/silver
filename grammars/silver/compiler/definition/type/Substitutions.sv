@@ -47,7 +47,7 @@ Substitution ::= e::String
 function subst
 Substitution ::= tv::TyVar te::Type
 {
-  return goodSubst([pair(tv,te)]);
+  return goodSubst([(tv,te)]);
 }
 function composeSubst
 Substitution ::= s1::Substitution s2::Substitution

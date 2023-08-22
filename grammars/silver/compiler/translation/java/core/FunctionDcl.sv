@@ -24,9 +24,9 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 """;
 
   top.genFiles :=
-    [pair(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
+    [(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" 
-	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
+	then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
     else [];
 
   -- For main functions which return IOVal<Integer>
@@ -35,7 +35,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
       functionType(2, []),
         [appType(listCtrType(), stringType()),
           ioForeignType,
-          appType(nonterminalType("silver:core:IOVal", [starKind()], false, false), intType())])).failure;
+          appType(nonterminalType("silver:core:IOVal", [starKind()], true, false), intType())])).failure;
 
   -- For main functions which return IO<Integer>
   local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
@@ -53,7 +53,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 }
 
 function generateFunctionClassString
-String ::= env::Decorated Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
+String ::= env::Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
   local className :: String = "P" ++ whatName;
 

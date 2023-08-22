@@ -7,10 +7,10 @@ import stdlib;
 global e :: tm:Map<String Integer> = tm:empty();
 
 global t1 :: tm:Map<String Integer> =
-  tm:add([pair("1", 1), pair("2", 2), pair("3", 3), pair("4", 4), pair("5", 5), pair("6", 6), pair("1", 1), pair("2", 2), pair("0", 0), pair("7", 7)], e);
+  tm:add([("1", 1), ("2", 2), ("3", 3), ("4", 4), ("5", 5), ("6", 6), ("1", 1), ("2", 2), ("0", 0), ("7", 7)], e);
 
 global t2 :: tm:Map<String Integer> = 
-  tm:add([pair("g", 1), pair("f", 2), pair("d", 3), pair("s", 4), pair("a", 5), pair("p", 6), pair("q", 1), pair("h", 2), pair("i", 0), pair("q", 7)], t1);
+  tm:add([("g", 1), ("f", 2), ("d", 3), ("s", 4), ("a", 5), ("p", 6), ("q", 1), ("h", 2), ("i", 0), ("q", 7)], t1);
 
 equalityTest ( tm:lookup("1", t2), [1,1], [Integer], core_tests ) ;
 equalityTest ( tm:lookup("2", t2), [2,2], [Integer], core_tests ) ;
@@ -32,7 +32,7 @@ equalityTest ( tm:lookup("a", t2), [5], [Integer], core_tests ) ;
 
 
 global l1 :: [Pair<String Integer>] =
- [pair("hi", 2), pair("hello", 4), pair("hola", 6), pair("quepasa", 11)];
+ [("hi", 2), ("hello", 4), ("hola", 6), ("quepasa", 11)];
 
 global t6 :: tm:Map<String Integer> = tm:add(l1, t2);
 

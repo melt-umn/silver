@@ -41,7 +41,7 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   production givenLocation::Location =
-    fromMaybe(top.givenLocation, orElse(children.foundLocation, annotations.foundLocation));
+    fromMaybe(top.givenLocation, alt(getParsedOriginLocation(top), alt(children.foundLocation, annotations.foundLocation)));
   
   production attribute antiquoteTranslation::Maybe<Expr> with orElse;
   antiquoteTranslation := nothing();
@@ -186,7 +186,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
-  local locationAST::AST = reflect(new(location));
+  local locationAST::AST = reflect(location);
   locationAST.givenLocation = top.givenLocation;
 
   top.translation =

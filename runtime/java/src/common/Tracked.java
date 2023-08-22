@@ -30,12 +30,12 @@ public interface Tracked {
         if (roi instanceof PoriginOriginInfo) {
             PoriginOriginInfo oi = (PoriginOriginInfo)roi;
             origin = oi.getChild_origin();
-            originNotes = oi.getChild_originNotes();
+            originNotes = oi.getAnno_silver_core_originNotes();
             newlyConstructed = oi.getChild_newlyConstructed();
         } else if (roi instanceof PoriginAndRedexOriginInfo) {
             PoriginAndRedexOriginInfo oi = (PoriginAndRedexOriginInfo)roi;
             origin = oi.getChild_origin();
-            originNotes = oi.getChild_originNotes();
+            originNotes = oi.getAnno_silver_core_originNotes();
             newlyConstructed = oi.getChild_newlyConstructed();
         } else {
             return this;
@@ -43,14 +43,14 @@ public interface Tracked {
 
         return updateOriginInfo(
 			new PoriginAndRedexOriginInfo(
-				OriginsUtil.SET_AT_ACCESS_OIT,
-				origin, originNotes, redex, redexNotes, newlyConstructed));
+				origin, redex, redexNotes, newlyConstructed,
+                originNotes, OriginsUtil.SET_AT_ACCESS_OIT));
     }
 
 	public default Tracked duplicateForForwarding(Node redex, String note) {
         return updateOriginInfo(
             new PoriginOriginInfo(
-				OriginsUtil.SET_AT_FORWARDING_OIT,
-				this, new ConsCell(new PoriginDbgNote(new StringCatter(note)), ConsCell.nil), true));
+				this, true,
+				new ConsCell(new PoriginDbgNote(new StringCatter(note)), ConsCell.nil), OriginsUtil.SET_AT_FORWARDING_OIT));
     }
 }

@@ -108,7 +108,7 @@ ProductionGraph ::=
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Env
 {
   return if null(prods) then []
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
@@ -154,7 +154,7 @@ function computeAllProductionGraphs
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
@@ -177,7 +177,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
      else -- This first pair is used sometimes as an alias:
-          pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+          (lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs));
@@ -225,7 +225,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
  - @param ntEnv  The flow types we've previously computed
  -}
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local prod :: String = ns.fullName;
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
@@ -264,7 +264,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env
  -
  -}
 function constructAnonymousGraph
-ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   -- Actually very unclear to me right now if these dummy names matter.
   -- Presently duplicating what appears in BlockContext
@@ -300,7 +300,7 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<Pr
  -
  -}
 function constructDefaultProductionGraph
-ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local prod :: String = ns.fullName;
   local nt :: NtName = ns.outputElement.typerep.typeName;
@@ -340,7 +340,7 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
  - @return A fixed up graph.
  -}
 function constructPhantomProductionGraph
-ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
 {
   -- Just synthesized attributes.
   local syns :: [String] = getSynAttrsOn(nt, realEnv);
@@ -350,7 +350,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
-    pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+    (lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
@@ -366,7 +366,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
 function getPhantomEdge
 Pair<FlowVertex FlowVertex> ::= at::String
 {
-  return pair(lhsSynVertex(at), forwardEqVertex());
+  return (lhsSynVertex(at), forwardEqVertex());
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
@@ -380,8 +380,8 @@ function addFwdSynEqs
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
-    then [pair(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
-          pair(lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
+    then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
+          (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 }
 {--
@@ -392,7 +392,7 @@ function addFwdInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
 }
 {--
@@ -403,7 +403,7 @@ function addFwdProdAttrInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [pair(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
 }
 function allFwdProdAttrs
@@ -438,7 +438,7 @@ function addDefEqs
  - Stitch points for the flow type of 'nt', and the flow types of all translation attributes on 'nt'.
  -}
 function nonterminalStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  nt::NtName  vertexType::VertexType
+[StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType
 {
   return
     nonterminalStitchPoint(nt, vertexType) ::
@@ -454,7 +454,7 @@ function nonterminalStitchPoints
       getAttrOccursOn(nt, realEnv));
 }
 function localStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  nt::NtName  ds::[FlowDef]
+[StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef]
 {
   return flatMap(\ d::FlowDef ->
     case d of
@@ -469,7 +469,7 @@ function localStitchPoints
     end, ds);
 }
 function rhsStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  rhs::NamedSignatureElement
+[StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement
 {
   return
     -- We want only NONTERMINAL stitch points!
@@ -478,7 +478,7 @@ function rhsStitchPoints
     else [];
 }
 function patternStitchPoints
-[StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
+[StitchPoint] ::= realEnv::Env  defs::[FlowDef]
 {
   return case defs of
   | [] -> []
@@ -489,7 +489,7 @@ function patternStitchPoints
   end;
 }
 function patVarStitchPoints
-[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Decorated Env  var::PatternVarProjection
+[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection
 {
   return case var of
   | patternVarProjection(child, typeName, patternVar) -> 
@@ -500,7 +500,7 @@ function patVarStitchPoints
   end;
 }
 function subtermDecSiteStitchPoints
-[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Decorated Env  defs::[FlowDef]
+[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef]
 {
   return flatMap(\ d::FlowDef ->
     case d of
@@ -520,7 +520,7 @@ function subtermDecSiteStitchPoints
 function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
-  return pair(p.prod, p);
+  return (p.prod, p);
 }
 
 ---- Begin Suspect edge handling -----------------------------------------------
@@ -571,6 +571,6 @@ function findAdmissibleEdges
     filter(isLhsInhSet(_, currentDeps), set:toList(targetNotSource));
   
   return if set:isEmpty(currentDeps) then [] -- just a quick optimization.
-  else map(pair(edge.fst, _), validDeps);
+  else map(pair(fst=edge.fst, snd=_), validDeps);
 }
 

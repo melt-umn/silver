@@ -55,9 +55,8 @@ top::Expr ::= tuple::Expr '.' a::IntConst
 
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
 
-  -- Ensure that we extract the tupleElems from the underlying chain of pair types if the tuple type is decorated.
   local ty :: Type = performSubstitution(tuple.typerep, tuple.upSubst);
-  local len::Integer = length((if ty.isDecorated then ty.decoratedType else ty).tupleElems);
+  local len::Integer = length(ty.tupleElems);
   
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
@@ -87,7 +86,7 @@ concrete production tupleList_2Elements
 top::TupleList ::= fst::Expr ',' snd::Expr
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd}) };
 }
 
 -- There are more than two elements in the tuple
@@ -95,5 +94,5 @@ concrete production tupleList_nElements
 top::TupleList ::= fst::Expr ',' snd::TupleList
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd.translation}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd.translation}) };
 }

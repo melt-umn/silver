@@ -3,7 +3,7 @@ grammar silver:rewrite;
 inherited attribute matchWith<a>::a;
 synthesized attribute substitution::Maybe<[Pair<String AST>]>;
 
-nonterminal ASTPattern with pp, matchWith<AST>, substitution;
+tracked nonterminal ASTPattern with pp, matchWith<AST>, substitution;
 
 -- AST constructors
 abstract production prodCallASTPattern
@@ -112,7 +112,7 @@ abstract production varASTPattern
 top::ASTPattern ::= n::String
 {
   top.pp = text(n);
-  top.substitution = just([pair(n, top.matchWith)]);
+  top.substitution = just([(n, top.matchWith)]);
 }
 
 abstract production wildASTPattern
@@ -124,7 +124,7 @@ top::ASTPattern ::=
 
 synthesized attribute astPatterns::[ASTPattern];
 
-nonterminal ASTPatterns with pps, astPatterns, matchWith<ASTs>, substitution;
+tracked nonterminal ASTPatterns with pps, astPatterns, matchWith<ASTs>, substitution;
 
 abstract production consASTPattern
 top::ASTPatterns ::= h::ASTPattern t::ASTPatterns
@@ -168,7 +168,7 @@ ASTPatterns ::= a::ASTPatterns b::ASTPatterns
     end;
 }
 
-nonterminal NamedASTPatterns with pps, substitutionEnv, matchWith<[Pair<String AST>]>, substitution;
+tracked nonterminal NamedASTPatterns with pps, substitutionEnv, matchWith<[Pair<String AST>]>, substitution;
 
 abstract production consNamedASTPattern
 top::NamedASTPatterns ::= h::NamedASTPattern t::NamedASTPatterns
@@ -202,7 +202,7 @@ NamedASTPatterns ::= a::NamedASTPatterns b::NamedASTPatterns
     end;
 }
 
-nonterminal NamedASTPattern with pp, substitutionEnv, matchWith<[Pair<String AST>]>, substitution;
+tracked nonterminal NamedASTPattern with pp, substitutionEnv, matchWith<[Pair<String AST>]>, substitution;
 
 abstract production namedASTPattern
 top::NamedASTPattern ::= n::String v::ASTPattern

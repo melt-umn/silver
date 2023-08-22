@@ -86,7 +86,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   local rootSpecs :: [Decorated RootSpec] = flatMap(searchEnvTree(_, top.compiledGrammars), depsPlusOptions);
   g.grammarDependencies = actualDependencies;
   g.flowEnv =
-    fromFlowDefs(
+    flowEnv(
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
       flatMap((.uniqueRefs), rootSpecs),
@@ -204,11 +204,11 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
 {
   return case e of
   | syntaxError(str, locat, _, _) ->
-      pair(locat.filename, 
+      (locat.filename, 
         [err(locat,
           "Syntax error:\n" ++ str)])
   | unknownParseError(str, file) ->
-      pair(file,
+      (file,
         [err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
           "Unknown error while parsing:\n" ++ str)])
   end;

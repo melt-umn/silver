@@ -33,7 +33,7 @@ imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
 
 function isForwardProdAttr
-Boolean ::= a::String  e::Decorated Env
+Boolean ::= a::String  e::Env
 {
   return case getValueDclAll(a, e) of
   | d :: _ -> d.hasForward

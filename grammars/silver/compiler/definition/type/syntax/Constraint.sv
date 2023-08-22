@@ -82,7 +82,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | typeVariableTypeExpr(tv)
       -- Avoid circular inference if someone uses a class constraint within its own definition
       when top.constraintPos.classDefName != just(fName) ->
-      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
+      [(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
     | _ -> []
     end;
 } action {
@@ -179,7 +179,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
 
   top.lexicalTyVarKinds <-
     case i of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
 }
@@ -268,12 +268,12 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
 
   top.lexicalTyVarKinds <-
     case i1 of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
   top.lexicalTyVarKinds <-
     case i2 of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
 }
@@ -364,7 +364,7 @@ top::ConstraintPosition ::= tvs::[TyVar]
 }
 
 function transitiveSuperContexts
-[Context] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
+[Context] ::= env::Env ty::Type seenClasses::[String] className::String
 {
   local dcls::[TypeDclInfo] = getTypeDcl(className, env);
   local dcl::TypeDclInfo = head(dcls);
@@ -394,7 +394,7 @@ Boolean ::= c1::Context c2::Context
 }
 
 function transitiveSuperDefs
-[Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::InstDclInfo
+[Def] ::= env::Env ty::Type seenClasses::[String] instDcl::InstDclInfo
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);
@@ -415,7 +415,7 @@ function transitiveSuperDefs
 }
 
 function transitiveSuperOccursDefs
-[OccursDclInfo] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::InstDclInfo
+[OccursDclInfo] ::= env::Env ty::Type seenClasses::[String] instDcl::InstDclInfo
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);

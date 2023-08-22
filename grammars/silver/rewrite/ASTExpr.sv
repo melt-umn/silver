@@ -6,7 +6,7 @@ imports silver:langutil:pp;
 inherited attribute substitutionEnv::[Pair<String AST>];
 synthesized attribute value::AST;
 
-nonterminal ASTExpr with pp, substitutionEnv, value;
+tracked nonterminal ASTExpr with pp, substitutionEnv, value;
 propagate substitutionEnv on ASTExpr excluding letASTExpr, matchASTExpr;
 
 -- AST constructors
@@ -351,7 +351,7 @@ top::ASTExpr ::= a::NamedASTExprs body::ASTExpr
   top.value = body.value;
   a.substitutionEnv = top.substitutionEnv;
   body.substitutionEnv =
-    map(\ n::NamedAST -> case n of namedAST(n, a) -> pair(n, a) end, a.namedValues) ++ top.substitutionEnv;
+    map(\ n::NamedAST -> case n of namedAST(n, a) -> (n, a) end, a.namedValues) ++ top.substitutionEnv;
 }
 
 abstract production lengthASTExpr
@@ -454,7 +454,7 @@ synthesized attribute astExprs::[ASTExpr];
 synthesized attribute values::[AST];
 synthesized attribute appValues::[Maybe<AST>];
 
-nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues;
+tracked nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues;
 propagate substitutionEnv on ASTExprs;
 
 abstract production consASTExpr
@@ -492,7 +492,7 @@ ASTExprs ::= a::ASTExprs b::ASTExprs
 synthesized attribute namedValues::[NamedAST];
 synthesized attribute namedAppValues::[Pair<String Maybe<AST>>];
 
-nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues;
+tracked nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues;
 propagate substitutionEnv on NamedASTExprs;
 
 abstract production consNamedASTExpr
@@ -524,7 +524,7 @@ NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs
 synthesized attribute namedValue::NamedAST;
 synthesized attribute namedAppValue::Pair<String Maybe<AST>>;
 
-nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue;
+tracked nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue;
 propagate substitutionEnv on NamedASTExpr;
 
 abstract production namedASTExpr
@@ -533,7 +533,7 @@ top::NamedASTExpr ::= n::String v::ASTExpr
   top.pp = pp"${text(n)}=${v.pp}";
   top.namedValue = namedAST(n, v.value);
   top.namedAppValue =
-    pair(
+    (
       last(explode(":", n)),
       case v of
       | missingArgASTExpr() -> nothing()

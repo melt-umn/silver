@@ -63,7 +63,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local contexts::Contexts = foldContexts(namedSig.contexts);
   contexts.boundVariables = namedSig.freeVariables;
 
-  top.genFiles := [pair(className ++ ".java", s"""
+  top.genFiles := [(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
 import silver.core.*;
@@ -290,7 +290,7 @@ ${body.translation}
             ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
             ${namedSig.contextRuntimeResolve}
 
-            return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfAny else ""} ${namedSig.refInvokeTrans});
+            return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(origAST, true, rules, common.OriginsUtil.SET_FROM_REIFICATION_OIT)"++commaIfAny else ""} ${namedSig.refInvokeTrans});
         }
 
         public ${className} constructDirect(
@@ -360,9 +360,9 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     public ${fnnt} duplicate(common.Node redex, common.ConsCell notes) {
         silver.core.NOriginInfo oi;
         if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
-            oi = new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true);
+            oi = new PoriginOriginInfo(this, true, notes, common.OriginsUtil.SET_AT_NEW_OIT);
         } else {
-            oi = new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true);
+            oi = new PoriginAndRedexOriginInfo(this, redex, notes, true, notes, common.OriginsUtil.SET_AT_NEW_OIT);
         }
         return new ${className}(
             ${implode(", ",

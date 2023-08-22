@@ -181,7 +181,7 @@ top::Type ::= c::Type a::Type
     end;
   top.namedTypes =
     case top.baseType of
-    | functionType(_, nps) -> zipWith(pair, nps, drop(top.arity, top.argTypes))
+    | functionType(_, nps) -> zip(nps, drop(top.arity, top.argTypes))
     | _ -> []
     end;
 }

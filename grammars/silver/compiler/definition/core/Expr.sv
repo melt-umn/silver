@@ -381,7 +381,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   note.isRoot = false;
   e.isRoot = false;
   note.originRules = top.originRules;
-  e.originRules = top.originRules ++ [note];
+  e.originRules = note :: top.originRules;
 }
 
 -- NOTE: this is not intended to be used normally.
@@ -452,7 +452,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("silver:core:Location", [], false, false)  -- TODO: This should become data!
+    then nonterminalType("silver:core:Location", [], true, false)
     else errorType();
 }
 
@@ -1246,7 +1246,7 @@ function reorderedAnnoAppExprs
 [Decorated Expr] ::= d::Decorated AnnoAppExprs
 {
   -- This is an annoyingly poor quality implementation
-  return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+  return map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
 }
 function reorderedLte
 Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }

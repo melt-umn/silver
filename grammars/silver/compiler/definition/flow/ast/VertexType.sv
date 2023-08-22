@@ -7,11 +7,10 @@ grammar silver:compiler:definition:flow:ast;
  - lhsVertexType, rhsVertexType(sigName), localVertexType(fName),
  - forwardVertexType, anonVertexType(x)
  -}
-nonterminal VertexType with
-  compareTo, isEqual, compareKey, compare,
+data nonterminal VertexType with
   vertexName,
   synVertex, inhVertex, fwdVertex, eqVertex;
-propagate compareTo, isEqual, compareKey, compare on VertexType;
+derive Eq, Ord on VertexType;
 
 synthesized attribute vertexName::String;
 

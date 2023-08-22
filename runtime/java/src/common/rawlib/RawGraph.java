@@ -26,9 +26,8 @@ public final class RawGraph {
 		// Note that this clone only the tree map... it's up to us to clone the sets in the values.
 		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
 		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
-			assert(elem instanceof silver.core.Ppair); // document as an assert why not
-			final Object src = elem.getChild(0);
-			final Object dst = elem.getChild(1);
+			final Object src = elem.getAnno_silver_core_fst();
+			final Object dst = elem.getAnno_silver_core_snd();
 			
 			TreeSet<Object> target = ret.get(src);
 			if(target == null) {
@@ -58,11 +57,10 @@ public final class RawGraph {
 	
 	// contains :: (Boolean ::= Pair<a a>  Graph<a>)
 	public static boolean contains(silver.core.NPair p, TreeMap<Object,TreeSet<Object>> g) {
-		assert(p instanceof silver.core.Ppair); // document as an assert why not
-		final TreeSet<Object> set = g.get(p.getChild(0));
+		final TreeSet<Object> set = g.get(p.getAnno_silver_core_fst());
 		if(set == null)
 			return false;
-		return set.contains(p.getChild(1));
+		return set.contains(p.getAnno_silver_core_snd());
 	}
 	
 	// toList :: ([Pair<a a>] ::= Graph<a>)
@@ -131,9 +129,8 @@ public final class RawGraph {
 		// calls to comparison functions. So, uh, to-do someday: make silver fast. Heh.
 		
 		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
-			assert(elem instanceof silver.core.Ppair); // document as an assert why not
-			final Object src = elem.getChild(0);
-			final Object dst = elem.getChild(1);
+			final Object src = elem.getAnno_silver_core_fst();
+			final Object dst = elem.getAnno_silver_core_snd();
 
 			// So we have a transitively closed graph, currently, and we
 			// suddenly want to add the edge (src, dst), and repair the closure.

@@ -16,7 +16,8 @@ synthesized attribute isRight :: Boolean;
  - Inspect it's state with isLeft::Boolean and isRight::Boolean, and
  - access it's state with fromLeft::a, fromRight::b (which panic if incorrect)
  -}
-nonterminal Either<a b> with fromLeft<a>, fromRight<b>, isLeft, isRight;
+data nonterminal Either<a b> with fromLeft<a>, fromRight<b>, isLeft, isRight;
+derive Eq, Ord on Either;
 
 @{-
   - Left case for Either.
@@ -107,7 +108,7 @@ instance Alt Either<a _> {
  - @param m The monad type to be transformed
  - @param a The "success" result type, corresponding to the right constructor
  -}
-nonterminal EitherT<e (m :: * -> *) a> with run<m<Either<e a>>>;
+data nonterminal EitherT<e (m :: * -> *) a> with run<m<Either<e a>>>;
 abstract production eitherT
 top::EitherT<e m a> ::= x::m<Either<e a>>
 {
@@ -196,9 +197,9 @@ Pair<[a] [b]> ::= l::[Either<a b>]
   local recurse :: Pair<[a] [b]> = partitionEithers(tail(l));
   
   return case l of
-  | [] -> pair([], [])
-  | left(a) :: _ -> pair(a :: recurse.fst, recurse.snd)
-  | right(b) :: _ -> pair(recurse.fst, b :: recurse.snd)
+  | [] -> ([], [])
+  | left(a) :: _ -> (a :: recurse.fst, recurse.snd)
+  | right(b) :: _ -> (recurse.fst, b :: recurse.snd)
   end;
 }
 

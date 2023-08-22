@@ -183,7 +183,7 @@ function buildExplicitAttrErrors
 {
   return case l of
          | [] -> []
-         | pair(name, loca)::t ->
+         | (name, loca)::t ->
            err(loca, "Attributes accessed in restricted equations must be restricted; " ++
                      name ++ " is not")::buildExplicitAttrErrors(t)
          end;

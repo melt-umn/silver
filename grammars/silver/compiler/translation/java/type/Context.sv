@@ -112,7 +112,7 @@ top::Context ::= t::Type
 {
   top.transType = "common.TypeRep";
   
-  t.skolemTypeReps = zipWith(pair, t.freeVariables, requiredContexts.transTypeableContexts);
+  t.skolemTypeReps = zip(t.freeVariables, requiredContexts.transTypeableContexts);
   resolvedDcl.transContextDeps = requiredContexts.transTypeableContexts;
   top.transTypeableContext =
     case top.resolved, t of

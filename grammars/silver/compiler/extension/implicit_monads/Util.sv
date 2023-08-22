@@ -35,7 +35,7 @@ threaded attribute mDownSubst, mUpSubst::Substitution;
 
 
 function isMonad
-Boolean ::= ty::Type env::Decorated Env
+Boolean ::= ty::Type env::Env
 {
   return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
@@ -44,7 +44,7 @@ Boolean ::= ty::Type env::Decorated Env
 }
 
 function isMonadPlus
-Boolean ::= ty::Type env::Decorated Env
+Boolean ::= ty::Type env::Env
 {
   return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
@@ -53,7 +53,7 @@ Boolean ::= ty::Type env::Decorated Env
 }
 
 function isMonadFail
-Boolean ::= ty::Type env::Decorated Env
+Boolean ::= ty::Type env::Env
 {
   return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0
@@ -78,7 +78,7 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
      case dropDecorated(ty1), dropDecorated(ty2) of
      | appType(c1, _), appType(c2, _) ->
        tyMatch(c1, c2, subst)
-     | _, _ -> pair(false, subst)
+     | _, _ -> (false, subst)
      end;
 }
 
@@ -106,7 +106,7 @@ Pair<Boolean Substitution> ::= t1::Type t2::Type subst::Substitution
 {
   local tycheck::TypeCheck = check(t1, t2);
   tycheck.downSubst = subst;
-  return pair(!tycheck.typeerror, tycheck.upSubst);
+  return (!tycheck.typeerror, tycheck.upSubst);
 }
 
 
@@ -239,7 +239,7 @@ Expr ::= names::[Pair<String Type>] body::Expr loc::Location
   local sig::ProductionRHS =
         foldr(\ pr::Pair<String Type> p::ProductionRHS ->
                 case pr of
-                | pair(n, ty) ->
+                | (n, ty) ->
                   productionRHSCons(productionRHSElem(name(n, loc), '::',
                                        typerepTypeExpr(ty, location=loc), location=loc),
                                     p, location=loc)

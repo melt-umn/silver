@@ -704,7 +704,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
       fromMaybe(e.finalType.isDecorated, lookup(qn.name, top.boundVars))
     | _ -> e.finalType.isDecorated
     end;
-  top.varBindings = [pair(id.name, isDecorated)];
+  top.varBindings = [(id.name, isDecorated)];
   top.decRuleExprs = e.decRuleExprs;
 }
 

@@ -67,13 +67,13 @@ function testMultipleVars
 Boolean ::= p1::Pair<Integer Integer> p2::Pair<Integer Integer>
 {
   return  case p1, p2 of
-          | pair(vara,varb), pair(varc,vard) when vara + varb == varc + vard -> true
-          | pair(vara,varb), pair(varc,vard) -> false
+          | (vara,varb), (varc,vard) when vara + varb == varc + vard -> true
+          | (vara,varb), (varc,vard) -> false
           end;
 }
 
-equalityTest ( testMultipleVars(pair(3,4), pair(7,0)), true, Boolean, pat_tests ) ;
-equalityTest ( testMultipleVars(pair(3,4), pair(3,3)), false, Boolean, pat_tests ) ;
+equalityTest ( testMultipleVars((3,4), (7,0)), true, Boolean, pat_tests ) ;
+equalityTest ( testMultipleVars((3,4), (3,3)), false, Boolean, pat_tests ) ;
 
 
 

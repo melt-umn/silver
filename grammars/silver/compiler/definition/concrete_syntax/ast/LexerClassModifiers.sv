@@ -66,7 +66,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
   -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
   production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
-  top.superClassContribs := map(pair(top.className, _), map((.fullName), superRefs));
+  top.superClassContribs := map(pair(fst=top.className, snd=_), map((.fullName), superRefs));
 }
 
 {--
@@ -82,7 +82,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
-                   zipWith(pair, sub, subRefs)); 
+                   zip(sub, subRefs));
   
   top.submits_ := map(head, subRefs);
 }
@@ -99,7 +99,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
-                   zipWith(pair, dom, domRefs));
+                   zip(dom, domRefs));
 
   top.dominates_ := map(head, domRefs);
 }

@@ -1,5 +1,29 @@
 grammar silver:core;
 
+instance Eq a => Eq [a] {
+  eq = \ x::[a] y::[a] ->
+    case x, y of
+    | h1::t1, h2::t2 -> h1 == h2 && t1 == t2
+    | [], [] -> true
+    | _, _ -> false
+    end;
+  neq = \ x::[a] y::[a] ->
+    case x, y of
+    | h1::t1, h2::t2 -> h1 != h2 || t1 != t2
+    | [], [] -> false
+    | _, _ -> true
+    end;
+}
+
+instance Ord a => Ord [a] {
+  lte = \ x::[a] y::[a] ->
+    case x, y of
+    | h1::t1, h2::t2 -> if h1 == h2 then t1 <= t2 else h1 < h2
+    | [], _ -> true
+    | _, _ -> false
+    end;
+}
+
 instance Functor [] {
   map = \ f::(b ::= a) l::[a] ->
     if null(l) then []
@@ -208,10 +232,10 @@ Pair<[a] [a]> ::= f::(Boolean ::= a) lst::[a]
   local attribute recurse :: Pair<[a] [a]>;
   recurse = partition(f, tail(lst));
 
-  return if null(lst) then pair([],[])
+  return if null(lst) then ([],[])
          else if f(head(lst))
-              then pair(head(lst) :: recurse.fst, recurse.snd)
-              else pair(recurse.fst, head(lst) :: recurse.snd);
+              then (head(lst) :: recurse.fst, recurse.snd)
+              else (recurse.fst, head(lst) :: recurse.snd);
 }
 
 @{--
@@ -430,6 +454,36 @@ function unzipWith
          else f(head(l).1, head(l).2) :: unzipWith(f, tail(l));
 }
 
+function zip
+[(a, b)] ::= l1::[a]  l2::[b]
+{
+  return if null(l1) || null(l2) then []
+         else (head(l1), head(l2)) :: zip(tail(l1), tail(l2));
+}
+
+function unzip
+([a], [b]) ::= l::[(a, b)]
+{
+  local rest::([a], [b]) = unzip(tail(l));
+  return if null(l) then ([], [])
+         else (head(l).1 :: rest.1, head(l).2 :: rest.2);
+}
+
+function zip3
+[(a, b, c)] ::= l1::[a]  l2::[b]  l3::[c]
+{
+  return if null(l1) || null(l2) || null(l3) then []
+         else (head(l1), head(l2), head(l3)) :: zip3(tail(l1), tail(l2), tail(l3));
+}
+
+function unzip3
+([a], [b], [c]) ::= l::[(a, b, c)]
+{
+  local rest::([a], [b], [c]) = unzip3(tail(l));
+  return if null(l) then ([], [], [])
+         else (head(l).1 :: rest.1, head(l).2 :: rest.2, head(l).3 :: rest.3);
+}
+
 function reverse
 [a] ::= lst::[a]
 {
@@ -506,8 +560,8 @@ Pair<[a] [a]> ::= eq::(Boolean ::= a a) f::a l::[a]
   recurse = groupByHelp(eq, f, tail(l));
 
   return if null(l) || !eq(f, head(l))
-         then pair([], l)
-         else pair(head(l) :: recurse.fst, recurse.snd);
+         then ([], l)
+         else (head(l) :: recurse.fst, recurse.snd);
 }
 
 function group
