@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 import silver:compiler:definition:origins;
 import silver:util:cmdargs only CmdArgs;
 import silver:compiler:driver;
@@ -57,7 +64,7 @@ global newConstructionOriginUsingCtxRef :: String =
 function makeNewConstructionOrigin
 [String] ::= top::Decorated Expr  inInteresting::Boolean  --need .frame anno
 {
-  local ty :: Type = finalType(top).outputType;
+  local ty :: Type = top.finalType.outputType;
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
   return if typeWantsTracking(ty, top.config, top.env)
@@ -94,7 +101,7 @@ Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 function wrapAccessWithOT
 String ::= top::Decorated Expr expr::String
 {
-  local ty :: Type = finalType(top);
+  local ty :: Type = top.finalType;
 
   -- The complexity here is needed because of silver generics. A nonterminal like Maybe<a> is monomorphized in such a way
   -- that the parameter type is Object. As a result we can't tell, when it's possible that we are doing something on a type

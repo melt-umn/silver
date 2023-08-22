@@ -2,11 +2,11 @@ grammar silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type only isNonterminal, typerep;
 import silver:compiler:definition:type:syntax;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
 import silver:compiler:driver:util only isExportedBy, RootSpec;
-import silver:compiler:translation:java:core only finalType;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
@@ -208,7 +208,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
     if e.alwaysDecorated
     then just(localVertexType(val.lookupValue.fullName))
     else nothing();
-  e.alwaysDecorated = isDecorable(finalType(e), top.env);
+  e.alwaysDecorated = isDecorable(e.finalType, top.env);
 }
 
 -- FROM COLLECTIONS TODO

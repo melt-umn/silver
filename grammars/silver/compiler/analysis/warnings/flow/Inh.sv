@@ -638,43 +638,39 @@ Step 2: Let's go check on expressions. This has two purposes:
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
+    top.errors <-
     if top.config.warnMissingInh
     && isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then if refSet.isJust then []
-         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
     else [];
 }
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
+    top.errors <-
     if top.config.warnMissingInh
     then if refSet.isJust then []
-         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
     else [];
 }
 aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
+    top.errors <-
     if top.config.warnMissingInh
     && isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then if refSet.isJust then []
-         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
     else [];
 }
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
+    top.errors <-
     if top.config.warnMissingInh
     then if refSet.isJust then []
-         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
     else [];
 }
 
@@ -690,15 +686,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local finalTy :: Type = performSubstitution(e.typerep, e.upSubst);
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
-    inhDepsForSynOnType(q.attrDcl.fullName, finalTy, myFlow, top.frame.signature, top.env);
+    inhDepsForSynOnType(q.attrDcl.fullName, e.finalType, myFlow, top.frame.signature, top.env);
   local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
 
 -- This aspect is in two parts. First: we *must* check that any accesses
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
-    case finalTy of
+    case e.finalType of
     | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
     | _ -> ([], [])
     end;
@@ -716,7 +711,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       -- an access with unbounded inh deps only ever makes sense on a reference. 
       | just(_) ->
           if deps.1.isJust then []
-          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
+          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(e.finalType) ++ " requires an unbounded set of inherited attributes")]
       -- without a vertex, we're accessing from a reference, and so...
       | nothing() ->
           if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
@@ -725,10 +720,10 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
             then if deps.fst.isJust then []  -- We have a bound on the inh deps, and they are all present
             -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
             else if null(acceptable.2)
-            then [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
-            else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires one of the following sets of inherited attributes not known to be supplied to this reference: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.snd)))]
+            then [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(e.finalType) ++ " requires an unbounded set of inherited attributes")]
+            else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(e.finalType) ++ " requires one of the following sets of inherited attributes not known to be supplied to this reference: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.snd)))]
           -- We didn't find the inh deps
-          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff))]
+          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(e.finalType) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff))]
       end
     else [];
 
@@ -795,7 +790,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's
   -- an explicit access to the attributes.
-  local finalTy::Type = performSubstitution(e.typerep, e.upSubst);
   top.errors <- 
     if null(e.errors) && top.config.warnMissingInh
     then
@@ -803,9 +797,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       | just(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | nothing() ->
-          if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
+          if contains(q.attrDcl.fullName, getMinRefSet(e.finalType, top.env))
           then []
-          else [mwdaWrn(top.config, top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted")]
+          else [mwdaWrn(top.config, top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(e.finalType) ++ " is not permitted")]
       end
     else [];
 }
@@ -816,9 +810,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local finalTy :: Type = performSubstitution(e.typerep, e.upSubst);
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
-    inhDepsForSynOnType(q.attrDcl.fullName, finalTy, myFlow, top.frame.signature, top.env);
+    inhDepsForSynOnType(q.attrDcl.fullName, e.finalType, myFlow, top.frame.signature, top.env);
   local inhDeps :: set:Set<String> =
     -- Inh deps for computing this syn attribute
     fromMaybe(set:empty(), deps.1) ++  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
@@ -829,7 +822,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.errors <-
     if top.config.warnMissingInh
     then if refSet.isJust then []
-         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrn(top.config, top.location, s"Cannot take a reference of type ${prettyType(e.finalType)}, as the reference set is not bounded.")]
     else [];
 
   -- TODO: check that reference set is only inhs?
@@ -839,7 +832,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 -- This aspect is in two parts. First: we *must* check that any accesses
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
-    case finalTy of
+    case e.finalType of
     | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
     | _ -> ([], [])
     end;
@@ -857,7 +850,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       -- an access with unbounded inh deps only ever makes sense on a reference. 
       | just(_) ->
           if deps.1.isJust then []
-          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
+          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(e.finalType) ++ " requires an unbounded set of inherited attributes")]
       -- without a vertex, we're accessing from a reference, and so...
       | nothing() ->
           if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
@@ -866,10 +859,10 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
             then if deps.fst.isJust then []  -- We have a bound on the inh deps, and they are all present
             -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
             else if null(acceptable.2)
-            then [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes")]
-            else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires one of the following sets of inherited attributes not known to be supplied to this reference: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.snd)))]
+            then [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from " ++ prettyType(e.finalType) ++ " requires an unbounded set of inherited attributes")]
+            else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(e.finalType) ++ " requires one of the following sets of inherited attributes not known to be supplied to this reference: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.snd)))]
           -- We didn't find the inh deps
-          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff))]
+          else [mwdaWrn(top.config, top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(e.finalType) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff))]
       end
     else [];
 

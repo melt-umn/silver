@@ -14,13 +14,11 @@ import silver:compiler:translation:java:type;
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
-  local finTy :: Type = finalType(top);
-
   -- We need to create these nested locals, so we have no choice but to create a thunk object so we can declare these things.
   local closureExpr :: String =
-    s"new common.Thunk<${finTy.transType}>(new common.Thunk.Evaluable<${finTy.transType}>() { public final ${finTy.transType} eval() { ${la.let_translation} return ${e.translation}; } })";
+    s"new common.Thunk<${top.finalType.transType}>(new common.Thunk.Evaluable<${top.finalType.transType}>() { public final ${top.finalType.transType} eval() { ${la.let_translation} return ${e.translation}; } })";
     --TODO: java lambdas are bugged
-    --s"new common.Thunk<${finTy.transType}>(() -> { ${la.let_translation} return ${e.translation};\n})";
+    --s"new common.Thunk<${top.finalType.transType}>(() -> { ${la.let_translation} return ${e.translation};\n})";
   
   top.translation = s"${closureExpr}.eval()";
 
@@ -74,12 +72,12 @@ top::Expr ::= q::Decorated! QName  _ _ _
   -- it could be isDecorated (ntOrDecType) that later gets specialized to undecorated
   -- and therefore we must be careful not to try to undecorate it again!
   local needsUndecorating :: Boolean =
-    performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated && !finalType(top).isDecorated;
+    performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated && !top.finalType.isDecorated;
   
   top.translation = 
     if needsUndecorating
-    then "((" ++ finalType(top).transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
-    else "((" ++ finalType(top).transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
+    then "((" ++ top.finalType.transType ++ ")((common.DecoratedNode)" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()).undecorate())"
+    else "((" ++ top.finalType.transType ++ ")(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ".eval()))";
 
   top.lazyTranslation = 
     if !top.frame.lazyApplication then top.translation

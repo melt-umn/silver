@@ -13,10 +13,12 @@ propagate upSubst, downSubst
      terminalConstructor, noteAttachment;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
+attribute finalType occurs on Expr;
 attribute contexts occurs on Expr;
 aspect default production
 top::Expr ::=
 {
+  top.finalType = performSubstitution(top.typerep, top.finalSubst);
   top.contexts = [];
 }
 
@@ -241,9 +243,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 
 aspect production minus
@@ -260,9 +262,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
@@ -278,9 +280,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
@@ -296,9 +298,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
@@ -314,18 +316,18 @@ top::Expr ::= e1::Expr '%' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production neg
 top::Expr ::= '-' e1::Expr
 {
   
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(e1.finalType))];
 }
 
 aspect production terminalConstructor
