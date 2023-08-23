@@ -314,6 +314,7 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
   tl.appArgKinds =
     case ty of
     | nominalTypeExpr(q) when q.lookupType.found -> q.lookupType.dcl.kindrep.argKinds
+    | decTypeExpr(_) -> [uniquenessKind(), inhSetKind(), starKind()]
     | _ -> []
     end;
   top.lexicalTyVarKinds <-
