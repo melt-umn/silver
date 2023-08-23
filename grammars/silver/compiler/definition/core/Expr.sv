@@ -170,7 +170,7 @@ top::Expr ::= q::Decorated! QName
   top.typerep = typeScheme.typerep;
 
   production contexts::Contexts =
-    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
+    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts)).defaultSpecialization;
   contexts.env = top.env;
   contexts.frame = top.frame;
   contexts.config = top.config;
@@ -189,7 +189,7 @@ top::Expr ::= q::Decorated! QName
   top.typerep = typeScheme.typerep;
 
   production contexts::Contexts =
-    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
+    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts)).defaultSpecialization;
   contexts.env = top.env;
   contexts.frame = top.frame;
   contexts.config = top.config;
@@ -209,7 +209,7 @@ top::Expr ::= q::Decorated! QName
 
   production instHead::Context =
     case typeScheme.contexts of
-    | c :: _ -> performContextSubstitution(c, top.finalSubst)
+    | c :: _ -> performContextSubstitution(c, top.finalSubst).defaultSpecialization
     | _ -> error("Class member should have at least one context!")
     end;
   instHead.env = top.env;
@@ -219,7 +219,7 @@ top::Expr ::= q::Decorated! QName
   instHead.compiledGrammars = top.compiledGrammars;
   production contexts::Contexts =
     case typeScheme.contexts of
-    | _ :: cs -> foldContexts(map(performContextSubstitution(_, top.finalSubst), cs))
+    | _ :: cs -> foldContexts(map(performContextSubstitution(_, top.finalSubst), cs)).defaultSpecialization
     | _ -> error("Class member should have at least one context!")
     end;
   contexts.env = top.env;
@@ -243,7 +243,7 @@ top::Expr ::= q::Decorated! QName
   -- Context resolution 
   -- Performs final substitution on all the contexts
   production contexts::Contexts =
-    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
+    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts)).defaultSpecialization;
   contexts.env = top.env;
   contexts.frame = top.frame;
   contexts.config = top.config;

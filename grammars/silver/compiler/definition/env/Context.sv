@@ -9,8 +9,9 @@ propagate env, config, compiledGrammars, grammarFlowTypes on Context, Contexts;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
-propagate boundVariables on Contexts;
+nonterminal Contexts with
+  env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables, defaultSpecialization;
+propagate boundVariables, defaultSpecialization on Contexts;
 
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
@@ -61,12 +62,6 @@ top::Context ::= cls::String t::Type
   top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
   top.contextSigOccursDefs = \ NamedSignature String Location -> [];
   top.contextClassName = just(cls);
-  
-  -- Here possibly-decorated types that are still unspecialized at this point
-  -- are specialized as decorated.  Why?  Instance resolution happens after
-  -- final types have been computed, and the default is to be decorated,
-  -- so we can't allow this to match an instance for the undecorated type.
-  production decT::Type = t.defaultSpecialization;
 
   -- Somewhat inefficient, since we try unifying with all the instances of the class.
   -- But occurs-on lookup works this way too and isn't too bad?
@@ -74,7 +69,7 @@ top::Context ::= cls::String t::Type
   -- the instance.  Probably unavoidable?
   local matching::[InstDclInfo] =
     filter(
-      \ d::InstDclInfo -> !unifyDirectional(d.typeScheme.typerep, decT).failure && !d.typeScheme.typerep.isError,
+      \ d::InstDclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
       searchEnvTree(cls, top.env.instTree));
   top.resolved =
     removeAllBy(
@@ -83,7 +78,7 @@ top::Context ::= cls::String t::Type
 
   production resolvedDcl::InstDclInfo = head(top.resolved);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
-  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, decT);
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, t);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;

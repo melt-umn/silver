@@ -284,5 +284,5 @@ instance Eq Type {
   eq = \ t1::Type t2::Type -> !unifyDirectional(t1, t2).failure;
 }
 
-attribute compareTo, isEqual occurs on Context;
-propagate compareTo, isEqual on Context;
+attribute compareTo, isEqual, defaultSpecialization occurs on Context;
+propagate compareTo, isEqual, defaultSpecialization on Context;
