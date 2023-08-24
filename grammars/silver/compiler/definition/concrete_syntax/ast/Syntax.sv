@@ -333,7 +333,7 @@ String ::= i::Integer  ns::[NamedSignatureElement]
 }
 
 function insertLocationAnnotation
-String ::= ns::Decorated NamedSignature
+String ::= ns::NamedSignature
 {
   local pfx :: String = if null(ns.inputElements) then "" else ", ";
 

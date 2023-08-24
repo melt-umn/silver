@@ -1,8 +1,8 @@
 grammar silver:compiler:definition:flow:driver;
 
-nonterminal StitchPoint with prodGraphs, flowTypes, stitchEdges;
+data nonterminal StitchPoint with stitchEdges;
 
-synthesized attribute stitchEdges :: [Pair<FlowVertex FlowVertex>];
+synthesized attribute stitchEdges :: ([Pair<FlowVertex FlowVertex>] ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
 
 {--
  - Introduces internal edges corresponding to the flow type of 'nt'
@@ -11,9 +11,9 @@ synthesized attribute stitchEdges :: [Pair<FlowVertex FlowVertex>];
 abstract production nonterminalStitchPoint
 top::StitchPoint ::= nt::String  vertexType::VertexType
 {
-  top.stitchEdges = 
+  top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     map(flowTypeEdge(vertexType, _),
-      g:toList(findFlowType(nt, top.flowTypes)));
+      g:toList(findFlowType(nt, flowTypes)));
 }
 
 
@@ -45,9 +45,9 @@ top::StitchPoint ::=
   prodType::VertexType -- a rhsVertex of 'prod'
   attrs::[String] -- all inhs on the NT type of prodType/sourceType
 {
-  top.stitchEdges =
+  top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     flatMap(
-      projectAttribute(_, sourceType, targetType, prodType, findProductionGraph(prod, top.prodGraphs)),
+      projectAttribute(_, sourceType, targetType, prodType, findProductionGraph(prod, prodGraphs)),
       attrs);
 }
 
@@ -83,9 +83,7 @@ function projectAttribute
 function stitchEdgesFor
 [Pair<FlowVertex FlowVertex>] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph>
 {
-  sp.prodGraphs = prodEnv;
-  sp.flowTypes = ntEnv;
-  return sp.stitchEdges;
+  return sp.stitchEdges(ntEnv, prodEnv);
 }
 
 function edgeIsNew
