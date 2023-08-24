@@ -56,9 +56,11 @@ top::ProductionStmt ::= inh::String syn::Decorated! QName
               trueConst('true', location=top.location),
               map(
                 \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
+                  if !null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
+                  then Silver_Expr { $name{ie.elementName}.$QName{new(syn)} }
+                  else if isNonterminal(ie.typerep, top.env) && !ie.typerep.isData
+                  then Silver_Expr { silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"})) }
+                  else Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;

@@ -133,8 +133,12 @@ top::AGDcl ::= nt::Decorated! QName
                           foldr(
                             and(_, '&&', _, location=top.location),
                             Silver_Expr {true},
-                            map(
-                              \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} == $name{s"b${toString(i)}"} },
+                            zipWith(
+                              \ e::NamedSignatureElement i::Integer -> Silver_Expr {
+                                $Expr{undecIfNonterminal(e.typerep, Silver_Expr { $name{s"a${toString(i)}"} }, location=top.location)} ==
+                                $Expr{undecIfNonterminal(e.typerep, Silver_Expr { $name{s"b${toString(i)}"} }, location=top.location)}
+                              },
+                              prod.namedSignature.inputElements,
                               range(0, length(prod.namedSignature.inputElements)))),
                           location=top.location),
                         location=top.location),
@@ -180,8 +184,12 @@ top::AGDcl ::= nt::Decorated! QName
                           foldr(
                             or(_, '||', _, location=top.location),
                             Silver_Expr {false},
-                            map(
-                              \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} != $name{s"b${toString(i)}"} },
+                            zipWith(
+                              \ e::NamedSignatureElement i::Integer -> Silver_Expr {
+                                $Expr{undecIfNonterminal(e.typerep, Silver_Expr { $name{s"a${toString(i)}"} }, location=top.location)} !=
+                                $Expr{undecIfNonterminal(e.typerep, Silver_Expr { $name{s"b${toString(i)}"} }, location=top.location)}
+                              },
+                              prod.namedSignature.inputElements,
                               range(0, length(prod.namedSignature.inputElements)))),
                           location=top.location),
                         location=top.location),
@@ -274,9 +282,14 @@ top::AGDcl ::= nt::Decorated! QName
                               else foldr1(
                                 \ e1::Expr e2::Expr ->
                                   Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
-                                map(
-                                  \ i::Integer -> Silver_Expr { silver:core:compare($name{s"a${toString(i)}"}, $name{s"b${toString(i)}"}) },
-                                  range(0, length(prod2.namedSignature.inputElements)))),
+                                  zipWith(
+                                    \ e::NamedSignatureElement i::Integer -> Silver_Expr {
+                                      silver:core:compare(
+                                        $Expr{undecIfNonterminal(e.typerep, Silver_Expr { $name{s"a${toString(i)}"} }, location=top.location)},
+                                        $Expr{undecIfNonterminal(e.typerep, Silver_Expr { $name{s"b${toString(i)}"} }, location=top.location)})
+                                    },
+                                    prod.namedSignature.inputElements,
+                                    range(0, length(prod.namedSignature.inputElements)))),
                               location=top.location),
                           includedProds),
                         top.location),
@@ -304,4 +317,15 @@ PrimPatterns ::= ps::[PrimPattern]  loc::Location
     | h :: t -> consPattern(h, '|', foldPrimPatterns(t, loc), location=loc)
     | [] -> error("empty patterns")
     end;
+}
+
+production undecIfNonterminal
+top::Expr ::= sigTy::Type e::Expr
+{
+  top.unparse = "undecIfNonterminal(" ++ e.unparse ++ ")";
+  forward f = @e;
+  forwards to
+    if e.typerep.isDecorated && !sigTy.isDecorated
+    then Silver_Expr { silver:core:new($Expr{@f}) }
+    else @f;
 }
