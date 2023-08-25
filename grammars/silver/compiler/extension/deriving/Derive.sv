@@ -323,6 +323,7 @@ production undecIfNonterminal
 top::Expr ::= sigTy::Type e::Expr
 {
   top.unparse = "undecIfNonterminal(" ++ e.unparse ++ ")";
+  top.freeVars := e.freeVars;
   forward f = @e;
   forwards to
     if e.typerep.isDecorated && !sigTy.isDecorated

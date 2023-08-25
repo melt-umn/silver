@@ -625,6 +625,7 @@ top::OptWithInhs ::=
 operator=DecoratedLowPrec_t
 {
   top.unparse = "";
+  top.freeVariables = [];
 
   top.typerep = inhSetType(sort(concat(getInhsForNtRef(top.onNt.typeName, top.flowEnv))));
   top.errors :=
@@ -640,6 +641,7 @@ top::OptWithInhs ::= 'with' i::TypeExpr
 {
   top.unparse = " with " ++ i.unparse;
   top.typerep = i.typerepInhSet;
+  top.freeVariables = i.freeVariables;
   top.errors := i.errorsInhSet;
   
   i.onNt = top.onNt;
