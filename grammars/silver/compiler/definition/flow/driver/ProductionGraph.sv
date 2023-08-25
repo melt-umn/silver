@@ -3,17 +3,14 @@ grammar silver:compiler:definition:flow:driver;
 import silver:compiler:definition:type only isNonterminal, typerep;
 import silver:compiler:analysis:warnings:flow only sigAttrViaReference, localAttrViaReference;
 
-nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
-
-inherited attribute flowTypes :: EnvTree<FlowType>;
-inherited attribute prodGraphs :: EnvTree<ProductionGraph>;
+data nonterminal ProductionGraph with stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes;
 
 -- TODO: future me note: these are good candidates to be "static attributes" maybe?
 {--
  - Given a set of flow types, stitches those edges into the graph for
  - all stitch points (i.e. children, locals, forward)
  -}
-synthesized attribute stitchedGraph :: ProductionGraph;
+synthesized attribute stitchedGraph :: (ProductionGraph ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
 {--
  - Just compute the transitive closure of the edge set
  -}
@@ -24,7 +21,7 @@ synthesized attribute transitiveClosure :: ProductionGraph;
 synthesized attribute edgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
 synthesized attribute suspectEdgeMap :: ([FlowVertex] ::= FlowVertex);
 
-synthesized attribute cullSuspect :: ProductionGraph;
+synthesized attribute cullSuspect :: (ProductionGraph ::= EnvTree<FlowType>);
 
 -- This is, apparently, only used to look up production by name
 synthesized attribute prod::String;
@@ -61,10 +58,10 @@ top::ProductionGraph ::=
   top.lhsNt = lhsNt;
   top.flowTypeVertexes = flowTypeVertexes;
   
-  top.stitchedGraph = 
+  top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
           filter(edgeIsNew(_, graph),
-            flatMap(stitchEdgesFor(_, top.flowTypes, top.prodGraphs), stitchPoints))
+            flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), stitchPoints))
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -80,10 +77,10 @@ top::ProductionGraph ::=
   top.edgeMap = g:edgesFrom(_, graph);
   top.suspectEdgeMap = lookupAll(_, suspectEdges);
   
-  top.cullSuspect = 
+  top.cullSuspect = \ flowTypes::EnvTree<FlowType> ->
     -- this potentially introduces the same edge twice, but that's a nonissue
     let newEdges :: [Pair<FlowVertex FlowVertex>] =
-          flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, top.flowTypes)), suspectEdges)
+          flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, flowTypes)), suspectEdges)
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
     in if null(newEdges) then top else
@@ -97,13 +94,7 @@ ProductionGraph ::=
   prodEnv::EnvTree<ProductionGraph>
   ntEnv::EnvTree<FlowType>
 {
-  graph.flowTypes = ntEnv;
-  graph.prodGraphs = prodEnv;
-
-  local stitchedGraph :: ProductionGraph = graph.stitchedGraph;
-  stitchedGraph.flowTypes = ntEnv;
-
-  return stitchedGraph.cullSuspect;
+  return graph.stitchedGraph(ntEnv, prodEnv).cullSuspect(ntEnv);
 }
 
 -- construct a production graph for each production
