@@ -9,7 +9,7 @@ grammar silver:langutil;
 @{--
  - A Message represents a compiler output message (error/warning)
  -}
-tracked nonterminal Message with message, where, noLocOutput, output, severity;
+tracked data nonterminal Message with message, where, noLocOutput, output, severity;
 
 @{--
  - The location of an error message.
