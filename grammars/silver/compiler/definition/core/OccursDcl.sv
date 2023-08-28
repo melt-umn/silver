@@ -1,9 +1,9 @@
 grammar silver:compiler:definition:core;
 
 abstract production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location); 
+  undecorates to attributionDcl('attribute', new(at), new(attl), 'occurs', 'on', new(nt), new(nttl), ';', location=top.location); 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
@@ -14,9 +14,9 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   top.occursDefs := [
     (if !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       nt.lookupType.fullName, at.lookupAttribute.fullName,
-      protontty,
+      new(protontty),
       if ntParamKinds == map((.kindrep), nttl.types) && map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
-      then protoatty
+      then new(protoatty)
       else errorType(),
       sourceGrammar=top.grammarName, sourceLocation=at.location)];
 
@@ -96,6 +96,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   -- Apply the nonterminal type to the type variables.
   -- NOT .monoType so we do something sensible if someone does "occurs on TypeAlias<a>" or something.
   production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
+  protontty.boundVariables = protontty.freeVariables;
   
   -- This renames the vars from the environment
   -- at's env types -> type params containing local skolem vars  (vars -> types)
@@ -106,6 +107,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
   production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
+  protoatty.boundVariables = protoatty.freeVariables;
   
   -- Now, finally, make sure we're not "redefining" the occurs.
   production occursCheck :: [OccursDclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
@@ -175,7 +177,7 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  propagate env;
+  at.env = top.env;
   
   -- Workaround for circular dependency due to dispatching on env:
   -- Nothing used to build the env namespaces on which we dispatch can depend on
@@ -188,14 +190,14 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   top.moduleNames := [];
   
   forwards to
-    (if !at.lookupAttribute.found
-     then errorAttributionDcl(at.lookupAttribute.errors, _, _, _, _, location=_)
-     else at.lookupAttribute.dcl.attributionDispatcher)(at, attl, nt, nttl, top.location);
+    if !at.lookupAttribute.found
+    then errorAttributionDcl(at.lookupAttribute.errors, at, @attl, @nt, @nttl, location=top.location)
+    else at.lookupAttribute.dcl.attributionDispatcher(at, attl, nt, nttl, top.location);
 }
 
 concrete production annotateDcl
 top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8, location=top.location);
+  forwards to attributionDcl('attribute', @at, @attl, $4, $5, @nt, @nttl, $8, location=top.location);
 }
 

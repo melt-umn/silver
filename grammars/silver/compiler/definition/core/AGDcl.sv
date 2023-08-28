@@ -71,14 +71,11 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
 }
 
-function makeAppendAGDclOfAGDcls
-AGDcl ::= dcls::AGDcls
-{
-  return case dcls of
-         | nilAGDcls(location=l) -> emptyAGDcl(location=l)
-         | consAGDcls(dcl, rest, location=l) -> appendAGDcl(dcl, makeAppendAGDclOfAGDcls(rest), location=l)
-         end;
-}
+synthesized attribute asAppendAGDcl::AGDcl occurs on AGDcls;
+aspect asAppendAGDcl on top::AGDcls of
+| nilAGDcls() -> emptyAGDcl(location=top.location)
+| consAGDcls(h, t) -> appendAGDcl(new(h), t.asAppendAGDcl, location=top.location)
+end;
 
 abstract production jarNameDcl
 top::AGDcl ::= n::Name

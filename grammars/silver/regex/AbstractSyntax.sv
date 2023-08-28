@@ -11,6 +11,7 @@ synthesized attribute basePP::Document;
 implicit synthesized attribute classPP::Maybe<Document>;
 
 tracked nonterminal Regex with pp, altPP, seqPP, basePP, classPP, compareTo, isEqual;
+flowtype Regex = decorate {};
 
 propagate isEqual, compareTo on Regex;
 

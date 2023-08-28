@@ -44,7 +44,7 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
-  top.qNameType = qNameTypeCons(id, ':', qn.qNameType, location=top.location);
+  top.qNameType = qNameTypeCons(new(id), ':', qn.qNameType, location=top.location);
   top.baseNameLoc = qn.baseNameLoc;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
@@ -67,7 +67,7 @@ top::QName ::= msg::[Message]
   top.lookupAttribute = decorate errorLookup(msg) with {};
 }
 
-nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
+data nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
 
 synthesized attribute lookupValue :: Decorated QNameLookup<ValueDclInfo> occurs on QName;
 synthesized attribute lookupType :: Decorated QNameLookup<TypeDclInfo> occurs on QName;
@@ -248,7 +248,7 @@ top::QNameAttrOccur ::= at::QName
   requiredContexts.env = top.env;
   
   top.typerep = if top.found then determineAttributeType(head(dclsNarrowed), top.attrFor) else errorType();
-  top.dcl = resolvedDcl;
+  top.dcl = new(resolvedDcl);
   top.attrDcl = if top.found then head(attrsNarrowed) else
     -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
     if !null(attrs) then head(attrs) else

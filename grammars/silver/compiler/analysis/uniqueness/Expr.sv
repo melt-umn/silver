@@ -22,7 +22,7 @@ top::Expr ::=
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
-    top.uniqueRefs <-
+  top.uniqueRefs <-
     case refSet of
     | just(inhs) when
         top.finalType.isUniqueDecorated &&
@@ -52,7 +52,7 @@ top::Expr ::= q::Decorated! QName
 aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
-    top.uniqueRefs <-
+  top.uniqueRefs <-
     case refSet of
     | just(inhs) when
           top.finalType.isUniqueDecorated &&
@@ -187,6 +187,8 @@ top::AppExpr ::= e::Expr
     | varType(_) -> uniqueContextErrors(e.uniqueRefs)  -- Would need linear types to make this work...
     | nonterminalType(_, _, true, _) -> uniqueContextErrors(e.uniqueRefs)
     | nonterminalType(_, _, _, _) when !top.isNtUniquenessPreserving -> uniqueContextErrors(e.uniqueRefs)
+    -- Note that we permit passing unique refs in parameters declared with unique decorated types,
+    -- since we know that any function must be uniqueness-preserving for them.
     | _ -> []
     end;
 }

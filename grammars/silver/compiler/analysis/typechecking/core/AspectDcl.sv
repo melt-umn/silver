@@ -68,7 +68,7 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   thread downSubst, upSubst on top, errCheck1, top;
   
-  errCheck1 = check(rType, t);
+  errCheck1 = check(new(rType), new(t));
   top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
@@ -94,7 +94,7 @@ top::AspectRHSElem ::= id::Name t::Type
 
   thread downSubst, upSubst on top, errCheck1, top;
   
-  errCheck1 = check(rType, t);
+  errCheck1 = check(new(rType), new(t));
   top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
@@ -114,7 +114,7 @@ top::AspectFunctionLHS ::= t::TypeExpr
 
   thread downSubst, upSubst on top, errCheck1, top;
   
-  errCheck1 = check(rType, t.typerep);
+  errCheck1 = check(new(rType), t.typerep);
   top.errors <-
         if errCheck1.typeerror
         then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]

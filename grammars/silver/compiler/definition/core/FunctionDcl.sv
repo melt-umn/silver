@@ -76,7 +76,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
 
-  forwards to functionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+  forwards to functionSignature(nilConstraint(location=top.location), '=>', @lhs, $2, @rhs, location=top.location);
 } action {
   sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }

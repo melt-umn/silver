@@ -228,8 +228,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
 
   forwards to productionStmtAppend(
-    forwardsTo($1, $2, $3, $8, location=top.location),
-    forwardingWith('forwarding', $4, $5, inh, $7, $8, location=top.location),
+    forwardsTo($1, $2, @e, $8, location=top.location),
+    forwardingWith('forwarding', $4, $5, @inh, $7, $8, location=top.location),
     location=top.location);
 }
 
@@ -316,9 +316,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- consider "production foo  top::DoesNotExist ::= { top.errors = ...; }"
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
-    (if !dl.found || !attr.found || !null(problems)
-     then errorAttributeDef(problems, _,  _, _, location=_)
-     else attr.attrDcl.attrDefDispatcher)(dl, attr, e, top.location);
+    if !dl.found || !attr.found || !null(problems)
+    then errorAttributeDef(problems, dl, attr, @e, location=top.location)
+    else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
 }
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
@@ -335,9 +335,9 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! Q
 }
 
 abstract production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  undecorates to attributeDef(new(dl), '.', new(attr), '=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -351,9 +351,9 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 }
 
 abstract production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  undecorates to attributeDef(new(dl), '.', new(attr), '=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -371,10 +371,10 @@ top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QName
     attributeDef(
       transAttrDefLHS(
         case dl of
-        | concreteDefLHS(q) -> q
+        | concreteDefLHS(q) -> new(q)
         | _ -> error("Unexpected concrete DefLHS")
-        end, transAttr, location=top.location),
-      $4, attr, $6, e, $8,
+        end, @transAttr, location=top.location),
+      $4, @attr, $6, @e, $8,
       location=top.location);
 }
 
@@ -385,9 +385,10 @@ top::DefLHS ::= q::QName
   top.unparse = q.unparse;
   propagate env;
   
-  forwards to (if null(q.lookupValue.dcls)
-               then errorDefLHS(_, location=_)
-               else q.lookupValue.dcl.defLHSDispatcher)(q, top.location);
+  forwards to
+    if null(q.lookupValue.dcls)
+    then errorDefLHS(q, location=top.location)
+    else q.lookupValue.dcl.defLHSDispatcher(q, top.location);
 } action {
   if (contains(q.name, sigNames)) {
     insert semantic token IdSigName_t at q.baseNameLoc;
@@ -397,7 +398,7 @@ top::DefLHS ::= q::QName
 abstract production errorDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(new(q), location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -417,7 +418,7 @@ top::DefLHS ::= q::'forward'
 abstract production childDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(new(q), location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -434,7 +435,7 @@ top::DefLHS ::= q::Decorated! QName
 abstract production lhsDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(new(q), location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -451,7 +452,7 @@ top::DefLHS ::= q::Decorated! QName
 abstract production localDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(new(q), location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -468,7 +469,7 @@ top::DefLHS ::= q::Decorated! QName
 abstract production forwardDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(new(q), location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -493,15 +494,16 @@ top::DefLHS ::= q::QName attr::QNameAttrOccur
   attr.config = top.config;
   attr.attrFor = q.lookupValue.typeScheme.monoType;
   
-  forwards to (if null(q.lookupValue.dcls) || !attr.found || !attr.attrDcl.isTranslation 
-               then errorTransAttrDefLHS(_, _, location=_)
-               else q.lookupValue.dcl.transDefLHSDispatcher)(q, attr, top.location);
+  forwards to
+    if null(q.lookupValue.dcls) || !attr.found || !attr.attrDcl.isTranslation 
+    then errorTransAttrDefLHS(q, attr, location=top.location)
+    else q.lookupValue.dcl.transDefLHSDispatcher(q, attr, top.location);
 }
 
 abstract production errorTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  undecorates to transAttrDefLHS(new(q), new(attr), location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = false;
@@ -515,7 +517,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 abstract production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  undecorates to transAttrDefLHS(new(q), new(attr), location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -542,7 +544,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 abstract production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  undecorates to transAttrDefLHS(new(q), new(attr), location=top.location);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -580,15 +582,16 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to (if null(val.lookupValue.dcls)
-               then errorValueDef(_, _, location=_)
-               else val.lookupValue.dcl.defDispatcher)(val, e, top.location);
+  forwards to
+    if null(val.lookupValue.dcls)
+    then errorValueDef(val, @e, location=top.location)
+    else val.lookupValue.dcl.defDispatcher(val, e, top.location);
 }
 
 abstract production errorValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  undecorates to valueEq(new(val), '=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -599,9 +602,9 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 }
 
 abstract production localValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  undecorates to valueEq(new(val), '=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here

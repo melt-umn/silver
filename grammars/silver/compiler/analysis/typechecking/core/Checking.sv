@@ -12,16 +12,16 @@ nonterminal TypeCheck with upSubst, downSubst, finalSubst, leftpp, rightpp, type
 abstract production check
 top::TypeCheck ::= l::Type r::Type
 {
-  top.upSubst = unifyCheck(l, r, top.downSubst);
+  top.upSubst = unifyCheck(new(l), new(r), top.downSubst);
 
   top.typeerror = top.upSubst.failure;
 
-  local finleft :: Type = performSubstitution(l, top.finalSubst).defaultSpecialization;
+  local finleft :: Type = performSubstitution(new(l), top.finalSubst).defaultSpecialization;
 
-  local finright :: Type = performSubstitution(r, top.finalSubst).defaultSpecialization;
+  local finright :: Type = performSubstitution(new(r), top.finalSubst).defaultSpecialization;
 
   local fv :: [TyVar] = setUnionTyVars(finleft.freeVariables, finright.freeVariables);
 
-  top.leftpp = prettyTypeWith(finleft, fv);
-  top.rightpp = prettyTypeWith(finright, fv);
+  top.leftpp = prettyTypeWith(new(finleft), fv);
+  top.rightpp = prettyTypeWith(new(finright), fv);
 }

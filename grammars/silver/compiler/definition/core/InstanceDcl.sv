@@ -14,6 +14,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   
   production superContexts::Contexts =
     foldContexts(if id.lookupType.found && !foldContexts(cl.contexts).isTypeError then dcl.superContexts else []);
+  superContexts.boundVariables = superContexts.freeVariables;
   superContexts.env = body.env;
   superContexts.config = top.config;
   superContexts.grammarName = top.grammarName;
@@ -78,7 +79,7 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
   top.unparse = s"instance ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
-  forwards to instanceDcl($1, nilConstraint(location=top.location), '=>', id, ty, $4, body, $6, location=top.location);
+  forwards to instanceDcl($1, nilConstraint(location=top.location), '=>', @id, @ty, $4, @body, $6, location=top.location);
 } action {
   insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
@@ -133,7 +134,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     -- Current class context is the first context on the member's type scheme
     | instContext(cls, ty) :: _ when cls == top.className ->
       composeSubst(
-        unify(ty, top.instanceType),
+        unify(new(ty), top.instanceType),
         -- Skolemize all the other type vars that didn't get instantiated by the instance head
         zipVarsIntoSkolemizedSubstitution(typeScheme.boundVars, memberSkolemVars))
     | _ -> emptySubst() -- Fall back in case of errors

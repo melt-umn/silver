@@ -37,14 +37,13 @@ concrete production warnDecl
 top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "warnCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
-  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
   
   top.errors := 
-    if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
-    then [err(top.location, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
+    if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, forward.errors)
+    then [err(top.location, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ forward.errors
     else [];
   
-  forwards to makeAppendAGDclOfAGDcls(ags);
+  forwards to ags.asAppendAGDcl;
   -- Forward to the decls so that we can use the stuff declared with warnings in other tests
 }
 
@@ -60,7 +59,6 @@ concrete production noWarnDecl
 top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "noWarnCode " ++ s.lexeme ++ " {" ++ ags.unparse ++ "}";
-  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
 
   {-
     I think we want the errors from ags in any case.  This production
@@ -69,12 +67,12 @@ top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
     written correctly, not because it had a worse error in it.
   -}
   top.errors :=
-    ags.errors ++
-    if containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
+    forward.errors ++
+    if containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, forward.errors)
     then [err(top.location, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
     else [];
 
-  forwards to makeAppendAGDclOfAGDcls(ags);
+  forwards to ags.asAppendAGDcl;
   -- Forward to the decls so that we can use the stuff declared without warnings in other tests
 }
 

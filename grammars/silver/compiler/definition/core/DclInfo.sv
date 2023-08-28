@@ -9,7 +9,7 @@ synthesized attribute refDispatcher :: (Expr ::= Decorated! QName  Location) occ
 {--
  - The production an "assignment" should forward to for this type of value
  -}
-synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated! QName  Expr  Location) occurs on ValueDclInfo;
+synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated! QName  Decorated! Expr with {}  Location) occurs on ValueDclInfo;
 {--
  - The production an "equation" left hand side should forward to for this type of value (i.e. the 'x' in 'x.a = e')
  -}
@@ -37,11 +37,15 @@ synthesized attribute dataAccessHandler :: (Expr ::= Decorated! Expr  Decorated!
 {--
  - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
-synthesized attribute attrDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) occurs on AttributeDclInfo;
+synthesized attribute attrDefDispatcher ::
+  (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Decorated! Expr with {}  Location)
+  occurs on AttributeDclInfo;
 {--
  - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh attrs.)
  -}
-synthesized attribute attributionDispatcher :: (AGDcl ::= Decorated! QName  BracketedOptTypeExprs  QName  BracketedOptTypeExprs  Location) occurs on AttributeDclInfo;
+synthesized attribute attributionDispatcher ::
+  (AGDcl ::= Decorated! QName  Decorated! BracketedOptTypeExprs with {}  Decorated! QName with {}  Decorated! BracketedOptTypeExprs with {}  Location)
+  occurs on AttributeDclInfo;
 
 -- -- non-interface values
 aspect production childDcl
@@ -159,7 +163,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = annoAccessHandler(_, _, location=_);
   top.dataAccessHandler = annoAccessHandler(_, _, location=_);
   top.attrDefDispatcher =
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, "Annotations are not defined as equations within productions")], dl, attr, e, location=l);
+    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}  l::Location ->
+      errorAttributeDef([err(l, "Annotations are not defined as equations within productions")], dl, attr, @e, location=l);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }

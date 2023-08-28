@@ -117,7 +117,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
   
-  forwards to productionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+  forwards to productionSignature(nilConstraint(location=top.location), '=>', @lhs, $2, @rhs, location=top.location);
 } action {
   sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
@@ -182,6 +182,6 @@ top::ProductionRHSElem ::= t::TypeExpr
 {
   top.unparse = t.unparse;
 
-  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount), t.location), '::', t, location=top.location);
+  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount), t.location), '::', @t, location=top.location);
 }
 

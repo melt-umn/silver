@@ -1,7 +1,7 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
 function asPrettyName
-Maybe<String> ::= r::Regex
+Maybe<String> ::= r::Decorated Regex
 {
   return map(\x::String -> "'" ++ x ++ "'", r.asLiteral);
 }

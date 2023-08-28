@@ -114,7 +114,7 @@ aspect default production
 top::Context ::=
 {
   top.contextRuntimeResolveFailure = s"""
-			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${prettyContext(top)} cannot be resolved at runtime");
+			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${top.typepp} cannot be resolved at runtime");
 			final ${top.transType} ${top.transContextMemberName} = ${top.transContextDummyInit};
 """;
   top.contextRuntimeResolve := top.contextRuntimeResolveFailure;

@@ -635,5 +635,5 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
       end,
       forward.errors);
 
-  forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
+  forwards to combinedAspectDcls.asAppendAGDcl;
 }

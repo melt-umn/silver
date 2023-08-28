@@ -105,9 +105,9 @@ top::TypeExpr ::= e::[Message]
 abstract production typerepTypeExpr
 top::TypeExpr ::= t::Type
 {
-  top.unparse = prettyType(t);
+  top.unparse = prettyType(new(t));
 
-  top.typerep = t;
+  top.typerep = new(t);
 
   top.errorsTyVars :=
     case t of
@@ -181,9 +181,9 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
   top.typerep = inhSetType(sort(nub(inhs.inhList)));
   inhs.onNt = errorType();
 
-  -- When we are in a refTypeExpr where we know the nonterminal type,
+  -- When we are in a decoratedTypeExpr where we know the nonterminal type,
   -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  production ntInhs::FlowSpecInhs = inhs;
+  production ntInhs::FlowSpecInhs = new(inhs);
   ntInhs.config = top.config;
   ntInhs.grammarName = top.grammarName;
   ntInhs.env = top.env;
@@ -264,8 +264,8 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
     | nominalTypeExpr(q) when
         q.lookupType.found && q.lookupType.dcl.isTypeAlias &&
         length(q.lookupType.typeScheme.boundVars) > 0 ->
-      aliasAppTypeExpr(q, tl, location=top.location)
-    | _ -> typeAppTypeExpr(ty, tl, location=top.location)
+      aliasAppTypeExpr(q, new(tl), location=top.location)
+    | _ -> typeAppTypeExpr(ty, new(tl), location=top.location)
     end;
 }
 
@@ -526,7 +526,7 @@ concrete production typeListSingle
 top::TypeExprs ::= t::TypeExpr
 {
   top.unparse = t.unparse;
-  forwards to typeListCons(t, typeListNone(location=top.location), location=top.location);
+  forwards to typeListCons(@t, typeListNone(location=top.location), location=top.location);
 }
 
 concrete production typeListSingleMissing
@@ -590,7 +590,7 @@ concrete production namedTypeListSingle
 top::NamedTypeExprs ::= n::Name '::' t::TypeExpr
 {
   top.unparse = t.unparse;
-  forwards to namedTypeListCons(n, $2, t, namedTypeListNone(location=top.location), location=top.location);
+  forwards to namedTypeListCons(@n, $2, @t, namedTypeListNone(location=top.location), location=top.location);
 }
 
 concrete production namedTypeListCons

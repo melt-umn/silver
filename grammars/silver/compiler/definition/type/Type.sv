@@ -303,14 +303,14 @@ synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
 abstract production tyVar
 top::TyVar ::= k::Kind i::Integer
 {
-  top.kindrep = k;
+  top.kindrep = new(k);
   top.extractTyVarRep = i;
 }
 
 abstract production tyVarNamed
 top::TyVar ::= k::Kind i::Integer n::String
 {
-  forwards to tyVar(k, i);
+  forwards to tyVar(@k, i);
 }
 
 function freshTyVar

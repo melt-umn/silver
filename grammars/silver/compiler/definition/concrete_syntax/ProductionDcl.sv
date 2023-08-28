@@ -10,11 +10,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.unparse = "concrete production " ++ id.unparse ++ "\n" ++ ns.unparse ++ " " ++ pm.unparse ++ "\n" ++ body.unparse;
   propagate config, grammarName, compiledGrammars;
 
-  production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
-  
-  ns.signatureName = fName;
-  ns.env = newScopeEnv(ns.defs, top.env);
+
   pm.productionSig = ns.namedSignature;
   pm.env = newScopeEnv(ns.actionDefs, top.env);
 
@@ -27,7 +24,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
         location=top.location, sourceGrammar=top.grammarName)
     ];
   
-  forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
+  forwards to productionDcl('abstract', $2, @id, @ns, @body, location=top.location);
 } action {
   insert semantic token IdFnProdDcl_t at id.location;
   sigNames = [];

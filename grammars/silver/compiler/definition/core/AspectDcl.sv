@@ -169,7 +169,7 @@ top::AspectProductionLHS ::= id::Name
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  forwards to aspectProductionLHSFull(id, rType, location=top.location);
+  forwards to aspectProductionLHSFull(@id, @rType, location=top.location);
 } action {
   insert semantic token IdSigNameDcl_t at id.location;
 }
@@ -182,7 +182,7 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 
   top.errors <- t.errors;
   
-  forwards to aspectProductionLHSFull(id, t.typerep, location=top.location);
+  forwards to aspectProductionLHSFull(@id, t.typerep, location=top.location);
 } action {
   insert semantic token IdSigNameDcl_t at id.location;
 }
@@ -190,16 +190,16 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::Type
 {
-  top.unparse = id.unparse ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(new(t));
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  top.outputElement = namedSignatureElement(id.name, t);
+  top.outputElement = namedSignatureElement(id.name, new(t));
   
-  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, performSubstitution(new(t), top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
@@ -239,7 +239,7 @@ top::AspectRHSElem ::= '_'
 
   forwards to aspectRHSElemFull(
     name("p_" ++ toString(top.deterministicCount), $1.location),
-    rType,
+    @rType,
     location=top.location);
 }
 
@@ -253,7 +253,7 @@ top::AspectRHSElem ::= id::Name
 
   top.errors <- [wrn(top.location, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
   
-  forwards to aspectRHSElemFull(id, rType, location=top.location);
+  forwards to aspectRHSElemFull(@id, @rType, location=top.location);
 } action {
   insert semantic token IdSigNameDcl_t at id.location;
 }
@@ -266,7 +266,7 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
   
   top.errors <- t.errors;
 
-  forwards to aspectRHSElemFull(id, t.typerep, location=top.location);
+  forwards to aspectRHSElemFull(@id, t.typerep, location=top.location);
 } action {
   insert semantic token IdSigNameDcl_t at id.location;
 }
@@ -274,16 +274,16 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 abstract production aspectRHSElemFull
 top::AspectRHSElem ::= id::Name t::Type
 {
-  top.unparse = id.unparse ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(new(t));
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  top.inputElements = [namedSignatureElement(id.name, t)];
+  top.inputElements = [namedSignatureElement(id.name, new(t))];
 
-  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, performSubstitution(new(t), top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]

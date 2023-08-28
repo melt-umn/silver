@@ -11,7 +11,7 @@ abstract production warnFwdFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnFwd = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]

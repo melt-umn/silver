@@ -135,8 +135,8 @@ top::VarBinder ::= n::Name
   -- we need to do some substitution to connect it with the real types.
   -- (in the env above its okay, since that must always be consulted with the current substitution,
   -- but here we're rendering the translation. it's the end of the line.)
-  production finalTy :: Type = performSubstitution(ty, top.finalSubst).defaultSpecialization;
-  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production finalTy :: Type = performSubstitution(new(ty), top.finalSubst).defaultSpecialization;
+  production refSet::Maybe<[String]> = getMaxRefSet(new(finalTy), top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   
@@ -160,7 +160,7 @@ top::VarBinder ::= n::Name
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
-  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps, [])];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, new(ty), vt, deps, [])];
   top.boundNames <- [n.name];
 
   top.translation = 

@@ -81,6 +81,7 @@ top::Context ::= cls::String t::Type
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, t);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.boundVariables = requiredContexts.freeVariables;
   requiredContexts.env = top.env;
   requiredContexts.frame = top.frame;
   requiredContexts.config = top.config;
@@ -109,6 +110,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.boundVariables = requiredContexts.freeVariables;
   requiredContexts.env = top.env;
   requiredContexts.frame = top.frame;
   requiredContexts.config = top.config;
@@ -137,6 +139,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.boundVariables = requiredContexts.freeVariables;
   requiredContexts.env = top.env;
   requiredContexts.frame = top.frame;
   requiredContexts.config = top.config;
@@ -165,6 +168,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.boundVariables = requiredContexts.freeVariables;
   requiredContexts.env = top.env;
   requiredContexts.frame = top.frame;
   requiredContexts.config = top.config;
@@ -197,6 +201,7 @@ top::Context ::= t::Type
       if null(top.resolved)
       then map(compose(typeableContext, skolemType), t.freeSkolemVars)
       else resolvedDcl.typeScheme.contexts);
+  requiredContexts.boundVariables = requiredContexts.freeVariables;
   requiredContexts.env = top.env;
   requiredContexts.frame = top.frame;
   requiredContexts.config = top.config;

@@ -152,8 +152,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.cstNormalize :=
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
-       else [ syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds),
-                exportedProds, exportedLayoutTerms, modifiers,
+       else [ syntaxNonterminal(new(t), foldr(consSyntax, nilSyntax(), myProds),
+                exportedProds, exportedLayoutTerms, new(modifiers),
                 location=top.location, sourceGrammar=top.sourceGrammar)
             ]
     end;
@@ -197,7 +197,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.dominatingTerminalContribs :=
     map(pair(fst=n, snd=_), flatMap((.memberTerminals), modifiers.submits_)) ++
     map(pair(fst=_, snd=top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
-  top.terminalRegex = regex;
+  top.terminalRegex = new(regex);
 
   -- left(terminal name) or right(string prefix)
   production pfx::[String] = searchEnvTree(n, top.prefixesForTerminals);
@@ -208,10 +208,10 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.cstNormalize :=
     case modifiers.prefixSeperatorToApply of
     | just(sep) ->
-        [ syntaxTerminal(n, seq(regex, regexLiteral(sep)), modifiers,
+        [ syntaxTerminal(n, seq(new(regex), regexLiteral(sep)), new(modifiers),
             location=top.location, sourceGrammar=top.sourceGrammar)
         ]
-    | nothing() -> [top]
+    | nothing() -> [new(top)]
     end;
 
   local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
@@ -268,7 +268,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
-  top.cstProds := [(ns.outputElement.typerep.typeName, top)];
+  top.cstProds := [(ns.outputElement.typerep.typeName, new(top))];
   top.cstNormalize := [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
@@ -384,7 +384,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.domContribs = modifiers.dominates_;
   top.subContribs = modifiers.submits_;
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
   top.superClassContribs := modifiers.superClassContribs;
   top.disambiguationClasses := modifiers.disambiguationClasses;
 
@@ -418,7 +418,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));
@@ -446,7 +446,7 @@ top::SyntaxDcl ::= n::String acode::String
     if !null(searchEnvTree(n, top.cstEnv)) then []
     else ["Parser attribute " ++ n ++ " was referenced but this grammar was not included in this parser."];
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
 
   top.parserAttributeAspectContribs := [(n, acode)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
@@ -475,7 +475,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
             "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
     zip(terms, trefs));
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));

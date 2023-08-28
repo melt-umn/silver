@@ -47,6 +47,7 @@ ag::AGDcl ::= kwd::'equalityTest'
     else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++ errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
 
   local eqCtx::Context = instContext("silver:core:Eq", valueType.typerep);
+  eqCtx.boundVariables = eqCtx.freeVariables;
   eqCtx.env = ag.env;
   eqCtx.contextLoc = valueType.location;
   eqCtx.contextSource = "equalityTest";
