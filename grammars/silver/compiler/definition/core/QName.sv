@@ -34,9 +34,9 @@ top::QName ::= id::Name
   top.qNameType = qNameTypeId(terminal(IdUpper_t, id.name, id.location), location=id.location);
   top.baseNameLoc = id.location;
   
-  top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
-  top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
-  top.lookupAttribute = decorate customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location) with {};
+  top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name, top.location);
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
+  top.lookupAttribute = customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location);
 }
 
 concrete production qNameCons
@@ -47,9 +47,9 @@ top::QName ::= id::Name ':' qn::QName
   top.qNameType = qNameTypeCons(new(id), ':', qn.qNameType, location=top.location);
   top.baseNameLoc = qn.baseNameLoc;
   
-  top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
-  top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
-  top.lookupAttribute = decorate customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location) with {};
+  top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name, top.location);
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
+  top.lookupAttribute = customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location);
 } action {
   insert semantic token IdGrammarName_t at id.location;
 }
@@ -62,16 +62,16 @@ top::QName ::= msg::[Message]
   top.qNameType = qNameTypeId(terminal(IdUpper_t, "Err", top.location), location=top.location);
   top.baseNameLoc = top.location;
   
-  top.lookupValue = decorate errorLookup(msg) with {};
-  top.lookupType = decorate errorLookup(msg) with {};
-  top.lookupAttribute = decorate errorLookup(msg) with {};
+  top.lookupValue = errorLookup(msg);
+  top.lookupType = errorLookup(msg);
+  top.lookupAttribute = errorLookup(msg);
 }
 
 data nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
 
-synthesized attribute lookupValue :: Decorated QNameLookup<ValueDclInfo> occurs on QName;
-synthesized attribute lookupType :: Decorated QNameLookup<TypeDclInfo> occurs on QName;
-synthesized attribute lookupAttribute :: Decorated QNameLookup<AttributeDclInfo> occurs on QName;
+synthesized attribute lookupValue :: QNameLookup<ValueDclInfo> occurs on QName;
+synthesized attribute lookupType :: QNameLookup<TypeDclInfo> occurs on QName;
+synthesized attribute lookupAttribute :: QNameLookup<AttributeDclInfo> occurs on QName;
 
 flowtype QName = lookupValue {env}, lookupType {env}, lookupAttribute {env};
 
@@ -136,7 +136,7 @@ top::QNameType ::= id::IdUpper_t
   top.unparse = id.lexeme;
   top.baseNameLoc = id.location;
   
-  top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
 }
 
 concrete production qNameTypeCons
@@ -146,7 +146,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
   top.baseNameLoc = qn.baseNameLoc;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
   
-  top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
 } action {
   insert semantic token IdGrammarName_t at id.location;
 }
