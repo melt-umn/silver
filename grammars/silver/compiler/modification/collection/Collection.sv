@@ -225,7 +225,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 
 -- ERROR ON VALUE DEFS:
 abstract production errorCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
@@ -233,10 +233,10 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
   top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
 
-  forwards to errorValueDef(val, @e, location=top.location);
+  forwards to errorValueDef(val, e, location=top.location);
 }
 abstract production errorColNormalValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
@@ -244,34 +244,34 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
   top.errors <- [err(top.location, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
 
-  forwards to errorValueDef(val, @e, location=top.location);
+  forwards to errorValueDef(val, e, location=top.location);
 }
 
 -- NON-ERRORS for PRODUCTIONS
 
 abstract production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
-  forwards to localValueDef(val, @e, location=top.location);
+  forwards to localValueDef(val, e, location=top.location);
 }
 abstract production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
-  forwards to localValueDef(val, @e, location=top.location);
+  forwards to localValueDef(val, e, location=top.location);
 }
 
 -- NON-ERRORS for SYN ATTRS
 
 abstract production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
@@ -292,7 +292,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
 }
 abstract production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
@@ -316,7 +316,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 -- NON-ERRORS for INHERITED ATTRS
 
 abstract production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
@@ -337,7 +337,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
 }
 abstract production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
@@ -377,9 +377,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    (if !dl.found || !attr.found
-     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _, location=_)
-     else attr.attrDcl.attrAppendDefDispatcher)(dl, attr, e, top.location);
+    if !dl.found || !attr.found
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e, top.location);
 }
 
 concrete production attrContainsBase
@@ -396,9 +396,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    (if !dl.found || !attr.found
-     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _, location=_)
-     else attr.attrDcl.attrBaseDefDispatcher)(dl, attr, e, top.location);
+    if !dl.found || !attr.found
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e, top.location);
 }
 
 concrete production valContainsAppend
@@ -413,9 +413,9 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   top.defs := [];
   
   forwards to
-    (if null(val.lookupValue.dcls)
-     then errorValueDef(_, _, location=_)
-     else val.lookupValue.dcl.appendDefDispatcher)(val, e, top.location);
+    if null(val.lookupValue.dcls)
+    then errorValueDef(val, e, location=top.location)
+    else val.lookupValue.dcl.appendDefDispatcher(val, e, top.location);
 }
 
 concrete production valContainsBase
@@ -430,8 +430,8 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   top.defs := [];
   
   forwards to
-    (if null(val.lookupValue.dcls)
-     then errorValueDef(_, _, location=_)
-     else val.lookupValue.dcl.baseDefDispatcher)(val, e, top.location);
+    if null(val.lookupValue.dcls)
+    then errorValueDef(val, e, location=top.location)
+    else val.lookupValue.dcl.baseDefDispatcher(val, e, top.location);
 }
 

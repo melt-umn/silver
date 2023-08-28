@@ -5,11 +5,15 @@ attribute operation, baseDefDispatcher, appendDefDispatcher occurs on ValueDclIn
 
 synthesized attribute isCollection::Boolean;
 
-synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location);
-synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location);
+synthesized attribute attrBaseDefDispatcher ::
+  (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Decorated! Expr with {}  Location);
+synthesized attribute attrAppendDefDispatcher ::
+  (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Decorated! Expr with {}  Location);
 
-synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr  Location);
-synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr  Location);
+synthesized attribute baseDefDispatcher ::
+  (ProductionStmt ::= Decorated! QName  Decorated! Expr with {}  Location);
+synthesized attribute appendDefDispatcher ::
+  (ProductionStmt ::= Decorated! QName  Decorated! Expr with {}  Location);
 
 aspect default production
 top::AttributeDclInfo ::=
@@ -104,17 +108,18 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   forwards to localDcl(fn,ty,false,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
 }
 
-global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-    errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+-- TODO: Use concise function syntax here
+global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Decorated! Expr with {}  Location) =
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}  l::Location ->
+    errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, @e, location=l);
 
-global nonCollectionAttrAppendDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-    errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+global nonCollectionAttrAppendDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Decorated! Expr with {}  Location) =
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}  l::Location ->
+    errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, @e, location=l);
 
-global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr  Location) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-    errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Decorated! Expr with {}  Location) =
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}  l::Location ->
+    errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, @e, location=l);
 
 
 -- Defs

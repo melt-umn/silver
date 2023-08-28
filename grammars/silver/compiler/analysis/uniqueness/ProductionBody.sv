@@ -38,41 +38,41 @@ top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   top.errors <-
     if !attr.found || attr.attrDcl.isTranslation then []
     else uniqueContextErrors(e.uniqueRefs);
 }
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 
 -- Modifications
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
@@ -87,7 +87,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
@@ -107,7 +107,7 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
   top.errors <- uniqueContextErrors(condition.uniqueRefs);
 }
 aspect production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }

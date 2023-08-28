@@ -32,7 +32,7 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 }
 
 abstract production unificationInhAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
@@ -40,28 +40,26 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
 
   propagate grammarName, env, flowEnv;
   
-  forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then attl
-      else
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-              end,
-              location=top.location),
-            '>', location=top.location),
-          location=top.location),
-      nt, nttl,
-      location=top.location);
+  production fwrdAttl::BracketedOptTypeExprs =
+    if length(attl.types) > 0
+    then attl
+    else
+      botlSome(
+        bTypeList(
+          '<',
+          typeListSingle(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType, location=top.location),
+                tl, location=top.location)
+            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+            end,
+            location=top.location),
+          '>', location=top.location),
+        location=top.location);
+
+  forwards to defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
 }
 
 abstract production propagateUnificationSynPartial

@@ -87,7 +87,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
@@ -255,7 +255,7 @@ top::DefLHS ::= q::Decorated! QName
 }
 
 abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";

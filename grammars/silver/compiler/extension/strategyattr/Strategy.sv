@@ -58,7 +58,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 }
 
 abstract production strategyAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   propagate grammarName, env, flowEnv;
@@ -84,25 +84,23 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  local atOccursDcl::AGDcl =
-    defaultAttributionDcl(
-      at,
-      botlSome(
-        bTypeList(
-          '<',
-          typeListSingle(
-            case nttl of
-            | botlSome(tl) -> 
-              appTypeExpr(
-                nominalTypeExpr(nt.qNameType, location=top.location),
-                tl, location=top.location)
-            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-            end,
-            location=top.location),
-          '>', location=top.location),
-        location=top.location),
-      nt, nttl,
+  local fwrdAttl::BracketedOptTypeExprs =
+    botlSome(
+      bTypeList(
+        '<',
+        typeListSingle(
+          case nttl of
+          | botlSome(tl) -> 
+            appTypeExpr(
+              nominalTypeExpr(nt.qNameType, location=top.location),
+              tl, location=top.location)
+          | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+          end,
+          location=top.location),
+        '>', location=top.location),
       location=top.location);
+
+  local atOccursDcl::AGDcl = defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
 
   forwards to
     if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl

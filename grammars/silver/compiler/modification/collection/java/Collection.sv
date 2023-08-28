@@ -187,7 +187,7 @@ public class ${className} extends common.CollectionAttribute {
 
 ---------- LOCALS ---
 aspect production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -196,7 +196,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 """;
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -207,7 +207,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
 ---------- SYNTHESIZED ----
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Decorated! Expr with {}
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
@@ -217,7 +217,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 """;
 }
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Decorated! Expr with {}
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
@@ -229,7 +229,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 
 ---------- INHERITED ----
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Decorated! Expr with {}
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
@@ -239,7 +239,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 """;
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Decorated! Expr with {}
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}

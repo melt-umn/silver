@@ -210,7 +210,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 
 
 aspect production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName attl::Decorated! BracketedOptTypeExprs with {} nt::Decorated! QName with {} nttl::Decorated! BracketedOptTypeExprs with {}
 {
   top.docForName = "";
   top.docUnparse = "";

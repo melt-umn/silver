@@ -21,7 +21,7 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 }
 
 abstract production destructAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
@@ -29,50 +29,48 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
 
   propagate grammarName, env, flowEnv;
   
-  forwards to
-    defaultAttributionDcl(
-      at,
-      case attl.types of
-      | [] ->
-        botlSome(
-          bTypeList(
-            '<',
-            typeListCons(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-              end,
-              typeListSingle(
-                typerepTypeExpr(inhSetType([]), location=top.location), 
-                location=top.location),
+  production fwrdAttl::BracketedOptTypeExprs =
+    case attl.types of
+    | [] ->
+      botlSome(
+        bTypeList(
+          '<',
+          typeListCons(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType, location=top.location),
+                tl, location=top.location)
+            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+            end,
+            typeListSingle(
+              typerepTypeExpr(inhSetType([]), location=top.location), 
               location=top.location),
-            '>', location=top.location),
-          location=top.location)
-      | [i] ->
-        botlSome(
-          bTypeList(
-            '<',
-            typeListCons(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-              end,
-              typeListSingle(
-                typerepTypeExpr(i, location=top.location), 
-                location=top.location),
+            location=top.location),
+          '>', location=top.location),
+        location=top.location)
+    | [i] ->
+      botlSome(
+        bTypeList(
+          '<',
+          typeListCons(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType, location=top.location),
+                tl, location=top.location)
+            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+            end,
+            typeListSingle(
+              typerepTypeExpr(i, location=top.location), 
               location=top.location),
-            '>', location=top.location),
-          location=top.location)
-      | _ -> attl
-      end,
-      nt, nttl,
-      location=top.location);
+            location=top.location),
+          '>', location=top.location),
+        location=top.location)
+    | _ -> @attl
+    end;
+
+  forwards to defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
 }
 
 {--

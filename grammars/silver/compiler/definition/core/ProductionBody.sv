@@ -584,7 +584,7 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   
   forwards to
     if null(val.lookupValue.dcls)
-    then errorValueDef(val, @e, location=top.location)
+    then errorValueDef(val, e, location=top.location)
     else val.lookupValue.dcl.defDispatcher(val, e, top.location);
 }
 
