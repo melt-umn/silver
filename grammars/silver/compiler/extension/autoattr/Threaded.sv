@@ -111,7 +111,11 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
       filter(
         \ ie::NamedSignatureElement ->
           isDecorable(ie.typerep, top.env) &&
-          !ie.typerep.isUniqueDecorated &&  -- Don't thread on unique decorated children
+          -- Only propagate for unique decorated children that don't have the inh attribute
+          case getMaxRefSet(ie.typerep, top.env) of
+          | just(inhs) -> !contains(inh.lookupAttribute.fullName, inhs)
+          | nothing() -> false
+          end &&
           !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
           !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
         if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
@@ -145,7 +149,11 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! 
       filter(
         \ ie::NamedSignatureElement ->
           isDecorable(ie.typerep, top.env) &&
-          !ie.typerep.isUniqueDecorated &&  -- Don't thread on unique decorated children
+          -- Only propagate for unique decorated children that don't have the inh attribute
+          case getMaxRefSet(ie.typerep, top.env) of
+          | just(inhs) -> !contains(inh, inhs)
+          | nothing() -> false
+          end &&
           !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
           !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
         top.frame.signature.inputElements));
