@@ -48,6 +48,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
   -- Ugh, workaround for circular dependency
   top.defs := [];
   top.occursDefs := [];
+  top.refDefs := [];
   top.moduleNames := [];
   top.specDefs := [];
   
