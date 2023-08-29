@@ -789,8 +789,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -919,8 +917,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production transUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
