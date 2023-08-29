@@ -461,8 +461,6 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -537,7 +535,6 @@ aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -609,7 +606,6 @@ aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
 
   top.merrors := e.merrors;
   top.mUpSubst = top.mDownSubst;
@@ -658,7 +654,6 @@ aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -730,7 +725,6 @@ aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -802,7 +796,6 @@ aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
 
   top.monadicNames = [];
 
