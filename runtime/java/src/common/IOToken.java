@@ -151,9 +151,10 @@ public final class IOToken implements Typed {
 	public IOToken writeByteFile(StringCatter filename, byte[] content) {
 		try {
 			File outputFile = new File(filename.toString());
-			FileOutputStream outputStream = new FileOutputStream(outputFile);
-			outputStream.write(content);
-			outputStream.flush();
+			try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+				outputStream.write(content);
+				outputStream.flush();
+			}
 			return this;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
