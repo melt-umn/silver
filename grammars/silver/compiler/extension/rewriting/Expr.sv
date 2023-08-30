@@ -117,9 +117,6 @@ aspect production errorApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
-  e.boundVars = top.boundVars;
-  es.boundVars = top.boundVars;
-  anns.boundVars = top.boundVars;
 }
 
 aspect production functionInvocation
@@ -161,18 +158,12 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
-  e.boundVars = top.boundVars;
-  es.boundVars = top.boundVars;
-  anns.boundVars = top.boundVars;
 }
 
 aspect production partialApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
-  e.boundVars = top.boundVars;
-  es.boundVars = top.boundVars;
-  anns.boundVars = top.boundVars;
 }
 
 aspect production forwardAccess
@@ -209,7 +200,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production annoAccessHandler
@@ -224,7 +214,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production synDataAccessHandler
@@ -239,7 +228,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production terminalAccessHandler
@@ -254,7 +242,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 
@@ -320,7 +307,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         consASTExpr(e.transform, nilASTExpr()),
         nilNamedASTExpr())
     end;
-  e.boundVars = top.boundVars;
 }
 
 aspect production inhDecoratedAccessHandler
@@ -343,7 +329,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production inhUndecoratedAccessErrorHandler
@@ -366,7 +351,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production transUndecoratedAccessErrorHandler
@@ -389,7 +373,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production unknownDclAccessHandler
@@ -412,7 +395,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production decorateExprWith

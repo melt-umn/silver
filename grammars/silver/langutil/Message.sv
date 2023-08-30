@@ -9,7 +9,7 @@ grammar silver:langutil;
 @{--
  - A Message represents a compiler output message (error/warning)
  -}
-tracked nonterminal Message with message, where, noLocOutput, output, severity;
+closed tracked data nonterminal Message with message, where, noLocOutput, output, severity;
 
 @{--
  - The location of an error message.
@@ -34,12 +34,19 @@ synthesized attribute noLocOutput :: String;
 @{--
  - A convention for determining message severity.
  - err=2, wrn=1, info=0
+ - TODO: Consider making this a custom datatype.
  -}
 synthesized attribute severity :: Integer;
 
 aspect default production
 top::Message ::=
 {
+  top.noLocOutput =
+    case top.severity of
+    | 0 -> "info"
+    | 1 -> "warning"
+    | _ -> "error"
+    end ++ ": " ++ top.message;
   top.output = s"${top.where.unparse}: ${top.noLocOutput}";
 }
 
@@ -52,7 +59,6 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.noLocOutput = s"error: ${m}";
   top.severity = 2;
 }
 
@@ -71,7 +77,6 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.noLocOutput = s"warning: ${m}";
   top.severity = 1;
 }
 
@@ -90,7 +95,6 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.noLocOutput = s"info: ${m}";
   top.severity = 0;
 }
 
@@ -117,20 +121,12 @@ top::Message ::= l::Location m::String others::[Message]
 
 @{--
  - Determines if a list has any errors (or, optionally, warnings, too)
- - Note: user extended messages that forward to err or wrn will have
- - the same effect, and unknown completely messages will be skipped as
- - though they do not exist.
  -}
 function containsErrors
 Boolean ::= l::[Message] wError::Boolean
 {
-  return case l of
-         | [] -> false
-         | err(_,_) :: _ -> true
-         | wrn(_,_) :: t -> if wError then true else containsErrors(t, false)
-         | nested(_, _, e) :: t -> containsErrors(e, wError) || containsErrors(t, wError)
-         | _ :: t -> containsErrors(t, wError)
-         end;
+  local errSeverity::Integer = if wError then 1 else 2;
+  return any(map(\ m::Message -> m.severity >= errSeverity, l));
 }
 
 @{--
