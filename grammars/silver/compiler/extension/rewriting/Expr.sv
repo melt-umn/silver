@@ -228,7 +228,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production terminalAccessHandler
@@ -352,7 +351,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production transUndecoratedAccessErrorHandler
@@ -375,7 +373,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 aspect production unknownDclAccessHandler
