@@ -173,7 +173,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   pluckTAction.originRules = [];
   
   local tName::String = t.lookupType.dcl.fullName;
-  top.syntaxAst <-
+  top.syntaxAst <- if !t.lookupType.found then [] else
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
     -- since we currently require those to be disjoint.
