@@ -2,7 +2,6 @@ package common;
 
 import java.util.Arrays;
 
-import common.exceptions.CycleException;
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
 import common.exceptions.SilverInternalError;
@@ -530,7 +529,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param decSiteAttribute The index of the attribute's decoration site attribute
 	 * @return The value of the attribute.
 	 */
-	@SuppressWarnings("unchecked")
 	public DecoratedNode translation(final int attribute, final int inhsAttribute, final int decSiteAttribute) {
 		// common.Util.stackProbe();
 		// System.err.println("TRACE: " + getDebugID() + " demanding trans attribute: " + self.getNameOfSynAttr(attribute));

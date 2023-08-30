@@ -281,7 +281,7 @@ public final class Reflection {
 		FunctionTypeRep fnType = (FunctionTypeRep)a;
 		List<TypeRep> params = typeArgs.subList(0, fnType.params);
 		List<TypeRep> namedParamTypes = typeArgs.subList(fnType.params, fnType.params + fnType.namedParams.length);
-		TypeRep resultType = typeArgs.get(fnType.params + fnType.namedParams.length);
+		//TypeRep resultType = typeArgs.get(fnType.params + fnType.namedParams.length);
 
 		final ConsCell rules = ctx.rulesAsSilverList();
 		
@@ -450,7 +450,7 @@ public final class Reflection {
 			if (prodset.size() > 1<<15) throw new NativeSerializationException("Too many productions for native serialize");
 			o.writeShort(prodset.size()); // Write lookup table size
 
-			for (RTTIManager.Prodleton p : prodset) { // Write lookup table. For each prod:
+			for (RTTIManager.Prodleton<?> p : prodset) { // Write lookup table. For each prod:
 				o.writeUTF(p.getName());              //  fully qualified silver prod name 
 				o.writeUTF(p.getTypeUnparse());       //  opaque typerep
 			}

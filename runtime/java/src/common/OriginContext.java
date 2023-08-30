@@ -2,10 +2,6 @@ package common;
 
 import silver.core.*;
 
-import java.util.*;
-
-import common.exceptions.*;
-
 
 /**
  * Implementation of "the stuff on the left of the turnstile" that needs to be
