@@ -11,7 +11,11 @@ top::ProductionStmt ::= attr::Decorated! QName
     filter(
       \ input::NamedSignatureElement ->
         isDecorable(input.typerep, top.env) &&
-        !input.typerep.isUniqueDecorated &&  -- Don't copy on unique decorated children
+        -- Only propagate for unique decorated children that don't have the attribute
+        case getMaxRefSet(input.typerep, top.env) of
+        | just(inhs) -> !contains(attrFullName, inhs)
+        | nothing() -> false
+        end &&
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
   forwards to
