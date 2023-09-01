@@ -699,7 +699,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
                                     | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
