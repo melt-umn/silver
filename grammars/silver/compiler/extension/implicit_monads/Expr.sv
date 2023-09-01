@@ -254,25 +254,12 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     Reusing ai in the bind for the ith argument simplifies doing the
     application inside all the binds.
   -}
-  local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations,
-                               nanns.monadAnns, ety, funIsMonadic, wrapReturn, top.location);
+  local lambda_fun::Expr =
+      buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations,
+         nanns.monadAnns, top.expectedMonad, ety, funIsMonadic, wrapReturn, top.location);
   local expanded_args::AppExprs =
       snocAppExprs(nanns.fullArgs, ',', presentAppExpr(ne.monadRewritten, location=top.location),
                    location=top.location);
-{-  local bind_name::String = "__bindFun_" ++ toString(genInt());
-  -- fun >>= \ bind_name -> lambda_fun(args, bind_name)
-  local bind_fun_in::Expr =
-        Silver_Expr {
-          bind($Expr {if ne.mtyperep.isDecorated
-                      then mkStrFunctionInvocation(top.location, "silver:core:new", [ne.monadRewritten])
-                      else ne.monadRewritten},
-               $Expr {buildLambda(bind_name, monadInnerType(ne.mtyperep, top.location),
-                         applicationExpr(lambda_fun, '(', expanded_name_args, ')', location=top.location),
-                         top.location) })
-        };
-  local expanded_name_args::AppExprs =
-        snocAppExprs(nanns.fullArgs, ',', presentAppExpr(baseExpr(qNameId(name(bind_name, top.location),
-                     location=top.location), location=top.location), location=top.location), location=top.location);-}
   top.monadRewritten =
       if areMonadicArgs || funIsMonadic
       then applicationExpr(lambda_fun, '(', expanded_args, ')', location=top.location)
@@ -307,14 +294,15 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
   top.monadicNames = t.monadicNames;
 }
 --build the lambda to apply to all the original arguments plus the function
---we're going to assume this is only called if monadTysLocs is non-empty
 function buildMonadApplicationLambda
 Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, QName, Boolean)]
-         funType::Type bindFun::Boolean wrapReturn::Boolean loc::Location
+         expectedMonad::Type funType::Type bindFun::Boolean wrapReturn::Boolean loc::Location
 {
   local funargs::AppExprs = buildFunArgs(length(realtys), loc);
   local funannargs::AnnoAppExprs = buildFunAnnArgs(monadAnns, length(realtys) + 1, loc);
-  local params::ProductionRHS = buildMonadApplicationParams(realtys ++ map(fst, monadAnns), 1, funType, loc);
+  local params::ProductionRHS =
+        buildMonadApplicationParams(realtys ++ map(fst, monadAnns), 1,
+            if bindFun then monadOfType(expectedMonad, funType) else funType, loc);
   local actualMonadAnns::[(Type, Integer)] =
       foldr(\ here::(Type, QName, Boolean) rest::([(Type, Integer)], Integer) ->
               if here.3
