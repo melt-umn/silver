@@ -151,6 +151,7 @@ top::VarBinder ::= n::Name
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
+  -- Unique refs are forbidden in the scrutinee.
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps, [])];
   top.boundNames <- [n.name];
 
