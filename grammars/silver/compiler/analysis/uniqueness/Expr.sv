@@ -335,15 +335,7 @@ top::Expr ::= params::ProductionRHS e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
-  top.uniqueRefs <- map(
-    \ r::(String, UniqueRefSite) ->
-      (r.1, uniqueRefSite(
-          refSet=r.2.refSet,
-          refFlowDeps=top.flowDeps,
-          sourceGrammar=top.grammarName,
-          sourceLocation=top.location
-        )),
-    rs);
+  top.uniqueRefs <- rs;
   top.accessUniqueRefs = [];
 }
 
