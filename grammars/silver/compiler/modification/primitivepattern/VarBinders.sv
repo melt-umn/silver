@@ -149,8 +149,6 @@ top::VarBinder ::= n::Name
   -- because we don't have an 'anonEq' (the nonterminal stitch point gets generated for us by the above contribution) we won't be reported as missing in this production. Checks for presence in remote productions have to be done explicitly
 
   -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
-  -- and the correct value is computed based on how this gets used.
-  -- (e.g. if 'new'
   local vt :: Maybe<VertexType> =
     if isDecorable(top.bindingType, top.env)
     then just(anonVertexType(fName))

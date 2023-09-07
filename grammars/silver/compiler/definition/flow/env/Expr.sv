@@ -56,7 +56,7 @@ propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess,
     synDecoratedAccessHandler, inhDecoratedAccessHandler, transDecoratedAccessHandler,
-    decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
+    decorateExprWith, letp, matchPrimitiveReal;
 propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 attribute decSiteVertexInfo, alwaysDecorated occurs on Expr, AppExprs, AppExpr;
@@ -571,24 +571,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 {
-  -- Because of the auto-undecorate behavior, we need to check for the case
-  -- where `t` should be equivalent to `new(t)` and report accoringly.
-  
-  -- If we:
-  -- 1. Have a flow vertex
-  -- 2. Are a decorated type
-  -- 3. Used as undecorated type
-  -- Then: Suppress `fd` and report just `fi.eq`
-
-  top.flowDeps := 
-    case fi of
-    | just(vertex) ->
-        if performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated &&
-           !top.finalType.isDecorated
-        then vertex.eqVertex -- we're a `t` emulating `new(t)`
-        else fd -- we're passing along our vertex-ness to the outer expression
-    | nothing() -> fd -- we're actually being used as a ref-set-taking decorated var
-    end;
+  top.flowDeps <- fd;
   top.flowVertexInfo = fi;
 }
 
