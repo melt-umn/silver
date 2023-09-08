@@ -108,7 +108,16 @@ concrete production restrictedAttributeDef
 top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  dl.grammarName = top.grammarName;
+  dl.config = top.config;
+  dl.frame = top.frame;
+  dl.env = top.env;
+  dl.flowEnv = top.flowEnv;
+  dl.originRules = top.originRules;
+  dl.compiledGrammars = top.compiledGrammars;
+  attr.grammarName = top.grammarName;
+  attr.config = top.config;
+  attr.env = top.env;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -148,7 +157,16 @@ concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  dl.grammarName = top.grammarName;
+  dl.config = top.config;
+  dl.frame = top.frame;
+  dl.env = top.env;
+  dl.flowEnv = top.flowEnv;
+  dl.originRules = top.originRules;
+  dl.compiledGrammars = top.compiledGrammars;
+  attr.grammarName = top.grammarName;
+  attr.config = top.config;
+  attr.env = top.env;
 
   top.productionAttributes := [];
   top.defs := [];

@@ -25,8 +25,8 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 {- This is the primary check for missing synthesized equations.
  - In theory, this is the only check necessary to spot them all.
  -}
-aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+aspect production defaultAttributionDcl
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   -- All non-forwarding productions for this nonterminal:
   local nfprods :: [String] = getNonforwardingProds(nt.lookupType.typeScheme.typeName, top.flowEnv);

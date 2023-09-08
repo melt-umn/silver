@@ -61,7 +61,6 @@ abstract production strategyAttributionDcl
 top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
-  propagate grammarName, env, flowEnv;
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -84,6 +83,9 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
+  attl.env = top.env;
+  attl.grammarName = top.grammarName;
+  attl.flowEnv = top.flowEnv;
   local fwrdAttl::BracketedOptTypeExprs =
     botlSome(
       bTypeList(
@@ -100,7 +102,7 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
         '>', location=top.location),
       location=top.location);
 
-  local atOccursDcl::AGDcl = defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
+  forward atOccursDcl = defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
 
   forwards to
     if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl

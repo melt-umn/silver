@@ -8,8 +8,8 @@ import silver:compiler:driver:util only isExportedBy;
 attribute flowEnv occurs on Contexts, Context;
 propagate flowEnv on Contexts, Context;
 
-aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+aspect production defaultAttributionDcl
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   local isHost :: Boolean = isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars);
   local isSyn :: Boolean = at.lookupAttribute.dcl.isSynthesized;

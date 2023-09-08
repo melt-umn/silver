@@ -27,11 +27,12 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  propagate grammarName, env, flowEnv;
-  
+  attl.env = top.env;
+  attl.grammarName = top.grammarName;
+  attl.flowEnv = top.flowEnv;
   production fwrdAttl::BracketedOptTypeExprs =
     if length(attl.types) > 0
-    then @attl
+    then new(attl)
     else
       botlSome(
         bTypeList(

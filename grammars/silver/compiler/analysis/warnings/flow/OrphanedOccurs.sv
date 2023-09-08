@@ -22,8 +22,8 @@ Either<String  Decorated CmdArgs> ::= args::[String]
       flagParser=flag(warnOrphanedFlag))];
 }
 
-aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+aspect production defaultAttributionDcl
+top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
   top.errors <-
     if nt.lookupType.found && at.lookupAttribute.found

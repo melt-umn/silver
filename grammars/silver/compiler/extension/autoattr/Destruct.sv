@@ -27,9 +27,10 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  propagate grammarName, env, flowEnv;
-  
-  production fwrdAttl::BracketedOptTypeExprs =
+  attl.env = top.env;
+  attl.grammarName = top.grammarName;
+  attl.flowEnv = top.flowEnv;
+  local fwrdAttl::BracketedOptTypeExprs =
     case attl.types of
     | [] ->
       botlSome(
@@ -67,9 +68,8 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
             location=top.location),
           '>', location=top.location),
         location=top.location)
-    | _ -> @attl
+    | _ -> new(attl)
     end;
-
   forwards to defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
 }
 
