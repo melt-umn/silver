@@ -11,8 +11,25 @@ import silver:compiler:translation:java:core;
 nonterminal NameOrBOperator with config, location, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, errors, env, unparse, operation, operatorForType;
 propagate config, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, env on NameOrBOperator;
 
-nonterminal Operation with compareTo, isEqual;
-propagate compareTo, isEqual on Operation excluding functionOperation;
+data Operation
+  = functionOperation e::OpExpr eTrans::String trackConstruction::Boolean
+  | plusPlusOperationString
+  | plusPlusOperationList
+  | borOperation
+  | bandOperation
+  | addOperation
+  | mulOperation;
+derive Eq on Operation;
+
+-- This is basically a newtype wrapper around Expr to provide an Eq instance.
+-- It would be much nicer if we could put the Decorated Expr here,
+-- but this nonterminal must be serializable as part of the environment.
+data OpExpr = opExpr
+  with expr;
+annotation expr::Expr;
+instance Eq OpExpr {
+  eq = \ OpExpr OpExpr -> true;
+}
 
 synthesized attribute operation :: Operation;
 inherited attribute operatorForType :: Type;
@@ -22,7 +39,7 @@ top::NameOrBOperator ::= e::Expr
 {
   top.unparse = e.unparse;
 
-  top.operation = functionOperation(e, e.translation, false);
+  top.operation = functionOperation(opExpr(expr=new(e)), e.translation, false);
 
   top.errors := e.errors;
   
@@ -117,35 +134,6 @@ top::NameOrBOperator ::= '*'
                 end;
 }
 
--- This would be much nicer if we could pass the Decorated Expr here,
--- but this nonterminal must be serializable as part of the environment.
-abstract production functionOperation
-top::Operation ::= e::Expr eTrans::String trackConstruction::Boolean
-{ top.isEqual =
-    case top.compareTo of
-    | functionOperation(_, et, tc) -> et == eTrans && tc == trackConstruction
-    | _ -> false
-    end;
-}
-abstract production plusPlusOperationString
-top::Operation ::= 
-{}
-abstract production plusPlusOperationList
-top::Operation ::= 
-{}
-abstract production borOperation
-top::Operation ::= 
-{}
-abstract production bandOperation
-top::Operation ::= 
-{}
-abstract production addOperation
-top::Operation ::= 
-{}
-abstract production mulOperation
-top::Operation ::= 
-{}
-
 --- Declarations ---------------------------------------------------------------
 concrete production collectionAttributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
@@ -218,7 +206,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   q.operatorForType = te.typerep;
   top.errors <- q.errors;
  
-  forwards to productionAttributeDcl($1, $2, a, $4, te, $8, location=top.location);
+  forwards to productionAttributeDcl($1, $2, new(a), $4, new(te), $8, location=top.location);
 }
 
 --- The use semantics ----------------------------------------------------------
@@ -227,7 +215,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
-  undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  undecorates to valContainsBase(new(val), ':=', new(e), ';', location=top.location);
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
   top.errors := e.errors;
 
@@ -238,7 +226,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 abstract production errorColNormalValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  undecorates to valueEq(new(val), '=', new(e), ';', location=top.location);
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
   top.errors := e.errors;
 
@@ -252,7 +240,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
-  undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  undecorates to valContainsBase(new(val), ':=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
@@ -261,7 +249,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 {
-  undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
+  undecorates to valContainsAppend(new(val), '<-', new(e), ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
@@ -273,7 +261,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Decorated! Expr with {}
 abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
+  undecorates to attrContainsBase(new(dl), '.', new(attr), ':=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -294,7 +282,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
+  undecorates to attrContainsAppend(new(dl), '.', new(attr), '<-', new(e), ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -318,7 +306,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
+  undecorates to attrContainsBase(new(dl), '.', new(attr), ':=', new(e), ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -339,7 +327,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Decorated! Expr with {}
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
+  undecorates to attrContainsAppend(new(dl), '.', new(attr), '<-', new(e), ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -378,7 +366,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, @e, location=top.location)
     else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e, top.location);
 }
 
@@ -397,7 +385,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, @e, location=top.location)
     else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e, top.location);
 }
 

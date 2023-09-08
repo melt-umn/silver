@@ -78,9 +78,9 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 synthesized attribute appendProd :: (Expr ::= Expr Expr Location) occurs on Operation;
 
 aspect production functionOperation
-top::Operation ::= e::Expr _ _
+top::Operation ::= e::OpExpr _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkFunctionInvocation(l, e, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkFunctionInvocation(l, e.expr, [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 
@@ -120,7 +120,7 @@ top::Operation ::=
 abstract production propagateMonoid
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(new(attr), location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not

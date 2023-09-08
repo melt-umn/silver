@@ -71,7 +71,7 @@ top::PolyType ::= ty::Type
   top.isEqual =
     top.compareTo.boundVars == [] &&
     top.compareTo.contexts == [] &&
-    top.compareTo.typerep == ty;
+    top.compareTo.typerep == new(ty);
 }
 
 aspect production polyType
@@ -90,7 +90,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
     zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
   top.isEqual =
     top.compareTo.contexts == [] &&
-    top.compareTo.typerep == performRenaming(ty, eqSub);
+    top.compareTo.typerep == performRenaming(new(ty), eqSub);
 }
 
 aspect production constraintType
@@ -109,7 +109,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
   top.isEqual =
     top.compareTo.contexts == map(performContextRenaming(_, eqSub), contexts) &&
-    top.compareTo.typerep == performRenaming(ty, eqSub);
+    top.compareTo.typerep == performRenaming(new(ty), eqSub);
 }
 
 attribute
@@ -128,7 +128,7 @@ top::Type ::=
   top.outputType = errorType();
   top.namedTypes = [];
   top.arity = 0;
-  top.baseType = top;
+  top.baseType = new(top);
   top.argTypes = [];
   top.inhSetMembers = [];
   
@@ -145,35 +145,35 @@ top::Type ::=
   top.uniqueness = varType(freshTyVar(uniquenessKind()));
   top.refSet = freshInhSet();
   top.asDecoratedType = errorType();
-  top.defaultSpecialization = top;
+  top.defaultSpecialization = new(top);
 }
 
 aspect production varType
 top::Type ::= tv::TyVar
 {
-  top.freeFlexibleVars <- [tv];
+  top.freeFlexibleVars <- [new(tv)];
   top.defaultSpecialization =
     case tv.kindrep of
     | uniquenessKind() -> nonUniqueType()
     | inhSetKind() -> inhSetType([])
-    | _ -> top
+    | _ -> new(top)
     end;
 }
 
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
-  top.freeSkolemVars <- [tv];
+  top.freeSkolemVars <- [new(tv)];
 
   -- Skolems with occurs-on contexts act like nonterminals, so use that behavior in unification
-  top.asDecoratedType = freshDecoratedType(top);
+  top.asDecoratedType = freshDecoratedType(new(top));
 }
 
 aspect production appType
 top::Type ::= c::Type a::Type
 {
   top.baseType = c.baseType;
-  top.argTypes = c.argTypes ++ [a];
+  top.argTypes = c.argTypes ++ [new(a)];
   top.isDecorated = c.isDecorated;
   top.isUniqueDecorated =
     case c of
@@ -185,23 +185,23 @@ top::Type ::= c::Type a::Type
   top.isTracked = c.isTracked;
   top.decoratedType =
     case c of
-    | appType(appType(decoratedType(), _), _) -> a
+    | appType(appType(decoratedType(), _), _) -> new(a)
     | _ -> errorType()
     end;
   top.uniqueness =
     case c of
-    | appType(appType(decoratedType(), u), _) -> u
+    | appType(appType(decoratedType(), u), _) -> new(u)
     | _ -> varType(freshTyVar(uniquenessKind()))
     end;
   top.refSet =
     case c of
-    | appType(appType(decoratedType(), _), i) -> i
+    | appType(appType(decoratedType(), _), i) -> new(i)
     | _ -> freshInhSet()
     end;
   top.asDecoratedType =
     if top.isDecorated
     then freshDecoratedType(top.decoratedType)
-    else freshDecoratedType(top);  -- c.baseType should be a nonterminal or skolem
+    else freshDecoratedType(new(top));  -- c.baseType should be a nonterminal or skolem
   top.arity = c.arity;
   top.isApplicable = c.isApplicable;
   
@@ -251,7 +251,7 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
   top.isNonterminal = true;
   top.isData = data;
   top.isTracked = tracked;
-  top.asDecoratedType = if data then top else freshDecoratedType(top);
+  top.asDecoratedType = if data then new(top) else freshDecoratedType(new(top));
 }
 
 aspect production terminalType

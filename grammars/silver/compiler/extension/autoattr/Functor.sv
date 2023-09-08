@@ -23,7 +23,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 abstract production functorAttributionDcl
 top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  undecorates to attributionDcl('attribute', new(at), new(attl), 'occurs', 'on', new(nt), new(nttl), ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -59,7 +59,7 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
 abstract production propagateFunctor
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(new(attr), location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not

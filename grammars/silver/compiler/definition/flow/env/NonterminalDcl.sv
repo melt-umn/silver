@@ -46,7 +46,7 @@ function getInhAttrsOnForReferences
             [s"${occ.attrOccurring}.${occ2.attrOccurring}"]
           | _ -> []
           end,
-          getAttrOccursOn(determineAttributeType(occ, ntty).typeName, e))
+          getAttrOccursOn(determineAttributeType(occ, new(ntty)).typeName, e))
         else []
     | _ -> []
     end,

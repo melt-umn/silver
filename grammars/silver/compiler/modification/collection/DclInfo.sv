@@ -43,9 +43,9 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
     top.compareKey == top.compareTo.compareKey &&
     fn == top.compareTo.fullName &&
     top.typeScheme == top.compareTo.typeScheme &&
-    o.isEqual;
+    o == top.compareTo.operation;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, new(ty));
   top.isSynthesized = true;
   top.isCollection = true;
   top.operation = o;
@@ -68,9 +68,9 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
     top.compareKey == top.compareTo.compareKey &&
     fn == top.compareTo.fullName &&
     top.typeScheme == top.compareTo.typeScheme &&
-    o.isEqual;
+    o == top.compareTo.operation;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, new(ty));
   top.isInherited = true;
   top.isCollection = true;
   top.operation = o;
@@ -91,7 +91,7 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   top.fullName = fn;
   propagate compareTo, isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
   top.operation = o;
   
   top.refDispatcher = localReference(_, location=_);

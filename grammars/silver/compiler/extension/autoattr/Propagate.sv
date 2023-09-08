@@ -7,7 +7,7 @@ top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'excluding' ps::Pr
   propagate env;
   
   top.errors <- ps.errors;
-  forwards to propagateOnNTListDcl(attrs, nts, ps, location=top.location);
+  forwards to propagateOnNTListDcl(@attrs, @nts, @ps, location=top.location);
 }
 
 concrete production propagateOnNTListDcl_c
@@ -16,7 +16,7 @@ top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList ';'
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse};";
   
   forwards to
-    propagateOnNTListDcl(attrs, nts, prodNameListNil(location=top.location), location=top.location);
+    propagateOnNTListDcl(@attrs, @nts, prodNameListNil(location=top.location), location=top.location);
 }
 
 abstract production propagateOnNTListDcl
@@ -26,11 +26,11 @@ top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> propagateOnOneNTDcl(attrs, n, ps, location=n.location)
+    | nameListOne(n) -> propagateOnOneNTDcl(new(attrs), new(n), new(ps), location=n.location)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        propagateOnOneNTDcl(attrs, n, ps, location=n.location),
-        propagateOnNTListDcl(attrs, rest, ps, location=top.location),
+        propagateOnOneNTDcl(new(attrs), new(n), new(ps), location=n.location),
+        propagateOnNTListDcl(new(attrs), new(rest), new(ps), location=top.location),
         location=top.location)
     end;
 }
@@ -59,12 +59,12 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
   local dcl::AGDcl =
     foldr(
       appendAGDcl(_, _, location=top.location), emptyAGDcl(location=top.location),
-      map(propagateAspectDcl(_, attrs, location=nt.location), includedProds));
+      map(propagateAspectDcl(_, new(attrs), location=nt.location), includedProds));
   
   forwards to
     if !null(nt.lookupType.errors)
     then errorAGDcl(nt.lookupType.errors, location=top.location)
-    else dcl;
+    else @dcl;
 }
 
 abstract production propagateAspectDcl
@@ -99,7 +99,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
         '{',
         productionStmtsSnoc(
           productionStmtsNil(location=top.location),
-          propagateAttrList('propagate', attrs, ';', location=top.location),
+          propagateAttrList('propagate', @attrs, ';', location=top.location),
           location=top.location),
         '}',
         location=top.location),
@@ -115,11 +115,11 @@ top::ProductionStmt ::= 'propagate' ns::NameList ';'
   -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
-    | nameListOne(n) -> propagateOneAttr(n, location=top.location)
+    | nameListOne(n) -> propagateOneAttr(new(n), location=top.location)
     | nameListCons(n, _, rest) ->
       productionStmtAppend(
-        propagateOneAttr(n, location=n.location),
-        propagateAttrList($1, rest, $3, location=top.location),
+        propagateOneAttr(new(n), location=n.location),
+        propagateAttrList($1, new(rest), $3, location=top.location),
         location=top.location)
     end;
 }
@@ -150,7 +150,7 @@ top::ProductionStmt ::= attr::QName
 abstract production propagateError
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(new(attr), location=top.location);
   forwards to
     errorProductionStmt(
       [err(attr.location, s"Attribute ${attr.name} cannot be propagated")],

@@ -54,13 +54,13 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   -- Uncomment for debugging
   --forwards to unsafeTrace(fwrd, printT(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
 
-  forwards to fwrd;
+  forwards to @fwrd;
 }
 
 abstract production strategyAttributionDcl
 top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  undecorates to attributionDcl('attribute', new(at), new(attl), 'occurs', 'on', new(nt), new(nttl), ';', location=top.location);
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -127,7 +127,7 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
 abstract production propagateStrategy
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(new(attr), location=top.location);
   top.unparse = s"propagate ${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;

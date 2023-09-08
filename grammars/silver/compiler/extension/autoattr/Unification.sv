@@ -34,7 +34,7 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 abstract production unificationInhAttributionDcl
 top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  undecorates to attributionDcl('attribute', new(at), new(attl), 'occurs', 'on', new(nt), new(nttl), ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -66,7 +66,7 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
 abstract production propagateUnificationSynPartial
 top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
 {
-  undecorates to propagateOneAttr(synPartial, location=top.location);
+  undecorates to propagateOneAttr(new(synPartial), location=top.location);
   top.unparse = s"propagate ${synPartial.unparse};";
   
   forwards to

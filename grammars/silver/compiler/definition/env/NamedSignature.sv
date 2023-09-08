@@ -33,14 +33,16 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
   top.fullName = fn;
   top.contexts = ctxs.contexts;
   top.inputElements = ie.elements;
-  top.outputElement = oe;
+  top.outputElement = new(oe);
   top.namedInputElements = np.elements;
   top.inputNames = ie.elementNames;
   top.inputTypes = ie.elementTypes; -- Does anything actually use this? TODO: eliminate?
-  local typerep::Type = appTypes(functionType(length(ie.elements), np.elementShortNames), ie.elementTypes ++ np.elementTypes ++ [oe.typerep]);
-  top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, typerep);
-  top.freeVariables = setUnionTyVars(ctxs.freeVariables, typerep.freeVariables);
-  top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
+  
+  -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow, and make this a local.
+  top.typerep = appTypes(functionType(length(ie.elements), np.elementShortNames), ie.elementTypes ++ np.elementTypes ++ [oe.typerep]);
+
+  top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, top.typerep);
+  top.freeVariables = setUnionTyVars(ctxs.freeVariables, top.typerep.freeVariables);
   
   ctxs.boundVariables = top.freeVariables;
   ie.boundVariables = top.freeVariables;
@@ -71,9 +73,9 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
   top.namedInputElements = error("Not a production or function");
   top.inputNames = error("Not a production or function");
   top.inputTypes = ty.inputTypes; -- Does anything actually use this? TODO: eliminate?
-  top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, ty);
+  top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, new(ty));
   top.freeVariables = setUnionTyVars(ctxs.freeVariables, ty.freeVariables);
-  top.typerep = ty;
+  top.typerep = new(ty);
   
   top.freshenNamedSignature = globalSignature(fn, ctxs.flatRenamed, ty.flatRenamed); 
   local freshSubst::Substitution = zipVarsAndTypesIntoSubstitution(top.freeVariables, map(skolemType, top.typeScheme.boundVars));
@@ -105,7 +107,7 @@ synthesized attribute elementTypes::[Type];
 abstract production consNamedSignatureElement
 top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElements
 {
-  top.elements = h :: t.elements;
+  top.elements = new(h) :: t.elements;
   top.elementNames = h.elementName :: t.elementNames;
   top.elementShortNames = h.elementShortName :: t.elementShortNames;
   top.elementTypes = h.typerep :: t.elementTypes;
@@ -141,7 +143,7 @@ abstract production namedSignatureElement
 top::NamedSignatureElement ::= n::String ty::Type
 {
   top.elementName = n;
-  top.typerep = ty;
+  top.typerep = new(ty);
   top.freeVariables = ty.freeVariables;
 
   -- When we convert from a SignatureElement to a functionType, we cut down to the short name only:

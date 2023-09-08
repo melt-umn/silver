@@ -316,14 +316,14 @@ function annotationsForNonterminal
   local annos :: [OccursDclInfo] =
     filter((.isAnnotation), getAttrOccursOn(nt.typeName, env));
   
-  return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(nt, _), annos));
+  return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(new(nt), _), annos));
 }
 -- only used by the above
 function annoInstanceToNamed
 NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
 {
   -- Used to compute the local typerep for this nonterminal
-  anno.givenNonterminalType = nt;
+  anno.givenNonterminalType = new(nt);
   
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
 }
@@ -332,7 +332,7 @@ NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
 function getInstanceDcl
 [InstDclInfo] ::= fntc::String t::Type e::Env
 {
-  local c::Context = instContext(fntc, t);
+  local c::Context = instContext(fntc, new(t));
   c.env = e;
   return c.resolved;
 }
@@ -341,7 +341,7 @@ function getInstanceDcl
 function getMinInhSetMembers
 ([String], [TyVar]) ::= seen::[TyVar] t::Type e::Env
 {
-  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
+  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), new(t));
   c.env = e;
   
   local recurse::[([String], [TyVar])] =
@@ -351,7 +351,7 @@ function getMinInhSetMembers
 
   return
     case t of
-    | skolemType(tv) when contains(tv, seen) -> ([], [])
+    | skolemType(tv) when contains(new(tv), seen) -> ([], [])
     | varType(_) -> ([], [])  -- If an InhSet is unspecialized after type checking, assume it is empty
     | _ -> (sort(unions(t.inhSetMembers :: map(fst, recurse))), unions(t.freeVariables :: map(snd, recurse))) 
     end;
@@ -362,7 +362,7 @@ function getMinRefSet
 {
   return
     case t of
-    | appType(appType(appType(decoratedType(), _), i), _) -> getMinInhSetMembers([], i, e).fst
+    | appType(appType(appType(decoratedType(), _), i), _) -> getMinInhSetMembers([], new(i), e).fst
     | _ -> []
     end;
 }
@@ -371,7 +371,7 @@ function getMinRefSet
 function getMaxInhSetMembers
 (Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Env
 {
-  local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
+  local c::Context = inhSubsetContext(new(t), varType(freshTyVar(inhSetKind())));
   c.env = e;
   
   local recurse::[(Maybe<[String]>, [TyVar])] =
@@ -381,7 +381,7 @@ function getMaxInhSetMembers
   
   return
     case t of
-    | skolemType(tv) when contains(tv, seen) -> (nothing(), [])
+    | skolemType(tv) when contains(new(tv), seen) -> (nothing(), [])
     | varType(_) -> (just([]), [])  -- If an InhSet is unspecialized after type checking, assume it is empty
     | inhSetType(inhs) -> (just(inhs), [])
     | _ -> (map(sort, foldr(
@@ -396,7 +396,7 @@ Maybe<[String]> ::= t::Type e::Env
 {
   return
     case t of
-    | appType(appType(appType(decoratedType(), _), i), _) -> getMaxInhSetMembers([], i, e).fst
+    | appType(appType(appType(decoratedType(), _), i), _) -> getMaxInhSetMembers([], new(i), e).fst
     | _ -> just([])
     end;
 }

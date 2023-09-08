@@ -272,7 +272,7 @@ top::Context ::=
 aspect production synOccursContext
 top::Context ::= syn::String _ _ inhs::Type ntty::Type
 {
-  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], inhs, top.env);
+  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], new(inhs), top.env);
   top.occursContextInhDeps :=
     case maxInhSetMembers.fst of
     | just(inhAttrs) -> [(ntty.typeName, syn, inhAttrs)]

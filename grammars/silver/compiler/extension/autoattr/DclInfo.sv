@@ -49,7 +49,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
-  top.emptyVal = empty;
+  top.emptyVal = new(empty);
   top.operation = append;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);

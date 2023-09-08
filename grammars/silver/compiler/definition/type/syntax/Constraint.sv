@@ -321,7 +321,7 @@ top::ConstraintPosition ::= instHead::Context tvs::[TyVar]
   top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
   top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.instanceHead = just(instHead);
+  top.instanceHead = just(new(instHead));
 }
 abstract production classPos
 top::ConstraintPosition ::= className::String tvs::[TyVar]
@@ -377,7 +377,7 @@ function transitiveSuperContexts
 {
   local dcls::[TypeDclInfo] = getTypeDcl(className, env);
   local dcl::TypeDclInfo = head(dcls);
-  dcl.givenInstanceType = ty;
+  dcl.givenInstanceType = new(ty);
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
@@ -385,7 +385,7 @@ function transitiveSuperContexts
     else unionsBy(
       sameSuperContext,
       dcl.superContexts ::
-      map(transitiveSuperContexts(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
+      map(transitiveSuperContexts(env, new(ty), dcl.fullName :: seenClasses, _), superClassNames));
 }
 
 -- TODO: Should be an equality attribute, maybe?
@@ -407,11 +407,11 @@ function transitiveSuperDefs
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);
-  dcl.givenInstanceType = ty;
+  dcl.givenInstanceType = new(ty);
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   local superInstDcls::[InstDclInfo] =
     map(
-      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      instSuperDcl(_, new(instDcl), sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
@@ -419,8 +419,8 @@ function transitiveSuperDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      flatMap(\ c::Context -> c.contextSuperDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
-      flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
+      flatMap(\ c::Context -> c.contextSuperDefs(new(instDcl), dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
+      flatMap(transitiveSuperDefs(env, new(ty), dcl.fullName :: seenClasses, _), superInstDcls);
 }
 
 function transitiveSuperOccursDefs
@@ -428,11 +428,11 @@ function transitiveSuperOccursDefs
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);
-  dcl.givenInstanceType = ty;
+  dcl.givenInstanceType = new(ty);
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   local superInstDcls::[InstDclInfo] =
     map(
-      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      instSuperDcl(_, new(instDcl), sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
@@ -440,6 +440,6 @@ function transitiveSuperOccursDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      flatMap(\ c::Context -> c.contextSuperOccursDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
-      flatMap(transitiveSuperOccursDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
+      flatMap(\ c::Context -> c.contextSuperOccursDefs(new(instDcl), dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
+      flatMap(transitiveSuperOccursDefs(env, new(ty), dcl.fullName :: seenClasses, _), superInstDcls);
 }
