@@ -112,10 +112,18 @@ Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureE
   return
     if validTypeHead && attrOccursOnHead
     then access(
-           baseExpr(at, location=loc), '.',
+           baseExpr(new(at), location=loc), '.',
            qNameAttrOccur(new(attrName), location=loc),
            location=loc)
-    else baseExpr(at, location=loc);
+    else if isNonterminal(input.typerep, env) && !input.typerep.isData
+    then application(
+      baseExpr(qName(loc, "silver:core:new"), location=loc), '(',
+      oneAppExprs(
+        presentAppExpr(baseExpr(new(at), location=loc), location=loc),
+        location=loc), ',',
+      emptyAnnoAppExprs(location=loc), ')',
+      location=loc)
+    else baseExpr(new(at), location=loc);
 }
 
 {--
