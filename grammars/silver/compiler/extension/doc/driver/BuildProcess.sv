@@ -29,7 +29,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.docGeneration = true;
   top.parseDocs = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 abstract production printUndocFlag
@@ -37,7 +37,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.printUndoc = true;
   top.parseDocs = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 abstract production countUndocFlag
@@ -45,7 +45,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.countUndoc = true;
   top.parseDocs = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 abstract production docOutFlag
@@ -55,7 +55,7 @@ top::CmdArgs ::= loc::String rest::CmdArgs
     | nothing() -> just(loc)
     | _ -> error("Duplicate arguments for docOutOption")
   end;
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs

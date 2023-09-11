@@ -115,9 +115,9 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
     then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
-    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    else if map((.kind), atTypeScheme.boundVars) != map((.kindrep), attl.types)
     then [errFromOrigin(at,
-      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kind), atTypeScheme.boundVars))) ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
 
@@ -126,7 +126,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type =
-    if map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
+    if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
@@ -160,9 +160,9 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
     then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
-    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    else if map((.kind), atTypeScheme.boundVars) != map((.kindrep), attl.types)
     then [errFromOrigin(at,
-      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kind), atTypeScheme.boundVars))) ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
 
@@ -176,7 +176,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type =
-    if map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
+    if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
@@ -216,9 +216,9 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
     then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
-    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    else if map((.kind), atTypeScheme.boundVars) != map((.kindrep), attl.types)
     then [errFromOrigin(at,
-      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kind), atTypeScheme.boundVars))) ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
   
@@ -227,7 +227,7 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type =
-    if map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
+    if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
