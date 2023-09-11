@@ -103,7 +103,7 @@ top::ClassBody ::=
 concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
-  forwards to constraintClassBodyItem(@id, $2, nilConstraint(location=top.location), '=>', ty, $4, location=top.location);
+  forwards to constraintClassBodyItem(@id, $2, nilConstraint(location=top.location), '=>', @ty, $4, location=top.location);
 } action {
   insert semantic token IdTypeClassMemberDcl_t at id.location;
 }

@@ -26,7 +26,7 @@ function getFreeTypeNames
 [String] ::= l::[TyVar]
 {
     return case l of
-           | tyVarNamed(_, _, s)::xs -> s :: getFreeTypeNames(xs)
+           | tyVarNamed(s)::xs -> s :: getFreeTypeNames(xs)
            | _::xs -> getFreeTypeNames(xs)
            | [] -> []
            end;

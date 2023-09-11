@@ -22,8 +22,8 @@ top::PolyType ::= ty::Type
 {
   top.boundVars = [];
   top.contexts = [];
-  top.typerep = ty;
-  top.monoType = ty;
+  top.typerep = new(ty);
+  top.monoType = new(ty);
   top.kindrep = ty.kindrep;
 }
 
@@ -32,7 +32,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = [];
-  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
   top.kindrep = ty.kindrep;
 }
@@ -42,7 +42,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
-  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a (constraint) poly type!");
   top.kindrep = ty.kindrep;
 }
@@ -62,19 +62,19 @@ top::Context ::= cls::String t::Type
 abstract production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args) ++ [ntty.freeVariables]);
 }
 
 abstract production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [inhs, ntty]));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args) ++ [inhs.freeVariables, ntty.freeVariables]);
 }
 
 abstract production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args) ++ [ntty.freeVariables]);
 }
 
 abstract production typeableContext
@@ -108,7 +108,7 @@ flowtype Type = decorate {}, forward {};
 abstract production varType
 top::Type ::= tv::TyVar
 {
-  top.kindrep = tv.kindrep;
+  top.kindrep = tv.kind;
   top.freeVariables = [tv];
 }
 
@@ -119,7 +119,7 @@ top::Type ::= tv::TyVar
 abstract production skolemType
 top::Type ::= tv::TyVar
 {
-  top.kindrep = tv.kindrep;
+  top.kindrep = tv.kind;
   top.freeVariables = [tv];
 }
 
@@ -131,7 +131,7 @@ top::Type ::= c::Type a::Type
 {
   top.kindrep =
     case c.kindrep of
-    | arrowKind(_, k) -> k
+    | arrowKind(_, k) -> new(k)
     | _ -> starKind()
     end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
@@ -294,36 +294,18 @@ top::Type ::= params::Integer namedParams::[String]
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindrep, compareTo, isEqual;
-propagate compareTo, isEqual on TyVar;
+annotation varId :: Integer;
+annotation kind :: Kind;
 
--- In essence, this should be 'private' to this file.
-synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
+data TyVar = tyVar | tyVarNamed n::String
+  with varId, kind;
 
-abstract production tyVar
-top::TyVar ::= k::Kind i::Integer
-{
-  top.kindrep = new(k);
-  top.extractTyVarRep = i;
+instance Eq TyVar {
+  eq = \ x::TyVar y::TyVar -> x.varId == y.varId; -- && x.kind == y.kind;
 }
 
-abstract production tyVarNamed
-top::TyVar ::= k::Kind i::Integer n::String
-{
-  forwards to tyVar(@k, i);
-}
-
-function freshTyVar
-TyVar ::= k::Kind
-{
-  return tyVar(k, genInt());
-}
-
-function freshTyVarNamed
-TyVar ::= k::Kind n::String
-{
-  return tyVarNamed(k, genInt(), n);
-}
+global freshTyVar::(TyVar ::= Kind) = tyVar(kind=_, varId=genInt());
+global freshTyVarNamed::(TyVar ::= String Kind) = tyVarNamed(_, kind=_, varId=genInt());
 
 function freshType
 Type ::=

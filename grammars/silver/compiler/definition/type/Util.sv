@@ -151,9 +151,9 @@ top::Type ::=
 aspect production varType
 top::Type ::= tv::TyVar
 {
-  top.freeFlexibleVars <- [new(tv)];
+  top.freeFlexibleVars <- [tv];
   top.defaultSpecialization =
-    case tv.kindrep of
+    case tv.kind of
     | uniquenessKind() -> nonUniqueType()
     | inhSetKind() -> inhSetType([])
     | _ -> new(top)
@@ -163,7 +163,7 @@ top::Type ::= tv::TyVar
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
-  top.freeSkolemVars <- [new(tv)];
+  top.freeSkolemVars <- [tv];
 
   -- Skolems with occurs-on contexts act like nonterminals, so use that behavior in unification
   top.asDecoratedType = freshDecoratedType(new(top));

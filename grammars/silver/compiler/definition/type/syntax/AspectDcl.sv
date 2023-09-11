@@ -9,7 +9,7 @@ flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName, determi
 function addNewLexicalTyVars_ActuallyVariables
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
 {
-  return map(\ n::String -> aspectLexTyVarDef(gn, sl, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
+  return map(\ n::String -> aspectLexTyVarDef(gn, sl, n, freshTyVarNamed(n, fromMaybe(starKind(), lookup(n, lk)))), l);
 }
 
 -- This binds variables that appear in the signature to type variables, rather than skolem constants

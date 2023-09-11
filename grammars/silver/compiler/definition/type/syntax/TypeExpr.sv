@@ -73,7 +73,7 @@ propagate mentionedAliases on
 function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
 {
-  return map(\ n::String -> lexTyVarDef(gn, sl, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
+  return map(\ n::String -> lexTyVarDef(gn, sl, n, freshTyVarNamed(n, fromMaybe(starKind(), lookup(n, lk)))), l);
 }
 
 aspect default production

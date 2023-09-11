@@ -535,7 +535,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
-    then [err(q.location, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(ty)} are not supported")]
+    then [err(q.location, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(new(ty))} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
@@ -562,7 +562,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
-    then [err(q.location, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(ty)} are not supported")]
+    then [err(q.location, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(new(ty))} are not supported")]
     else [];
 
   top.typerep = attr.typerep;

@@ -119,7 +119,7 @@ top::Type ::= tv::TyVar
   -- Perform one iteration of substitution
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindrep != tv.kindrep -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindrep != tv.kind -> error("Kind mismatch in applying substitution!")
     | ps -> ps
     end;
   
@@ -127,11 +127,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else top;
+    else new(top);
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else top;
+    else new(top);
 }
 
 aspect production skolemType
@@ -153,7 +153,7 @@ top::Type ::= tv::TyVar
   
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindrep != tv.kindrep -> nothing()
+    | just(s) when s.kindrep != tv.kind -> nothing()
     | ps -> ps
     end;
   
@@ -161,11 +161,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else top;
+    else new(top);
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else top;
+    else new(top);
 }
 
 --------------------------------------------------------------------------------
@@ -218,7 +218,7 @@ function mapRenameSubst
 function freshTyVars
 [TyVar] ::= tvs::[TyVar]
 {
-  return map(freshTyVar, map((.kindrep), tvs));
+  return map(freshTyVar, map((.kind), tvs));
 }
 
 function zipVarsIntoSubstitution

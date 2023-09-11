@@ -40,73 +40,73 @@ abstract production versionFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.displayVersion = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production cleanFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.doClean = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production warnErrorFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnError = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production forceOriginsFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.forceOrigins = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production noOriginsFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noOrigins = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production tracingOriginsFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.tracingOrigins = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production noRedexFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noRedex = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production outFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.outName = s :: forward.outName;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production includeFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.searchPath = s :: forward.searchPath;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production genFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.genLocation = s :: forward.genLocation;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production homeFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.silverHomeOption = s :: forward.silverHomeOption;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production nobindingFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noBindingChecking = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 function parseArgs

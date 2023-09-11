@@ -36,5 +36,5 @@ concrete production parenKindExpr
 top::KindExpr ::= '(' k::KindExpr ')'
 {
   top.unparse = s"(${k.unparse})";
-  forwards to k;
+  forwards to @k;
 }

@@ -351,7 +351,7 @@ function getMinInhSetMembers
 
   return
     case t of
-    | skolemType(tv) when contains(new(tv), seen) -> ([], [])
+    | skolemType(tv) when contains(tv, seen) -> ([], [])
     | varType(_) -> ([], [])  -- If an InhSet is unspecialized after type checking, assume it is empty
     | _ -> (sort(unions(t.inhSetMembers :: map(fst, recurse))), unions(t.freeVariables :: map(snd, recurse))) 
     end;
@@ -381,7 +381,7 @@ function getMaxInhSetMembers
   
   return
     case t of
-    | skolemType(tv) when contains(new(tv), seen) -> (nothing(), [])
+    | skolemType(tv) when contains(tv, seen) -> (nothing(), [])
     | varType(_) -> (just([]), [])  -- If an InhSet is unspecialized after type checking, assume it is empty
     | inhSetType(inhs) -> (just(inhs), [])
     | _ -> (map(sort, foldr(
