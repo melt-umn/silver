@@ -9,7 +9,7 @@ top::AGDcl ::= 'derive' tcs::NameList 'on' nts::NameList ';'
 {
   top.unparse = s"derive ${tcs.unparse} on ${nts.unparse};";
   
-  forwards to deriveTCsOnNTListDcl(tcs, nts, location=top.location);
+  forwards to deriveTCsOnNTListDcl(@tcs, @nts, location=top.location);
 }
 
 production deriveTCsOnNTListDcl
@@ -19,11 +19,11 @@ top::AGDcl ::= tcs::NameList nts::NameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> deriveTCsOnOneNTDcl(tcs, n, location=n.location)
+    | nameListOne(n) -> deriveTCsOnOneNTDcl(@tcs, new(n), location=n.location)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        deriveTCsOnOneNTDcl(tcs, n, location=n.location),
-        deriveTCsOnNTListDcl(tcs, rest, location=top.location),
+        deriveTCsOnOneNTDcl(@tcs, new(n), location=n.location),
+        deriveTCsOnNTListDcl(new(tcs), new(rest), location=top.location),
         location=top.location)
     end;
 }
@@ -35,11 +35,11 @@ top::AGDcl ::= tcs::NameList nt::QName
   
   forwards to
     case tcs of
-    | nameListOne(tc) -> deriveDcl(tc, nt, location=top.location)
+    | nameListOne(tc) -> deriveDcl(new(tc), @nt, location=top.location)
     | nameListCons(tc, _, rest) ->
       appendAGDcl(
-        deriveDcl(tc, nt, location=top.location),
-        deriveTCsOnOneNTDcl(rest, nt, location=top.location),
+        deriveDcl(new(tc), @nt, location=top.location),
+        deriveTCsOnOneNTDcl(new(rest), new(nt), location=top.location),
         location=top.location)
     end;
 }
@@ -76,7 +76,7 @@ top::AGDcl ::= tc::QName nt::QName
 production deriveEqDcl
 top::AGDcl ::= nt::Decorated! QName
 {
-  undecorates to deriveDcl(qName(top.location, "silver:core:Eq"), nt, location=top.location);
+  undecorates to deriveDcl(qName(top.location, "silver:core:Eq"), new(nt), location=top.location);
   top.unparse = s"derive silver:core:Eq on ${nt.unparse};";
   top.moduleNames := [];
 
@@ -94,15 +94,15 @@ top::AGDcl ::= nt::Decorated! QName
         nilConstraint(location=top.location),
         filterMap(
           \ tv::TyVar ->
-            if tv.kindrep == starKind()
+            if tv.kind == starKind()
             then just(
               classConstraint(
                 qName(top.location, "silver:core:Eq").qNameType,
                 typerepTypeExpr(skolemType(tv), location=top.location),
                 location=top.location))
             else nothing(),
-          tvs))} => silver:core:Eq $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
-        eq = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+          tvs))} => silver:core:Eq $TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} {
+        eq = \ x::$TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} y::$TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} -> $Expr{
           if null(includedProds) then Silver_Expr {true} else
           foldr(
             and(_, '&&', _, location=top.location),
@@ -152,8 +152,8 @@ top::AGDcl ::= nt::Decorated! QName
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { x.$name{anno.elementName} == y.$name{anno.elementName} },
-              annotationsForNonterminal(ntty, top.env)))};
-        neq = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+              annotationsForNonterminal(new(ntty), top.env)))};
+        neq = \ x::$TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} y::$TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} -> $Expr{
           if null(includedProds) then Silver_Expr {false} else
           foldr(
             or(_, '||', _, location=top.location),
@@ -203,7 +203,7 @@ top::AGDcl ::= nt::Decorated! QName
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { x.$name{anno.elementName} != y.$name{anno.elementName} },
-              annotationsForNonterminal(ntty, top.env)))};
+              annotationsForNonterminal(new(ntty), top.env)))};
       }
   };
 }
@@ -211,7 +211,7 @@ top::AGDcl ::= nt::Decorated! QName
 production deriveOrdDcl
 top::AGDcl ::= nt::Decorated! QName
 {
-  undecorates to deriveDcl(qName(top.location, "silver:core:Ord"), nt, location=top.location);
+  undecorates to deriveDcl(qName(top.location, "silver:core:Ord"), new(nt), location=top.location);
   top.unparse = s"derive silver:core:Ord on ${nt.unparse};";
   top.moduleNames := [];
 
@@ -230,15 +230,15 @@ top::AGDcl ::= nt::Decorated! QName
         nilConstraint(location=top.location),
         filterMap(
           \ tv::TyVar ->
-            if tv.kindrep == starKind()
+            if tv.kind == starKind()
             then just(
               classConstraint(
                 qName(top.location, "silver:core:Ord").qNameType,
                 typerepTypeExpr(skolemType(tv), location=top.location),
                 location=top.location))
             else nothing(),
-          tvs))} => silver:core:Ord $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
-        compare = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+          tvs))} => silver:core:Ord $TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} {
+        compare = \ x::$TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} y::$TypeExpr{typerepTypeExpr(new(ntty), location=top.location)} -> $Expr{
           if null(includedProds) then Silver_Expr { 0 } else
           foldr(
             \ e1::Expr e2::Expr ->
@@ -303,7 +303,7 @@ top::AGDcl ::= nt::Decorated! QName
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { silver:core:compare(x.$name{anno.elementName}, y.$name{anno.elementName}) },
-              annotationsForNonterminal(ntty, top.env)))};
+              annotationsForNonterminal(new(ntty), top.env)))};
       }
   };
 }
