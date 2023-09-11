@@ -1,9 +1,9 @@
 grammar silver:compiler:extension:autoattr;
 
-concrete production unificationAttributeDcl
-top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName ';'
+concrete production biequalityAttributeDcl
+top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName ';'
 {
-  top.unparse = s"unification attribute ${synPartial.unparse}, ${syn.unparse} with ${inh.unparse};";
+  top.unparse = s"biequality attribute ${synPartial.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
   propagate grammarName, env, flowEnv;
@@ -26,12 +26,12 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(unificationPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
-       attrDef(defaultEnvItem(unificationDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
+      [attrDef(defaultEnvItem(biequalityPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
+       attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 
-abstract production unificationInhAttributionDcl
+abstract production biequalityInhAttributionDcl
 top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
@@ -64,7 +64,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
       location=top.location);
 }
 
-abstract production propagateUnificationSynPartial
+abstract production propagateBiequalitySynPartial
 top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
 {
   undecorates to propagateOneAttr(synPartial, location=top.location);
@@ -101,7 +101,7 @@ top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
     };
 }
 
-abstract production propagateUnificationSyn
+abstract production propagateBiequalitySyn
 top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
 {
   undecorates to propagateOneAttr(syn, location=top.location);

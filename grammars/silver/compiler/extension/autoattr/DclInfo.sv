@@ -128,7 +128,7 @@ top::AttributeDclInfo ::= inh::String keySyn::String syn::String
   top.propagateDispatcher = propagateOrdering(inh, keySyn, _, location=_);
 }
 
-abstract production unificationPartialDcl
+abstract production biequalityPartialDcl
 top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = synPartial;
@@ -141,10 +141,10 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateUnificationSynPartial(inh, _, syn, location=_);
+  top.propagateDispatcher = propagateBiequalitySynPartial(inh, _, syn, location=_);
 }
 
-abstract production unificationDcl
+abstract production biequalityDcl
 top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = syn;
@@ -157,7 +157,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateUnificationSyn(inh, synPartial, _, location=_);
+  top.propagateDispatcher = propagateBiequalitySyn(inh, synPartial, _, location=_);
 }
 
 abstract production threadedInhDcl
