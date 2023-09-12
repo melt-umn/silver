@@ -120,13 +120,13 @@ top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name '
       location=top.location);
 }
 
-concrete production unificationAttributeDclMultiple
-top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
+concrete production biequalityAttributeDclMultiple
+top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "unification attribute " ++ synPartial.name ++ ", " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "biequality attribute " ++ synPartial.name ++ ", " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      unificationAttributeDcl($1, $2, synPartial, ',', syn, 'with', inh, ';', location=top.location),
+      biequalityAttributeDcl($1, $2, synPartial, ',', syn, 'with', inh, ';', location=top.location),
       appendAGDcl(
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),

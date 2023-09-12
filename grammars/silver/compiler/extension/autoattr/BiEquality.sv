@@ -1,9 +1,9 @@
 grammar silver:compiler:extension:autoattr;
 
-concrete production unificationAttributeDcl
-top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName ';'
+concrete production biequalityAttributeDcl
+top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName ';'
 {
-  top.unparse = s"unification attribute ${synPartial.unparse}, ${syn.unparse} with ${inh.unparse};";
+  top.unparse = s"biequality attribute ${synPartial.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
   propagate grammarName, env, flowEnv;
@@ -26,24 +26,24 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(unificationPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
-       attrDef(defaultEnvItem(unificationDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
+      [attrDef(defaultEnvItem(biequalityPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
+       attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 
-abstract production unificationInhAttributionDcl
-top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with {}  nt::Decorated! QName with {}  nttl::Decorated! BracketedOptTypeExprs with {}
+abstract production biequalityInhAttributionDcl
+top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', new(at), new(attl), 'occurs', 'on', new(nt), new(nttl), ';', location=top.location);
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
   attl.env = top.env;
   attl.grammarName = top.grammarName;
   attl.flowEnv = top.flowEnv;
-  production fwrdAttl::BracketedOptTypeExprs =
+  local fwrdAttl::BracketedOptTypeExprs =
     if length(attl.types) > 0
-    then new(attl)
+    then attl
     else
       botlSome(
         bTypeList(
@@ -59,14 +59,13 @@ top::AGDcl ::= at::Decorated! QName  attl::Decorated! BracketedOptTypeExprs with
             location=top.location),
           '>', location=top.location),
         location=top.location);
-
   forwards to defaultAttributionDcl(at, fwrdAttl, nt, nttl, location=top.location);
 }
 
-abstract production propagateUnificationSynPartial
+abstract production propagateBiequalitySynPartial
 top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
 {
-  undecorates to propagateOneAttr(new(synPartial), location=top.location);
+  undecorates to propagateOneAttr(synPartial, location=top.location);
   top.unparse = s"propagate ${synPartial.unparse};";
   
   forwards to
@@ -91,18 +90,16 @@ top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
               trueConst('true', location=top.location),
               map(
                 \ ie::NamedSignatureElement ->
-                  if !null(getOccursDcl(syn, ie.typerep.typeName, top.env))
-                  then Silver_Expr { $name{ie.elementName}.$qName{syn} }
-                  else if isNonterminal(ie.typerep, top.env) && !ie.typerep.isData
-                  then Silver_Expr { silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"})) }
-                  else Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) },
+                  if null(getOccursDcl(syn, ie.typerep.typeName, top.env))
+                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
+                  else Silver_Expr { $name{ie.elementName}.$qName{syn} },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;
     };
 }
 
-abstract production propagateUnificationSyn
+abstract production propagateBiequalitySyn
 top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
 {
   undecorates to propagateOneAttr(syn, location=top.location);
@@ -115,3 +112,4 @@ top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
         $name{top.frame.signature.outputElement.elementName}.$qName{inh}.$qName{synPartial};
     };
 }
+
