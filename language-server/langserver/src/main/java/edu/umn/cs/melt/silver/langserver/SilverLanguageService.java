@@ -401,9 +401,9 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
         // Set up the build environment
         NBuildEnv benv = new PbuildEnv(
-            new StringCatter(silverHome),
-            new StringCatter(silverGen),
             ConsCellCollection.fromStringList(grammarPath),
+            new StringCatter(silverGen),
+            new StringCatter(silverHome),
             ConsCellCollection.fromStringList(silverHostGen)
         );
         DecoratedNode a = PparseArgsOrError.invoke(OriginContext.FFI_CONTEXT, ConsCellCollection.fromStringList(args));
