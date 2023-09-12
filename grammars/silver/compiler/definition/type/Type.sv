@@ -301,11 +301,12 @@ data TyVar = tyVar | tyVarNamed n::String
   with varId, kind;
 
 instance Eq TyVar {
-  eq = \ x::TyVar y::TyVar -> x.varId == y.varId; -- && x.kind == y.kind;
+  -- Shouldn't need to compare kinds here, since all type vars have a unique id.
+  eq = \ x::TyVar y::TyVar -> x.varId == y.varId; --&& x.kind == y.kind;
 }
 
-global freshTyVar::(TyVar ::= Kind) = tyVar(kind=_, varId=genInt());
-global freshTyVarNamed::(TyVar ::= String Kind) = tyVarNamed(_, kind=_, varId=genInt());
+global freshTyVar::(TyVar ::= Kind) = \ k::Kind -> tyVar(kind=k, varId=genInt());
+global freshTyVarNamed::(TyVar ::= String Kind) = \ n::String k::Kind -> tyVarNamed(n, kind=k, varId=genInt());
 
 function freshType
 Type ::=
