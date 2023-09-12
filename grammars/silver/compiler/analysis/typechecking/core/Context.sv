@@ -25,7 +25,7 @@ top::Context ::= cls::String t::Type
     -- and unify with something else in solving another instance later on.
     if !null(t.freeFlexibleVars)
     then map(
-      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.boundVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
       t.freeFlexibleVars)
     else if null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${top.typepp} (arising from ${top.contextSource})")]
@@ -45,7 +45,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     -- and unify with something else in solving another instance later on.
     if !null(ntty.freeFlexibleVars)
     then map(
-      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.boundVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
       ntty.freeFlexibleVars)
     -- atty should never have free type variables if ntty does not, except in case of errors elsewhere.
     else {-if !null(atty.freeFlexibleVars)
@@ -68,7 +68,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     -- and unify with something else in solving another instance later on.
     if !null(ntty.freeFlexibleVars) || (!ntty.isNonterminal && !null(inhs.freeFlexibleVars))
     then map(
-      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.boundVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
       ntty.freeFlexibleVars ++ inhs.freeFlexibleVars)
     -- Give a more helpful error message when there are flexible type vars in inhs but not in ntty,
     -- when we might be able to resolve the ambiguity via flow types.
@@ -76,7 +76,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     then map(
       \ tv::TyVar -> err(
         top.contextLoc,
-        s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for ${attr} on ${ntty.typeName}"),
+        s"Ambiguous type variable ${findAbbrevFor(tv, top.boundVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for ${attr} on ${ntty.typeName}"),
       inhs.freeFlexibleVars)
     -- atty should never have free type variables if ntty does not, except in case of errors elsewhere.
     else {-if !null(atty.freeFlexibleVars)
@@ -99,7 +99,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     -- and unify with something else in solving another instance later on.
     if !null(ntty.freeFlexibleVars)
     then map(
-      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.boundVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
       ntty.freeFlexibleVars)
     else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${top.typepp} (arising from ${top.contextSource})")]
@@ -130,7 +130,7 @@ top::Context ::= i1::Type i2::Type
     -- and unify with something else in solving another instance later on.
     if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     then map(
-      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.boundVariables)} (arising from ${top.contextSource}) prevents the constraint ${top.typepp} from being solved."),
       i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     else
       case getMaxInhSetMembers([], new(i1), top.env), getMinInhSetMembers([], new(i2), top.env) of

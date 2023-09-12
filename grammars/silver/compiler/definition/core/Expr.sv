@@ -214,7 +214,7 @@ top::Expr ::= q::Decorated! QName
     | c :: _ -> performContextSubstitution(c, top.finalSubst).defaultSpecialization
     | _ -> error("Class member should have at least one context!")
     end;
-  instHead.boundVariables = contexts.freeVariables;
+  instHead.boundVariables = instHead.freeVariables;
   instHead.env = top.env;
   instHead.frame = top.frame;
   instHead.config = top.config;

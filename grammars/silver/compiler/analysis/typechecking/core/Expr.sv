@@ -13,12 +13,10 @@ propagate upSubst, downSubst
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 attribute finalType occurs on Expr;
-attribute contexts occurs on Expr;
 aspect default production
 top::Expr ::=
 {
   top.finalType = performSubstitution(top.typerep, top.finalSubst).defaultSpecialization;
-  top.contexts = [];
 }
 
 aspect production productionReference
@@ -27,7 +25,6 @@ top::Expr ::= q::Decorated! QName
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production functionReference
@@ -36,7 +33,6 @@ top::Expr ::= q::Decorated! QName
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production globalValueReference
@@ -45,7 +41,6 @@ top::Expr ::= q::Decorated! QName
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production classMemberReference
@@ -58,8 +53,6 @@ top::Expr ::= q::Decorated! QName
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production application
