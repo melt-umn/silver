@@ -32,6 +32,8 @@ import silver.core.PunsafeEvalIO;
 
 /**
  * Abstraction over the Silver compiler, to perform builds and query information from the most recent build.
+ * 
+ * @author krame505
  */
 public class SilverCompiler {
     private DecoratedNode comp = null;
