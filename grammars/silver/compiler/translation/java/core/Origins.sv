@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import silver:compiler:definition:origins;
 import silver:util:cmdargs only CmdArgs;
 import silver:compiler:driver;
