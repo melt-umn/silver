@@ -19,11 +19,11 @@ top::ValueDclInfo ::= fn::String ty::Type
 
   top.typeScheme = monoType(ty);
   
-  top.refDispatcher = parserAttributeReference(_, location=_);
-  top.defDispatcher = parserAttributeValueDef(_, _, location=_);
-  top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
-  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur  l::Location ->
-    parserAttributeDefLHS(q, location=l);
+  top.refDispatcher = parserAttributeReference;
+  top.defDispatcher = parserAttributeValueDef;
+  top.defLHSDispatcher = parserAttributeDefLHS;
+  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur ->
+    parserAttributeDefLHS(q);
 }
 
 {--
@@ -39,10 +39,10 @@ top::ValueDclInfo ::= fn::String
   -- that are not part of the disambiguation set.
   top.typeScheme = monoType(terminalIdType());
   
-  top.refDispatcher = pluckTerminalReference(_, location=_);
-  top.defDispatcher = errorValueDef(_, _, location=_);
-  top.defLHSDispatcher = errorDefLHS(_, location=_);
-  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
+  top.refDispatcher = pluckTerminalReference;
+  top.defDispatcher = errorValueDef;
+  top.defLHSDispatcher = errorDefLHS;
+  top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
 {--
@@ -59,10 +59,10 @@ top::ValueDclInfo ::= fn::String  superClasses::[String]
   -- We wouldn't need a separate namespace, they could just be in the type namespace.
   -- Currently referencing a lexer class gives a list of its member's TerminalIds.
   top.typeScheme = monoType(listType(terminalIdType()));
-  top.refDispatcher = lexerClassReference(_, location=_);
-  top.defDispatcher = errorValueDef(_, _, location=_);
-  top.defLHSDispatcher = errorDefLHS(_, location=_);
-  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
+  top.refDispatcher = lexerClassReference;
+  top.defDispatcher = errorValueDef;
+  top.defLHSDispatcher = errorDefLHS;
+  top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
 {--
@@ -76,10 +76,10 @@ top::ValueDclInfo ::= fn::String ty::Type
 
   top.typeScheme = monoType(ty);
   
-  top.refDispatcher = termAttrValueReference(_, location=_);
-  top.defDispatcher = termAttrValueValueDef(_, _, location=_);
-  top.defLHSDispatcher = errorDefLHS(_, location=_);
-  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
+  top.refDispatcher = termAttrValueReference;
+  top.defDispatcher = termAttrValueValueDef;
+  top.defLHSDispatcher = errorDefLHS;
+  top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
 {--
@@ -93,11 +93,11 @@ top::ValueDclInfo ::= fn::String ty::Type
 
   top.typeScheme = monoType(ty);
   
-  top.refDispatcher = actionChildReference(_, location=_);
-  top.defDispatcher = errorValueDef(_, _, location=_);
-  top.defLHSDispatcher = parserAttributeDefLHS(_, location=_); -- TODO: specialize this
-  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur  l::Location ->
-    parserAttributeDefLHS(q, location=l);
+  top.refDispatcher = actionChildReference;
+  top.defDispatcher = errorValueDef;
+  top.defLHSDispatcher = parserAttributeDefLHS; -- TODO: specialize this
+  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur ->
+    parserAttributeDefLHS(q);
 }
 
 {--
@@ -112,9 +112,9 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.typeScheme = monoType(ty);
   
   -- TODO: use specialized ones that give better errors messages!
-  top.refDispatcher = parserAttributeReference(_, location=_);
-  top.defDispatcher = parserAttributeValueDef(_, _, location=_);
-  top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
-  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur  l::Location ->
-    parserAttributeDefLHS(q, location=l);
+  top.refDispatcher = parserAttributeReference;
+  top.defDispatcher = parserAttributeValueDef;
+  top.defLHSDispatcher = parserAttributeDefLHS;
+  top.transDefLHSDispatcher = \ q::Decorated! QName  Decorated! QNameAttrOccur ->
+    parserAttributeDefLHS(q);
 }

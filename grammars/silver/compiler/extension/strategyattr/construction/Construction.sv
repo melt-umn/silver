@@ -30,8 +30,8 @@ top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_
     s:rewriteWith(
       s:allTopDown(
         rule on AnnoExpr of
-        | annoExpr(n, _, presentAppExpr(e), location=l) when n.name == "genName" ->
-          annoExpr(n, '=', presentAppExpr(plusPlus(genName, '++', e, location=l), location=l), location=l)
+        | annoExpr(n, _, presentAppExpr(e)) when n.name == "genName" ->
+          annoExpr(n, '=', presentAppExpr(plusPlus(genName, '++', e)))
         end),
         translate(top.location, reflect(cst.ast))).fromJust;
 }
@@ -40,13 +40,13 @@ concrete production antiquoteStrategyExpr_c
 top::StrategyExpr_c ::= '$StrategyExpr' '{' e::Expr '}'
 {
   top.unparse = s"$$StrategyExpr{${e.unparse}}";
-  top.ast = antiquoteStrategyExpr(e, genName=top.givenGenName, location=top.location);
+  top.ast = antiquoteStrategyExpr(e, genName=top.givenGenName);
 }
 
 concrete production antiquote_strategyQName
 top::StrategyQName ::= '$strategyQName' '{' e::Expr '}'
 {
-  top.ast = antiquote_qName('$qName', $2, e, $4, location=top.location);
+  top.ast = antiquote_qName('$qName', $2, e, $4);
 }
 
 abstract production antiquoteStrategyExpr

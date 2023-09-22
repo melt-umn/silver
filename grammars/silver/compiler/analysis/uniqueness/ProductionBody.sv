@@ -8,7 +8,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   top.errors <-
     if any(map((.isUniqueDecorated), namedSig.inputTypes)) && null(body.undecorateExpr)
-    then [err(top.location, s"Production '${id.name}' has a unique reference in its signature but no 'undecorates to'.")]
+    then [errFromOrigin(top, s"Production '${id.name}' has a unique reference in its signature but no 'undecorates to'.")]
     else [];
 }
 

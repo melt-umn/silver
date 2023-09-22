@@ -62,7 +62,7 @@ Monoid m => m ::= x::m  n::Integer
 }
 
 @{- @hide -}
-nonterminal MPowerHelper<m>;
+data nonterminal MPowerHelper<m>;
 
 @{- @hide -}
 abstract production mPowerHelper

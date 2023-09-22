@@ -81,7 +81,7 @@ top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
                 else [dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
   top.docErrors <-
     if isDoubleComment
-    then [wrn(parsed.location, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+    then [wrnFromOrigin(parsed, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
   forwards to item;
@@ -158,7 +158,7 @@ top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
                 else [dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
   top.docErrors <-
     if isDoubleComment
-    then [wrn(parsed.location, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+    then [wrnFromOrigin(parsed, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
   forwards to item;

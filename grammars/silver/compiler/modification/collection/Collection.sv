@@ -8,7 +8,7 @@ import silver:compiler:driver:util;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
 import silver:compiler:translation:java:core;
 
-nonterminal NameOrBOperator with config, location, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, errors, env, unparse, operation, operatorForType;
+tracked nonterminal NameOrBOperator with config, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, errors, env, unparse, operation, operatorForType;
 propagate config, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, env on NameOrBOperator;
 
 nonterminal Operation with compareTo, isEqual;
@@ -36,7 +36,7 @@ top::NameOrBOperator ::= e::Expr
   
   top.errors <-
     if !checkOperationType.typeerror then []
-    else [err(top.location, e.unparse ++ " must be of type " ++ checkOperationType.rightpp ++
+    else [errFromOrigin(top, e.unparse ++ " must be of type " ++ checkOperationType.rightpp ++
             " instead it is of type " ++ checkOperationType.leftpp)];
   
   -- oh no again!
@@ -66,7 +66,7 @@ top::NameOrBOperator ::= '++'
   top.errors := case top.operatorForType of
                 | stringType() -> []
                 | listType(_) -> []
-                | _ -> [err(top.location, "++ operator will only work for collections of type list or String")]
+                | _ -> [errFromOrigin(top, "++ operator will only work for collections of type list or String")]
                 end;
 }
 
@@ -78,7 +78,7 @@ top::NameOrBOperator ::= '||'
   top.operation = borOperation();
   top.errors := case top.operatorForType of
                 | boolType() -> []
-                | _ -> [err(top.location, "|| operator will only work for collections of type Boolean")]
+                | _ -> [errFromOrigin(top, "|| operator will only work for collections of type Boolean")]
                 end;
 }
 concrete production bandOperator
@@ -89,7 +89,7 @@ top::NameOrBOperator ::= '&&'
   top.operation = bandOperation();
   top.errors := case top.operatorForType of
                 | boolType() -> []
-                | _ -> [err(top.location, "&& operator will only work for collections of type Boolean")]
+                | _ -> [errFromOrigin(top, "&& operator will only work for collections of type Boolean")]
                 end;
 }
 
@@ -101,7 +101,7 @@ top::NameOrBOperator ::= '+'
   top.operation = addOperation();
   top.errors := case top.operatorForType of
                 | intType() -> []
-                | _ -> [err(top.location, "+ operator will only work for collections of type Integer")]
+                | _ -> [errFromOrigin(top, "+ operator will only work for collections of type Integer")]
                 end;
 }
 
@@ -113,7 +113,7 @@ top::NameOrBOperator ::= '*'
   top.operation = addOperation();
   top.errors := case top.operatorForType of
                 | intType() -> []
-                | _ -> [err(top.location, "* operator will only work for collections of type Integer")]
+                | _ -> [errFromOrigin(top, "* operator will only work for collections of type Integer")]
                 end;
 }
 
@@ -170,7 +170,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
-        then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+        then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];
 }
 
@@ -197,7 +197,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
-        then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+        then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];
 }
 
@@ -218,7 +218,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   q.operatorForType = te.typerep;
   top.errors <- q.errors;
  
-  forwards to productionAttributeDcl($1, $2, a, $4, te, $8, location=top.location);
+  forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
 }
 
 --- The use semantics ----------------------------------------------------------
@@ -227,24 +227,24 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
-  undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  undecorates to valContainsBase(val, ':=', e, ';');
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
   top.errors := e.errors;
 
-  top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
+  top.errors <- [errFromOrigin(top, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
 
-  forwards to errorValueDef(val, @e, location=top.location);
+  forwards to errorValueDef(val, @e);
 }
 abstract production errorColNormalValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  undecorates to valueEq(val, '=', e, ';');
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
   top.errors := e.errors;
 
-  top.errors <- [err(top.location, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
+  top.errors <- [errFromOrigin(top, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
 
-  forwards to errorValueDef(val, @e, location=top.location);
+  forwards to errorValueDef(val, @e);
 }
 
 -- NON-ERRORS for PRODUCTIONS
@@ -252,20 +252,20 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
-  undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  undecorates to valContainsBase(val, ':=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
-  forwards to localValueDef(val, @e, location=top.location);
+  forwards to localValueDef(val, @e);
 }
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
-  undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
+  undecorates to valContainsAppend(val, '<-', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
-  forwards to localValueDef(val, @e, location=top.location);
+  forwards to localValueDef(val, @e);
 }
 
 -- NON-ERRORS for SYN ATTRS
@@ -273,7 +273,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
+  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -288,13 +288,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
 abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
+  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -309,7 +309,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
 
@@ -318,7 +318,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
+  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -333,13 +333,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
 abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
+  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -354,7 +354,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
 
@@ -378,7 +378,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 
   forwards to
     (if !dl.found || !attr.found
-     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _, location=_)
+     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _)
      else attr.attrDcl.attrAppendDefDispatcher)(dl, attr, e, top.location);
 }
 
@@ -397,7 +397,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 
   forwards to
     (if !dl.found || !attr.found
-     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _, location=_)
+     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _)
      else attr.attrDcl.attrBaseDefDispatcher)(dl, attr, e, top.location);
 }
 
@@ -414,7 +414,7 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   
   forwards to
     (if null(val.lookupValue.dcls)
-     then errorValueDef(_, _, location=_)
+     then errorValueDef(_, _)
      else val.lookupValue.dcl.appendDefDispatcher)(val, e, top.location);
 }
 
@@ -431,7 +431,7 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   
   forwards to
     (if null(val.lookupValue.dcls)
-     then errorValueDef(_, _, location=_)
+     then errorValueDef(_, _)
      else val.lookupValue.dcl.baseDefDispatcher)(val, e, top.location);
 }
 

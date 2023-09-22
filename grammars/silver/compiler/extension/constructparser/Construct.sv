@@ -16,64 +16,50 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
 {
   local agDcls :: AGDcls =
     consAGDcls(setJarName, consAGDcls(prsr, consAGDcls(main,
-      nilAGDcls(location=top.location), location=top.location),
-      location=top.location), location=top.location);
+      nilAGDcls())));
 
-  local setJarName :: AGDcl = jarNameDcl(parserName, location=top.location);
+  local setJarName :: AGDcl = jarNameDcl(parserName);
 
   local prsr :: AGDcl =
-    parserDcl('parser', name("extendedParser", top.location), '::',
-      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Root"), location=top.location), location=top.location),
+    parserDcl('parser', name("extendedParser"), '::',
+      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Root"))),
       '{',
       consParserComponent(
-        parserComponent(moduleName(m, location=top.location),
-          nilParserComponentModifier(location=top.location), ';', location=top.location),
-        ms, location=top.location),
-      '}', location=top.location);
+        parserComponent(moduleName(m),
+          nilParserComponentModifier(), ';'),
+        ms),
+      '}');
 
   local main :: AGDcl =
-    functionDcl('function', name("main", top.location),
+    functionDcl('function', name("main"),
       functionSignature(
-        nilConstraint(location=top.location),
+        nilConstraint(),
         '=>',
         functionLHS(
           appTypeExpr(
             nominalTypeExpr(
-              qNameTypeId(terminal(IdUpper_t, "IOVal"), location=top.location),
-              location=top.location),
-            bTypeList('<', typeListSingle(integerTypeExpr('Integer', location=top.location),
-              location=top.location), '>', location=top.location),
-            location=top.location
-          ),
-          location=top.location),
+              qNameTypeId(terminal(IdUpper_t, "IOVal"))),
+            bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
         '::=',
         productionRHSCons(
-          productionRHSElem(name("args",  top.location), '::',
-            listTypeExpr('[', stringTypeExpr('String', location=top.location), ']',
-            location=top.location), location=top.location),
+          productionRHSElem(name("args"), '::',
+            listTypeExpr('[', stringTypeExpr('String'), ']')),
           productionRHSCons(
-            productionRHSElem(name("ioIn",  top.location), '::',
-              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOToken"), location=top.location), location=top.location),
-              location=top.location),
-            productionRHSNil(location=top.location),
-            location=top.location
-          ),
-          location=top.location
-        ), location=top.location),
+            productionRHSElem(name("ioIn"), '::',
+              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOToken")))),
+            productionRHSNil()))),
       productionBody('{',
-        productionStmtsSnoc(productionStmtsNil(location=top.location),
+        productionStmtsSnoc(productionStmtsNil(),
           returnDef('return',
             Silver_Expr { driver(args, ioIn, extendedParser) },
-            ';', location=top.location),
-          location=top.location),
-        '}', location=top.location),
-      location=top.location);
+            ';')),
+        '}'));
 
   local importStmts :: ImportStmts =
     consImportStmts(
-      importStmt('import', moduleAll(m, location=top.location), ';', location=top.location),
-      is, location=top.location);
+      importStmt('import', moduleAll(m), ';'),
+      is);
 
-  forwards to root(gdcl, mStmts, importStmts, agDcls, location=top.location);
+  forwards to root(gdcl, mStmts, importStmts, agDcls);
 }
 

@@ -24,7 +24,7 @@ terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[
 
 ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 
-closed nonterminal AST_c with unparse, ast<AST>, errors, location;
+closed tracked nonterminal AST_c with unparse, ast<AST>, errors;
 
 concrete productions top::AST_c
 | prodName::QName_t '(' children::ASTs_c ',' annotations::NamedASTs_c ')'
@@ -63,7 +63,7 @@ concrete productions top::AST_c
         fromRight(locReifyRes, bogusLoc()));
     top.errors :=
       case locReifyRes of
-      | left(msg) -> [err(location.location, msg)]
+      | left(msg) -> [errFromOrigin(location, msg)]
       | right(_) -> []
       end;
   }
@@ -110,7 +110,7 @@ concrete productions top::AST_c
     top.errors := [];
   }
 
-nonterminal ASTs_c with unparse, ast<[AST]>, errors;
+tracked nonterminal ASTs_c with unparse, ast<[AST]>, errors;
 
 concrete productions top::ASTs_c
 | t::ASTs_c ',' h::AST_c
@@ -126,7 +126,7 @@ concrete productions top::ASTs_c
     top.errors := [];
   }
 
-nonterminal NamedASTs_c with unparse, ast<[NamedAST]>, errors;
+tracked nonterminal NamedASTs_c with unparse, ast<[NamedAST]>, errors;
 
 concrete productions top::NamedASTs_c
 | t::NamedASTs_c ',' h::NamedAST_c
@@ -142,7 +142,7 @@ concrete productions top::NamedASTs_c
     top.errors := [];
   }
 
-nonterminal NamedAST_c with unparse, ast<NamedAST>, errors, location;
+tracked nonterminal NamedAST_c with unparse, ast<NamedAST>, errors;
 
 concrete productions top::NamedAST_c
 | n::QName_t '=' v::AST_c

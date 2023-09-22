@@ -39,7 +39,7 @@ IO<Integer> ::= unit::IOErrorable<Decorated Compilation>
     res::Either<RunError Decorated Compilation> <- unit.run;
     case res of
     | left(re) -> do {
-        eprintln(re.message);
+        eprintln(re.errMsg);
         return re.code;
       }
     | right(comp) -> runAll(comp.postOps)
@@ -194,17 +194,11 @@ function eatGrammars
       newDeps ++ eatGrammars(triggered, n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
-synthesized attribute code::Integer;
+annotation code::Integer;
+annotation errMsg::String;
 
-nonterminal RunError with code, message;
--- from silver:langutil, and silver:compiler:driver:util;
-
-abstract production runError
-top::RunError ::= c::Integer  m::String
-{
-  top.code = c;
-  top.message = m;
-}
+data RunError = runError
+  with code, errMsg;
 
 -- A common return type for IO functions. Does IO and returns error or whatever.
 type IOErrorable<a> = EitherT<RunError IO a>;
@@ -212,5 +206,5 @@ type IOErrorable<a> = EitherT<RunError IO a>;
 function throwRunError
 IOErrorable<a> ::= c::Integer m::String
 {
-  return throwError(runError(c, m));
+  return throwError(runError(code=c, errMsg=m));
 }

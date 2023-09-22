@@ -14,7 +14,7 @@ imports silver:compiler:extension:patternmatching;
 
 terminal IntConst /[0-9]+/;
 
-nonterminal TupleList with location, unparse, translation;
+tracked nonterminal TupleList with unparse, translation;
 
 -- used to convert the comma-separated list of expressions 
 -- that make up the tuple into a pair expression:
@@ -59,9 +59,9 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   local len::Integer = length(ty.tupleElems);
   
   forwards to if (accessIndex > len || accessIndex < 1) then
-      errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
+      errorExpr([errFromOrigin(top, "Invalid tuple selector index.")])
     -- @ prevents exponential type checking
-    else select(@tuple, 1, accessIndex, len, location=top.location);
+    else select(@tuple, 1, accessIndex, len);
 
 }
 
@@ -77,7 +77,7 @@ top::Expr ::= exp::Expr i::Integer a::Integer len::Integer
         -- tuple do we simply return the expression itself
         @exp
       else Silver_Expr { $Expr{@exp}.fst }
-    else select(Silver_Expr{ $Expr{@exp}.snd }, i + 1, a, len, location=top.location);
+    else select(Silver_Expr{ $Expr{@exp}.snd }, i + 1, a, len);
 }
 
 -- TupleList cases:

@@ -9,6 +9,6 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors <-
     if at.lookupAttribute.found && at.lookupAttribute.dcl.isTranslation && checkNT.typeerror
-    then [err(top.location, s"Occurrence of translation attribute ${at.lookupAttribute.fullName} must have a nonterminal type.  Instead it is of type " ++ checkNT.leftpp)]
+    then [errFromOrigin(top, s"Occurrence of translation attribute ${at.lookupAttribute.fullName} must have a nonterminal type.  Instead it is of type " ++ checkNT.leftpp)]
     else [];
 }

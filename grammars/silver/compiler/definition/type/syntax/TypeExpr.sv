@@ -6,13 +6,13 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:definition:flow:env;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases, onNt, errorsInhSet, typerepInhSet;
-nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
-nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
-nonterminal NamedTypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, namedTypes, lexicalTypeVariables, lexicalTyVarKinds, errorsKindStar, freeVariables, mentionedAliases;
+tracked nonterminal TypeExpr  with config, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases, onNt, errorsInhSet, typerepInhSet;
+tracked nonterminal Signature with config, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
+tracked nonterminal SignatureLHS with config, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
+tracked nonterminal TypeExprs with config, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases;
+tracked nonterminal BracketedTypeExprs with config, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
+tracked nonterminal BracketedOptTypeExprs with config, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
+tracked nonterminal NamedTypeExprs with config, grammarName, errors, env, unparse, flowEnv, namedTypes, lexicalTypeVariables, lexicalTyVarKinds, errorsKindStar, freeVariables, mentionedAliases;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -68,9 +68,10 @@ propagate errorsKindStar on TypeExprs, NamedTypeExprs;
 propagate mentionedAliases on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs;
 
 function addNewLexicalTyVars
-[Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
+[Def] ::= gn::String lk::[Pair<String Kind>] l::[String]
 {
-  return map(\ n::String -> lexTyVarDef(gn, sl, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
+  local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
+  return map(\ n::String -> lexTyVarDef(gn, loc, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
 }
 
 aspect default production
@@ -79,11 +80,11 @@ top::TypeExpr ::=
   -- This has to do with type lists that are type variables only.
   -- We don't have a separate nonterminal for this, because we'd like to produce
   -- "semantic" errors, rather than parse errors for this.
-  top.errorsTyVars := [err(top.location, top.unparse ++ " is not permitted here, only type variables are")];
+  top.errorsTyVars := [errFromOrigin(top, top.unparse ++ " is not permitted here, only type variables are")];
   top.freeVariables = top.typerep.freeVariables;
   top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
-    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
+    then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
   top.errorsInhSet = top.errors;
   top.typerepInhSet = top.typerep;
@@ -110,7 +111,7 @@ top::TypeExpr ::= t::Type
     case t of
     | varType(_) -> []
     | skolemType(_) -> []
-    | _ -> [err(top.location, top.unparse ++ " is not permitted here, only type variables are")]
+    | _ -> [errFromOrigin(top, top.unparse ++ " is not permitted here, only type variables are")]
     end;
 }
 
@@ -189,12 +190,12 @@ top::TypeExpr ::= q::QNameType
   top.errors <-
     if !q.lookupType.found || q.lookupType.dcl.isType then []
     else if q.lookupType.dcl.isTypeAlias  -- Raise a less confusing error if we see an unapplied type alias
-    then [err(top.location, q.name ++ " is a type alias, expecting " ++ toString(length(q.lookupType.dcl.typeScheme.boundVars)) ++ " type arguments.")]
-    else [err(top.location, q.name ++ " is not a type.")];
+    then [errFromOrigin(top, q.name ++ " is a type alias, expecting " ++ toString(length(q.lookupType.dcl.typeScheme.boundVars)) ++ " type arguments.")]
+    else [errFromOrigin(top, q.name ++ " is not a type.")];
 
   top.typerep = q.lookupType.typeScheme.typerep; -- NOT .monoType since this can be a polyType when an error is raised
 } action {
-  insert semantic token IdType_t at q.baseNameLoc;
+  insert semantic token IdType_t at q.nameLoc;
 }
 
 concrete production typeVariableTypeExpr
@@ -203,7 +204,7 @@ top::TypeExpr ::= tv::IdLower_t
   top.unparse = tv.lexeme;
   
   local attribute hack::QNameLookup<TypeDclInfo>;
-  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
+  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme);
   
   top.typerep = hack.typeScheme.monoType;
   top.errors <- hack.errors;
@@ -220,7 +221,7 @@ top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
   top.unparse = s"(${tv.lexeme} :: ${k.unparse})";
   
   local attribute hack::QNameLookup<TypeDclInfo>;
-  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
+  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme);
   
   top.typerep = hack.typeScheme.monoType;
   top.errors <- hack.errors;
@@ -245,8 +246,8 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
     | nominalTypeExpr(q) when
         q.lookupType.found && q.lookupType.dcl.isTypeAlias &&
         length(q.lookupType.typeScheme.boundVars) > 0 ->
-      aliasAppTypeExpr(q, tl, location=top.location)
-    | _ -> typeAppTypeExpr(ty, tl, location=top.location)
+      aliasAppTypeExpr(q, tl)
+    | _ -> typeAppTypeExpr(ty, tl)
     end;
 }
 
@@ -263,11 +264,11 @@ top::TypeExpr ::= q::Decorated QNameType with {env}  tl::BracketedTypeExprs
   local tlCount::Integer = length(tl.types) + tl.missingCount;
   top.errors <-
     if tlCount != length(ts.boundVars)
-    then [err(top.location, q.lookupType.fullName ++ " expects " ++ toString(length(ts.boundVars)) ++ " type arguments, but there are " ++ toString(tlCount) ++ " supplied here.")]
+    then [errFromOrigin(top, q.lookupType.fullName ++ " expects " ++ toString(length(ts.boundVars)) ++ " type arguments, but there are " ++ toString(tlCount) ++ " supplied here.")]
     else [];
   top.errors <-
     if tl.missingCount > 0
-    then [err(tl.location, q.lookupType.fullName ++ " is a type alias and cannot be partially applied.")]
+    then [errFromOrigin(tl, q.lookupType.fullName ++ " is a type alias and cannot be partially applied.")]
     else [];
 }
 
@@ -286,9 +287,9 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
   local tlKinds::[Kind] = map((.kindrep), tl.types);
   local kindErrors::[Message] =
     if tlCount != length(ty.typerep.kindrep.argKinds)
-    then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    then [errFromOrigin(top, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
     else if take(length(tlKinds), ty.typerep.kindrep.argKinds) != tlKinds
-    then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but argument(s) have kind(s) " ++ implode(", ", map(prettyKind, tlKinds)))]
+    then [errFromOrigin(top, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but argument(s) have kind(s) " ++ implode(", ", map(prettyKind, tlKinds)))]
     else [];
   top.errors <- kindErrors;
 
@@ -322,15 +323,15 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [errFromOrigin(t, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> []
     | varType(_) -> []
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <-
     if i.typerep.kindrep != inhSetKind()
-    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
+    then [errFromOrigin(i, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
   top.errors <- t.errorsKindStar;
 
@@ -352,11 +353,11 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [errFromOrigin(t, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
-    | skolemType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
-    | varType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    | skolemType(_) -> [errFromOrigin(t, "polymorphic Decorated types must specify an explicit reference set")]
+    | varType(_) -> [errFromOrigin(t, "polymorphic Decorated types must specify an explicit reference set")]
+    | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
 }
 
@@ -372,15 +373,15 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [errFromOrigin(t, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
     | skolemType(_) -> []
     | varType(_) -> []
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
+    | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
   top.errors <-
     if i.typerep.kindrep != inhSetKind()
-    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
+    then [errFromOrigin(i, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
   top.errors <- t.errorsKindStar;
 
@@ -402,11 +403,11 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr
   
   top.errors <-
     case t.typerep.baseType of
-    | nonterminalType(fn,_,true,_) -> [err(t.location, s"${fn} is a data nonterminal and cannot be decorated")]
+    | nonterminalType(fn,_,true,_) -> [errFromOrigin(t, s"${fn} is a data nonterminal and cannot be decorated")]
     | nonterminalType(_,_,_,_) -> []
-    | skolemType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
-    | varType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
+    | skolemType(_) -> [errFromOrigin(t, "polymorphic Decorated! types must specify an explicit reference set")]
+    | varType(_) -> [errFromOrigin(t, "polymorphic Decorated! types must specify an explicit reference set")]
+    | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
 }
 
@@ -436,7 +437,7 @@ top::Signature ::= l::SignatureLHS '::=' list::TypeExprs
   top.errors <- list.errorsKindStar;
   top.errors <-
     if l.maybeType.isJust && list.missingCount > 0
-    then [err($1.location, "Return type cannot be present when argument types are missing")]
+    then [errFromOrigin(l, "Return type cannot be present when argument types are missing")]
     else [];
 }
 
@@ -472,7 +473,7 @@ top::Signature ::= l::SignatureLHS '::=' list::TypeExprs ';' namedList::NamedTyp
   top.errors <- namedList.errorsKindStar;
   top.errors <-
     if list.missingCount > 0
-    then [err($1.location, "Named parameters cannot be present when argument types are missing")]
+    then [errFromOrigin(namedList, "Named parameters cannot be present when argument types are missing")]
     else [];
 }
 
@@ -498,7 +499,7 @@ concrete production botlNone
 top::BracketedOptTypeExprs ::=
 {
   top.unparse = "";
-  forwards to botlSome(bTypeList('<', typeListNone(location=top.location), '>', location=top.location), location=top.location);
+  forwards to botlSome(bTypeList('<', typeListNone(), '>'));
 }
 
 concrete production botlSome
@@ -526,16 +527,16 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
   
   top.errorsTyVars <-
     if length(tl.lexicalTypeVariables) != length(nub(tl.lexicalTypeVariables))
-    then [err(top.location, "Type parameter list repeats type variable names")]
+    then [errFromOrigin(top, "Type parameter list repeats type variable names")]
     else [];
   top.errorsTyVars <-
     if tl.missingCount > 0
-    then [err(top.location, "Type parameter list cannot contain _")]
+    then [errFromOrigin(top, "Type parameter list cannot contain _")]
     else [];
 
   top.envBindingTyVars =
     newScopeEnv(
-      addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTyVarKinds, tl.lexicalTypeVariables),
+      addNewLexicalTyVars(top.grammarName, tl.lexicalTyVarKinds, tl.lexicalTypeVariables),
       top.initialEnv);
 
   tl.appArgKinds = top.appArgKinds;
@@ -556,14 +557,14 @@ concrete production typeListSingle
 top::TypeExprs ::= t::TypeExpr
 {
   top.unparse = t.unparse;
-  forwards to typeListCons(t, typeListNone(location=top.location), location=top.location);
+  forwards to typeListCons(t, typeListNone());
 }
 
 concrete production typeListSingleMissing
 top::TypeExprs ::= '_'
 {
   top.unparse = "_";
-  forwards to typeListConsMissing($1, typeListNone(location=top.location), location=top.location);
+  forwards to typeListConsMissing($1, typeListNone());
 }
 
 concrete production typeListCons
@@ -620,7 +621,7 @@ concrete production namedTypeListSingle
 top::NamedTypeExprs ::= n::Name '::' t::TypeExpr
 {
   top.unparse = t.unparse;
-  forwards to namedTypeListCons(n, $2, t, namedTypeListNone(location=top.location), location=top.location);
+  forwards to namedTypeListCons(n, $2, t, namedTypeListNone());
 }
 
 concrete production namedTypeListCons

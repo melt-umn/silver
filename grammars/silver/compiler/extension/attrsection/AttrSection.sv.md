@@ -66,7 +66,7 @@ specific type that differs from the output type is safe to use for the attribute
 ```silver
   top.errors :=
     if !null(outputTy.freeFlexibleVars)
-    then [err(top.location, s"The attribute section ${top.unparse} has an ambiguous inferred output type ${prettyType(outputTy)}, where ${implode(", ", map(findAbbrevFor(_, outputTy.freeVariables), outputTy.freeFlexibleVars))} ${if length(outputTy.freeFlexibleVars) > 1 then "are" else "is"} unspecialized")]
+    then [errFromOrigin(top, s"The attribute section ${top.unparse} has an ambiguous inferred output type ${prettyType(outputTy)}, where ${implode(", ", map(findAbbrevFor(_, outputTy.freeVariables), outputTy.freeFlexibleVars))} ${if length(outputTy.freeFlexibleVars) > 1 then "are" else "is"} unspecialized")]
     else forward.errors;
 ```
 
@@ -79,7 +79,7 @@ was inferred elsewhere.)
   checkOutputType.finalSubst = composeSubst(forward.upSubst, top.finalSubst);
   top.errors <-
     if checkOutputType.typeerror
-    then [err(top.location, s"Attribute section ${top.unparse} has inferred output type ${checkOutputType.leftpp} that does not match the attribute's type ${checkOutputType.rightpp}")]
+    then [errFromOrigin(top, s"Attribute section ${top.unparse} has inferred output type ${checkOutputType.leftpp} that does not match the attribute's type ${checkOutputType.rightpp}")]
     else [];
 ```
 
@@ -88,10 +88,8 @@ The forward is just equivalent to `\ x::inputTy -> x.attr`
   forwards to
     lambdap(
       productionRHSCons(
-        productionRHSElem(name("x", top.location), '::', typerepTypeExpr(inputTy, location=top.location), location=top.location),
-        productionRHSNil(location=top.location),
-        location=top.location),
-      access(baseExpr(qName(top.location, "x"), location=top.location), '.', q, location=top.location),
-      location=top.location);
+        productionRHSElem(name("x"), '::', typerepTypeExpr(inputTy)),
+        productionRHSNil()),
+      access(baseExpr(qName("x")), '.', q));
 }
 ```

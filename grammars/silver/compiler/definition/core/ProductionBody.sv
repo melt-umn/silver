@@ -1,13 +1,13 @@
 grammar silver:compiler:definition:core;
 
-nonterminal ProductionBody with
-  config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
+tracked nonterminal ProductionBody with
+  config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, forwardExpr, returnExpr, undecorateExpr;
-nonterminal ProductionStmts with 
-  config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
+tracked nonterminal ProductionStmts with 
+  config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
-nonterminal ProductionStmt with
-  config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
+tracked nonterminal ProductionStmt with
+  config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
@@ -18,18 +18,18 @@ flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, d
   on ProductionStmt;
 flowtype forward {decorate} on ProductionBody, ProductionStmts, ProductionStmt;
 
-nonterminal DefLHS with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
+tracked nonterminal DefLHS with 
+  config, grammarName, env, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, defLHSattr, originRules}
   on DefLHS;
 
-nonterminal ForwardInhs with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
-nonterminal ForwardInh with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
-nonterminal ForwardLHSExpr with 
-  config, grammarName, env, location, unparse, errors, frame, name, typerep, originRules;
+tracked nonterminal ForwardInhs with 
+  config, grammarName, env, unparse, errors, frame, compiledGrammars, originRules;
+tracked nonterminal ForwardInh with 
+  config, grammarName, env, unparse, errors, frame, compiledGrammars, originRules;
+tracked nonterminal ForwardLHSExpr with 
+  config, grammarName, env, unparse, errors, frame, name, typerep, originRules;
 
 {--
  - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
@@ -141,7 +141,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.returnExpr := [e];
   
   top.errors <- if !top.frame.permitReturn
-                then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
+                then [errFromOrigin(top, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
 
   e.isRoot = true;
@@ -153,17 +153,17 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.unparse = "\tlocal attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
   production attribute fName :: String;
-  fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", top.location.filename)))}:${toString(top.location.line)}:${toString(top.location.column)}:${a.name}";
+  fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", a.nameLoc.filename)))}:${toString(a.nameLoc.line)}:${toString(a.nameLoc.column)}:${a.name}";
 
-  top.defs := [localDef(top.grammarName, a.location, fName, te.typerep, false)];
+  top.defs := [localDef(top.grammarName, a.nameLoc, fName, te.typerep, false)];
 
   top.errors <-
         if length(getValueDclInScope(a.name, top.env)) > 1 
-        then [err(a.location, "Value '" ++ a.name ++ "' is already bound.")]
+        then [errFromOrigin(a, "Value '" ++ a.name ++ "' is already bound.")]
         else [];
 
   top.errors <- if !top.frame.permitLocalAttributes
-                then [err(top.location, "Local attributes are not valid in this context.")]
+                then [errFromOrigin(top, "Local attributes are not valid in this context.")]
                 else [];
 }
 
@@ -175,15 +175,15 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
 
-  top.productionAttributes := [localDef(top.grammarName, a.location, fName, te.typerep, false)];
+  top.productionAttributes := [localDef(top.grammarName, a.nameLoc, fName, te.typerep, false)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1 
-        then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
+        then [errFromOrigin(a, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
   top.errors <- if !top.frame.permitProductionAttributes
-                then [err(top.location, "Production attributes are not valid in this context.")]
+                then [errFromOrigin(top, "Production attributes are not valid in this context.")]
                 else [];
 }
 
@@ -195,15 +195,15 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
 
-  top.productionAttributes := [localDef(top.grammarName, a.location, fName, top.frame.signature.outputElement.typerep, true)];
+  top.productionAttributes := [localDef(top.grammarName, a.nameLoc, fName, top.frame.signature.outputElement.typerep, true)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1 
-        then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
+        then [errFromOrigin(a, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
   top.errors <- if !top.frame.permitForwardProductionAttributes
-                then [err(top.location, "Forward production attributes are not valid in this context.")]
+                then [errFromOrigin(top, "Forward production attributes are not valid in this context.")]
                 else [];
 }
 
@@ -214,11 +214,11 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   e.isRoot = true;
 
-  top.productionAttributes := [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
+  top.productionAttributes := [forwardDef(top.grammarName, getParsedOriginLocationOrFallback(top), top.frame.signature.outputElement.typerep)];
   top.forwardExpr := [e];
 
   top.errors <- if !top.frame.permitForward
-                then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
+                then [errFromOrigin(top, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
                 else [];
 }
 
@@ -228,9 +228,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
   top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
 
   forwards to productionStmtAppend(
-    forwardsTo($1, $2, $3, $8, location=top.location),
-    forwardingWith('forwarding', $4, $5, inh, $7, $8, location=top.location),
-    location=top.location);
+    forwardsTo($1, $2, $3, $8),
+    forwardingWith('forwarding', $4, $5, inh, $7, $8));
 }
 
 concrete production forwardingWith
@@ -242,7 +241,7 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
   fwdDcls = getValueDcl("forward", top.env);
   
   top.errors <- if null(fwdDcls)
-                then [err(top.location, "'forwarding with' clause for a production that does not forward!")]
+                then [errFromOrigin(top, "'forwarding with' clause for a production that does not forward!")]
                 else [];
 }
 
@@ -289,7 +288,7 @@ top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
 
   top.errors <-
     if !top.frame.permitForward  -- Permitted in the same place as forwards to
-    then [err(top.location, "Undecorates is not permitted in this context. (Only permitted in non-aspect productions.)")]
+    then [errFromOrigin(top, "Undecorates is not permitted in this context. (Only permitted in non-aspect productions.)")]
     else [];
 }
 
@@ -308,7 +307,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   
   local problems :: [Message] =
     if attr.found && attr.attrDcl.isAnnotation
-    then [err(attr.location, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
+    then [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
     else dl.errors ++ attr.errors;
 
   forwards to
@@ -316,9 +315,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- consider "production foo  top::DoesNotExist ::= { top.errors = ...; }"
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
-    (if !dl.found || !attr.found || !null(problems)
-     then errorAttributeDef(problems, _,  _, _, location=_)
-     else attr.attrDcl.attrDefDispatcher)(dl, attr, e, top.location);
+    if !dl.found || !attr.found || !null(problems)
+    then errorAttributeDef(problems, dl, attr, e)
+    else attr.attrDcl.attrDefDispatcher(dl, attr, e);
 }
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
@@ -326,18 +325,18 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 abstract production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to errorProductionStmt(msg, location=top.location);
+  undecorates to errorProductionStmt(msg);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, config, env, frame, compiledGrammars, originRules;
   e.isRoot = true;
 
-  forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
+  forwards to errorProductionStmt(msg ++ e.errors);
 }
 
 abstract production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -345,7 +344,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   top.errors <-
     case getValueDcl(top.frame.fullName, top.env) of
     | dcl :: _ when dcl.hasForward && attr.found && attr.attrDcl.isTranslation ->
-      [err(top.location, s"Overriding translation attribute ${attr.attrDcl.fullName} in a forwarding production is not currently supported.")]
+      [errFromOrigin(top, s"Overriding translation attribute ${attr.attrDcl.fullName} in a forwarding production is not currently supported.")]
     | _ -> []
     end;
 }
@@ -353,7 +352,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 abstract production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -373,9 +372,8 @@ top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QName
         case dl of
         | concreteDefLHS(q) -> q
         | _ -> error("Unexpected concrete DefLHS")
-        end, transAttr, location=top.location),
-      $4, attr, $6, e, $8,
-      location=top.location);
+        end, transAttr),
+      $4, attr, $6, e, $8);
 }
 
 concrete production concreteDefLHS
@@ -385,39 +383,39 @@ top::DefLHS ::= q::QName
   top.unparse = q.unparse;
   propagate env;
   
-  forwards to (if null(q.lookupValue.dcls)
-               then errorDefLHS(_, location=_)
-               else q.lookupValue.dcl.defLHSDispatcher)(q, top.location);
+  forwards to if null(q.lookupValue.dcls)
+              then errorDefLHS(q)
+               else q.lookupValue.dcl.defLHSDispatcher(q);
 } action {
   if (contains(q.name, sigNames)) {
-    insert semantic token IdSigName_t at q.baseNameLoc;
+    insert semantic token IdSigName_t at q.nameLoc;
   }
 }
 
 abstract production errorDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
   
   top.errors <- q.lookupValue.errors;
   top.errors <-
-    if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
+    if top.typerep.isError then [] else [errFromOrigin(q, "Cannot define attributes on " ++ q.name)];
   top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 concrete production concreteDefLHSfwd
-top::DefLHS ::= q::'forward'
+top::DefLHS ::= 'forward'
 {
-  forwards to concreteDefLHS(qName(q.location, "forward"), location=top.location);
+  forwards to concreteDefLHS(qName("forward"));
 }
 
 abstract production childDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -426,7 +424,7 @@ top::DefLHS ::= q::Decorated! QName
   
   top.errors <-
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
+    else [errFromOrigin(q, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
                 
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
@@ -434,7 +432,7 @@ top::DefLHS ::= q::Decorated! QName
 abstract production lhsDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -443,7 +441,7 @@ top::DefLHS ::= q::Decorated! QName
   
   top.errors <-
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
+    else [errFromOrigin(q, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
 
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
@@ -451,7 +449,7 @@ top::DefLHS ::= q::Decorated! QName
 abstract production localDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -460,7 +458,7 @@ top::DefLHS ::= q::Decorated! QName
   
   top.errors <-
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on local '" ++ q.name ++ "'")];
+    else [errFromOrigin(q, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on local '" ++ q.name ++ "'")];
 
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
@@ -468,7 +466,7 @@ top::DefLHS ::= q::Decorated! QName
 abstract production forwardDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -477,7 +475,7 @@ top::DefLHS ::= q::Decorated! QName
   
   top.errors <-
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on forward")];
+    else [errFromOrigin(q, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on forward")];
 
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
@@ -493,29 +491,29 @@ top::DefLHS ::= q::QName attr::QNameAttrOccur
   attr.config = top.config;
   attr.attrFor = q.lookupValue.typeScheme.monoType;
   
-  forwards to (if null(q.lookupValue.dcls) || !attr.found || !attr.attrDcl.isTranslation 
-               then errorTransAttrDefLHS(_, _, location=_)
-               else q.lookupValue.dcl.transDefLHSDispatcher)(q, attr, top.location);
+  forwards to if null(q.lookupValue.dcls) || !attr.found || !attr.attrDcl.isTranslation 
+              then errorTransAttrDefLHS(q, attr)
+              else q.lookupValue.dcl.transDefLHSDispatcher(q, attr);
 }
 
 abstract production errorTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = false;
   
   top.errors <- q.lookupValue.errors;
   top.errors <-
-    if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ top.unparse)];
+    if top.typerep.isError then [] else [errFromOrigin(q, "Cannot define attributes on " ++ top.unparse)];
   top.typerep = attr.typerep;
 }
 
 abstract production childTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -525,13 +523,13 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.errors <-
     if existingProblems then []
     else if !top.defLHSattr.attrDcl.isInherited
-    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    then [errFromOrigin(attr, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
     else [];
   
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
-    then [err(q.location, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(ty)} are not supported")]
+    then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(ty)} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
@@ -540,7 +538,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 abstract production localTransAttrDefLHS
 top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -550,13 +548,13 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.errors <-
     if existingProblems then []
     else if !top.defLHSattr.attrDcl.isInherited
-    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    then [errFromOrigin(attr, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
     else [];
   
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
-    then [err(q.location, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(ty)} are not supported")]
+    then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(ty)} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
@@ -576,28 +574,28 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to (if null(val.lookupValue.dcls)
-               then errorValueDef(_, _, location=_)
-               else val.lookupValue.dcl.defDispatcher)(val, e, top.location);
+  forwards to if null(val.lookupValue.dcls)
+              then errorValueDef(val, e)
+              else val.lookupValue.dcl.defDispatcher(val, e);
 }
 
 abstract production errorValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
 
   top.errors <-
     if val.lookupValue.typeScheme.isError then []
-    else [err(val.location, val.name ++ " cannot be assigned to.")];
+    else [errFromOrigin(val, val.name ++ " cannot be assigned to.")];
 }
 
 abstract production localValueDef
 top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here

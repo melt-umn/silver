@@ -52,15 +52,14 @@ top::Expr ::= la::AssignExpr  e::Expr
   -}
   top.monadRewritten =
      letp(la.fixedAssigns,
-          boundIn,
-          location=top.location);
+          boundIn);
   local inside::Expr = if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
                        then ne.monadRewritten
                        else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
   local boundIn::Expr =
          foldr(\x::Pair<Name TypeExpr> y::Expr ->
                  buildApplication(mbind,
-                     [baseExpr(qName(top.location, x.fst.name), location=top.location),
+                     [baseExpr(qName(x.fst.name)),
                       buildLambda(x.fst.name,
                                   decorate x.snd with
                                      {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
@@ -90,7 +89,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 
   top.bindInList = a1.bindInList ++ a2.bindInList;
 
-  top.fixedAssigns = appendAssignExpr(a1.fixedAssigns, a2.fixedAssigns, location=top.location);
+  top.fixedAssigns = appendAssignExpr(a1.fixedAssigns, a2.fixedAssigns);
 }
 
 aspect production assignExpr
@@ -98,7 +97,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.merrors := e.merrors;
   top.merrors <- if isMonad(t.typerep, top.env) && fst(monadsMatch(top.expectedMonad, t.typerep, top.mDownSubst))
-                 then [err(top.location, "Let bindings may not use a monad type")]
+                 then [errFromOrigin(top, "Let bindings may not use a monad type")]
                  else [];
   local errCheck::TypeCheck = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst))
                               then check(t.typerep, monadInnerType(e.mtyperep, top.location))
@@ -115,7 +114,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   e.monadicallyUsed = isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst)) && !isMonad(t.typerep, top.env);
   top.monadicNames = e.monadicNames;
 
-  top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
+  top.mdefs = [lexicalLocalDef(top.grammarName, id.nameLoc, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
                                e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
 
@@ -125,10 +124,9 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
-                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep),
-                                                               location=top.location),
-                                     '=', e.monadRewritten, location=top.location)
-                     else assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
+                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
+                                     '=', e.monadRewritten)
+                     else assignExpr(id, '::', t, '=', e.monadRewritten);
 }
 
 
@@ -141,7 +139,7 @@ top::Expr ::= q::Decorated! QName  _ _ _
   propagate mDownSubst, mUpSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(new(q), location=top.location);
+  top.monadRewritten = baseExpr(new(q));
 }

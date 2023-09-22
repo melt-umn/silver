@@ -6,5 +6,5 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(cl.lexicalTypeVariables ++ ty.lexicalTypeVariables);
   
-  headPreDefs <- addNewLexicalTyVars(top.grammarName, top.location, cl.lexicalTyVarKinds ++ ty.lexicalTyVarKinds, allLexicalTyVars);
+  headPreDefs <- addNewLexicalTyVars(top.grammarName, cl.lexicalTyVarKinds ++ ty.lexicalTyVarKinds, allLexicalTyVars);
 }

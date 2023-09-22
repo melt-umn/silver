@@ -20,10 +20,10 @@ top::ValueDclInfo ::= fn::String ty::Type id::Integer paramIndex::Integer
   top.lambdaParamIndex = paramIndex;
   top.lambdaId = id;
 
-  top.refDispatcher = lambdaParamReference(_, location=_);
-  top.defDispatcher = errorValueDef(_, _, location=_); -- should be impossible (never in scope at production level?)
-  top.defLHSDispatcher = errorDefLHS(_, location=_); -- ditto
-  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
+  top.refDispatcher = lambdaParamReference;
+  top.defDispatcher = errorValueDef; -- should be impossible (never in scope at production level?)
+  top.defLHSDispatcher = errorDefLHS; -- ditto
+  top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
 function lambdaParamDef

@@ -9,9 +9,9 @@ terminal IdLexerClassDcl_t '' lexer classes {IDENTIFIER, lsp:Class, lsp:Declarat
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
 {
-  forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(location=$4.location), $4, location=top.location);
+  forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(), $4);
 } action {
-  insert semantic token IdLexerClassDcl_t at id.location;
+  insert semantic token IdLexerClassDcl_t at id.nameLoc;
 }
 
 concrete production lexerClassDecl
@@ -23,10 +23,10 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs := [lexerClassDef(top.grammarName, id.location, fName, modifiers.superClasses)];
+  top.defs := [lexerClassDef(top.grammarName, id.nameLoc, fName, modifiers.superClasses)];
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
-                then [err(id.location, "Lexer class '" ++ fName ++ "' is already bound.")]
+                then [errFromOrigin(id, "Lexer class '" ++ fName ++ "' is already bound.")]
                 else [];	
 
   top.errors := modifiers.errors;
@@ -36,11 +36,11 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
         foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
         location=top.location, sourceGrammar=top.grammarName)];
 } action {
-  insert semantic token IdLexerClassDcl_t at id.location;
+  insert semantic token IdLexerClassDcl_t at id.nameLoc;
 }
 
-nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
-closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
+tracked nonterminal LexerClassModifiers with config, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
+closed tracked nonterminal LexerClassModifier with config, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
 
 monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 

@@ -14,7 +14,7 @@ top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
 
-  forwards to lambdap(params, e, location=top.location);
+  forwards to lambdap(params, e);
 }
 
 abstract production lambdap
@@ -77,7 +77,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 abstract production lambdaParamReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   propagate errors;
   top.freeVars := ts:fromList([q.name]);

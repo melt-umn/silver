@@ -3,7 +3,7 @@ grammar silver:compiler:definition:type;
 synthesized attribute baseKind::Kind;
 synthesized attribute argKinds::[Kind];
 
-nonterminal Kind with compareTo, isEqual, baseKind, argKinds;
+tracked nonterminal Kind with compareTo, isEqual, baseKind, argKinds;
 propagate compareTo, isEqual on Kind;
 
 aspect default production

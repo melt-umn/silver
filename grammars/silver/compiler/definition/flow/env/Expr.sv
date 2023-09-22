@@ -261,7 +261,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Expr  q::Decorated! QNameAttrOccur
 {
   propagate flowEnv;
   e.alwaysDecorated = false;
@@ -389,14 +389,14 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- this as to the flow analysis, and justifies all the choices below:
 
   -- First, generate our "anonymous" flow vertex name:
-  inh.decorationVertex = "__decorate" ++ toString(genInt()) ++ ":line" ++ toString(top.location.line);
+  inh.decorationVertex = "__decorate" ++ toString(genInt()) ++ ":line" ++ toString(getParsedOriginLocationOrFallback(top).line);
 
   -- Next, emit the "local equation" for this anonymous flow vertex.
   -- This means only the deps in 'e', see above conceptual transformation to see why.
   -- N.B. 'inh.flowDefs' will emit 'localInhEq's for this anonymous flow vertex.
   local eTy::Type = e.finalType;
   top.flowDefs <-
-    [anonEq(top.frame.fullName, inh.decorationVertex, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)];
+    [anonEq(top.frame.fullName, inh.decorationVertex, eTy.typeName, eTy.isNonterminal, getParsedOriginLocationOrFallback(top), e.flowDeps)];
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
@@ -612,7 +612,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- so we DO need to be transitive. Unfortunately.
   
   -- hack note: there's a test that depends on this name starting with __scrutinee. grep for it if you have to change this
-  local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(e.location.line);
+  local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(getParsedOriginLocationOrFallback(e).line);
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
@@ -629,7 +629,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.flowDefs <-
     case e.flowVertexInfo of
     | just(vertex) -> []
-    | nothing() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)]
+    | nothing() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, getParsedOriginLocationOrFallback(top), e.flowDeps)]
     end;
   -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 

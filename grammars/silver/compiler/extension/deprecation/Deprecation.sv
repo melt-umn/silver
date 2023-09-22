@@ -13,8 +13,8 @@ top::AGDcl ::= 'deprecated' s::String_t ';'
 {
   top.unparse = "deprecated" ++ s.lexeme ++ ";";
   
-  top.errors := [wrn(top.location, s.lexeme)];
+  top.errors := [wrnFromOrigin(top, s.lexeme)];
   
-  forwards to emptyAGDcl(location=top.location);
+  forwards to emptyAGDcl();
 }
 

@@ -9,31 +9,31 @@ synthesized attribute makeAspectEquation::(ProductionStmt ::= DefLHS QNameAttrOc
 @{-
   - A nonterminal describing what binding to use on the attribute in the generated aspects.
 -}
-nonterminal ConvenienceAspectEquationKind with location, unparse, pp, makeAspectEquation;
+tracked nonterminal ConvenienceAspectEquationKind with unparse, pp, makeAspectEquation;
 
 @{- @hide -}
 concrete productions top::ConvenienceAspectEquationKind
 | 'using' '='
 {
-  top.makeAspectEquation = attributeDef(_,'.',_,'=',_,';',location=_);
+  top.makeAspectEquation = attributeDef(_,'.',_,'=',_,';');
   top.pp = pp"using =";
   top.unparse = "using =";
 }
 | 'using' ':='
 {
-  top.makeAspectEquation = attrContainsBase(_,'.',_,':=',_,';',location=_);
+  top.makeAspectEquation = attrContainsBase(_,'.',_,':=',_,';');
   top.pp = pp"using :=";
   top.unparse = "using :=";
 }
 | 'using' '<-'
 {
-  top.makeAspectEquation = attrContainsAppend(_,'.',_,'<-',_,';', location=_);
+  top.makeAspectEquation = attrContainsAppend(_,'.',_,'<-',_,';');
   top.pp = pp"using <-";
   top.unparse = "using <-";
 }
 |
 {
-  top.makeAspectEquation = attributeDef(_,'.',_,'=',_,';',location=_);
+  top.makeAspectEquation = attributeDef(_,'.',_,'=',_,';');
   top.pp = pp"";
   top.unparse = "";
 }
@@ -46,7 +46,7 @@ synthesized attribute aspectType::TypeExpr;
 
 @{-
   - Nonterminal for the name and type of the term for which you're constructing aspect productions for. -}
-nonterminal ConvAspectLHS with aspectName, aspectType, unparse;
+tracked nonterminal ConvAspectLHS with aspectName, aspectType, unparse;
 @{- @hide -}
 concrete productions top::ConvAspectLHS
 | name::Name '::' ty::TypeExpr
@@ -58,7 +58,7 @@ concrete productions top::ConvAspectLHS
 | ty::TypeExpr
 {
   top.aspectType = ty;
-  top.aspectName = name("__generatedTop_" ++ toString(genInt()), ty.location);
+  top.aspectName = name("__generatedTop_" ++ toString(genInt()));
   top.unparse = ty.unparse;
 }
 
@@ -75,5 +75,5 @@ concrete productions top::ConvAspectLHS
 concrete production convenienceAspects_c
 top::AGDcl ::= 'aspect' attr::QNameAttrOccur 'on' aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind 'of' Opt_Vbar_t ml::MRuleList 'end' ';'
 {
-  forwards to convenienceAspects(attr, aspectLHS, eqKind, ml, location=top.location);
+  forwards to convenienceAspects(attr, aspectLHS, eqKind, ml);
 }

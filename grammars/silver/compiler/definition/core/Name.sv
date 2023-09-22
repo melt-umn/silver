@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:core;
 
-nonterminal Name with config, grammarName, location, unparse, name;
+tracked nonterminal Name with config, grammarName, nameLoc, unparse, name;
 
 {--
  - An identifier's (possibly qualified) name.
@@ -12,17 +12,20 @@ top::Name ::= id::IdLower_t
 {
   top.name = id.lexeme;
   top.unparse = id.lexeme;
+  top.nameLoc = id.location;
 }
 concrete production nameIdUpper
 top::Name ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.unparse = id.lexeme;
+  top.nameLoc = id.location;
 }
 
 function name
-Name ::= n::String l::Location
+Name ::= n::String
 {
-  return nameIdLower(terminal(IdLower_t, n, l), location=l);
+  local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
+  return nameIdLower(terminal(IdLower_t, n, loc));
 }
 

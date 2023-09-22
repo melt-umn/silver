@@ -6,12 +6,12 @@ import silver:compiler:modification:copper;
 concrete production productionDclImplicitAbs
 top::AGDcl ::= 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  forwards to productionDcl('abstract', $1, id, ns, body, location=top.location);
+  forwards to productionDcl('abstract', $1, id, ns, body);
 }
 
 -- "concrete productions" syntax
-nonterminal ProductionDclStmts with unparse, location, proddcls, lhsdcl, grammarName;
-nonterminal ProductionDclStmt with unparse, location, proddcls, lhsdcl, grammarName;
+tracked nonterminal ProductionDclStmts with unparse, proddcls, lhsdcl, grammarName;
+tracked nonterminal ProductionDclStmt with unparse, proddcls, lhsdcl, grammarName;
 propagate lhsdcl, grammarName on ProductionDclStmts, ProductionDclStmt;
 
 synthesized attribute proddcls :: AGDcl;
@@ -41,7 +41,7 @@ concrete production productionDclStmtsCons
 top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 {
   top.unparse = s.unparse ++ ss.unparse;
-  top.proddcls = appendAGDcl(s.proddcls, ss.proddcls, location=top.location);
+  top.proddcls = appendAGDcl(s.proddcls, ss.proddcls);
 }
 
 concrete production productionDclStmt
@@ -66,18 +66,18 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
     end;
 
   local newSig :: ProductionSignature =
-    productionSignature(nilConstraint(location=top.location), '=>', top.lhsdcl, '::=', rhs, location=rhs.location);
+    productionSignature(nilConstraint(), '=>', top.lhsdcl, '::=', rhs);
 
   top.proddcls = 
     case opta of
     | noOptionalAction() -> 
-        concreteProductionDcl('concrete', 'production', nme, newSig, mods, body, location=top.location)
+        concreteProductionDcl('concrete', 'production', nme, newSig, mods, body)
     | anOptionalAction(a,c) ->
-        concreteProductionDclAction('concrete', 'production', nme, newSig, mods, body, a, c, location=top.location)
+        concreteProductionDclAction('concrete', 'production', nme, newSig, mods, body, a, c)
     end;
 }
 
-nonterminal OptionalName with location;
+tracked nonterminal OptionalName;
 concrete production noOptionalName
 optn::OptionalName ::=
 {
@@ -87,7 +87,7 @@ optn::OptionalName ::= '(' id::Name ')'
 {
 }
 
-nonterminal OptionalAction with location;
+tracked nonterminal OptionalAction;
 concrete production noOptionalAction
 opta::OptionalAction ::=
 {

@@ -13,8 +13,8 @@ PatternList ::= l::[Pattern] defaultLoc::Location
 {
   return
     foldr(
-      \next::Pattern accum::PatternList -> patternList_more(next, ',', accum, location=next.location),
-      patternList_nil(location=defaultLoc),
+      \next::Pattern accum::PatternList -> patternList_more(next, ',', accum),
+      patternList_nil(),
       l);
 }
 
@@ -72,11 +72,11 @@ function makeExprsFromExprList
 Exprs ::= l::[Expr] defaultLoc::Location
 {
   return
-    if null(l) then exprsEmpty(location=defaultLoc)
+    if null(l) then exprsEmpty()
     else
       foldrLastElem(
-        \leftelem::Expr accum::Exprs -> exprsCons(leftelem,',',accum,location=leftelem.location),
-        \elem::Expr -> exprsSingle(elem,location=elem.location),
+        \leftelem::Expr accum::Exprs -> exprsCons(leftelem,',',accum),
+        \elem::Expr -> exprsSingle(elem),
         l);
 }
 
@@ -90,8 +90,8 @@ function makeMRuleListFromListMatchRules
 MRuleList ::= l::[MatchRule]
 {
   return foldrLastElem(
-   \leftelem::MatchRule accum::MRuleList -> mRuleList_cons(leftelem,'|',accum, location=leftelem.location),
-   \a::MatchRule -> mRuleList_one(a,location=a.location),
+   \leftelem::MatchRule accum::MRuleList -> mRuleList_cons(leftelem,'|',accum),
+   \a::MatchRule -> mRuleList_one(a),
    l);
 
 }
@@ -126,7 +126,7 @@ function makeGeneratedNamesFromMatchRule
     | matchRule_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_) -> pl
     | matchRuleWhen_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_) -> pl
     | matchRuleWhenMatches_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_,_,_) -> pl
-    | _ -> patternList_nil(location=loc)
+    | _ -> patternList_nil()
     end;
 
   return
@@ -152,12 +152,12 @@ PatternList ::= mr::MatchRule loc::Location
     | matchRule_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_) -> pl
     | matchRuleWhen_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_) -> pl
     | matchRuleWhenMatches_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_,_,_) -> pl
-    | _ -> patternList_nil(location=loc)
+    | _ -> patternList_nil()
     end;
 
   return makePatternListFromListofPatterns(
     map(\pat::Pattern ->
-      wildcPattern('_', location=loc),
+      wildcPattern('_'),
       collectPatternsFromPatternList(patList,[])),
       loc);
 }
@@ -172,7 +172,7 @@ PatternList ::= mr::MatchRule loc::Location
 function makeDefinitionLHSFromName
 DefLHS ::= name::Name loc::Location
 {
-  return concreteDefLHS(qNameId(name,location=loc), location=loc);
+  return concreteDefLHS(qNameId(name));
 }
 
 @{-
@@ -194,10 +194,8 @@ Expr ::= newName::Name aspectLHS::Decorated ConvAspectLHS e::Expr loc::Location
         '::',
         aspectLHS.aspectType,
         '=',
-        baseExpr(qNameId(aspectLHS.aspectName,location=loc),location=loc),
-        location=loc),
-      e,
-      location=loc);
+        baseExpr(qNameId(aspectLHS.aspectName))),
+      e);
 
 }
 
@@ -217,7 +215,7 @@ Expr ::= patList::PatternList aspectLHS::Decorated ConvAspectLHS e::Expr loc::Lo
   | patternList_more(wildcPattern(_),_,_) -> e
   | patternList_one(varPattern(name)) -> makeLetExprForTopRenaming(name, aspectLHS, e, loc)
   | patternList_more(varPattern(name),_,_) -> makeLetExprForTopRenaming(name, aspectLHS, e, loc)
-  | _ -> errorExpr([],location=loc)
+  | _ -> errorExpr([])
   end;
 }
 
@@ -246,16 +244,14 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       end;
 
   local makeAspectRHSElemListFromNameAndTypeLists::([AspectRHSElem] ::= [Name] [Type]) =
-    zipWith(aspectRHSElemFull(_, _, location=location), _, _);
+    zipWith(aspectRHSElemFull, _, _);
 
-  local makeAspectRHSFromParamsList::(AspectRHS ::= [AspectRHSElem] ) = foldr(
-    aspectRHSElemCons(_, _, location=location),
-    aspectRHSElemNil(location=location),
-    _);
+  local makeAspectRHSFromParamsList::(AspectRHS ::= [AspectRHSElem] ) =
+    foldr(aspectRHSElemCons, aspectRHSElemNil(), _);
 
-  local makeQNamesFromNames::([QName] ::= [Name]) = map(qNameId(_, location=location),_);
+  local makeQNamesFromNames::([QName] ::= [Name]) = map(qNameId,_);
 
-  local makeBaseExprFromQNames::([Expr] ::= [QName]) = map(baseExpr(_,location=location),_);
+  local makeBaseExprFromQNames::([Expr] ::= [QName]) = map(baseExpr,_);
 
   -- Transforms it to extract a subpattern and bring it up as the
   -- main pattern.
@@ -264,16 +260,14 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       | matchRule_c(pl,arrow,e) -> matchRule_c(
         extractSubPatternListsFromProdPatterns(pl),
         arrow,
-        e,
-        location=location)
+        eation)
       | matchRuleWhen_c(pl,whenKWD,cond,arrow,e) ->
         matchRuleWhen_c(
           extractSubPatternListsFromProdPatterns(pl),
           whenKWD,
           cond,
           arrow,
-          e,
-          location=location)
+          eation)
       | matchRuleWhenMatches_c(pl,whenKWD,cond,matches,p,arrow,e) ->
         matchRuleWhenMatches_c(
           extractSubPatternListsFromProdPatterns(pl),
@@ -282,8 +276,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
           matches,
           p,
           arrow,
-          e,
-          location=location)
+          eation)
       end),
       _);
 
@@ -299,8 +292,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
         'of',
         terminal(Opt_Vbar_t, "|"),
         makeMRuleListFromListMatchRules(transformPatternMatchRule(mRules)),
-        'end',
-        location=location);
+        'end');
 
   -- This function makes our aspect production from the Expression, QName, and AspectRHS
   -- We've generated elsewhere.
@@ -415,7 +407,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
       [])
     | _ ->
       (
-        emptyAGDcl(location=location),
+        emptyAGDcl(),
         [err(location,"Patterns in aspect convenience syntax should be productions,wildcards, or varpatterns only")])
     end;
 }
@@ -608,8 +600,8 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
   local combinedAspectProds::[AGDcl] = map(fst(_),groupExtractResults);
 
   local combinedAspectDcls::AGDcls = foldr(
-   consAGDcls(_,_,location=top.location),
-   nilAGDcls(location=top.location),
+   consAGDcls(_,_),
+   nilAGDcls(),
    combinedAspectProds);
 
 

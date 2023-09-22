@@ -61,7 +61,7 @@ top::Grammar ::= h::Root  t::Grammar
 
   production attribute rootErrors::[Message] with ++;
   rootErrors := h.errors;
-  top.allFileErrors = (h.location.filename, rootErrors) :: t.allFileErrors;
+  top.allFileErrors = (getParsedOriginLocationOrFallback(h).filename, rootErrors) :: t.allFileErrors;
 
   rootErrors <- warnIfMultJarName(h.jarName, t.jarName, h.location);
 }

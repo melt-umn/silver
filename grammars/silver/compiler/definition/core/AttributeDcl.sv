@@ -8,7 +8,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [inhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [inhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -16,7 +16,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;
@@ -30,7 +30,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [synDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [synDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -38,7 +38,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;
@@ -52,7 +52,7 @@ top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [transDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [transDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -60,7 +60,7 @@ top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;

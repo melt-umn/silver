@@ -36,14 +36,12 @@ top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataCo
     | consDataConstructor(h1, _, t1) ->
       consDataConstructor(
         h, '|',
-        consDataConstructor(documentedConstructor(comment, h1, location=h1.location), '|', t1, location=t.location),
-        location=top.location)
+        consDataConstructor(documentedConstructor(comment, h1), '|', t1))
     | oneDataConstructor(h1) ->
       consDataConstructor(
         h, '|',
-        oneDataConstructor(documentedConstructor(comment, h1, location=h1.location), location=t.location),
-        location=top.location)
-    | nilDataConstructor() -> consDataConstructor(h, '|', t, location=top.location)
+        oneDataConstructor(documentedConstructor(comment, h1)))
+    | nilDataConstructor() -> consDataConstructor(h, '|', t)
     end;
 }
 
@@ -69,7 +67,7 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
                 else [dclCommentItem(top.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
   top.docErrors <-
     if isDoubleComment
-    then [wrn(parsed.location, "Doc comment not immediately preceding constructor, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+    then [wrnFromOrigin(parsed, "Doc comment not immediately preceding constructor, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
   forwards to item;

@@ -60,7 +60,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   local localErrors::[Message] =
     es.errors ++ anns.traverseErrors ++
     if null(getTypeDcl("silver:rewrite:Strategy", top.env))
-    then [err(top.location, "Term rewriting requires import of silver:rewrite")]
+    then [errFromOrigin(top, "Term rewriting requires import of silver:rewrite")]
     else [];
 
   propagate downSubst, upSubst, finalSubst, freeVars;
@@ -69,22 +69,22 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     traversal(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
   local fwrd::Expr = translate(builtin, reflect(new(transform)));
   
-  forwards to if !null(localErrors) then errorExpr(localErrors, location=builtin) else fwrd;
+  forwards to if !null(localErrors) then errorExpr(localErrors) else fwrd;
 }
 concrete production traverseProdAnno
 top::Expr ::= 'traverse' n::QName '(' anns::AnnoAppExprs ')'
 {
-  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', anns, $5, location=top.location);
+  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(), ',', anns, $5);
 }
 concrete production traverseProdExpr
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ')'
 {
-  forwards to traverseProdExprAnno($1, n, $3, es, ',', emptyAnnoAppExprs(location=$4.location), $5, location=top.location);
+  forwards to traverseProdExprAnno($1, n, $3, es, ',', emptyAnnoAppExprs(), $5);
 }
 concrete production traverseProdEmpty
 top::Expr ::= 'traverse' n::QName '(' ')'
 {
-  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', emptyAnnoAppExprs(location=$4.location), $4, location=top.location);
+  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(), ',', emptyAnnoAppExprs(), $4);
 }
 
 abstract production traverseConsList
@@ -98,12 +98,12 @@ top::Expr ::= 'traverse' '(' h::AppExpr '::' t::AppExpr ')'
 concrete production traverseConsListFirstMissing
 top::Expr ::= 'traverse' '(' h::'_' '::' t::AppExpr ')'
 {
-  forwards to traverseConsList($1, $2, missingAppExpr(h, location=h.location), $4, t, $6, location=top.location);
+  forwards to traverseConsList($1, $2, missingAppExpr(h), $4, t, $6);
 }
 concrete production traverseConsListFirstPresent
 top::Expr ::= 'traverse' '(' h::Expr '::' t::AppExpr ')'
 {
-  forwards to traverseConsList($1, $2, presentAppExpr(h, location=h.location), $4, t, $6, location=top.location);
+  forwards to traverseConsList($1, $2, presentAppExpr(h), $4, t, $6);
 }
 
 concrete production traverseNilList
@@ -165,7 +165,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
   top.traverseErrors =
     e.errors ++
     if !extractNamedArg(qn.name, top.funcAnnotations).fst.isJust
-    then [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]
+    then [errFromOrigin(qn, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]
     else [];
   top.traverseTransform = (qn.lookupAttribute.fullName, e.traverseTransform);
 }
@@ -206,9 +206,9 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   -- so we need to decorate one of those here.
   local checkExpr::Expr =
     caseExpr(
-      [hackExprType(ty.typerep, location=builtin)],
+      [hackExprType(ty.typerep)],
       ml.wrappedMatchRuleList, false,
-      errorExpr([], location=builtin),
+      errorExpr([]),
       ty.typerep,
       location=builtin);
   checkExpr.env = top.env;
@@ -233,7 +233,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
     ty.errors ++ ml.errors ++ checkExpr.errors ++
     ty.errorsKindStar ++
     if null(getTypeDcl("silver:rewrite:Strategy", top.env))
-    then [err(top.location, "Term rewriting requires import of silver:rewrite")]
+    then [errFromOrigin(top, "Term rewriting requires import of silver:rewrite")]
     else [];
   
   -- Can't use an error production here, unfortunately, due to circular dependency issues.
@@ -250,7 +250,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
     then requireType(antiquoteASTExpr(
       Silver_Expr {
         silver:rewrite:anyASTExpr(
-          \ $TypeExpr{typerepTypeExpr(finalRuleType, location=builtin)} -> unit())
+          \ $TypeExpr{typerepTypeExpr(finalRuleType)} -> unit())
       })) <* ml.transform
     else ml.transform;
   
@@ -265,7 +265,7 @@ abstract production hackExprType
 top::Expr ::= t::Type
 {
   top.typerep = t;
-  forwards to errorExpr([], location=builtin);
+  forwards to errorExpr([]);
 }
 
 -- Strategy meta-translation

@@ -154,12 +154,12 @@ String ::= ty::Type
 function monadBind
 Expr ::= l::Location
 {
-  return baseExpr(qNameId(name("silver:core:bind", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:bind", l)));
 }
 function monadReturn
 Expr ::= l::Location
 {
-  return baseExpr(qNameId(name("silver:core:pure", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:pure", l)));
 }
 
 --We want to produce a value, not a function, so we apply it to an argument
@@ -168,7 +168,7 @@ Expr ::= l::Location
 {
   return
      buildApplication
-       (baseExpr(qNameId(name("silver:core:fail", l), location=l), location=l),
+       (baseExpr(qNameId(name("silver:core:fail", l))),
         [stringConst(terminal(String_t, "\"Automatically-inserted fail at " ++
                                            l.unparse ++ "\""),
                      location=l)], l);
@@ -178,12 +178,12 @@ Expr ::= l::Location
 function monadPlus
 Expr ::= l::Location
 {
-  return baseExpr(qNameId(name("silver:core:alt", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:alt", l)));
 }
 function monadZero
 Expr ::= l::Location
 {
-  return baseExpr(qNameId(name("silver:core:empty", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:empty", l)));
 }
 
 
@@ -199,7 +199,7 @@ Expr ::= l::Location
 function buildApplication
 Expr ::= fun::Expr args::[Expr] loc::Location
 {
-  return applicationExpr(fun, '(', buildApplicationReverseArgs(reverse(args), loc), ')', location=loc);
+  return applicationExpr(fun, '(', buildApplicationReverseArgs(reverse(args), loc), ')');
 }
 
 --because the AST is set up as a snoc list, we build the arguments in reverse
@@ -208,10 +208,10 @@ function buildApplicationReverseArgs
 AppExprs ::= args::[Expr] loc::Location
 {
   return case args of
-         | [] -> emptyAppExprs(location=loc)
+         | [] -> emptyAppExprs()
          | hd::tl ->
            snocAppExprs(buildApplicationReverseArgs(tl, loc), ',',
-                        presentAppExpr(hd, location=loc), location=loc)
+                        presentAppExpr(hd))
          end;
 }
 
@@ -224,12 +224,9 @@ Expr ::= n::String ty::Type body::Expr loc::Location
   return lambdap(
            productionRHSCons(productionRHSElem(name(n, loc),
                                                '::',
-                                               typerepTypeExpr(ty, location=loc),
-                                               location=loc),
-                             productionRHSNil(location=loc),
-                             location=loc),
-           body,
-           location=loc);
+                                               typerepTypeExpr(ty)),
+                             productionRHSNil()),
+           body);
 }
 
 
@@ -241,10 +238,10 @@ Expr ::= names::[Pair<String Type>] body::Expr loc::Location
                 case pr of
                 | (n, ty) ->
                   productionRHSCons(productionRHSElem(name(n, loc), '::',
-                                       typerepTypeExpr(ty, location=loc), location=loc),
-                                    p, location=loc)
+                                       typerepTypeExpr(ty)),
+                                    p)
                 end,
-              productionRHSNil(location=loc), names);
-  return lambdap(sig, body, location=loc);
+              productionRHSNil(), names);
+  return lambdap(sig, body);
 }
 

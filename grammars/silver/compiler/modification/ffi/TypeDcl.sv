@@ -11,10 +11,10 @@ concrete production ffiTypeDclLegacy
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' ';'
 {
   local obj :: String_t = terminal(String_t, "\"Object\"");
-  --forwards to ffiTypeDcl('foreign', 'type', id, tl, '=', obj, ';', location=top.location);
-  forwards to ffiTypeDclUgly('type', id, tl, 'foreign', '=', obj, ';', location=top.location);
+  --forwards to ffiTypeDcl('foreign', 'type', id, tl, '=', obj, ';');
+  forwards to ffiTypeDclUgly('type', id, tl, 'foreign', '=', obj, ';');
 } action {
-  insert semantic token IdTypeDcl_t at id.location;
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }
 
 
@@ -41,7 +41,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
   -- Strip quotes
   local transType :: String = substring(1, length(trans.lexeme) - 1, trans.lexeme);
 
-  top.defs := [typeAliasDef(top.grammarName, id.location, fName, [], tl.freeVariables, foreignType(fName, transType, tl.types))];
+  top.defs := [typeAliasDef(top.grammarName, id.nameLoc, fName, [], tl.freeVariables, foreignType(fName, transType, tl.types))];
 
   propagate grammarName, errors, flowDefs, flowEnv;
   top.errors <- tl.errorsTyVars;
@@ -53,14 +53,14 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
   -- Redefinition check of the name
   top.errors <- 
     if length(getTypeDclAll(fName, top.env)) > 1 
-    then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Type '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <-
     if isLower(substring(0, 1, id.name))
-    then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
+    then [errFromOrigin(id, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
     else [];
 } action {
-  insert semantic token IdTypeDcl_t at id.location;
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }
 

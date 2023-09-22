@@ -1,9 +1,9 @@
 grammar silver:compiler:definition:core;
 
-nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
-nonterminal ProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
-nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, elementCount;
-nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount;
+tracked nonterminal ProductionSignature with config, grammarName, env, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
+tracked nonterminal ProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement;
+tracked nonterminal ProductionRHS with config, grammarName, env, unparse, errors, defs, inputElements, elementCount;
+tracked nonterminal ProductionRHSElem with config, grammarName, env, unparse, errors, defs, inputElements, deterministicCount;
 
 flowtype forward {env, signatureName} on ProductionSignature;
 flowtype forward {env} on ProductionLHS, ProductionRHS;
@@ -45,9 +45,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs := prodDef(top.grammarName, id.location, namedSig, length(body.forwardExpr) > 0) ::
+  top.defs := prodDef(top.grammarName, id.nameLoc, namedSig, length(body.forwardExpr) > 0) ::
     if null(body.productionAttributes) then []
-    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
+    else [prodOccursDef(top.grammarName, id.nameLoc, namedSig, body.productionAttributes)];
 
   -- Other productions on the same nonterminal with the same name:
   local sameNTProds::[ValueDclInfo] = filter(
@@ -59,24 +59,24 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     getValueDclAll(id.name, top.env));
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
-    then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
     else if length(sameNTProds) > 1
-    then [err(top.location, "Production " ++ id.name ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.name ++ " as ...' to change the other production's apparent name.")]
+    then [errFromOrigin(top, "Production " ++ id.name ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.name ++ " as ...' to change the other production's apparent name.")]
     else [];
   
   top.errors <-
     if length(body.forwardExpr) > 1
-    then [err(top.location, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
+    then [errFromOrigin(top, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
     else [];
   
   top.errors <-
     if length(body.undecorateExpr) > 1
-    then [err(top.location, "Production '" ++ id.name ++ "' has more than one undecorate declaration.")]
+    then [errFromOrigin(top, "Production '" ++ id.name ++ "' has more than one undecorate declaration.")]
     else [];
 
   top.errors <-
     if isLower(substring(0,1,id.name)) then []
-    else [wrn(id.location, s"(future) ${id.name}: productions may be required to begin with a lower-case letter.")];
+    else [wrnFromOrigin(id, s"(future) ${id.name}: productions may be required to begin with a lower-case letter.")];
 
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
@@ -90,7 +90,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs ++ prodAtts, top.env));
   body.frame = productionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 } action {
-  insert semantic token IdFnProdDcl_t at id.location;
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
 }
 
@@ -123,7 +123,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
   
-  forwards to productionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+  forwards to productionSignature(nilConstraint(), '=>', lhs, $2, rhs);
 } action {
   sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
@@ -136,14 +136,14 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
-  top.defs := [lhsDef(top.grammarName, id.location, id.name, t.typerep)];
+  top.defs := [lhsDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1
-    then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 } action {
-  insert semantic token IdSigNameDcl_t at id.location;
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 concrete production productionRHSNil
@@ -173,14 +173,14 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
-  top.defs := [childDef(top.grammarName, id.location, id.name, t.typerep)];
+  top.defs := [childDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1 
-    then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 } action {
-  insert semantic token IdSigNameDcl_t at id.location;
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 concrete production productionRHSElemType
@@ -188,6 +188,6 @@ top::ProductionRHSElem ::= t::TypeExpr
 {
   top.unparse = t.unparse;
 
-  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount), t.location), '::', t, location=top.location);
+  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount)), '::', t);
 }
 

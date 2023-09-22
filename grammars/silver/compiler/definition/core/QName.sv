@@ -3,11 +3,11 @@ grammar silver:compiler:definition:core;
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
-nonterminal QName with config, name, location, grammarName, env, unparse, qNameType, baseNameLoc;
+tracked nonterminal QName with config, name, grammarName, env, unparse, qNameType, nameLoc;
 {--
  - Qualified names where the LAST name has an upper case first letter.
  -}
-nonterminal QNameType with config, name, location, grammarName, env, unparse, baseNameLoc;
+tracked nonterminal QNameType with config, name, grammarName, env, unparse, nameLoc;
 
 flowtype decorate {env} on QName, QNameType;
 
@@ -17,13 +17,13 @@ flowtype decorate {env} on QName, QNameType;
 synthesized attribute dcls<a> :: [a];
 
 synthesized attribute qNameType::QNameType;
-synthesized attribute baseNameLoc::Location;
+synthesized attribute nameLoc::Location;
 
--- TODO: for consistency, the order of these args should be flipped:
 function qName
-QName ::= l::Location s::String
+QName ::= s::String
 {
-  return qNameId(nameIdLower(terminal(IdLower_t, s, l), location=l), location=l);
+  local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
+  return qNameId(nameIdLower(terminal(IdLower_t, s, loc)));
 }
 
 concrete production qNameId
@@ -31,12 +31,12 @@ top::QName ::= id::Name
 {
   top.name = id.name;
   top.unparse = id.unparse;
-  top.qNameType = qNameTypeId(terminal(IdUpper_t, id.name, id.location), location=id.location);
-  top.baseNameLoc = id.location;
+  top.qNameType = qNameTypeId(terminal(IdUpper_t, id.name, id.nameLoc));
+  top.nameLoc = id.nameLoc;
   
-  top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name, top.location);
-  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
-  top.lookupAttribute = customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location);
+  top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name);
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name);
+  top.lookupAttribute = customLookup("attribute", getAttrDcl(top.name, top.env), top.name);
 }
 
 concrete production qNameCons
@@ -44,14 +44,14 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
-  top.qNameType = qNameTypeCons(id, ':', qn.qNameType, location=top.location);
-  top.baseNameLoc = qn.baseNameLoc;
+  top.qNameType = qNameTypeCons(id, ':', qn.qNameType);
+  top.nameLoc = qn.nameLoc;
   
-  top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name, top.location);
-  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
-  top.lookupAttribute = customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location);
+  top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name);
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name);
+  top.lookupAttribute = customLookup("attribute", getAttrDcl(top.name, top.env), top.name);
 } action {
-  insert semantic token IdGrammarName_t at id.location;
+  insert semantic token IdGrammarName_t at id.nameLoc;
 }
 
 abstract production qNameError
@@ -59,8 +59,8 @@ top::QName ::= msg::[Message]
 {
   top.name = "err";
   top.unparse = "<err>";
-  top.qNameType = qNameTypeId(terminal(IdUpper_t, "Err", top.location), location=top.location);
-  top.baseNameLoc = top.location;
+  top.qNameType = qNameTypeId(terminal(IdUpper_t, "Err", top.nameLoc));
+  top.nameLoc = getParsedOriginLocationOrFallback(top);
   
   top.lookupValue = errorLookup(msg);
   top.lookupType = errorLookup(msg);
@@ -79,13 +79,15 @@ abstract production customLookup
 attribute fullName {} occurs on a,
 attribute typeScheme {} occurs on a,
 annotation sourceLocation occurs on a =>
-top::QNameLookup<a> ::= kindOfLookup::String dcls::[a] name::String l::Location 
+top::QNameLookup<a> ::= kindOfLookup::String dcls::[a] name::String
 {
+  production loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
+
   top.dcls = dcls;
   top.found = !null(top.dcls); -- currently accurate
   top.dcl =
     if top.found then head(top.dcls)
-    else error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ l.unparse);
+    else error("INTERNAL ERROR: Accessing dcl of " ++ kindOfLookup ++ " " ++ name ++ " at " ++ loc.unparse);
   
   top.fullName = if top.found then top.dcl.fullName else "undeclared:value:" ++ name;
   
@@ -93,9 +95,9 @@ top::QNameLookup<a> ::= kindOfLookup::String dcls::[a] name::String l::Location
   
   top.errors := 
     (if top.found then []
-     else [err(l, "Undeclared " ++ kindOfLookup ++ " '" ++ name ++ "'.")]) ++
+     else [err(loc, "Undeclared " ++ kindOfLookup ++ " '" ++ name ++ "'.")]) ++
     (if length(top.dcls) <= 1 then []
-     else [err(l, "Ambiguous reference to " ++ kindOfLookup ++ " '" ++ name ++ "'. Possibilities are:\n" ++ printPossibilities(top.dcls))]);
+     else [err(loc, "Ambiguous reference to " ++ kindOfLookup ++ " '" ++ name ++ "'. Possibilities are:\n" ++ printPossibilities(top.dcls))]);
 }
 
 abstract production errorLookup
@@ -134,27 +136,27 @@ top::QNameType ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.unparse = id.lexeme;
-  top.baseNameLoc = id.location;
+  top.nameLoc = id.location;
   
-  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name);
 }
 
 concrete production qNameTypeCons
 top::QNameType ::= id::Name ':' qn::QNameType
 {
   top.name = id.name ++ ":" ++ qn.name;
-  top.baseNameLoc = qn.baseNameLoc;
+  top.nameLoc = qn.nameLoc;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
   
-  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location);
+  top.lookupType = customLookup("type", getTypeDcl(top.name, top.env), top.name);
 } action {
-  insert semantic token IdGrammarName_t at id.location;
+  insert semantic token IdGrammarName_t at id.nameLoc;
 }
 
 {--
  - Qualified name looked up CONTEXTUALLY
  -}
-nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
+tracked nonterminal QNameAttrOccur with config, name, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
 
 flowtype QNameAttrOccur = decorate {grammarName, config, env, attrFor}, dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
 
@@ -215,22 +217,22 @@ top::QNameAttrOccur ::= at::QName
       -- This is a heuristic error message for the situation where you have a type, but haven't imported
       -- the grammar declaring that type.
       (if lastIndexOf(":", top.attrFor.typeName) > 0 && null(getTypeDcl(top.attrFor.typeName, top.env)) then
-         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
+         [errFromOrigin(at, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
        else
-         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
+         [errFromOrigin(at, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
       )
     -- If more than one attribute on the same _short name_ occurs, raise ambiguity
     else if length(attrs) > 1 then
-      [err(at.location, "Ambiguous reference to attribute occurring on '" ++ prettyType(top.attrFor) ++ "'. Possibilities are:\n" ++ printPossibilities(attrs))]
+      [errFromOrigin(at, "Ambiguous reference to attribute occurring on '" ++ prettyType(top.attrFor) ++ "'. Possibilities are:\n" ++ printPossibilities(attrs))]
     -- If this same attribute has multiple occurences (must be due to orphaned occurs)
     else []; {-if length(dcls) > 1 then
-      [err(at.location, "There are erroneously multiple attribute occurrences for '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(dcls))]
+      [errFromOrigin(at, "There are erroneously multiple attribute occurrences for '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(dcls))]
     else [];-}
     -- TODO: This last bit is disabled because we have problems with importing grammars multiple times.
     -- TODO FIXME: enable this, and fix the grammar import issues!
 
   production resolvedDcl::OccursDclInfo = if top.found then head(dcls) else
-    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
+    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ at.nameLoc.unparse);
   resolvedDcl.givenNonterminalType = top.attrFor;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production requiredContexts::Contexts = foldContexts(resolvedTypeScheme.contexts);
@@ -241,7 +243,7 @@ top::QNameAttrOccur ::= at::QName
   top.attrDcl = if top.found then head(attrs) else
     -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
     if at.lookupAttribute.found then at.lookupAttribute.dcl else
-    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
+    error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ at.nameLoc.unparse);
 }
 
 {--

@@ -21,18 +21,17 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   
   top.errors <-
     if length(getAttrDclAll(inhFName, top.env)) > 1
-    then [err(inh.location, "Attribute '" ++ inhFName ++ "' is already bound.")]
+    then [errFromOrigin(inh, "Attribute '" ++ inhFName ++ "' is already bound.")]
     else [];
   top.errors <-
     if length(getAttrDclAll(synFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
   
   forwards to
     defsAGDcl(
       [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=inh.location))),
-       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
-      location=top.location);
+       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.location)))]);
 }
 
 concrete production collectionThreadedAttributeDcl
@@ -57,11 +56,11 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   
   top.errors <-
     if length(getAttrDclAll(inhFName, top.env)) > 1
-    then [err(inh.location, "Attribute '" ++ inhFName ++ "' is already bound.")]
+    then [errFromOrigin(inh, "Attribute '" ++ inhFName ++ "' is already bound.")]
     else [];
   top.errors <-
     if length(getAttrDclAll(synFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
   
   -- TODO: We want to forward to collection attr decls for the translation, but provide our own defs.
@@ -73,14 +72,13 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   
   forwards to
     appendAGDcl(
-      collectionAttributeDclInh('inherited', 'attribute', inh, tl, '::', te, 'with', q, ';', location=top.location),
-      collectionAttributeDclSyn('synthesized', 'attribute', syn, tl, '::', te, 'with', q, ';', location=top.location),
-      location=top.location);
+      collectionAttributeDclInh('inherited', 'attribute', inh, tl, '::', te, 'with', q, ';'),
+      collectionAttributeDclSyn('synthesized', 'attribute', syn, tl, '::', te, 'with', q, ';'));
 }
 
 synthesized attribute reversed::Boolean;
 
-nonterminal OptDirectionMod with unparse, reversed;
+tracked nonterminal OptDirectionMod with unparse, reversed;
 concrete productions top::OptDirectionMod
 | 'direction' '=' d::Direction
   { top.unparse = " direction=" ++ d.unparse;
@@ -89,7 +87,7 @@ concrete productions top::OptDirectionMod
   { top.unparse = "";
     top.reversed = false; }
 
-nonterminal Direction with unparse, reversed;
+tracked nonterminal Direction with unparse, reversed;
 concrete productions top::Direction
 | 'left' 'to' 'right'
   { top.unparse = "left to right";
@@ -101,7 +99,7 @@ concrete productions top::Direction
 abstract production propagateThreadedInh
 top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::String
 {
-  undecorates to propagateOneAttr(inh, location=top.location);
+  undecorates to propagateOneAttr(inh);
   top.unparse = s"propagate ${inh.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
@@ -132,14 +130,13 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
         then if !null(getOccursDcl(inh.lookupAttribute.fullName, last(top.frame.signature.inputElements).typerep.typeName, top.env))
           then [last(top.frame.signature.inputElements).elementName]
           else []
-        else [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
-      location=top.location);
+        else [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]));
 }
 
 abstract production propagateThreadedSyn
 top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! QName
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
+  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
@@ -164,8 +161,7 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! 
         name(_, top.location),
         lhsName ::
         (if rev then reverse(occursChildren) else occursChildren) ++
-        [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
-      location=top.location);
+        [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]));
 }
 
 concrete production threadDcl_c
@@ -182,13 +178,10 @@ top::ProductionStmt ::= 'thread' inh::QName ',' syn::QName 'on' children::ChildN
     productionStmtAppend(
       threadInhDcl(
         inh.lookupAttribute.found && inh.lookupAttribute.dcl.isCollection,
-        inh.name, syn.name, children.ids,
-        location=top.location),
+        inh.name, syn.name, children.ids),
       threadSynDcl(
         syn.lookupAttribute.found && syn.lookupAttribute.dcl.isCollection,
-        inh.name, syn.name, children.ids,
-        location=top.location),
-      location=top.location);
+        inh.name, syn.name, children.ids));
 }
 
 abstract production threadInhDcl
@@ -199,24 +192,23 @@ top::ProductionStmt ::= isCol::Boolean inh::String syn::String children::[Name]
   local lhsName::String = top.frame.signature.outputElement.elementName;
   local attrDefProd::(ProductionStmt ::= DefLHS QNameAttrOccur Expr) =
     if isCol
-    then attrContainsBase(_, '.', _, ':=', _, ';', location=top.location)
-    else attributeDef(_, '.', _, '=', _, ';', location=top.location);
+    then attrContainsBase(_, '.', _, ':=', _, ';')
+    else attributeDef(_, '.', _, '=', _, ';');
   forwards to
     foldr(
-      productionStmtAppend(_, _, location=top.location),
-      errorProductionStmt([], location=top.location), -- No emptyProductionStmt?
+      productionStmtAppend(_, _),
+      errorProductionStmt([]), -- No emptyProductionStmt?
       zipWith(
         \ c1::Name c2::Name ->
           if c1.name != lhsName
           then
             attrDefProd(
-              concreteDefLHS(qNameId(c1, location=top.location), location=top.location),
-              qNameAttrOccur(qName(top.location, inh), location=top.location),
+              concreteDefLHS(qNameId(c1)),
+              qNameAttrOccur(qName(inh)),
               access(
-                baseExpr(qNameId(c2, location=top.location), location=top.location), '.',
-                qNameAttrOccur(qName(top.location, if c2.name == lhsName then inh else syn), location=top.location),
-                location=top.location))
-          else errorProductionStmt([], location=top.location),
+                baseExpr(qNameId(c2)), '.',
+                qNameAttrOccur(qName(if c2.name == lhsName then inh else syn))))
+          else errorProductionStmt([]),
         tail(children), children));
 }
 
@@ -228,30 +220,29 @@ top::ProductionStmt ::= isCol::Boolean inh::String syn::String children::[Name]
   local lhsName::String = top.frame.signature.outputElement.elementName;
   local attrDefProd::(ProductionStmt ::= DefLHS QNameAttrOccur Expr) =
     if isCol
-    then attrContainsBase(_, '.', _, ':=', _, ';', location=top.location)
-    else attributeDef(_, '.', _, '=', _, ';', location=top.location);
+    then attrContainsBase(_, '.', _, ':=', _, ';')
+    else attributeDef(_, '.', _, '=', _, ';');
   forwards to
     foldr(
-      productionStmtAppend(_, _, location=top.location),
-      errorProductionStmt([], location=top.location), -- No emptyProductionStmt?
+      productionStmtAppend(_, _),
+      errorProductionStmt([]), -- No emptyProductionStmt?
       zipWith(
         \ c1::Name c2::Name ->
           if c1.name == lhsName
           then
             attrDefProd(
-              concreteDefLHS(qNameId(c1, location=top.location), location=top.location),
-              qNameAttrOccur(qName(top.location, syn), location=top.location),
+              concreteDefLHS(qNameId(c1)),
+              qNameAttrOccur(qName(syn)),
               access(
-                baseExpr(qNameId(c2, location=top.location), location=top.location), '.',
-                qNameAttrOccur(qName(top.location, if c2.name == lhsName then inh else syn), location=top.location),
-                location=top.location))
-          else errorProductionStmt([], location=top.location),
+                baseExpr(qNameId(c2)), '.',
+                qNameAttrOccur(qName(if c2.name == lhsName then inh else syn))))
+          else errorProductionStmt([]),
         tail(children), children));
 }
 
 synthesized attribute ids :: [Name];
 
-nonterminal ChildNameList with location, unparse, ids;
+tracked nonterminal ChildNameList with unparse, ids;
 concrete production idSingle
 top::ChildNameList ::= id::ChildName
 {
@@ -268,7 +259,7 @@ top::ChildNameList ::= id1::ChildName ',' id2::ChildNameList
 
 synthesized attribute id :: Name;
 
-nonterminal ChildName with location, unparse, id;
+tracked nonterminal ChildName with unparse, id;
 concrete production idName
 top::ChildName ::= id::Name
 {
@@ -280,6 +271,6 @@ concrete production idForward
 top::ChildName ::= 'forward'
 {
   top.unparse = "forward";
-  top.id = name("forward", top.location);
+  top.id = name("forward");
 }
 

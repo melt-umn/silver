@@ -2,13 +2,13 @@ grammar silver:compiler:definition:type:syntax;
 
 inherited attribute constraintPos::ConstraintPosition;
 
-nonterminal ConstraintList
+tracked nonterminal ConstraintList
   -- This grammar doesn't export silver:compiler:definition:core, so the type concrete
   -- syntax doesn't "know about" the core layout terminals.
   -- Thus we have to set the layout explicitly for the "root" nonterminal here.
   layout {BlockComments, Comments, WhiteSpace}
-  with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
-nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
+  with config, grammarName, env, flowEnv, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
+tracked nonterminal Constraint with config, grammarName, env, flowEnv, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
 
 flowtype Constraint = decorate {grammarName, env, flowEnv, constraintPos};
 
@@ -48,7 +48,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
   top.errors <- c.lookupType.errors;
   top.errors <-
     if c.lookupType.found && dcl.isClass then []
-    else [err(c.location, c.name ++ " is not a type class.")];
+    else [errFromOrigin(c, c.name ++ " is not a type class.")];
   top.errors <- t.errorsTyVars;
   
   -- We essentially permit FlexibleInstances but not UndecidableInstnaces,
@@ -67,7 +67,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
   production undecidableInstanceErrors::[Message] =
     case top.constraintPos.instanceHead of
     | just(h) when (h, contains(fName, undecidableInstanceClasses)) matches (instContext(_, skolemType(_)), false) ->
-      [err(top.location, s"The constraint ${top.unparse} is no smaller than the instance head ${prettyContext(h)}")]
+      [errFromOrigin(top, s"The constraint ${top.unparse} is no smaller than the instance head ${prettyContext(h)}")]
     | _ -> []
     end;
   top.errors <- undecidableInstanceErrors;
@@ -86,7 +86,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | _ -> []
     end;
 } action {
-  insert semantic token IdTypeClass_t at c.baseNameLoc;
+  insert semantic token IdTypeClass_t at c.nameLoc;
 }
 
 concrete production inhOccursConstraint
@@ -101,22 +101,22 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
   top.errors <- at.lookupAttribute.errors;
   top.errors <-
     if at.lookupAttribute.found && !dcl.isInherited
-    then [err(at.location, fName ++ " is not an inherited attribute")]
+    then [errFromOrigin(at, fName ++ " is not an inherited attribute")]
     else [];
   
   top.errors <-
     if attl.missingCount > 0
-    then [err(attl.location, "Attribute type arguments cannot contain _")]
+    then [errFromOrigin(attl, "Attribute type arguments cannot contain _")]
     else [];
 
   -- Make sure we get the number and kind of type variables correct for the ATTR
   top.errors <-
     if length(atTypeScheme.boundVars) != length(attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
     else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
         "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
@@ -143,29 +143,29 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   top.errors <- at.lookupAttribute.errors;
   top.errors <-
     if at.lookupAttribute.found && !dcl.isSynthesized
-    then [err(at.location, fName ++ " is not a synthesized attribute")]
+    then [errFromOrigin(at, fName ++ " is not a synthesized attribute")]
     else [];
   
   top.errors <-
     if attl.missingCount > 0
-    then [err(attl.location, "Attribute type arguments cannot contain _")]
+    then [errFromOrigin(attl, "Attribute type arguments cannot contain _")]
     else [];
 
   -- Make sure we get the number and kind of type variables correct for the ATTR
   top.errors <-
     if length(atTypeScheme.boundVars) != length(attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
     else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
         "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
 
   top.errors <-
     if i.typerep.kindrep != inhSetKind()
-    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
+    then [errFromOrigin(i, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
   top.errors <- t.errorsKindStar;
@@ -196,22 +196,22 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   top.errors <- at.lookupAttribute.errors;
   top.errors <-
     if at.lookupAttribute.found && !dcl.isAnnotation
-    then [err(at.location, fName ++ " is not an annotation")]
+    then [errFromOrigin(at, fName ++ " is not an annotation")]
     else [];
   
   top.errors <-
     if attl.missingCount > 0
-    then [err(attl.location, "Annotation type arguments cannot contain _")]
+    then [errFromOrigin(attl, "Annotation type arguments cannot contain _")]
     else [];
 
   -- Make sure we get the number and kind of type variables correct for the ATTR
   top.errors <-
     if length(atTypeScheme.boundVars) != length(attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
     else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
         "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
@@ -247,11 +247,11 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
 
   top.errors <-
     if i1.typerep.kindrep != inhSetKind()
-    then [err(top.location, s"${top.unparse} has kind ${prettyKind(i1.typerep.kindrep)}, but kind InhSet is expected here")]
+    then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(i1.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
   top.errors <-
     if i2.typerep.kindrep != inhSetKind()
-    then [err(top.location, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
+    then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
   local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep, top.grammarName, top.location);
@@ -262,7 +262,7 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     end;
   top.errors <-
     case top.constraintPos of
-    | classPos(_, _) -> [err(top.location, "subset constraint not permitted as superclass")]
+    | classPos(_, _) -> [errFromOrigin(top, "subset constraint not permitted as superclass")]
     | _ -> []
     end;
 
@@ -287,7 +287,7 @@ top::Constraint ::= 'typeError' msg::String_t
   top.errors <-
     case top.constraintPos of
     | instancePos(_, _) -> []
-    | _ -> [err(top.location, "typeError constraint is only permitted on instances")]
+    | _ -> [errFromOrigin(top, "typeError constraint is only permitted on instances")]
     end;
 }
 
@@ -297,7 +297,7 @@ synthesized attribute typeableInstDcl::(InstDclInfo ::= Type String Location);
 synthesized attribute inhSubsetInstDcl::(InstDclInfo ::= Type Type String Location);
 synthesized attribute classDefName::Maybe<String>;
 synthesized attribute instanceHead::Maybe<Context>;
-nonterminal ConstraintPosition with classInstDcl, occursInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
+tracked nonterminal ConstraintPosition with classInstDcl, occursInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
 
 aspect default production
 top::ConstraintPosition ::=

@@ -8,7 +8,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 aspect production functionSignature

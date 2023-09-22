@@ -3,20 +3,20 @@ grammar silver:compiler:definition:core;
 {--
  - Root represents one textual file of Silver source.
  -}
-nonterminal Root with
+tracked nonterminal Root with
   -- Global-level inherited attributes
   config, compiledGrammars,
   -- Grammar-level inherited attributes
   grammarName, env, globalImports, grammarDependencies,
   -- File-level inherited attributes
   -- Synthesized attributes
-  declaredName, unparse, location, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
+  declaredName, unparse, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
   exportedGrammars, optionalGrammars, condBuild, jarName;
 
 flowtype Root = decorate {config, compiledGrammars, grammarName, env, globalImports, grammarDependencies, flowEnv};
 
-nonterminal GrammarDcl with 
-  declaredName, grammarName, location, unparse, errors;
+tracked nonterminal GrammarDcl with 
+  declaredName, grammarName, unparse, errors;
 
 propagate errors on Root, GrammarDcl;
 propagate config, compiledGrammars, grammarName, globalImports, grammarDependencies, moduleNames on Root;
@@ -70,8 +70,8 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
   top.declaredName = qn.name;
   top.errors <-
     if qn.name == top.grammarName then []
-    else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
+    else [errFromOrigin(top, "Grammar declaration is incorrect: " ++ qn.name)];
 } action {
-  insert semantic token IdGrammarName_t at qn.baseNameLoc;
+  insert semantic token IdGrammarName_t at qn.nameLoc;
 }
 

@@ -12,7 +12,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   top.defs := [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
-                then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+                then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
                 else [];
   top.errors <- te.errorsKindStar;
   
@@ -46,7 +46,7 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
   top.defs := [];
 
   top.errors <- if null(a.lookupValue.dcls)
-                then [err(a.location, "Undefined attribute '" ++ a.name ++ "'.")]
+                then [errFromOrigin(a, "Undefined attribute '" ++ a.name ++ "'.")]
                 else [];
   
   -- oh no again!

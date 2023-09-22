@@ -38,13 +38,13 @@ ag::AGDcl ::= kwd::'equalityTest'
   localErrors := value.errors ++ expected.errors ++ valueType.errors;
   localErrors <-
     if !errCheck1.typeerror then []
-    else [err(value.location, "Type of first and second expressions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+    else [errFromOrigin(value, "Type of first and second expressions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
   localErrors <-
     if !errCheck2.typeerror then []
-    else [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++ errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)];
+    else [errFromOrigin(value, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++ errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)];
   localErrors <-
     if !errCheck3.typeerror then []
-    else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++ errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
+    else [errFromOrigin(value, "Type of second expression does not match specified type (3rd argument). Instead they are " ++ errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
 
   local eqCtx::Context = instContext("silver:core:Eq", valueType.typerep);
   eqCtx.env = ag.env;
@@ -90,7 +90,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
   ag.errors := if null(localErrors) then forward.errors else localErrors;
 
-  forwards to appendAGDcl(absProdCS, aspProdCS, location=ag.location);
+  forwards to appendAGDcl(absProdCS, aspProdCS);
 
 {-
   local absProdCS :: AGDcl = asAGDcl (
@@ -128,27 +128,27 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
 
   -- TODO: BUG: FIXME: these names should be mangled. I ran into 't' being shadowed in a test I wrote!
-  local tref :: Name = name("t", ag.location);
+  local tref :: Name = name("t");
   local testNameref :: Name = name(testName, ag.location);
-  local valueref :: Name = name("value", ag.location);
-  local expectedref :: Name = name("expected", ag.location);
-  local msgref :: Name = name("msg", ag.location);
-  local passref :: Name = name("pass", ag.location);
+  local valueref :: Name = name("value");
+  local expectedref :: Name = name("expected");
+  local msgref :: Name = name("msg");
+  local passref :: Name = name("pass");
   
   -- TODO: Rewrite as Silver_AGDcl { ... }
   local absProdCS :: AGDcl =
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
-        nilConstraint(location=ag.location), '=>',
+        nilConstraint(), '=>',
         productionLHS(tref, '::',
-          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), location=ag.location), location=ag.location),
-        '::=', productionRHSNil(location=ag.location), location=ag.location),
-      productionBody('{', foldl(productionStmtsSnoc(_, _, location=ag.location), productionStmtsNil(location=ag.location), [
-        localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';', location=ag.location),
-        valueEq(qNameId(valueref, location=valueref.location), '=', value, ';', location=ag.location),
-        localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';', location=ag.location),
-        valueEq(qNameId(expectedref, location=expectedref.location), '=', expected, ';', location=ag.location),
-        attributeDef(concreteDefLHS(qNameId(tref, location=tref.location), location=tref.location), '.', qNameAttrOccur(qNameId(msgref, location=msgref.location), location=ag.location), '=',
+          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location)))),
+        '::=', productionRHSNil()),
+      productionBody('{', foldl(productionStmtsSnoc(_, _), productionStmtsNil(), [
+        localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
+        valueEq(qNameId(valueref), '=', value, ';'),
+        localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';'),
+        valueEq(qNameId(expectedref), '=', expected, ';'),
+        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
           foldStringExprs([
             strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++
               stringifyString(value.unparse) ++ "\nshould be same as expression\n   " ++
@@ -156,10 +156,10 @@ ag::AGDcl ::= kwd::'equalityTest'
             Silver_Expr { silver:testing:showTestValue(value) },
             strCnst("\nExpected value: \n   "),
             Silver_Expr { silver:testing:showTestValue(expected) },
-            strCnst("\n")]), ';', location=ag.location),
-        attributeDef(concreteDefLHS(qNameId(tref, location=tref.location), location=tref.location), '.', qNameAttrOccur(qNameId(passref, location=passref.location), location=ag.location), '=',
-           Silver_Expr { value == expected }, ';', location=ag.location),
-        forwardsTo('forwards', 'to', mkStrFunctionInvocation(ag.location, "defTest", []), ';', location=ag.location)]), '}', location=ag.location), location=ag.location);
+            strCnst("\n")]), ';'),
+        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(passref)), '=',
+           Silver_Expr { value == expected }, ';'),
+        forwardsTo('forwards', 'to', mkStrFunctionInvocation(ag.location, "defTest", []), ';')]), '}'));
 
 {-
   local aspProdCS :: AGDcl = asAGDcl (
@@ -170,22 +170,22 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
 
   local aspProdCS :: AGDcl =
-    aspectProductionDcl('aspect', 'production', qNameId(testSuite, location=ag.location),
+    aspectProductionDcl('aspect', 'production', qNameId(testSuite),
       aspectProductionSignature(
-        aspectProductionLHSId(tref, location=ag.location),
-          '::=', aspectRHSElemNil(location=ag.location), location=ag.location),
+        aspectProductionLHSId(tref),
+          '::=', aspectRHSElemNil()),
       productionBody('{',
         productionStmtsSnoc(
-          productionStmtsNil(location=ag.location),
+          productionStmtsNil(),
           valContainsAppend(
-            qName(ag.location, "testsToPerform"),
+            qName("testsToPerform"),
             '<-',
             fullList('[',
               exprsSingle(
                 applicationEmpty(
-                  baseExpr(qNameId(testNameref, location=ag.location), location=ag.location), '(', ')', location=ag.location), location=ag.location),
-              ']', location=ag.location),
-            ';', location=ag.location), location=ag.location), '}', location=ag.location), location=ag.location);
+                  baseExpr(qNameId(testNameref)), '(', ')')),
+              ']'),
+            ';')), '}'));
 
   local testName :: String = "generatedTest" ++ "_" ++ 
                             substitute(":","_",ag.grammarName) ++ "_" ++ 

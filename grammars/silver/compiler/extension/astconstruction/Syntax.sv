@@ -39,10 +39,10 @@ concrete production varAST_c
 top::AST_c ::= n::QName_t
 {
   top.unparse = n.lexeme;
-  top.ast = antiquotePatternAST(varPattern(name(n.lexeme, n.location), location=top.location));
+  top.ast = antiquotePatternAST(varPattern(name(n.lexeme, n.location)));
   top.errors :=
     if indexOf(":", n.lexeme) != -1
-    then [err(n.location, "Pattern variable name must be unqualified")]
+    then [errFromOrigin(n, "Pattern variable name must be unqualified")]
     else [];
 }
 
@@ -50,7 +50,7 @@ concrete production wildAST_c
 top::AST_c ::= '_'
 {
   top.unparse = "_";
-  top.ast = antiquotePatternAST(wildcPattern('_', location=top.location));
+  top.ast = antiquotePatternAST(wildcPattern('_'));
   top.errors := [];
 }
 

@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:convenience;
 
-nonterminal QNameWithTL with unparse,qnwtQN, qnwtTL;
+tracked nonterminal QNameWithTL with unparse,qnwtQN, qnwtTL;
 synthesized attribute qnwtQN :: QName;
 synthesized attribute qnwtTL :: BracketedOptTypeExprs;
 
@@ -17,8 +17,8 @@ top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
    list just one, then it goes to the ordinary, non-convenience extension form.
  -}
  
-nonterminal QNames2 with unparse, qnames;
-nonterminal QNames with unparse, qnames;
+tracked nonterminal QNames2 with unparse, qnames;
+tracked nonterminal QNames with unparse, qnames;
 
 synthesized attribute qnames :: [QNameWithTL];
 
@@ -57,18 +57,18 @@ function makeOccursDcls
 AGDcl ::= l::Location ats::[QNameWithTL] nts::[QNameWithTL]
 {
   return if null(ats) 
-	 then emptyAGDcl(location=l)
-	 else appendAGDcl(makeOccursDclsHelp(l, head(ats), nts), makeOccursDcls(l, tail(ats), nts), location=l);
+	 then emptyAGDcl()
+	 else appendAGDcl(makeOccursDclsHelp(l, head(ats), nts), makeOccursDcls(l, tail(ats), nts));
 }
 
 function makeOccursDclsHelp
 AGDcl ::= l::Location at::QNameWithTL nts::[QNameWithTL]
 {
   return if null(nts) 
-	 then emptyAGDcl(location=l)
+	 then emptyAGDcl()
 	 else appendAGDcl(
-	        attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';', location=l),
-		makeOccursDclsHelp(l, at, tail(nts)), location=l);
+	        attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';'),
+		makeOccursDclsHelp(l, at, tail(nts)));
 }
 
 
@@ -77,7 +77,7 @@ AGDcl ::= l::Location at::QNameWithTL nts::[QNameWithTL]
 
 synthesized attribute ids :: [Name];
 
-nonterminal Names2 with unparse, ids;
+tracked nonterminal Names2 with unparse, ids;
 concrete production id2Single
 top::Names2 ::= id::Name ',' id2::Name
 {
@@ -92,7 +92,7 @@ top::Names2 ::= id1::Name ',' id2::Names2
   top.ids = [id1] ++ id2.ids;
 }
 
-nonterminal Names with unparse, ids;
+tracked nonterminal Names with unparse, ids;
 concrete production idSingle
 top::Names ::= id::Name
 {

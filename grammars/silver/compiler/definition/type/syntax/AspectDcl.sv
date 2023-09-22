@@ -22,7 +22,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, id.nameLoc, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 aspect production aspectFunctionDcl
@@ -31,7 +31,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, id.nameLoc, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;

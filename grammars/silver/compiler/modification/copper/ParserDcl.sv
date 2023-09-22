@@ -22,7 +22,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   
   -- Compute the module exported defs for all grammars in the parser spec to add to the new environment
   production med :: ModuleExportedDefs =
-    moduleExportedDefs(top.location, top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
+    moduleExportedDefs(top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
   
   t.env = top.env;
   m.env = appendEnv(toEnv(med.defs, med.occursDefs), top.env);
@@ -46,7 +46,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   top.parserSpecs := [spec]; -- Note that this is undecorated.
 }
 
-nonterminal ParserComponents with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
+tracked nonterminal ParserComponents with config, env, flowEnv, grammarName, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
 propagate config, env, flowEnv, grammarName, compiledGrammars, grammarDependencies, errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponents;
 
@@ -62,7 +62,7 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.unparse = c1.unparse ++ ", " ++ c2.unparse;
 }
 
-closed nonterminal ParserComponent with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
+closed tracked nonterminal ParserComponent with config, env, flowEnv, grammarName, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
 propagate config, env, flowEnv, grammarName, compiledGrammars, grammarDependencies, errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponent;
 
@@ -83,7 +83,7 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 inherited attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
-nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
+tracked nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
 propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifiers;
 
@@ -99,7 +99,7 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.unparse = h.unparse ++ t.unparse;
 }
 
-nonterminal ParserComponentModifier with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
+tracked nonterminal ParserComponentModifier with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
 propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifier;
 

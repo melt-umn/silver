@@ -26,28 +26,28 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   local myFlowGraph :: ProductionGraph = constructAnonymousGraph(body.flowDefs, top.env, myProds, myFlow);
   superContexts.frame = globalExprContext(fName, foldContexts(body.frameContexts), ty.typerep, myFlowGraph, sourceGrammar=top.grammarName);
 
-  top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep, body.definedMembers)];
+  top.defs := [instDef(top.grammarName, id.nameLoc, fName, boundVars, cl.contexts, ty.typerep, body.definedMembers)];
 
   top.errors <- id.lookupType.errors;
   top.errors <-
     if !id.lookupType.found || dcl.isClass then []
-    else [err(id.location, id.name ++ " is not a type class.")];
+    else [errFromOrigin(id, id.name ++ " is not a type class.")];
   top.errors <-
     if !ty.typerep.isError && length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
-    then [err(id.location, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
+    then [errFromOrigin(id, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
     else [];
   top.errors <-
     case ty.typerep of
     -- Default instance, must be exported by the class declaration
     | skolemType(_) when id.lookupType.found && !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
-      [wrn(top.location, "Orphaned default instance declaration for " ++ fName)]
+      [wrnFromOrigin(top, "Orphaned default instance declaration for " ++ fName)]
     -- Regular instance, must be exported by the class or type declaration
     | t when id.lookupType.found &&
         !isExportedBy(
           top.grammarName,
           dcl.sourceGrammar :: map(\ d::TypeDclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)),
           top.compiledGrammars) ->
-      [wrn(top.location, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
+      [wrnFromOrigin(top, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
     | _ -> []
     end;
   
@@ -58,7 +58,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
 
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
-  headDefs <- [currentInstDef(top.grammarName, id.location, fName, ty.typerep)];
+  headDefs <- [currentInstDef(top.grammarName, id.nameLoc, fName, ty.typerep)];
   
   cl.env = newScopeEnv(headPreDefs, top.env);
   id.env = cl.env;
@@ -70,7 +70,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
   body.frameContexts = superContexts.contexts ++ cl.contexts;
 } action {
-  insert semantic token IdTypeClass_t at id.baseNameLoc;
+  insert semantic token IdTypeClass_t at id.nameLoc;
 }
 
 concrete production instanceDclNoCL
@@ -78,19 +78,19 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
   top.unparse = s"instance ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
-  forwards to instanceDcl($1, nilConstraint(location=top.location), '=>', id, ty, $4, body, $6, location=top.location);
+  forwards to instanceDcl($1, nilConstraint(), '=>', id, ty, $4, body, $6);
 } action {
-  insert semantic token IdTypeClass_t at id.baseNameLoc;
+  insert semantic token IdTypeClass_t at id.nameLoc;
 }
 
 inherited attribute className::String;
 inherited attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
-nonterminal InstanceBody with
-  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
-nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
+tracked nonterminal InstanceBody with
+  config, grammarName, env, defs, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
+tracked nonterminal InstanceBodyItem with
+  config, grammarName, env, defs, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
 propagate 
   config, grammarName, compiledGrammars, className, instanceType,
@@ -117,7 +117,7 @@ top::InstanceBody ::=
   top.errors <-
     flatMap(
       \ m::Pair<String Boolean> ->
-        if m.snd then [] else [err(top.location, s"Missing instance member ${m.fst} for class ${top.className}")],
+        if m.snd then [] else [errFromOrigin(top, s"Missing instance member ${m.fst} for class ${top.className}")],
       top.expectedClassMembers);
 }
 
@@ -148,7 +148,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   top.errors <- id.lookupValue.errors;
   top.errors <-
     if !id.lookupValue.found || lookup(top.fullName, top.expectedClassMembers).isJust then []
-    else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
+    else [errFromOrigin(id, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
 
   top.fullName = id.lookupValue.fullName;
 
@@ -179,5 +179,5 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   e.frame = globalExprContext(top.fullName, foldContexts(top.frameContexts), typeScheme.typerep, myFlowGraph, sourceGrammar=top.grammarName);
 } action {
-  insert semantic token IdTypeClassMember_t at id.baseNameLoc;
+  insert semantic token IdTypeClassMember_t at id.nameLoc;
 }

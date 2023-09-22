@@ -18,7 +18,7 @@ top::Expr ::=
       -- Constrain the type of the wrapped expression to the type that was inferred here,
       -- to allow for any type class constraints to be resolved in the translation.
       silver:rewrite:anyASTExpr(
-        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(top.finalType, location=top.location)} = $Expr{top}
+        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(top.finalType)} = $Expr{top}
         in rewrite_rule_anyAST_val__
         end)
     });
@@ -44,11 +44,10 @@ top::Expr ::= q::Decorated! QName _ _ _
           antiquoteASTExpr(
             Silver_Expr {
               silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(top.finalType.decoratedType, location=builtin)} ->
+                \ e::$TypeExpr{typerepTypeExpr(top.finalType.decoratedType)} ->
                   $Expr{
                     decorateExprWithEmpty(
-                      'decorate', Silver_Expr { e }, 'with', '{', '}',
-                      location=top.location)})
+                      'decorate', Silver_Expr { e }, 'with', '{', '}')})
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())
@@ -182,7 +181,7 @@ top::Expr ::= e::Expr '.' 'forward'
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.forward)
+            \ e::$TypeExpr{typerepTypeExpr(finalTy)} -> e.forward)
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -196,7 +195,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.finalType, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(e.finalType)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -210,7 +209,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.finalType, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(e.finalType)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -224,7 +223,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.finalType, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(e.finalType)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -238,7 +237,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.finalType, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(e.finalType)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -268,15 +267,15 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                 lambdap(
                   productionRHSCons(
                     productionRHSElem(
-                      name("_e", builtin), '::',
-                      typerepTypeExpr(eUndec.finalType, location=builtin),
+                      name("_e"), '::',
+                      typerepTypeExpr(eUndec.finalType),
                       location=builtin),
                     inh.lambdaParams,
                     location=builtin),
                   Silver_Expr {
                     $Expr{
                       decorateExprWith(
-                        'decorate', baseExpr(qName(builtin, "_e"), location=builtin),
+                        'decorate', baseExpr(qName("_e")),
                         'with', '{', inh.bodyExprInhTransform, '}',
                         location=builtin)}.$qName{q.name}
                   },
@@ -293,7 +292,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         antiquoteASTExpr(
           Silver_Expr {
             silver:rewrite:anyASTExpr(
-              \ e::$TypeExpr{typerepTypeExpr(e.finalType.decoratedType, location=builtin)} -> e.$qName{q.name})
+              \ e::$TypeExpr{typerepTypeExpr(e.finalType.decoratedType)} -> e.$qName{q.name})
           }),
         consASTExpr(varASTExpr(qn.name), nilASTExpr()),
         nilNamedASTExpr())
@@ -302,7 +301,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
         antiquoteASTExpr(
           Silver_Expr {
             silver:rewrite:anyASTExpr(
-              \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+              \ e::$TypeExpr{typerepTypeExpr(finalTy)} -> e.$qName{q.name})
           }),
         consASTExpr(e.transform, nilASTExpr()),
         nilNamedASTExpr())
@@ -325,7 +324,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalTy)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -347,7 +346,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalTy)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -369,7 +368,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalTy)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -391,7 +390,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalTy, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalTy)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -409,13 +408,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
               lambdap(
                 productionRHSCons(
                   productionRHSElem(
-                    name("_e", builtin), '::',
-                    typerepTypeExpr(e.finalType, location=builtin),
+                    name("_e"), '::',
+                    typerepTypeExpr(e.finalType),
                     location=builtin),
                   inh.lambdaParams,
                   location=builtin),
                 decorateExprWith(
-                  'decorate', baseExpr(qName(builtin, "_e"), location=builtin),
+                  'decorate', baseExpr(qName("_e")),
                   'with', '{', inh.bodyExprInhTransform, '}',
                   location=builtin),
                 location=builtin)})
@@ -433,7 +432,7 @@ aspect production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.transform = nilASTExpr();
-  top.lambdaParams = productionRHSNil(location=builtin);
+  top.lambdaParams = productionRHSNil();
 }
 
 aspect production exprInhsOne
@@ -441,14 +440,14 @@ top::ExprInhs ::= lhs::ExprInh
 {
   top.transform = consASTExpr(lhs.transform, nilASTExpr());
   top.lambdaParams =
-    productionRHSCons(lhs.lambdaParam, productionRHSNil(location=builtin), location=builtin);
+    productionRHSCons(lhs.lambdaParam, productionRHSNil());
 }
 
 aspect production exprInhsCons
 top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.transform = consASTExpr(lhs.transform, inh.transform);
-  top.lambdaParams = productionRHSCons(lhs.lambdaParam, inh.lambdaParams, location=builtin);
+  top.lambdaParams = productionRHSCons(lhs.lambdaParam, inh.lambdaParams);
 }
 
 attribute transform<ASTExpr> occurs on ExprInh;
@@ -463,11 +462,11 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.lambdaParam =
     productionRHSElem(
       name(paramName, builtin), '::',
-      typerepTypeExpr(e.finalType, location=builtin),
+      typerepTypeExpr(e.finalType),
       location=builtin);
   top.bodyExprInhTransform =
     exprInh(
-      lhs, '=', baseExpr(qName(builtin, paramName), location=builtin), ';',
+      lhs, '=', baseExpr(qName(paramName)), ';',
       location=builtin);
 }
 
@@ -707,8 +706,8 @@ aspect production exprsEmpty
 top::Exprs ::=
 {
   top.transform = nilASTExpr();
-  top.lambdaParams = productionRHSNil(location=builtin);
-  top.lambdaParamRefs = exprsEmpty(location=builtin);
+  top.lambdaParams = productionRHSNil();
+  top.lambdaParamRefs = exprsEmpty();
 }
 aspect production exprsSingle
 top::Exprs ::= e::Expr
@@ -720,13 +719,13 @@ top::Exprs ::= e::Expr
     productionRHSCons(
       productionRHSElem(
         name(lambdaParamName, builtin), '::',
-        typerepTypeExpr(e.finalType, location=builtin),
+        typerepTypeExpr(e.finalType),
         location=builtin),
-      productionRHSNil(location=builtin),
+      productionRHSNil(),
       location=builtin);
   top.lambdaParamRefs =
     exprsSingle(
-      baseExpr(qName(builtin,lambdaParamName), location=builtin),
+      baseExpr(qName(builtin,lambdaParamName)),
       location=builtin);
 }
 aspect production exprsCons
@@ -739,13 +738,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
     productionRHSCons(
       productionRHSElem(
         name(lambdaParamName, builtin), '::',
-        typerepTypeExpr(e1.finalType, location=builtin),
+        typerepTypeExpr(e1.finalType),
         location=builtin),
       e2.lambdaParams,
       location=builtin);
   top.lambdaParamRefs =
     exprsCons(
-      baseExpr(qName(builtin, lambdaParamName), location=builtin),
+      baseExpr(qName(lambdaParamName)),
       ',', e2.lambdaParamRefs,
       location=builtin);
 }

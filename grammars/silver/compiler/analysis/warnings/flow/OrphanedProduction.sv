@@ -43,7 +43,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     && !isClosedNt
     -- AND this production is not exported by the nonterminal definition grammar... even including options
     && !isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned production: " ++ id.name ++ " on " ++ namedSig.outputElement.typerep.typeName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned production: " ++ id.name ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
 }
 

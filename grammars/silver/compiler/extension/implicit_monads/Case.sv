@@ -38,8 +38,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local basicFailure::Expr = mkStrFunctionInvocation(top.location, "silver:core:error",
                                [stringConst(terminal(String_t, 
                                   "\"Error: pattern match failed at " ++ top.grammarName ++
-                                  " " ++ top.location.unparse ++ "\\n\""),
-                                location=top.location)]);
+                                  " " ++ top.location.unparse ++ "\\n\""))]);
   {-
     Inserting fails breaks down if the current monad's fail is
     expecting something other than a string, integer, float, or list,
@@ -92,7 +91,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                 makeLet(top.location, p.3, monadInnerType(p.1, top.location), p.2, rest),
               caseExpr(monadStuff.snd,
                  ml.matchRuleList, !isMonadFail(top.expectedMonad, top.env), failure,
-                 outty, location=top.location),
+                 outty),
               monadStuff.1);
   monadLocal.mDownSubst = ml.mUpSubst;
   monadLocal.frame = top.frame;
@@ -178,7 +177,7 @@ function monadicMatchTypesNames
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then ((ety, decE.monadRewritten, newName) :: subcall.1,
-                   baseExpr(qName(loc, newName), location=loc) :: subcall.2)
+                   baseExpr(qName(newName)) :: subcall.2)
              else (subcall.1, new(decE)::subcall.2)
            end
          end;
@@ -242,7 +241,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
                 | matchRule(_, nothing(), e) -> e
                 --cond is a Boolean
                 | matchRule(_, just((cond, nothing())), e) ->
-                  ifThenElse('if', cond, 'then', e, 'else', rest, location=loc)
+                  ifThenElse('if', cond, 'then', e, 'else', rest)
                 --cond is the expression for another match
                 | matchRule(_, just((cond, just(patt))), e) ->
                   Silver_Expr {
@@ -301,9 +300,9 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
                                        compileRest, retType, _, env),
               constructorGroups);
   local currentConCase::Expr =
-        matchPrimitive(firstMatchExpr, typerepTypeExpr(retType, location=loc),
+        matchPrimitive(firstMatchExpr, typerepTypeExpr(retType),
                foldPrimPatterns(mappedPatterns),
-               compileRest, location=loc);
+               compileRest);
 
   -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
   -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
@@ -342,7 +341,7 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   local annos :: [String] =
     nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
   local annoAccesses :: [Expr] =
-    map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
+    map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(n))), annos);
   
   -- Maybe this one is more reasonable? We need to test examples and see what happens...
   local l :: Location = head(mrs).headPattern.location;
@@ -350,14 +349,14 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   return
     case head(mrs).headPattern of
     | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', terminal(Arrow_kwd, "->", l), subcase, location=l)
-    | intPattern(it) -> integerPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l)
-    | fltPattern(it) -> floatPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l)
-    | strPattern(it) -> stringPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l)
-    | truePattern(_) -> booleanPattern("true", terminal(Arrow_kwd, "->", l), subcase, location=l)
-    | falsePattern(_) -> booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase, location=l)
-    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
-    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
+        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', terminal(Arrow_kwd, "->", l), subcase)
+    | intPattern(it) -> integerPattern(it, terminal(Arrow_kwd, "->", l), subcase)
+    | fltPattern(it) -> floatPattern(it, terminal(Arrow_kwd, "->", l), subcase)
+    | strPattern(it) -> stringPattern(it, terminal(Arrow_kwd, "->", l), subcase)
+    | truePattern(_) -> booleanPattern("true", terminal(Arrow_kwd, "->", l), subcase)
+    | falsePattern(_) -> booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase)
+    | nilListPattern(_,_) -> nilPattern(subcase)
+    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase)
     | _ -> error("Can only have constructor patterns in monadAllConCaseTransform")
     end;
 }
@@ -370,7 +369,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   propagate config, frame, env;
 
   top.merrors := [];
-  top.merrors <- if isMonadPlus_instance then [] else [err(top.location, notMonadPlus)];
+  top.merrors <- if isMonadPlus_instance then [] else [errFromOrigin(top, notMonadPlus)];
 
   ml.mDownSubst = top.mDownSubst;
   local monadInExprs::Boolean =
@@ -389,13 +388,13 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   --we need fresh names for the expressions being matched on, which we will use to only evaluate them once
   local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
   local params::[Pair<String Type>] = zip(newNames, ml.patternTypeList);
-  local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
+  local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(x)),
                                 newNames);
 
   --Build a separate case expression for each match rule with mzero as the failure
   local caseExprs::[Expr] =
         map(\ x::AbstractMatchRule ->
-             caseExpr(nameExprs, [x], false, mzero, top.mtyperep, location=top.location),
+             caseExpr(nameExprs, [x], false, mzero, top.mtyperep),
             ml.matchRuleList);
   --Rewrite the case expressions, wrapped in lambdas to provide the names
   local rewrittenCaseExprs::[Expr] =
@@ -454,9 +453,8 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 
   --We need to forward to an errorExpr rather than the rewritten version to avoid flow errors
   --Because this should only be used in implicit equations, it should be fine
-  forwards to errorExpr([err(top.location,
-                             "Can only use case_any in implicit equations")],
-                        location=top.location);
+  forwards to errorExpr([errFromOrigin(top,
+                             "Can only use case_any in implicit equations")]);
 }
 
 {-

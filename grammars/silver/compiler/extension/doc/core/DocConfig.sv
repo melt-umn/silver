@@ -4,67 +4,34 @@ grammar silver:compiler:extension:doc:core;
  - Represents a single setting (key = value) of a doc configuration option.
  - Some are file-scope, and some are grammar-scope (see @link[fileScope].)
  -}
-nonterminal DocConfigSetting;
+data DocConfigSetting
+  = splitConfig v::Boolean
+  | fileSplitConfig v::Boolean
+  | weightConfig v::Integer
+  | grammarWeightConfig v::Integer
+  | grammarTitleConfig v::String
+  | titleConfig v::String
+  | grammarNoDocsConfig v::Boolean
+  | fileNoDocsConfig v::Boolean
+  | tocConfig v::Boolean
+  ;
 
 @{-
  - Is this @link[DocConfigSetting] local to the file (e.g. @@title) or to the
  - grammar (e.g. @@grammarTitle)?
  -}
 synthesized attribute fileScope::Boolean occurs on DocConfigSetting;
-
-abstract production splitConfig
-top::DocConfigSetting ::= v::Boolean
-{
-  top.fileScope = false;
-}
-
-abstract production fileSplitConfig
-top::DocConfigSetting ::= v::Boolean
-{
-  top.fileScope = true;
-}
-
-abstract production weightConfig
-top::DocConfigSetting ::= v::Integer
-{
-  top.fileScope = true;
-}
-
-abstract production grammarWeightConfig
-top::DocConfigSetting ::= v::Integer
-{
-  top.fileScope = false;
-}
-
-abstract production grammarTitleConfig
-top::DocConfigSetting ::= v::String
-{
-  top.fileScope = false;
-}
-
-abstract production titleConfig
-top::DocConfigSetting ::= v::String
-{
-  top.fileScope = true;
-}
-
-abstract production grammarNoDocsConfig
-top::DocConfigSetting ::= v::Boolean
-{
-  top.fileScope = false;
-}
-
-abstract production fileNoDocsConfig
-top::DocConfigSetting ::= v::Boolean
-{
-  top.fileScope = true;
-}
-
-abstract production tocConfig
-top::DocConfigSetting ::= v::Boolean
-{
-  top.fileScope = true;
-}
+aspect fileScope on DocConfigSetting of
+| splitConfig(_) -> true
+| fileSplitConfig(_) -> true
+| weightConfig(_) -> true
+| grammarWeightConfig(_) -> false
+| grammarTitleConfig(_) -> false
+| titleConfig(_) -> true
+| grammarNoDocsConfig(_) -> false
+| fileNoDocsConfig(_) -> true
+| tocConfig(_) -> true
+end;
 
 
 -- a grammar with @excludeGrammar containing file(s) with @excludeFile false will

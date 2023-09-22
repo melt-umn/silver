@@ -2,32 +2,17 @@ import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:flow:driver;
 
+data ContextOriginInfoSource
+  = useContextLhsAndRules
+  | useRuntimePassedInfo
+  | useBogusInfo  name::String;
+
 {--
  - Does code generated in this block need to reference originsCtx, or can it
  - get information from the frame's left-hand-side and rules? Effectively, is
  - this code in a function or a production?
  -}
 synthesized attribute originsContextSource :: ContextOriginInfoSource occurs on BlockContext;
-
-nonterminal ContextOriginInfoSource;
-
-abstract production useContextLhsAndRules
-top::ContextOriginInfoSource ::=
-{
-	
-}
-
-abstract production useRuntimePassedInfo
-top::ContextOriginInfoSource ::=
-{
-	
-}
-
-abstract production useBogusInfo
-top::ContextOriginInfoSource ::= name::String
-{
-	
-}
 
 aspect production functionContext
 top::BlockContext ::= sig::NamedSignature  g::ProductionGraph

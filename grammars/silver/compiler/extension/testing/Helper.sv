@@ -14,7 +14,7 @@ import silver:compiler:modification:list;
 function mkNameExpr
 Expr ::= name::String  l::Location
 { 
-  return baseExpr(qName(l, name), location=l);
+  return baseExpr(qName(name));
 }
 
 -- fold a list of expressions(Expr) into a single "++"-separated Expr
@@ -38,7 +38,7 @@ function attrAcc
 Expr ::= n::String a::String l::Location
 {
   return  
-    access(mkNameExpr(n, l), '.', qNameAttrOccur(qName(l, a), location=l), location=l);
+    access(mkNameExpr(n, l), '.', qNameAttrOccur(qName(a)));
 }
 
 -- replace " characters with two: \ and "

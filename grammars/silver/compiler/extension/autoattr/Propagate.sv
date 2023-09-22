@@ -7,7 +7,7 @@ top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'excluding' ps::Pr
   propagate env;
   
   top.errors <- ps.errors;
-  forwards to propagateOnNTListDcl(attrs, nts, ps, location=top.location);
+  forwards to propagateOnNTListDcl(attrs, nts, ps);
 }
 
 concrete production propagateOnNTListDcl_c
@@ -16,7 +16,7 @@ top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList ';'
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse};";
   
   forwards to
-    propagateOnNTListDcl(attrs, nts, prodNameListNil(location=top.location), location=top.location);
+    propagateOnNTListDcl(attrs, nts, prodNameListNil());
 }
 
 abstract production propagateOnNTListDcl
@@ -26,12 +26,11 @@ top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> propagateOnOneNTDcl(attrs, n, ps, location=n.location)
+    | nameListOne(n) -> propagateOnOneNTDcl(attrs, n, ps)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        propagateOnOneNTDcl(attrs, n, ps, location=n.location),
-        propagateOnNTListDcl(attrs, rest, ps, location=top.location),
-        location=top.location)
+        propagateOnOneNTDcl(attrs, n, ps),
+        propagateOnNTListDcl(attrs, rest, ps))
     end;
 }
 
@@ -58,12 +57,12 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
       getKnownProds(nt.lookupType.fullName, top.env));
   local dcl::AGDcl =
     foldr(
-      appendAGDcl(_, _, location=top.location), emptyAGDcl(location=top.location),
-      map(propagateAspectDcl(_, attrs, location=nt.location), includedProds));
+      appendAGDcl(_, _), emptyAGDcl(),
+      map(propagateAspectDcl(_, attrs), includedProds));
   
   forwards to
     if !null(nt.lookupType.errors)
-    then errorAGDcl(nt.lookupType.errors, location=top.location)
+    then errorAGDcl(nt.lookupType.errors)
     else dcl;
 }
 
@@ -77,33 +76,27 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
   
   forwards to
     aspectProductionDcl(
-      'aspect', 'production', qName(top.location, d.fullName),
+      'aspect', 'production', qName(d.fullName),
       aspectProductionSignature(
         aspectProductionLHSFull(
           name(d.namedSignature.outputElement.elementName, top.location),
-          d.namedSignature.outputElement.typerep,
-          location=top.location),
+          d.namedSignature.outputElement.typerep),
         '::=',
         foldr(
-          aspectRHSElemCons(_, _, location=top.location),
-          aspectRHSElemNil(location=top.location),
+          aspectRHSElemCons(_, _),
+          aspectRHSElemNil(),
           map(
             \ ie::NamedSignatureElement ->
               aspectRHSElemFull(
                 name(ie.elementName, top.location),
-                freshenType(ie.typerep, ie.typerep.freeVariables),
-                location=top.location),
-            d.namedSignature.inputElements)),
-        location=top.location),
+                freshenType(ie.typerep, ie.typerep.freeVariables)),
+            d.namedSignature.inputElements))),
       productionBody(
         '{',
         productionStmtsSnoc(
-          productionStmtsNil(location=top.location),
-          propagateAttrList('propagate', attrs, ';', location=top.location),
-          location=top.location),
-        '}',
-        location=top.location),
-      location=top.location);
+          productionStmtsNil(),
+          propagateAttrList('propagate', attrs, ';')),
+        '}'));
 }
 
 concrete production propagateAttrList
@@ -115,12 +108,11 @@ top::ProductionStmt ::= 'propagate' ns::NameList ';'
   -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
-    | nameListOne(n) -> propagateOneAttr(n, location=top.location)
+    | nameListOne(n) -> propagateOneAttr(n)
     | nameListCons(n, _, rest) ->
       productionStmtAppend(
-        propagateOneAttr(n, location=n.location),
-        propagateAttrList($1, rest, $3, location=top.location),
-        location=top.location)
+        propagateOneAttr(n),
+        propagateAttrList($1, rest, $3))
     end;
 }
 
@@ -143,23 +135,22 @@ top::ProductionStmt ::= attr::QName
   top.productionAttributes := [];
   forwards to
     if !null(attr.lookupAttribute.errors)
-    then errorProductionStmt(attr.lookupAttribute.errors, location=top.location)
+    then errorProductionStmt(attr.lookupAttribute.errors)
     else attr.lookupAttribute.dcl.propagateDispatcher(attr, top.location);
 }
 
 abstract production propagateError
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(attr);
   forwards to
     errorProductionStmt(
-      [err(attr.location, s"Attribute ${attr.name} cannot be propagated")],
-      location=top.location);
+      [errFromOrigin(attr, s"Attribute ${attr.name} cannot be propagated")]);
 }
 
 
 -- Need a seperate nonterminal since this can be empty and needs env to check errors
-nonterminal ProdNameList with config, grammarName, env, location, unparse, names, errors;
+tracked nonterminal ProdNameList with config, grammarName, env, unparse, names, errors;
 propagate config, grammarName, env, errors on ProdNameList;
 
 abstract production prodNameListNil
@@ -180,7 +171,7 @@ top::ProdNameList ::= n::QName
     then
       case n.lookupValue.dcl of
       | prodDcl(_, _) -> []
-      | _ -> [err(n.location, n.name ++ " is not a production")]
+      | _ -> [errFromOrigin(n, n.name ++ " is not a production")]
       end
     else [];
 }
@@ -196,7 +187,7 @@ top::ProdNameList ::= h::QName ',' t::ProdNameList
     then
       case h.lookupValue.dcl of
       | prodDcl(_, _) -> []
-      | _ -> [err(h.location, h.name ++ " is not a production")]
+      | _ -> [errFromOrigin(h, h.name ++ " is not a production")]
       end
     else [];
 }

@@ -69,7 +69,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
                     )];
 
   top.errors <- if length(ffidefs.ffiTranslationString) > 1
-                then [err(ffidefs.location, "There is more than one Java translation in this FFI function")]
+                then [errFromOrigin(ffidefs, "There is more than one Java translation in this FFI function")]
                 else [];
 }
 

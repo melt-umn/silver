@@ -115,19 +115,19 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       trans::(String, String, String, String) <-
         lookup(prodName, collectionAntiquoteProductions);
       return
-        errorExpr([err(givenLocation, s"$$${trans.1} may only occur as a member of ${trans.1}")], location=givenLocation);
+        errorExpr([err(givenLocation, s"$$${trans.1} may only occur as a member of ${trans.1}")]);
     };
   
   antiquoteTranslation <-
     if contains(prodName, patternAntiquoteProductions)
-    then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")], location=givenLocation))
+    then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")]))
     else nothing();
   
   top.translation =
     fromMaybe(
       mkFullFunctionInvocation(
         givenLocation,
-        baseExpr(qName(givenLocation, prodName), location=givenLocation),
+        baseExpr(qName(prodName)),
         children.translation,
         filter(\ a::(String, Expr) -> a.1 != "location", annotations.translation)),
       antiquoteTranslation);
@@ -165,14 +165,14 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   
   patternAntiquoteTranslation <-
     if contains(prodName, directAntiquoteProductions ++ map(fst, collectionAntiquoteProductions))
-    then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
+    then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")]))
     else nothing();
   
   -- Note that we intentionally ignore annotations here
   top.patternTranslation =
     fromMaybe(
       prodAppPattern(
-        qName(givenLocation, prodName),
+        qName(prodName),
         '(',
         children.patternTranslation,
         ')',
@@ -201,11 +201,11 @@ top::AST ::= terminalName::String lexeme::String location::Location
         location=top.givenLocation),
       ',',
       locationAST.translation,
-      ')', location=top.givenLocation);
+      ')');
   
   -- TODO: What to do here- warn about this maybe?
   -- Shouldn't really be an issue unless matching against concrete syntax containing non-fixed terminals
-  top.patternTranslation = wildcPattern('_', location=top.givenLocation);
+  top.patternTranslation = wildcPattern('_');
 }
 
 aspect production listAST
@@ -215,13 +215,13 @@ top::AST ::= vals::ASTs
     fullList(
       '[',
       foldr(
-        exprsCons(_, ',', _, location=top.givenLocation),
-        exprsEmpty(location=top.givenLocation),
+        exprsCons(_, ',', _),
+        exprsEmpty(),
         vals.translation),
       ']',
       location=top.givenLocation);
   top.patternTranslation =
-    listPattern('[', vals.patternTranslation, ']', location=top.givenLocation);
+    listPattern('[', vals.patternTranslation, ']');
 }
 
 aspect production stringAST
@@ -241,18 +241,18 @@ aspect production integerAST
 top::AST ::= i::Integer
 {
   top.translation =
-    intConst(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
+    intConst(terminal(Int_t, toString(i), top.givenLocation));
   top.patternTranslation =
-    intPattern(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
+    intPattern(terminal(Int_t, toString(i), top.givenLocation));
 }
 
 aspect production floatAST
 top::AST ::= f::Float
 {
   top.translation =
-    floatConst(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
+    floatConst(terminal(Float_t, toString(f), top.givenLocation));
   top.patternTranslation =
-    fltPattern(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
+    fltPattern(terminal(Float_t, toString(f), top.givenLocation));
 }
 
 aspect production booleanAST
@@ -260,12 +260,12 @@ top::AST ::= b::Boolean
 {
   top.translation =
     if b
-    then trueConst('true', location=top.givenLocation)
-    else falseConst('false', location=top.givenLocation);
+    then trueConst('true')
+    else falseConst('false');
   top.patternTranslation =
     if b
-    then truePattern('true', location=top.givenLocation)
-    else falsePattern('false', location=top.givenLocation);
+    then truePattern('true')
+    else falsePattern('false');
 }
 
 aspect production anyAST
@@ -290,7 +290,7 @@ top::ASTs ::= h::AST t::ASTs
 {
   top.translation = h.translation :: t.translation;
   top.patternTranslation =
-    patternList_more(h.patternTranslation, ',', t.patternTranslation, location=top.givenLocation);
+    patternList_more(h.patternTranslation, ',', t.patternTranslation);
   top.foundLocation =
     -- Try to reify the last child as a location
     case t of
@@ -307,7 +307,7 @@ aspect production nilAST
 top::ASTs ::=
 {
   top.translation = [];
-  top.patternTranslation = patternList_nil(location=top.givenLocation);
+  top.patternTranslation = patternList_nil();
   top.foundLocation = nothing();
 }
 
@@ -353,8 +353,8 @@ Name ::= n::String loc::Location
 {
   return
     if isUpper(head(explode("", n)))
-    then nameIdUpper(terminal(IdUpper_t, n, loc), location=loc)
-    else nameIdLower(terminal(IdLower_t, n, loc), location=loc);
+    then nameIdUpper(terminal(IdUpper_t, n, loc))
+    else nameIdLower(terminal(IdLower_t, n, loc));
 }
 
 function makeQName
@@ -363,8 +363,8 @@ QName ::= n::String loc::Location
   local ns::[Name] = map(makeName(_, loc), explode(":", n));
   return
     foldr(
-      qNameCons(_, ':', _, location=loc),
-      qNameId(last(ns), location=loc),
+      qNameCons(_, ':', _),
+      qNameId(last(ns)),
       init(ns));
 }
 
@@ -374,7 +374,7 @@ QNameType ::= n::String loc::Location
   local ns::[String] = explode(":", n);
   return
     foldr(
-      qNameTypeCons(_, ':', _, location=loc),
-      qNameTypeId(terminal(IdUpper_t, last(ns), loc), location=loc),
+      qNameTypeCons(_, ':', _),
+      qNameTypeId(terminal(IdUpper_t, last(ns), loc)),
       map(makeName(_, loc), init(ns)));
 }

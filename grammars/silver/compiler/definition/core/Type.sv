@@ -1,10 +1,10 @@
 grammar silver:compiler:definition:core;
 
 -- LHS type gives this to 'application' for "foo(...)" calls.
-synthesized attribute applicationDispatcher :: (Expr ::= Decorated! Expr  Decorated! AppExprs  Decorated! AnnoAppExprs  Location);
+synthesized attribute applicationDispatcher :: (Expr ::= Decorated! Expr  Decorated! AppExprs  Decorated! AnnoAppExprs);
 -- LHS type gives this to 'access' for "foo.some" accesses.
 -- (See DclInfo for the next step)
-synthesized attribute accessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location);
+synthesized attribute accessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur);
 
 -- Used for poor man's type classes
 -- TODO: Finish removing these and replace with real type classes
@@ -15,8 +15,8 @@ attribute applicationDispatcher, accessHandler, instanceNum occurs on Type;
 aspect default production
 top::Type ::=
 {
-  top.applicationDispatcher = errorApplication(_, _, _, location=_);
-  top.accessHandler = errorAccessHandler(_, _, location=_);
+  top.applicationDispatcher = errorApplication;
+  top.accessHandler = errorAccessHandler;
   top.instanceNum = false;
 }
 
@@ -38,7 +38,7 @@ top::Type ::= c::Type a::Type
 aspect production skolemType
 top::Type ::= _
 {
-  top.accessHandler = undecoratedAccessHandler(_, _, location=_);
+  top.accessHandler = undecoratedAccessHandler;
 }
 
 aspect production intType
@@ -58,31 +58,31 @@ top::Type ::= fn::String _ data::Boolean _
 {
   top.accessHandler =
     if data
-    then dataAccessHandler(_, _, location=_)
-    else undecoratedAccessHandler(_, _, location=_);
+    then dataAccessHandler(_, _)
+    else undecoratedAccessHandler(_, _);
 }
 
 aspect production terminalType
 top::Type ::= fn::String
 {
-  top.accessHandler = terminalAccessHandler(_, _, location=_);
+  top.accessHandler = terminalAccessHandler;
 }
 
 aspect production decoratedType
 top::Type ::= te::Type _
 {
-  top.accessHandler = decoratedAccessHandler(_, _, location=_);
+  top.accessHandler = decoratedAccessHandler;
 }
 
 aspect production uniqueDecoratedType
 top::Type ::= te::Type _
 {
-  top.accessHandler = decoratedAccessHandler(_, _, location=_);
+  top.accessHandler = decoratedAccessHandler;
 }
 
 aspect production functionType
 top::Type ::= _ _
 {
-  top.applicationDispatcher = functionApplication(_, _, _, location=_);
+  top.applicationDispatcher = functionApplication;
 }
 

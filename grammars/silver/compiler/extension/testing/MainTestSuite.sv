@@ -20,23 +20,23 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
 
   local sig :: ProductionSignature =
     productionSignature(
-      nilConstraint(location=top.location), '=>',
-      productionLHS(name("t", top.location), '::',
-        nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location), location=top.location), location=top.location), location=top.location),
-     '::=', productionRHSNil(location=top.location), location=top.location);
+      nilConstraint(), '=>',
+      productionLHS(name("t"), '::',
+        nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location)))),
+     '::=', productionRHSNil());
 
   local bod :: [ProductionStmt] =
-    [forwardsTo('forwards', 'to', mkStrFunctionInvocation(top.location, "testsAsNT", [mkNameExpr("testsToPerform", top.location)]), ';', location=top.location),
-     collectionAttributeDclProd('production', 'attribute', name("testsToPerform", top.location), '::',
-       listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", top.location), location=top.location), location=top.location), ']', location=top.location),
-       'with', plusplusOperator('++', location=top.location), ';', location=top.location),
-     valContainsBase(qName(top.location, "testsToPerform"), ':=', emptyList('[',']', location=top.location), ';', location=top.location)
+    [forwardsTo('forwards', 'to', mkStrFunctionInvocation(top.location, "testsAsNT", [mkNameExpr("testsToPerform", top.location)]), ';'),
+     collectionAttributeDclProd('production', 'attribute', name("testsToPerform"), '::',
+       listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", top.location))), ']'),
+       'with', plusplusOperator('++'), ';'),
+     valContainsBase(qName("testsToPerform"), ':=', emptyList('[',']'), ';')
     ];
 
   forwards to
-    productionDcl('abstract', 'production', nameIdLower(nme, location=nme.location), sig,
+    productionDcl('abstract', 'production', nameIdLower(nme), sig,
       productionBody('{',
-        foldl(productionStmtsSnoc(_, _, location=top.location), productionStmtsNil(location=top.location), bod), '}', location=top.location), location=top.location);
+        foldl(productionStmtsSnoc(_, _), productionStmtsNil(), bod), '}'));
 
   {-
     abstract production core_tests
@@ -58,41 +58,38 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
   appendAGDcl(
    functionDcl(
     -- function main
-    'function', name("main", top.location),
+    'function', name("main"),
     -- IOVal<Integer> ::= args::[String]  mainIO::IOToken
     functionSignature(
-      nilConstraint(location=top.location), '=>',
+      nilConstraint(), '=>',
      functionLHS(
        appTypeExpr(
-         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOVal", top.location), location=top.location), location=top.location),
-         bTypeList('<', typeListSingle(integerTypeExpr('Integer', location=top.location), location=top.location), '>', location=top.location), location=top.location), location=top.location),
+         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOVal", top.location))),
+         bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
      '::=',
      productionRHSCons(
-      productionRHSElemType(listTypeExpr('[', stringTypeExpr('String', location=top.location), ']', location=top.location), location=top.location),
+      productionRHSElemType(listTypeExpr('[', stringTypeExpr('String'), ']')),
       productionRHSCons(
        productionRHSElem(
-        name("mainIO", top.location),
-        '::', typerepTypeExpr(ioForeignType, location=top.location), location=top.location),
-       productionRHSNil(location=top.location),
-      location=top.location),
-     location=top.location),
-    location=top.location),
+        name("mainIO"),
+        '::', typerepTypeExpr(ioForeignType)),
+       productionRHSNil()))),
     -- body::ProductionBody 
    productionBody('{',
-    foldl(productionStmtsSnoc(_, _, location=top.location), productionStmtsNil(location=top.location), [
+    foldl(productionStmtsSnoc(_, _), productionStmtsNil(), [
      --  local testResults :: TestSuite;
      localAttributeDcl(
-      'local', 'attribute', name("testResults", top.location), '::',
-      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite", top.location), location=top.location), location=top.location), ';', location=top.location),
+      'local', 'attribute', name("testResults"), '::',
+      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite", top.location))), ';'),
      -- testResults = name()
-     valueEq( qName(top.location, "testResults"), '=', 
-                 applicationEmpty( baseExpr( qNameId(nameIdLower(nme, location=top.location), location=top.location), location=top.location), 
-                  '(', ')', location=top.location),
-                 ';', location=top.location),
+     valueEq( qName("testResults"), '=', 
+                 applicationEmpty( baseExpr( qNameId(nameIdLower(nme))), 
+                  '(', ')'),
+                 ';'),
      -- testResults.ioIn = ...
      attributeDef( 
-         concreteDefLHS( qName(top.location, "testResults"), location=top.location), '.', qNameAttrOccur(qName(top.location, "ioIn"), location=top.location),
-         '=', mkNameExpr("mainIO", top.location), ';', location=top.location),
+         concreteDefLHS( qName("testResults")), '.', qNameAttrOccur(qName("ioIn")),
+         '=', mkNameExpr("mainIO", top.location), ';'),
      -- return ...
      returnDef('return',
         mkStrFunctionInvocation(top.location, "ioval",
@@ -116,13 +113,12 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
                 attrAcc("testResults", "ioOut", top.location)
               ])
            ]),
-           intConst( terminal(Int_t, "0", top.location), location=top.location) 
+           intConst( terminal(Int_t, "0", top.location)) 
          ]), 
-         ';', location=top.location)
-    ]), '}', location=top.location), location=top.location),
+         ';')
+    ]), '}')),
 
-  makeTestSuite_p( 'makeTestSuite', nme, ';', location=top.location),
-  location=top.location);
+  makeTestSuite_p( 'makeTestSuite', nme, ';'));
 }
 
 

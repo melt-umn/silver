@@ -5,7 +5,7 @@ synthesized attribute loc :: Location;
 synthesized attribute stub :: Boolean;
 synthesized attribute docNames :: [String];
 synthesized attribute undocNames :: [String];
-nonterminal CommentItem with body, loc, doEmit, stub, docNames, undocNames;
+tracked nonterminal CommentItem with body, loc, doEmit, stub, docNames, undocNames;
 
 {-
 Used by other productions to construct 

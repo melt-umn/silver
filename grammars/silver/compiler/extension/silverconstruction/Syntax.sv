@@ -56,16 +56,15 @@ top::Expr ::= '$Expr' '{' e::Expr '}'
   top.unparse = s"$$Expr{${e.unparse}}";
   forwards to
     errorExpr(
-      [err(top.location, "$Expr should not occur outside of quoted Silver literal")],
-      location=top.location);
+      [errFromOrigin(top, "$Expr should not occur outside of quoted Silver literal")]);
 }
 
 concrete production antiquoteExprInhs
 top::ExprInhs ::= '$ExprInhs' '{' e::Expr '}'
 {
   top.unparse = s"$$ExprInhs{${e.unparse}}";
-  -- TODO: [err(top.location, "$ExprInhs should not occur outside of quoted Silver literal")]
-  forwards to exprInhsEmpty(location=top.location);
+  -- TODO: [errFromOrigin(top, "$ExprInhs should not occur outside of quoted Silver literal")]
+  forwards to exprInhsEmpty();
 }
 
 concrete production antiquoteTypeExpr
@@ -74,16 +73,15 @@ top::TypeExpr ::= '$TypeExpr' '{' e::Expr '}'
   top.unparse = s"$$TypeExpr{${e.unparse}}";
   forwards to
     errorTypeExpr(
-      [err(top.location, "$TypeExpr should not occur outside of quoted Silver literal")],
-      location=top.location);
+      [errFromOrigin(top, "$TypeExpr should not occur outside of quoted Silver literal")]);
 }
 
 concrete production antiquoteConstraintList
 top::ConstraintList ::= '$ConstraintList' '{' e::Expr '}'
 {
   top.unparse = s"$$ConstraintList{${e.unparse}}";
-  -- [err(top.location, "$ConstraintList should not occur outside of quoted Silver Literal.")]
-  forwards to nilConstraint(location=top.location);
+  -- [errFromOrigin(top, "$ConstraintList should not occur outside of quoted Silver Literal.")]
+  forwards to nilConstraint();
 }
 
 concrete production antiquotePattern
@@ -92,22 +90,21 @@ top::Pattern ::= '$Pattern' '{' e::Expr '}'
   top.unparse = s"$$Pattern{${e.unparse}}";
   forwards to
     errorPattern(
-      [err(top.location, "$Pattern should not occur outside of quoted Silver literal")],
-      location=top.location);
+      [errFromOrigin(top, "$Pattern should not occur outside of quoted Silver literal")]);
 }
 
 concrete production antiquoteProductionRHS
 top::ProductionRHS ::= '$ProductionRHS' '{' e::Expr '}'
 {
   top.unparse = s"$$ProductionRHS{${e.unparse}}";
-  forwards to productionRHSNil(location=top.location);
+  forwards to productionRHSNil();
 }
 
 concrete production antiquoteAspectRHS
 top::AspectRHS ::= '$AspectRHS' '{' e::Expr '}'
 {
   top.unparse = s"$$AspectRHS{${e.unparse}}";
-  forwards to aspectRHSElemNil(location=top.location);
+  forwards to aspectRHSElemNil();
 }
 
 concrete production antiquoteProductionStmt
@@ -116,8 +113,7 @@ top::ProductionStmt ::= '$ProductionStmt' '{' e::Expr '}'
   top.unparse = s"$$ProductionStmt{${e.unparse}}";
   forwards to
     errorProductionStmt(
-      [err(top.location, "$ProductionStmt should not occur outside of quoted Silver Literal.")],
-      location=top.location);
+      [errFromOrigin(top, "$ProductionStmt should not occur outside of quoted Silver Literal.")]);
 }
 
 
@@ -127,8 +123,7 @@ top::QName ::= '$QName' '{' e::Expr '}'
   top.unparse = s"$$QName{${e.unparse}}";
   forwards to
     qNameError(
-      [err(top.location, "$QName should not occur outside of quoted Silver literal")],
-      location=top.location);
+      [errFromOrigin(top, "$QName should not occur outside of quoted Silver literal")]);
 }
 
 concrete production antiquoteQNameAttrOccur
@@ -138,17 +133,15 @@ top::QNameAttrOccur ::= '$QNameAttrOccur' '{' e::Expr '}'
   forwards to
     qNameAttrOccur(
       qNameError(
-        [err(top.location, "$QNameAttrOccur should not occur outside of quoted Silver literal")],
-        location=top.location),
-      location=top.location);
+        [errFromOrigin(top, "$QNameAttrOccur should not occur outside of quoted Silver literal")]));
 }
 
 concrete production antiquoteName
 top::Name ::= '$Name' '{' e::Expr '}'
 {
   top.unparse = s"$$Name{${e.unparse}}";
-  -- TODO: [err(top.location, "$Name should not occur outside of quoted Silver literal")]
-  forwards to name("err", top.location);
+  -- TODO: [errFromOrigin(top, "$Name should not occur outside of quoted Silver literal")]
+  forwards to name("err");
 }
 
 concrete production antiquote_qName
@@ -157,14 +150,13 @@ top::QName ::= '$qName' '{' e::Expr '}'
   top.unparse = s"$$qName{${e.unparse}}";
   forwards to
     qNameError(
-      [err(top.location, "$qName should not occur outside of Silver_Expr")],
-      location=top.location);
+      [errFromOrigin(top, "$qName should not occur outside of Silver_Expr")]);
 }
 
 concrete production antiquote_name
 top::Name ::= '$name' '{' e::Expr '}'
 {
   top.unparse = s"$$name{${e.unparse}}";
-  -- TODO: [err(top.location, "$Name should not occur outside of quoted Silver literal")]
-  forwards to name("err", top.location);
+  -- TODO: [errFromOrigin(top, "$Name should not occur outside of quoted Silver literal")]
+  forwards to name("err");
 }

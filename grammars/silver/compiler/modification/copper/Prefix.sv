@@ -20,7 +20,7 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
 inherited attribute prefixedTerminals::[String];
 inherited attribute prefixedGrammars::[String];
 synthesized attribute terminalPrefix::String;
-nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
+tracked nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, unparse, errors, syntaxAst, genFiles, terminalPrefix;
 
 propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, errors, syntaxAst, genFiles on TerminalPrefix;
 
@@ -31,7 +31,7 @@ top::TerminalPrefix ::= s::QName
   top.errors <- s.lookupType.errors;
   top.terminalPrefix = makeCopperName(s.lookupType.fullName);
 } action {
-  insert semantic token IdType_t at s.baseNameLoc;
+  insert semantic token IdType_t at s.nameLoc;
 }
 
 concrete production newTermModifiersTerminalPrefix
@@ -60,7 +60,7 @@ concrete production newTermTerminalPrefix
 top::TerminalPrefix ::= r::RegExpr
 {
   top.unparse = r.unparse;
-  forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone(location=top.location), location=top.location);
+  forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone());
 }
 
 concrete production seperatedTerminalPrefix
@@ -70,11 +70,11 @@ top::TerminalPrefix ::= t::String_t
   forwards to
     newTermModifiersTerminalPrefix(
       -- We pass the string prefix as a regex that does not contain the prefix separator
-      regExpr(regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), location=top.location),
+      regExpr(regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme))),
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(
-        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars, location=top.location),
+        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars),
         location=top.location),
       location=top.location);
 }
@@ -91,7 +91,7 @@ top::TerminalModifier ::= terms::[String]  grams::[String]
 
 synthesized attribute prefixItemNames::[String];
 synthesized attribute isAllMarking::Boolean;
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames, isAllMarking;
+tracked nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, unparse, errors, prefixItemNames, isAllMarking;
 propagate config, env, grammarName, componentGrammarName, compiledGrammars, errors on TerminalPrefixItems;
 
 concrete production consTerminalPrefixItem
@@ -127,7 +127,7 @@ top::TerminalPrefixItems ::=
   top.isAllMarking = true;
 }
 
-nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
+tracked nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, unparse, errors, prefixItemNames;
 propagate config, env, grammarName, componentGrammarName, compiledGrammars on TerminalPrefixItem;
 
 concrete production qNameTerminalPrefixItem
@@ -137,7 +137,7 @@ top::TerminalPrefixItem ::= t::QName
   top.errors := t.lookupType.errors;
   top.prefixItemNames = [t.lookupType.fullName];
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
 concrete production easyTerminalRefTerminalPrefixItem
@@ -146,7 +146,7 @@ top::TerminalPrefixItem ::= t::EasyTerminalRef
   propagate env;
   forwards to
     qNameTerminalPrefixItem(
-      qName(top.location, head(t.dcls).fullName),
+      qName(head(t.dcls).fullName),
       location=top.location);
 }
 
@@ -187,7 +187,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
           location=top.location, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
 -- Prefix separator

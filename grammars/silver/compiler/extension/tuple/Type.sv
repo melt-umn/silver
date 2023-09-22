@@ -2,7 +2,7 @@ grammar silver:compiler:extension:tuple;
 
 imports silver:compiler:modification:list;
 
-nonterminal ListOfTypeExprs with location, unparse, te_translation;
+tracked nonterminal ListOfTypeExprs with unparse, te_translation;
 
 -- Used to convert the comma-separated list of TypeExprs 
 -- that make up the tuple type expression into a 

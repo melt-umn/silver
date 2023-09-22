@@ -31,13 +31,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     && top.config.warnMissingInh
     -- Must be a forwarding production
     && !null(body.forwardExpr)
-    then flatMap(raiseImplicitFwdEqFlowTypes(top.config, top.location, lhsNt, fName, _, top.flowEnv, myGraph, myFlow), hostSyns)
+    then flatMap(raiseImplicitFwdEqFlowTypes(top.config, lhsNt, fName, _, top.flowEnv, myGraph, myFlow), hostSyns)
     else [];
 }
 
 
 function raiseImplicitFwdEqFlowTypes
-[Message] ::= config::Decorated CmdArgs  l::Location  lhsNt::String  prod::String  attr::String  e::FlowEnv  myGraph::ProductionGraph  myFlow::EnvTree<FlowType> 
+[Message] ::= config::Decorated CmdArgs  lhsNt::String  prod::String  attr::String  e::FlowEnv  myGraph::ProductionGraph  myFlow::EnvTree<FlowType> 
 {
   -- The actual dependencies for `forward.attr`
   local fwdFlowDeps :: set:Set<String> = onlyLhsInh(expandGraph([forwardEqVertex(), forwardSynVertex(attr)], myGraph));
@@ -50,7 +50,7 @@ function raiseImplicitFwdEqFlowTypes
   | eq :: _ -> []
   | [] ->
       if null(diff) then []
-      else [mwdaWrn(config, l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type with dependencies on ${implode(", ", diff)}")]
+      else [mwdaWrnAmbientOrigin(config, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type with dependencies on ${implode(", ", diff)}")]
   end;
 }
 
