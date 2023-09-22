@@ -524,8 +524,6 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 
   top.errors <-
     if existingProblems then []
-    else if !attr.attrDcl.isSynthesized
-    then [err(attr.location, s"Translation attribute '${attr.name}' is not synthesized, and cannot have attributes defined on it for child '${q.name}'")]
     else if !top.defLHSattr.attrDcl.isInherited
     then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
     else [];
@@ -551,8 +549,6 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 
   top.errors <-
     if existingProblems then []
-    else if !attr.attrDcl.isSynthesized
-    then [err(attr.location, s"Translation attribute '${attr.name}' is not synthesized, and cannot have attributes defined on it for local '${q.name}'")]
     else if !top.defLHSattr.attrDcl.isInherited
     then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
     else [];
