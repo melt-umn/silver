@@ -326,16 +326,16 @@ String ::= n::NamedSignatureElement
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
 function makeChildDecSiteAccessCase
-String ::= env::Decorated Env flowEnv::FlowEnv prodName::String n::NamedSignatureElement
+String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
-    case lookupRefDecSite(prodName, n.elementName, flowEnv) of
-    | [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, v)};\n"
-    | _ -> ""
+    case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
+    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
+    | _, _ -> ""
     end;
 }
 function refAccessTranslation
-String ::= env::Decorated Env flowEnv::FlowEnv v::VertexType
+String ::= env::Decorated Env flowEnv::FlowEnv lhsNtName::String v::VertexType
 {
   return
     case v of
@@ -346,10 +346,15 @@ String ::= env::Decorated Env flowEnv::FlowEnv v::VertexType
       | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
       | [] -> error("Couldn't find decl for local " ++ fName)
       end
+    | transAttrVertexType(lhsVertexType_real(), transAttr) ->
+      let transIndexName::String = head(getOccursDcl(transAttr, lhsNtName, env)).attrGlobalOccursInitIndex
+      in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
+      end
+    | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
     | forwardVertexType_real() -> s"context.forward()"
     | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
     | subtermVertexType(parent, prodName, sigName) ->
-      s"${refAccessTranslation(env, flowEnv, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+      s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
     end;
 }
 

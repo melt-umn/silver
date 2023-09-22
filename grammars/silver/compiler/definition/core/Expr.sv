@@ -17,7 +17,9 @@ nonterminal ExprLHSExpr with
 
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
-flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
+flowtype Expr =
+  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config},
+  decorate {forward, alwaysDecorated};
 
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
@@ -476,6 +478,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                else q.attrDcl.undecoratedAccessHandler)(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
+  -- transUndecoratedAccessErrorHandler
 }
 
 {--
@@ -544,6 +547,26 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
+}
+
+abstract production transDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+}
+
+abstract production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+
+  top.errors <- [err(top.location, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
 
 -- TODO: change name. really "unknownDclAccessHandler"
@@ -624,6 +647,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   e.isRoot = false;
 }
 
+-- TODO: permit supplying inhs on translation attributes
 concrete production exprLhsExpr
 top::ExprLHSExpr ::= q::QNameAttrOccur
 {

@@ -200,6 +200,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   e.downSubst = top.downSubst;
+  e.alwaysDecorated = false;
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -226,6 +227,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   e.downSubst = top.downSubst;
+  e.alwaysDecorated = false;
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -257,6 +259,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+  e.alwaysDecorated = false;
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
@@ -288,6 +291,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+  e.alwaysDecorated = false;
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;

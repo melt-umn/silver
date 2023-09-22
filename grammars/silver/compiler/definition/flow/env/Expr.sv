@@ -55,7 +55,8 @@ attribute flowVertexInfo occurs on Expr;
 
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
-    childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
+    childReference, lhsReference, localReference, forwardReference, forwardAccess,
+    synDecoratedAccessHandler, inhDecoratedAccessHandler, transDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
@@ -94,7 +95,7 @@ top::Expr ::= q::Decorated! QName
       isEquationMissing(lookupInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
         origRefSet,
-        map((.attrOccurring), getInhAttrsOn(finalTy.decoratedType.typeName, top.env))));
+        getInhAndInhOnTransAttrsOn(finalTy.decoratedType.typeName, top.env)));
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
@@ -144,7 +145,7 @@ top::Expr ::= q::Decorated! QName
       isEquationMissing(lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, _, top.flowEnv), _),
       removeAll(
         origRefSet,
-        map((.attrOccurring), getInhAttrsOn(finalTy.decoratedType.typeName, top.env))));
+        getInhAndInhOnTransAttrsOn(finalTy.decoratedType.typeName, top.env)));
   -- Add remote equations for reference site decoration with attributes that aren't supplied here
   top.flowDefs <-
     case top.decSiteVertexInfo of
@@ -178,6 +179,7 @@ aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate flowEnv;
+  e.alwaysDecorated = false;
 }
 
 aspect production errorApplication
@@ -185,7 +187,6 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 {
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
   es.alwaysDecorated = false;
   es.appProd = nothing();
 }
@@ -201,7 +202,6 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
-  e.alwaysDecorated = false;
   es.alwaysDecorated = top.alwaysDecorated;
 }
 
@@ -215,7 +215,6 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
   es.alwaysDecorated = false;
 }
 
@@ -223,8 +222,8 @@ aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
   e.appProd = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production presentAppExpr
@@ -263,12 +262,14 @@ aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   propagate flowEnv;
+  e.alwaysDecorated = false;
 }
 
 aspect production accessBouncer
 top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
   propagate flowEnv;
+  e.alwaysDecorated = false;
 }
 
 aspect production forwardAccess
@@ -288,19 +289,16 @@ aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
@@ -313,7 +311,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
@@ -324,13 +321,52 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | nothing() -> e.flowDeps
     end;
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+}
+aspect production transDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  top.flowVertexInfo = map(transAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
+  top.flowDeps := 
+    case e.flowVertexInfo of
+    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex ++
+      if finalTy.isDecorated then map(vertex.inhVertex, fromMaybe([], refSet)) else []
+    | nothing() -> e.flowDeps
+    end;
+
+  local allInhs::[String] = getInhAndInhOnTransAttrsOn(finalTy.decoratedType.typeName, top.env);
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(decSite) when finalTy.isUniqueDecorated ->
+      case e of
+      | childReference(cqn) ->
+        [childTransRefDecSiteEq(
+          top.frame.fullName, cqn.lookupValue.fullName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
+          filter(
+            isEquationMissing(lookupInh(top.frame.fullName, cqn.lookupValue.fullName, _, top.flowEnv), _),
+            allInhs))]
+      | localReference(lqn) ->
+        [localTransRefDecSiteEq(
+          top.frame.fullName, lqn.lookupValue.fullName, q.attrDcl.fullName, top.alwaysDecorated, decSite,
+          filter(
+            isEquationMissing(lookupLocalInh(top.frame.fullName, lqn.lookupValue.fullName, _, top.flowEnv), _),
+            allInhs))]
+      | _ -> []
+      end
+    | _ -> []
+    end;
+  e.decSiteVertexInfo = nothing();
 }
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+}
+aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production decorateExprWith

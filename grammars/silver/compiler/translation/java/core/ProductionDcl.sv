@@ -143,7 +143,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	@Override
 	public common.Lazy getChildDecSite(final int index) {
 		switch(index) {
-${implode("", map(makeChildDecSiteAccessCase(body.env, top.flowEnv, fName, _), namedSig.inputElements))}
+${implode("", map(makeChildDecSiteAccessCase(body.env, top.flowEnv, body.frame.lhsNtName, fName, _), namedSig.inputElements))}
             default: return null;
         }
     }
@@ -204,8 +204,8 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     }
 
     @Override
-    public common.Lazy getForwardInheritedAttributes(final int index) {
-        return forwardInheritedAttributes[index];
+    public common.Lazy[] getForwardInheritedAttributes() {
+        return forwardInheritedAttributes;
     }
 
     @Override

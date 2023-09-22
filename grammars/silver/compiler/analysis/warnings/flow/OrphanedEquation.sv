@@ -56,7 +56,14 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     -- Exported by the declaration of the thing we're giving inh to, or to the occurs
     | localDefLHS(q) -> [q.lookupValue.dcl.sourceGrammar, attr.dcl.sourceGrammar]
     -- For rhs or forwards, that's the production.
-    | _ -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | childDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | forwardDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    -- Eqs on translation attributes can be with the thing we're giving inh to, or either attr occurs
+    | localTransAttrDefLHS(q, transAttr) ->
+      [q.lookupValue.dcl.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | childTransAttrDefLHS(_, transAttr) ->
+      [top.frame.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | _ -> []
     end;
 
   top.errors <-
@@ -68,7 +75,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
     
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
+    if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
@@ -106,7 +113,14 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     -- Exported by the declaration of the thing we're giving inh to, or to the occurs
     | localDefLHS(q) -> [q.lookupValue.dcl.sourceGrammar, attr.dcl.sourceGrammar]
     -- For rhs or forwards, that's the production.
-    | _ -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | childDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    | forwardDefLHS(_) -> [top.frame.sourceGrammar, attr.dcl.sourceGrammar]
+    -- Eqs on translation attributes can be with the thing we're giving inh to, or either attr occurs
+    | localTransAttrDefLHS(q, transAttr) ->
+      [q.lookupValue.dcl.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | childTransAttrDefLHS(_, transAttr) ->
+      [top.frame.sourceGrammar, transAttr.dcl.sourceGrammar, attr.dcl.sourceGrammar]
+    | _ -> []
     end;
 
   top.errors <-
@@ -118,7 +132,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
     
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
+    if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
@@ -144,15 +158,20 @@ flowtype lookupEqDefLHS {decorate} on DefLHS;
 aspect lookupEqDefLHS on top::DefLHS of
   -- prod, child, attr
 | childDefLHS(q) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
+  -- prod, child, trans attr, attr
+| childTransAttrDefLHS(q, attr) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}", top.flowEnv)
   -- prod, attr
 | lhsDefLHS(q) -> lookupSyn(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, local, attr
 | localDefLHS(q) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
+  -- prod, local, trans attr, attr
+| localTransAttrDefLHS(q, attr) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}", top.flowEnv)
   -- prod, attr
 | forwardDefLHS(q) -> lookupFwdInh(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- nt, attr
 | defaultLhsDefLHS(q) -> lookupDef(top.frame.lhsNtName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
 
 | errorDefLHS(q) -> []
+| errorTransAttrDefLHS(_, _) -> []
 | parserAttributeDefLHS(q) -> [] -- TODO: maybe error?
 end;

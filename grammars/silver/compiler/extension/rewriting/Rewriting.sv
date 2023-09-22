@@ -220,6 +220,8 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.config = top.config;
   checkExpr.compiledGrammars = top.compiledGrammars;
   checkExpr.boundVars = [];
+  checkExpr.alwaysDecorated = false;
+  checkExpr.decSiteVertexInfo = nothing();
   checkExpr.isRoot = false;
   checkExpr.originRules = top.originRules;
   

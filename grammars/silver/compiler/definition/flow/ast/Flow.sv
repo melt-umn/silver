@@ -277,6 +277,42 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 }
 
 {--
+ - The definition of an inherited attribute for a translation attribute
+ - on an rhs signature element in a production.
+ -
+ - @param prod  the full name of the production
+ - @param sigName  the name of the RHS element
+ - @param transAttr  the full name of the translation attribute
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ -}
+abstract production transInhEq
+top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String  deps::[FlowVertex]
+{
+  top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), top)];
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges = map(pair(rhsInhVertex(sigName, s"${transAttr}.${attr}"), _), deps);
+}
+
+{--
+ - The definition of an inherited attribute for a translation attribute
+ - on an local attribute.
+ -
+ - @param prod  the full name of the production
+ - @param fName  the name of the local/production attribute
+ - @param transAttr  the full name of the translation attribute
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ -}
+abstract production localTransInhEq
+top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  deps::[FlowVertex]
+{
+  top.inhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges = map(pair(localSynVertex(fName, s"${transAttr}.${attr}"), _), deps);
+}
+
+{--
  - Used for contributions to collections. Allows tacking on dependencies
  - to vertices.
  -
@@ -377,7 +413,7 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::St
 }
 
 {--
- - A unique reference to a child that is decorated with additional inherited attributes.
+ - A unique reference to a child that is elsewhere decorated with additional inherited attributes.
  -
  - @param prod      the full name of the production
  - @param sigName   the name of the child
@@ -395,7 +431,7 @@ top::FlowDef ::= prod::String  sigName::String  alwaysDec::Boolean  decSite::Ver
 }
 
 {--
- - A unique reference to a local/production attribute that is decorated with additional inherited attributes.
+ - A unique reference to a local/production attribute that is elsewhere decorated with additional inherited attributes.
  -
  - @param prod      the full name of the production
  - @param fName     the full name of the local/production attribute
@@ -409,6 +445,44 @@ top::FlowDef ::= prod::String  fName::String  alwaysDec::Boolean  decSite::Verte
   top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(\ attr::String -> (localInhVertex(fName, attr), decSite.inhVertex(attr)), attrs);
   top.refPossibleDecSiteContribs := [(fName, decSite)];
+  top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
+}
+
+{--
+ - A unique reference to a translation attribute on a child that is elsewhere decorated with additional inherited attributes.
+ -
+ - @param prod      the full name of the production
+ - @param sigName   the name of the child
+ - @param transAttr the name of the translation attribute
+ - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
+ - @param decSite   the vertex type that is supplying the attributes
+ - @param attrs     the inherited attributes that are being supplied
+ -}
+abstract production childTransRefDecSiteEq
+top::FlowDef ::= prod::String  sigName::String  transAttr::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
+{
+  top.prodGraphContribs := [pair(prod, top)];
+  top.flowEdges = map(\ attr::String -> (rhsInhVertex(sigName, s"${transAttr}.${attr}"), decSite.inhVertex(attr)), attrs);
+  top.refPossibleDecSiteContribs := [(s"${prod}:${sigName}.${transAttr}", decSite)];
+  top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
+}
+
+{--
+ - A unique reference to a translation attribute on a local/production attribute that is elsewhere decorated with additional inherited attributes.
+ -
+ - @param prod      the full name of the production
+ - @param fName     the full name of the local/production attribute
+ - @param transAttr the name of the translation attribute
+ - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
+ - @param decSite   the vertex type that is supplying the attributes
+ - @param attrs     the inherited attributes that are being supplied
+ -}
+abstract production localTransRefDecSiteEq
+top::FlowDef ::= prod::String  fName::String  transAttr::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
+{
+  top.prodGraphContribs := [pair(prod, top)];
+  top.flowEdges = map(\ attr::String -> (localInhVertex(fName, s"${transAttr}.${attr}"), decSite.inhVertex(attr)), attrs);
+  top.refPossibleDecSiteContribs := [(s"${fName}.${transAttr}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
 }
 

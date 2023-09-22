@@ -341,6 +341,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
+
+  top.errors <-
+    case getValueDcl(top.frame.fullName, top.env) of
+    | dcl :: _ when dcl.hasForward && attr.found && attr.attrDcl.isTranslation ->
+      [err(top.location, s"Overriding translation attribute ${attr.attrDcl.fullName} in a forwarding production is not currently supported.")]
+    | _ -> []
+    end;
 }
 
 abstract production inheritedAttributeDef
@@ -350,6 +357,25 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
+}
+
+-- The grammar needs to be structured in this way to avoid a shift/reduce conflict...
+concrete production transInhAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ transAttr.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  dl.env = top.env;
+  dl.grammarName = top.grammarName;
+  dl.config = top.config;
+  forwards to
+    attributeDef(
+      transAttrDefLHS(
+        case dl of
+        | concreteDefLHS(q) -> q
+        | _ -> error("Unexpected concrete DefLHS")
+        end, transAttr, location=top.location),
+      $4, attr, $6, e, $8,
+      location=top.location);
 }
 
 concrete production concreteDefLHS
@@ -454,6 +480,86 @@ top::DefLHS ::= q::Decorated! QName
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on forward")];
 
   top.typerep = q.lookupValue.typeScheme.monoType;
+}
+
+-- See transAttributeDef above - this is abstract to avoid a shift/reduce conflict.
+abstract production transAttrDefLHS
+top::DefLHS ::= q::QName attr::QNameAttrOccur
+{
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  propagate env;
+  attr.grammarName = top.grammarName;
+  attr.config = top.config;
+  attr.attrFor = q.lookupValue.typeScheme.monoType;
+  
+  forwards to (if null(q.lookupValue.dcls) || !attr.found || !attr.attrDcl.isTranslation 
+               then errorTransAttrDefLHS(_, _, location=_)
+               else q.lookupValue.dcl.transDefLHSDispatcher)(q, attr, top.location);
+}
+
+abstract production errorTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = false;
+  
+  top.errors <- q.lookupValue.errors;
+  top.errors <-
+    if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ top.unparse)];
+  top.typerep = attr.typerep;
+}
+
+abstract production childTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
+  
+  local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
+
+  top.errors <-
+    if existingProblems then []
+    else if !top.defLHSattr.attrDcl.isInherited
+    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    else [];
+  
+  local ty::Type = q.lookupValue.typeScheme.monoType;
+  top.errors <-
+    if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
+    then [err(q.location, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(ty)} are not supported")]
+    else [];
+
+  top.typerep = attr.typerep;
+}
+
+abstract production localTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  undecorates to transAttrDefLHS(q, attr, location=top.location);
+  top.name = q.name;
+  top.unparse = s"${q.unparse}.${attr.unparse}";
+  top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
+  
+  local existingProblems :: Boolean = !top.defLHSattr.found || !attr.found || top.typerep.isError;
+
+  top.errors <-
+    if existingProblems then []
+    else if !top.defLHSattr.attrDcl.isInherited
+    then [err(attr.location, s"Attribute '${attr.name}' is not inherited and cannot be defined on '${top.unparse}'")]
+    else [];
+  
+  local ty::Type = q.lookupValue.typeScheme.monoType;
+  top.errors <-
+    if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
+    then [err(q.location, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(ty)} are not supported")]
+    else [];
+
+  top.typerep = attr.typerep;
 }
 
 ----- done with DefLHS

@@ -13,7 +13,7 @@ propagate expectedMonad on Expr;
 
 
 type MonadInhs = {
-  downSubst, finalSubst, frame, grammarName, isRoot, originRules,
+  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot, originRules,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 };
 
@@ -172,6 +172,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.alwaysDecorated = false;
+  ne.decSiteVertexInfo = nothing();
   ne.originRules = top.originRules;
   ne.isRoot = false;
   local nes::AppExprs = new(es);
@@ -184,6 +186,9 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.frame = top.frame;
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
+  nes.alwaysDecorated = false;
+  nes.decSiteVertexInfo = nothing();
+  nes.appProd = nothing();
   nes.originRules = top.originRules;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
@@ -270,21 +275,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 aspect production functionInvocation
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
-  local t::Expr = application(e, '(', es, ',', anns, ')', location=top.location);
-  t.mDownSubst = top.mDownSubst;
-  t.env = top.env;
-  t.flowEnv = top.flowEnv;
-  t.config = top.config;
-  t.compiledGrammars = top.compiledGrammars;
-  t.grammarName = top.grammarName;
-  t.frame = top.frame;
-  t.finalSubst = top.finalSubst;
-  t.downSubst = top.downSubst;
-  t.isRoot = top.isRoot;
-  t.originRules = top.originRules;
-  t.expectedMonad = top.expectedMonad;
-
-  t.monadicallyUsed = top.monadicallyUsed;
+  forward t = application(e, '(', es, ',', anns, ')', location=top.location);
 
   top.merrors := t.merrors;
   top.mUpSubst = t.mUpSubst;
@@ -479,6 +470,7 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.config = top.config;
   ne.env = top.env;
   ne.flowEnv = top.flowEnv;
+  ne.alwaysDecorated = false;
   ne.originRules = top.originRules;
   ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
@@ -493,6 +485,7 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.config = top.config;
   res_e.env = top.env;
   res_e.flowEnv = top.flowEnv;
+  res_e.alwaysDecorated = false;
   res_e.isRoot = false;
   res_e.originRules = top.originRules;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
@@ -826,6 +819,62 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                else [];
 }
 
+-- TODO: restricted translation attributes?
+aspect production transDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
+
+  propagate mDownSubst, mUpSubst;
+  top.merrors := [];
+  top.merrors <- case q.attrDcl of
+                 -- TODO: restricted translation attributes?
+                 -- | restrictedSynDcl(_, _, _) -> []
+                 -- | restrictedInhDcl(_, _, _) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
+
+  local eUnDec::Expr =
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
+  local isEMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(top.location)}
+      ($Expr {eUnDec},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
+          $Expr {monadReturn(top.location)}
+          (x.$QName {qName(q.location, q.name)})
+       )
+      )
+    };
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                       then isEMonad
+                       else noMonad;
+
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                 then monadOfType(top.expectedMonad, q.typerep)
+                 else q.typerep;
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               if q.found
+                               then case q.attrDcl of
+                                    -- TODO: restricted translation attributes?
+                                    -- | restrictedSynDcl(_, _, _) -> []
+                                    -- | restrictedInhDcl(_, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
+}
+
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
@@ -898,6 +947,64 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                else [];
 }
 
+-- TODO: restricted translation attributes?
+aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
+
+  propagate mDownSubst, mUpSubst;
+  top.merrors := [];
+  top.merrors <- case q.attrDcl of
+                 -- TODO: restricted translation attributes?
+                 -- | restrictedSynDcl(_, _, _) -> []
+                 -- | restrictedInhDcl(_, _, _) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
+
+  --Why do we rewrite here, in an error production?  We can get here from the basic access
+  --   production based on normal typechecking failing even though our typechecking will
+  --   succeed, and we then need to be able to go back.
+  local eUnDec::Expr =
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
+  local isEMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(top.location)}
+      ($Expr {eUnDec},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
+          $Expr {monadReturn(top.location)}
+          (x.$QName {qName(q.location, q.name)})
+       )
+      )
+    };
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                       then isEMonad
+                       else noMonad;
+
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                 then monadOfType(top.expectedMonad, q.typerep)
+                 else q.typerep;
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               if q.found
+                               then case q.attrDcl of
+                                    -- TODO: restricted translation attributes?
+                                    -- | restrictedSynDcl(_, _, _) -> []
+                                    -- | restrictedInhDcl(_, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
+}
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
@@ -1291,6 +1398,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                      then e1.mtyperep
                      else top.expectedMonad;
   
+  e1.alwaysDecorated = false;
+  e2.alwaysDecorated = false;
   e1.isRoot = false;
   e2.isRoot = false;
 

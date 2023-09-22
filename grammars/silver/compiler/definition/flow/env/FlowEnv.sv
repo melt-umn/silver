@@ -127,6 +127,20 @@ function lookupLocalUniqueRefs
   return searchEnvTree(fName, e.uniqueRefTree);
 }
 
+-- unique references taken for a translation attribute on a child
+function lookupTransUniqueRefs
+[UniqueRefSite] ::= prod::String sigName::String attrName::String e::FlowEnv
+{
+  return searchEnvTree(prod ++ ":" ++ sigName ++ "." ++ attrName, e.uniqueRefTree);
+}
+
+-- unique references taken for a translation attribute on a local
+function lookupLocalTransUniqueRefs
+[UniqueRefSite] ::= fName::String attrName::String e::FlowEnv
+{
+  return searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
+}
+
 -- possible decoration sites for unique references taken for a child
 function lookupRefPossibleDecSites
 [VertexType] ::= prod::String  sigName::String  e::FlowEnv
@@ -141,6 +155,20 @@ function lookupLocalRefPossibleDecSites
   return searchEnvTree(fName, e.refPossibleDecSiteTree);
 }
 
+-- possible decoration sites for unique references taken for a translation attribute on a child
+function lookupTransRefPossibleDecSites
+[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refPossibleDecSiteTree);
+}
+
+-- possible decoration sites for unique references taken for a translation attribute on a local/production attribute
+function lookupLocalTransRefPossibleDecSites
+[VertexType] ::= fName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${fName}.${attrName}", e.refPossibleDecSiteTree);
+}
+
 -- unconditional decoration sites for unique references taken for a child
 function lookupRefDecSite
 [VertexType] ::= prod::String  sigName::String  e::FlowEnv
@@ -153,6 +181,20 @@ function lookupLocalRefDecSite
 [VertexType] ::= fName::String  e::FlowEnv
 {
   return searchEnvTree(fName, e.refDecSiteTree);
+}
+
+-- unconditional decoration sites for unique references taken for a translation attribute on a child
+function lookupTransRefDecSite
+[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refDecSiteTree);
+}
+
+-- unconditional decoration sites for unique references taken for a translation attribute on a local/production attribute
+function lookupLocalTransRefDecSite
+[VertexType] ::= fName::String  attrName::String  e::FlowEnv
+{
+  return searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);
 }
 
 {--
@@ -254,4 +296,12 @@ function occursContextDeps
   return map(
     \ synDeps::(String, [String]) -> synOccursContextEq(ns.fullName, vt, synDeps.fst, synDeps.snd),
     lookupAll(t.typeName, contexts.occursContextInhDeps));
+}
+
+function splitTransAttrInh
+Maybe<(String, String)> ::= attr::String
+{
+  local i::Integer = indexOf(".", attr);
+  return if i == -1 then nothing() else
+    just((substring(0, i, attr), substring(i + 1, length(attr), attr)));
 }

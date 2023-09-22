@@ -196,6 +196,27 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
     else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
 }
 
+concrete production flowSpecTrans
+top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::QNameAttrOccur
+{
+  top.unparse = s"${transSyn.unparse}.${inh.unparse}";
+  top.inhList :=
+    if transSyn.attrFound && inh.attrFound
+    then [s"${transSyn.attrDcl.fullName}.${inh.attrDcl.fullName}"]
+    else [];
+  top.refList := [];
+
+  transSyn.attrFor = top.onNt;
+  inh.attrFor = transSyn.typerep;
+
+  top.errors <-
+    if !transSyn.found || transSyn.attrDcl.isSynthesized && transSyn.attrDcl.isTranslation then []
+    else [err(transSyn.location, transSyn.name ++ " is not a translation attribute and so cannot be within a flow type")];
+  top.errors <-
+    if !inh.found || inh.attrDcl.isInherited then []
+    else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
+}
+
 {--
  - Inherit a flow spec from another flow spec.
  -

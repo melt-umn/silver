@@ -23,6 +23,7 @@ top::ValueDclInfo ::= fn::String ty::Type id::Integer paramIndex::Integer
   top.refDispatcher = lambdaParamReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- should be impossible (never in scope at production level?)
   top.defLHSDispatcher = errorDefLHS(_, location=_); -- ditto
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 function lambdaParamDef

@@ -264,6 +264,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
   ne.grammarName = top.grammarName;
   ne.config = top.config;
   ne.flowEnv = top.flowEnv;
+  ne.alwaysDecorated = false;
   ne.originRules = top.originRules;
   ne.isRoot = false;
 

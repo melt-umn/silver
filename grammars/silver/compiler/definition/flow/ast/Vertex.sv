@@ -85,7 +85,6 @@ abstract production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {}
 
--- TODO: we should distinguish these!
 
 -- The forward equation for this production. We do not care to distinguish it.
 function forwardEqVertex

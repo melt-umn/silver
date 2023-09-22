@@ -110,8 +110,8 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.DecoratedNode fwdParent) {
-			return ref.decorate(parent, inhs, fwdParent);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.DecoratedNode fwdParent, final boolean prodFwrd) {
+			return ref.decorate(parent, inhs, fwdParent, prodFwrd);
 		}
 
 		// Accessors used in reflection and debugging.
@@ -150,73 +150,73 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		// This should never happen.
 		@Override
 		public common.Lazy getChildDecSite(final int child) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Lazy[] getChildInheritedAttributes(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public int getNumberOfLocalAttrs() {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public String getNameOfLocalAttr(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Lazy getLocal(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Lazy getLocalDecSite(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public boolean getLocalIsForward(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Lazy[] getLocalInheritedAttributes(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public boolean hasForward() {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Node evalForward(final common.DecoratedNode context) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Node evalUndecorate(final common.DecoratedNode context) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
-		public common.Lazy getForwardInheritedAttributes(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		public common.Lazy[] getForwardInheritedAttributes() {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		@Override
 		public common.Lazy getSynthesized(final int index) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
 		${if wantsTracking then s"""
 		@Override
 		public ${className} duplicate(common.Node redex, common.ConsCell notes) {
-			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should not exist in undecorated tree!");
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should not exist in tree after undecoration!\n");
 		}
 
 		@Override

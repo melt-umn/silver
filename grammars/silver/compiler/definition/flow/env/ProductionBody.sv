@@ -52,9 +52,10 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     -- we regard these as non-suspect. That is, we implicitly insert these copy
     -- equations here.
     -- Currently, we don't bother to filter this to just synthesized, but we should?
+    -- TODO: What about attrs on translation attrs?
     implicitFwdAffects(top.frame.fullName, map((.attrOccurring),
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
-        getAttrsOn(top.frame.lhsNtName, top.env))))];
+        getAttrOccursOn(top.frame.lhsNtName, top.env))))];
 
   e.decSiteVertexInfo = just(forwardVertexType);
   e.alwaysDecorated = true;
@@ -109,21 +110,77 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+  e.decSiteVertexInfo =
+    if attr.found && attr.attrDcl.isTranslation
+    then just(transAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
+    else nothing();
+  e.alwaysDecorated = attr.found && attr.attrDcl.isTranslation;
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  top.flowDefs <-
-    case dl of
-    | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
-    end;
+  top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+}
+
+-- The flow vertex type corresponding to attributes on this DefLHS
+synthesized attribute defLHSVertex::VertexType occurs on DefLHS;
+
+-- The constructor for inherited equations on this DefLHS
+synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS;
+
+-- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
+synthesized attribute inhAttrName::String occurs on DefLHS;
+
+aspect default production
+top::DefLHS ::=
+{
+  top.defLHSVertex = localVertexType("bogus:lhs:vertex");
+  top.defLHSInhEq = [];
+  top.inhAttrName = "";
+}
+aspect production childDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = rhsVertexType(q.lookupValue.fullName);
+  top.defLHSInhEq = [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+}
+aspect production lhsDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = lhsVertexType;
+  top.defLHSInhEq = [];
+  top.inhAttrName = "";
+}
+aspect production localDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = localVertexType(q.lookupValue.fullName);
+  top.defLHSInhEq = [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+}
+aspect production forwardDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = forwardVertexType;
+  top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+}
+aspect production childTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.defLHSVertex = transAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSInhEq = [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+}
+aspect production localTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.defLHSVertex = transAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSInhEq = [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
 }
 
 aspect production errorValueDef
@@ -173,15 +230,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
 {
-  local vertex :: FlowVertex =
-    case dl of
-    | childDefLHS(q) -> rhsInhVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | localDefLHS(q) -> localInhVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | forwardDefLHS(q) -> forwardInhVertex(attr.attrDcl.fullName)
-    | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
-    end;
-  top.flowDefs <-
-    [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
+  top.flowDefs <- [extraEq(top.frame.fullName, dl.defLHSVertex.inhVertex(attr.attrDcl.fullName), e.flowDeps, true)];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }
@@ -206,13 +255,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  top.flowDefs <-
-    case dl of
-    | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
-    end;
+  top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }

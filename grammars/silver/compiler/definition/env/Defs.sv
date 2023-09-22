@@ -193,6 +193,11 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(inhDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
+function transDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
+{
+  return attrDef(defaultEnvItem(transDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+}
 function prodOccursDef
 Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def]
 { 

@@ -42,7 +42,7 @@ public abstract class Terminal implements Typed {
 	// It'd be nice to just directly access its children, but we don't actually know
 	// that our NLocation is Ploc. :(
 	private Object getFromLoc(int syn) {
-		DecoratedNode d = location.decorate(TopNode.singleton, (Lazy[])null);
+		DecoratedNode d = location.decorate();
 		return d.synthesized(syn);
 	}
 	public Integer getLine() {
@@ -69,8 +69,8 @@ public abstract class Terminal implements Typed {
 	
 	// This is a utility that I put here because why not. Perhaps it should be moved?
 	public static NLocation span(final NLocation a, final NLocation b) {
-		final DecoratedNode x = a.decorate(TopNode.singleton, (Lazy[])null);
-		final DecoratedNode y = b.decorate(TopNode.singleton, (Lazy[])null);
+		final DecoratedNode x = a.decorate();
+		final DecoratedNode y = b.decorate();
 		
 		return new Ploc(x.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location),
 				x.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location),

@@ -27,16 +27,19 @@ public abstract class Node implements Decorable, Typed {
 	 * (child and local)
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
-	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public DecoratedNode decorate(
+		final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, null);
+				                 this, parent, inhs, null, false);
 	}
 
 	/**
@@ -44,17 +47,24 @@ public abstract class Node implements Decorable, Typed {
 	 * (fwd only)
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
-	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.  These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
+	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
+	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
+	 *   We will pass inherited attribute access requests to this node.
+	 * @param prodFwrd  Is this the forward for fwdParent's prod?  False for forward prod attributes.
 	 * @return A "decorated" form of this Node 
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent) {
+	public DecoratedNode decorate(
+		final DecoratedNode parent, final Lazy[] inhs,
+		final DecoratedNode fwdParent, final boolean isProdForward) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, fwdParent);
+                                 this, parent, inhs, fwdParent, isProdForward);
 	}
 
 	/**
@@ -64,7 +74,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @return  A node decorated with no inherited attributes, without a parent.
 	 */
 	public DecoratedNode decorate() {
-		return decorate(TopNode.singleton, (Lazy[])null);
+		return decorate(TopNode.singleton, null);
 	}
 
 	private Node undecoratedValue = null;
@@ -185,7 +195,7 @@ public abstract class Node implements Decorable, Typed {
 	public abstract Lazy getChildDecSite(final int child);
 	
 	/**
-	 * @param key The child index to look up the inherited attributes.
+	 * @param index The child index to look up the inherited attributes.
 	 * @return An array containing the inherited attributes supplied to that child 
 	 */
 	public abstract Lazy[] getChildInheritedAttributes(final int index);
@@ -215,7 +225,7 @@ public abstract class Node implements Decorable, Typed {
 	 * Access the decorated form of this local through its reference decoration site, if it has one.
 	 * 
 	 * @param index The index of a local or production attribute on this Node
-	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated child,
+	 * @return A Lazy to evaluate on a decorated form of this Node, to get the decorated local,
 	 * 	or null if it has no reference decoration site
 	 */
 	public abstract Lazy getLocalDecSite(final int index);
@@ -259,10 +269,9 @@ public abstract class Node implements Decorable, Typed {
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })
 	 * 
-	 * @param index The inherited attribute requested by a forwarded-to Node. 
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of this attribute provided to the forward.
 	 */
-	public abstract Lazy getForwardInheritedAttributes(final int index);
+	public abstract Lazy[] getForwardInheritedAttributes();
 
 	/**
 	 * @param index Any synthesized attribute on this Node

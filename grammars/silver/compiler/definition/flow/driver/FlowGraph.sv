@@ -52,7 +52,7 @@ set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p:
 
 {--
  - Look up flow types.
- - @param syn  A synthesized attribute's full name (or "forward")
+ - @param syn  A synthesized attribute's full name (or "forward", or trans.syn)
  - @param nt  The nonterminal to look up this attribute on
  - @param flow  The flow type environment (NOTE: TODO: this is currently 'myFlow' or something, NOT top.flowEnv)
  - @return A set of inherited attributes on this nonterminal, needed to compute this synthesized attribute.

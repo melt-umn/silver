@@ -1,5 +1,6 @@
 grammar silver:compiler:definition:flow:env;
 
+import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax only BracketedOptTypeExprs;
 import silver:compiler:driver:util only isStrictlyExportedBy;
 
@@ -10,9 +11,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   -- Here, to avoid creating a hard dependency on options, we ignore options when
   -- deciding the include things in the *inferred* ref set. (Thus, isStrictlyExportedBy.)
   local inferredInhs :: [String] =
-    flatMap(
-      filterOccursForReferences(_, top.env, isStrictlyExportedBy(_, [top.grammarName], top.compiledGrammars)),
-      getAttrsOn(fName, top.env));
+    getInhAttrsOnForReferences(fName, top.env, isStrictlyExportedBy(_, [top.grammarName], top.compiledGrammars));
   
   local specInhs :: Maybe<[String]> =
     map(fst, lookup("decorate", getFlowTypeSpecFor(fName, top.flowEnv)));
@@ -24,14 +23,32 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 }
 
 -- If it is inherited and exported by this grammar (according to authority)
-function filterOccursForReferences
-[String] ::= occ::OccursDclInfo  e::Decorated Env  authority::(Boolean ::= String)
+-- Also includes inherited on translation attributes.
+-- Note that we only include trans.inh when both trans and inh are exported by nt's grammar.
+-- We might want to consider including all trans.inh where inh is in the ref set of trans's nonterminal.
+function getInhAttrsOnForReferences
+[String] ::= nt::String  e::Decorated Env  authority::(Boolean ::= String)
 {
-  return case getAttrDcl(occ.attrOccurring, e) of
-         | at :: _ ->
-             if at.isInherited && authority(occ.sourceGrammar)
-             then [occ.attrOccurring]
-             else []
-         | _ -> []
-         end; 
+  local ntty::Type =
+    case getTypeDcl(nt, e) of
+    | ty :: _ -> ty.typeScheme.monoType
+    | [] -> errorType()
+    end;
+  return flatMap(\ occ::OccursDclInfo ->
+    case getAttrDcl(occ.attrOccurring, e) of
+    | at :: _ when authority(occ.sourceGrammar) ->
+        if at.isInherited
+        then [occ.attrOccurring]
+        else if at.isSynthesized && at.isTranslation
+        then flatMap(\ occ2::OccursDclInfo ->
+          case getAttrDcl(occ2.attrOccurring, e) of
+          | at2 :: _ when authority(occ2.sourceGrammar) && at2.isInherited ->
+            [s"${occ.attrOccurring}.${occ2.attrOccurring}"]
+          | _ -> []
+          end,
+          getAttrOccursOn(determineAttributeType(occ, ntty).typeName, e))
+        else []
+    | _ -> []
+    end,
+    getAttrOccursOn(nt, e)); 
 }

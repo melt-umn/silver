@@ -13,6 +13,16 @@ public interface Lazy {
 	// TODO: probably make this Lazy<T>...
 	public Object eval(DecoratedNode context);
 
+    /**
+     * Create a Lazy that evaluates in some context and ignores the supplied one.
+     * 
+     * @param context The context to evaluate in.
+     * @return A Lazy that evaluates in the supplied context.
+     */
+    public default Lazy withContext(final DecoratedNode context) {
+        return (ignoredNewContext) -> eval(context);
+    }
+
     public static class Trap implements Lazy {
         String m;
 

@@ -39,6 +39,7 @@ synthesized attribute isAnnotation :: Boolean; -- also "attrs"
 -- attrs
 synthesized attribute isSynthesized :: Boolean;
 synthesized attribute isInherited :: Boolean;
+synthesized attribute isTranslation :: Boolean;
 
 -- production attribute
 synthesized attribute prodDefs :: [Def];
@@ -236,7 +237,7 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
 
 closed nonterminal AttributeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, compareKey, isEqual,
-  typeScheme, isInherited, isSynthesized, isAnnotation;
+  typeScheme, isInherited, isSynthesized, isAnnotation, isTranslation;
 propagate compareKey on AttributeDclInfo;
 
 aspect default production
@@ -250,6 +251,7 @@ top::AttributeDclInfo ::=
   top.isSynthesized = false;
   top.isInherited = false;
   top.isAnnotation = false;
+  top.isTranslation = false;
 }
 
 abstract production synDcl
@@ -267,6 +269,15 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
+}
+abstract production transDcl
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
+{
+  top.fullName = fn;
+
+  top.typeScheme = polyType(bound, ty);
+  top.isSynthesized = true;
+  top.isTranslation = true;
 }
 abstract production annoDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type

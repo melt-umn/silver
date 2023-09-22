@@ -27,6 +27,12 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     else
       s"public static final int ${head(occursCheck).attrOccursIndexName} = " ++
       s"${makeName(ntgrammar)}.Init.count_${occursType}__ON__${ntname}++;\n";
+
+  top.valueWeaving <-
+    if at.lookupAttribute.dcl.isTranslation then
+      s"public static final int ${head(occursCheck).attrOccursIndexName}_dec_site = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n" ++
+      s"public static final int ${head(occursCheck).attrOccursIndexName}_inhs = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n"
+    else "";
 }
 
 aspect production errorAttributionDcl

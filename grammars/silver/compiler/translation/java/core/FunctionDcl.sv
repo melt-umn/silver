@@ -120,7 +120,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 	@Override
 	public common.Lazy getChildDecSite(final int index) {
 		switch(index) {
-${implode("", map(makeChildDecSiteAccessCase(env, flowEnv, whatSig.fullName, _), whatSig.inputElements))}
+${implode("", map(makeChildDecSiteAccessCase(env, flowEnv, whatSig.outputElement.typerep.typeName, whatSig.fullName, _), whatSig.inputElements))}
             default: return null;
         }
     }
@@ -242,7 +242,7 @@ public class Main {
 
 		try {
 			common.Node rv = (common.Node) ${if isIOValReturn then invocationIOVal else invokationEvalIO};
-			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
+			common.DecoratedNode drv = rv.decorate();
 			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
 		} catch(Throwable t) {

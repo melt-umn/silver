@@ -264,32 +264,61 @@ function getKnownProds
  - Obviously we can never know all attributes, but we generally don't need to for
  - any reason.
  -}
-function getAttrsOn
+function getAttrOccursOn
 [OccursDclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvTree(fnnt, e.occursTree);
 }
+
+{--
+ - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
+ -}
 function getSynAttrsOn
-[OccursDclInfo] ::= fnnt::String e::Decorated Env
+[String] ::= fnnt::String e::Decorated Env
 {
-  return filter(
+  return flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
-      | at :: _ -> at.isSynthesized
-      | _ -> false
+      | at :: _ when at.isSynthesized -> [o.attrOccurring]
+      | _ -> []
       end,
-    getAttrsOn(fnnt, e));
+    getAttrOccursOn(fnnt, e));
 }
+
+{--
+ - Returns the names of all inherited attributes known locally to occur on a nonterminal.
+ -}
 function getInhAttrsOn
-[OccursDclInfo] ::= fnnt::String e::Decorated Env
+[String] ::= fnnt::String e::Decorated Env
 {
-  return filter(
+  return flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
-      | at :: _ -> at.isInherited
-      | _ -> false
+      | at :: _ when at.isInherited -> [o.attrOccurring]
+      | _ -> []
       end,
-    getAttrsOn(fnnt, e));
+    getAttrOccursOn(fnnt, e));
+}
+
+{--
+ - Returns the names of all inherited attributes known locally to occur on a nonterminal.
+ - Also includes all inherited attributes occuring on translation attributes on the
+ - nonterminal, when we want to treat these like inherited attributes.
+ -}
+function getInhAndInhOnTransAttrsOn
+[String] ::= fnnt::String e::Decorated Env
+{
+  return flatMap(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, e) of
+      | at :: _ when at.isInherited -> [o.attrOccurring]
+      | at :: _ when at.isSynthesized && at.isTranslation ->
+        map(
+          \ inh::String -> s"${o.attrOccurring}.${inh}",
+          getInhAttrsOn(at.typeScheme.typeName, e))
+      | _ -> []
+      end,
+    getAttrOccursOn(fnnt, e));
 }
 
 -- This ensure the annotation list is in the properly sorted order!
@@ -297,7 +326,7 @@ function annotationsForNonterminal
 [NamedSignatureElement] ::= nt::Type  env::Decorated Env
 {
   local annos :: [OccursDclInfo] =
-    filter((.isAnnotation), getAttrsOn(nt.typeName, env));
+    filter((.isAnnotation), getAttrOccursOn(nt.typeName, env));
   
   return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(nt, _), annos));
 }

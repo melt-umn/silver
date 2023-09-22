@@ -68,6 +68,15 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
+aspect production attributeDclTrans
+top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+{
+  top.docForName = a.name;
+  top.docUnparse = s"`translation attribute ${a.name}${tl.unparse} :: ${te.unparse}`";
+  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
 aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {

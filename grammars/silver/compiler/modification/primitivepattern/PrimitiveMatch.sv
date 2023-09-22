@@ -27,17 +27,17 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, originRules;
+  scrutineeType, returnType, translation, initTransDecSites, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, originRules;
+  scrutineeType, returnType, translation, initTransDecSites, originRules;
 
 inherited attribute scrutineeType :: Type;
 inherited attribute returnType :: Type;
 
-propagate config, grammarName, compiledGrammars, frame, errors, scrutineeType, returnType, originRules
+propagate config, grammarName, compiledGrammars, frame, errors, scrutineeType, returnType, initTransDecSites, originRules
   on PrimPatterns, PrimPattern;
 propagate env, finalSubst, freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
 
@@ -138,6 +138,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
+
+  propagate initTransDecSites;
 }
 
 concrete production onePattern

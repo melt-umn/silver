@@ -104,6 +104,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   monadLocal.downSubst = ml.mUpSubst;
   monadLocal.finalSubst = top.finalSubst;
   monadLocal.expectedMonad = top.expectedMonad;
+  monadLocal.alwaysDecorated = false;
   monadLocal.originRules = top.originRules;
   monadLocal.isRoot = false;
   top.monadRewritten = monadLocal.monadRewritten;
@@ -118,7 +119,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                 decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
-                                     config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;
+                                     config=top.config; alwaysDecorated = false; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;
                                      isRoot=top.isRoot; originRules=top.originRules;}
              in if isMonad(a.mtyperep, top.env) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
                    !isMonad(performSubstitution(x.snd, top.mDownSubst), top.env)
@@ -126,7 +127,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv; monadicallyUsed=true;
-                                     expectedMonad=top.expectedMonad; isRoot=top.isRoot; originRules=top.originRules;}.monadicNames
+                                     expectedMonad=top.expectedMonad; alwaysDecorated = false; isRoot=top.isRoot; originRules=top.originRules;}.monadicNames
                 else []
              end ++ l,
            monadLocal.monadicNames, zipWith(\x::Expr y::Type -> pair(x,y), es.rawExprs, ml.patternTypeList));
@@ -143,7 +144,7 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
               | e::etl ->
                 let etyp::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                                                   downSubst=sub; finalSubst=sub;
-                                                  compiledGrammars=cg; config=c; flowEnv=fe;
+                                                  compiledGrammars=cg; config=c; alwaysDecorated = false; flowEnv=fe;
                                                   expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
                 in
                   fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em, iR, oR)
@@ -190,19 +191,7 @@ function monadicMatchTypesNames
   fails.-}
 aspect production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type {
-  local monadLocal::Expr = monadCompileCaseExpr(es, ml, failExpr, retType, top.location, top.env);
-  monadLocal.mDownSubst = top.mDownSubst;
-  monadLocal.frame = top.frame;
-  monadLocal.grammarName = top.grammarName;
-  monadLocal.compiledGrammars = top.compiledGrammars;
-  monadLocal.config = top.config;
-  monadLocal.env = top.env;
-  monadLocal.flowEnv = top.flowEnv;
-  monadLocal.downSubst = top.mDownSubst;
-  monadLocal.finalSubst = top.finalSubst;
-  monadLocal.expectedMonad = top.expectedMonad;
-  monadLocal.originRules = top.originRules;
-  monadLocal.isRoot = top.isRoot;
+  forward monadLocal = monadCompileCaseExpr(es, ml, failExpr, retType, top.location, top.env);
 
   top.monadRewritten = monadLocal.monadRewritten;
 
@@ -422,6 +411,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                   downSubst = top.mDownSubst;
                   finalSubst = top.mDownSubst;
                   expectedMonad = top.expectedMonad;
+                  alwaysDecorated = false;
                   isRoot = top.isRoot;
                   originRules = top.originRules;
                  }.monadRewritten,
@@ -491,7 +481,7 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
                               downSubst=sub; finalSubst=sub;
                               compiledGrammars=cg; config=c; flowEnv=fe;
                               expectedMonad=em; originRules = oR;
-                              isRoot = iR;}.mtyperep
+                              isRoot = iR; alwaysDecorated = false; }.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then buildApplication(
@@ -596,6 +586,7 @@ top::MatchRule ::= pt::PatternList arr::Arrow_kwd e::Expr
   ne.frame = top.frame;
   ne.finalSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
+  ne.alwaysDecorated = false;
   ne.originRules = [];
   ne.isRoot = false;
 
@@ -616,6 +607,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ncond.frame = top.frame;
   ncond.finalSubst = top.mDownSubst;
   ncond.downSubst = top.mDownSubst;
+  ncond.alwaysDecorated = false;
   ncond.originRules = [];
   ncond.isRoot = false;
   local ne::Expr = e;
@@ -627,6 +619,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ne.frame = top.frame;
   ne.finalSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
+  ne.alwaysDecorated = false;
   ne.originRules = [];
   ne.isRoot = false;
 
@@ -647,6 +640,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ncond.frame = top.frame;
   ncond.finalSubst = top.mDownSubst;
   ncond.downSubst = top.mDownSubst;
+  ncond.alwaysDecorated = false;
   ncond.originRules = [];
   ncond.isRoot = false;
   local ne::Expr = e;
@@ -658,6 +652,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ne.frame = top.frame;
   ne.finalSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
+  ne.alwaysDecorated = false;
   ne.originRules = [];
   ne.isRoot = false;
 
@@ -708,6 +703,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Patt
   ne.frame = top.temp_frame;
   ne.finalSubst = top.temp_finalSubst;
   ne.downSubst = top.temp_downSubst;
+  ne.alwaysDecorated = false;
   ne.originRules = [];
   ne.isRoot = false;
 

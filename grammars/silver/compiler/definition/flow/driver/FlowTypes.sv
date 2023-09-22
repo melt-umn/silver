@@ -61,7 +61,7 @@ function toFlatEdges
  - Iterates until convergence.
  -}
 function fullySolveFlowTypes
-Pair<[ProductionGraph] EnvTree<FlowType>> ::= 
+([ProductionGraph], EnvTree<FlowType>) ::= 
   graphs::[ProductionGraph]
   ntEnv::EnvTree<FlowType>
 {
@@ -70,21 +70,19 @@ Pair<[ProductionGraph] EnvTree<FlowType>> ::=
   local prodEnv :: EnvTree<ProductionGraph> =
     directBuildTree(map(prodGraphToEnv, graphs));
   
-  local iter :: Pair<Boolean Pair<[ProductionGraph] EnvTree<FlowType>>> =
+  local iter :: (Boolean, [ProductionGraph], EnvTree<FlowType>) =
     solveFlowTypes(graphs, prodEnv, ntEnv);
   
   -- Just iterate until no new edges are added
-  return if !iter.fst then iter.snd
-  else fullySolveFlowTypes(iter.snd.fst, iter.snd.snd);
+  return if !iter.1 then iter.snd
+  else fullySolveFlowTypes(iter.2, iter.3);
 }
 
 {--
  - One iteration of solving flow type equations. Goes through each production once.
  -}
 function solveFlowTypes
-Pair<Boolean
-     Pair<[ProductionGraph]
-          EnvTree<FlowType>>> ::=
+(Boolean, [ProductionGraph], EnvTree<FlowType>) ::=
   graphs::[ProductionGraph]
   prodEnv::EnvTree<ProductionGraph>
   ntEnv::EnvTree<FlowType>
@@ -110,7 +108,7 @@ Pair<Boolean
     solveFlowTypes(tail(graphs), prodEnv, rtm:update(updatedGraph.lhsNt, [newFlowType], ntEnv));
     
   return if null(graphs) then pair(false, pair([], ntEnv))
-  else pair(!null(brandNewEdges) || recurse.fst, pair(updatedGraph :: recurse.snd.fst, recurse.snd.snd));
+  else (!null(brandNewEdges) || recurse.fst, updatedGraph :: recurse.snd.fst, recurse.snd.snd);
 }
 
 

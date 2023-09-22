@@ -14,6 +14,10 @@ synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated! QName  Exp
  - The production an "equation" left hand side should forward to for this type of value (i.e. the 'x' in 'x.a = e')
  -}
 synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated! QName  Location) occurs on ValueDclInfo;
+{--
+ - The production a translation attribute left hand side should forward to, for this type of value (i.e. the 'x.a' in 'x.a.b = e')
+ -}
+synthesized attribute transDefLHSDispatcher :: (DefLHS ::= Decorated! QName  Decorated!  QNameAttrOccur  Location) occurs on ValueDclInfo;
 
 {--
  - The handler for 'x.a' for 'a', given that 'x' is DECORATED.
@@ -43,6 +47,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = childReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: we should be smarted about error messages, and mention its a child
   top.defLHSDispatcher = childDefLHS(_, location=_);
+  top.transDefLHSDispatcher = childTransAttrDefLHS(_, _, location=_);
 }
 aspect production lhsDcl
 top::ValueDclInfo ::= fn::String ty::Type
@@ -50,6 +55,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = lhsDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 aspect production localDcl
 top::ValueDclInfo ::= fn::String ty::Type _
@@ -57,6 +63,7 @@ top::ValueDclInfo ::= fn::String ty::Type _
   top.refDispatcher = localReference(_, location=_);
   top.defDispatcher = localValueDef(_, _, location=_);
   top.defLHSDispatcher = localDefLHS(_, location=_);
+  top.transDefLHSDispatcher = localTransAttrDefLHS(_, _, location=_);
 }
 
 
@@ -68,6 +75,7 @@ top::ValueDclInfo ::= ns::NamedSignature hasForward::Boolean
    -- Note that we still need production references, even though bug #16 removes the production type.
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 aspect production funDcl
 top::ValueDclInfo ::= ns::NamedSignature
@@ -75,6 +83,7 @@ top::ValueDclInfo ::= ns::NamedSignature
   top.refDispatcher = functionReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 aspect production globalValueDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
@@ -82,6 +91,7 @@ top::ValueDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.refDispatcher = globalValueReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 aspect production classMemberDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] head::Context contexts::[Context] ty::Type
@@ -89,6 +99,7 @@ top::ValueDclInfo ::= fn::String bound::[TyVar] head::Context contexts::[Context
   top.refDispatcher = classMemberReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 -- -- interface Production attr (values)
@@ -98,6 +109,7 @@ top::ValueDclInfo ::= ty::Type
   top.refDispatcher = forwardReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: better error message
   top.defLHSDispatcher = forwardDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 aspect production termIdDcl
@@ -106,6 +118,7 @@ top::ValueDclInfo ::= fn::String
   top.refDispatcher = terminalIdReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 -- -- interface Attributes
@@ -123,6 +136,14 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+}
+aspect production transDcl
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
+{
+  top.decoratedAccessHandler = transDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = transUndecoratedAccessErrorHandler(_, _, location=_);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production annoDcl

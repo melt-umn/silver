@@ -28,9 +28,13 @@ top::Expr ::= la::AssignExpr  e::Expr
     if top.frame.lazyApplication
     then closureExpr
     else top.translation;
+  
+  propagate initTransDecSites;
 }
 
 synthesized attribute let_translation :: String occurs on AssignExpr;
+attribute initTransDecSites occurs on AssignExpr;
+propagate initTransDecSites on AssignExpr;
 
 function makeLocalValueName
 String ::= s::String
@@ -82,5 +86,7 @@ top::Expr ::= q::Decorated! QName  _ _ _
     else if needsUndecorating
     then "common.Thunk.transformUndecorate(" ++ makeLocalValueName(q.lookupValue.fullName) ++ ")"
     else makeLocalValueName(q.lookupValue.fullName);
+  
+  top.initTransDecSites := "";
 }
 
