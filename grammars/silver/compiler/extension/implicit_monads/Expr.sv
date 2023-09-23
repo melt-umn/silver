@@ -6,7 +6,7 @@ inherited attribute monadicallyUsed::Boolean occurs on Expr;
 --a collection of names/attribute accesses that are monadically used
 --it's a list of expressions for attribute accesses
 --I think this is for let insertion too
-synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs;
+synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
 
 attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expectedMonad occurs on Expr;
 propagate expectedMonad on Expr;
@@ -193,23 +193,29 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
+  local nanns::AnnoAppExprs = new(anns);
+  nanns.mDownSubst = nes.mUpSubst;
+  nanns.flowEnv = top.flowEnv;
+  nanns.env = top.env;
+  nanns.config = top.config;
+  nanns.compiledGrammars = top.compiledGrammars;
+  nanns.grammarName = top.grammarName;
+  nanns.frame = top.frame;
+  nanns.finalSubst = top.finalSubst;
+  nanns.downSubst = top.downSubst;
+  nanns.originRules = top.originRules;
+  nanns.appExprApplied = ne.unparse;
+  nanns.remainingFuncAnnotations = anns.remainingFuncAnnotations;
+  nanns.funcAnnotations = anns.funcAnnotations;
+  nanns.monadArgumentsAllowed = acceptableMonadFunction(e);
+  nanns.previousArgs = nes.monadRewritten;
 
   ne.expectedMonad = top.expectedMonad;
   nes.expectedMonad = top.expectedMonad;
+  nanns.expectedMonad = top.expectedMonad;
 
-  top.merrors := ne.merrors ++ nes.merrors;
-  top.mUpSubst = nes.mUpSubst;
-
-  top.merrors <-
-      case anns of
-      | emptyAnnoAppExprs() ->
-        []
-      | _ ->
-        if null(nes.monadTypesLocations)
-        then []
-        else [err(top.location, "Monad Rewriting not defined with annotated " ++
-                                "expressions in a function application")]
-      end;
+  top.merrors := ne.merrors ++ nes.merrors ++ nanns.merrors;
+  top.mUpSubst = nanns.mUpSubst;
 
   local substTy::Type = performSubstitution(ne.mtyperep, top.mUpSubst);
   local ety :: Type =
@@ -217,26 +223,28 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
            monadsMatch(top.expectedMonad, substTy, top.mDownSubst).fst
         then monadInnerType(substTy, top.location)
         else substTy;
+  local areMonadicArgs::Boolean =
+      !null(nes.monadTypesLocations) || any(map(\ p::(Type, QName, Boolean) -> p.3, nanns.monadAnns));
+  local funIsMonadic::Boolean =
+      isMonad(substTy, top.env) && monadsMatch(top.expectedMonad, substTy, top.mUpSubst).fst;
+  local funResultIsMonad::Boolean =
+      isMonad(ety.outputType, top.env) && monadsMatch(ety.outputType, top.expectedMonad, top.mUpSubst).fst;
 
   --needs to add a monad to the result if there are monadic args or the function is monadic
   top.mtyperep =
-      if null(nes.monadTypesLocations)
-      then if isMonad(substTy, top.env) && monadsMatch(top.expectedMonad, substTy, top.mDownSubst).fst
-           then monadOfType(top.expectedMonad, ety.outputType)
-           else ety.outputType
-      else if isMonad(ety.outputType, top.env) && fst(monadsMatch(ety.outputType, top.expectedMonad, top.mUpSubst))
+      if areMonadicArgs || funIsMonadic
+      then if funResultIsMonad
            then ety.outputType
-           else monadOfType(top.expectedMonad, ety.outputType);
+           else monadOfType(top.expectedMonad, ety.outputType)
+      else ety.outputType;
 
-  ne.monadicallyUsed = isMonad(ne.mtyperep, top.env) && fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst));
+  ne.monadicallyUsed = funIsMonadic;
   top.monadicNames = ne.monadicNames ++ nes.monadicNames;
 
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
   local wrapReturn::Boolean =
-        --monadic args                  or  monadic function
-        (!null(nes.monadTypesLocations) || (isMonad(substTy, top.env) && monadsMatch(substTy, top.expectedMonad, top.mUpSubst).fst)) &&
-        --not monadic result               or  not the right monad
-        (!isMonad(ety.outputType, top.env) || !fst(monadsMatch(ety.outputType, top.expectedMonad, top.mUpSubst)));
+        --monadic args  or monadic function and not a monad result
+        (areMonadicArgs || funIsMonadic)    &&  !funResultIsMonad;
 
   {-
     Monad translation creates a lambda to apply to all the arguments
@@ -251,27 +259,18 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     Reusing ai in the bind for the ith argument simplifies doing the
     application inside all the binds.
   -}
-  local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn, top.location);
-  local expanded_args::AppExprs = snocAppExprs(nes.monadRewritten, ',', presentAppExpr(ne.monadRewritten, location=top.location),
-                                               location=top.location);
-  local bind_name::String = "__bindFun_" ++ toString(genInt());
-  -- fun >>= \ bind_name -> lambda_fun(args, bind_name)
-  local bind_fun_in::Expr =
-        Silver_Expr {
-          bind($Expr {if ne.mtyperep.isDecorated then mkStrFunctionInvocation(top.location, "silver:core:new", [ne.monadRewritten]) else ne.monadRewritten},
-               $Expr {buildLambda(bind_name, monadInnerType(ne.mtyperep, top.location), applicationExpr(lambda_fun, '(', expanded_name_args, ')', location=top.location), top.location) })
-        };
-  local expanded_name_args::AppExprs =
-        snocAppExprs(nes.monadRewritten, ',', presentAppExpr(baseExpr(qNameId(name(bind_name, top.location), location=top.location),
-                     location=top.location), location=top.location), location=top.location);
-  --haven't done monadRewritten on annotated ones, so ignore them
+  local lambda_fun::Expr =
+      buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations,
+         nanns.monadAnns, top.expectedMonad, ety, funIsMonadic, wrapReturn, top.location);
+  local expanded_args::AppExprs =
+      snocAppExprs(nanns.fullArgs, ',', presentAppExpr(ne.monadRewritten, location=top.location),
+                   location=top.location);
   top.monadRewritten =
-      if isMonad(substTy, top.env) && monadsMatch(top.expectedMonad, substTy, top.mDownSubst).fst
-      then bind_fun_in
-      else if null(nes.monadTypesLocations)
-           then applicationExpr(ne.monadRewritten, '(', nes.monadRewritten, ')', location=top.location)
-           else applicationExpr(lambda_fun, '(', expanded_args, ')', location=top.location);
+      if areMonadicArgs || funIsMonadic
+      then applicationExpr(lambda_fun, '(', expanded_args, ')', location=top.location)
+      else application(ne.monadRewritten, '(', nes.monadRewritten, ',', nanns.monadRewritten, ')', location=top.location);
 }
+
 
 aspect production functionInvocation
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
@@ -286,13 +285,23 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
   top.monadicNames = t.monadicNames;
 }
 --build the lambda to apply to all the original arguments plus the function
---we're going to assume this is only called if monadTysLocs is non-empty
 function buildMonadApplicationLambda
-Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] funType::Type wrapReturn::Boolean loc::Location
+Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, QName, Boolean)]
+         expectedMonad::Type funType::Type bindFun::Boolean wrapReturn::Boolean loc::Location
 {
   local funargs::AppExprs = buildFunArgs(length(realtys), loc);
-  local params::ProductionRHS = buildMonadApplicationParams(realtys, 1, funType, loc);
-  local body::Expr = buildMonadApplicationBody(monadTysLocs, funargs, head(monadTysLocs).fst, wrapReturn, loc);
+  local funannargs::AnnoAppExprs = buildFunAnnArgs(monadAnns, length(realtys) + 1, loc);
+  local params::ProductionRHS =
+        buildMonadApplicationParams(realtys ++ map(fst, monadAnns), 1,
+            if bindFun then monadOfType(expectedMonad, funType) else funType, loc);
+  local actualMonadAnns::[(Type, Integer)] =
+      foldr(\ here::(Type, QName, Boolean) rest::([(Type, Integer)], Integer) ->
+              if here.3
+              then ((here.1, rest.2)::rest.1, rest.2 - 1)
+              else (rest.1, rest.2 -1),
+            ([], length(realtys) + length(monadAnns)), monadAnns).1;
+  local body::Expr = buildMonadApplicationBody(monadTysLocs ++ actualMonadAnns, funargs, funannargs,
+                                               head(monadTysLocs).fst, funType, bindFun, wrapReturn, loc);
   return lambdap(params, body, location=loc);
 }
 --build the parameters for the lambda applied to all the original arguments plus the function
@@ -309,12 +318,12 @@ ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type loc::Locatio
          else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), loc),
                                                   '::',
                                                   typerepTypeExpr(dropDecorated(head(realtys)), location=loc),
-                                                  --typerepTypeExpr(head(realtys), location=loc),
                                                   location=loc),
                                 buildMonadApplicationParams(tail(realtys), currentLoc+1, funType, loc),
                                 location=loc);
 }
 --build the arguments for the application inside all the binds
+--currentIndex is the numerical index of the argument for the name (a<currentIndex>, like a3)
 function buildFunArgs
 AppExprs ::= currentIndex::Integer loc::Location
 {
@@ -326,11 +335,29 @@ AppExprs ::= currentIndex::Integer loc::Location
                                                    location=loc),
                                           location=loc), location=loc);
 }
+--build the annotation arguments for the application inside all the binds
+--annotations are the annotations given to the original call
+--currentIndex is the numerical index of the argument for the name (a<currentIndex>, like a3)
+function buildFunAnnArgs
+AnnoAppExprs ::= annotations::[(Type, QName, Boolean)] currentIndex::Integer loc::Location
+{
+  return case annotations of
+         | [] -> emptyAnnoAppExprs(location=loc)
+         | (ty, q, _)::rest ->
+           snocAnnoAppExprs(buildFunAnnArgs(rest, currentIndex + 1, loc), ',',
+              annoExpr(q, '=',
+                 presentAppExpr(baseExpr(qName(loc, "a" ++ toString(currentIndex)),
+                    location=loc), location=loc), location=loc),
+              location=loc)
+         end;
+}
 --build the body of the lambda which includes all the binds
 function buildMonadApplicationBody
-Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wrapReturn::Boolean loc::Location
+Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppExprs
+         monadType::Type funTy::Type bindFun::Boolean wrapReturn::Boolean loc::Location
 {
-  local sub::Expr = buildMonadApplicationBody(tail(monadTysLocs), funargs, monadType, wrapReturn, loc);
+  local sub::Expr = buildMonadApplicationBody(tail(monadTysLocs), funargs, annargs,
+                       monadType, funTy, bindFun, wrapReturn, loc);
   local argty::Type = head(monadTysLocs).fst;
   local bind::Expr = monadBind(loc);
   local binding::ProductionRHS =
@@ -357,14 +384,33 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wr
   local step::Expr = applicationExpr(bind, '(', bindargs, ')', location=loc);
 
   --the function is always going to be bound into the name "f", so we hard code that here
-  local baseapp::Expr = applicationExpr(baseExpr(qName(loc, "f"), location=loc),
-                                        '(', funargs, ')', location=loc);
+  local baseapp::Expr = application(baseExpr(qName(loc, "f"), location=loc),
+                                    '(', funargs, ',', annargs, ')', location=loc);
   local funapp::Expr = if wrapReturn
                        then Silver_Expr { $Expr {monadReturn(loc)}($Expr {baseapp}) }
                        else baseapp;
+  local funbinding::ProductionRHS =
+      productionRHSCons(productionRHSElem(name("f", loc), '::',
+         typerepTypeExpr(funTy, location=loc), location=loc),
+         productionRHSNil(location=loc),
+         location=loc);
+  local funbindargs::AppExprs =
+        snocAppExprs(
+           oneAppExprs(presentAppExpr(
+                          baseExpr(qName(loc,"f"), location=loc),
+                          location=loc),
+                       location=loc),
+           ',',
+            presentAppExpr(lambdap(funbinding, funapp, location=loc),
+                           location=loc),
+            location=loc);
+  local fullfun::Expr =
+      if bindFun
+      then applicationExpr(bind, '(', funbindargs, ')', location=loc)
+      else funapp;
 
   return if null(monadTysLocs)
-         then funapp
+         then fullfun
          else step;
 }
 
@@ -454,8 +500,6 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -532,7 +576,6 @@ aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -580,33 +623,18 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
   top.mUpSubst = top.mDownSubst;
   top.merrors := [];
-  top.merrors <- case q.attrDcl of
-                 | restrictedSynDcl(_, _, _) -> []
-                 | restrictedInhDcl(_, _, _) -> []
-                 | implicitSynDcl(_, _, _) -> []
-                 | implicitInhDcl(_, _, _) -> []
-                 | annoDcl(_, _, _) -> []
-                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or restricted; " ++ q.unparse ++
-                                           " is neither")]
-                 end;
-
-  top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               if q.found
-                               then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _) -> []
-                                    | restrictedInhDcl(_, _, _) -> []
-                                    | annoDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
-                                    end
-                               else [];
+  {-
+    Note that we don't treat annotations as having a plicitness (restricted,
+    implicit, explicit) like attributes because they are arguments to a
+    constructor like any other argument, only named.  Then they have a different
+    character than attributes and plicitness does not make sense for them.
+  -}
 }
 
 aspect production synDataAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -680,7 +708,6 @@ aspect production terminalAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
 
   top.merrors := e.merrors;
   top.mUpSubst = top.mDownSubst;
@@ -729,7 +756,6 @@ aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -803,7 +829,6 @@ aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -877,8 +902,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -935,7 +958,6 @@ aspect production unknownDclAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
 
   top.monadicNames = [];
 
@@ -1009,8 +1031,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production inhUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -1065,8 +1085,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production transUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q, location=top.location)] ++ e.monadicNames
@@ -2189,16 +2207,26 @@ top::Expr ::= s::String_t
 
 --A list of the locations where arguments are monads used implicitly
 synthesized attribute monadTypesLocations::[Pair<Type Integer>] occurs on AppExpr, AppExprs;
+--A list of the annotation names, with the final argument being if it is monadic
+synthesized attribute monadAnns::[(Type, QName, Boolean)] occurs on AnnoExpr, AnnoAppExprs;
 --A list of the actual types of arguments
-synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
+synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
 --The only monad banned from being used as an actual argument
-attribute expectedMonad occurs on AppExpr, AppExprs;
-propagate expectedMonad on AppExpr, AppExprs;
+attribute expectedMonad occurs on AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
+propagate expectedMonad on AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
 --Whether we're in a special case where monad arguments are allowed, despite the normal prohibition
-inherited attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
+inherited attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
+
+--We need to put together all the args for the function giving fresh names
+--Pass down the args from the regular args to add the annotated args at the end
+inherited attribute previousArgs::AppExprs occurs on AnnoAppExprs;
+synthesized attribute fullArgs::AppExprs occurs on AnnoAppExprs;
+synthesized attribute rewrittenArg::AppExpr occurs on AnnoExpr;
 
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
+attribute monadRewritten<AnnoExpr>, merrors, mDownSubst, mUpSubst occurs on AnnoExpr;
+attribute monadRewritten<AnnoAppExprs>, merrors, mDownSubst, mUpSubst occurs on AnnoAppExprs;
 
 aspect production missingAppExpr
 top::AppExpr ::= '_'
@@ -2307,6 +2335,80 @@ top::AppExprs ::=
   top.monadicNames = [];
 
   top.monadRewritten = emptyAppExprs(location=top.location);
+}
+
+propagate monadArgumentsAllowed, mDownSubst, mUpSubst on AnnoAppExprs;
+
+aspect production annoExpr
+top::AnnoExpr ::= qn::QName '=' e::AppExpr
+{
+  top.merrors := e.merrors;
+
+  e.monadArgumentsAllowed = top.monadArgumentsAllowed;
+
+  top.realTypes = e.realTypes;
+  --can be at most one entry
+  top.monadAnns = case e.monadTypesLocations of
+                  | [(ty, _)] -> [(ty, qn, true)]
+                  | _ -> [(e.appExprTyperep, qn, false)]
+                  end;
+  top.monadicNames = e.monadicNames;
+
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
+
+  top.monadRewritten = annoExpr(qn, '=', e.monadRewritten, location=top.location);
+
+  top.rewrittenArg = e.monadRewritten;
+}
+
+aspect production snocAnnoAppExprs
+top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
+{
+  top.merrors := es.merrors ++ e.merrors;
+
+  top.realTypes = es.realTypes ++ e.realTypes;
+
+  top.monadAnns = es.monadAnns ++ e.monadAnns;
+
+  top.monadicNames = es.monadicNames ++ e.monadicNames;
+
+  top.monadRewritten = snocAnnoAppExprs(es.monadRewritten, ',', e.monadRewritten, location=top.location);
+
+  es.previousArgs = top.previousArgs;
+  top.fullArgs = snocAppExprs(es.fullArgs, ',', e.rewrittenArg, location=top.location);
+}
+
+aspect production oneAnnoAppExprs
+top::AnnoAppExprs ::= e::AnnoExpr
+{
+  top.merrors := e.merrors;
+
+  top.realTypes = e.realTypes;
+
+  top.monadAnns = e.monadAnns;
+
+  top.monadicNames = e.monadicNames;
+
+  top.monadRewritten = oneAnnoAppExprs(e.monadRewritten, location=top.location);
+
+  top.fullArgs = snocAppExprs(top.previousArgs, ',', e.rewrittenArg, location=top.location);
+}
+
+aspect production emptyAnnoAppExprs
+top::AnnoAppExprs ::=
+{
+  top.merrors := [];
+
+  top.realTypes = [];
+
+  top.monadAnns = [];
+
+  top.monadicNames = [];
+
+  top.monadRewritten = emptyAnnoAppExprs(location=top.location);
+
+  top.fullArgs = top.previousArgs;
 }
 
 --Copper Expressions
