@@ -12,6 +12,9 @@ threaded attribute downSubst, upSubst :: Substitution;
 {-- The complete, final substitution context -}
 inherited attribute finalSubst :: Substitution;
 
+{-- typerep after applying finalSubst, for convinence -}
+synthesized attribute finalType :: Type;
+
 -- We also use typerep.
 -- Such that performSubstitution(e.typerep, e.upSubst) is the expression's real type (as of that moment)
 

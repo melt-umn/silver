@@ -141,7 +141,7 @@ top::Expr ::= x::a
 }
 }
 
-warnCode "Access of value from Decorated a with {} requires an unbounded set of inherited attributes" {
+warnCode "Access of value from Decorated a with b requires an unbounded set of inherited attributes" {
 production valueThing3Bad
 attribute value i occurs on a =>
 top::Expr ::= x::a
