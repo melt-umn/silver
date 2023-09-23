@@ -35,7 +35,7 @@ threaded attribute mDownSubst, mUpSubst::Substitution;
 
 
 function isMonad
-Boolean ::= ty::Type env::Decorated Env
+Boolean ::= ty::Type env::Env
 {
   return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
@@ -44,7 +44,7 @@ Boolean ::= ty::Type env::Decorated Env
 }
 
 function isMonadPlus
-Boolean ::= ty::Type env::Decorated Env
+Boolean ::= ty::Type env::Env
 {
   return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
@@ -53,7 +53,7 @@ Boolean ::= ty::Type env::Decorated Env
 }
 
 function isMonadFail
-Boolean ::= ty::Type env::Decorated Env
+Boolean ::= ty::Type env::Env
 {
   return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0

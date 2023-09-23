@@ -122,14 +122,22 @@ global s11::s:Strategy =
 
 equalityTest(s:rewriteWith(s11, pair(1, pair(2, 3))), just(pair(2, pair(3, 1))), Maybe<Pair<Integer Pair<Integer Integer>>>, silver_tests);
 
+nonterminal DecPair<a b> with fst<a>, snd<b>;
+production dpair
+top::DecPair<a b> ::= x::a y::b
+{
+  top.fst = x;
+  top.snd = y;
+}
+
 global s12::s:Strategy =
-  rule on Maybe<Decorated Pair<Integer Integer>> of
-  | just(p) -> just(decorate pair(p.snd, p.fst) with {})
+  rule on Maybe<Decorated DecPair<Integer Integer>> of
+  | just(p) -> just(decorate dpair(p.snd, p.fst) with {})
   end;
 
 -- Result contains a decorated node, so tricky to test exactly.
 -- Mostly just concerned that this one compiles properly.
-equalityTest(s:rewriteWith(s12, just(decorate pair(123, 456) with {})).isJust, true, Boolean, silver_tests);
+equalityTest(s:rewriteWith(s12, just(decorate dpair(123, 456) with {})).isJust, true, Boolean, silver_tests);
 
 global s13::s:Strategy =
   rule on Pair<a a> of

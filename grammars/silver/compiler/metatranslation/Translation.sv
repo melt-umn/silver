@@ -186,7 +186,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
-  local locationAST::AST = reflect(new(location));
+  local locationAST::AST = reflect(location);
   locationAST.givenLocation = top.givenLocation;
 
   top.translation =

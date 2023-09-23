@@ -1,7 +1,4 @@
 grammar silver:core;
 
-nonterminal Unit;
-
-abstract production unit
-top::Unit ::=
-{}
+data Unit = unit;
+derive Eq, Ord on Unit;

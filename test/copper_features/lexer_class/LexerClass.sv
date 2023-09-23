@@ -54,15 +54,15 @@ parser parse :: Root {
 
 equalityTest ( parse("bar", "").parseSuccess, true, Boolean, copper_tests );
 equalityTest ( parse("bar", "").parseTree.result, "Id", String, copper_tests );
-equalityTest ( parse("bar", "").parseTerminals, [terminalDescriptor("bar", ["copper_features:lexer_class:Identifier", "copper_features:lexer_class:Identifier2"], "copper_features:lexer_class:Id", loc("", 1, 0, 1, 3, 0, 3))], [TerminalDescriptor], copper_tests );
+equalityTest ( parse("bar", "").parseTerminals, [terminalDescriptor(lexeme="bar", lexerClasses=["copper_features:lexer_class:Identifier", "copper_features:lexer_class:Identifier2"], terminalName="copper_features:lexer_class:Id", terminalLocation=loc("", 1, 0, 1, 3, 0, 3))], [TerminalDescriptor], copper_tests );
 
 equalityTest ( parse("foo", "").parseSuccess, true, Boolean, copper_tests );
 equalityTest ( parse("foo", "").parseTree.result, "Foo", String, copper_tests );
-equalityTest ( parse("foo", "").parseTerminals, [terminalDescriptor("foo", ["copper_features:lexer_class:Keyword", "copper_features:lexer_class:AKeyword", "copper_features:lexer_class:BKeyword", "copper_features:lexer_class:C3", "copper_features:lexer_class:C1", "copper_features:lexer_class:C2"], "copper_features:lexer_class:Foo", loc("", 1, 0, 1, 3, 0, 3))], [TerminalDescriptor], copper_tests );
+equalityTest ( parse("foo", "").parseTerminals, [terminalDescriptor(lexeme="foo", lexerClasses=["copper_features:lexer_class:Keyword", "copper_features:lexer_class:AKeyword", "copper_features:lexer_class:BKeyword", "copper_features:lexer_class:C3", "copper_features:lexer_class:C1", "copper_features:lexer_class:C2"], terminalName="copper_features:lexer_class:Foo", terminalLocation=loc("", 1, 0, 1, 3, 0, 3))], [TerminalDescriptor], copper_tests );
 
 equalityTest ( parse("fooxyz", "").parseSuccess, true, Boolean, copper_tests );
 equalityTest ( parse("fooxyz", "").parseTree.result, "FooId", String, copper_tests );
-equalityTest ( parse("fooxyz", "").parseTerminals, [terminalDescriptor("fooxyz", ["copper_features:lexer_class:Keyword", "copper_features:lexer_class:AKeyword", "copper_features:lexer_class:CKeyword"], "copper_features:lexer_class:FooId", loc("", 1, 0, 1, 6, 0, 6))], [TerminalDescriptor], copper_tests );
+equalityTest ( parse("fooxyz", "").parseTerminals, [terminalDescriptor(lexeme="fooxyz", lexerClasses=["copper_features:lexer_class:Keyword", "copper_features:lexer_class:AKeyword", "copper_features:lexer_class:CKeyword"], terminalName="copper_features:lexer_class:FooId", terminalLocation=loc("", 1, 0, 1, 6, 0, 6))], [TerminalDescriptor], copper_tests );
 
 equalityTest ( parse("getRes", "").parseSuccess, true, Boolean, copper_tests );
 equalityTest ( parse("getRes", "").parseTree.result, "true", String, copper_tests );

@@ -201,7 +201,7 @@ top::Type ::=
  - An (undecorated) nonterminal type.
  - Note that this is the *unapplied* type constructor for a nonterminal type;
  - e.g. `Pair<String Integer>` would be represented as
- - `apType(apType(nonterminalType("silver:core:Pair", [starKind(), starKind()], false), stringType()), integerType())`.
+ - `apType(apType(nonterminalType("silver:core:Pair", [starKind(), starKind()], true, false), stringType()), integerType())`.
  -
  - @param fn  The fully qualified name of the nonterminal.
  - @param k  The number type parameters for that nonterminal.

@@ -53,7 +53,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - True if nonsensicle.
  -}
 function sigAttrViaReference
-Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Decorated Env
+Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Env
 {
   local ty :: Type = findNamedSigElemType(sigName, ns.inputElements);
   return !isDecorable(ty, e) || contains(attrName, getMinRefSet(ty, e));
@@ -66,7 +66,7 @@ Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Decorated 
  - True if nonsensicle.
  -}
 function localAttrViaReference
-Boolean ::= sigName::String  attrName::String  e::Decorated Env
+Boolean ::= sigName::String  attrName::String  e::Env
 {
   local d :: [ValueDclInfo] = getValueDcl(sigName, e);
   local ty :: Type = head(d).typeScheme.typerep;
@@ -97,7 +97,7 @@ Boolean ::= sigName::String  attrName::String  e::Decorated Env
  - @returns  Errors for missing equations
  -}
 function checkEqDeps
-[Message] ::= v::FlowVertex  config::Decorated CmdArgs  l::Location  prodName::String  flowEnv::FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>]
+[Message] ::= v::FlowVertex  config::Decorated CmdArgs  l::Location  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>]
 {
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   
@@ -173,7 +173,7 @@ function checkEqDeps
   end;
 }
 function checkAllEqDeps
-[Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  l::Location  prodName::String  flowEnv::FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>]
+[Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  l::Location  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>]
 {
   return flatMap(checkEqDeps(_, config, l, prodName, flowEnv, realEnv, anonResolve), v);
 }
@@ -189,7 +189,7 @@ function checkAllEqDeps
  - needed to compute this synthesized attribute on this type.
  -}
 function inhDepsForSynOnType
-(Maybe<set:Set<String>>, [TyVar]) ::= syn::String  t::Type  flow::EnvTree<FlowType>  ns::NamedSignature env::Decorated Env
+(Maybe<set:Set<String>>, [TyVar]) ::= syn::String  t::Type  flow::EnvTree<FlowType>  ns::NamedSignature env::Env
 {
   local contexts::Contexts = foldContexts(ns.contexts);
   contexts.env = env;

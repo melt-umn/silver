@@ -359,7 +359,7 @@ String ::= qn::Decorated QNameAttrOccur
 }
 -- Source grammar of a lookup of a local dcl
 function hackGramFromQName
-String ::= qn::Decorated QNameLookup<ValueDclInfo>
+String ::= qn::QNameLookup<ValueDclInfo>
 {
   return if qn.found then qn.dcl.sourceGrammar else "";
 }

@@ -35,7 +35,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
       functionType(2, []),
         [appType(listCtrType(), stringType()),
           ioForeignType,
-          appType(nonterminalType("silver:core:IOVal", [starKind()], false, false), intType())])).failure;
+          appType(nonterminalType("silver:core:IOVal", [starKind()], true, false), intType())])).failure;
 
   -- For main functions which return IO<Integer>
   local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
@@ -53,7 +53,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 }
 
 function generateFunctionClassString
-String ::= env::Decorated Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
+String ::= env::Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
   local className :: String = "P" ++ whatName;
 

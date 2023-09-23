@@ -99,7 +99,7 @@ top::ProductionStmt ::= attr::Decorated! QName
  - @return Either this the child, or accessing `attrName` on the child
  -}
 function makeArg
-Expr ::= loc::Location env::Decorated Env attrName::Decorated QName input::NamedSignatureElement
+Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureElement
 {
   local at::QName = qName(loc, input.elementName);
   at.env = env;

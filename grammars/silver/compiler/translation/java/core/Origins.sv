@@ -81,7 +81,7 @@ function getSpecialCaseNoOrigins
 
 
 function typeWantsTracking
-Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
+Boolean ::= ty::Type conf::Decorated CmdArgs env::Env
 {
   return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
