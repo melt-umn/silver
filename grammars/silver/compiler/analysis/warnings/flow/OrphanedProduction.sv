@@ -30,7 +30,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local isClosedNt :: Boolean =
     case getTypeDclAll(namedSig.outputElement.typerep.typeName, top.env) of
-    | ntDcl(_, _, closed, _) :: _ -> closed
+    | ntDcl(_, _, _, closed, _) :: _ -> closed
     | _ -> false -- default, if the lookup fails
     end;
 

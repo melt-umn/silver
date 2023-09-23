@@ -410,6 +410,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   -- This jumps to:
   -- errorAccessHandler  (e.g. 1.unparse)
   -- undecoratedAccessHandler
+  -- dataAccessHandler
   -- decoratedAccessHandler  (see that production, for how normal attribute access proceeds!)
   -- terminalAccessHandler
 }
@@ -428,18 +429,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
             if length(e.unparse) < 12 then "'" ++ e.unparse ++ "' has" else "LHS of '.' is"
        in [err(top.location, ref ++ " type " ++ prettyType(q.attrFor) ++ " and cannot have attributes.")]
       end;
-}
-
-abstract production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
-{
-  undecorates to access(e, '.', q, location=top.location);
-  top.unparse = e.unparse ++ "." ++ q.unparse;
-  
-  production index :: Integer =
-    findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
-
-  top.typerep = q.typerep;
 }
 
 abstract production terminalAccessHandler
@@ -463,7 +452,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("silver:core:Location", [], false)
+    then nonterminalType("silver:core:Location", [], false, false)  -- TODO: This should become data!
     else errorType();
 }
 
@@ -474,11 +463,26 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
-  forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
+  forwards to (if !q.found then unknownDclAccessHandler(_, _, location=_)
                else q.attrDcl.undecoratedAccessHandler)(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
   -- transUndecoratedAccessErrorHandler
+  -- unknownDclAccessHandler  -- unknown attribute error raised already.
+}
+
+abstract production dataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  -- Note: LHS is data, here we dispatch based on the kind of attribute.
+  forwards to (if !q.found then unknownDclAccessHandler(_, _, location=_)
+               else q.attrDcl.dataAccessHandler)(e, q, top.location);
+  -- annoAccessHandler
+  -- synDataAccessHandler
+  -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
 {--
@@ -523,12 +527,12 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
-  forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
+  forwards to (if !q.found then unknownDclAccessHandler(_, _, location=_)
                else q.attrDcl.decoratedAccessHandler)(e, q, top.location);
   -- From here we go to:
   -- synDecoratedAccessHandler
   -- inhDecoratedAccessHandler
-  -- errorDecoratedAccessHandler  -- unknown attribute error raised already.
+  -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
 abstract production synDecoratedAccessHandler
@@ -558,6 +562,38 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep.asNtOrDecType;
 }
 
+abstract production annoAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  production index :: Integer =
+    findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
+
+  top.typerep = q.typerep;
+}
+
+abstract production synDataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+
+  top.typerep = q.typerep;
+}
+
+abstract production inhUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+
+  top.errors <- [err(top.location, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
+}
+
 abstract production transUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
@@ -569,8 +605,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.errors <- [err(top.location, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
 
--- TODO: change name. really "unknownDclAccessHandler"
-abstract production errorDecoratedAccessHandler
+abstract production unknownDclAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);

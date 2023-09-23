@@ -51,11 +51,11 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   
   local numChildren::Integer = n.lookupValue.typeScheme.arity;
   local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);
-  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false), numChildren);
+  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false, false), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(pair(_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
+    map(pair(_, nonterminalType("silver:rewrite:Strategy", [], false, false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] =

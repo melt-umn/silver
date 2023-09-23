@@ -17,7 +17,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   
   top.syntaxAst :=
     [ syntaxNonterminal(
-        nonterminalType(fName, map((.kindrep), tl.types), isThisTracked),
+        nonterminalType(fName, map((.kindrep), tl.types), quals.data, isThisTracked),
         nilSyntax(), exportedProds, exportedLayoutTerms,
         foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers),
         location=top.location, sourceGrammar=top.grammarName)

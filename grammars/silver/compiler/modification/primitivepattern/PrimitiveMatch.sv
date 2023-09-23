@@ -131,8 +131,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else
-          "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- ditto
-           pr.translation) ++
+          s"final ${scrutineeTransType} ${ -- ditto
+            if scrutineeFinalType.isData then "scrutineeNode" else "scrutinee"} = scrutineeIter; " ++
+          pr.translation) ++
         "return " ++ f.translation ++ ";" ++ 
     "}}.eval(context, (" ++ scrutineeTransType ++")" ++ e.translation ++ ")";
 
@@ -182,7 +183,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalType(_, _, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
+    | nonterminalType(_, _, _, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
     | _ -> false
     end;
   
@@ -236,10 +237,15 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
+  production expectedScrutineeType :: Type =
+    if prod_type.outputType.isData
+    then prod_type.outputType
+    else decoratedType(prod_type.outputType, freshInhSet());
+
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  
-  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
+
+  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -311,10 +317,15 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
+  production expectedScrutineeType :: Type =
+    if prod_type.outputType.isData
+    then prod_type.outputType
+    else decoratedType(prod_type.outputType, freshInhSet());
+
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
+  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -332,7 +343,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.finalSubst = top.finalSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType, freshInhSet())));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, expectedScrutineeType));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....

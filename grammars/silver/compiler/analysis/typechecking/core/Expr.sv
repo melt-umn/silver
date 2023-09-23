@@ -146,7 +146,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   thread downSubst, upSubst on top, note, e, errCheck1, top;
   
-  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], false));
+  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], false, false));  -- TODO: This should be data?
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
@@ -337,7 +337,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
   
   errCheck1 = check(es.typerep, stringType());
-  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], false));
+  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], false, false));
   top.errors <-
     if errCheck1.typeerror
     then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]
@@ -364,7 +364,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   errCheck1 = checkDecorable(top.env, e.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a nonterminal or unique reference type.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [err(top.location, "Operand to decorate must be a decorable type.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 

@@ -316,7 +316,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.lazyTranslation = top.translation;
 }
 
-aspect production errorDecoratedAccessHandler
+aspect production inhUndecoratedAccessErrorHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
@@ -324,6 +324,13 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  top.lazyTranslation = top.translation;
+}
+
+aspect production unknownDclAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
@@ -433,8 +440,20 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  local accessTrans::String = s"((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}()";
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";
+  top.translation =
+    if q.attrDcl.typeScheme.typerep.transType != finalType(top).transType
+    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${accessTrans})"
+    else accessTrans;
+  
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
+aspect production synDataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>synthesized(${q.attrOccursIndex})");
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -512,7 +531,7 @@ top::Expr ::= '@' e::Expr
 {
   top.translation =
     s"new ${finalType(top).transType}.DecorationSiteWrapper(${
-      if finalType(top).tracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${e.translation})";
+      if finalType(top).isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 

@@ -105,9 +105,9 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   local lstType :: Type = last(top.namedSignature.inputElements).typerep;
   
   local checkFirst :: Boolean =
-    fstType.isTerminal || !null(getOccursDcl("silver:core:location", fstType.typeName, top.env)) || fstType.tracked;
+    fstType.isTerminal || !null(getOccursDcl("silver:core:location", fstType.typeName, top.env)) || fstType.isTracked;
   local checkSecond :: Boolean =
-    lstType.isTerminal || !null(getOccursDcl("silver:core:location", lstType.typeName, top.env)) || lstType.tracked;
+    lstType.isTerminal || !null(getOccursDcl("silver:core:location", lstType.typeName, top.env)) || lstType.isTracked;
   local errFirst :: [Message] =
     if checkFirst then [] else [err(top.location, "Production has location annotation or is tracked, but first element of signature does not have location and is not tracked.")];
   local errSecond :: [Message] =
@@ -118,7 +118,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
     | [namedSignatureElement("silver:core:location", _)] -> true
     | _ -> false
     end;
-  local lhsHasOrigin :: Boolean = top.namedSignature.outputElement.typerep.tracked;
+  local lhsHasOrigin :: Boolean = top.namedSignature.outputElement.typerep.isTracked;
 
   top.concreteSyntaxTypeErrors <-
     case top.namedSignature.namedInputElements of
@@ -154,7 +154,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String ks::[Kind] tracked::Boolean
+top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
 {
   top.permittedInConcreteSyntax = null(ks);
 }

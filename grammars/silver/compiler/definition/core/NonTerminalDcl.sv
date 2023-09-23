@@ -15,6 +15,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
                     id.location,
                     fName,
                     map((.kindrep), tl.types),
+                    quals.data,
                     quals.closed,
                     quals.tracked)];
   -- TODO: It's probably reasonable to skip listing
@@ -46,38 +47,36 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   insert semantic token IdTypeDcl_t at id.location;
 }
 
-nonterminal NTDeclQualifiers with location, errors;
+nonterminal NTDeclQualifiers with location, errors, data, closed, tracked;
+propagate errors, data, closed, tracked on NTDeclQualifiers;
 
-synthesized attribute closed :: Boolean occurs on NTDeclQualifiers;
-synthesized attribute tracked :: Boolean occurs on NTDeclQualifiers;
+monoid attribute data :: Boolean with false, ||;
+monoid attribute closed :: Boolean with false, ||;
+monoid attribute tracked :: Boolean with false, ||;
 
 concrete production nilNTQualifier
 top::NTDeclQualifiers ::=
 {
-  -- This controls the default closed-ness and tracked-ness of nonterminals
-  top.closed = false;
-  top.tracked = false;
+}
 
-  top.errors := [];
+concrete production dataNTQualifier
+top::NTDeclQualifiers ::= 'data' rest::NTDeclQualifiers
+{
+  top.data <- true;
+  top.errors <- if rest.data then [err(top.location, "Duplicate 'data' qualifier")] else [];
 }
 
 concrete production closedNTQualifier
 top::NTDeclQualifiers ::= 'closed' rest::NTDeclQualifiers
 {
-  top.closed = true;
-  top.tracked = rest.tracked;
-
-  top.errors := rest.errors;
+  top.closed <- true;
   top.errors <- if rest.closed then [err(top.location, "Duplicate 'closed' qualifier")] else [];
 }
 
 concrete production trackedNTQualifier
 top::NTDeclQualifiers ::= 'tracked' rest::NTDeclQualifiers
 {
-  top.closed = rest.closed;
-  top.tracked = true;
-
-  top.errors := rest.errors;
+  top.tracked <- true;
   top.errors <- if rest.tracked then [err(top.location, "Duplicate 'tracked' qualifier")] else [];
 }
 

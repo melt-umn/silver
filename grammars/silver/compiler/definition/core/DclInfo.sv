@@ -21,16 +21,19 @@ synthesized attribute transDefLHSDispatcher :: (DefLHS ::= Decorated! QName  Dec
 
 {--
  - The handler for 'x.a' for 'a', given that 'x' is DECORATED.
- - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see decoratedAccessHandler production for where this is used
  -}
 synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) occurs on AttributeDclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is UNdecorated.
- - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see undecoratedAccessHandler production for where this is used
  -}
 synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) occurs on AttributeDclInfo;
+{--
+ - The handler for 'x.a' for 'a', given that 'x' is data.
+ - @see dataAccessHandler production for where this is used
+ -}
+synthesized attribute dataAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) occurs on AttributeDclInfo;
 {--
  - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
@@ -127,6 +130,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.dataAccessHandler = synDataAccessHandler(_, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
@@ -134,7 +138,8 @@ aspect production inhDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler! access inh from undecorated?
+  top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
+  top.dataAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
@@ -143,6 +148,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = transDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = transUndecoratedAccessErrorHandler(_, _, location=_);
+  top.dataAccessHandler = transUndecoratedAccessErrorHandler(_, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
@@ -151,6 +157,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler(_, _, location=_), _, _, _);
   top.undecoratedAccessHandler = annoAccessHandler(_, _, location=_);
+  top.dataAccessHandler = annoAccessHandler(_, _, location=_);
   top.attrDefDispatcher =
     \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, "Annotations are not defined as equations within productions")], dl, attr, e, location=l);

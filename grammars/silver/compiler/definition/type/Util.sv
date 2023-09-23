@@ -28,6 +28,12 @@ synthesized attribute isUniqueDecorated :: Boolean;
 -- Used in determining whether a type may be supplied with inherited attributes.
 synthesized attribute isNonterminal :: Boolean;
 
+-- Determines whether a type is a data nonterminal type
+synthesized attribute isData :: Boolean;
+
+-- Determines whether a type is tracked
+synthesized attribute isTracked :: Boolean;
+
 -- Used for type checking by 'terminal()'
 synthesized attribute isTerminal :: Boolean;
 
@@ -45,7 +51,7 @@ synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 synthesized attribute unifyInstanceDecorable :: Substitution;  -- NT or unique decorated
 
-attribute arity, isError, isDecorated, isUniqueDecorated, isNonterminal, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
+attribute arity, isError, isDecorated, isUniqueDecorated, isNonterminal, isData, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -55,6 +61,7 @@ top::PolyType ::= ty::Type
   top.isDecorated = ty.isDecorated;
   top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
+  top.isData = ty.isData;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = ty.asNtOrDecType;
 
@@ -72,6 +79,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.isDecorated = ty.isDecorated;
   top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
+  top.isData = ty.isData;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 
@@ -90,6 +98,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.isDecorated = ty.isDecorated;
   top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
+  top.isData = ty.isData;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 
@@ -100,7 +109,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     top.compareTo.typerep == performRenaming(ty, eqSub);
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isUniqueDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isUniqueDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 
@@ -118,6 +127,8 @@ top::Type ::=
   top.isDecorated = false;
   top.isUniqueDecorated = false;
   top.isNonterminal = false;
+  top.isData = false;
+  top.isTracked = false;
   top.isTerminal = false;
   top.isError = false;
   top.isApplicable = false;
@@ -154,6 +165,8 @@ top::Type ::= c::Type a::Type
   top.baseType = c.baseType;
   top.argTypes = c.argTypes ++ [a];
   top.isNonterminal = c.isNonterminal;
+  top.isData = c.isData;
+  top.isTracked = c.isTracked;
   top.asNtOrDecType = ntOrDecType(top, freshInhSet(), freshType());  -- c.baseType should be a nonterminal or skolem
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
   top.unifyInstanceDecorable = c.unifyInstanceDecorable;
@@ -201,12 +214,14 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
 {
   top.isNonterminal = true;
-  top.asNtOrDecType = ntOrDecType(top, freshInhSet(), freshType());
+  top.isData = data;
+  top.isTracked = tracked;
+  top.asNtOrDecType = if data then top else ntOrDecType(top, freshInhSet(), freshType());
   top.unifyInstanceNonterminal = emptySubst();
-  top.unifyInstanceDecorable = emptySubst();
+  top.unifyInstanceDecorable = if data then errorSubst("data") else emptySubst();
 }
 
 aspect production terminalType

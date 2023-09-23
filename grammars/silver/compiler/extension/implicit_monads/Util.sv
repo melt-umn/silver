@@ -143,7 +143,7 @@ String ::= ty::Type
      | appType(c, _) ->
        --We use nonterminalType to get it to show just an underscore
        --e.g. this gives us Maybe<_>, Either<String _>
-       prettyType(appType(c, nonterminalType("_", [], false)))
+       prettyType(appType(c, nonterminalType("_", [], false, false)))
      | _ -> error("Tried to get monadToString for a non-monadic type (" ++ prettyType(ty) ++ ")")
      end;
 }

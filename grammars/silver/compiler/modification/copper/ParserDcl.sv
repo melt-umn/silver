@@ -34,7 +34,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       foldNamedSignatureElements([
         namedSignatureElement("stringToParse", stringType()),
         namedSignatureElement("filenameToReport", stringType())]),
-      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], false), t.typerep)),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], false, false), t.typerep)),
       nilNamedSignatureElement());
 
   production spec :: ParserSpec =

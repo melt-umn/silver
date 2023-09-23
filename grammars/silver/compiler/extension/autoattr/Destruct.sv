@@ -112,7 +112,7 @@ top::ProductionStmt ::= attr::Decorated! QName
                   "Destruct attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", top.location), location=top.location)} ++
                   " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", top.location), location=top.location)} ++
                   " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", top.location), location=top.location)} ++
-                  " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")
+                  " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")  -- TODO: Shouldn't really be using hackUnparse here.
               end;
           },
         filter(

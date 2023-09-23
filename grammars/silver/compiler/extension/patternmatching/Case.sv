@@ -946,7 +946,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
   nt.env = env;
   local isClosed::Boolean =
         case nt.lookupType.dcls of
-        | ntDcl(_, _, closed, _) :: _ -> closed
+        | ntDcl(_, _, _, closed, _) :: _ -> closed
         | _ -> false -- default, if the lookup fails
         end;
 

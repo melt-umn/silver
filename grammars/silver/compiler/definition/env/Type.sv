@@ -40,7 +40,7 @@ top::Type ::= c::Type a::Type
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String _ _ _
 {
   top.typeName = fn;
 }

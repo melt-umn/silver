@@ -48,6 +48,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.dataAccessHandler = synDataAccessHandler(_, _, location=_);
   top.attrDefDispatcher = collectionAttrDefError;
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
@@ -71,7 +72,8 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.operation = o;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
+  top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
+  top.dataAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
   top.attrDefDispatcher = collectionAttrDefError;
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 

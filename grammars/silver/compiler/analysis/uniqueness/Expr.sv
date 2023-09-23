@@ -3,10 +3,11 @@ grammar silver:compiler:analysis:uniqueness;
 attribute uniqueRefs occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
 propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern
   excluding
-    errorAccessHandler, annoAccessHandler, terminalAccessHandler,
+    errorAccessHandler, terminalAccessHandler,
     synDecoratedAccessHandler, inhDecoratedAccessHandler,
     transDecoratedAccessHandler,
-    errorDecoratedAccessHandler,
+    annoAccessHandler, synDataAccessHandler,
+    unknownDclAccessHandler, inhUndecoratedAccessErrorHandler, transUndecoratedAccessErrorHandler,
     ifThenElse, lambdap, letp, matchPrimitiveReal, consPattern;
 
 -- Unique references taken when this expression is wrapped in an attribute access
@@ -194,17 +195,13 @@ top::AppExpr ::= e::Expr
   top.appExprUniquenessErrors <-
     case top.appExprTyperep.baseType of
     | varType(_) -> uniqueContextErrors(e.uniqueRefs)  -- Would need linear types to make this work...
-    | nonterminalType(_, _, _) when !top.isNtUniquenessPreserving -> uniqueContextErrors(e.uniqueRefs)
+    | nonterminalType(_, _, true, _) -> uniqueContextErrors(e.uniqueRefs)
+    | nonterminalType(_, _, _, _) when !top.isNtUniquenessPreserving -> uniqueContextErrors(e.uniqueRefs)
     | _ -> []
     end;
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
-{
-  top.uniqueRefs := e.accessUniqueRefs;
-}
-aspect production annoAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
@@ -282,7 +279,27 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     | _ -> []
     end;
 }
-aspect production errorDecoratedAccessHandler
+aspect production annoAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.uniqueRefs := e.accessUniqueRefs;
+}
+aspect production synDataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.uniqueRefs := e.accessUniqueRefs;
+}
+aspect production inhUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.uniqueRefs := e.accessUniqueRefs;
+}
+aspect production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  top.uniqueRefs := e.accessUniqueRefs;
+}
+aspect production unknownDclAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;

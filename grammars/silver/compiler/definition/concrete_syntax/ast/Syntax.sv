@@ -296,7 +296,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   local isTracked :: Boolean =
     case head(lhsRef) of
-    | syntaxNonterminal(nonterminalType(_, _, tracked), _, _, _, _) -> tracked
+    | syntaxNonterminal(nonterminalType(_, _, _, tracked), _, _, _, _) -> tracked
     | _ -> error("LHS is not a nonterminal")
     end;
   local commaIfArgsOrAnnos :: String = if length(ns.inputElements) + length(ns.namedInputElements)!= 0 then "," else "";

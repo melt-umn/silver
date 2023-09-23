@@ -54,9 +54,12 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String _ data::Boolean _
 {
-  top.accessHandler = undecoratedAccessHandler(_, _, location=_);
+  top.accessHandler =
+    if data
+    then dataAccessHandler(_, _, location=_)
+    else undecoratedAccessHandler(_, _, location=_);
 }
 
 aspect production terminalType

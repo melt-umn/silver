@@ -95,16 +95,9 @@ top::Context ::= msg::String
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindrep, freeVariables, tracked;
-synthesized attribute tracked :: Boolean;
+nonterminal Type with kindrep, freeVariables;
 
 flowtype Type = decorate {}, forward {};
-
-aspect default production
-top::Type ::=
-{
-  top.tracked = false;
-}
 
 {--
  - This is a (universally quantified) type variable.
@@ -139,7 +132,6 @@ top::Type ::= c::Type a::Type
     | _ -> starKind()
     end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
-  top.tracked = c.tracked;
 }
 
 {--
@@ -213,14 +205,14 @@ top::Type ::=
  -
  - @param fn  The fully qualified name of the nonterminal.
  - @param k  The number type parameters for that nonterminal.
- - @param tracked  Might this NT be tracked.
+ - @param data  Is this a data nonterminal.
+ - @param tracked  Is this NT tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String ks::[Kind] tracked::Boolean
+top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
 {
   top.kindrep = foldr(arrowKind, starKind(), ks);
   top.freeVariables = [];
-  top.tracked = tracked;
 }
 
 {--

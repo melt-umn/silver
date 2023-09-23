@@ -126,7 +126,14 @@ top::VarBinder ::= n::Name
     if isDecorable(top.bindingType, top.env) && !top.bindingType.isDecorated
     then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
-  production finalTy::Type = performSubstitution(ty, top.finalSubst);
+
+  -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
+  -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
+  -- since top.bindingType comes straight from the production's type in the environment.
+  -- we need to do some substitution to connect it with the real types.
+  -- (in the env above its okay, since that must always be consulted with the current substitution,
+  -- but here we're rendering the translation. it's the end of the line.)
+  production finalTy :: Type = performSubstitution(ty, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
@@ -155,22 +162,21 @@ top::VarBinder ::= n::Name
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps, [])];
   top.boundNames <- [n.name];
 
-  -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
-  -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
-  -- since top.bindingType comes straight from the production's type in the environment.
-  -- we need to do some substitution to connect it with the real types.
-  -- (in the env above its okay, since that must always be consulted with the current substitution,
-  -- but here we're rendering the translation. it's the end of the line.)
-  local actualTy :: Type = performSubstitution(ty, top.finalSubst);
-
   top.translation = 
-    makeSpecialLocalBinding(fName, 
-      "scrutinee." ++ 
+    makeSpecialLocalBinding(fName,
+      if top.matchingAgainst.fromJust.namedSignature.outputElement.typerep.isData
+      then
+        if isDecorable(top.bindingType, top.env)
+        then s"scrutineeNode.childDecorated(${toString(top.bindingIndex)})"
+        else if top.bindingType.transType == finalTy.transType
+        then s"((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}()"
+        else s"common.Util.<${finalTy.transType}>uncheckedCast(((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}())"
+      else "scrutinee." ++
         (if isDecorable(top.bindingType, top.env)
          then "childDecorated("
-         else s"<${actualTy.transType}>childAsIs(") ++
+         else s"<${finalTy.transType}>childAsIs(") ++
         toString(top.bindingIndex) ++ ")",
-      actualTy.transType);
+      finalTy.transType);
   
   -- We prevent this to prevent newbies from thinking patterns are "typecase"
   -- (Types have to be upper case)

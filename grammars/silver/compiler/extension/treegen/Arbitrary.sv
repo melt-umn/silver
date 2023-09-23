@@ -115,7 +115,7 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
     case t of
     -- Monomorphic nonterminals that don't have an explicit Arbitrary instance,
     -- call the appropriate local generator function.
-    | nonterminalType(ntName, [], _)
+    | nonterminalType(ntName, [], _, _)
       when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
       matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName), loc)}($Expr{depth}) }
     
@@ -127,12 +127,10 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
     -- e.g. lists of nonterminals in a production RHS.
     | appType(listCtrType(), elemT) ->
       Silver_Expr {
-        silver:core:bind(random, \ len::Integer ->
-          silver:core:sequence(
+        silver:core:bind(silver:util:random:randomRange(0, $Expr{depth}), \ len::Integer ->
+          silver:core:traverseA(
             \ depth::Integer -> $Expr{genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, elemT)},
-            silver:core:take(
-              silver:core:toInteger(len * silver:core:toFloat($Expr{depth}))),
-              silver:core:reverse(silver:core:range(0, $Expr{depth}))))
+            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{depth})))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
@@ -147,7 +145,7 @@ Boolean ::= env::Decorated Env  specEnv::Decorated Env  t::Type
 {
   return
     case t of
-    | nonterminalType(ntName, [], _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
+    | nonterminalType(ntName, [], _, _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | terminalType(ntName) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, elemT)
     | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", t, env))
