@@ -10,7 +10,7 @@ grammar silver:compiler:definition:type;
  -       Consider unify returning Maybe<Substitution> or Pair<Boolean Substitution> depending.
  - TODO: More efficient type representations than a assoc-list, somehow.
  -}
-nonterminal Substitution with substList, substErrors, failure;
+data nonterminal Substitution with substList, substErrors, failure;
 
 synthesized attribute substList :: [Pair<TyVar Type>];
 synthesized attribute substErrors :: [String];

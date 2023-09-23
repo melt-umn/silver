@@ -30,8 +30,8 @@ monoid attribute appLexicalTyVarKinds :: [Pair<String Kind>];
 -- These attributes are used if we're using the TypeExprs as type variables-only.
 monoid attribute errorsTyVars :: [Message];
 -- A new environment, with the type variables in this list appearing bound
-inherited attribute initialEnv :: Decorated Env;
-synthesized attribute envBindingTyVars :: Decorated Env;
+inherited attribute initialEnv :: Env;
+synthesized attribute envBindingTyVars :: Env;
 
 monoid attribute errorsKindStar::[Message];
 

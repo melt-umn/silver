@@ -42,19 +42,17 @@ import silver.langutil.NMessage;
  */
 public class Util {
     public static String locationToFile(final NLocation loc) {
-        DecoratedNode decLoc = loc.decorate();
-        return decLoc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+        return loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
     }
 
     public static Range locationToRange(final NLocation loc) {
-        DecoratedNode decLoc = loc.decorate();
         return new Range(
             new Position(
-                (int)decLoc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location) - 1,
-                decLoc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location)),
+                (int)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location) - 1,
+                loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location)),
             new Position(
-                (int)decLoc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location) - 1,
-                decLoc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location))
+                (int)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location) - 1,
+                loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location))
         );
     }
 

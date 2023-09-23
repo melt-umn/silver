@@ -39,10 +39,10 @@ Either<String  Decorated CmdArgs> ::= args::[String]
       flagParser=flag(mwdaFlag))];
 }
 
-abstract production mwdaWrn
-top::Message ::= config::Decorated CmdArgs l::Location m::String
+function mwdaWrn
+Message ::= config::Decorated CmdArgs l::Location m::String
 {
-  forwards to
+  return
     if config.errorMwda
     then err(l, m)
     else wrn(l, m);

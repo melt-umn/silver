@@ -74,7 +74,7 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 }
 
 inherited attribute classHead::Context;
-inherited attribute constraintEnv::Decorated Env;
+inherited attribute constraintEnv::Env;
 inherited attribute frameContexts::[Context];  -- Only used for computing frame in members
 
 nonterminal ClassBody with

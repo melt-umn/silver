@@ -27,7 +27,7 @@ top::TypeCheck ::= l::Type r::Type
 }
 
 abstract production checkNonterminal
-top::TypeCheck ::= e::Decorated Env allowDecorableSkolems::Boolean l::Type
+top::TypeCheck ::= e::Env allowDecorableSkolems::Boolean l::Type
 {
   local refined :: Type =
     performSubstitution(l, top.downSubst);
@@ -57,7 +57,7 @@ top::TypeCheck ::= l::Type
   top.rightpp = "a decorated nonterminal";
 }
 abstract production checkDecorable
-top::TypeCheck ::= e::Decorated Env l::Type
+top::TypeCheck ::= e::Env l::Type
 {
   local refined :: Type =
     performSubstitution(l, top.downSubst);

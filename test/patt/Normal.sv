@@ -90,7 +90,7 @@ a ::= s::a
 }
 
 equalityTest ( echotest("foo"), "foo", String, pat_tests ) ;
-equalityTest ( echotest(decorate just("hi") with {}).fromJust, "hi", String, pat_tests ) ;
+equalityTest ( echotest(just("hi")).fromJust, "hi", String, pat_tests ) ;
 
 
 function lookattees

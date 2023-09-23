@@ -72,38 +72,38 @@ Def ::= sg::String sl::Location fn::String ty::Type
 
 synthesized attribute lexerClassTree :: EnvTree<ValueDclInfo> occurs on Env;
 
-aspect production i_emptyEnv
+aspect production emptyEnv
 top::Env ::=
 {
   top.lexerClassTree = emptyEnvTree();
 }
 
-aspect production i_appendEnv
-top::Env ::= e1::Decorated Env  e2::Decorated Env
+aspect production appendEnv
+top::Env ::= e1::Env  e2::Env
 {
   top.lexerClassTree = appendEnvTree(e1.lexerClassTree, e2.lexerClassTree);
 }
 
-aspect production i_newScopeEnv
-top::Env ::= d::Defs  e::Decorated Env
+aspect production newScopeEnv
+top::Env ::= _  e::Env
 {
   top.lexerClassTree = consEnvTree(d.lexerClassList, e.lexerClassTree);
 }
 
-aspect production i_occursEnv
-top::Env ::= _  e::Decorated Env
+aspect production occursEnv
+top::Env ::= _  e::Env
 {
   top.lexerClassTree = e.lexerClassTree;
 }
 
 function getLexerClassDcl
-[ValueDclInfo] ::= search::String e::Decorated Env
+[ValueDclInfo] ::= search::String e::Env
 {
   return searchEnvTree(search, e.lexerClassTree);
 }
 
 function expandTransitiveSuperClasses
-[String] ::= seen::[String] toExpand::[String] e::Decorated Env
+[String] ::= seen::[String] toExpand::[String] e::Env
 {
   return
     case toExpand of
@@ -119,24 +119,24 @@ function expandTransitiveSuperClasses
 --------------------------------------------------------------------------------
 -- QName.sv
 
-synthesized attribute lookupLexerClass :: Decorated QNameLookup<ValueDclInfo> occurs on QName;
+synthesized attribute lookupLexerClass :: QNameLookup<ValueDclInfo> occurs on QName;
 
 aspect production qNameId
 top::QName ::= id::Name
 {
-  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
+  top.lookupLexerClass = customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location);
 }
 
 aspect production qNameCons
 top::QName ::= id::Name ':' qn::QName
 {
-  top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
+  top.lookupLexerClass = customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location);
 }
 
 aspect production qNameError
 top::QName ::= msg::[Message]
 {
-  top.lookupLexerClass = decorate errorLookup(msg) with {};
+  top.lookupLexerClass = errorLookup(msg);
 }
 
 

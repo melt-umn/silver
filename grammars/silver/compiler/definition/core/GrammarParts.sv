@@ -22,7 +22,7 @@ inherited attribute grammarDependencies :: [String];
  - a file's individual imports between grammar definitions and grammar
  - wide imports.
  -}
-inherited attribute globalImports :: Decorated Env;
+inherited attribute globalImports :: Env;
 {--
  - The definitions resulting from grammar-wide imports definitions.
  - At the top of a grammar, these are echoed down as globalImports

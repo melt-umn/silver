@@ -6,7 +6,8 @@ synthesized attribute snd<a> :: a;
 @{--
  - The basic product type, counterpart to Either.
  -}
-nonterminal Pair<a b> with fst<a>, snd<b>;
+data nonterminal Pair<a b> with fst<a>, snd<b>;
+derive Eq, Ord on Pair;
 
 abstract production pair
 top::Pair<a b> ::= f::a  s::b

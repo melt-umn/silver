@@ -3,7 +3,7 @@ grammar silver:compiler:extension:easyterminal;
 import silver:compiler:definition:env;
 
 function getTerminalRegexDclAll
-[TypeDclInfo] ::= search::String e::Decorated Env
+[TypeDclInfo] ::= search::String e::Env
 {
   return searchEnv(search, e.terminalTree);
 }
@@ -25,26 +25,26 @@ EnvTree<TypeDclInfo> ::= eis::[EnvItem<TypeDclInfo>]
   return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 }
 
-aspect production i_emptyEnv
+aspect production emptyEnv
 top::Env ::=
 {
   top.terminalTree = [emptyEnvTree()];
 }
 
-aspect production i_appendEnv
-top::Env ::= e1::Decorated Env  e2::Decorated Env
+aspect production appendEnv
+top::Env ::= e1::Env  e2::Env
 {
   top.terminalTree = e1.terminalTree ++ e2.terminalTree;
 }
 
-aspect production i_newScopeEnv
-top::Env ::= d::Defs  e::Decorated Env
+aspect production newScopeEnv
+top::Env ::= _  e::Env
 {
   top.terminalTree = buildTerminalTree(d.typeList) :: e.terminalTree;
 }
 
-aspect production i_occursEnv
-top::Env ::= _  e::Decorated Env
+aspect production occursEnv
+top::Env ::= _  e::Env
 {
   top.terminalTree = e.terminalTree;
 }

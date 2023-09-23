@@ -227,11 +227,11 @@ Expr ::= patList::PatternList aspectLHS::Decorated ConvAspectLHS e::Expr loc::Lo
   - @param aspectAttr The aspect attribute we're generating productions for
   - @param eqKind The operator that assigns or binds to the attribute
   - @param location The location where the aspect pattern is defined
-  - @param env A decorated environment for looking up production types.
+  - @param env A Environment for looking up production types.
   - @return A pair of a single AgDcl that defines the aspect production we're generating, and a list of warnings or errors that came from generating the AgDcl.
 -}
 function extractAspectAgDclFromRuleList
-Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS aspectAttr::QNameAttrOccur  eqKind::ConvenienceAspectEquationKind location::Location env::Decorated Env
+Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS aspectAttr::QNameAttrOccur  eqKind::ConvenienceAspectEquationKind location::Location env::Env
 {
 
   local lookupProdInputTypes::([Type] ::= String) = \prodName::String ->

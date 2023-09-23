@@ -452,7 +452,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("silver:core:Location", [], false, false)  -- TODO: This should become data!
+    then nonterminalType("silver:core:Location", [], true, false)
     else errorType();
 }
 
