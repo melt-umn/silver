@@ -358,15 +358,7 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
     | _, _ -> []
     end;
   
-  top.uniqueRefs <- map(
-    \ r::(String, UniqueRefSite) ->
-      (r.1, uniqueRefSite(
-          refSet=r.2.refSet,
-          refFlowDeps=top.flowDeps,
-          sourceGrammar=top.grammarName,
-          sourceLocation=top.location
-        )),
-    rs);
+  top.uniqueRefs <- rs;
   top.accessUniqueRefs = [];
 }
 
