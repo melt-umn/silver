@@ -54,21 +54,20 @@ top::QNames ::= id1::QNameWithTL ',' id2::QNames
 --------------------------------------------------------------------------------
 
 function makeOccursDcls
-AGDcl ::= l::Location ats::[QNameWithTL] nts::[QNameWithTL]
+AGDcl ::= ats::[QNameWithTL] nts::[QNameWithTL]
 {
   return if null(ats) 
 	 then emptyAGDcl()
-	 else appendAGDcl(makeOccursDclsHelp(l, head(ats), nts), makeOccursDcls(l, tail(ats), nts));
+	 else appendAGDcl(makeOccursDclsHelp(head(ats), nts), makeOccursDcls(tail(ats), nts));
 }
 
 function makeOccursDclsHelp
-AGDcl ::= l::Location at::QNameWithTL nts::[QNameWithTL]
+AGDcl ::= at::QNameWithTL nts::[QNameWithTL]
 {
   return if null(nts) 
 	 then emptyAGDcl()
-	 else appendAGDcl(
-	        attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';'),
-		makeOccursDclsHelp(l, at, tail(nts)));
+	 else appendAGDcl(attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';'),
+		 makeOccursDclsHelp(at, tail(nts)));
 }
 
 

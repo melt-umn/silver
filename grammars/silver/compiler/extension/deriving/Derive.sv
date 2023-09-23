@@ -114,7 +114,7 @@ top::AGDcl ::= nt::Decorated! QName
                       consVarBinder(_, ',', _),
                       nilVarBinder(),
                       map(\ i::Integer ->
-                        varVarBinder(name(s"a${toString(i)}", top.location)),
+                        varVarBinder(name(s"a${toString(i)}")),
                         range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                     matchPrimitive(
                       Silver_Expr {y},
@@ -125,7 +125,7 @@ top::AGDcl ::= nt::Decorated! QName
                             consVarBinder(_, ',', _),
                             nilVarBinder(),
                             map(\ i::Integer ->
-                              varVarBinder(name(s"b${toString(i)}", top.location)),
+                              varVarBinder(name(s"b${toString(i)}")),
                               range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                           foldr(
                             and(_, '&&', _),
@@ -134,8 +134,7 @@ top::AGDcl ::= nt::Decorated! QName
                               \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} == $name{s"b${toString(i)}"} },
                               range(0, length(prod.namedSignature.inputElements)))))),
                       Silver_Expr {false})),
-                  includedProds),
-                top.location),
+                  includedProds)),
               Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")}),
             map(
               \ anno::NamedSignatureElement ->
@@ -156,7 +155,7 @@ top::AGDcl ::= nt::Decorated! QName
                       consVarBinder(_, ',', _),
                       nilVarBinder(),
                       map(\ i::Integer ->
-                        varVarBinder(name(s"a${toString(i)}", top.location)),
+                        varVarBinder(name(s"a${toString(i)}")),
                         range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                     matchPrimitive(
                       Silver_Expr {y},
@@ -167,7 +166,7 @@ top::AGDcl ::= nt::Decorated! QName
                             consVarBinder(_, ',', _),
                             nilVarBinder(),
                             map(\ i::Integer ->
-                              varVarBinder(name(s"b${toString(i)}", top.location)),
+                              varVarBinder(name(s"b${toString(i)}")),
                               range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                           foldr(
                             or(_, '||', _),
@@ -176,8 +175,7 @@ top::AGDcl ::= nt::Decorated! QName
                               \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} != $name{s"b${toString(i)}"} },
                               range(0, length(prod.namedSignature.inputElements)))))),
                       Silver_Expr {true})),
-                  includedProds),
-                top.location),
+                  includedProds)),
               Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")}),
             map(
               \ anno::NamedSignatureElement ->
@@ -232,7 +230,7 @@ top::AGDcl ::= nt::Decorated! QName
                       consVarBinder(_, ',', _),
                       nilVarBinder(),
                       map(\ i::Integer ->
-                        varVarBinder(name(s"a${toString(i)}", top.location)),
+                        varVarBinder(name(s"a${toString(i)}")),
                         range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                     matchPrimitive(
                       Silver_Expr {y},
@@ -248,7 +246,7 @@ top::AGDcl ::= nt::Decorated! QName
                                 map(
                                   \ i::Integer ->
                                     if prod.fullName == prod2.fullName
-                                    then varVarBinder(name(s"b${toString(i)}", top.location))
+                                    then varVarBinder(name(s"b${toString(i)}"))
                                     else ignoreVarBinder('_'),
                                   range(0, length(prod2.namedSignature.inputElements)))), ')', '->',
                               if prod.fullName < prod2.fullName
@@ -263,11 +261,9 @@ top::AGDcl ::= nt::Decorated! QName
                                 map(
                                   \ i::Integer -> Silver_Expr { silver:core:compare($name{s"a${toString(i)}"}, $name{s"b${toString(i)}"}) },
                                   range(0, length(prod2.namedSignature.inputElements))))),
-                          includedProds),
-                        top.location),
+                          includedProds)),
                       Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")})),
-                  includedProds),
-                top.location),
+                  includedProds)),
               Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")}),
             map(
               \ anno::NamedSignatureElement ->
@@ -278,12 +274,12 @@ top::AGDcl ::= nt::Decorated! QName
 }
 
 function foldPrimPatterns
-PrimPatterns ::= ps::[PrimPattern]  loc::Location
+PrimPatterns ::= ps::[PrimPattern]
 {
   return
     case ps of
     | [h] -> onePattern(h)
-    | h :: t -> consPattern(h, '|', foldPrimPatterns(t, loc))
+    | h :: t -> consPattern(h, '|', foldPrimPatterns(t))
     | [] -> error("empty patterns")
     end;
 }

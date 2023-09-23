@@ -28,7 +28,7 @@ top::AttributeDclInfo ::= fn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = functorAttributionDcl;
@@ -53,11 +53,11 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
   top.operation = append;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = 
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, attr.name ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
+    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
+      errorAttributeDef([errFromOrigin(ambientOrigin(), attr.name ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
   top.attrAppendDefDispatcher = synAppendColAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
@@ -93,7 +93,7 @@ top::AttributeDclInfo ::= inh::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
@@ -110,7 +110,7 @@ top::AttributeDclInfo ::= syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
@@ -127,7 +127,7 @@ top::AttributeDclInfo ::= inh::String keySyn::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
@@ -144,7 +144,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
@@ -161,7 +161,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
@@ -222,7 +222,7 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
   top.operation = o.fromJust;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher =
     if o.isJust

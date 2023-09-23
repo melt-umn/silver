@@ -35,7 +35,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   
   local fwrd::AGDcl =
     foldr(
-      appendAGDcl(_, _),
+      appendAGDcl,
       defsAGDcl(
         [attrDef(
            defaultEnvItem(
@@ -105,7 +105,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
       appendAGDcl(
         @atOccursDcl,
         foldr1(
-          appendAGDcl(_, _),
+          appendAGDcl,
           map(
             \ n::String ->
               attributionDcl(

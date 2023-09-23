@@ -59,9 +59,8 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
         name(
           "p_"
            ++ substitute(":", "_", top.grammarName)
-           ++ "_" ++ substitute(".", "_", top.location.filename)
-           ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column),
-           v.location)
+           ++ "_" ++ substitute(".", "_", v.location.filename)
+           ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column))
     | anOptionalName(_, n, _) -> n
     end;
 

@@ -72,7 +72,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
   top.errors <- undecidableInstanceErrors;
 
-  local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep, top.grammarName, top.location);
+  local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
   top.occursDefs <- transitiveSuperOccursDefs(top.env, t.typerep, [], instDcl);
@@ -127,7 +127,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 }
 
@@ -174,7 +174,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 
   top.lexicalTyVarKinds <-
@@ -222,7 +222,7 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 }
 
@@ -235,7 +235,7 @@ top::Constraint ::= 'runtimeTypeable' t::TypeExpr
   top.errors <- t.errorsTyVars;
   top.errors <- t.errorsKindStar;
 
-  local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep, top.grammarName, top.location);
+  local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep);
   top.defs <- [tcInstDef(instDcl)];
 }
 
@@ -254,7 +254,7 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
-  local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep, top.grammarName, top.location);
+  local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep);
   top.defs <-
     case top.constraintPos of
     | classPos(_, _) -> []
@@ -291,13 +291,14 @@ top::Constraint ::= 'typeError' msg::String_t
     end;
 }
 
-synthesized attribute classInstDcl::(InstDclInfo ::= String Type String Location);
-synthesized attribute occursInstDcl::(OccursDclInfo ::= String Type Type String Location);
-synthesized attribute typeableInstDcl::(InstDclInfo ::= Type String Location);
-synthesized attribute inhSubsetInstDcl::(InstDclInfo ::= Type Type String Location);
+synthesized attribute classInstDcl::(InstDclInfo ::= String Type);
+synthesized attribute occursInstDcl::(OccursDclInfo ::= String Type Type);
+synthesized attribute typeableInstDcl::(InstDclInfo ::= Type);
+synthesized attribute inhSubsetInstDcl::(InstDclInfo ::= Type Type);
 synthesized attribute classDefName::Maybe<String>;
 synthesized attribute instanceHead::Maybe<Context>;
-tracked nonterminal ConstraintPosition with classInstDcl, occursInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
+tracked data nonterminal ConstraintPosition
+  with sourceGrammar, classInstDcl, occursInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
 
 aspect default production
 top::ConstraintPosition ::=
@@ -308,37 +309,40 @@ top::ConstraintPosition ::=
 abstract production instancePos
 top::ConstraintPosition ::= instHead::Context tvs::[TyVar]
 {
-  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
-  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  local loc::Location = getParsedOriginLocationOrFallback(top);
+  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.instanceHead = just(instHead);
 }
 abstract production classPos
 top::ConstraintPosition ::= className::String tvs::[TyVar]
 {
-  top.classInstDcl = \ fName::String t::Type g::String l::Location ->
+  local loc::Location = getParsedOriginLocationOrFallback(top);
+  top.classInstDcl = \ fName::String t::Type ->
     instSuperDcl(fName,
-      currentInstDcl(className, t, sourceGrammar=g, sourceLocation=l),
-      sourceGrammar=g, sourceLocation=l);
-  top.occursInstDcl = \ fName::String ntty::Type atty::Type g::String l::Location ->
+      currentInstDcl(className, t, sourceGrammar=top.sourceGrammar, sourceLocation=loc),
+      sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.occursInstDcl = \ fName::String ntty::Type atty::Type ->
     occursSuperDcl(fName, atty,
-      currentInstDcl(className, ntty, sourceGrammar=g, sourceLocation=l),
-      sourceGrammar=g, sourceLocation=l);
-  top.typeableInstDcl = \ t::Type g::String l::Location ->
+      currentInstDcl(className, ntty, sourceGrammar=top.sourceGrammar, sourceLocation=loc),
+      sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.typeableInstDcl = \ t::Type ->
     typeableSuperDcl(
-      currentInstDcl(className, t, sourceGrammar=g, sourceLocation=l),
-      sourceGrammar=g, sourceLocation=l);
+      currentInstDcl(className, t, sourceGrammar=top.sourceGrammar, sourceLocation=loc),
+      sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.inhSubsetInstDcl = error("subset constraint not permitted as superclass");
   top.classDefName = just(className);
 }
 abstract production classMemberPos
 top::ConstraintPosition ::= className::String tvs::[TyVar]
 {
-  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
-  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  local loc::Location = getParsedOriginLocationOrFallback(top);
+  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.classDefName = just(className);
   -- A bit strange, but class member constraints are sort of like instance constraints.
   -- However we don't know what the instance type actually is, and want to skip the
@@ -348,19 +352,21 @@ top::ConstraintPosition ::= className::String tvs::[TyVar]
 abstract production signaturePos
 top::ConstraintPosition ::= sig::NamedSignature
 {
-  top.classInstDcl = sigConstraintDcl(_, _, sig, sourceGrammar=_, sourceLocation=_);
-  top.occursInstDcl = occursSigConstraintDcl(_, _, _, sig, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableSigConstraintDcl(_, sig, sourceGrammar=_, sourceLocation=_);
-  top.inhSubsetInstDcl = inhSubsetSigConstraintDcl(_, _, sig, sourceGrammar=_, sourceLocation=_);
+  local loc::Location = getParsedOriginLocationOrFallback(top);
+  top.classInstDcl = sigConstraintDcl(_, _, sig, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.occursInstDcl = occursSigConstraintDcl(_, _, _, sig, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.typeableInstDcl = typeableSigConstraintDcl(_, sig, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.inhSubsetInstDcl = inhSubsetSigConstraintDcl(_, _, sig, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
 }
 abstract production globalPos
 top::ConstraintPosition ::= tvs::[TyVar]
 {
+  local loc::Location = getParsedOriginLocationOrFallback(top);
   -- These are translated the same as instance constraints.
-  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
-  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
+  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
 }
 
 function transitiveSuperContexts

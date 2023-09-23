@@ -65,7 +65,7 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
   top.unparse = s"${id.unparse} ${rhs.unparse}";
 
   local ntBaseType::TypeExpr = nominalTypeExpr(
-    qNameTypeId(terminal(IdUpper_t, top.ntName, top.location)));
+    qNameTypeId(terminal(IdUpper_t, top.ntName, id.nameLoc)));
   local ntType::TypeExpr =
     case top.ntTypeArgs of
     | botlNone() -> ntBaseType

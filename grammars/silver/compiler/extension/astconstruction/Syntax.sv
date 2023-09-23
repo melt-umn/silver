@@ -15,7 +15,7 @@ top::Expr ::= 'AST' '{' ast::AST_c '}'
 layout {silver:reflect:concretesyntax:WhiteSpace}
 {
   top.unparse = s"AST {${ast.unparse}}";
-  forwards to translate(top.location, reflect(ast.ast));
+  forwards to translate(reflect(ast.ast));
 }
 
 concrete production quoteASTPattern
@@ -23,7 +23,7 @@ top::Pattern ::= 'AST' '{' ast::AST_c '}'
 layout {silver:reflect:concretesyntax:WhiteSpace}
 {
   top.unparse = s"AST {${ast.unparse}}";
-  forwards to translatePattern(top.location, reflect(ast.ast));
+  forwards to translatePattern(reflect(ast.ast));
 }
 
 concrete production antiquoteAST_c
@@ -39,7 +39,7 @@ concrete production varAST_c
 top::AST_c ::= n::QName_t
 {
   top.unparse = n.lexeme;
-  top.ast = antiquotePatternAST(varPattern(name(n.lexeme, n.location)));
+  top.ast = antiquotePatternAST(varPattern(name(n.lexeme)));
   top.errors :=
     if indexOf(":", n.lexeme) != -1
     then [errFromOrigin(n, "Pattern variable name must be unqualified")]
@@ -58,13 +58,9 @@ abstract production antiquoteAST
 top::AST ::= e::Expr
 {
   top.translation =
-    errorExpr(
-      [err(top.givenLocation, "${} should only occur inside AST { } expression")],
-      location=top.givenLocation);
+    errorExpr([err(top.givenLocation, "${} should only occur inside AST { } expression")]);
   top.patternTranslation =
-    errorPattern(
-      [err(top.givenLocation, "${} should only occur inside AST { } expression")],
-      location=top.givenLocation);
+    errorPattern([err(top.givenLocation, "${} should only occur inside AST { } expression")]);
   forwards to error("forward shouldn't be needed here");
 }
 
@@ -72,12 +68,8 @@ abstract production antiquotePatternAST
 top::AST ::= p::Pattern
 {
   top.translation =
-    errorExpr(
-      [err(top.givenLocation, "Variable and wildcard patterns should only occur inside AST { } pattern")],
-      location=top.givenLocation);
+    errorExpr([err(top.givenLocation, "Variable and wildcard patterns should only occur inside AST { } pattern")]);
   top.patternTranslation =
-    errorPattern(
-      [err(top.givenLocation, "Variable and wildcard patterns should only occur inside AST { } pattern")],
-      location=top.givenLocation);
+    errorPattern([err(top.givenLocation, "Variable and wildcard patterns should only occur inside AST { } pattern")]);
   forwards to error("forward shouldn't be needed here");
 }

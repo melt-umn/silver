@@ -53,7 +53,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
   -- emit function taking a ID tree GENERATING FUNCTION and check e on it
   forwards to 
     foldr(
-      appendAGDcl(_, _),
+      appendAGDcl,
       emptyAGDcl(),
       fundcl ::
         map(
@@ -88,7 +88,7 @@ AGDcl ::= d::ValueDclInfo  testfunname::String  l::Location  testSuite::Name
   -- emit test case calling 'repeatTestTimes(testArbitraryProduction_ID, 100)'
   return 
     foldr(
-      appendAGDcl(_, _),
+      appendAGDcl,
       emptyAGDcl(),
       [
         functionDcl(

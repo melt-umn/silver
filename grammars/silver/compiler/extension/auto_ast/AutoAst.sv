@@ -60,7 +60,6 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       astQName,
       '=',
       mkFullFunctionInvocation(
-        top.location,
         baseExpr(v),
         map(accessAst(_, top.location), elems),
         if hasLoc then

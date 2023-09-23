@@ -55,11 +55,11 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   local contextSigDefs::[Def] =
     flatMap(
-      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
-      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local sourceGrammar::String =
     if id.lookupValue.found
@@ -112,11 +112,11 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   local contextSigDefs::[Def] =
     flatMap(
-      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
-      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local sourceGrammar::String =
     if id.lookupValue.found

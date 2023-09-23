@@ -16,7 +16,7 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.location)))]);
+      [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.nameLoc)))]);
 }
 
 abstract production destructAttributionDcl
@@ -100,9 +100,9 @@ top::ProductionStmt ::= attr::Decorated! QName
                     ')')} -> a
               | a ->
                 error(
-                  "Destruct attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", top.location))} ++
-                  " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", top.location))} ++
-                  " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", top.location))} ++
+                  "Destruct attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", attr.nameLoc))} ++
+                  " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", attr.nameLoc))} ++
+                  " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", attr.nameLoc))} ++
                   " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")  -- TODO: Shouldn't really be using hackUnparse here.
               end;
           },

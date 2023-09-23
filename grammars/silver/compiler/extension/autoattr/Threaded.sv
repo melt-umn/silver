@@ -30,8 +30,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=inh.location))),
-       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.location)))]);
+      [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=inh.nameLoc))),
+       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, nothing(), d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
 concrete production collectionThreadedAttributeDcl
@@ -67,8 +67,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   -- The non-interfering way of doing this would be to split up the collection attr decl prodictions
   -- into a prod providing the defs, and a prod providing the translation...
   top.defs := 
-    [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, just(q.operation), d.reversed, sourceGrammar=top.grammarName, sourceLocation=inh.location))),
-     attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, just(q.operation), d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.location)))];
+    [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, just(q.operation), d.reversed, sourceGrammar=top.grammarName, sourceLocation=inh.nameLoc))),
+     attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, just(q.operation), d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))];
   
   forwards to
     appendAGDcl(
@@ -122,8 +122,7 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
   forwards to
     threadInhDcl(
       isCol, inh.name, syn,
-      map(
-        name(_, top.location),
+      map(name,
         lhsName ::
         (if rev then reverse(occursChildren) else occursChildren) ++
         if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
@@ -157,8 +156,7 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! 
   forwards to
     threadSynDcl(
       isCol, inh, syn.name,
-      map(
-        name(_, top.location),
+      map(name,
         lhsName ::
         (if rev then reverse(occursChildren) else occursChildren) ++
         [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]));

@@ -51,7 +51,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     | _ -> []
     end;
   
-  cl.constraintPos = instancePos(instContext(fName, ty.typerep), boundVars);
+  cl.constraintPos = instancePos(instContext(fName, ty.typerep), boundVars, sourceGrammar=top.grammarName);
 
   production attribute headPreDefs :: [Def] with ++;
   headPreDefs := [];
@@ -156,11 +156,11 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   local cmDefs::[Def] =
     flatMap(
-      \ c::Context -> c.contextMemberDefs(boundVars, top.grammarName, top.location),
+      \ c::Context -> c.contextMemberDefs(boundVars, top.grammarName, id.nameLoc),
       memberContexts);
   local cmOccursDefs::[OccursDclInfo] =
     flatMap(
-      \ c::Context -> c.contextMemberOccursDefs(boundVars, top.grammarName, top.location),
+      \ c::Context -> c.contextMemberOccursDefs(boundVars, top.grammarName, id.nameLoc),
       memberContexts);
   e.env =
     newScopeEnv(

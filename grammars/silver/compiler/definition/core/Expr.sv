@@ -920,7 +920,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
   --top.errors <- [wrnFromOrigin(t, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
 
   local bogus :: Expr =
-    mkStrFunctionInvocation($6.location, "silver:core:bogusLoc", []);
+    mkStrFunctionInvocation("silver:core:bogusLoc", []);
 
   forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6);
 }

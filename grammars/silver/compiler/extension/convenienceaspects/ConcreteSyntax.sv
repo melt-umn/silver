@@ -4,7 +4,7 @@ import silver:compiler:modification:collection;
 import silver:compiler:extension:constructparser;
 
 @{- @hide -}
-synthesized attribute makeAspectEquation::(ProductionStmt ::= DefLHS QNameAttrOccur Expr Location);
+synthesized attribute makeAspectEquation::(ProductionStmt ::= DefLHS QNameAttrOccur Expr);
 
 @{-
   - A nonterminal describing what binding to use on the attribute in the generated aspects.

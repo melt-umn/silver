@@ -23,7 +23,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   -- TODO: We want to define our own defs here but can't forward to defsAGDcl because collections define different translation.
   -- Not sure about the best way to refactor this.
   top.defs :=
-    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.location)))];
+    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))];
 
   top.errors <- e.errors;
   
@@ -73,12 +73,12 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
       exprOperator(baseExpr(qName("silver:core:append"))), $7);
 }
 
-synthesized attribute appendProd :: (Expr ::= Expr Expr Location) occurs on Operation;
+synthesized attribute appendProd :: (Expr ::= Expr Expr) occurs on Operation;
 
 aspect production functionOperation
 top::Operation ::= e::Expr _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkFunctionInvocation(l, e, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr -> mkFunctionInvocation(e, [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 
@@ -136,7 +136,7 @@ top::ProductionStmt ::= attr::Decorated! QName
     then attr.lookupAttribute.dcl.emptyVal
     else
       foldr1(
-        attr.lookupAttribute.dcl.operation.appendProd(_, _, top.location),
+        attr.lookupAttribute.dcl.operation.appendProd,
         map(
           \ i::NamedSignatureElement ->
             access(

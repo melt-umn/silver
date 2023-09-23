@@ -12,7 +12,7 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
   propagate grammarName, config, docEnv;
   top.docForName = id.name;
   top.docUnparse = s"`data nonterminal ${id.unparse}`";
-  top.docDcls := (id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName)) :: ctors.docDcls;
+  top.docDcls := (id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName)) :: ctors.docDcls;
   top.docs := mkUndocumentedItem(top.docForName, top) :: ctors.docs;
   ctors.downDocConfig = top.downDocConfig;
 }
@@ -23,7 +23,7 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
   propagate grammarName, config, docEnv;
   top.docForName = id.name;
   top.docUnparse = s"`data nonterminal ${id.unparse}`";
-  top.docDcls := (id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName)) :: ctors.docDcls;
+  top.docDcls := (id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName)) :: ctors.docDcls;
   top.docs := mkUndocumentedItem(top.docForName, top) :: ctors.docs;
   ctors.downDocConfig = top.downDocConfig;
 }

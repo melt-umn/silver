@@ -57,7 +57,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
       getKnownProds(nt.lookupType.fullName, top.env));
   local dcl::AGDcl =
     foldr(
-      appendAGDcl(_, _), emptyAGDcl(),
+      appendAGDcl, emptyAGDcl(),
       map(propagateAspectDcl(_, attrs), includedProds));
   
   forwards to
@@ -72,14 +72,17 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
   top.errors :=
     if null(forward.errors)
     then []
-    else [nested(top.location, s"In propagate of ${attrs.unparse} for production ${d.fullName}:", forward.errors)];
+    else [nested(
+      getParsedOriginLocationOrFallback(top),
+      s"In propagate of ${attrs.unparse} for production ${d.fullName}:",
+      forward.errors)];
   
   forwards to
     aspectProductionDcl(
       'aspect', 'production', qName(d.fullName),
       aspectProductionSignature(
         aspectProductionLHSFull(
-          name(d.namedSignature.outputElement.elementName, top.location),
+          name(d.namedSignature.outputElement.elementName),
           d.namedSignature.outputElement.typerep),
         '::=',
         foldr(
@@ -88,7 +91,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
           map(
             \ ie::NamedSignatureElement ->
               aspectRHSElemFull(
-                name(ie.elementName, top.location),
+                name(ie.elementName),
                 freshenType(ie.typerep, ie.typerep.freeVariables)),
             d.namedSignature.inputElements))),
       productionBody(
@@ -136,7 +139,7 @@ top::ProductionStmt ::= attr::QName
   forwards to
     if !null(attr.lookupAttribute.errors)
     then errorProductionStmt(attr.lookupAttribute.errors)
-    else attr.lookupAttribute.dcl.propagateDispatcher(attr, top.location);
+    else attr.lookupAttribute.dcl.propagateDispatcher(attr);
 }
 
 abstract production propagateError

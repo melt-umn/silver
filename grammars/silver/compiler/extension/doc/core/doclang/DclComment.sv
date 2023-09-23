@@ -74,7 +74,7 @@ top::DclComment ::= EmptyDclComment_t
     top.doEmit = false;
 }
 
-global theEmptyDclComment :: DclComment = emptyDclComment(terminal(EmptyDclComment_t, ""), location=txtLoc("<theEmpyDclComment>"));
+global theEmptyDclComment :: DclComment = emptyDclComment(terminal(EmptyDclComment_t, ""));
 
 concrete production normalDclComment
 top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
@@ -406,7 +406,7 @@ top::DclCommentPart ::= '@link' '[' id::Id_t ']'
                end;
     top.errors <- case res of
                   | [_] -> []
-                  | _ -> [wrn(childParserLoc(top.offsetLocation, top.location, 0, 0, 0, 0),
+                  | _ -> [wrn(childParserLoc(top.offsetLocation, getParsedOriginLocation(top).fromJust, 0, 0, 0, 0),
                             "Broken doc link to `"++id.lexeme++"`")]
                   end;
 }

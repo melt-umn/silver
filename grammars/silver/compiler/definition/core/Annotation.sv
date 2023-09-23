@@ -11,7 +11,7 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
 
   production fName :: String = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [annoDef(top.grammarName, getParsedOriginLocationOrFallback(a), fName, tl.freeVariables, te.typerep)];
+  top.defs := [annoDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;

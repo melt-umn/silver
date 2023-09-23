@@ -12,7 +12,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 {
   top.docForName = "class " ++ id.name;
   top.docUnparse = s"`class ${id.unparse}`";
-  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=top.location, sourceGrammar=top.grammarName))] ++ body.docDcls;
+  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))] ++ body.docDcls;
   top.docs := [mkUndocumentedItem(top.docForName, top)] ++ body.docs;
   body.scopeName = top.docForName;
   body.downDocConfig = top.downDocConfig;
@@ -24,7 +24,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
 {
   top.docForName = "instance "++id.name++" "++ty.unparse;
   top.docUnparse = s"`instance ${id.unparse} ${ty.unparse}`";
-  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=top.location, sourceGrammar=top.grammarName))] ++ body.docDcls;
+  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))] ++ body.docDcls;
   top.docs := [mkUndocumentedItem(top.docForName, top)] ++ body.docs;
   body.scopeName = top.docForName;
   body.downDocConfig = top.downDocConfig;

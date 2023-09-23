@@ -16,7 +16,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(functorDcl(fName, sourceGrammar=top.grammarName, sourceLocation=a.location)))]);
+      [attrDef(defaultEnvItem(functorDcl(fName, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
 }
 
 abstract production functorAttributionDcl
@@ -64,10 +64,10 @@ top::ProductionStmt ::= attr::Decorated! QName
   
   -- Generate the arguments for the constructor
   local inputs :: [Expr] = 
-    map(makeArg(top.location, top.env, attr, _), top.frame.signature.inputElements);
+    map(makeArg(top.env, attr, _), top.frame.signature.inputElements);
   local annotations :: [Pair<String Expr>] = 
     map(
-      makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+      makeAnnoArg(top.frame.signature.outputElement.elementName, _),
       top.frame.signature.namedInputElements);
 
   -- Construct an attribute def and call with the generated arguments
@@ -77,24 +77,19 @@ top::ProductionStmt ::= attr::Decorated! QName
       '.',
       qNameAttrOccur(new(attr)),
       '=',
-      mkFullFunctionInvocation(
-        top.location,
-        baseExpr(qName(top.frame.fullName)),
-        inputs,
-        annotations),
+      mkFullFunctionInvocation(baseExpr(qName(top.frame.fullName)), inputs, annotations),
       ';');
 }
 
 {--
  - Generates the expression we should use for an argument
- - @param loc      The parent location to use in construction
  - @param env      The environment
  - @param attrName The name of the attribute being propagated
  - @param input    The NamedSignatureElement being propagated
  - @return Either this the child, or accessing `attrName` on the child
  -}
 function makeArg
-Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureElement
+Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
 {
   local at::QName = qName(input.elementName);
   at.env = env;
@@ -115,13 +110,12 @@ Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureE
 
 {--
  - Generates the list of AnnoExprs used in calling the constructor
- - @param loc      The parent location to use in construction
  - @param baseName The name of the parent from the signature
  - @param input   The NamedSignatureElement for an annotation
  - @return A list of AnnoExprs to be used to build the named arguments
  -}
 function makeAnnoArg
-Pair<String Expr> ::= loc::Location baseName::String input::NamedSignatureElement
+Pair<String Expr> ::= baseName::String input::NamedSignatureElement
 {
   -- TODO: This is a hacky way of getting the base name, not sure if correct
   -- trouble is the annotations are listed as fullnames, but have to be supplied as shortnames. weird.

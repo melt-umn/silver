@@ -65,14 +65,14 @@ concrete production pptemplateExpr
 top::Expr ::= PPTemplate_kwd t::TemplateString
 layout {}
 {
-  forwards to translate(top.location, reflect(t.ppTemplate));
+  forwards to translate(reflect(t.ppTemplate));
 }
 
 concrete production singleLinepptemplateExpr
 top::Expr ::= SLPPTemplate_kwd t::SingleLineTemplateString
 layout {}
 {
-  forwards to translate(top.location, reflect(t.ppTemplate));
+  forwards to translate(reflect(t.ppTemplate));
 }
 
 -- Antiquote production used in translating nonwater Exprs that should get directly embedded in the result.
