@@ -645,17 +645,17 @@ top::ExprTest ::= p::Maybe<Pair<String Pair<Integer Integer>>>
 {
   top.i_out =
       case p of
-      | pair("a", pair(0, 1)) -> 3
-      | pair("b", pair(_, 0)) -> 4
+      | ("a", (0, 1)) -> 3
+      | ("b", (_, 0)) -> 4
       | _ -> 5
       end;
 }
 
-equalityTest(test_case_nested(just(pair("a", pair(0, 1)))).i_out, just(3),
+equalityTest(test_case_nested(just(("a", (0, 1)))).i_out, just(3),
              Maybe<Integer>, implicit_monad_tests);
-equalityTest(test_case_nested(just(pair("b", pair(0, 0)))).i_out, just(4),
+equalityTest(test_case_nested(just(("b", (0, 0)))).i_out, just(4),
              Maybe<Integer>, implicit_monad_tests);
-equalityTest(test_case_nested(just(pair("a", pair(0, 0)))).i_out, just(5),
+equalityTest(test_case_nested(just(("a", (0, 0)))).i_out, just(5),
              Maybe<Integer>, implicit_monad_tests);
 equalityTest(test_case_nested(nothing()).i_out, nothing(),
              Maybe<Integer>, implicit_monad_tests);
@@ -670,8 +670,8 @@ top::ExprTest ::= p::Pair<String Integer>
 {
   top.i_out_lst =
       case_any p of
-      | pair("a", 0) -> [3]
-      | pair("b", 1) -> [4]
+      | ("a", 0) -> [3]
+      | ("b", 1) -> [4]
       | _ -> 5
       end;
 }
@@ -680,24 +680,24 @@ top::ExprTest ::= p::[Pair<String Integer>]
 {
   top.i_out_lst =
       case_any p of
-      | pair("a", 0) -> 3
-      | pair("b", 1) -> 4
+      | ("a", 0) -> 3
+      | ("b", 1) -> 4
       | _ -> 5
       end;
 }
 
-equalityTest(test_case_any1(pair("a", 0)).i_out_lst, [3, 5],
+equalityTest(test_case_any1(("a", 0)).i_out_lst, [3, 5],
              [Integer], implicit_monad_tests);
-equalityTest(test_case_any1(pair("b", 1)).i_out_lst, [4, 5],
+equalityTest(test_case_any1(("b", 1)).i_out_lst, [4, 5],
              [Integer], implicit_monad_tests);
-equalityTest(test_case_any1(pair("c", 2)).i_out_lst, [5],
+equalityTest(test_case_any1(("c", 2)).i_out_lst, [5],
              [Integer], implicit_monad_tests);
 --
-equalityTest(test_case_any2([pair("a", 0)]).i_out_lst, [3, 5],
+equalityTest(test_case_any2([("a", 0)]).i_out_lst, [3, 5],
              [Integer], implicit_monad_tests);
-equalityTest(test_case_any2([pair("b", 1)]).i_out_lst, [4, 5],
+equalityTest(test_case_any2([("b", 1)]).i_out_lst, [4, 5],
              [Integer], implicit_monad_tests);
-equalityTest(test_case_any2([pair("c", 2)]).i_out_lst, [5],
+equalityTest(test_case_any2([("c", 2)]).i_out_lst, [5],
              [Integer], implicit_monad_tests);
 equalityTest(test_case_any2([]).i_out_lst, [],
              [Integer], implicit_monad_tests);

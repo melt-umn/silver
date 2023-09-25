@@ -112,7 +112,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
   -- It is necessary to subst on scrutineeType here for the horrible reason that the type we're matching on
-  -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of pair(x,_) -> x end'
+  -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of (x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
   local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst);

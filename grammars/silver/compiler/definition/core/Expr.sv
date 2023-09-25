@@ -1246,7 +1246,7 @@ function reorderedAnnoAppExprs
 [Decorated Expr] ::= d::Decorated AnnoAppExprs
 {
   -- This is an annoyingly poor quality implementation
-  return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+  return map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
 }
 function reorderedLte
 Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }

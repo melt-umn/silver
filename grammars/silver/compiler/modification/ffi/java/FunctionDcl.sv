@@ -64,7 +64,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.genFiles := if null(ffidefs.ffiTranslationString)
                     then forward.genFiles
                     else 
-                    [pair("P" ++ id.name ++ ".java",
+                    [("P" ++ id.name ++ ".java",
                       generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, "return (" ++ namedSig.outputElement.typerep.transClassType ++ ")" ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n")
                     )];
 

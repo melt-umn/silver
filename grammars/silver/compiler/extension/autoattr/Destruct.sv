@@ -118,6 +118,6 @@ top::ProductionStmt ::= attr::Decorated! QName
         filter(
           \ ie::Pair<Integer NamedSignatureElement> ->
             !null(getOccursDcl(attr.lookupAttribute.dcl.fullName, ie.snd.typerep.typeName, top.env)),
-          zipWith(pair, range(0, numChildren), top.frame.signature.inputElements))));
+          zip(range(0, numChildren), top.frame.signature.inputElements))));
 }
 

@@ -27,10 +27,10 @@ global mts::MaybeT<State<Integer _> String> =
     return toString(y / (x + 1));
   };
 
-equalityTest(runState(mts.run, -4), pair(-2, nothing()), Pair<Integer Maybe<String>>, core_tests);
-equalityTest(runState(mts.run, -1), pair(1, nothing()), Pair<Integer Maybe<String>>, core_tests);
-equalityTest(runState(mts.run, 0), pair(2, just("2")), Pair<Integer Maybe<String>>, core_tests);
-equalityTest(runState(mts.run, 1), pair(2, just("1")), Pair<Integer Maybe<String>>, core_tests);
-equalityTest(runState(mts.run, 2), pair(4, just("1")), Pair<Integer Maybe<String>>, core_tests);
-equalityTest(runState(mts.run, 3), pair(4, just("1")), Pair<Integer Maybe<String>>, core_tests);
-equalityTest(runState(mts.run, 5), pair(6, just("1")), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, -4), (-2, nothing()), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, -1), (1, nothing()), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, 0), (2, just("2")), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, 1), (2, just("1")), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, 2), (4, just("1")), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, 3), (4, just("1")), Pair<Integer Maybe<String>>, core_tests);
+equalityTest(runState(mts.run, 5), (6, just("1")), Pair<Integer Maybe<String>>, core_tests);

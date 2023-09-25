@@ -63,7 +63,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local contexts::Contexts = foldContexts(namedSig.contexts);
   contexts.boundVariables = namedSig.freeVariables;
 
-  top.genFiles := [pair(className ++ ".java", s"""
+  top.genFiles := [(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
 import silver.core.*;

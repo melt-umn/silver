@@ -54,14 +54,14 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     local parsed::DclComment = parseComment(top.config, comment);
 
     local paramNamesAndForWhat::Pair<Maybe<[String]> String> = case getFirstAGDcl(forward) of
-        | functionDcl(_, _, ns, _) -> pair(just(ns.argNames), "function")
-        | aspectFunctionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "function")
-        | productionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "production")
-        | aspectProductionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "production")
-        | nonterminalDcl(_, _, _, tl, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
-        | attributeDclInh(_, _, _, tl, _, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "attribute")
-        | attributeDclSyn(_, _, _, tl, _, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "attribute")
-        | _ -> pair(just([]), if isDoubleComment then "standalone" else "other")
+        | functionDcl(_, _, ns, _) -> (just(ns.argNames), "function")
+        | aspectFunctionDcl(_, _, _, ns, _) -> (just(ns.argNames), "function")
+        | productionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
+        | aspectProductionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
+        | nonterminalDcl(_, _, _, tl, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
+        | attributeDclInh(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | attributeDclSyn(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | _ -> (just([]), if isDoubleComment then "standalone" else "other")
         end;
 
     parsed.paramNames = paramNamesAndForWhat.fst;

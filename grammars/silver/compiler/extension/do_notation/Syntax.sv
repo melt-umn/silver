@@ -149,7 +149,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
     then
       finalReturnDoBody('return',
         foldr1(
-          \ e1::Expr e2::Expr -> Silver_Expr { silver:core:pair($Expr{e1}, $Expr{e2}) },
+          \ e1::Expr e2::Expr -> Silver_Expr { silver:core:pair(fst=$Expr{e1}, snd=$Expr{e2}) },
           map(\ item::(String, TypeExpr) -> Silver_Expr { $name{item.1} }, top.recBindings)),
         ';', location=top.location)
     else top.recRes;

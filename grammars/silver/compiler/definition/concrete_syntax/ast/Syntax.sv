@@ -143,7 +143,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
 {
   top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
-  top.cstDcls := [pair(t.typeName, top)] ++ subdcls.cstDcls;
+  top.cstDcls := [(t.typeName, top)] ++ subdcls.cstDcls;
   top.allNonterminals := [top];
   
   top.cstErrors <- if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
@@ -160,7 +160,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
+  top.layoutContribs := map(pair(fst=t.typeName, snd=_), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(t.typeName));
@@ -182,7 +182,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.fullName = n;
   top.sortKey = "CCC" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [(n, top)];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with terminal " ++ n];
@@ -195,8 +195,8 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.classTerminalContribs := modifiers.classTerminalContribs;
   top.memberTerminals := [top];
   top.dominatingTerminalContribs :=
-    map(pair(n, _), flatMap((.memberTerminals), modifiers.submits_)) ++
-    map(pair(_, top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
+    map(pair(fst=n, snd=_), flatMap((.memberTerminals), modifiers.submits_)) ++
+    map(pair(fst=_, snd=top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
   top.terminalRegex = regex;
 
   -- left(terminal name) or right(string prefix)
@@ -215,7 +215,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     end;
 
   local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
-  top.prettyNamesAccum := [pair(prettyName, n)];
+  top.prettyNamesAccum := [(prettyName, n)];
   local disambiguatedPrettyName :: String =
     case length(tm:lookup(prettyName, top.prettyNames)) of
     | 1 -> prettyName
@@ -245,7 +245,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
-  top.cstDcls := [pair(ns.fullName, top)];
+  top.cstDcls := [(ns.fullName, top)];
   top.allProductions := [top];
   top.allProductionNames := [ns.fullName];
   
@@ -268,14 +268,14 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
-  top.cstProds := [pair(ns.outputElement.typerep.typeName, top)];
+  top.cstProds := [(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize := [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs :=
-    map(pair(ns.fullName, _), fromMaybe([], modifiers.customLayout)) ++
+    map(pair(fst=ns.fullName, snd=_), fromMaybe([], modifiers.customLayout)) ++
     -- The production inherits its LHS nonterminal's layout, unless overridden.
-    (if top.hasCustomLayout then [] else [pair(ns.fullName, head(lhsRef).fullName)]) ++
+    (if top.hasCustomLayout then [] else [(ns.fullName, head(lhsRef).fullName)]) ++
     -- All nonterminals on the RHS that export this production inherit this
     -- production's layout, unless overriden on the nonterminal.
     flatMap(
@@ -284,7 +284,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         | syntaxNonterminal(_,_,_,_,_)
           when !head(rhsRef).hasCustomLayout &&
                contains(top.fullName, head(rhsRef).exportedProds) ->
-          [pair(head(rhsRef).fullName, ns.fullName)]
+          [(head(rhsRef).fullName, ns.fullName)]
         | _ -> []
         end,
       rhsRefs);
@@ -373,7 +373,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.fullName = n;
   top.sortKey = "AAA" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [(n, top)];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
@@ -414,7 +414,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [(n, top)];
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
@@ -448,7 +448,7 @@ top::SyntaxDcl ::= n::String acode::String
 
   top.cstNormalize := [top];
 
-  top.parserAttributeAspectContribs := [pair(n, acode)];
+  top.parserAttributeAspectContribs := [(n, acode)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
   top.copperElementReference = error("can't demand copperElementReference of an aspect");
   top.copperGrammarElements = [];
@@ -473,7 +473,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
       if !null(p.snd) then []
       else ["Terminal " ++ p.fst ++ " was referenced but " ++
             "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
-    zipWith(pair, terms, trefs));
+    zip(terms, trefs));
 
   top.cstNormalize := [top];
 

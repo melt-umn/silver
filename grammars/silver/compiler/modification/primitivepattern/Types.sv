@@ -22,7 +22,7 @@ Pair<[Context] Type> ::= te::PolyType
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(existentialVars)),
     zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(te.typerep.outputType.freeVariables)));
   
-  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
+  return (map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 {--
@@ -59,7 +59,7 @@ Pair<[Context] Type> ::= te::PolyType
 {
   local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(te.boundVars));
   
-  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
+  return (map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 

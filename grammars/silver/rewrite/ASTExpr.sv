@@ -351,7 +351,7 @@ top::ASTExpr ::= a::NamedASTExprs body::ASTExpr
   top.value = body.value;
   a.substitutionEnv = top.substitutionEnv;
   body.substitutionEnv =
-    map(\ n::NamedAST -> case n of namedAST(n, a) -> pair(n, a) end, a.namedValues) ++ top.substitutionEnv;
+    map(\ n::NamedAST -> case n of namedAST(n, a) -> (n, a) end, a.namedValues) ++ top.substitutionEnv;
 }
 
 abstract production lengthASTExpr
@@ -533,7 +533,7 @@ top::NamedASTExpr ::= n::String v::ASTExpr
   top.pp = pp"${text(n)}=${v.pp}";
   top.namedValue = namedAST(n, v.value);
   top.namedAppValue =
-    pair(
+    (
       last(explode(":", n)),
       case v of
       | missingArgASTExpr() -> nothing()

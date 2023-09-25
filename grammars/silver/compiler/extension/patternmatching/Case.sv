@@ -166,7 +166,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
   local fwdResult::Expr =
         foldr(\ p::(String, Expr) rest::Expr ->
                 makeLet(top.location, p.1, freshType(), p.2, rest),
-              compiledCase, zipWith(pair(_, _), names, es));
+              compiledCase, zip(names, es));
   forwards to fwdResult;
 }
 
@@ -187,15 +187,15 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
 {
   return case lst of
            --this probably shouldn't be called with an empty list, but catch it anyway
-         | [] -> pair([], [])
-         | [mr] -> pair([mr], [])
+         | [] -> ([], [])
+         | [mr] -> ([mr], [])
          | mr1::mr2::rest ->
            if mr1.isVarMatchRule == mr2.isVarMatchRule
            then --both have the same type of pattern
               let sub::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(mr2::rest)
-              in pair(mr1::sub.fst, sub.snd) end
+              in (mr1::sub.fst, sub.snd) end
            else --the first has a different type of pattern than the second
-              pair([mr1], mr2::rest)
+              ([mr1], mr2::rest)
          end;
 }
 
@@ -661,7 +661,7 @@ function groupAllPattsByHead
      if null(pattLists)
      then []
      else case groupAllPattsByHeadHelp(head(pattLists), tail(pattLists)) of
-          | pair(thisGroup, others) ->
+          | (thisGroup, others) ->
             (head(pattLists)::thisGroup)::groupAllPattsByHead(others)
           end;
 }
@@ -671,12 +671,12 @@ Pair<[[Decorated Pattern]] [[Decorated Pattern]]> ::=
 {
   return
      case rest of
-     | [] -> pair([], [])
+     | [] -> ([], [])
      | h::t -> case groupAllPattsByHeadHelp(item, t) of
-               | pair(grp, rst) ->
+               | (grp, rst) ->
                  if head(item).patternSortKey == head(h).patternSortKey
-                 then pair(h::grp, rst)
-                 else pair(grp, h::rst)
+                 then (h::grp, rst)
+                 else (grp, h::rst)
                end
      end;
 }
@@ -1087,7 +1087,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 
   pt.patternVarEnv = [];
 
-  top.matchRuleList = [matchRule(pt.patternList, just(pair(cond, nothing())), e, location=top.location)];
+  top.matchRuleList = [matchRule(pt.patternList, just((cond, nothing())), e, location=top.location)];
 }
 
 concrete production matchRuleWhenMatches_c
@@ -1106,7 +1106,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e
   pt.patternVarEnv = [];
   p.patternVarEnv = pt.patternVars;
 
-  top.matchRuleList = [matchRule(pt.patternList, just(pair(cond, just(p))), e, location=top.location)];
+  top.matchRuleList = [matchRule(pt.patternList, just((cond, just(p))), e, location=top.location)];
 }
 
 abstract production matchRule
@@ -1118,8 +1118,8 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern]
   top.unparse =
     implode(", ", map((.unparse), pl)) ++
     case cond of
-    | just(pair(c, just(p))) -> " when " ++ c.unparse ++ " matches " ++ p.unparse
-    | just(pair(c, nothing())) -> " when " ++ c.unparse
+    | just((c, just(p))) -> " when " ++ c.unparse ++ " matches " ++ p.unparse
+    | just((c, nothing())) -> " when " ++ c.unparse
     | nothing() -> ""
     end ++
     " -> " ++ e.unparse;
@@ -1257,7 +1257,7 @@ AbstractMatchRule ::= headExpr::Expr  headType::Type  absRule::AbstractMatchRule
       matchRule(
         restPat,
         case cond of
-        | just(pair(c, p)) -> just(pair(makeLet(absRule.location, pvn, headType, headExpr, c), p))
+        | just((c, p)) -> just((makeLet(absRule.location, pvn, headType, headExpr, c), p))
         | nothing() -> nothing()
         end,
         makeLet(absRule.location, pvn, headType, headExpr, e),
@@ -1320,13 +1320,13 @@ Expr ::= ml::[AbstractMatchRule] failExpr::Expr
 {
   return
     case ml of
-    | matchRule(_, just(pair(c, nothing())), e) :: tl ->
+    | matchRule(_, just((c, nothing())), e) :: tl ->
       Silver_Expr {
         if $Expr{c}
         then $Expr{e}
         else $Expr{buildMatchWhenConditionals(tl, failExpr)}
       }
-    | matchRule(_, just(pair(c, just(p))), e) :: tl ->
+    | matchRule(_, just((c, just(p))), e) :: tl ->
       Silver_Expr {
         case $Expr{c} of
         | $Pattern{p} -> $Expr{e}

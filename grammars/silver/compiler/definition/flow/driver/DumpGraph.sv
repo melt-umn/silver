@@ -52,9 +52,9 @@ function unList
   return if null(l) then
     []
   else if !null(recurse) && head(recurse).fst == head(l).fst then
-    pair(head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
+    (head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
   else
-    pair(head(l).fst, [head(l).snd]) :: recurse;
+    (head(l).fst, [head(l).snd]) :: recurse;
 }
 
 

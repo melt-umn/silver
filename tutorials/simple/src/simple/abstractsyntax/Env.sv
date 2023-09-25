@@ -80,7 +80,7 @@ top::Def ::=
 abstract production valueDef
 top::Def ::= n::String  t::Decorated TypeExpr
 {
-  top.valueContribs = [pair(n, t)];
+  top.valueContribs = [(n, t)];
 }
 
 function lookupValue

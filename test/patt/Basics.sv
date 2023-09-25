@@ -17,19 +17,19 @@ function basic2 -- nest translation
 Boolean ::= s::Pair<Maybe<Boolean> Maybe<Pair<Boolean String>>>
 {
   return case s of
-          pair(just(bv), just(pair(sbv, ssv))) -> bv && sbv
-         |pair(just(bv), nothing()) -> !bv
-         |pair(nothing(), _) -> false
+          (just(bv), just((sbv, ssv))) -> bv && sbv
+         |(just(bv), nothing()) -> !bv
+         |(nothing(), _) -> false
          end;
 }
 
-equalityTest ( basic2(pair(just(true), just(pair(true, "")))), true, Boolean, pat_tests ) ;
-equalityTest ( basic2(pair(just(false), just(pair(true, "")))), false, Boolean, pat_tests ) ;
-equalityTest ( basic2(pair(just(true), just(pair(false, "")))), false, Boolean, pat_tests ) ;
-equalityTest ( basic2(pair(just(true), nothing())), false, Boolean, pat_tests ) ;
-equalityTest ( basic2(pair(just(false), nothing())), true, Boolean, pat_tests ) ;
-equalityTest ( basic2(pair(nothing(), nothing())), false, Boolean, pat_tests ) ;
-equalityTest ( basic2(pair(nothing(), just(pair(true, "")))), false, Boolean, pat_tests ) ;
+equalityTest ( basic2((just(true), just((true, "")))), true, Boolean, pat_tests ) ;
+equalityTest ( basic2((just(false), just((true, "")))), false, Boolean, pat_tests ) ;
+equalityTest ( basic2((just(true), just((false, "")))), false, Boolean, pat_tests ) ;
+equalityTest ( basic2((just(true), nothing())), false, Boolean, pat_tests ) ;
+equalityTest ( basic2((just(false), nothing())), true, Boolean, pat_tests ) ;
+equalityTest ( basic2((nothing(), nothing())), false, Boolean, pat_tests ) ;
+equalityTest ( basic2((nothing(), just((true, "")))), false, Boolean, pat_tests ) ;
 
 
 function basic3 -- "nondeterministic" multiple matching
@@ -55,53 +55,53 @@ function basic4 -- using integers
 Integer ::= p::Pair<Integer Maybe<Integer>>
 {
   return case p of
-           pair(1, nothing()) -> 1
-         | pair(1, just(_)) -> 2
-         | pair(2, nothing()) -> 3
-         | pair(_, _) -> 4
+           (1, nothing()) -> 1
+         | (1, just(_)) -> 2
+         | (2, nothing()) -> 3
+         | (_, _) -> 4
          end;
 }
 
-equalityTest ( basic4(pair(1, nothing())), 1, Integer, pat_tests ) ;
-equalityTest ( basic4(pair(1, just(1))), 2, Integer, pat_tests ) ;
-equalityTest ( basic4(pair(2, nothing())), 3, Integer, pat_tests ) ;
-equalityTest ( basic4(pair(2, just(1))), 4, Integer, pat_tests ) ;
-equalityTest ( basic4(pair(77, just(1))), 4, Integer, pat_tests ) ;
+equalityTest ( basic4((1, nothing())), 1, Integer, pat_tests ) ;
+equalityTest ( basic4((1, just(1))), 2, Integer, pat_tests ) ;
+equalityTest ( basic4((2, nothing())), 3, Integer, pat_tests ) ;
+equalityTest ( basic4((2, just(1))), 4, Integer, pat_tests ) ;
+equalityTest ( basic4((77, just(1))), 4, Integer, pat_tests ) ;
 
 function basic5 -- using strings
 Integer ::= p::Pair<String Maybe<Integer>>
 {
   return case p of
-           pair("1", nothing()) -> 1
-         | pair("1", just(_)) -> 2
-         | pair("2", nothing()) -> 3
-         | pair(_, _) -> 4
+           ("1", nothing()) -> 1
+         | ("1", just(_)) -> 2
+         | ("2", nothing()) -> 3
+         | (_, _) -> 4
          end;
 }
 
-equalityTest ( basic5(pair("1", nothing())), 1, Integer, pat_tests ) ;
-equalityTest ( basic5(pair("1", just(1))), 2, Integer, pat_tests ) ;
-equalityTest ( basic5(pair("2", nothing())), 3, Integer, pat_tests ) ;
-equalityTest ( basic5(pair("2", just(1))), 4, Integer, pat_tests ) ;
-equalityTest ( basic5(pair("77", just(1))), 4, Integer, pat_tests ) ;
+equalityTest ( basic5(("1", nothing())), 1, Integer, pat_tests ) ;
+equalityTest ( basic5(("1", just(1))), 2, Integer, pat_tests ) ;
+equalityTest ( basic5(("2", nothing())), 3, Integer, pat_tests ) ;
+equalityTest ( basic5(("2", just(1))), 4, Integer, pat_tests ) ;
+equalityTest ( basic5(("77", just(1))), 4, Integer, pat_tests ) ;
 
 function basic6 -- using _
 Integer ::= p::Pair<String String>
 {
   return case p of
-           pair("1", _) -> 1
-         | pair("2", _) -> 2
-         | pair(_, "1") -> 3
-         | pair(_, _) -> 4
+           ("1", _) -> 1
+         | ("2", _) -> 2
+         | (_, "1") -> 3
+         | (_, _) -> 4
          end;
 }
 
-equalityTest ( basic6(pair("1", "1")), 1, Integer, pat_tests ) ;
-equalityTest ( basic6(pair("1", "2")), 1, Integer, pat_tests ) ;
-equalityTest ( basic6(pair("2", "1")), 2, Integer, pat_tests ) ;
-equalityTest ( basic6(pair("2", "2")), 2, Integer, pat_tests ) ;
-equalityTest ( basic6(pair("77", "1")), 3, Integer, pat_tests ) ;
-equalityTest ( basic6(pair("77", "2")), 4, Integer, pat_tests ) ;
+equalityTest ( basic6(("1", "1")), 1, Integer, pat_tests ) ;
+equalityTest ( basic6(("1", "2")), 1, Integer, pat_tests ) ;
+equalityTest ( basic6(("2", "1")), 2, Integer, pat_tests ) ;
+equalityTest ( basic6(("2", "2")), 2, Integer, pat_tests ) ;
+equalityTest ( basic6(("77", "1")), 3, Integer, pat_tests ) ;
+equalityTest ( basic6(("77", "2")), 4, Integer, pat_tests ) ;
 
 nonterminal MyTriple<a b c>;
 abstract production mytriple
@@ -125,18 +125,18 @@ function basic8 -- using mixed name/fullnames
 Integer ::= p::Pair<Integer Integer>
 {
 return case p of
-| pair(1,2) -> 1
-| silver:core:pair(1,_) -> 2
-| pair(2,1) -> 3
-| silver:core:pair(_,1) -> 4
+| (1,2) -> 1
+| silver:core:pair(fst=1) -> 2
+| pair(fst=2,snd=1) -> 3
+| silver:core:pair(snd=1) -> 4
 | _ -> 5
 end;
 }
 
-equalityTest ( basic8(pair(1,2)), 1, Integer, pat_tests );
-equalityTest ( basic8(pair(1,3)), 2, Integer, pat_tests );
-equalityTest ( basic8(pair(2,1)), 3, Integer, pat_tests );
-equalityTest ( basic8(pair(3,1)), 4, Integer, pat_tests );
+equalityTest ( basic8((1,2)), 1, Integer, pat_tests );
+equalityTest ( basic8((1,3)), 2, Integer, pat_tests );
+equalityTest ( basic8((2,1)), 3, Integer, pat_tests );
+equalityTest ( basic8((3,1)), 4, Integer, pat_tests );
 
 
 -- more testing mixing variable and constructor patterns

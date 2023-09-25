@@ -60,14 +60,14 @@ top::ParserSpec ::=
   production componentGrammarMarkingTerminals::[Pair<String [String]>] =
     map(
       \ g::String ->
-        pair(g,
+        (g,
           foldr(consSyntax, nilSyntax(),
             moduleExportedDefs(top.location, top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
       grams);
   production markingTerminalPrefixes::[Pair<String String>] =
     flatMap(
       \ gp::Pair<String String> ->
-        map(pair(_, gp.snd), lookup(gp.fst, componentGrammarMarkingTerminals).fromJust),
+        map(pair(fst=_, snd=gp.snd), lookup(gp.fst, componentGrammarMarkingTerminals).fromJust),
       grammarTerminalPrefixes);
 
   top.cstAst =

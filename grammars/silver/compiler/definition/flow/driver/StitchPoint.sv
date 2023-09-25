@@ -69,7 +69,7 @@ function projectAttribute
   prod::ProductionGraph
 {
   -- emit edges from the src vertex of this production
-  return map(pair(sourceType.inhVertex(attr), _),
+  return map(pair(fst=sourceType.inhVertex(attr), snd=_),
     -- Turn into inh vertexes (in this production) on targetType
     map(targetType.inhVertex,
       -- Filter down to just LHS Inh in that production, (string names)
@@ -103,8 +103,8 @@ function flowTypeEdge
 Pair<FlowVertex FlowVertex> ::= vt::VertexType  edge::Pair<String String>
 {
   return if edge.fst == "forward" then
-    pair(vt.fwdVertex, vt.inhVertex(edge.snd))
+    (vt.fwdVertex, vt.inhVertex(edge.snd))
   else
-    pair(vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
+    (vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
 }
 

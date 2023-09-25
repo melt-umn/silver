@@ -111,7 +111,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just(pair(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), nothing())),
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), nothing())),
       hackWrapKey(toString(top.ruleIndex), e, location=e.location),
       location=top.location)];
 }
@@ -141,7 +141,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just(pair(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), just(p))),
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), just(p))),
       hackWrapKey(toString(top.ruleIndex), e, location=e.location),
       location=top.location)];
 }
@@ -150,7 +150,7 @@ abstract production hackWrapKey
 top::Expr ::= key::String e::Expr
 {
   top.unparse = s"key(${key}, ${e.unparse})";
-  top.decRuleExprs = [pair(key, forward)];
+  top.decRuleExprs = [(key, forward)];
   forwards to e;
 }
 
@@ -258,7 +258,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   nps.namedTypesHaveUniversalVars =
     map(
       \ t::Pair<String Type> ->
-        pair(t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
+        (t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
       prodType.namedTypes);
 } 
 
@@ -415,7 +415,7 @@ top::VarBinders ::=
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
-  top.varBindings = [pair(n.name, performSubstitution(top.bindingType, top.finalSubst).isDecorated)];
+  top.varBindings = [(n.name, performSubstitution(top.bindingType, top.finalSubst).isDecorated)];
 }
 aspect production ignoreVarBinder
 top::VarBinder ::= '_'

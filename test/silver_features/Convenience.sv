@@ -1,21 +1,23 @@
 
-nonterminal ConcreteProductions with fst<ATerm>;
+import silver:langutil;
+
+nonterminal ConcreteProductions with ast<ATerm>;
 
 terminal ATerm '';
 
 -- Just make sure the syntax is as expected.
 
 concrete productions top::ConcreteProductions
-(oneElem)  | s::ATerm { top.fst = s; }
-(consElem) | s::ATerm ss::ConcreteProductions { top.fst = ss.fst; } action { print "hello"; }
-(moreElem) | ss::ConcreteProductions precedence = 7 { top.fst = ss.fst; }
-           | s::ATerm { top.fst = s; }
+(oneElem)  | s::ATerm { top.ast = s; }
+(consElem) | s::ATerm ss::ConcreteProductions { top.ast = ss.ast; } action { print "hello"; }
+(moreElem) | ss::ConcreteProductions precedence = 7 { top.ast = ss.ast; }
+           | s::ATerm { top.ast = s; }
 
 
 wrongCode "$9" {
   abstract production dummyDontMatter
   top::ConcreteProductions ::=
   {
-    top.fst = $9;
+    top.ast = $9;
   }
 }
