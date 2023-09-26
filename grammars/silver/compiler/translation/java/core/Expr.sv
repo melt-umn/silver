@@ -1,15 +1,8 @@
 grammar silver:compiler:translation:java:core;
 
 
-import silver:compiler:analysis:typechecking:core only finalSubst;
 import silver:compiler:driver only noOrigins;
 import silver:compiler:definition:flow:ast;
-
-function finalType
-Type ::= e::Decorated Expr
-{
-  return performSubstitution(e.typerep, e.finalSubst);
-}
 
 {--
  - A translation string that will be a thunk instead of the raw value.
@@ -80,13 +73,13 @@ top::Expr ::= q::Decorated! QName
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env) then
       -- Reference to a primitive (not decorated or undecorated):
-      s"context.<${finalType(top).transType}>childAsIs(${childIDref})"
-    else if !finalType(top).isDecorated then
+      s"context.<${top.finalType.transType}>childAsIs(${childIDref})"
+    else if !top.finalType.isDecorated then
       -- Undecorated reference to a nonterminal:
       -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
       -- this is a potential source of minor inefficiency for functions that do not decorate.
-      s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
-    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+      s"((${top.finalType.transType})context.childDecorated(${childIDref}).undecorate())"
+    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
       -- Unique reference to a child that is a remote decoration site:
       -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
       s"context.createDecoratedChild(${childIDref})"
@@ -100,9 +93,9 @@ top::Expr ::= q::Decorated! QName
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.childAsIsLazy(${childIDref})"
-    else if !finalType(top).isDecorated
+    else if !top.finalType.isDecorated
     then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
-    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
       wrapThunk(top.translation, true)
     else
       s"context.childDecoratedLazy(${childIDref})";
@@ -113,10 +106,10 @@ top::Expr ::= q::Decorated! QName
 {
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-    then s"context.<${finalType(top).transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !finalType(top).isDecorated
-    then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
-    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+    then s"context.<${top.finalType.transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
+    else if !top.finalType.isDecorated
+    then s"((${top.finalType.transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
+    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
       s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
     else
       s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
@@ -126,9 +119,9 @@ top::Expr ::= q::Decorated! QName
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !finalType(top).isDecorated
+    else if !top.finalType.isDecorated
     then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
-    else if finalType(top).isUniqueDecorated && top.alwaysDecorated then
+    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
       wrapThunk(top.translation, true)
     else
       s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
@@ -138,9 +131,9 @@ aspect production lhsReference
 top::Expr ::= q::Decorated! QName
 {
   top.translation =
-    if finalType(top).isDecorated
+    if top.finalType.isDecorated
     then "context"
-    else s"((${finalType(top).transType})context.undecorate())";
+    else s"((${top.finalType.transType})context.undecorate())";
 
   top.lazyTranslation = top.translation;
 }
@@ -149,9 +142,9 @@ aspect production forwardReference
 top::Expr ::= q::Decorated! QName
 {
   top.translation =
-    if finalType(top).isDecorated
+    if top.finalType.isDecorated
     then "context.forward()"
-    else s"((${finalType(top).transType})context.forward().undecorate())";
+    else s"((${top.finalType.transType})context.forward().undecorate())";
 
   -- this might evaluate the forward equation, so suspend it as a thunk
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -186,8 +179,8 @@ top::Expr ::= q::Decorated! QName
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
   top.translation =
-    if top.typerep.transType != finalType(top).transType
-    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${top.lazyTranslation})"
+    if top.typerep.transType != top.finalType.transType
+    then s"common.Util.<${top.finalType.transType}>uncheckedCast(${top.lazyTranslation})"
     else top.lazyTranslation;
   top.lazyTranslation =
     if null(typeScheme.contexts)
@@ -201,8 +194,8 @@ top::Expr ::= q::Decorated! QName
       contexts.transContexts ++
       map((.lazyTranslation), top.invokeArgs.exprs))})";
   top.invokeTranslation =
-    if top.typerep.outputType.transType != finalType(top).outputType.transType
-    then s"common.Util.<${finalType(top).outputType.transType}>uncheckedCast(${invokeTrans})"
+    if top.typerep.outputType.transType != top.finalType.outputType.transType
+    then s"common.Util.<${top.finalType.outputType.transType}>uncheckedCast(${invokeTrans})"
     else invokeTrans;
 }
 
@@ -217,7 +210,7 @@ top::Expr ::= q::Decorated! QName
     -- The resolved instance has a polymorphic implementation for the member,
     -- or relies on a default implementation, which may have a more general type.
     -- This means that we must insert a cast to the more specific inferred result type.
-    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${transContextMember})"
+    then s"common.Util.<${top.finalType.transType}>uncheckedCast(${transContextMember})"
     else transContextMember;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -230,7 +223,7 @@ top::Expr ::= q::Decorated! QName
     if null(typeScheme.contexts) then ""
     else s"(${implode(", ", contexts.transContexts)})";
 
-  top.translation = s"common.Util.<${finalType(top).transType}>uncheckedCast(${directThunk}.eval())";
+  top.translation = s"common.Util.<${top.finalType.transType}>uncheckedCast(${directThunk}.eval())";
   top.lazyTranslation = 
     if top.frame.lazyApplication
     then directThunk
@@ -340,14 +333,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.forwardOrThis())";
+  top.translation = s"((${top.finalType.transType})${e.translation}.forwardOrThis())";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>synthesized(${q.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${top.finalType.transType}>synthesized(${q.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -366,7 +359,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>inherited(${q.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${top.finalType.transType}>inherited(${q.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -379,11 +372,10 @@ aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- TODO: Origin tracking?
-  local finalTy::Type = finalType(top);
-  top.translation =
-    if !finalTy.isDecorated then
-      s"((${finalTy.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site).undecorate())"
-    else if finalTy.isUniqueDecorated && top.alwaysDecorated &&
+    top.translation =
+    if !top.finalType.isDecorated then
+      s"((${top.finalType.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site).undecorate())"
+    else if top.finalType.isUniqueDecorated && top.alwaysDecorated &&
         case e of
         | childReference(cqn) -> true
         | localReference(lqn) -> true
@@ -402,7 +394,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
   top.initTransDecSites <-
     case top.decSiteVertexInfo of
-    | just(decSite) when finalTy.isUniqueDecorated && top.alwaysDecorated ->
+    | just(decSite) when top.finalType.isUniqueDecorated && top.alwaysDecorated ->
       case e of
       | childReference(cqn) ->
 	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
@@ -432,7 +424,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     then "getFilename()"
     else error("Not possible -- an error should have been raised about " ++ q.unparse);
 
-  top.translation = s"((${finalType(top).transType})${e.translation}.${accessor})";
+  top.translation = s"((${top.finalType.transType})${e.translation}.${accessor})";
 
   top.lazyTranslation = top.translation;
 }
@@ -443,8 +435,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   local accessTrans::String = s"((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}()";
   -- Note that the transType is specific to the nonterminal we're accessing from.
   top.translation =
-    if q.attrDcl.typeScheme.typerep.transType != finalType(top).transType
-    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${accessTrans})"
+    if q.attrDcl.typeScheme.typerep.transType != top.finalType.transType
+    then s"common.Util.<${top.finalType.transType}>uncheckedCast(${accessTrans})"
     else accessTrans;
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -453,7 +445,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production synDataAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>synthesized(${q.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${top.finalType.transType}>synthesized(${q.attrOccursIndex})");
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -470,7 +462,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       -- (especially important because we're implicitly inserted when accessing attributes
       --  from undecorated nodes, and this is a common error for new silverers.)
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-      case finalType(e) of
+      case e.finalType of
       -- Don't know the actual number of attributes for skolems with occurs-on contexts,
       -- fall back to using the max index.
       | skolemType(_) -> foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
@@ -530,8 +522,8 @@ aspect production decorationSiteExpr
 top::Expr ::= '@' e::Expr
 {
   top.translation =
-    s"new ${finalType(top).transType}.DecorationSiteWrapper(${
-      if finalType(top).isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${e.translation})";
+    s"new ${top.finalType.transType}.DecorationSiteWrapper(${
+      if top.finalType.isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -578,7 +570,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
     Java tries to cast it to the type of the then branch, which
     doesn't always work.
   -}
-  top.translation = s"(${e1.translation} ? ${e2.translation} : (${finalType(top).transType})${e3.translation})";
+  top.translation = s"(${e1.translation} ? ${e2.translation} : (${top.finalType.transType})${e3.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 

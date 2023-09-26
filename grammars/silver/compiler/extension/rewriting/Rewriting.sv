@@ -13,7 +13,6 @@ imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:env;
 imports silver:compiler:analysis:typechecking:core;
-imports silver:compiler:translation:java:core only finalType;
 imports silver:compiler:extension:patternmatching;
 imports silver:compiler:modification:list;
 imports silver:compiler:modification:primitivepattern;
