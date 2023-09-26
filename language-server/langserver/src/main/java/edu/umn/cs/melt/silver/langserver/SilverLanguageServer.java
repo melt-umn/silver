@@ -1,11 +1,9 @@
 package edu.umn.cs.melt.silver.langserver;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,7 +21,6 @@ import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
-import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.WorkspaceServerCapabilities;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
@@ -53,13 +50,10 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 		common.Util.init();
 
         // Get the initialization options
-        String compilerJar = "", parserName = "";
+        String parserName = "";
         try {
             JsonObject initOptions = (JsonObject)initializeParams.getInitializationOptions();
             if (initOptions != null) {
-                if (initOptions.has("compilerJar")) {
-                    compilerJar = initOptions.get("compilerJar").getAsString();
-                }
                 if (initOptions.has("parserName")) {
                     parserName = initOptions.get("parserName").getAsString();
                 }
@@ -71,27 +65,14 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
             parserName = "silver:compiler:composed:Default:svParse";
         }
 
-        // Initialize grammars from the specified compiler jar (or default classloader)
+        // Initialize the compiler grammars
         ClassLoader loader = ClassLoader.getSystemClassLoader();
-        if (!compilerJar.isEmpty()) {
-            List<WorkspaceFolder> workspaceFolders = initializeParams.getWorkspaceFolders();
-            Path jarPath;
-            try {
-                // Compute the absolute jar path based on the workspace folder, if a relative path is specified.
-                jarPath = workspaceFolders != null && workspaceFolders.size() > 0?
-                    Paths.get(new URI(initializeParams.getWorkspaceFolders().get(0).getUri()).getPath()).resolve(compilerJar) :
-                    Paths.get(compilerJar);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
-            loader = Util.getJarClassLoader(jarPath);
-        }
         try {
             // The grammar silver:compiler:langserver contains language server-specific
             // compiler utilities, and imports silver:compiler:host.
             Util.initGrammar("silver:compiler:langserver", loader);
         } catch (SecurityException | ReflectiveOperationException e) {
-            client.showMessage(new MessageParams(MessageType.Error, "Error loading compiler jar " + compilerJar + ": " + e.toString()));
+            client.showMessage(new MessageParams(MessageType.Error, "Error loading compiler jar: " + e.toString()));
         }
 
         // Load the specified parser
@@ -111,7 +92,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        service.setSilverGrammarsPath(silverGrammars);
+        SilverCompiler.getInstance().setStdLibGrammarsDir(silverGrammars);
 
         // Initialize the project grammars folder(s)
         if (initializeParams.getWorkspaceFolders() != null) {
