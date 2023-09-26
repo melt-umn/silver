@@ -25,7 +25,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
     moduleExportedDefs(top.location, top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
   
   t.env = top.env;
-  m.env = appendEnv(toEnv(med.defs), top.env);
+  m.env = appendEnv(toEnv(med.defs, med.occursDefs), top.env);
   
   production fName :: String = top.grammarName ++ ":" ++ n.name;
 

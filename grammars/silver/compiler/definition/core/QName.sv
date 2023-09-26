@@ -187,71 +187,60 @@ top::QNameAttrOccur ::= at::QName
   top.unparse = at.unparse;
   propagate env;
   
-  -- We start with all attributes we find with the name `at`:
-  local attrs :: [AttributeDclInfo] = at.lookupAttribute.dcls;
-  
-  -- Then we filter to just those that appear to have an occurrence on `top.attrFor`:
-  local narrowed :: [[OccursDclInfo]] = 
-    -- The occurs dcls on this nonterminal for
-    map(getOccursDcl(_, top.attrFor.typeName, top.env),
-      -- the full names of each candidate
-      map((.fullName), attrs));
-  -- TODO: BUG: this disambiguates, but doesn't find full-named that aren't in scope with short names!
-  -- i.e. 'import somthing as prefixed;  something.a' won't find prefixed:a.
+  local attrs :: [AttributeDclInfo] =
+    if top.attrFor.isError
+    then at.lookupAttribute.dcls
+    else getOccuringAttrDcl(top.attrFor.typeName, at.name, top.env);
 
-  -- Occurs dcls for `at` on `top.attrFor` (there should be only one)
-  local dclsNarrowed :: [OccursDclInfo] = concat(narrowed);
-  
-  -- Attribute dcls
-  local attrsNarrowed :: [AttributeDclInfo] = zipFilterDcls(attrs, narrowed);
+  local dcls :: [OccursDclInfo] =
+    case attrs of
+    | attr :: _ -> getOccursDcl(attr.fullName, top.attrFor.typeName, top.env)
+    | _ -> []
+    end;
   
   -- This basically has to mirror the logic in errors below!
-  top.found = 
-    !(null(at.lookupAttribute.dcls) ||
-      top.attrFor.isError ||
-      null(dclsNarrowed) ||
-      length(attrsNarrowed) != 1);
+  top.found = at.lookupAttribute.found && !top.attrFor.isError && !null(dcls) && length(attrs) == 1;
   
-  top.attrFound = !null(attrs);
+  top.attrFound = at.lookupAttribute.found;
   
   top.errors :=
     -- If we fail to look up the attribute, just report that.
-    if null(at.lookupAttribute.dcls) then
+    if !at.lookupAttribute.found then
       at.lookupAttribute.errors
     -- If we're looking up an attribute on `errorType`, an error is already raised, don't create noise
     else if top.attrFor.isError then
       []
     -- If no attribute occurs on this type, raise that error
-    else if null(dclsNarrowed) then
+    else if null(dcls) then
       -- This is a heuristic error message for the situation where you have a type, but haven't imported
       -- the grammar declaring that type.
       (if lastIndexOf(":", top.attrFor.typeName) > 0 && null(getTypeDcl(top.attrFor.typeName, top.env)) then
          [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
        else
-         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(attrs))]
+         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
       )
     -- If more than one attribute on the same _short name_ occurs, raise ambiguity
-    else if length(attrsNarrowed) > 1 then
-      [err(at.location, "Ambiguous reference to attribute occurring on '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(attrsNarrowed))]
+    else if length(attrs) > 1 then
+      [err(at.location, "Ambiguous reference to attribute occurring on '" ++ prettyType(top.attrFor) ++ "'. Possibilities are:\n" ++ printPossibilities(attrs))]
     -- If this same attribute has multiple occurences (must be due to orphaned occurs)
-    else []; {-if length(dclsNarrowed) > 1 then
-      [err(at.location, "There are erroneously multiple attribute occurrences for '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(dclsNarrowed))]
+    else []; {-if length(dcls) > 1 then
+      [err(at.location, "There are erroneously multiple attribute occurrences for '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(dcls))]
     else [];-}
     -- TODO: This last bit is disabled because we have problems with importing grammars multiple times.
     -- TODO FIXME: enable this, and fix the grammar import issues!
 
-  production resolvedDcl::OccursDclInfo = if top.found then head(dclsNarrowed) else
+  production resolvedDcl::OccursDclInfo = if top.found then head(dcls) else
     error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
   resolvedDcl.givenNonterminalType = top.attrFor;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production requiredContexts::Contexts = foldContexts(resolvedTypeScheme.contexts);
   requiredContexts.env = top.env;
   
-  top.typerep = if top.found then determineAttributeType(head(dclsNarrowed), top.attrFor) else errorType();
+  top.typerep = if top.found then determineAttributeType(head(dcls), top.attrFor) else errorType();
   top.dcl = resolvedDcl;
-  top.attrDcl = if top.found then head(attrsNarrowed) else
+  top.attrDcl = if top.found then head(attrs) else
     -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
-    if !null(attrs) then head(attrs) else
+    if at.lookupAttribute.found then at.lookupAttribute.dcl else
     error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
 }
 

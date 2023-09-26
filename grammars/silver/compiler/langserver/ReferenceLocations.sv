@@ -101,9 +101,9 @@ aspect attributeRefLocs on Constraint using <- of
 end;
 
 aspect valueRefLocs on top::ProductionStmt using <- of
-| localAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
-| productionAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
-| forwardProductionAttributeDcl(_, _, _, id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| localAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| productionAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| forwardProductionAttributeDcl(_, _, _, n, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on ProductionStmt using := of
@@ -188,11 +188,11 @@ end;
 -- Productions
 -- LHS
 aspect valueRefLocs on top::ProductionLHS using <- of
-| productionLHS(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| productionLHS(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectProductionLHS using <- of
-| aspectProductionLHSFull(id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectProductionLHSFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionLHS using <- of
@@ -209,11 +209,11 @@ end;
 
 --RHS
 aspect valueRefLocs on top::ProductionRHSElem using <- of
-| productionRHSElem(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| productionRHSElem(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectRHSElem using <- of
-| aspectRHSElemFull(id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectRHSElemFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionRHSElem using <- of
