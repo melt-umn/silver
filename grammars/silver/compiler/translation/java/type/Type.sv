@@ -13,7 +13,7 @@ synthesized attribute transCovariantType :: String;
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
 -- An environment mapping skolem constants to their runtime representation translations
-autocopy attribute skolemTypeReps :: [(TyVar, String)];
+inherited attribute skolemTypeReps :: [(TyVar, String)];
 -- The runtime representation of a type, where all skolems are replaced with their provided representations, used for reification
 synthesized attribute transTypeRep :: String;
 -- A valid Java identifier, unique to the type
@@ -48,6 +48,7 @@ String ::= te::Type tvs::[TyVar]
 }
 
 attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transTypeName occurs on Type;
+propagate skolemTypeReps on Type;
 
 aspect default production
 top::Type ::=
@@ -142,7 +143,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String _ _ _
 {
   -- untightened version would be "common.Node", but we prefer the generated
   -- class, e.g. silver.definition.core.NExpr
@@ -177,7 +178,7 @@ top::Type ::= te::Type i::Type
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"

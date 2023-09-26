@@ -42,19 +42,17 @@ import silver.langutil.NMessage;
  */
 public class Util {
     public static String locationToFile(final NLocation loc) {
-        DecoratedNode decLoc = loc.decorate();
-        return decLoc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+        return loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
     }
 
     public static Range locationToRange(final NLocation loc) {
-        DecoratedNode decLoc = loc.decorate();
         return new Range(
             new Position(
-                (int)decLoc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location) - 1,
-                decLoc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location)),
+                (int)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location) - 1,
+                loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location)),
             new Position(
-                (int)decLoc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location) - 1,
-                decLoc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location))
+                (int)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location) - 1,
+                loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location))
         );
     }
 
@@ -127,10 +125,58 @@ public class Util {
     }
 
     /**
+     * Convert a grammar name to a Java package name
+     * @param grammar The grammar name
+     * @return The package name
+     */
+    public static String grammarToPackage(final String grammar) {
+        return grammar.replace(':', '.');
+    }
+
+    /**
+     * Reflectively initialize a Silver grammar, using the default ClassLoader.
+     * This transitively initialize all dependencies.
+     * 
+     * @param grammar The name of the grammar to initialize
+     */
+    public static void initGrammar(final String grammar)
+        throws SecurityException, ReflectiveOperationException {
+        initGrammar(grammar, ClassLoader.getSystemClassLoader());
+    }
+    /**
+     * Reflectively initialize a Silver grammar, using the specified ClassLoader.
+     * This transitively initialize all dependencies.
+     * 
+     * @param grammar The name of the grammar to initialize
+     * @param loader The ClassLoader from which to load the grammar's classes
+     */
+    public static void initGrammar(final String grammar, final ClassLoader loader)
+        throws SecurityException, ReflectiveOperationException {
+        Class<?> initClass = Class.forName(grammarToPackage(grammar) + ".Init", true, loader);
+        initClass.getMethod("initAllStatics").invoke(null);
+        initClass.getMethod("init").invoke(null);
+        initClass.getMethod("postInit").invoke(null);
+    }
+
+    /**
+     * Initialize a ClassLoader from a jar path.
+     * 
+     * @param jarPath The path to the jar
+     * @return A ClassLoader for the jar
+     */
+    public static URLClassLoader getJarClassLoader(final Path jarPath) {
+        try {
+            return new URLClassLoader(new URL[] {jarPath.toUri().toURL()}, Util.class.getClassLoader());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Dynamically load a Copper parser from a compiled Silver grammar.
      * 
      * @param <ROOT> The start nonterminal type of the parser
-     * @param jarPath The path to the jar file to be loaded
+     * @param loader The ClassLoader to use to load the parser
      * @param name The name of the declared parser, prefixed by its grammar
      * @param rootClass The class of the start nonterminal for the parser
      * @return A factory object for instantiating the parser
@@ -139,18 +185,11 @@ public class Util {
      */
     @SuppressWarnings("unchecked")
     public static <ROOT> Supplier<SilverCopperParser<ROOT>> loadCopperParserFactory(
-        final Path jarPath, final String name, final Class<ROOT> rootClass)
+        final ClassLoader loader, final String name, final Class<ROOT> rootClass)
         throws SecurityException, ReflectiveOperationException {
-        // Initialize a class loader for the jar
-        URLClassLoader loader;
-        try {
-            loader = new URLClassLoader(new URL[] {jarPath.toUri().toURL()}, Util.class.getClassLoader());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
         // Load the parser class
-        String pkg = String.join(".", name.substring(0, Math.max(name.lastIndexOf(":"), 0)).split(":"));
+        String grammar = name.substring(0, Math.max(name.lastIndexOf(":"), 0));
+        String pkg = grammarToPackage(grammar);
         String parserClassName = pkg + ".Parser_" + String.join("_", name.split(":"));
         Class<?> parserClass = Class.forName(parserClassName, true, loader);
 
@@ -174,11 +213,7 @@ public class Util {
         }
 
         // Initialize the grammar containing the parser.
-        // This transitively initializes any dependent grammars, e.g. extensions included in the parser.
-        Class<?> initClass = Class.forName(pkg + ".Init", true, loader);
-        initClass.getMethod("initAllStatics").invoke(null);
-        initClass.getMethod("init").invoke(null);
-        initClass.getMethod("postInit").invoke(null);
+        initGrammar(grammar, loader);
 
         // Set up the parser factory
         Constructor<?> constructor = parserClass.getConstructor();

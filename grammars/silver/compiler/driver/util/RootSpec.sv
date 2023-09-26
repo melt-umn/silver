@@ -12,6 +12,7 @@ import silver:compiler:definition:flow:ast only nilFlow, consFlow, FlowDef;
 import silver:compiler:definition:core only jarName;
 
 import silver:compiler:analysis:warnings:flow only warnMissingInh;
+import silver:compiler:analysis:uniqueness;
 
 {--
  - A representation of a grammar, from an unknown source. TODO: rename GrammarSpec
@@ -28,7 +29,7 @@ nonterminal RootSpec with
 
 flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
 
-propagate exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
+propagate productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
 
 {--
  - Grammars (a, b) where b depends on a
@@ -85,9 +86,10 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   local rootSpecs :: [Decorated RootSpec] = flatMap(searchEnvTree(_, top.compiledGrammars), depsPlusOptions);
   g.grammarDependencies = actualDependencies;
   g.flowEnv =
-    fromFlowDefs(
+    flowEnv(
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
+      flatMap((.uniqueRefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
   production newInterface::InterfaceItems = packInterfaceItems(top);
@@ -127,9 +129,21 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.declaredName = g.declaredName;
   top.moduleNames := nub(g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
   top.allGrammarDependencies := actualDependencies;
-  top.grammarErrors = g.grammarErrors;
+
+  top.grammarErrors = filter(\ fe::(String, [Message]) -> !null(fe.2), top.allFileErrors);
   top.parsingErrors = [];
-  top.allFileErrors = g.allFileErrors;
+
+  production attribute extraFileErrors::[(String, [Message])] with ++;
+  extraFileErrors := [];
+
+  -- Seed flow deps with {compiledGrammars, config}
+  extraFileErrors <- if false then error(hackUnparse((top.compiledGrammars, top.config))) else [];
+
+  top.allFileErrors = map(
+    \ fe::(String, [Message]) -> case fe of (fileName, fileErrors) ->
+      (fileName, fileErrors ++ concat(lookupAll(fileName, extraFileErrors)))
+    end,
+    g.allFileErrors);
 
   top.jarName := g.jarName;
 }
@@ -190,11 +204,11 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
 {
   return case e of
   | syntaxError(str, locat, _, _) ->
-      pair(locat.filename, 
+      (locat.filename, 
         [err(locat,
           "Syntax error:\n" ++ str)])
   | unknownParseError(str, file) ->
-      pair(file,
+      (file,
         [err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
           "Unknown error while parsing:\n" ++ str)])
   end;

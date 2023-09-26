@@ -86,17 +86,16 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   -- All locally known synthesized attributes. This does not need to be exhaustive,
   -- because this error message is a courtesy, not the basis of the analysis.
-  local attrs :: [OccursDclInfo] = 
-    filter(isOccursSynthesized(_, top.env),
-      getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
+  local attrs :: [String] = 
+    getSynAttrsOn(namedSig.outputElement.typerep.typeName, top.env);
 
   top.errors <-
     if null(body.errors ++ ns.errors)
     && top.config.warnMissingSyn
-    -- Forwarding productions do no have missing synthesized equations:
-    && null(body.uniqueSignificantExpression)
+    -- Forwarding productions do not have missing synthesized equations:
+    && null(body.forwardExpr)
     -- Otherwise, examine them all:
-    then flatMap(raiseMissingAttrs(top.config, top.location, fName, _, top.flowEnv), attrs)
+    then flatMap(raiseMissingAttrs(top.config, top.location, fName, namedSig.outputElement.typerep.typeName, _, top.flowEnv), attrs)
     else [];
 }
 
@@ -105,28 +104,28 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
  - for the synthesized attribute `attr`.
  -
  - @param l      Location to raise the error message (of the production)
- - @param attr   DclInfo of a synthesized attribute occurrence
  - @param prod   Full name of the non-forwarding production in question
+ - @param nt     Full name of prod's lhs nonterminal
+ - @param attr   Full name of a synthesized attribute
  - @param e      The local flow environment
  - @returns      An error message from the production's perspective, if any
  -}
 function raiseMissingAttrs
-[Message] ::= config::Decorated CmdArgs  l::Location  prod::String  attr::OccursDclInfo  e::FlowEnv
+[Message] ::= config::Decorated CmdArgs  l::Location  prod::String  nt::String  attr::String  e::FlowEnv
 {
   -- Because the location is of the production, deliberately use the production's shortname
   local shortName :: String = substring(lastIndexOf(":", prod) + 1, length(prod), prod);
 
-  local lacks_default_equation :: Boolean = 
-    null(lookupDef(attr.fullName, attr.attrOccurring, e));
+  local lacks_default_equation :: Boolean = null(lookupDef(nt, attr, e));
 
   local missing_explicit_equation :: Boolean =
-    case lookupSyn(prod, attr.attrOccurring, e) of
+    case lookupSyn(prod, attr, e) of
     | eq :: _ -> false
     | [] -> true
     end;
  
   return if lacks_default_equation && missing_explicit_equation
-  then [mwdaWrn(config, l, "production " ++ shortName ++ " lacks synthesized equation for " ++ attr.attrOccurring)]
+  then [mwdaWrn(config, l, "production " ++ shortName ++ " lacks synthesized equation for " ++ attr)]
   else [];
 }
 

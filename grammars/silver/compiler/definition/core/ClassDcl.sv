@@ -5,7 +5,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 concrete production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}"; 
+  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production tv :: TyVar =
@@ -52,6 +52,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   cl.constraintPos = classPos(fName, var.freeVariables);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
+  id.env = cl.env;
   var.env = cl.env;
   
   body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
@@ -72,17 +73,19 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
   insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
 }
 
-autocopy attribute classHead::Context;
-autocopy attribute constraintEnv::Decorated Env;
-autocopy attribute frameContexts::[Context];  -- Only used for computing frame in members
+inherited attribute classHead::Context;
+inherited attribute constraintEnv::Env;
+inherited attribute frameContexts::[Context];  -- Only used for computing frame in members
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 
-propagate flowDefs, errors, lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
-propagate defs on ClassBody;
+propagate
+  config, grammarName, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars
+  on ClassBody, ClassBodyItem;
+propagate env, defs on ClassBody;
 
 concrete production consClassBody
 top::ClassBody ::= h::ClassBodyItem t::ClassBody
@@ -113,7 +116,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVarsAll(top.classHead.freeVariables :: map((.freeVariables), cl.contexts) ++ [ty.typerep.freeVariables]);
-  top.classMembers = [pair(fName, false)];
+  top.classMembers = [(fName, false)];
   
   cl.constraintPos =
     case top.classHead of
@@ -121,6 +124,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
+
+  ty.env = top.env;
   
   top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
@@ -148,7 +153,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVarsAll(top.classHead.freeVariables :: map((.freeVariables), cl.contexts) ++ [ty.typerep.freeVariables]);
-  top.classMembers = [pair(fName, true)];
+  top.classMembers = [(fName, true)];
   
   cl.constraintPos =
     case top.classHead of
@@ -156,6 +161,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
+
+  ty.env = top.env;
   
   e.isRoot = true;
   e.originRules = [];

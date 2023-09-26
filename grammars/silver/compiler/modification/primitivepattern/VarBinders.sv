@@ -7,7 +7,7 @@ import silver:compiler:translation:java:type;
 
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex, inhVertex;
+import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, anonVertexType, VertexType, FlowVertex, inhVertex;
 -- also unfortunately placed references to flowEnv
 
 import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
@@ -31,7 +31,8 @@ flowtype errors {decorate, receivedDeps} on VarBinders, VarBinder;
 flowtype defs {decorate} on VarBinders, VarBinder;
 flowtype boundNames {} on VarBinders, VarBinder;
 
-propagate errors, defs, boundNames on VarBinders, VarBinder;
+propagate config, grammarName, env, compiledGrammars, frame, errors, defs, boundNames, finalSubst, flowEnv, matchingAgainst
+  on VarBinders, VarBinder;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -45,7 +46,7 @@ inherited attribute bindingName :: String;
 synthesized attribute flowProjections :: [PatternVarProjection];
 
 -- The DclInfo of the production we're matching against
-autocopy attribute matchingAgainst :: Maybe<ValueDclInfo>;
+inherited attribute matchingAgainst :: Maybe<ValueDclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 
@@ -120,12 +121,19 @@ top::VarBinder ::= n::Name
   -- (We *DO NOT* want to substitute first... because that will turn the type
   -- variables into concrete types! and type variables in a production are
   -- NOT automatically decorated!)
-  -- Also, don't attempt to decorate already-partially-decorated types.
+  -- Also, don't attempt to decorate already-decorated types.
   local ty :: Type =
     if isDecorable(top.bindingType, top.env) && !top.bindingType.isDecorated
     then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
-  production finalTy::Type = performSubstitution(ty, top.finalSubst);
+
+  -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
+  -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
+  -- since top.bindingType comes straight from the production's type in the environment.
+  -- we need to do some substitution to connect it with the real types.
+  -- (in the env above its okay, since that must always be consulted with the current substitution,
+  -- but here we're rendering the translation. it's the end of the line.)
+  production finalTy :: Type = performSubstitution(ty, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
@@ -141,34 +149,34 @@ top::VarBinder ::= n::Name
   -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
   -- and the correct value is computed based on how this gets used.
   -- (e.g. if 'new'
-  local vt :: ExprVertexInfo =
+  local vt :: Maybe<VertexType> =
     if isDecorable(top.bindingType, top.env)
-    then hasVertex(anonVertexType(fName))
-    else noVertex();
+    then just(anonVertexType(fName))
+    else nothing();
   local deps :: [FlowVertex] =
     if isDecorable(top.bindingType, top.env)
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
-  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
+  -- Unique refs are forbidden in the scrutinee.
+  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps, [])];
   top.boundNames <- [n.name];
 
-  -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
-  -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
-  -- since top.bindingType comes straight from the production's type in the environment.
-  -- we need to do some substitution to connect it with the real types.
-  -- (in the env above its okay, since that must always be consulted with the current substitution,
-  -- but here we're rendering the translation. it's the end of the line.)
-  local actualTy :: Type = performSubstitution(ty, top.finalSubst);
-
   top.translation = 
-    makeSpecialLocalBinding(fName, 
-      "scrutinee." ++ 
+    makeSpecialLocalBinding(fName,
+      if top.matchingAgainst.fromJust.namedSignature.outputElement.typerep.isData
+      then
+        if isDecorable(top.bindingType, top.env)
+        then s"scrutineeNode.childDecorated(${toString(top.bindingIndex)})"
+        else if top.bindingType.transType == finalTy.transType
+        then s"((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}()"
+        else s"common.Util.<${finalTy.transType}>uncheckedCast(((${makeProdName(top.matchingAgainst.fromJust.fullName)})scrutineeNode).getChild_${top.bindingName}())"
+      else "scrutinee." ++
         (if isDecorable(top.bindingType, top.env)
          then "childDecorated("
-         else s"<${actualTy.transType}>childAsIs(") ++
+         else s"<${finalTy.transType}>childAsIs(") ++
         toString(top.bindingIndex) ++ ")",
-      actualTy.transType);
+      finalTy.transType);
   
   -- We prevent this to prevent newbies from thinking patterns are "typecase"
   -- (Types have to be upper case)

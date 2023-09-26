@@ -27,51 +27,51 @@ equalityTest(s:rewriteWith(s2, ["a", "b", "c", "d"]), just(["c", "d", "a"]), May
 
 global s3::s:Strategy =
   rule on Pair<Integer Integer> of
-  | pair(a, b) when a != b -> pair(b, a)
-  | pair(a, b) when a == b -> pair(a, 17)
+  | (a, b) when a != b -> (b, a)
+  | (a, b) when a == b -> (a, 17)
   end;
 
-equalityTest(s:rewriteWith(s3, pair(1, 2)), just(pair(2, 1)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s3, pair(42, 42)), just(pair(42, 17)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s3, (1, 2)), just((2, 1)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s3, (42, 42)), just((42, 17)), Maybe<Pair<Integer Integer>>, silver_tests);
 
 global s4::s:Strategy =
   rule on Pair<Integer Integer> of
-  | pair(a, b) when a == b -> pair(a, 17)
-  | pair(a, b) when a != b -> pair(b, a)
+  | (a, b) when a == b -> (a, 17)
+  | (a, b) when a != b -> (b, a)
   end;
 
-equalityTest(s:rewriteWith(s4, pair(1, 2)), just(pair(2, 1)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s4, pair(42, 42)), just(pair(42, 17)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s4, (1, 2)), just((2, 1)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s4, (42, 42)), just((42, 17)), Maybe<Pair<Integer Integer>>, silver_tests);
 
 global s5::s:Strategy =
   rule on Pair<Integer String> of
-  | pair(n, s) when all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
-    pair(toInteger(s), toString(n))
+  | (n, s) when all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
+    (toInteger(s), toString(n))
   | a -> a
   end;
 
-equalityTest(s:rewriteWith(s5, pair(123, "4")), just(pair(4, "123")), Maybe<Pair<Integer String>>, silver_tests);
-equalityTest(s:rewriteWith(s5, pair(467, "foo")), just(pair(467, "foo")), Maybe<Pair<Integer String>>, silver_tests);
+equalityTest(s:rewriteWith(s5, (123, "4")), just((4, "123")), Maybe<Pair<Integer String>>, silver_tests);
+equalityTest(s:rewriteWith(s5, (467, "foo")), just((467, "foo")), Maybe<Pair<Integer String>>, silver_tests);
 
 global s6::s:Strategy =
   rule on Pair<Integer String> of
   | p -> case p of
-    | pair(n, s) when all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
-      pair(toInteger(s), toString(n))
+    | (n, s) when all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
+      (toInteger(s), toString(n))
     | a -> a
     end
   end;
 
-equalityTest(s:rewriteWith(s6, pair(123, "4")), just(pair(4, "123")), Maybe<Pair<Integer String>>, silver_tests);
-equalityTest(s:rewriteWith(s6, pair(467, "foo")), just(pair(467, "foo")), Maybe<Pair<Integer String>>, silver_tests);
+equalityTest(s:rewriteWith(s6, (123, "4")), just((4, "123")), Maybe<Pair<Integer String>>, silver_tests);
+equalityTest(s:rewriteWith(s6, (467, "foo")), just((467, "foo")), Maybe<Pair<Integer String>>, silver_tests);
 
 global s7::s:Strategy =
   rule on Pair<Integer Integer> of
-  | p -> pair(p.snd, p.fst)
+  | p -> (p.snd, p.fst)
   end;
 
-equalityTest(s:rewriteWith(s7, pair(123, 456)), just(pair(456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s7, pair(123, "hello")), nothing(), Maybe<Pair<Integer String>>, silver_tests);
+equalityTest(s:rewriteWith(s7, (123, 456)), just((456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s7, (123, "hello")), nothing(), Maybe<Pair<Integer String>>, silver_tests);
 
 nonterminal Foo with isEqual, compareTo;
 abstract production foo
@@ -90,10 +90,10 @@ equalityTest(s:rewriteWith(s8, [foo(2), foo(2), foo(3)]), just([foo(2), foo(3)])
 
 global s9::s:Strategy =
   rule on Pair<Integer Integer> of
-  | pair(a, b) -> pair(b, _)(a)
+  | (a, b) -> pair(fst=b, snd=_)(a)
   end;
 
-equalityTest(s:rewriteWith(s9, pair(123, 456)), just(pair(456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s9, (123, 456)), just((456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
 
 annotation a1::Integer;
 annotation a2::Integer;
@@ -117,27 +117,32 @@ equalityTest(s:rewriteWith(s10, barI(1, a1=2, a2=3)), just(barI(3, a1=1, a2=2)),
 
 global s11::s:Strategy =
   rule on Pair<Integer Pair<Integer Integer>> of
-  | pair(a, b) when b.fst < 10 -> pair(b.fst, pair(b.snd, a))
+  | (a, b) when b.fst < 10 -> (b.fst, (b.snd, a))
   end;
 
-equalityTest(s:rewriteWith(s11, pair(1, pair(2, 3))), just(pair(2, pair(3, 1))), Maybe<Pair<Integer Pair<Integer Integer>>>, silver_tests);
+equalityTest(s:rewriteWith(s11, (1, (2, 3))), just((2, (3, 1))), Maybe<Pair<Integer Pair<Integer Integer>>>, silver_tests);
+
+nonterminal DecPair<a b> with fst<a>, snd<b>;
+production dpair
+top::DecPair<a b> ::=
+{}
 
 global s12::s:Strategy =
-  rule on Maybe<Decorated Pair<Integer Integer>> of
-  | just(p) -> just(decorate pair(p.snd, p.fst) with {})
+  rule on Maybe<Decorated DecPair<Integer Integer>> of
+  | just(p) -> just(decorate dpair(fst=p.snd, snd=p.fst) with {})
   end;
 
 -- Result contains a decorated node, so tricky to test exactly.
 -- Mostly just concerned that this one compiles properly.
-equalityTest(s:rewriteWith(s12, just(decorate pair(123, 456) with {})).isJust, true, Boolean, silver_tests);
+equalityTest(s:rewriteWith(s12, just(decorate dpair(fst=123, snd=456) with {})).isJust, true, Boolean, silver_tests);
 
 global s13::s:Strategy =
   rule on Pair<a a> of
-  | pair(a, b) -> pair(b, a)
+  | (a, b) -> (b, a)
   end;
 
-equalityTest(s:rewriteWith(s13, pair(123, 456)), just(pair(456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s13, pair(123, "hello")), nothing(), Maybe<Pair<Integer String>>, silver_tests);
+equalityTest(s:rewriteWith(s13, (123, 456)), just((456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s13, (123, "hello")), nothing(), Maybe<Pair<Integer String>>, silver_tests);
 
 global s14::s:Strategy =
   rule on [[Integer]] of
@@ -150,22 +155,22 @@ equalityTest(s:rewriteWith(s13, [["a"]]), nothing(), Maybe<[[String]]>, silver_t
 
 global inc::s:Strategy = rule on Integer of i -> i + 1 end;
 
-global s15::s:Strategy = traverse pair(_, inc);
+global s15::s:Strategy = traverse pair(fst=_, snd=inc);
 
-equalityTest(s:rewriteWith(s15, pair(1, 2)), just(pair(1, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s15, pair("a", "b")), nothing(), Maybe<Pair<String String>>, silver_tests);
+equalityTest(s:rewriteWith(s15, (1, 2)), just((1, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s15, ("a", "b")), nothing(), Maybe<Pair<String String>>, silver_tests);
 equalityTest(s:rewriteWith(s15, [["a"]]), nothing(), Maybe<[[String]]>, silver_tests);
 
 global s16::s:Strategy = traverse barI(inc, a1=inc, a1=_, a1=inc);
 
 equalityTest(s:rewriteWith(s16, barI(1, a1=2, a2=3)), just(barI(2, a1=4, a2=3)), Maybe<Bar>, silver_tests);
 
-global s17::s:Strategy = s:rec(\ s::s:Strategy -> traverse pair(s, s) <+ s:try(inc));
+global s17::s:Strategy = s:rec(\ s::s:Strategy -> traverse pair(fst=s, snd=s) <+ s:try(inc));
 
-equalityTest(s:rewriteWith(s17, pair(1, 2)), just(pair(2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s17, (1, 2)), just((2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
 equalityTest(
-  s:rewriteWith(s17, pair(pair(pair("a", 1), pair("b", 2)), pair(true, 3))),
-              just(pair(pair(pair("a", 2), pair("b", 3)), pair(true, 4))),
+  s:rewriteWith(s17, ((("a", 1), ("b", 2)), (true, 3))),
+              just(((("a", 2), ("b", 3)), (true, 4))),
   Maybe<Pair<Pair<Pair<String Integer> Pair<String Integer>> Pair<Boolean Integer>>>, silver_tests);
 
 global s18::s:Strategy = s:rec(\ s::s:Strategy -> traverse (s :: s) <+ traverse [] <+ s:try(inc));
@@ -181,20 +186,20 @@ equalityTest(s:rewriteWith(s20, [1, 2, 3, 4]), just([1, 2, 3, 4]), Maybe<[Intege
 equalityTest(s:rewriteWith(s20, [[1, 2, 3], [4, 5, 6], [7, 8, 9]]), just([[1, 2, 3], [4, 6, 6], [7, 8, 9]]), Maybe<[[Integer]]>, silver_tests);
 
 global s21::s:Strategy = s:all(inc);
-equalityTest(s:rewriteWith(s21, pair(1, 2)), just(pair(2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s21, pair(true, 2)), nothing(), Maybe<Pair<Boolean Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s21, pair(true, false)), nothing(), Maybe<Pair<Boolean Boolean>>, silver_tests);
+equalityTest(s:rewriteWith(s21, (1, 2)), just((2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s21, (true, 2)), nothing(), Maybe<Pair<Boolean Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s21, (true, false)), nothing(), Maybe<Pair<Boolean Boolean>>, silver_tests);
 equalityTest(s:rewriteWith(s21, [1, 2, 3]), nothing(), Maybe<[Integer]>, silver_tests);
 
 global s22::s:Strategy = s:some(inc);
-equalityTest(s:rewriteWith(s22, pair(1, 2)), just(pair(2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s22, pair(true, 2)), just(pair(true, 3)), Maybe<Pair<Boolean Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s22, pair(true, false)), nothing(), Maybe<Pair<Boolean Boolean>>, silver_tests);
+equalityTest(s:rewriteWith(s22, (1, 2)), just((2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s22, (true, 2)), just((true, 3)), Maybe<Pair<Boolean Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s22, (true, false)), nothing(), Maybe<Pair<Boolean Boolean>>, silver_tests);
 equalityTest(s:rewriteWith(s22, [1, 2, 3]), just([2, 2, 3]), Maybe<[Integer]>, silver_tests);
 
 global s23::s:Strategy = s:one(inc);
-equalityTest(s:rewriteWith(s23, pair(1, 2)), just(pair(2, 2)), Maybe<Pair<Integer Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s23, pair(true, 2)), just(pair(true, 3)), Maybe<Pair<Boolean Integer>>, silver_tests);
-equalityTest(s:rewriteWith(s23, pair(true, false)), nothing(), Maybe<Pair<Boolean Boolean>>, silver_tests);
+equalityTest(s:rewriteWith(s23, (1, 2)), just((2, 2)), Maybe<Pair<Integer Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s23, (true, 2)), just((true, 3)), Maybe<Pair<Boolean Integer>>, silver_tests);
+equalityTest(s:rewriteWith(s23, (true, false)), nothing(), Maybe<Pair<Boolean Boolean>>, silver_tests);
 equalityTest(s:rewriteWith(s23, [1, 2, 3]), just([2, 2, 3]), Maybe<[Integer]>, silver_tests);
 

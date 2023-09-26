@@ -10,6 +10,8 @@ attribute           translation               occurs on DefLHS, ForwardInhs, For
 
 propagate setupInh, valueWeaving on ProductionBody, ProductionStmts;
 
+synthesized attribute initTransInh :: String occurs on DefLHS;
+
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
@@ -55,7 +57,7 @@ top::ProductionStmt ::=
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  top.translation = "";
+  top.translation = e.initTransDecSites;
 }
 
 aspect production forwardingWith
@@ -90,6 +92,12 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.attrName = q.attrOccursInitIndex;
 }
 
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  top.translation = "";
+}
+
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
@@ -102,15 +110,22 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     if isDecorable(te.typerep, top.env)
     then
       s"\t\t//${top.unparse}\n" ++
-      s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
-      if te.typerep.isNonterminal || te.typerep.isPartiallyDecorated
-      then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
-      else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
+      if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
+      then
+        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
+      else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
-  top.translation = "";
+  top.translation = 
+    case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
+    | [u], [v] ->
+        s"\t\t//${top.unparse}\n" ++
+        s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, v)};\n"
+    | _, _ -> ""
+    end;
 }
 
 aspect production productionAttributeDcl
@@ -125,81 +140,144 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     if isDecorable(te.typerep, top.env)
     then
       s"\t\t//${top.unparse}\n" ++
-      s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
-      if te.typerep.isNonterminal || te.typerep.isPartiallyDecorated
-      then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
-      else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
+      if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
+      then
+        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
+      else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
+  top.translation = 
+    case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
+    | [u], [v] ->
+        s"\t\t//${top.unparse}\n" ++
+        s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, v)};\n"
+    | _, _ -> ""
+    end;
+}
+
+aspect production forwardProductionAttributeDcl
+top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
+{
+  local attribute ugh_dcl_hack :: ValueDclInfo;
+  ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...
+  
+  top.valueWeaving := s"public static final int ${ugh_dcl_hack.attrOccursIndexName} = ${top.frame.prodLocalCountName}++;\n";
+
+  top.setupInh :=
+    s"\t\t//${top.unparse}\n" ++
+    s"\t\t${top.frame.className}.localIsForward[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n" ++ 
+    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n";
+
+  top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
+
+  -- Decoration through a remote reference has no effect, since all inhs are supplied here via a forward parent
   top.translation = "";
 }
 
+aspect default production
+top::DefLHS ::=
+{
+  top.initTransInh = "";
+}
+
 aspect production childDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   top.translation = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
 }
 
 aspect production lhsDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   top.translation = s"${top.frame.className}.synthesizedAttributes";
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   top.translation = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}]";
 }
 
 aspect production forwardDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
   top.translation = s"${top.frame.className}.forwardInheritedAttributes";
 }
 
 aspect production errorDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
+{
+  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+}
+
+aspect production childTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  local inhsIndex::String = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}][${attr.attrOccursIndex}_inhs]";
+  top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
+  top.initTransInh =
+    s"\t\tif (${inhsIndex} == null) {\n" ++
+    s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    "\t\t}\n";
+}
+
+aspect production localTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  local inhsIndex::String = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}][${attr.attrOccursIndex}_inhs]";
+  top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
+  top.initTransInh =
+    s"\t\tif (${inhsIndex} == null) {\n" ++
+    s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(attr.typerep.typeName)}.num_inh_attrs);\n" ++
+    "\t\t}\n";
+}
+
+aspect production errorTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
+    dl.initTransInh ++ e.initTransDecSites ++
     s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
+    dl.initTransInh ++
     s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 
 aspect production errorValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   top.translation =
 	s"\t\t// ${val.unparse} = ${e.unparse}\n" ++
+  e.initTransDecSites ++
 	s"\t\t${top.frame.className}.localAttributes[${val.lookupValue.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 

@@ -11,7 +11,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 {
   top.unparse = "parser " ++ m.unparse ++ ";"; -- TODO?
   
-  propagate errors, moduleNames;
+  propagate config, grammarName, compiledGrammars, errors, moduleNames;
 
   -- Right now parsers masquerade as functions. This is probably fine.
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
@@ -24,6 +24,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   production med :: ModuleExportedDefs =
     moduleExportedDefs(top.location, top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
   
+  t.env = top.env;
   m.env = appendEnv(toEnv(med.defs), top.env);
   
   production fName :: String = top.grammarName ++ ":" ++ n.name;
@@ -33,7 +34,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       foldNamedSignatureElements([
         namedSignatureElement("stringToParse", stringType()),
         namedSignatureElement("filenameToReport", stringType())]),
-      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], false), t.typerep)),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], true, false), t.typerep)),
       nilNamedSignatureElement());
 
   production spec :: ParserSpec =
@@ -47,7 +48,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 
 nonterminal ParserComponents with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponents;
+propagate config, env, flowEnv, grammarName, compiledGrammars, grammarDependencies, errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponents;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -63,7 +64,7 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
 
 closed nonterminal ParserComponent with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponent;
+propagate config, env, flowEnv, grammarName, compiledGrammars, grammarDependencies, errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponent;
 
 aspect default production
 top::ParserComponent ::=
@@ -79,12 +80,12 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
   mods.componentGrammarName = head(m.moduleNames);
 }
 
-autocopy attribute componentGrammarName::String;
+inherited attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
 nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifiers;
+propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifiers;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -100,7 +101,7 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
 
 nonterminal ParserComponentModifier with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifier;
+propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifier;
 
 aspect default production
 top::ParserComponentModifier ::=
@@ -129,8 +130,8 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   -- TODO: As a hack, even though we don't propogates defs up to the top level, we
   -- do generate files for the lifted dcl. Needed to generate terminal class files.
   top.genFiles := m.genFiles ++
-    [pair(className ++ ".java",
-          generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
+    [(className ++ ".java",
+          generateFunctionClassString(top.env, top.flowEnv, top.grammarName, n.name, namedSig, parseResult))];
   
   local parseResult :: String =
     s"""return common.Util.callCopperParser(new ${packageName}.${parserName}(), c_stringToParse, c_filenameToReport);""";

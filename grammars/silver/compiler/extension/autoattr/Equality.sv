@@ -6,6 +6,8 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
   top.unparse = s"equality attribute ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
+  propagate env;
+
   production attribute inhFName :: String;
   inhFName = inh.lookupAttribute.fullName;
   production attribute synFName :: String;
@@ -27,8 +29,9 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateEquality
-top::ProductionStmt ::= inh::String syn::PartiallyDecorated QName
+top::ProductionStmt ::= inh::String syn::Decorated! QName
 {
+  undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   forwards to

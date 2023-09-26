@@ -131,9 +131,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function localDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
+Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean
 {
-  return valueDef(defaultEnvItem(localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+  return valueDef(defaultEnvItem(localDcl(fn,ty,isForward,sourceGrammar=sg,sourceLocation=sl)));
 }
 function prodDef
 Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean
@@ -156,9 +156,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context conte
   return valueDef(defaultEnvItem(classMemberDcl(fn,bound,head,contexts,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  closed::Boolean  tracked::Boolean
+Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  data::Boolean  closed::Boolean  tracked::Boolean
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,ks,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,ks,data,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>  genRepeatProb::Maybe<Float>
@@ -192,6 +192,11 @@ function inhDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(inhDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+}
+function transDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
+{
+  return attrDef(defaultEnvItem(transDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function prodOccursDef
 Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def]

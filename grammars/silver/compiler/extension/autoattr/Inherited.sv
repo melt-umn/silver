@@ -1,8 +1,9 @@
 grammar silver:compiler:extension:autoattr;
 
 abstract production propagateInh
-top::ProductionStmt ::= attr::PartiallyDecorated QName
+top::ProductionStmt ::= attr::Decorated! QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   local attrFullName::String = attr.lookupAttribute.dcl.fullName;
@@ -10,7 +11,11 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
     filter(
       \ input::NamedSignatureElement ->
         isDecorable(input.typerep, top.env) &&
-        !input.typerep.isPartiallyDecorated &&  -- Don't copy on partially decorated children
+        -- Only propagate for unique decorated children that don't have the attribute
+        case getMaxRefSet(input.typerep, top.env) of
+        | just(inhs) -> !contains(attrFullName, inhs)
+        | nothing() -> false
+        end &&
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
   forwards to

@@ -1,5 +1,7 @@
 grammar silver:compiler:analysis:typechecking:core;
 
+import silver:compiler:definition:flow:env;
+
 attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 propagate upSubst, downSubst
@@ -7,18 +9,21 @@ propagate upSubst, downSubst
    excluding
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
-     decorateExprWith, exprInh, presentAppExpr,
+     decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
+propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
+attribute finalType occurs on Expr;
 attribute contexts occurs on Expr;
 aspect default production
 top::Expr ::=
 {
+  top.finalType = performSubstitution(top.typerep, top.finalSubst);
   top.contexts = [];
 }
 
 aspect production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
@@ -27,7 +32,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
@@ -36,7 +41,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
@@ -45,7 +50,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   instHead.contextLoc = q.location;
   instHead.contextSource = "the use of " ++ q.name;
@@ -69,16 +74,17 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   infContexts.flowEnv = top.flowEnv;
 
   thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
+  propagate finalSubst;
 }
 
 aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
-  propagate upSubst, downSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -96,9 +102,9 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
-  propagate upSubst, downSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production forwardAccess
@@ -116,7 +122,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -142,7 +148,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   thread downSubst, upSubst on top, note, e, errCheck1, top;
   
-  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], false));
+  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], true, false));
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
@@ -237,9 +243,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 
 aspect production minus
@@ -256,9 +262,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
@@ -274,9 +280,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
@@ -292,9 +298,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
@@ -310,18 +316,18 @@ top::Expr ::= e1::Expr '%' e2::Expr
        else [];
 
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
 }
 aspect production neg
 top::Expr ::= '-' e1::Expr
 {
   
   top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+       if e1.finalType.instanceNum
        then []
-       else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(e1.finalType))];
 }
 
 aspect production terminalConstructor
@@ -333,7 +339,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
   
   errCheck1 = check(es.typerep, stringType());
-  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], false));
+  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], true, false));
   top.errors <-
     if errCheck1.typeerror
     then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]
@@ -360,7 +366,21 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   errCheck1 = checkDecorable(top.env, e.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a nonterminal or partially decorated type.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [err(top.location, "Operand to decorate must be a decorable type.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
+}
+
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, e, errCheck1, top;
+
+  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -394,5 +414,5 @@ top::AppExpr ::= e::Expr
             " but argument is of type " ++ errCheck1.leftpp)];  
 }
 
--- See documentation for major restriction on use of exprRef.
+-- See documentation for major restriction on use of @.
 -- Essentially, the referred expression MUST have already been type checked.

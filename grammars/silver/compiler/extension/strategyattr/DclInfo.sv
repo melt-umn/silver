@@ -39,12 +39,13 @@ top::AttributeDclInfo ::=
   top.typeScheme = polyType([tyVar],
     if isTotal
     then varType(tyVar)
-    else appType(nonterminalType("silver:core:Maybe", [starKind()], false), varType(tyVar)));
+    else appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), varType(tyVar)));
   top.isSynthesized = true;
   top.isStrategy = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.dataAccessHandler = synDataAccessHandler(_, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = strategyAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateStrategy(_, location=_);

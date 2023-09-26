@@ -19,7 +19,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.docForName = id.name;
   top.docUnparse = "`function " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -37,7 +37,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   top.docForName = id.name;
   top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -46,7 +46,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 {
   top.docForName = id.name;
   top.docUnparse = "`concrete production " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -55,7 +55,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 {
   top.docForName = a.name;
   top.docUnparse = s"`synthesized attribute ${a.name}${tl.unparse} :: ${te.unparse}`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -64,7 +64,16 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 {
   top.docForName = a.name;
   top.docUnparse = s"`inherited attribute ${a.name}${tl.unparse} :: ${te.unparse}`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production attributeDclTrans
+top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+{
+  top.docForName = a.name;
+  top.docUnparse = s"`translation attribute ${a.name}${tl.unparse} :: ${te.unparse}`";
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -72,8 +81,8 @@ aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   top.docForName = id.name;
-  top.docUnparse = s"`nonterminal ${id.name}${tl.unparse}`";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docUnparse = s"`${quals.docUnparse}nonterminal ${id.name}${tl.unparse}`";
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -91,7 +100,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 {
   top.docForName = id.name;
   top.docUnparse = s"`terminal ${id.unparse}`";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -100,7 +109,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 {
   top.docForName = id.name;
   top.docUnparse = s"`lexer class ${id.unparse} ${modifiers.unparse}`";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -109,7 +118,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 {
   top.docForName = n.name;
   top.docUnparse = s"`parser ${n.unparse} :: ${t.unparse}`";
-  top.docDcls := [pair(n.name, docDclInfo(n.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(n.name, docDclInfo(n.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -118,7 +127,7 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
 {
   top.docForName = a.name;
   top.docUnparse = s"`annotation ${a.unparse}${tl.unparse} :: ${te.unparse}`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -127,7 +136,7 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
 {
   top.docForName = syn.name;
   top.docUnparse = s"`equality attribute ${syn.name} with ${inh.name}`";
-  top.docDcls := [pair(syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -136,8 +145,8 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
 {
   top.docForName = keySyn.name++" and "++syn.name++" (ordering pair)";
   top.docUnparse = s"`ordering attribute ${keySyn.name}, ${syn.name} with ${inh.name}`";
-  top.docDcls := [pair(keySyn.name, docDclInfo(keySyn.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
-                  pair(syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(keySyn.name, docDclInfo(keySyn.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
+                  (syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -146,7 +155,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 {
   top.docForName = a.name;
   top.docUnparse = s"`monoid attribute ${a.unparse}${tl.unparse} :: ${te.unparse}`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -155,8 +164,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
 {
   top.docForName = inh.name++" and "++syn.name++" (threaded pair)";
   top.docUnparse = s"`threaded attribute ${inh.name}, ${syn.name}${tl.unparse} :: ${te.unparse} direction=${if d.reversed then "right to left" else "left to right"}`";
-  top.docDcls := [pair(inh.name, docDclInfo(inh.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
-                  pair(syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(inh.name, docDclInfo(inh.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
+                  (syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -165,7 +174,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 {
   top.docForName = a.name;
   top.docUnparse = s"`monoid attribute ${a.unparse}`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -175,9 +184,9 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 -- {
 --   top.docForName = inh.name++" and "++synPartial.name++" and "++syn.name++" (unification set)";
 --   top.docUnparse = s"`unification attribute ${inh.name}, ${syn.name}, ${syn.name}`";
---   top.docDcls := [pair(inh.name, docDclInfo(inh.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
---                   pair(syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
---                   pair(synPartial.name, docDclInfo(synPartial.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+--   top.docDcls := [(inh.name, docDclInfo(inh.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
+--                   (syn.name, docDclInfo(syn.name, sourceLocation=top.location, sourceGrammar=top.grammarName)),
+--                   (synPartial.name, docDclInfo(synPartial.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
 --   top.docs := [mkUndocumentedItem(top.docForName, top)];
 -- }
 
@@ -195,13 +204,13 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 {
   top.docForName = id.name;
   top.docUnparse = s"`ffi type ${id.unparse}`";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
 
 aspect production defaultAttributionDcl
-top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.docForName = "";
   top.docUnparse = "";
@@ -246,7 +255,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
 {
   top.docForName = a.name;
   top.docUnparse = s"`parser attribute ${a.unparse}`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -292,7 +301,7 @@ top::AGDcl ::= n::Name
 }
 
 aspect production errorAttributionDcl
-top::AGDcl ::= msg::[Message] at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.docForName = "";
   top.docUnparse = "";
@@ -304,7 +313,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
 {
   top.docForName = id.name;
   top.docUnparse = s"`global ${id.unparse}`";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -313,7 +322,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 {
   top.docForName = id.name;
   top.docUnparse = s"`type ${id.unparse}`";
-  top.docDcls := [pair(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -322,7 +331,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 {
   top.docForName = a.name;
   top.docUnparse = s"`synthesized attribute ${a.unparse} (collection)`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -331,7 +340,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 {
   top.docForName = a.name;
   top.docUnparse = s"`synthesized attribute ${a.unparse} (collection)`";
-  top.docDcls := [pair(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
+  top.docDcls := [(a.name, docDclInfo(a.name, sourceLocation=top.location, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
@@ -342,3 +351,11 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
   top.docUnparse = "";
   top.docs := [];
 }
+
+attribute docUnparse occurs on NTDeclQualifiers;
+aspect docUnparse on NTDeclQualifiers of
+| closedNTQualifier(_, rest) -> "closed " ++ rest.docUnparse
+| dataNTQualifier(_, rest) -> "data " ++ rest.docUnparse
+| trackedNTQualifier(_, rest) -> rest.docUnparse
+| nilNTQualifier() -> ""
+end;

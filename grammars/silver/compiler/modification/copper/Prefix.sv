@@ -10,19 +10,19 @@ concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
 {  
   top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
-  top.terminalPrefixes <- map(pair(_, s.terminalPrefix), ts.prefixItemNames);
+  top.terminalPrefixes <- map(pair(fst=_, snd=s.terminalPrefix), ts.prefixItemNames);
   top.grammarTerminalPrefixes <-
-    if ts.isAllMarking then [pair(top.componentGrammarName, s.terminalPrefix)] else [];
+    if ts.isAllMarking then [(top.componentGrammarName, s.terminalPrefix)] else [];
   s.prefixedTerminals = ts.prefixItemNames;
   s.prefixedGrammars = if ts.isAllMarking then [top.componentGrammarName] else [];
 }
 
-autocopy attribute prefixedTerminals::[String];
-autocopy attribute prefixedGrammars::[String];
+inherited attribute prefixedTerminals::[String];
+inherited attribute prefixedGrammars::[String];
 synthesized attribute terminalPrefix::String;
 nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
 
-propagate errors, syntaxAst, genFiles on TerminalPrefix;
+propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, errors, syntaxAst, genFiles on TerminalPrefix;
 
 concrete production nameTerminalPrefix
 top::TerminalPrefix ::= s::QName
@@ -92,8 +92,7 @@ top::TerminalModifier ::= terms::[String]  grams::[String]
 synthesized attribute prefixItemNames::[String];
 synthesized attribute isAllMarking::Boolean;
 nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames, isAllMarking;
-
-propagate errors on TerminalPrefixItems;
+propagate config, env, grammarName, componentGrammarName, compiledGrammars, errors on TerminalPrefixItems;
 
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
@@ -129,6 +128,7 @@ top::TerminalPrefixItems ::=
 }
 
 nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
+propagate config, env, grammarName, componentGrammarName, compiledGrammars on TerminalPrefixItem;
 
 concrete production qNameTerminalPrefixItem
 top::TerminalPrefixItem ::= t::QName
@@ -143,6 +143,7 @@ top::TerminalPrefixItem ::= t::QName
 concrete production easyTerminalRefTerminalPrefixItem
 top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
+  propagate env;
   forwards to
     qNameTerminalPrefixItem(
       qName(top.location, head(t.dcls).fullName),
@@ -172,7 +173,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   pluckTAction.originRules = [];
   
   local tName::String = t.lookupType.dcl.fullName;
-  top.syntaxAst <-
+  top.syntaxAst <- if !t.lookupType.found then [] else
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
     -- since we currently require those to be disjoint.

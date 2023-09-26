@@ -4,9 +4,9 @@ grammar silver:core;
 --  Don't change their names, grammar locations, or parameters unless you know what your doing
 --  (and have made the appropriate runtime and compiler changes!)
 
-nonterminal OriginInfo;
-nonterminal OriginInfoType;
-nonterminal OriginNote;
+data nonterminal OriginInfo;
+data nonterminal OriginInfoType;
+data nonterminal OriginNote;
 
 synthesized attribute notepp :: String occurs on OriginNote;
 
@@ -340,7 +340,7 @@ Maybe<a> ::= arg::OriginInfo
   "java" : return "common.OriginsUtil.getOriginLink(%arg%)";
 }
 
-closed tracked nonterminal AmbientOriginNT;
+closed tracked data nonterminal AmbientOriginNT;
 
 @{- Useful for accessing the "ambient" origin, i.e., what origin does a created node get? Create one and find out! -}
 abstract production ambientOrigin

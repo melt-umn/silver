@@ -95,16 +95,9 @@ top::Context ::= msg::String
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindrep, freeVariables, tracked;
-synthesized attribute tracked :: Boolean;
+nonterminal Type with kindrep, freeVariables;
 
 flowtype Type = decorate {}, forward {};
-
-aspect default production
-top::Type ::=
-{
-  top.tracked = false;
-}
 
 {--
  - This is a (universally quantified) type variable.
@@ -139,7 +132,6 @@ top::Type ::= c::Type a::Type
     | _ -> starKind()
     end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
-  top.tracked = c.tracked;
 }
 
 {--
@@ -209,18 +201,18 @@ top::Type ::=
  - An (undecorated) nonterminal type.
  - Note that this is the *unapplied* type constructor for a nonterminal type;
  - e.g. `Pair<String Integer>` would be represented as
- - `apType(apType(nonterminalType("silver:core:Pair", [starKind(), starKind()], false), stringType()), integerType())`.
+ - `apType(apType(nonterminalType("silver:core:Pair", [starKind(), starKind()], true, false), stringType()), integerType())`.
  -
  - @param fn  The fully qualified name of the nonterminal.
  - @param k  The number type parameters for that nonterminal.
- - @param tracked  Might this NT be tracked.
+ - @param data  Is this a data nonterminal.
+ - @param tracked  Is this NT tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String ks::[Kind] tracked::Boolean
+top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
 {
   top.kindrep = foldr(arrowKind, starKind(), ks);
   top.freeVariables = [];
-  top.tracked = tracked;
 }
 
 {--
@@ -261,13 +253,13 @@ top::Type ::= te::Type i::Type
 }
 
 {--
- - A *partially decorated* nonterminal type.
+ - A *unique decorated* nonterminal type.
  - Represents a reference with some exact set of provided inherited attributes,
  - may be decorated with additional attributes.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
  - @param i  MUST have kind InhSet
  -}
-abstract production partiallyDecoratedType
+abstract production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
@@ -297,7 +289,7 @@ top::Type ::= te::Type i::Type
  -
  - @param nt  MUST be a 'nonterminalType'
  - @param inhs  The inh set that we're decorated with, or a free var if we don't care - MUST have kind InhSet
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'partiallyDecoratedType(nt, inhs)'
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'uniqueDecoratedType(nt, inhs)'
  -                representing state: unspecialized, undecorated, or decorated.
  - @param defaultPartialDec  The default for what we are if we never specialize.
  - @param inhs  The default for what we're decorated with if we never specialize - MUST have kind InhSet
@@ -327,7 +319,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
 
 {--
  - Function type. (Whether production or function.)
- - Note that this is the *unapplied* type constructor for a nonterminal type,
+ - Note that this is the *unapplied* type constructor for a function type,
  - and argument types are provided before the result type;
  - e.g. `(Integer ::= String Boolean)` would be represented as
  - `apType(apType(apType(functionType(3, []), stringType()), booleanType()), integerType())`.

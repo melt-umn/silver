@@ -190,7 +190,7 @@ public final class Util {
 	public static void printStackCauses(Throwable e) {
 		freeThisToPrintErrors = null;
 
-		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
+		System.err.println("\nAn error occurred.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
 			Throwable t = e;
@@ -201,7 +201,9 @@ public final class Util {
 				if(msg == null) // Some exceptions have no message... apparently.
 					msg = t.toString();
 
-				if(st.length == 0) {
+				if(t instanceof CycleTraceException) {
+					System.err.println("\tCycle begins here:");
+				} else if(st.length == 0) {
 					// Some exceptions don't seem to occur anywhere... somehow.
 					System.err.println("(??): " + msg);
 				} else if(st[0].getClassName().startsWith("common.")) {
@@ -337,8 +339,8 @@ public final class Util {
 		if(o instanceof Node) {
 			hackyhackyUnparseNode((Node)o, sb);
 		} else if(o instanceof DecoratedNode) {
-			// For the time being, just undecorate it
-			hackyhackyUnparseNode(((DecoratedNode)o).undecorate(), sb);
+			// For the time being, just grab the underlying Node (don't copy-undecorate!)
+			hackyhackyUnparseNode(((DecoratedNode)o).getNode(), sb);
 		} else if(o instanceof Terminal) {
 			Terminal t = (Terminal) o;
 			sb.append("'" + t.lexeme + "'");
@@ -356,12 +358,24 @@ public final class Util {
 	}
 	private static void hackyhackyUnparseNode(Node n, StringBuilder sb) {
 		sb.append(n.getName() + "(");
-		for(int i = 0; i < n.getNumberOfChildren(); i++) {
+		int nc = n.getNumberOfChildren();
+		for(int i = 0; i < nc; i++) {
 			if(i != 0) {
 				sb.append(", ");
 			}
 			hackyhackyUnparseObject(n.getChild(i), sb);
 			//System.out.println(sb.toString());
+		}
+		String[] annos = n.getAnnoNames();
+		for(int i = 0; i < annos.length; i++) {
+			if(!annos[i].equals("silver:core:location")) {
+				if(nc != 0 || i != 0) {
+					sb.append(", ");
+				}
+				sb.append(annos[i] + "=");
+				hackyhackyUnparseObject(n.getAnno(annos[i]), sb);
+				//System.out.println(sb.toString());
+			}
 		}
 		sb.append(")");
 	}
@@ -413,7 +427,7 @@ public final class Util {
 			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
 			return new PparseFailed(err, null);
 		} catch(Throwable t) {
-			throw new TraceException("An error occured while parsing", t);
+			throw new TraceException("An error occurred while parsing", t);
 		}
 	}
 
@@ -437,8 +451,8 @@ public final class Util {
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
         return new PterminalDescriptor(t.lexeme,
             convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
-            new StringCatter(t.getName()),
-            Terminal.extractLocation(t));
+            Terminal.extractLocation(t),
+            new StringCatter(t.getName()));
 	}
 
 	/**

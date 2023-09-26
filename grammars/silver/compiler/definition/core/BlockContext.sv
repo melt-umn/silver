@@ -7,7 +7,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph;
  - statements, etc.  i.e. "can forward/return/pluck?"
  -}
 nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes,
-  permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature,
+  permitForwardProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature,
   fullName, lhsNtName, signature, sourceGrammar, flowGraph;
 
 
@@ -20,6 +20,8 @@ synthesized attribute permitLocalAttributes :: Boolean;
 {-- Are 'production attribute' equations allowed in this context?
     DISTINCT from locals, due to action blocks. -}
 synthesized attribute permitProductionAttributes :: Boolean;
+{-- Are 'forward production attribute' equations allowed in this context? -}
+synthesized attribute permitForwardProductionAttributes :: Boolean;
 
 {--
  - Whether the signature includes the name of a LHS.
@@ -79,6 +81,7 @@ top::BlockContext ::=
   top.permitReturn = false;
   top.permitForward = false;
   top.permitProductionAttributes = false;
+  top.permitForwardProductionAttributes = false;
   top.permitLocalAttributes = false;
   top.lazyApplication = true;
   top.hasPartialSignature = false;
@@ -109,10 +112,11 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.signature = sig;
   top.flowGraph = g;
 
-  top.permitForward = true;
+  top.permitForward = !sig.outputElement.typerep.isData;
   top.hasPartialSignature = true;
   top.hasFullSignature = true;
   top.permitProductionAttributes = true;
+  top.permitForwardProductionAttributes = !sig.outputElement.typerep.isData;
   top.permitLocalAttributes = true;
 }
 

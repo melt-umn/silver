@@ -23,7 +23,6 @@ dont_delete = ["copper", "downloads", "melt-artifacts"]
 
 files = [
     "CopperCompiler.jar",
-    "IDEPluginRuntime.jar",
     "SilverRuntime.jar",
     "commonmark-0.17.1.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_ableC.jar",
@@ -31,6 +30,8 @@ files = [
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_base.jar",
     "silver-latest.tar.gz",
     "silver.compiler.composed.Default.jar",
+    "silver-langserver-launcher.jar",
+    "silverlsp-latest.vsix",
     "website.tar.gz",
 ]
 

@@ -6,7 +6,7 @@ grammar silver:compiler:modification:list;
 abstract production listType
 top::Type ::= el::Type
 {
-  propagate substituted, flatRenamed;
+  propagate substitution, substituted, flatRenamed, boundVariables;
   top.typepp = "[" ++ el.typepp ++ "]";
 
   forwards to appType(listCtrType(), el);
@@ -26,7 +26,8 @@ top::Type ::=
   top.isNonterminal = false;
   top.isDecorated = false;
 
-  top.tracked = false;
+  top.isData = false;
+  top.isTracked = false;
   top.kindrep = arrowKind(starKind(),starKind());
 
   top.unify =

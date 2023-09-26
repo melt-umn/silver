@@ -30,7 +30,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
         g:transitiveClosure(
           g:add(
             map(
-              \ p::Pair<String String> -> pair(p.snd, p.fst),
+              \ p::Pair<String String> -> (p.snd, p.fst),
               host.superClassContribs ++ ext.superClassContribs),
             g:empty()))));
   host.parserAttributeAspects =

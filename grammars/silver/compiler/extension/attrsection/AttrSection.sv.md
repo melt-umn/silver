@@ -5,6 +5,8 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
+imports silver:compiler:definition:flow:env;
+imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:modification:lambda_fn;
 
 import silver:util:treeset as ts;
@@ -17,7 +19,7 @@ concrete production attributeSection
 top::Expr ::= '(' '.' q::QNameAttrOccur ')'
 {
   top.unparse = s"(.${q.unparse})";
-  propagate freeVars;
+  propagate freeVars, env, grammarName;
 ```
 
 In constructing the forward we need to know on what type the attribute will be accessed.
@@ -54,6 +56,8 @@ Determine the actual final input and output types that were computed elsewhere d
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   local inputTy::Type = head(finalTy.inputTypes);
   local outputTy::Type = finalTy.outputType;
+
+  q.attrFor = inputTy;
 ```
 
 The inferred output type must be unambiguous: otherwise it is possible that a consumer of this

@@ -2,14 +2,14 @@ grammar silver:rewrite;
 
 exports silver:reflect; -- Needed by the extension, so just export it here.
 
-autocopy attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
+inherited attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
 synthesized attribute allResult<a>::Maybe<a>;
 synthesized attribute someResult<a>::Maybe<a>;
 synthesized attribute oneResult<a>::Maybe<a>;
 
 inherited attribute productionName::String occurs on AST;
-autocopy attribute childStrategies::[Strategy] occurs on AST, ASTs;
-autocopy attribute annotationStrategies::[Pair<String Strategy>] occurs on AST, NamedASTs, NamedAST;
+inherited attribute childStrategies::[Strategy] occurs on AST, ASTs;
+inherited attribute annotationStrategies::[Pair<String Strategy>] occurs on AST, NamedASTs, NamedAST;
 synthesized attribute traversalResult<a>::Maybe<a>;
 inherited attribute headStrategy::Strategy occurs on AST;
 inherited attribute tailStrategy::Strategy occurs on AST;
@@ -20,6 +20,8 @@ attribute allResult<AST> occurs on AST;
 attribute someResult<AST> occurs on AST;
 attribute oneResult<AST> occurs on AST;
 attribute traversalResult<AST> occurs on AST;
+
+propagate givenStrategy on AST, ASTs, NamedASTs, NamedAST;
 
 aspect default production
 top::AST ::=
@@ -59,6 +61,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       just(nonterminalAST(prodName, children, annotationsResult))
     | nothing(), nothing() -> nothing()
     end;
+  children.childStrategies = top.childStrategies;
+  annotations.annotationStrategies = top.annotationStrategies;
   top.traversalResult =
     do {
       if prodName != top.productionName then nothing() else just(unit());
@@ -216,6 +220,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
     | nothing(), just(tResult) -> just(consNamedAST(h, tResult))
     | nothing(), nothing() -> nothing()
     end;
+  propagate annotationStrategies;
   top.traversalResult =
     do {
       hResult::NamedAST <- h.traversalResult;
@@ -244,7 +249,7 @@ attribute traversalResult<NamedAST> occurs on NamedAST;
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
-  top.binding = pair(n, v);
+  top.binding = (n, v);
   top.allResult =
     do {
       vResult::AST <- decorate top.givenStrategy with { term = v; }.result;

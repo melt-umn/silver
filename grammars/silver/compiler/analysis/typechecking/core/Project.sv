@@ -10,7 +10,10 @@ imports silver:compiler:definition:type;
 threaded attribute downSubst, upSubst :: Substitution;
 
 {-- The complete, final substitution context -}
-autocopy attribute finalSubst :: Substitution;
+inherited attribute finalSubst :: Substitution;
+
+{-- typerep after applying finalSubst, for convinence -}
+synthesized attribute finalType :: Type;
 
 -- We also use typerep.
 -- Such that performSubstitution(e.typerep, e.upSubst) is the expression's real type (as of that moment)

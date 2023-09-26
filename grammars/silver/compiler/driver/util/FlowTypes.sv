@@ -3,6 +3,7 @@ grammar silver:compiler:driver:util;
 import silver:compiler:definition:flow:driver;
 import silver:compiler:definition:flow:ast;
 import silver:compiler:definition:flow:env;
+import silver:compiler:analysis:uniqueness;
 import silver:util:treemap as rtm;
 import silver:util:graph as g;
 
@@ -15,7 +16,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), allLatestGrammars));
   local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), allLatestGrammars);
   local allRefDefs :: [(String, [String])] = flatMap((.refDefs), allLatestGrammars);
-  local allFlowEnv :: FlowEnv = fromFlowDefs(allSpecDefs, allRefDefs, allFlowDefs);
+  local allUniqueRefs :: [(String, UniqueRefSite)] = flatMap((.uniqueRefs), allLatestGrammars);
+  local allFlowEnv :: FlowEnv = flowEnv(allSpecDefs, allRefDefs, allUniqueRefs, allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
@@ -24,7 +26,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   -- It's possible (likely) we could do better than using the overall env here.
   local allRealDefs :: [Def] = flatMap((.defs), allLatestGrammars);
   local allRealOccursDefs :: [OccursDclInfo] = flatMap((.occursDefs), allLatestGrammars);
-  local allRealEnv :: Decorated Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
+  local allRealEnv :: Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
   
   -- List of all productions
   local allProds :: [ValueDclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;

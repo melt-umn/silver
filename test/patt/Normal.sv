@@ -65,10 +65,10 @@ Boolean ::= p::Pair<Boolean Boolean>
          end;
 }
 
-equalityTest ( pairmatching(pair(true,true)), true, Boolean, pat_tests ) ;
-equalityTest ( pairmatching(pair(true,false)), false, Boolean, pat_tests ) ;
-equalityTest ( pairmatching(pair(false,true)), true, Boolean, pat_tests ) ;
-equalityTest ( pairmatching(pair(false,false)), true, Boolean, pat_tests ) ;
+equalityTest ( pairmatching((true,true)), true, Boolean, pat_tests ) ;
+equalityTest ( pairmatching((true,false)), false, Boolean, pat_tests ) ;
+equalityTest ( pairmatching((false,true)), true, Boolean, pat_tests ) ;
+equalityTest ( pairmatching((false,false)), true, Boolean, pat_tests ) ;
 
 
 nonterminal Echo<a> with input<a>, output<a>;
@@ -90,7 +90,7 @@ a ::= s::a
 }
 
 equalityTest ( echotest("foo"), "foo", String, pat_tests ) ;
-equalityTest ( echotest(decorate just("hi") with {}).fromJust, "hi", String, pat_tests ) ;
+equalityTest ( echotest(just("hi")).fromJust, "hi", String, pat_tests ) ;
 
 
 function lookattees
@@ -134,32 +134,36 @@ wrongCode "doesnotexist" {
  }
 }
 
-wrongCode "pair has 2 parameters but 0 patterns" {
+nonterminal IntPair;
+production intPair
+top::IntPair ::= Integer Integer {}
+
+wrongCode "intPair has 2 parameters but 0 patterns" {
  function fooDontCare
  String ::=
  {
-   return case pair(1,2) of
-            pair() -> ""
+   return case intPair(1,2) of
+            intPair() -> ""
           end;
  }
 }
 
-wrongCode "pair has 2 parameters but 3 patterns" {
+wrongCode "intPair has 2 parameters but 3 patterns" {
  function fooDontCare
  String ::=
  {
-   return case pair(1,2) of
-            pair(b,c,d) -> ""
+   return case intPair(1,2) of
+            intPair(b,c,d) -> ""
           end;
  }
 }
 
-wrongCode "pair has 2 parameters but 1 patterns" {
+wrongCode "intPair has 2 parameters but 1 patterns" {
  function fooDontCare
  String ::=
  {
-   return case pair(1,2) of
-            pair(d) -> ""
+   return case intPair(1,2) of
+            intPair(d) -> ""
           end;
  }
 }
@@ -225,49 +229,49 @@ String ::= d::OrdinaryNonterminal
 
 wrongCode "Pattern has overlapping cases" {
   global normalCrashTest223 :: Integer =
-    case pair(1,2) of
-    | pair(_, _) -> 2
-    | pair(_, _) -> 3 -- oops!
+    case (1,2) of
+    | (_, _) -> 2
+    | (_, _) -> 3 -- oops!
     end;
 }
 
 -- Make sure Silver doesn't crash compiling this:
 wrongCode "2 parameters but 1 patterns" {
   global normalCrashTest225 :: Integer =
-    case pair(1,2) of
-    | pair(_, _) -> 2
-    | pair(_) -> 3 -- oops!
+    case intPair(1,2) of
+    | intPair(_, _) -> 2
+    | intPair(_) -> 3 -- oops!
     end;
 }
 
 -- Make sure an error is raised for this:
 wrongCode "2 parameters but 1 patterns" {
   global normalErrorTest234 :: Integer =
-    case pair(1,2) of
-    | pair(2, 3) -> 2
-    | pair(_) -> 3 -- oops!
+    case intPair(1,2) of
+    | intPair(2, 3) -> 2
+    | intPair(_) -> 3 -- oops!
     end;
 }
 
 wrongCode "2 parameters but 3 patterns" {
   global normalErrorTest243 :: Integer =
-    case pair(1,2) of
-    | pair(2, 3) -> 2
-    | pair(_, _, _) -> 3 -- oops!
+    case intPair(1,2) of
+    | intPair(2, 3) -> 2
+    | intPair(_, _, _) -> 3 -- oops!
     end;
 }
 
 wrongCode "2 parameters but 3 patterns" {
   global normalErrorTest257 :: Integer =
-    case pair(1,2) of
-    | pair(_, _, _) -> 3 -- oops!
-    | pair(2, 3) -> 2
+    case intPair(1,2) of
+    | intPair(_, _, _) -> 3 -- oops!
+    | intPair(2, 3) -> 2
     end;
 }
 
 wrongCode "Undeclared value" {
   global normalErrorTest265 :: Integer =
-    case pair(1,2) of
+    case intPair(1,2) of
     | skdjhfkljshfkjsdh(_, _, _) -> 3 -- oops!
     end;
 }

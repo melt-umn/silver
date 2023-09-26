@@ -21,10 +21,13 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 }
 
 abstract production functorAttributionDcl
-top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
+
+  propagate grammarName, env, flowEnv;
   
   forwards to
     defaultAttributionDcl(
@@ -55,8 +58,9 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateFunctor
-top::ProductionStmt ::= attr::PartiallyDecorated QName
+top::ProductionStmt ::= attr::Decorated! QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
@@ -95,7 +99,7 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
  - @return Either this the child, or accessing `attrName` on the child
  -}
 function makeArg
-Expr ::= loc::Location env::Decorated Env attrName::Decorated QName input::NamedSignatureElement
+Expr ::= loc::Location env::Env attrName::Decorated QName input::NamedSignatureElement
 {
   local at::QName = qName(loc, input.elementName);
   at.env = env;
@@ -103,7 +107,8 @@ Expr ::= loc::Location env::Decorated Env attrName::Decorated QName input::Named
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
-  local validTypeHead :: Boolean = isDecorable(input.typerep, env) && !input.typerep.isPartiallyDecorated;
+  local validTypeHead :: Boolean = 
+    (isDecorable(input.typerep, env) || input.typerep.isNonterminal) && !input.typerep.isUniqueDecorated;
   
   return
     if validTypeHead && attrOccursOnHead
@@ -129,7 +134,7 @@ Pair<String Expr> ::= loc::Location baseName::String input::NamedSignatureElemen
   local annoName :: String = last(explode(":", input.elementName));
 
   return
-    pair(annoName,
+    (annoName,
       access(
         baseExpr(qName(loc, baseName), location=loc), '.',
         qNameAttrOccur(qName(loc, annoName), location=loc),

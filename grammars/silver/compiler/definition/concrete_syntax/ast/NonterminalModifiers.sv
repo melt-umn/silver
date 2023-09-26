@@ -8,7 +8,7 @@ imports silver:compiler:definition:core only nonterminalName;
 
 nonterminal SyntaxNonterminalModifiers with compareTo, isEqual, cstEnv, cstErrors, customLayout, nonterminalName;
 
-propagate compareTo, isEqual, cstErrors, customLayout on SyntaxNonterminalModifiers;
+propagate compareTo, isEqual, cstEnv, cstErrors, customLayout, nonterminalName on SyntaxNonterminalModifiers;
 
 abstract production consNonterminalMod
 top::SyntaxNonterminalModifiers ::= h::SyntaxNonterminalModifier  t::SyntaxNonterminalModifiers
@@ -45,7 +45,7 @@ top::SyntaxNonterminalModifier ::= terms::[String]
                      if !null(a.snd) then []
                      else ["Terminal " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from layout clause on nonterminal " ++ top.nonterminalName ++ ")"],
-                   zipWith(pair, terms, termRefs));
+                   zip(terms, termRefs));
 
   top.customLayout := just(terms);
 }

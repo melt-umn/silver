@@ -10,7 +10,7 @@ monoid attribute opAssociation :: Maybe<String> with nothing(), orElse; -- TODO 
 monoid attribute prefixSeperator :: Maybe<String> with nothing(), orElse;
 monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
-autocopy attribute terminalName :: String;
+inherited attribute terminalName :: String;
 
 monoid attribute dominates_ :: [Decorated SyntaxDcl];
 monoid attribute submits_ :: [Decorated SyntaxDcl];
@@ -25,8 +25,10 @@ nonterminal SyntaxTerminalModifiers with compareTo, isEqual, cstEnv, cstErrors,
   componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses;
 
-propagate compareTo, isEqual, cstErrors, classTerminalContribs, ignored, acode, opPrecedence,
-  opAssociation, prefixSeperator, prefixSeperatorToApply, marking, prettyName,
+propagate compareTo, isEqual, cstEnv, cstErrors,
+  classTerminalContribs, superClasses, subClasses, ignored, acode,
+  opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses
   on SyntaxTerminalModifiers;
 
@@ -121,7 +123,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
   production allClsRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(allCls, top.cstEnv));
 
   top.cstErrors := []; 
-  top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
+  top.classTerminalContribs := map(pair(fst=_, snd=top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominates_ := flatMap((.domContribs), allClsRefs);
   top.submits_ := flatMap((.subContribs), allClsRefs);
@@ -147,7 +149,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, sub, subRefs)); 
+                   zip(sub, subRefs)); 
   top.submits_ := map(head, subRefs);
 }
 {--
@@ -163,7 +165,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, dom, domRefs)); 
+                   zip(dom, domRefs)); 
   top.dominates_ := map(head, domRefs);
 }
 {--
@@ -203,7 +205,7 @@ top::SyntaxTerminalModifier ::= terms::[String] grams::[String]
                      if !null(a.snd) then []
                      else ["Terminal " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from use prefix seperator for clause for terminal)"],
-                   zipWith(pair, terms, termRefs));
+                   zip(terms, termRefs));
   
   top.cstErrors <-
     flatMap(

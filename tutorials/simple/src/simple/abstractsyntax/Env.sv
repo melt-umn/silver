@@ -5,31 +5,18 @@ import silver:util:treemap as tm;
 {- This is slightly overkill for simple, however it's an ideal way to set up the
    environment for larger projects and more realistic languages. -}
 
-nonterminal Env;
-nonterminal Defs;
-closed nonterminal Def;
-
--- Environment manipulation functions
-
-function emptyEnv
-Decorated Env ::=
-{
-  return decorate emptyEnv_i() with {};
-}
-function addEnv
-Decorated Env ::= d::[Def]  e::Decorated Env
-{
-  return decorate addEnv_i(d, e) with {};
-}
+data nonterminal Env;
+data nonterminal Defs;
+closed data nonterminal Def;
 
 -- Environment representation productions
 
-abstract production emptyEnv_i
+abstract production emptyEnv
 top::Env ::=
 {
 }
-abstract production addEnv_i
-top::Env ::= dlist::[Def]  e::Decorated Env
+abstract production addEnv
+top::Env ::= dlist::[Def]  e::Env
 {
   production d::Defs = foldr(consDefs, nilDefs(), dlist);
 }
@@ -63,13 +50,13 @@ top::Def ::=
 synthesized attribute values :: tm:Map<String Decorated TypeExpr> occurs on Env;
 synthesized attribute valueContribs :: [Pair<String Decorated TypeExpr>] occurs on Defs, Def;
 
-aspect production emptyEnv_i
+aspect production emptyEnv
 top::Env ::=
 {
   top.values = tm:empty();
 }
-aspect production addEnv_i
-top::Env ::= dlist::[Def]  e::Decorated Env
+aspect production addEnv
+top::Env ::= dlist::[Def]  e::Env
 {
   top.values = tm:add(d.valueContribs, e.values);
 }
@@ -93,16 +80,16 @@ top::Def ::=
 abstract production valueDef
 top::Def ::= n::String  t::Decorated TypeExpr
 {
-  top.valueContribs = [pair(n, t)];
+  top.valueContribs = [(n, t)];
 }
 
 function lookupValue
-Maybe<Decorated TypeExpr> ::= n::String  e::Decorated Env
+Maybe<Decorated TypeExpr> ::= n::String  e::Env
 {
   return adaptMaybe(tm:lookup(n, e.values));
 }
 function lookupValueAll
-[Decorated TypeExpr] ::= n::String  e::Decorated Env
+[Decorated TypeExpr] ::= n::String  e::Env
 {
   return tm:lookup(n, e.values);
 }

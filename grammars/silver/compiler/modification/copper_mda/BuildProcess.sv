@@ -32,11 +32,12 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       mkdir(outDir);
       eprintln("Running MDA for " ++ spec.fullName ++ ".");
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
-        makeName(spec.sourceGrammar), parserName, true, "", false, "", false);
-      case nativeSerialize(new(specCstAst)) of
-      | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper_mda modification: " ++ e)
-      | right(dump) -> writeBinaryFile(dumpFile, dump)
-      end;
+        makeName(spec.sourceGrammar), parserName, true, "", false, parserName ++ ".html", false);
+      when_(ret == 0,
+        case nativeSerialize(new(specCstAst)) of
+        | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper_mda modification: " ++ e)
+        | right(dump) -> writeBinaryFile(dumpFile, dump)
+        end);
       return ret;
     } else do {
       -- Should this be stderr?

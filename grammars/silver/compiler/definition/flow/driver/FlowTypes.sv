@@ -2,11 +2,10 @@ grammar silver:compiler:definition:flow:driver;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
---import silver:compiler:definition:flow:env;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:ast;
-imports silver:compiler:analysis:warnings:flow only isOccursSynthesized, isAutocopy;
-
-imports silver:compiler:modification:autocopyattr;
+imports silver:compiler:analysis:warnings:flow only isOccursSynthesized;
+imports silver:compiler:analysis:uniqueness;
 
 imports silver:util:treemap as rtm;
 imports silver:util:graph as g;
@@ -32,7 +31,7 @@ EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
 function initialFlowType
 Pair<NtName FlowType> ::= x::(NtName, [(String, [String])])
 {
-  return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
+  return (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
 }
 function ntListLte
 Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
@@ -48,12 +47,12 @@ function ntListCoalesce
 [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]]
 {
   return if null(l) then []
-  else pair(head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
+  else (head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
 }
 function toFlatEdges
 [Pair<String String>] ::= x::Pair<String [String]>
 {
-  return map(pair(x.fst, _), x.snd);
+  return map(pair(fst=x.fst, snd=_), x.snd);
 }
 
 
@@ -62,7 +61,7 @@ function toFlatEdges
  - Iterates until convergence.
  -}
 function fullySolveFlowTypes
-Pair<[ProductionGraph] EnvTree<FlowType>> ::= 
+([ProductionGraph], EnvTree<FlowType>) ::= 
   graphs::[ProductionGraph]
   ntEnv::EnvTree<FlowType>
 {
@@ -71,21 +70,19 @@ Pair<[ProductionGraph] EnvTree<FlowType>> ::=
   local prodEnv :: EnvTree<ProductionGraph> =
     directBuildTree(map(prodGraphToEnv, graphs));
   
-  local iter :: Pair<Boolean Pair<[ProductionGraph] EnvTree<FlowType>>> =
+  local iter :: (Boolean, [ProductionGraph], EnvTree<FlowType>) =
     solveFlowTypes(graphs, prodEnv, ntEnv);
   
   -- Just iterate until no new edges are added
-  return if !iter.fst then iter.snd
-  else fullySolveFlowTypes(iter.snd.fst, iter.snd.snd);
+  return if !iter.1 then iter.snd
+  else fullySolveFlowTypes(iter.2, iter.3);
 }
 
 {--
  - One iteration of solving flow type equations. Goes through each production once.
  -}
 function solveFlowTypes
-Pair<Boolean
-     Pair<[ProductionGraph]
-          EnvTree<FlowType>>> ::=
+(Boolean, [ProductionGraph], EnvTree<FlowType>) ::=
   graphs::[ProductionGraph]
   prodEnv::EnvTree<ProductionGraph>
   ntEnv::EnvTree<FlowType>
@@ -110,8 +107,8 @@ Pair<Boolean
   local recurse :: Pair<Boolean Pair<[ProductionGraph] EnvTree<FlowType>>> =
     solveFlowTypes(tail(graphs), prodEnv, rtm:update(updatedGraph.lhsNt, [newFlowType], ntEnv));
     
-  return if null(graphs) then pair(false, pair([], ntEnv))
-  else pair(!null(brandNewEdges) || recurse.fst, pair(updatedGraph :: recurse.snd.fst, recurse.snd.snd));
+  return if null(graphs) then (false, ([], ntEnv))
+  else (!null(brandNewEdges) || recurse.fst, updatedGraph :: recurse.snd.fst, recurse.snd.snd);
 }
 
 
@@ -124,7 +121,7 @@ function findBrandNewEdges
   -- TODO: we might take '[Pair<String Set<String>>]' insteadof [String] and gain speed?
   local newinhs :: [String] = removeAll(set:toList(g:edgesFrom(syn, currentFlowType)), inhs);
   
-  local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
+  local newEdges :: [Pair<String String>] = map(pair(fst=syn, snd=_), newinhs);
   
   return if null(candidates) then [] else newEdges ++ findBrandNewEdges(tail(candidates), currentFlowType);
 }
@@ -135,7 +132,7 @@ Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
 {
   -- TODO: we might return 'Pair<String Set<String>>' instead of [String] and gain speed?
   -- Have set:filter, don't have "set:map" yet... (FlowVertex->String)
-  return pair(ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
+  return (ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
 }
 
 {--
@@ -179,17 +176,27 @@ top::FlowVertex ::= attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for inherited attributes?");
 }
-aspect production rhsVertex
+aspect production rhsSynVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child attributes?");
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child synthesized attributes?");
+}
+aspect production rhsInhVertex
+top::FlowVertex ::= sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child inherited attributes?");
 }
 aspect production localEqVertex
 top::FlowVertex ::= fName::String
 {
   top.flowTypeName = fName; -- secretly only ever "forward" when we actually demand flowTypeName
 }
-aspect production localVertex
+aspect production localSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local synthesized attributes?");
+}
+aspect production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local inherited attributes?");
@@ -199,8 +206,23 @@ top::FlowVertex ::= fName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon equations?");
 }
-aspect production anonVertex
+aspect production anonSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon synthesized attributes?");
+}
+aspect production anonInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
+}
+aspect production subtermSynVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm synthesized attributes?");
+}
+aspect production subtermInhVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{
+  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm inherited attributes?");
 }

@@ -16,8 +16,10 @@ nonterminal NameList with config, grammarName, location, unparse, names, env;
 nonterminal WithElems with config, grammarName, location, unparse, envMaps;
 nonterminal WithElem with config, grammarName, location, unparse, envMaps;
 
-propagate errors, moduleNames, defs, occursDefs on ModuleStmts, ModuleStmt, ImportStmt, ImportStmts;
+propagate config, grammarName, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies
+  on ModuleStmts, ModuleStmt, ImportStmt, ImportStmts;
 propagate exportedGrammars, optionalGrammars, condBuild on ModuleStmts;
+propagate env on NameList;
 
 {--
  - A list of QName strings. Used for 'only' and 'hiding'.
@@ -380,7 +382,7 @@ concrete production withElement
 top::WithElem ::= n::QName 'as' newname::QName 
 {
   top.unparse = n.unparse ++ " as " ++ newname.unparse;
-  top.envMaps = [pair(n.name, newname.name)];
+  top.envMaps = [(n.name, newname.name)];
 }
 
 -----------

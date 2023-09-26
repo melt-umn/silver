@@ -125,7 +125,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
-  top.genFiles := [pair(className ++ ".java",
+  top.genFiles := [(className ++ ".java",
 s"""
 package ${makeName(top.grammarName)};
 
@@ -159,7 +159,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
-  top.genFiles := [pair(className ++ ".java",
+  top.genFiles := [(className ++ ".java",
 s"""
 package ${makeName(top.grammarName)};
 
@@ -187,7 +187,7 @@ public class ${className} extends common.CollectionAttribute {
 
 ---------- LOCALS ---
 aspect production baseCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -196,7 +196,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 """;
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -207,7 +207,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 
 ---------- SYNTHESIZED ----
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
@@ -217,7 +217,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 """;
 }
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
@@ -229,7 +229,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 
 ---------- INHERITED ----
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
@@ -239,7 +239,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 """;
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}

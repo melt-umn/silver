@@ -7,6 +7,7 @@ import silver:compiler:translation:java:type;
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
+import silver:compiler:definition:flow:env;
 
 synthesized attribute ffiTranslationString :: [String] occurs on FFIDef, FFIDefs;
 
@@ -63,8 +64,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.genFiles := if null(ffidefs.ffiTranslationString)
                     then forward.genFiles
                     else 
-                    [pair("P" ++ id.name ++ ".java",
-                      generateFunctionClassString(top.grammarName, id.name, namedSig, "return (" ++ namedSig.outputElement.typerep.transClassType ++ ")" ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n")
+                    [("P" ++ id.name ++ ".java",
+                      generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, "return (" ++ namedSig.outputElement.typerep.transClassType ++ ")" ++ computeSigTranslation(head(ffidefs.ffiTranslationString), namedSig) ++ ";\n")
                     )];
 
   top.errors <- if length(ffidefs.ffiTranslationString) > 1

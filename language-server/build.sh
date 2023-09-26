@@ -12,3 +12,4 @@ mvn install:install-file -Dfile=../jars/silver.compiler.composed.Default.jar -Dg
 
 mvn package
 
+cp launcher/target/launcher.jar ../jars/silver-langserver-launcher.jar

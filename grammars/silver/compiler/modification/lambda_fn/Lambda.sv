@@ -1,4 +1,3 @@
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
 import silver:compiler:definition:env;
 import silver:util:treeset as ts;
 
@@ -24,7 +23,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
   top.freeVars := ts:removeAll(params.lambdaBoundVars, e.freeVars);
   
-  propagate errors;
+  propagate config, grammarName, compiledGrammars, errors, originRules;
   
   top.typerep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
 
@@ -35,14 +34,14 @@ top::Expr ::= params::ProductionRHS e::Expr
       top.grammarName, top.location, params.lexicalTyVarKinds,
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
-  propagate downSubst, upSubst;
-  propagate flowDeps, flowDefs;
+  propagate downSubst, upSubst, finalSubst;
   
   params.env = newScopeEnv(sigDefs, top.env);
   params.givenLambdaParamIndex = 0;
   params.givenLambdaId = genInt();
   e.env = params.env;
   e.frame = inLambdaContext(top.frame, sourceGrammar=top.frame.sourceGrammar); --TODO: Is this sourceGrammar correct?
+  e.isRoot = false;
 }
 
 monoid attribute lambdaDefs::[Def];
@@ -76,8 +75,9 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 }
 
 abstract production lambdaParamReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   propagate errors;
   top.freeVars := ts:fromList([q.name]);
@@ -85,7 +85,4 @@ top::Expr ::= q::PartiallyDecorated QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 
   propagate downSubst, upSubst;
-  
-  -- TODO?
-  propagate flowDeps, flowDefs;
 }

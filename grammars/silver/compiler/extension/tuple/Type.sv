@@ -30,7 +30,7 @@ top::Type ::= c::Type a::Type
   top.tupleElems =
     -- c.argTypes should only have a single element
     case c.baseType of
-    | nonterminalType("silver:core:Pair", [starKind(), starKind()], false) -> c.argTypes ++ a.tupleElems
+    | nonterminalType("silver:core:Pair", [starKind(), starKind()], true, false) -> c.argTypes ++ a.tupleElems
     | _ -> [top]
     end;
 
@@ -71,12 +71,15 @@ top::Type ::= ts::[Type]
   top.flatRenamed = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.flatRenamed, ts));
 
   -- elements of ts need the boundVariables from the top because typepp attribute has a dependency on boundVariables
-  top.typepp = "(" ++ implode(", ", map(prettyTypeWith(_, top.boundVariables), ts)) ++ ")";
+  top.typepp = 
+    if length(ts) == 1
+    then forward.typepp
+    else "(" ++ implode(", ", map(prettyTypeWith(_, top.boundVariables), ts)) ++ ")";
   
   forwards to case ts of
-    | [] -> nonterminalType("silver:core:Unit", [], false)
+    | [] -> nonterminalType("silver:core:Unit", [], true, false)
     | [t] -> t
-    | t1::t1s -> appType(appType(nonterminalType("silver:core:Pair", [starKind(), starKind()], false), t1), tupleType(t1s))
+    | t1::t1s -> appType(appType(nonterminalType("silver:core:Pair", [starKind(), starKind()], true, false), t1), tupleType(t1s))
     end;
 
 }

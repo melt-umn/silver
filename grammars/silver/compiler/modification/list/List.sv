@@ -10,6 +10,7 @@ concrete production listTypeExpr
 top::TypeExpr ::= '[' te::TypeExpr ']'
 {
   top.unparse = "[" ++ te.unparse ++ "]";
+  propagate grammarName, env, flowEnv;
 
   top.typerep = listType(te.typerep);
   
@@ -58,7 +59,26 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
 
-  forwards to mkStrFunctionInvocation(top.location, "silver:core:cons", [h, t]);
+  -- Needed to satisfy flow analysis, since we demand translation of h and t.
+  h.decSiteVertexInfo = nothing();
+  t.decSiteVertexInfo = nothing();
+  h.alwaysDecorated = false;
+  t.alwaysDecorated = false;
+
+  forwards to application(
+    baseExpr(
+      qName(top.location, "silver:core:cons"),
+      location=top.location), '(',
+    snocAppExprs(
+      snocAppExprs(
+        emptyAppExprs(location=top.location), ',',
+        presentAppExpr(@h, location=top.location),
+        location=top.location), ',',
+      presentAppExpr(@t, location=top.location),
+      location=top.location),
+    ',',
+    emptyAnnoAppExprs(location=top.location),
+    ')', location=top.location);
 }
 
 concrete production fullList
@@ -80,19 +100,11 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = mkStrFunctionInvocation(e.location, "silver:core:cons", [e, emptyList('[',']', location=top.location)]);
+  top.listtrans = consListOp(e, '::', emptyList('[',']', location=top.location), location=top.location);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = mkStrFunctionInvocation(e1.location, "silver:core:cons", [e1, e2.listtrans]);
-}
-
--- Overloaded operators --------------------------------------------------------
-
-abstract production listPlusPlus
-top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
-{
-  forwards to mkStrFunctionInvocationDecorated(e1.location, "silver:core:append", [e1,e2]);
+  top.listtrans = consListOp(e1, '::', e2.listtrans, location=top.location);
 }

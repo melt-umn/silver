@@ -2,6 +2,7 @@ grammar silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type only isNonterminal, typerep;
 import silver:compiler:definition:type:syntax;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
@@ -10,7 +11,8 @@ import silver:compiler:driver:util only isExportedBy, RootSpec;
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
 
-propagate flowDefs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+propagate flowDefs, flowEnv on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+propagate flowEnv on DefLHS;
 
 {- A short note on how flowDefs are generated:
 
@@ -28,6 +30,13 @@ Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d
   return isExportedBy(prodgram, [ntgram, d.sourceGrammar], cg);
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' note::Expr ';'
+{
+  note.decSiteVertexInfo = nothing();
+  note.alwaysDecorated = false;
+}
+
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
@@ -43,9 +52,13 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     -- we regard these as non-suspect. That is, we implicitly insert these copy
     -- equations here.
     -- Currently, we don't bother to filter this to just synthesized, but we should?
+    -- TODO: What about attrs on translation attrs?
     implicitFwdAffects(top.frame.fullName, map((.attrOccurring),
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
-        getAttrsOn(top.frame.lhsNtName, top.env))))];
+        getAttrOccursOn(top.frame.lhsNtName, top.env))))];
+
+  e.decSiteVertexInfo = just(forwardVertexType);
+  e.alwaysDecorated = true;
 }
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
@@ -56,10 +69,34 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.frame.fullName, q.attrDcl.fullName, e.flowDeps)]
     end;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
+aspect production attributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  propagate flowEnv;
+}
+aspect production errorAttributeDef
+top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+{
+  propagate flowEnv;
+}
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
@@ -73,36 +110,111 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
+  e.decSiteVertexInfo =
+    if attr.found && attr.attrDcl.isTranslation
+    then just(transAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
+    else nothing();
+  e.alwaysDecorated = attr.found && attr.attrDcl.isTranslation;
 }
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  top.flowDefs <-
-    case dl of
-    | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
-    end;
+  top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+
+-- The flow vertex type corresponding to attributes on this DefLHS
+synthesized attribute defLHSVertex::VertexType occurs on DefLHS;
+
+-- The constructor for inherited equations on this DefLHS
+synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS;
+
+-- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
+synthesized attribute inhAttrName::String occurs on DefLHS;
+
+aspect default production
+top::DefLHS ::=
+{
+  top.defLHSVertex = localVertexType("bogus:lhs:vertex");
+  top.defLHSInhEq = [];
+  top.inhAttrName = "";
+}
+aspect production childDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = rhsVertexType(q.lookupValue.fullName);
+  top.defLHSInhEq = [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+}
+aspect production lhsDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = lhsVertexType;
+  top.defLHSInhEq = [];
+  top.inhAttrName = "";
+}
+aspect production localDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = localVertexType(q.lookupValue.fullName);
+  top.defLHSInhEq = [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+}
+aspect production forwardDefLHS
+top::DefLHS ::= q::Decorated! QName
+{
+  top.defLHSVertex = forwardVertexType;
+  top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+}
+aspect production childTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.defLHSVertex = transAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSInhEq = [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+}
+aspect production localTransAttrDefLHS
+top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+{
+  top.defLHSVertex = transAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
+  top.defLHSInhEq = [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+}
+
+aspect production errorValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
   -- I think we should forbid that syntactically, later on...
   top.flowDefs <-
-    [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName, val.lookupValue.typeScheme.typerep.isNonterminal, e.flowDeps)];
+    [localEq(
+      top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName,
+      val.lookupValue.typeScheme.typerep.isNonterminal, val.lookupValue.found && val.lookupValue.dcl.hasForward, e.flowDeps)];
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));
+
+  e.decSiteVertexInfo =
+    if e.alwaysDecorated
+    then just(localVertexType(val.lookupValue.fullName))
+    else nothing();
+  e.alwaysDecorated = isDecorable(e.finalType, top.env);
 }
 
 -- FROM COLLECTIONS TODO
 
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
@@ -111,23 +223,19 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 
   top.flowDefs <-
     [extraEq(top.frame.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
 {
-  local vertex :: FlowVertex =
-    case dl of
-    | childDefLHS(q) -> rhsVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | localDefLHS(q) -> localVertex(q.lookupValue.fullName, attr.attrDcl.fullName)
-    | forwardDefLHS(q) -> forwardVertex(attr.attrDcl.fullName)
-    | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
-    end;
-  top.flowDefs <-
-    [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
+  top.flowDefs <- [extraEq(top.frame.fullName, dl.defLHSVertex.inhVertex(attr.attrDcl.fullName), e.flowDeps, true)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
@@ -141,25 +249,29 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
-  top.flowDefs <-
-    case dl of
-    | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | forwardDefLHS(q) -> [fwdInhEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps)]
-    | _ -> [] -- TODO: this isn't quite extensible... more better way eventually, plz
-    end;
+  top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
-
+aspect production baseCollectionValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  -- We actually don't want reference site flow projections in e,
+  -- since we don't actually know the entire tree in which it is decorated.
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
-  -- TODO: possible bug? this would include ":local" in the gram wouldn't it?
 
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [locDefGram], top.compiledGrammars);
@@ -171,13 +283,58 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
   -- If we do, we'll have to come back here to add 'location' info anyway,
   -- so if we do that, uhhh... fix this! Because you're here! Reading this!
 
-  top.flowDefs <-
+  -- TODO: This shouldn't be a forwarding prod!
+  top.flowDefs := e.flowDefs ++
     if mayAffectFlowType
     then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 
--- TODO: Copper ProductionStmts
+-- TODO: flowDefs for Copper ProductionStmts
+aspect production pluckDef
+top::ProductionStmt ::= 'pluck' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production printStmt
+top::ProductionStmt ::= 'print' e::Expr ';'
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production parserAttributeValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
+aspect production pushTokenStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
+{
+  lexeme.decSiteVertexInfo = nothing();
+  lexeme.alwaysDecorated = false;
+}
+aspect production insertSemanticTokenStmt
+top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
+{
+  loc.decSiteVertexInfo = nothing();
+  loc.alwaysDecorated = false;
+}
+aspect production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  condition.decSiteVertexInfo = nothing();
+  condition.alwaysDecorated = false;
+}
+aspect production termAttrValueValueDef
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
+{
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+}
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
 -- even if there are errors in the larger grammar, as remote errors in binding
@@ -202,7 +359,7 @@ String ::= qn::Decorated QNameAttrOccur
 }
 -- Source grammar of a lookup of a local dcl
 function hackGramFromQName
-String ::= qn::Decorated QNameLookup<ValueDclInfo>
+String ::= qn::QNameLookup<ValueDclInfo>
 {
   return if qn.found then qn.dcl.sourceGrammar else "";
 }

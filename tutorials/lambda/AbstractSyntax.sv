@@ -45,7 +45,7 @@ e::Expr ::= id::String t::Type e1::Expr e2::Expr
  e.type = e2.type;
 
  e1.envi = [] ++ e.envi;
- e2.envi = [pair(id, t)];
+ e2.envi = [(id, t)];
 
  e.errors = if !eqType(e1.type, t)
             then "Declaration type and definition are mismatched\n" 
@@ -64,7 +64,7 @@ e::Expr ::= id::String tl::Type e1::Expr
  e.pp = pp"lambda ${text(id)}:${tl.pp}.${e1.pp}";
  e.type = arrow(tl, e1.type);
 
- e1.envi = [pair(id, tl)] ++ e.envi;
+ e1.envi = [(id, tl)] ++ e.envi;
 
  e.errors = case tl of
               type_err() -> id ++ " is type_err\n"
@@ -322,5 +322,6 @@ Boolean ::= t1::Type t2::Type
                    | int() -> true
                    | type_err() -> false
                    end
+        | type_err() -> false
         end;
 }

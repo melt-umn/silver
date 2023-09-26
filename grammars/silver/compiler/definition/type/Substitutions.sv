@@ -10,7 +10,7 @@ grammar silver:compiler:definition:type;
  -       Consider unify returning Maybe<Substitution> or Pair<Boolean Substitution> depending.
  - TODO: More efficient type representations than a assoc-list, somehow.
  -}
-nonterminal Substitution with substList, substErrors, failure;
+data nonterminal Substitution with substList, substErrors, failure;
 
 synthesized attribute substList :: [Pair<TyVar Type>];
 synthesized attribute substErrors :: [String];
@@ -47,7 +47,7 @@ Substitution ::= e::String
 function subst
 Substitution ::= tv::TyVar te::Type
 {
-  return goodSubst([pair(tv,te)]);
+  return goodSubst([(tv,te)]);
 }
 function composeSubst
 Substitution ::= s1::Substitution s2::Substitution
@@ -80,11 +80,12 @@ Maybe<Type> ::= tv::TyVar s::Substitution
 --------------------------------------------------------------------------------
 
 -- These are for ordinary tyvar substitutions.
-autocopy attribute substitution :: Substitution occurs on Context, Type;
+inherited attribute substitution :: Substitution occurs on Context, Type;
 functor attribute substituted occurs on Context, Type;
 -- These are for flat, non-recursive replacement of tyvars with something else directly
 functor attribute flatRenamed occurs on Context, Type;
 
+propagate substitution on Context, Type;
 propagate substituted, flatRenamed on Context, Type
   excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType, ntOrDecType;
 
@@ -178,7 +179,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
     | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
-  propagate flatRenamed;
+  propagate substitution, flatRenamed;
 }
 
 --------------------------------------------------------------------------------

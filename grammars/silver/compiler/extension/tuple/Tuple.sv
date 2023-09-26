@@ -7,6 +7,8 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:flow:env;
+imports silver:compiler:analysis:typechecking:core;
 
 imports silver:compiler:extension:patternmatching;
 
@@ -46,36 +48,36 @@ top::Expr ::= tuple::Expr '.' a::IntConst
 {
 
   -- Forward gets the substitution context of the tuple
-  propagate downSubst, upSubst, freeVars;
+  propagate grammarName, config, compiledGrammars, frame, env, flowEnv, downSubst, upSubst, finalSubst, freeVars, originRules;
+  tuple.isRoot = false;
 
   local accessIndex::Integer = toInteger(a.lexeme);
 
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
 
-  -- Ensure that we extract the tupleElems from the underlying chain of pair types if the tuple type is decorated.
   local ty :: Type = performSubstitution(tuple.typerep, tuple.upSubst);
-  local len::Integer = length((if ty.isDecorated then ty.decoratedType else ty).tupleElems);
+  local len::Integer = length(ty.tupleElems);
   
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
-    -- exprRef prevents exponential type checking
-    else select(exprRef(tuple, location=top.location), 1, accessIndex, len);
+    -- @ prevents exponential type checking
+    else select(@tuple, 1, accessIndex, len, location=top.location);
 
 }
 
-function select
+abstract production select
 -- i is the current index, a is the desired access index
 -- len is the total length of the tuple
-Expr ::= exp::Expr i::Integer a::Integer len::Integer
- {
-  return 
+top::Expr ::= exp::Expr i::Integer a::Integer len::Integer
+{
+  forwards to 
     if i == a then
       if a == len then
         -- only if the access index is the length of the
         -- tuple do we simply return the expression itself
-        Silver_Expr { $Expr{exp} } 
-      else Silver_Expr { $Expr{exp}.fst }
-    else select(Silver_Expr{ $Expr{exp}.snd }, i + 1, a, len);
+        @exp
+      else Silver_Expr { $Expr{@exp}.fst }
+    else select(Silver_Expr{ $Expr{@exp}.snd }, i + 1, a, len, location=top.location);
 }
 
 -- TupleList cases:
@@ -84,7 +86,7 @@ concrete production tupleList_2Elements
 top::TupleList ::= fst::Expr ',' snd::Expr
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd}) };
 }
 
 -- There are more than two elements in the tuple
@@ -92,5 +94,5 @@ concrete production tupleList_nElements
 top::TupleList ::= fst::Expr ',' snd::TupleList
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd.translation}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd.translation}) };
 }

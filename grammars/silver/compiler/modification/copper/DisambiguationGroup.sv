@@ -6,9 +6,9 @@ concrete production disambiguationGroupDcl
 top::AGDcl ::= 'disambiguate' terms::TermList acode::ActionCode_c
 {
   top.unparse = "disambiguate " ++ terms.unparse ++ " " ++ acode.unparse;
+  propagate config, grammarName, compiledGrammars, errors;
 
-  top.errors := terms.errors ++ acode.errors;
-
+  terms.env = top.env;
   acode.env = newScopeEnv(disambiguationActionVars ++ acode.defs ++ terms.defs, top.env);
 
   -- Give the group a name, deterministically, based on line number

@@ -7,6 +7,7 @@ concrete production monoidAttributeDcl
 top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' e::Expr ',' q::NameOrBOperator ';'
 {
   top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ e.unparse ++ ", " ++ q.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, flowEnv;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -14,6 +15,8 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  e.env = tl.envBindingTyVars;
+  q.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
   
@@ -51,6 +54,8 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   e.frame = globalExprContext(fName, nilContext(), te.typerep, myFlowGraph, sourceGrammar=top.grammarName);
   e.isRoot = false;
   e.originRules = [];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
   
   forwards to
     collectionAttributeDclSyn(
@@ -113,8 +118,9 @@ top::Operation ::=
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateMonoid
-top::ProductionStmt ::= attr::PartiallyDecorated QName
+top::ProductionStmt ::= attr::Decorated! QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
@@ -124,7 +130,7 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
   local inputsWithAttr::[NamedSignatureElement] =
     filter(
       \ input::NamedSignatureElement ->
-        isDecorable(input.typerep, top.env) &&
+        (isDecorable(input.typerep, top.env) || input.typerep.isNonterminal) &&
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
   local res :: Expr = 

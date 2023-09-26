@@ -4,6 +4,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
+imports silver:compiler:definition:flow:env;
 
 -- Yikes, this was a weird choice of syntax.
 concrete production ffiTypeDclLegacy
@@ -42,7 +43,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 
   top.defs := [typeAliasDef(top.grammarName, id.location, fName, [], tl.freeVariables, foreignType(fName, transType, tl.types))];
 
-  propagate errors, flowDefs;
+  propagate grammarName, errors, flowDefs, flowEnv;
   top.errors <- tl.errorsTyVars;
   
   -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"

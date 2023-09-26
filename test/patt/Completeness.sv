@@ -457,9 +457,9 @@ warnCode "not exhaustive" {
    String ::=
    {
      return
-       case (3, 4), 0 of
-       | (1, 2), _ -> "first"
-       | (_, _), 8 -> "second"
+       case intPair(3, 4), 0 of
+       | intPair(1, 2), _ -> "first"
+       | intPair(_, _), 8 -> "second"
        end;
    }
 }

@@ -34,8 +34,8 @@ terminal Aspect_kwd      'aspect'       lexer classes {KEYWORD,RESERVED};
 terminal Attribute_kwd   'attribute'    lexer classes {KEYWORD,RESERVED};
 terminal Class_kwd       'class'        lexer classes {KEYWORD};
 terminal Closed_kwd      'closed'       lexer classes {KEYWORD};
-terminal Tracked_kwd     'tracked'      lexer classes {KEYWORD};
 terminal Concrete_kwd    'concrete'     lexer classes {KEYWORD,RESERVED};
+terminal Data_kwd        'data'         lexer classes {KEYWORD};
 terminal Decorate_kwd    'decorate'     lexer classes {KEYWORD,RESERVED};
 terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4, association = left; -- Association needed for dangling else in action code.
 terminal End_kwd         'end'          lexer classes {KEYWORD,RESERVED};
@@ -57,11 +57,15 @@ terminal Synthesized_kwd 'synthesized'  lexer classes {KEYWORD,RESERVED};
 terminal Terminal_kwd    'terminal'     lexer classes {KEYWORD,RESERVED};
 terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
+terminal Tracked_kwd     'tracked'      lexer classes {KEYWORD};
+terminal Translation_kwd 'translation'  lexer classes {KEYWORD};
 terminal Type_t          'type'         lexer classes {KEYWORD};
+terminal Undecorates_t   'undecorates'  lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, precedence = 3; -- Precedence to fix Decorated Decorated Expr with {}, which is a semantic error either way
 
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
+terminal DecSite_t     '@'  lexer classes {OP}, precedence = 2;
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' lexer classes {OP}, precedence = 5, association = left;
 terminal And_t         '&&' lexer classes {OP}, precedence = 6, association = left;
@@ -92,8 +96,12 @@ terminal CCEQ_t        '::=' lexer classes {SPECOP};
 terminal Equal_t       '='   lexer classes {SPECOP};
 terminal CtxArrow_t    '=>'  lexer classes {SPECOP};
 
--- Unused infix operators: ~ ` @ # % ^ & | \
+-- Unused infix operators: ~ ` # % ^ & | \
 -- $ is used by convenience.
+
+disambiguate IdLower_t, Data_kwd { pluck Data_kwd; }
+disambiguate IdLower_t, Closed_kwd { pluck Closed_kwd; }
+disambiguate IdLower_t, Tracked_kwd { pluck Tracked_kwd; }
 
  -- this is a very careful regex. beware:
 --ignore terminal BlockComments /\{\-([^\-]|\-+[^\}\-])*\-+\}/ lexer classes {COMMENT};

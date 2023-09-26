@@ -18,8 +18,8 @@ synthesized attribute alwaysConsideredInteresting :: Boolean occurs on ContextOr
 aspect production useContextLhsAndRules
 top::ContextOriginInfoSource ::=
 {
-  top.contextRef = "new common.OriginContext(context.undecorate(), null)";
-  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(context.undecorate(), ${x})");
+  top.contextRef = "new common.OriginContext(context.getNode(), null)";
+  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(context.getNode(), ${x})");
   top.alwaysConsideredInteresting = false;
 }
 
@@ -43,7 +43,7 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${substitute("\"", "\\\"", top.location.unparse)}\"))";
+  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${escapeString(top.location.unparse)}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 
@@ -57,7 +57,7 @@ global newConstructionOriginUsingCtxRef :: String =
 function makeNewConstructionOrigin
 [String] ::= top::Decorated Expr  inInteresting::Boolean  --need .frame anno
 {
-  local ty :: Type = finalType(top).outputType;
+  local ty :: Type = top.finalType.outputType;
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
   return if typeWantsTracking(ty, top.config, top.env)
@@ -74,20 +74,18 @@ function getSpecialCaseNoOrigins
     -- These are forced to be untracked to prevent circularity
     "silver:core:OriginInfo",
     "silver:core:OriginInfoType",
-    "silver:core:OriginNote",
-    -- List is special(TM) because of it's special(TM) quasi-extension translation specialization
-    "silver:core:List"
+    "silver:core:OriginNote"
   ];
   return names;
 }
 
 
 function typeWantsTracking
-Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
+Boolean ::= ty::Type conf::Decorated CmdArgs env::Env
 {
   return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
-              | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
+              | nonterminalType(fn, _, _, tracked) -> conf.forceOrigins || tracked
               | appType(c, _) -> typeWantsTracking(c, conf, env)
               | _ -> false
               end;
@@ -96,7 +94,7 @@ Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 function wrapAccessWithOT
 String ::= top::Decorated Expr expr::String
 {
-  local ty :: Type = finalType(top);
+  local ty :: Type = top.finalType;
 
   -- The complexity here is needed because of silver generics. A nonterminal like Maybe<a> is monomorphized in such a way
   -- that the parameter type is Object. As a result we can't tell, when it's possible that we are doing something on a type

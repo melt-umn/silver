@@ -5,6 +5,8 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
+import silver:compiler:definition:flow:env;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
 
@@ -23,6 +25,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 {
   ag.unparse = "equalityTest (" ++ value.unparse ++ "," ++ expected.unparse ++ ",\n" ++ 
           "              " ++ valueType.unparse ++ ", " ++ testSuite.unparse ++ ");\n";
+  propagate grammarName, compiledGrammars, config, env, flowEnv;
 
   local attribute errCheck1 :: TypeCheck; 
   local attribute errCheck2 :: TypeCheck; 
@@ -75,6 +78,10 @@ ag::AGDcl ::= kwd::'equalityTest'
   expected.isRoot = true;
   value.originRules = [];
   expected.originRules = [];
+  value.decSiteVertexInfo = nothing();
+  expected.decSiteVertexInfo = nothing();
+  value.alwaysDecorated = false;
+  expected.alwaysDecorated = false;
 
 {- Causes some circularities with the environment. TODO
   forwards to if !errCheck1.typeerror && !errCheck2.typeerror && !errCheck3.typeerror

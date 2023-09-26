@@ -21,10 +21,17 @@ melt.trynode('silver') {
       if (source == 'develop') {
         source = "${silver.SILVER_WORKSPACE}/jars"
       }
-      // Obtain jars from specified location
-      sh "mkdir -p jars"
-      sh "cp ${source}/* jars/"
-      melt.annotate("Jars overridden.")
+      String branchJob = "/melt-umn/silver/${hudson.Util.rawEncode(source)}"
+      if(melt.doesJobExist(branchJob)) {
+        // Obtain jars from specified branch
+        melt.annotate("Jars overidden from branch.")
+        copyArtifacts(projectName: branchJob, selector: lastCompleted())
+      } else {
+        // Obtain jars from specified location
+        melt.annotate("Jars overridden from path.")
+        sh "mkdir -p jars"
+        sh "cp ${source}/* jars/"
+      }
     } else {
       // We start by obtaining normal jars, but we potentially overwrite them:
       // (This is the least annoying way to go about this...)
@@ -74,17 +81,29 @@ melt.trynode('silver') {
     sh "./deep-clean -delete"
     // Generate docs
     sh "./make-docs"
-    // Package
-    sh "rm -rf silver-latest* || true" // Robustness to past failures
-    sh "./make-dist latest"
     // Upon succeeding at initial build, archive for future builds
     archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
     melt.archiveCommitArtifacts("jars/*.jar")
   }
 
+  stage("Language server") {
+    sh "./make-vscode-extension"
+    archiveArtifacts(artifacts: "support/vs-code/silverlsp/*.vsix", fingerprint: true)
+    melt.archiveCommitArtifacts("support/vs-code/silverlsp/*.vsix")
+  }
+
+  stage("Package") {
+    sh "rm -rf silver-latest* || true" // Robustness to past failures
+    sh "./make-dist latest"
+  }
+
   stage("Modular Analyses") {
     sh "./self-compile --clean --mwda --dont-translate"
   }
+
+  // Avoid deadlock condition from all executor slots being filled with builds
+  // that are waiting for downstream builds to finish.
+  waitUntil { melt.isExecutorAvailable() }
 
   stage("Test") {
     // These test cases and tutorials are run as seperate tasks to allow for parallelism
@@ -110,14 +129,20 @@ melt.trynode('silver') {
     sh "rm -rf silver-latest"
   }
 
+  // Avoid deadlock condition from all executor slots being filled with builds
+  // that are waiting for downstream builds to finish.
+  waitUntil { melt.isExecutorAvailable() }
+
   stage("Integration") {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
-    def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite",
+    def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/meta-ocaml-lite",
                            "/melt-umn/lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
-                           "/internal/ring", "/melt-umn/caml-light"]
+                           "/melt-umn/caml-light"]
+    // These are not currently maintened: "/internal/ring"
     // Specific other jobs to build
-    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
+    def specific_jobs = ["/internal/matlab/master"]
     // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
+    // These are not currently maintened: "/internal/simple/master"
 
     def tasks = [:]
     tasks << github_projects.collectEntries { t ->
@@ -144,6 +169,7 @@ melt.trynode('silver') {
 
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
+      sh "cp support/vs-code/silverlsp/silverlsp-latest.vsix ${melt.ARTIFACTS}/"
 
       build "/melt-umn/melt-website/master"
     }

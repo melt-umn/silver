@@ -4,6 +4,8 @@ abstract production strategyAttributeDcl
 top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>] e::StrategyExpr
 {
   top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
+  propagate grammarName, config, env, flowEnv;
+
   top.occursDefs := [];
   top.specDefs := [];
   top.refDefs := [];
@@ -13,7 +15,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   
   -- Define these directly to avoid circular dependencies,
   -- since the forward contributes to the env.
-  propagate errors, moduleNames;
+  propagate compiledGrammars, errors, moduleNames;
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
@@ -56,8 +58,11 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 }
 
 abstract production strategyAttributionDcl
-top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  propagate grammarName, env, flowEnv;
+
   production attribute localErrors::[Message] with ++;
   localErrors :=
     attl.errors ++ attl.errorsTyVars ++ nt.lookupType.errors ++ nttl.errors ++ nttl.errorsTyVars;
@@ -79,33 +84,40 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  forwards to
-    foldr(
-      appendAGDcl(_, _, location=top.location),
-      defaultAttributionDcl(
-        at,
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-              end,
-              location=top.location),
-            '>', location=top.location),
-          location=top.location),
-        nt, nttl,
-        location=top.location),
-      map(
-        \ n::String ->
-          attributionDcl(
-            'attribute', qName(top.location, n), attl, 'occurs', 'on', nt, nttl, ';',
+  local atOccursDcl::AGDcl =
+    defaultAttributionDcl(
+      at,
+      botlSome(
+        bTypeList(
+          '<',
+          typeListSingle(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType, location=top.location),
+                tl, location=top.location)
+            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+            end,
             location=top.location),
-        at.lookupAttribute.dcl.liftedStrategyNames));
+          '>', location=top.location),
+        location=top.location),
+      nt, nttl,
+      location=top.location);
+
+  forwards to
+    if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl
+    else
+      appendAGDcl(
+        @atOccursDcl,
+        foldr1(
+          appendAGDcl(_, _, location=top.location),
+          map(
+            \ n::String ->
+              attributionDcl(
+                'attribute', qName(top.location, n), attl, 'occurs', 'on', nt, nttl, ';',
+                location=top.location),
+            at.lookupAttribute.dcl.liftedStrategyNames)),
+        location=top.location);
 }
 
 {--
@@ -113,8 +125,9 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateStrategy
-top::ProductionStmt ::= attr::PartiallyDecorated QName
+top::ProductionStmt ::= attr::Decorated! QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;

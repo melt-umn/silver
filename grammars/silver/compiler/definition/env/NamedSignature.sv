@@ -7,15 +7,17 @@ grammar silver:compiler:definition:env;
  - TODO: we might want to remove the full name of the production from this, and make it just `Signature`?
  - It's not clear if this information really belongs here, or not.
  -}
-nonterminal NamedSignature with fullName, contexts, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep;
-
-flowtype NamedSignature = decorate {};
+data nonterminal NamedSignature with fullName, contexts, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep, freshenNamedSignature;
 
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
 synthesized attribute namedInputElements :: [NamedSignatureElement];
 synthesized attribute inputNames :: [String];
 -- inputTypes comes from the types grammar.
+
+-- "Freshens" all the signature's type variables with new skolem constants,
+-- to avoid type vars from interface files clashing with new ones from genInt()
+synthesized attribute freshenNamedSignature::NamedSignature;
 
 @{-
  - Represents the signature of a production (or function).
@@ -44,6 +46,13 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
   ie.boundVariables = top.freeVariables;
   oe.boundVariables = top.freeVariables;
   np.boundVariables = top.freeVariables;
+
+  top.freshenNamedSignature = namedSignature(fn, ctxs.flatRenamed, ie.flatRenamed, oe.flatRenamed, np.flatRenamed); 
+  local freshSubst::Substitution = zipVarsAndTypesIntoSubstitution(top.freeVariables, map(skolemType, top.typeScheme.boundVars));
+  ctxs.substitution = freshSubst;
+  ie.substitution = freshSubst;
+  oe.substitution = freshSubst;
+  np.substitution = freshSubst;
 }
 
 @{-
@@ -66,24 +75,27 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
   top.freeVariables = setUnionTyVars(ctxs.freeVariables, ty.freeVariables);
   top.typerep = ty;
   
-  ctxs.boundVariables = top.freeVariables;
-  ty.boundVariables = top.freeVariables;
+  top.freshenNamedSignature = globalSignature(fn, ctxs.flatRenamed, ty.flatRenamed); 
+  local freshSubst::Substitution = zipVarsAndTypesIntoSubstitution(top.freeVariables, map(skolemType, top.typeScheme.boundVars));
+  ctxs.substitution = freshSubst;
+  ty.substitution = freshSubst;
 }
 
 {--
  - Used when an error occurs. e.g. aspecting a non-existant production.
  - Or, in contexts that have no valid signature, which maybe we should do something about...
  -}
-abstract production bogusNamedSignature
-top::NamedSignature ::= 
+function bogusNamedSignature
+NamedSignature ::= 
 {
-  forwards to namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
+  return namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
 }
 
 {--
  - Represents a collection of NamedSignatureElements
  -}
 nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, freeVariables, boundVariables;
+propagate boundVariables on NamedSignatureElements;
 
 synthesized attribute elements::[NamedSignatureElement];
 synthesized attribute elementNames::[String];
@@ -117,6 +129,7 @@ global foldNamedSignatureElements::(NamedSignatureElements ::= [NamedSignatureEl
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
 nonterminal NamedSignatureElement with elementName, elementShortName, typerep, freeVariables, boundVariables;
+propagate boundVariables on NamedSignatureElement;
 
 synthesized attribute elementName :: String;
 synthesized attribute elementShortName :: String;
@@ -167,22 +180,13 @@ function findNamedSigElemType
 Type ::= n::String l::[NamedSignatureElement]
 {
   local elems::NamedSignatureElements = foldNamedSignatureElements(l);
-  return fromMaybe(errorType(), lookup(n, zipWith(pair, elems.elementNames, elems.elementTypes)));
+  return fromMaybe(errorType(), lookup(n, zip(elems.elementNames, elems.elementTypes)));
 }
 
 --------------
 
-attribute substitution, flatRenamed occurs on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
-propagate flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
-
--- "Freshens" all the signature's type variables with new skolem constants,
--- to avoid type vars from interface files clashing with new ones from genInt()
-function freshenNamedSignature
-NamedSignature ::= ns::NamedSignature
-{
-  ns.substitution = zipVarsAndTypesIntoSubstitution(ns.freeVariables, map(skolemType, ns.typeScheme.boundVars));
-  return ns.flatRenamed;
-}
+attribute substitution, flatRenamed occurs on Contexts, NamedSignatureElements, NamedSignatureElement;
+propagate substitution, flatRenamed on Contexts, NamedSignatureElements, NamedSignatureElement;
 
 function unifyNamedSignature
 Substitution ::= ns1::NamedSignature ns2::NamedSignature

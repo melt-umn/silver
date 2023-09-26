@@ -52,9 +52,9 @@ function unList
   return if null(l) then
     []
   else if !null(recurse) && head(recurse).fst == head(l).fst then
-    pair(head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
+    (head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
   else
-    pair(head(l).fst, [head(l).snd]) :: recurse;
+    (head(l).fst, [head(l).snd]) :: recurse;
 }
 
 
@@ -143,7 +143,12 @@ top::FlowVertex ::= attrName::String
 {
   top.dotName = attrName;
 }
-aspect production rhsVertex
+aspect production rhsSynVertex
+top::FlowVertex ::= sigName::String  attrName::String
+{
+  top.dotName = sigName ++ "/" ++ attrName;
+}
+aspect production rhsInhVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {
   top.dotName = sigName ++ "/" ++ attrName;
@@ -153,7 +158,12 @@ top::FlowVertex ::= fName::String
 {
   top.dotName = fName;
 }
-aspect production localVertex
+aspect production localSynVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.dotName = fName ++ "/" ++ attrName;
+}
+aspect production localInhVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.dotName = fName ++ "/" ++ attrName;
@@ -163,9 +173,26 @@ top::FlowVertex ::= fName::String
 {
   top.dotName = fName;
 }
-aspect production anonVertex
+aspect production anonSynVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.dotName = fName ++ "/" ++ attrName;
 }
+aspect production anonInhVertex
+top::FlowVertex ::= fName::String  attrName::String
+{
+  top.dotName = fName ++ "/" ++ attrName;
+}
+aspect production subtermSynVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{
+  top.dotName = parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
+}
+aspect production subtermInhVertex
+top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
+{
+  top.dotName = parent.inhVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
+}
+
+
 

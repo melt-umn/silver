@@ -22,7 +22,7 @@ Pair<[Context] Type> ::= te::PolyType
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(existentialVars)),
     zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(te.typerep.outputType.freeVariables)));
   
-  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
+  return (map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 {--
@@ -59,7 +59,7 @@ Pair<[Context] Type> ::= te::PolyType
 {
   local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(te.boundVars));
   
-  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
+  return (map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 
@@ -185,11 +185,11 @@ top::Type ::= inhs::[String]
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String ks::[Kind] _
+top::Type ::= fn::String ks::[Kind] _ _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, oks, _) ->
+    | nonterminalType(ofn, oks, _, _) ->
         if fn == ofn && ks == oks
         then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
@@ -220,13 +220,13 @@ top::Type ::= te::Type i::Type
     end;
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.refine = 
     case top.refineWith of
-    | partiallyDecoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
-    | _ -> errorSubst("Tried to refine partially decorated type with " ++ prettyType(top.refineWith))
+    | uniqueDecoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
+    | _ -> errorSubst("Tried to refine unique decorated type with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -279,7 +279,7 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   return case scrutineeType, constructorType of
          | decoratedType(t1, i1), decoratedType(t2, i2) ->
            case t1.baseType, t2.baseType of
-           | nonterminalType(n1, _, _), nonterminalType(n2, _, _) when n1 == n2 ->
+           | nonterminalType(n1, _, _, _), nonterminalType(n2, _, _, _) when n1 == n2 ->
              refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
            | _, _ -> emptySubst()
            end

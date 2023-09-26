@@ -1,19 +1,19 @@
 
 
-equalityTest ( pair("A", 1).fst, "A",
+equalityTest ( ("A", 1).fst, "A",
                String, core_tests ) ;
-equalityTest ( pair("A", 1).snd, 1,
+equalityTest ( ("A", 1).snd, 1,
                Integer, core_tests ) ;
 
 
 global pairtester :: [Pair<String Integer>] =
- [pair("1", 1),
-  pair("2", 2),
-  pair("3", 3),
-  pair("99", 99),
-  pair("4", 4),
-  pair("4", 3),
-  pair("3", 2)];
+ [("1", 1),
+  ("2", 2),
+  ("3", 3),
+  ("99", 99),
+  ("4", 4),
+  ("4", 3),
+  ("3", 2)];
   
 
 equalityTest ( lookup("A", pairtester).isJust, false,

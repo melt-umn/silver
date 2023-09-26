@@ -5,9 +5,11 @@ import silver:compiler:definition:origins;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
---import silver:compiler:analysis:typechecking:core;
+import silver:compiler:analysis:typechecking:core;
 import silver:compiler:translation:java;
 
+import silver:compiler:definition:flow:env;
+import silver:compiler:definition:flow:ast only lhsVertexType;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructDefaultProductionGraph; -- for the "oh no again!" hack below
 import silver:compiler:driver:util only RootSpec; -- ditto
 
@@ -20,7 +22,7 @@ top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignat
 
   top.defs := [];
 
-  propagate errors, flowDefs;
+  propagate config, grammarName, compiledGrammars, errors;
   
   local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, ns.lexicalTypeVariables);
 
@@ -58,7 +60,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
       namedSignatureElement(lhs.name, te.typerep),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
-  propagate errors, lexicalTypeVariables, lexicalTyVarKinds;
+  propagate config, grammarName, env, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds, flowEnv;
 
   local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
   checkNT.downSubst = emptySubst();
@@ -97,11 +99,13 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = defaultLhsDefLHS(_, location=_);
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 abstract production defaultLhsDefLHS
-top::DefLHS ::= q::PartiallyDecorated QName
+top::DefLHS ::= q::Decorated! QName
 {
+  undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -113,6 +117,10 @@ top::DefLHS ::= q::PartiallyDecorated QName
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
   top.typerep = q.lookupValue.typeScheme.monoType;
+
+  top.defLHSVertex = lhsVertexType;
+  top.defLHSInhEq = [];
+  top.inhAttrName = "";
 
   top.translation = makeNTName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }

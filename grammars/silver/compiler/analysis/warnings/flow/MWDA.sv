@@ -15,51 +15,28 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
 
+-- type checking
+imports silver:compiler:analysis:typechecking:core;
+
 -- flow analysis
 imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 
+-- uniqueness analysis
+imports silver:compiler:analysis:uniqueness;
+
 -- the modifications we need to be aware of
-imports silver:compiler:modification:autocopyattr only isAutocopy;
 imports silver:compiler:modification:collection;
 imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
 
-function isOccursSynthesized
-Boolean ::= occs::OccursDclInfo  e::Decorated Env
+function isForwardProdAttr
+Boolean ::= a::String  e::Env
 {
-  return case getAttrDcl(occs.attrOccurring, e) of
-  | at :: _ -> at.isSynthesized
-  | _ -> false
-  end;
-}
-
--- TODO: this should probably not be a thing I have to write here
-function isAutocopy
-Boolean ::= attr::String  e::Decorated Env
-{
-  return case getAttrDclAll(attr, e) of
-  | at :: _ -> at.isAutocopy
-  | _ -> false
-  end;
-}
--- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
--- The real fix is for our vertexes to remember whether they are syn/inh.
-function isInherited
-Boolean ::= a::String  e::Decorated Env
-{
-  return case getAttrDclAll(a, e) of
-  | at :: _ -> at.isInherited
-  | _ -> false
-  end;
-}
-
-function isLhsInh
-Boolean ::= v::FlowVertex
-{
-  return case v of
-  | lhsInhVertex(_) -> true
+  return case getValueDclAll(a, e) of
+  | d :: _ -> d.hasForward
   | _ -> false
   end;
 }

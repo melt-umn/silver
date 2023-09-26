@@ -3,13 +3,14 @@ grammar silver:compiler:extension:auto_ast;
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
---import silver:compiler:analysis:typechecking:core;
+import silver:compiler:analysis:typechecking:core;
 
 
 concrete production autoAstDcl
 top::ProductionStmt ::= 'abstract' v::QName ';'
 {
   top.unparse = "abstract " ++ v.unparse ++ ";";
+  propagate env;
 
   local vty :: Type = v.lookupValue.typeScheme.typerep;
   
@@ -24,7 +25,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       functionType(length(elems), if hasLoc then ["location"] else []),
       map(astType(_, top.env), elems) ++
       (if hasLoc
-       then [ nonterminalType("silver:core:Location", [], false)]
+       then [nonterminalType("silver:core:Location", [], true, false)]
        else []) ++
       [astType(top.frame.signature.outputElement, top.env)]);
   
@@ -63,7 +64,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
         baseExpr(v, location=v.location),
         map(accessAst(_, top.location), elems),
         if hasLoc then
-         [pair("location", 
+         [("location", 
             access(
               baseExpr(lhsQName, location=top.location),
               '.',
@@ -76,13 +77,13 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
 
 
 function hasAst
-Boolean ::= ns::NamedSignatureElement  env::Decorated Env
+Boolean ::= ns::NamedSignatureElement  env::Env
 {
   return isDecorable(ns.typerep, env) &&
     !null(getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env));
 }
 function astType
-Type ::= ns::NamedSignatureElement  env::Decorated Env
+Type ::= ns::NamedSignatureElement  env::Env
 {
   local occursCheck :: [OccursDclInfo] =
     getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env);

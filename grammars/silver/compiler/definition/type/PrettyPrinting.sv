@@ -3,7 +3,9 @@ grammar silver:compiler:definition:type;
 import silver:langutil:pp;
 
 synthesized attribute typepp :: String occurs on PolyType, Context, Type, Kind;
-autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;
+inherited attribute boundVariables :: [TyVar] occurs on Context, Type;
+
+propagate boundVariables on Context, Type;
 
 function prettyType
 String ::= te::Type
@@ -135,9 +137,10 @@ top::Type ::= c::Type a::Type
          else "_") ++ " ::= " ++
          implode(" ", map(prettyTypeWith(_, top.boundVariables), take(params, top.argTypes))) ++
          (if length(top.argTypes) < params then replicate(params - length(top.argTypes), " _") else "") ++
+         (if null(namedParams) then "" else ";") ++
          concat(
-           zipWith(\ np::String t::Type -> s"; ${np}::${prettyTypeWith(t, top.boundVariables)}", namedParams, drop(params, top.argTypes)) ++
-           map(\ np::String -> s"; ${np}::_", drop(length(top.argTypes) - (params + length(namedParams)), namedParams))) ++ ")" ++
+           zipWith(\ np::String t::Type -> s" ${np}::${prettyTypeWith(t, top.boundVariables)}", namedParams, drop(params, top.argTypes)) ++
+           map(\ np::String -> s" ${np}::_", drop(length(top.argTypes) - params, namedParams))) ++ ")" ++
          if length(top.argTypes) <= params + length(namedParams) + 1 then ""
          else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), drop(params + length(namedParams) + 1, top.argTypes))) ++ ">"
     | _ -> prettyTypeWith(top.baseType, top.boundVariables) ++
@@ -184,7 +187,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _ _
+top::Type ::= fn::String _ _ _
 {
   top.typepp = fn;
 }
@@ -213,10 +216,10 @@ top::Type ::= t::Type i::Type
   top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= t::Type i::Type
 {
-  top.typepp = s"PartiallyDecorated ${t.typepp} with ${i.typepp}";
+  top.typepp = s"Decorated! ${t.typepp} with ${i.typepp}";
 }
 
 aspect production ntOrDecType

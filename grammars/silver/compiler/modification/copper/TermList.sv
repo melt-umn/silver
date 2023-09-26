@@ -9,7 +9,7 @@ nonterminal TermList with config, grammarName, unparse, location, termList, defs
 
 monoid attribute termList :: [String];
 
-propagate errors, termList on TermList;
+propagate config, grammarName, env, errors, termList on TermList;
 
 concrete production termListOne
 terms::TermList ::= t::QName
@@ -38,7 +38,7 @@ top::TermList ::= h::QName t::TermList
 
   production fName::String = h.lookupType.dcl.fullName;
 
-  top.termList <- [fName];
+  top.termList <- if h.lookupType.found then [fName] else [];
   
   -- Itd be nice if we didnt need this guard
   top.defs := if null(h.lookupType.dcls) then t.defs 

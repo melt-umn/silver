@@ -21,7 +21,7 @@ synthesized attribute iovalue<a> :: a;
  -
  - @param a  The type of value returned by the IO action.
  -}
-nonterminal IOVal<a> with io, iovalue<a>;
+data nonterminal IOVal<a> with io, iovalue<a>;
 
 type ByteArray foreign = "byte[]";
 

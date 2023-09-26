@@ -4,11 +4,14 @@ import silver:compiler:definition:core only frame, grammarName, compiledGrammars
 
 -- Context lookup/resolution stuff lives here
 
-attribute env occurs on Context;
+attribute env, config, compiledGrammars, grammarFlowTypes occurs on Context;
+propagate env, config, compiledGrammars, grammarFlowTypes on Context, Contexts;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
 nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
+propagate boundVariables on Contexts;
+
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 {
@@ -37,8 +40,6 @@ synthesized attribute resolvedOccurs::[OccursDclInfo] occurs on Context;
 
 monoid attribute isTypeError::Boolean with false, || occurs on Contexts, Context;
 propagate isTypeError on Contexts, Context;
-
-attribute config, compiledGrammars, grammarFlowTypes occurs on Context;
 
 aspect default production
 top::Context ::=
@@ -261,7 +262,7 @@ Boolean ::= a::Type b::Type
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
     | decoratedType(t1, i1), decoratedType(t2, i2) ->
       (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
-    | partiallyDecoratedType(t1, i1), partiallyDecoratedType(t2, i2) ->
+    | uniqueDecoratedType(t1, i1), uniqueDecoratedType(t2, i2) ->
       (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
     | _, _ -> false
     end;

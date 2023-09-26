@@ -25,7 +25,7 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
  * of parsed terminals, and encode them as a stream of integers. Terminals with
  * any of the specified "token type" lexer classes are returned as semantic
  * tokens in the stream, with their position, length, token type and modifiers
- * encoded as integers according to the language server protocol specificiation.
+ * encoded as integers according to the language server protocol specification.
  * 
  * @author krame505
  * @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens

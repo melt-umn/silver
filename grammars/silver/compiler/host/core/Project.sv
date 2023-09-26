@@ -16,6 +16,7 @@ exports silver:regex:concrete_syntax;
 
 -- symbols
 exports silver:compiler:analysis:typechecking:core;
+exports silver:compiler:definition:flow:env;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!
 -- Regexes end with /. Escape it if you want it.

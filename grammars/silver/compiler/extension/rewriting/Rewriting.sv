@@ -11,7 +11,8 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
-imports silver:compiler:translation:java:core only finalType;
+imports silver:compiler:definition:flow:env;
+imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:extension:patternmatching;
 imports silver:compiler:modification:list;
 imports silver:compiler:modification:primitivepattern;
@@ -45,14 +46,15 @@ concrete production traverseProdExprAnno
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
+  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, originRules;
   
   local numChildren::Integer = n.lookupValue.typeScheme.arity;
   local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);
-  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false), numChildren);
+  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false, false), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(pair(_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
+    map(pair(fst=_, snd=nonterminalType("silver:rewrite:Strategy", [], false, false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] =
@@ -61,7 +63,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];
 
-  propagate downSubst, upSubst, freeVars;
+  propagate downSubst, upSubst, finalSubst, freeVars;
   
   local transform::Strategy =
     traversal(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
@@ -165,7 +167,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
     if !extractNamedArg(qn.name, top.funcAnnotations).fst.isJust
     then [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]
     else [];
-  top.traverseTransform = pair(qn.lookupAttribute.fullName, e.traverseTransform);
+  top.traverseTransform = (qn.lookupAttribute.fullName, e.traverseTransform);
 }
 
 aspect production snocAnnoAppExprs
@@ -193,7 +195,7 @@ concrete production ruleExpr
 top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  propagate freeVars;
+  propagate grammarName, config, frame, flowEnv, freeVars;
   
   -- Find the free type variables (i.e. lacking a definition) to add as skolem constants
   local freeTyVars::[String] =
@@ -217,9 +219,12 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.config = top.config;
   checkExpr.compiledGrammars = top.compiledGrammars;
   checkExpr.boundVars = [];
-  checkExpr.isRoot = top.isRoot;
+  checkExpr.alwaysDecorated = false;
+  checkExpr.decSiteVertexInfo = nothing();
+  checkExpr.isRoot = false;
   checkExpr.originRules = top.originRules;
   
+  ml.env = top.env;
   ml.matchRulePatternSize = 1;
   ml.ruleIndex = 0;
   ml.decRuleExprsIn = checkExpr.decRuleExprs;

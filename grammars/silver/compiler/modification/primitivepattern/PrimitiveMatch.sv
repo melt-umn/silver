@@ -5,16 +5,19 @@ imports silver:util:treeset as ts;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:flow:env;
+
+imports silver:compiler:analysis:typechecking:core;
+imports silver:compiler:analysis:uniqueness;
 
 import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;
-import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
+import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
 -- Actually only used for lists, in this file... TODO
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
-import silver:compiler:definition:flow:ast only noVertex;
 
 import silver:compiler:modification:list; -- Oh no, this is a hack! TODO
 
@@ -24,18 +27,19 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, isRoot, originRules;
+  scrutineeType, returnType, translation, initTransDecSites, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, isRoot, originRules;
+  scrutineeType, returnType, translation, initTransDecSites, originRules;
 
-autocopy attribute scrutineeType :: Type;
-autocopy attribute returnType :: Type;
+inherited attribute scrutineeType :: Type;
+inherited attribute returnType :: Type;
 
-propagate errors on PrimPatterns, PrimPattern;
-propagate freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
+propagate config, grammarName, compiledGrammars, frame, errors, scrutineeType, returnType, initTransDecSites, originRules
+  on PrimPatterns, PrimPattern;
+propagate env, finalSubst, freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -49,13 +53,20 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, compiledGrammars, finalSubst, originRules, flowEnv;
+  e.isRoot = false;
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
+  forwards to
+    matchPrimitiveReal(
+      if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
+      then decorateExprWithEmpty('decorate', @e, 'with', '{', '}', location=e.location)
+      else @e,
+      t, pr, f, location=top.location);
 }
+
 {--
  - @param e  The value to match against (should be DECORATED if it's nonterminal type at all)
  - @param t  The RETURN TYPE, explicitly.
@@ -67,7 +78,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
-  propagate errors, freeVars;
+  propagate config, grammarName, env, freeVars, frame, errors, compiledGrammars, finalSubst, originRules;
   top.typerep = t.typerep;
 
   top.errors <- t.errorsKindStar;
@@ -95,10 +106,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
+
+  e.isRoot = false;
+  f.isRoot = false;
   
   local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
   -- It is necessary to subst on scrutineeType here for the horrible reason that the type we're matching on
-  -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of pair(x,_) -> x end'
+  -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of (x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
   local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst);
@@ -111,19 +125,22 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
          then
           "while(true) {" ++
            "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- our Lazy needs a final variable
-           "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
+           "final common.Node scrutineeNode = scrutinee.getNode(); " ++
             pr.translation ++
-           "if(!scrutineeIter.undecorate().hasForward()) break;" ++ 
+           "if(!scrutineeIter.getNode().hasForward()) break;" ++ 
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else
-          "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- ditto
-           pr.translation) ++
+          s"final ${scrutineeTransType} ${ -- ditto
+            if scrutineeFinalType.isData then "scrutineeNode" else "scrutinee"} = scrutineeIter; " ++
+          pr.translation) ++
         "return " ++ f.translation ++ ";" ++ 
     "}}.eval(context, (" ++ scrutineeTransType ++")" ++ e.translation ++ ")";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
+
+  propagate initTransDecSites;
 }
 
 concrete production onePattern
@@ -133,8 +150,7 @@ top::PrimPatterns ::= p::PrimPattern
   
   top.translation = p.translation;
   
-  p.downSubst = top.downSubst;
-  top.upSubst = p.upSubst;
+  propagate downSubst, upSubst;
 }
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
@@ -143,9 +159,7 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
   
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
 
-  p.downSubst = top.downSubst;
-  ps.downSubst = p.upSubst;
-  top.upSubst = ps.upSubst;
+  propagate downSubst, upSubst;
 }
 
 -- TODO: Long term, I'd like to switch to having a PrimRule and rename PrimPatterns PrimRules.
@@ -157,6 +171,7 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
+  propagate frame, env, compiledGrammars, grammarName;
 
   top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
 
@@ -168,7 +183,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalType(_, _, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
+    | nonterminalType(_, _, _, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
     | _ -> false
     end;
   
@@ -222,10 +237,15 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
+  production expectedScrutineeType :: Type =
+    if prod_type.outputType.isData
+    then prod_type.outputType
+    else decoratedType(prod_type.outputType, freshInhSet());
+
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  
-  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
+
+  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -237,6 +257,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+  propagate finalSubst;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -250,6 +271,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
           scrutineeName, top.location, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
+  e.isRoot = false;
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
     (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
@@ -295,10 +317,15 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
+  production expectedScrutineeType :: Type =
+    if prod_type.outputType.isData
+    then prod_type.outputType
+    else decoratedType(prod_type.outputType, freshInhSet());
+
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
+  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -313,9 +340,10 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   --       but for now for simplicity, we avoid that.
   -- So for now, we're just skipping over this case entirely:
   top.upSubst = top.downSubst;
+  ns.finalSubst = top.finalSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType, freshInhSet())));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, expectedScrutineeType));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....
@@ -334,6 +362,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
           scrutineeName, top.location, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
+
+  e.isRoot = false;
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
     (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
@@ -363,6 +393,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  e.isRoot = false;
+
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -385,6 +417,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  e.isRoot = false;
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -409,6 +443,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  e.isRoot = false;
+
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -432,6 +468,8 @@ top::PrimPattern ::= i::String '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  e.isRoot = false;
+
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -454,6 +492,8 @@ top::PrimPattern ::= e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  e.isRoot = false;
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -482,12 +522,15 @@ top::PrimPattern ::= h::Name t::Name e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),
-     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [])];
+    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, nothing(), [], []),
+     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, nothing(), [], [])];
   
   e.env = newScopeEnv(consdefs, top.env);
+  e.isRoot = false;
   
   top.translation =
     let

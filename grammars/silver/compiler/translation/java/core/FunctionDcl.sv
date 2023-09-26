@@ -19,14 +19,14 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
-			//${head(body.uniqueSignificantExpression).unparse}
-			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
+			//${head(body.returnExpr).unparse}
+			return (${namedSig.outputElement.typerep.transType})(${head(body.returnExpr).translation});
 """;
 
   top.genFiles :=
-    [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
+    [(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" 
-	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
+	then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
     else [];
 
   -- For main functions which return IOVal<Integer>
@@ -35,14 +35,14 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
       functionType(2, []),
         [appType(listCtrType(), stringType()),
           ioForeignType,
-          appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure;
+          appType(nonterminalType("silver:core:IOVal", [starKind()], true, false), intType())])).failure;
 
   -- For main functions which return IO<Integer>
   local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
     appTypes(
       functionType(1, []),
         [appType(listCtrType(), stringType()),
-          appType(nonterminalType("silver:core:IO", [starKind()], false), intType())])).failure;
+          appType(nonterminalType("silver:core:IO", [starKind()], false, false), intType())])).failure;
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <- 
@@ -53,7 +53,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 }
 
 function generateFunctionClassString
-String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
+String ::= env::Env flowEnv::FlowEnv whatGrammar::String whatName::String whatSig::NamedSignature whatResult::String
 {
   local className :: String = "P" ++ whatName;
 
@@ -80,6 +80,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][];
 
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
+    public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
 ${whatSig.inhOccursIndexDecls}
@@ -117,6 +118,14 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 	}
 
 	@Override
+	public common.Lazy getChildDecSite(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecSiteAccessCase(env, flowEnv, whatSig.outputElement.typerep.typeName, whatSig.fullName, _), whatSig.inputElements))}
+            default: return null;
+        }
+    }
+
+	@Override
 	public final int getNumberOfChildren() {
 		return ${toString(length(whatSig.inputElements))};
 	}
@@ -136,6 +145,11 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
 	@Override
 	public common.Lazy getLocal(final int key) {
 		return localAttributes[key];
+	}
+
+	@Override
+	public common.Lazy getLocalDecSite(final int key) {
+		return localDecSites[key];
 	}
 
 	@Override
@@ -179,7 +193,10 @@ ${contexts.contextInitTrans}
 
 		@Override
 		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
+			return ${className}.invoke(${implode(", ",
+			  ["originCtx"] ++
+			  map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++
+			  unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override
@@ -225,7 +242,7 @@ public class Main {
 
 		try {
 			common.Node rv = (common.Node) ${if isIOValReturn then invocationIOVal else invokationEvalIO};
-			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
+			common.DecoratedNode drv = rv.decorate();
 			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
 		} catch(Throwable t) {

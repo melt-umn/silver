@@ -1,5 +1,7 @@
 grammar silver:compiler:translation:java:core;
 
+import silver:compiler:definition:flow:ast;
+
 {--
  - The java translation of the *input parameters* signature.
  -}
@@ -10,7 +12,7 @@ synthesized attribute contextSigElems :: [String] occurs on Contexts;
 synthesized attribute contextSigElem :: String occurs on Context;
 -- Track what children with inh occurs-on contexts need to have indices generated
 monoid attribute contextInhOccurs :: [(Type, String)] occurs on NamedSignature, Contexts, Context;
-autocopy attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
+inherited attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
 synthesized attribute inhOccursContextTypes :: [Type] occurs on NamedSignature;
 monoid attribute inhOccursIndexDecls :: String occurs on NamedSignature, Contexts, Context;
 -- Track what children can be used to resolve contexts at runtime
@@ -24,7 +26,7 @@ synthesized attribute annoSigElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
 -- "d_contextname"
-synthesized attribute contextRefElems :: [String] occurs on Contexts;
+synthesized attribute contextRefElems :: [String] occurs on NamedSignature, Contexts;
 synthesized attribute contextRefElem :: String occurs on Context;
 -- "c_signame"
 synthesized attribute childRefElems :: [String] occurs on NamedSignatureElements;
@@ -41,16 +43,21 @@ synthesized attribute childStatic :: String occurs on NamedSignature, NamedSigna
 synthesized attribute childDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute childDecls :: String occurs on NamedSignature, NamedSignatureElements;
--- "signame"
+-- \"sig:name\"
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
+-- getAnno_signame()
+synthesized attribute annoAccessorElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
+
+propagate sigInhOccurs on NamedSignatureElements, NamedSignatureElement;
 
 aspect production namedSignature
 top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements
 {
   top.javaSignature = implode(", ", ctxs.contextSigElems ++ ie.childSigElems ++ np.annoSigElems);
   top.refInvokeTrans = implode(", ", ctxs.contextRefElems ++ ie.childRefElems ++ np.annoRefElems);
+  top.contextRefElems = ctxs.contextRefElems;
   top.childTypeVarElems = ie.childTypeVarElems;
   top.childStatic = ie.childStatic;
   top.childDecls = ie.childDecls;
@@ -77,6 +84,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
   top.javaSignature = error("Translation shouldn't be demanded from global signature");
   top.refInvokeTrans = error("Translation shouldn't be demanded from global signature");
   top.contextRuntimeResolve := error("Translation shouldn't be demanded from global signature");
+  top.contextRefElems = error("Translation shouldn't be demanded from global signature");
   top.childTypeVarElems = error("Translation shouldn't be demanded from global signature");
   top.childStatic = error("Translation shouldn't be demanded from global signature");
   top.childDecls = error("Translation shouldn't be demanded from global signature");
@@ -256,7 +264,7 @@ s"""private Object child_${n};
   top.childStaticElem =
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
-    else if ty.isNonterminal || ty.isPartiallyDecorated && ntType.isNonterminal
+    else if ty.isNonterminal && !ty.isData || ty.isUniqueDecorated && ntType.isNonterminal
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
@@ -278,6 +286,7 @@ s"""	protected Object anno_${fn};
 	}
 
 """;
+  top.annoAccessorElem = s"getAnno_${fn}()";
 
   top.annoNameElem = s"\"${n}\"";
   top.annoLookupElem =
@@ -316,6 +325,38 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
+function makeChildDecSiteAccessCase
+String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
+{
+  return
+    case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
+    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
+    | _, _ -> ""
+    end;
+}
+function refAccessTranslation
+String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType
+{
+  return
+    case v of
+    | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
+    | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
+    | localVertexType(fName) ->
+      case getValueDcl(fName, env) of
+      | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
+      | [] -> error("Couldn't find decl for local " ++ fName)
+      end
+    | transAttrVertexType(lhsVertexType_real(), transAttr) ->
+      let transIndexName::String = head(getOccursDcl(transAttr, lhsNtName, env)).attrGlobalOccursInitIndex
+      in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
+      end
+    | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
+    | forwardVertexType_real() -> s"context.forward()"
+    | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
+    | subtermVertexType(parent, prodName, sigName) ->
+      s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+    end;
+}
 
 function makeAnnoAssign
 String ::= n::NamedSignatureElement
@@ -335,9 +376,10 @@ String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhAr
   t.boundVariables = bv;
   local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
-			common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
+			${if null(inhs) then "return null;" else
+s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
 ${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
-			return res;
+			return res;"""}
 		}
 """;
 }
@@ -363,7 +405,7 @@ String ::= i::Integer s::[NamedSignatureElement]
 function makeChildUnify
 String ::= fn::String n::NamedSignatureElement
 {
-  return
+  return if null(n.typerep.freeVariables) then "" else
 s"""try {
 			if (!common.TypeRep.unify(${transFreshTypeRep(n.typerep)}, common.Reflection.getType(getChild_${n.elementName}()))) {
 				throw new common.exceptions.SilverInternalError("Unification failed.");

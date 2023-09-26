@@ -4,6 +4,7 @@ concrete production do_c
 top::Expr ::= 'do' '{' body::DoBody '}'
 {
   top.unparse = s"do {${body.unparse}}";
+  propagate frame;
 
   forwards to body.transform;
 }
@@ -40,6 +41,7 @@ concrete production mdo_c
 top::Expr ::= 'mdo' '{' body::DoBody '}'
 {
   top.unparse = s"mdo {${body.unparse}}";
+  propagate frame;
 
   body.boundVarEnv = mempty;
   body.allBoundVars = body.boundVars;
@@ -96,7 +98,7 @@ nonterminal DoBinding with
   transform, transformIn,
   recBindings;
 
-propagate boundVars on DoBody, DoBinding;
+propagate frame, boundVars on DoBody, DoBinding;
 propagate freeVars on DoBinding;
 
 concrete production consDoBody
@@ -147,7 +149,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
     then
       finalReturnDoBody('return',
         foldr1(
-          \ e1::Expr e2::Expr -> Silver_Expr { silver:core:pair($Expr{e1}, $Expr{e2}) },
+          \ e1::Expr e2::Expr -> Silver_Expr { silver:core:pair(fst=$Expr{e1}, snd=$Expr{e2}) },
           map(\ item::(String, TypeExpr) -> Silver_Expr { $name{item.1} }, top.recBindings)),
         ';', location=top.location)
     else top.recRes;
@@ -172,7 +174,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
         \ i::Integer item::(String, TypeExpr) ->
           letDoBinding(
             'let', name(item.1, top.location), '::', item.2, '=',
-            select(Silver_Expr { $name{recVarName} }, 1, i + 1, length(top.recBindings)), ';',
+            select(Silver_Expr { $name{recVarName} }, 1, i + 1, length(top.recBindings), location=top.location), ';',
             location=top.location),
         range(0, length(top.recBindings)),
         top.recBindings));

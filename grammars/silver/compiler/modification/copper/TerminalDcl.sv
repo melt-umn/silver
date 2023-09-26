@@ -12,33 +12,34 @@ concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates { " ++ terms.unparse ++ " } ";
+  propagate env, errors;
 
   top.terminalModifiers := [termDominates(terms.precTermList)];
-  propagate errors;
 }
 
 concrete production terminalModifierSubmitsTo
 top::TerminalModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to { " ++ terms.unparse ++ " } " ;
+  propagate env, errors;
 
   top.terminalModifiers := [termSubmits(terms.precTermList)];
-  propagate errors;
 }
 
 concrete production terminalModifierClassSpec
 top::TerminalModifier ::= 'lexer' 'classes' cl::LexerClasses
 {
   top.unparse = "lexer classes { " ++ cl.unparse ++ " } " ;
+  propagate env, errors;
 
   top.terminalModifiers := [termClasses(cl.lexerClasses)];
-  propagate errors;
 }
 
 concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
   top.unparse = "action " ++ acode.unparse;
+  propagate config, grammarName, compiledGrammars, flowEnv, errors;
 
   top.terminalModifiers := [termAction(acode.actionCode)];
 
@@ -51,14 +52,12 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 
   acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
-  
-  propagate errors;
 }
 
 monoid attribute precTermList :: [String];
 
 nonterminal TermPrecs with config, grammarName, unparse, location, precTermList, errors, env;
-propagate errors, precTermList on TermPrecs;
+propagate config, grammarName, env, errors, precTermList on TermPrecs;
 
 concrete production termPrecsOne
 top::TermPrecs ::= t::QName
@@ -81,7 +80,7 @@ top::TermPrecs ::= terms::TermPrecList
 }
 
 nonterminal TermPrecList with config, grammarName, unparse, location, precTermList, errors, env;
-propagate errors, precTermList on TermPrecList;
+propagate config, grammarName, env, errors, precTermList on TermPrecList;
 
 abstract production termPrecList
 top::TermPrecList ::= h::QName t::TermPrecList
@@ -92,7 +91,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
 
   production fName::String = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
 
-  top.precTermList <- [fName];
+  top.precTermList <- if h.lookupType.found || h.lookupLexerClass.found then [fName] else [];
   
   -- Since we're looking it up in two ways, do the errors ourselves
   top.errors <- if null(h.lookupType.dcls) && null(h.lookupLexerClass.dcls)
@@ -126,7 +125,7 @@ top::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
 }
 
 nonterminal LexerClasses with location, config, unparse, lexerClasses, errors, env;
-propagate errors, lexerClasses on LexerClasses;
+propagate config, env, errors, lexerClasses on LexerClasses;
 
 concrete production lexerClassesOne
 top::LexerClasses ::= n::QName
@@ -149,7 +148,7 @@ top::LexerClasses ::= cls::LexerClassList
 }
 
 nonterminal LexerClassList with location, config, unparse, lexerClasses, errors, env;
-propagate errors, lexerClasses on LexerClassList;
+propagate config, env, errors, lexerClasses on LexerClassList;
 
 concrete production lexerClassListOne
 top::LexerClassList ::= n::QName
@@ -177,7 +176,7 @@ top::LexerClassList ::= n::QName t::LexerClassList
 
   top.errors <- n.lookupLexerClass.errors;
 
-  top.lexerClasses <- [n.lookupLexerClass.dcl.fullName];
+  top.lexerClasses <- if n.lookupLexerClass.found then [n.lookupLexerClass.dcl.fullName] else [];
 }
 
 abstract production lexerClassListNull

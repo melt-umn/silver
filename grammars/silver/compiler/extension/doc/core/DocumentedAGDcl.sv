@@ -53,15 +53,15 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
 {
     local parsed::DclComment = parseComment(top.config, comment);
 
-    local paramNamesAndForWhat::Pair<Maybe<[String]> String> = case getFirstAGDcl(dcl) of
-        | functionDcl(_, _, ns, _) -> pair(just(ns.argNames), "function")
-        | aspectFunctionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "function")
-        | productionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "production")
-        | aspectProductionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "production")
-        | nonterminalDcl(_, _, _, tl, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
-        | attributeDclInh(_, _, _, tl, _, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "attribute")
-        | attributeDclSyn(_, _, _, tl, _, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "attribute")
-        | _ -> pair(just([]), if isDoubleComment then "standalone" else "other")
+    local paramNamesAndForWhat::Pair<Maybe<[String]> String> = case getFirstAGDcl(forward) of
+        | functionDcl(_, _, ns, _) -> (just(ns.argNames), "function")
+        | aspectFunctionDcl(_, _, _, ns, _) -> (just(ns.argNames), "function")
+        | productionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
+        | aspectProductionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
+        | nonterminalDcl(_, _, _, tl, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
+        | attributeDclInh(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | attributeDclSyn(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | _ -> (just([]), if isDoubleComment then "standalone" else "other")
         end;
 
     parsed.paramNames = paramNamesAndForWhat.fst;
@@ -70,17 +70,15 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     parsed.docEnv = top.docEnv;
     parsed.offsetLocation = comment.location;
     parsed.indentBy = "";
-
-    dcl.downDocConfig = top.downDocConfig;
     
-    top.upDocConfig <- parsed.upDocConfig ++ dcl.upDocConfig;
+    top.upDocConfig <- parsed.upDocConfig;
     top.docErrors <- parsed.errors;
 
-    local isDoubleComment::Boolean = case dcl of documentedAGDcl(_, _) -> true | _ -> false end;
+    local isDoubleComment::Boolean = case forward of documentedAGDcl(_, _) -> true | _ -> false end;
     top.docs := if isDoubleComment
-                  then [standaloneDclCommentItem(parsed)] ++ dcl.docs
-                  else [dclCommentItem(dcl.docForName, dcl.docUnparse, dcl.grammarName, dcl.location, parsed)]
-                       ++ if length(dcl.docs) > 1 then tail(dcl.docs) else [];
+                  then [standaloneDclCommentItem(parsed)] ++ forward.docs
+                  else [dclCommentItem(forward.docForName, forward.docUnparse, forward.grammarName, dcl.location, parsed)]
+                       ++ if length(forward.docs) > 1 then tail(forward.docs) else [];
     top.errors <- if isDoubleComment
                     then [wrn(parsed.location, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];

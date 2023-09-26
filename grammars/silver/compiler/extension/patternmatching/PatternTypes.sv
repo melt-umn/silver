@@ -6,6 +6,7 @@ import silver:compiler:modification:list only LSqr_t, RSqr_t;
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
 nonterminal Pattern with location, config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
+propagate config, frame, env, errors on Pattern;
 
 {--
  - The names of all var patterns in the pattern.
@@ -14,7 +15,7 @@ synthesized attribute patternVars :: [String];
 {--
  - The names of all var patterns seen so far.
  -}
-autocopy attribute patternVarEnv :: [String];
+inherited attribute patternVarEnv :: [String];
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
  -}
@@ -70,7 +71,6 @@ concrete production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
-  top.errors := ps.errors ++ nps.errors;
 
   local parms :: Integer = prod.lookupValue.typeScheme.arity;
 
@@ -79,6 +79,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
     else [err(prod.location, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
   
   top.patternVars = ps.patternVars ++ nps.patternVars;
+  ps.patternVarEnv = top.patternVarEnv;
   nps.patternVarEnv = ps.patternVarEnv ++ ps.patternVars;
 
   top.patternIsVariable = false;
@@ -112,7 +113,6 @@ concrete production wildcPattern
 top::Pattern ::= '_'
 {
   top.unparse = "_";
-  top.errors := [];
 
   top.patternVars = [];
   top.patternIsVariable = true;
@@ -136,7 +136,6 @@ concrete production varPattern
 top::Pattern ::= v::Name
 {
   top.unparse = v.name;
-  top.errors := [];
   top.errors <-
     if contains(v.name, top.patternVarEnv)
     then [err(v.location, "Duplicate pattern variable " ++ v.name)]
@@ -171,7 +170,7 @@ abstract production errorPattern
 top::Pattern ::= msg::[Message]
 {
   top.unparse = s"{-${messagesToString(msg)}-}";
-  top.errors := msg;
+  top.errors <- msg;
 
   top.patternVars = [];
   top.patternIsVariable = true;
@@ -212,7 +211,6 @@ concrete production intPattern
 top::Pattern ::= num::Int_t
 {
   top.unparse = num.lexeme;
-  top.errors := [];
   
   top.patternVars = [];
   top.patternSubPatternList = [];
@@ -227,7 +225,6 @@ concrete production fltPattern
 top::Pattern ::= num::Float_t
 {
   top.unparse = num.lexeme;
-  top.errors := [];
   
   top.patternVars = [];
   top.patternSubPatternList = [];
@@ -242,7 +239,6 @@ concrete production strPattern
 top::Pattern ::= str::String_t
 {
   top.unparse = str.lexeme;
-  top.errors := [];
   
   top.patternVars = [];
   top.patternSubPatternList = [];
@@ -257,7 +253,6 @@ concrete production truePattern
 top::Pattern ::= 'true'
 {
   top.unparse = "true";
-  top.errors := [];
   
   top.patternVars = [];
   top.patternSubPatternList = [];
@@ -272,7 +267,6 @@ concrete production falsePattern
 top::Pattern ::= 'false'
 {
   top.unparse = "false";
-  top.errors := [];
   
   top.patternVars = [];
   top.patternSubPatternList = [];
@@ -287,7 +281,6 @@ abstract production nilListPattern
 top::Pattern ::= '[' ']'
 {
   top.unparse = "[]";
-  top.errors := [];
   
   top.patternVars = [];
   top.patternSubPatternList = [];
@@ -302,7 +295,6 @@ concrete production consListPattern
 top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   top.unparse = hp.unparse ++ "::" ++ tp.unparse;
-  top.errors := hp.errors ++ tp.errors;
   
   top.patternVars = hp.patternVars ++ tp.patternVars;
   hp.patternVarEnv = top.patternVarEnv;
@@ -346,23 +338,24 @@ top::PatternList ::=
 synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
 
 nonterminal NamedPatternList with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+propagate config, frame, env, errors on NamedPatternList;
 
 concrete production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
 {
   top.unparse = p.unparse;
-  top.errors := p.errors;
 
   top.patternVars = p.patternVars;
+  p.patternVarEnv = top.patternVarEnv;
   top.namedPatternList = p.namedPatternList;
 }
 concrete production namedPatternList_more
 top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
 {
   top.unparse = p.unparse ++ ", " ++ ps.unparse;
-  top.errors := p.errors ++ ps.errors;
 
   top.patternVars = p.patternVars ++ ps.patternVars;
+  p.patternVarEnv = top.patternVarEnv;
   ps.patternVarEnv = p.patternVarEnv ++ p.patternVars;
   top.namedPatternList = p.namedPatternList ++ ps.namedPatternList;
 }
@@ -372,19 +365,18 @@ abstract production namedPatternList_nil
 top::NamedPatternList ::=
 {
   top.unparse = "";
-  top.errors := [];
 
   top.patternVars = [];
   top.namedPatternList = [];
 }
 
 nonterminal NamedPattern with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+propagate config, frame, env, patternVarEnv, errors on NamedPattern;
 
 concrete production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern
 {
   top.unparse = s"${qn.unparse}=${p.unparse}";
-  top.errors := p.errors;
   
   -- TODO: Error checking for annotation patterns is a bit broken.
   -- We can check that it is an annotation here, but any other
@@ -396,7 +388,7 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
     else [];
   
   top.patternVars = p.patternVars;
-  top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
+  top.namedPatternList = [(qn.lookupAttribute.fullName, p)];
 }
 
 --helper function for building patternLists from lists of patterns

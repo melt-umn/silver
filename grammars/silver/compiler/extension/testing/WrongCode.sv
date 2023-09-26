@@ -2,6 +2,8 @@ grammar silver:compiler:extension:testing;
 
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
+import silver:compiler:definition:flow:env;
+import silver:compiler:analysis:uniqueness;
 
 terminal WrongCode_kwd 'wrongCode' lexer classes {KEYWORD};
 terminal WarnCode_kwd 'warnCode' lexer classes {KEYWORD};
@@ -18,6 +20,7 @@ concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "wrongCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, flowEnv;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)
@@ -34,6 +37,7 @@ concrete production warnDecl
 top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "warnCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
@@ -56,6 +60,7 @@ concrete production noWarnDecl
 top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "noWarnCode " ++ s.lexeme ++ " {" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
 
   {-
     I think we want the errors from ags in any case.  This production
@@ -77,17 +82,15 @@ concrete production wrongFlowDecl
 top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "wrongFlowCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, flowEnv, env;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)
     then [err(top.location, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
-  -- do extend its environment with its defs
-  ags.env = occursEnv(ags.occursDefs, newScopeEnv(ags.defs, top.env));
-  
-  -- let's ALSO propagate up flow info, so these kinds of errors are checked/caught
-  top.flowDefs := ags.flowDefs;
+  -- These need to be passed up for the flow analysis to work:
+  propagate defs, flowDefs, uniqueRefs;
   
   forwards to emptyAGDcl(location=top.location);
 }

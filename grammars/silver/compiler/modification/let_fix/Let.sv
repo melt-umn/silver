@@ -1,6 +1,6 @@
 grammar silver:compiler:modification:let_fix;
 
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
+import silver:compiler:definition:flow:ast only VertexType, FlowVertex;
 import silver:util:treeset as ts;
 
 --- Concrete Syntax for lets
@@ -44,14 +44,16 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
   top.freeVars := ts:removeAll(la.boundNames, e.freeVars);
   
-  propagate errors;
+  propagate config, grammarName, compiledGrammars, frame, errors, originRules;
+  e.isRoot = false;
   
   top.typerep = e.typerep;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, finalSubst;
   
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
+  la.env = top.env;
   e.env = newScopeEnv(la.defs, top.env);
 }
 
@@ -59,9 +61,9 @@ monoid attribute boundNames::[String];
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
-                            downSubst, finalSubst, frame, isRoot, originRules;
+                            downSubst, finalSubst, frame, originRules;
 
-propagate errors, defs on AssignExpr;
+propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -93,7 +95,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -113,11 +115,14 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     if errCheck1.typeerror
     then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
     else [];
+
+  e.isRoot = false;
 }
 
 abstract production lexicalLocalReference
-top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);
@@ -141,7 +146,7 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
     case q.lookupValue.typeScheme.monoType of
     | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
     | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | partiallyDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
+    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;
 

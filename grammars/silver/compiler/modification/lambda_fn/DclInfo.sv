@@ -1,5 +1,3 @@
-import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
-
 synthesized attribute lambdaId::Integer occurs on ValueDclInfo;
 synthesized attribute lambdaParamIndex::Integer occurs on ValueDclInfo;
 
@@ -25,6 +23,7 @@ top::ValueDclInfo ::= fn::String ty::Type id::Integer paramIndex::Integer
   top.refDispatcher = lambdaParamReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- should be impossible (never in scope at production level?)
   top.defLHSDispatcher = errorDefLHS(_, location=_); -- ditto
+  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
 }
 
 function lambdaParamDef

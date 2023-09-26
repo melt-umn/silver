@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:implicit_monads;
 
-
+import silver:compiler:analysis:uniqueness;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
@@ -19,6 +19,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
+  ne.alwaysDecorated = top.alwaysDecorated;
   ne.originRules = top.originRules;
   ne.isRoot = top.isRoot;
 
@@ -116,10 +117,10 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
-                               e.flowVertexInfo, e.flowDeps)];
+                               e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
-                   then [pair(id, t)]
+                   then [(id, t)]
                    else [];
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
@@ -134,7 +135,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  _ _ _
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

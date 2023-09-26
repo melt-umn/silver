@@ -6,6 +6,8 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
   top.unparse = s"ordering attribute ${keySyn.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
+  propagate env;
+
   production attribute inhFName :: String;
   inhFName = inh.lookupAttribute.fullName;
   production attribute keySynFName :: String;
@@ -34,8 +36,9 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
  - Propagate a ordering key synthesized attribute on the enclosing production
  -}
 abstract production propagateOrderingKey
-top::ProductionStmt ::= syn::PartiallyDecorated QName
+top::ProductionStmt ::= syn::Decorated! QName
 {
+  undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
 
   forwards to
@@ -49,8 +52,9 @@ top::ProductionStmt ::= syn::PartiallyDecorated QName
  - Propagate a ordering synthesized attribute on the enclosing production
  -}
 abstract production propagateOrdering
-top::ProductionStmt ::= inh::String keySyn::String syn::PartiallyDecorated QName
+top::ProductionStmt ::= inh::String keySyn::String syn::Decorated! QName
 {
+  undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   local topName::String = top.frame.signature.outputElement.elementName;
@@ -76,7 +80,7 @@ top::ProductionStmt ::= inh::String keySyn::String syn::PartiallyDecorated QName
             else
               foldr1(
                 \ e1::Expr e2::Expr ->
-                  Silver_Expr { if $Expr{e1} == 0 then $Expr{e2} else $Expr{e1} },
+                  Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
                 map(
                   \ ie::NamedSignatureElement ->
                     if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))

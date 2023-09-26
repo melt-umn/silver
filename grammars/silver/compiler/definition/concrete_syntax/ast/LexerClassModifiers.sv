@@ -7,14 +7,18 @@ import silver:util:treemap as tm;
 -- monoid attribute submits_ :: [Decorated SyntaxDcl];
 -- synthesized attribute prefixSeperator :: Maybe<String>;
 
-autocopy attribute className :: String;
+inherited attribute className :: String;
 
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
+nonterminal SyntaxLexerClassModifiers with
+  compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs,
+  disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
 
-propagate compareTo, isEqual, cstErrors, superClassContribs, disambiguationClasses, prefixSeperator, dominates_, submits_
+propagate
+  compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs,
+  disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_
   on SyntaxLexerClassModifiers;
 
 abstract production consLexerClassMod
@@ -35,9 +39,13 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-closed nonterminal SyntaxLexerClassModifier with location, sourceGrammar, compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
+closed nonterminal SyntaxLexerClassModifier with location, sourceGrammar,
+  compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs,
+  disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
 
-propagate compareTo, isEqual on SyntaxLexerClassModifier;
+propagate
+  compareTo, isEqual, cstEnv, className, classTerminals, superClasses, subClasses, containingGrammar
+  on SyntaxLexerClassModifier;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -58,7 +66,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
   -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
   production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
-  top.superClassContribs := map(pair(top.className, _), map((.fullName), superRefs));
+  top.superClassContribs := map(pair(fst=top.className, snd=_), map((.fullName), superRefs));
 }
 
 {--
@@ -74,7 +82,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
-                   zipWith(pair, sub, subRefs)); 
+                   zip(sub, subRefs));
   
   top.submits_ := map(head, subRefs);
 }
@@ -91,7 +99,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
-                   zipWith(pair, dom, domRefs));
+                   zip(dom, domRefs));
 
   top.dominates_ := map(head, domRefs);
 }

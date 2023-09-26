@@ -2,6 +2,7 @@ grammar silver:compiler:definition:flow:syntax;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:driver only FlowType, inhDepsForSyn;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
@@ -18,6 +19,8 @@ concrete production flowtypeDcl
 top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
 {
   top.unparse = "flowtype " ++ nt.unparse ++ " = " ++ specs.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, flowEnv;
+
   top.errors :=
     if nt.lookupType.found
     then specs.errors
@@ -34,6 +37,8 @@ concrete production flowtypeAttrDcl
 top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 {
   top.unparse = "flowtype " ++ attr.unparse ++ " on " ++ nts.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, flowEnv;
+
   top.errors := nts.errors;
   top.specDefs := nts.specDefs;
   
@@ -43,7 +48,7 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 
 nonterminal FlowSpecs with config, location, grammarName, errors, env, unparse, onNt, specDefs, compiledGrammars, flowEnv;
 
-propagate errors, specDefs on FlowSpecs;
+propagate config, grammarName, errors, env, onNt, specDefs, compiledGrammars, flowEnv on FlowSpecs;
 
 concrete production oneFlowSpec
 top::FlowSpecs ::= h::FlowSpec
@@ -58,9 +63,9 @@ top::FlowSpecs ::= h::FlowSpecs  ','  t::FlowSpec
 
 nonterminal FlowSpec with config, location, grammarName, errors, env, unparse, onNt, specDefs, compiledGrammars, flowEnv;
 
-autocopy attribute onNt :: Type;
+inherited attribute onNt :: Type;
 
-propagate errors on FlowSpec;
+propagate config, grammarName, errors, env, onNt, compiledGrammars, flowEnv on FlowSpec;
 
 concrete production flowSpecDcl
 top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
@@ -109,7 +114,7 @@ nonterminal FlowSpecId with config, location, grammarName, errors, env, unparse,
 synthesized attribute synName :: String;
 synthesized attribute authorityGrammar :: String;
 
-propagate errors on FlowSpecId;
+propagate config, grammarName, errors, env, compiledGrammars, flowEnv on FlowSpecId;
 
 concrete production qnameSpecId
 top::FlowSpecId ::= syn::QNameAttrOccur
@@ -153,7 +158,7 @@ nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unpars
 monoid attribute inhList :: [String];  -- The attributes in the flow specification
 monoid attribute refList :: [String];  -- Flow specifications referenced in this one (currently can only contain "decorate" / "forward")
 
-propagate errors, inhList, refList on FlowSpecInhs;
+propagate config, grammarName, errors, env, onNt, inhList, refList, flowEnv on FlowSpecInhs;
 
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
@@ -173,9 +178,9 @@ top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 
 nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward};
+flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward}, errors {forward};
 
-propagate errors on FlowSpecInh;
+propagate config, grammarName, errors, env, flowEnv on FlowSpecInh;
 
 concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
@@ -186,6 +191,27 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
   
   inh.attrFor = top.onNt;
 
+  top.errors <-
+    if !inh.found || inh.attrDcl.isInherited then []
+    else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
+}
+
+concrete production flowSpecTrans
+top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::QNameAttrOccur
+{
+  top.unparse = s"${transSyn.unparse}.${inh.unparse}";
+  top.inhList :=
+    if transSyn.attrFound && inh.attrFound
+    then [s"${transSyn.attrDcl.fullName}.${inh.attrDcl.fullName}"]
+    else [];
+  top.refList := [];
+
+  transSyn.attrFor = top.onNt;
+  inh.attrFor = transSyn.typerep;
+
+  top.errors <-
+    if !transSyn.found || transSyn.attrDcl.isSynthesized && transSyn.attrDcl.isTranslation then []
+    else [err(transSyn.location, transSyn.name ++ " is not a translation attribute and so cannot be within a flow type")];
   top.errors <-
     if !inh.found || inh.attrDcl.isInherited then []
     else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
@@ -218,8 +244,8 @@ top::FlowSpecInh ::= 'decorate'
   -- so be sufficiently general here.
   top.errors <-
     case top.onNt, decSpec of
-    | nonterminalType(_, _, _), just(_) -> []
-    | nonterminalType(_, _, _), nothing() -> 
+    | nonterminalType(_, _, _, _), just(_) -> []
+    | nonterminalType(_, _, _, _), nothing() -> 
       [err(top.location, s"to use the default reference set for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")]
     | errorType(), _ -> []
     | _, _ -> [err(top.location, s"default reference set can only be used with nonterminal types, not ${prettyType(top.onNt)}")]
@@ -251,7 +277,7 @@ top::FlowSpecInh ::= 'forward'
 
 nonterminal NtList with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
 
-propagate errors, specDefs on NtList;
+propagate config, grammarName, errors, env, flowSpecSpec, specDefs, compiledGrammars, flowEnv on NtList;
 
 concrete production nilNtList
 top::NtList ::=
@@ -271,7 +297,9 @@ top::NtList ::= h::NtName  ','  t::NtList
 
 nonterminal NtName with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
 
-autocopy attribute flowSpecSpec :: FlowSpec;
+propagate config, grammarName, env, compiledGrammars, flowEnv on NtName;
+
+inherited attribute flowSpecSpec :: FlowSpec;
 
 concrete production ntName
 top::NtName ::= nt::QName

@@ -30,7 +30,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local isClosedNt :: Boolean =
     case getTypeDclAll(namedSig.outputElement.typerep.typeName, top.env) of
-    | ntDcl(_, _, closed, _) :: _ -> closed
+    | ntDcl(_, _, _, closed, _) :: _ -> closed
     | _ -> false -- default, if the lookup fails
     end;
 
@@ -38,7 +38,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.errors ++ ns.errors)
     && top.config.warnFwd
     -- If this production does not forward
-    && null(body.uniqueSignificantExpression)
+    && null(body.forwardExpr)
     -- AND this is not a closed nonterminal
     && !isClosedNt
     -- AND this production is not exported by the nonterminal definition grammar... even including options

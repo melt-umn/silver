@@ -8,8 +8,7 @@ synthesized attribute genFiles :: [Pair<String String>] with ++;
  - Used for getting doc comments on AGDcls to emit.
  - Note that not every item really should be emitted, see doEmit.
  -}
-synthesized attribute docs :: [CommentItem] with ++;
-attribute docs occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+monoid attribute docs :: [CommentItem] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
 
 @@{-
  - Doc config is managed in both a per-file, and per-grammar way. Directives are either file-scope
@@ -21,10 +20,10 @@ attribute docs occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBo
  - in @link[downDocConfig] (and stored on the `Root` as @link[localDocConfig].) -}
 
 @{- Final doc config flowing back down, inside files (Roots) will include file scoped settings first. -}
-inherited attribute downDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+inherited attribute downDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
 
 @{- Doc config information flowing up. File scoped settings are stripped at the Root level. -}
-synthesized attribute upDocConfig :: [DocConfigSetting] with ++ occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+monoid attribute upDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
 
 @{- Snapshot of @link[downDocConfig] stored on `Root`. -}
 synthesized attribute localDocConfig :: [DocConfigSetting] occurs on Root;
@@ -36,17 +35,22 @@ synthesized attribute documentedNamed :: [String] occurs on Root, Grammar;
  - Declarations of documented AGDcls, flowing up. Used for linking and counting documented items.
  - Flows back down as @link[docEnv].
  -}
-synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
-attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+monoid attribute docDcls :: [Pair<String DocDclInfo>] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
 
 @{- Environment of all documented AGDcls, flowing back down after being computed from @link[docDcls].  -}
-autocopy attribute docEnv :: tm:Map<String DocDclInfo>;
-attribute docEnv occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+inherited attribute docEnv :: tm:Map<String DocDclInfo>;
+attribute docEnv occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
+propagate docEnv on AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
 
 @{- Errors arising from ill-formed doc comments.  -}
 monoid attribute docErrors :: [Message];
-attribute docErrors occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
-propagate docErrors on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+attribute docErrors occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
+propagate docErrors on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody, DataConstructors, DataConstructor;
+
+@{-
+ - All file names in a grammar, paired with their documentation-related error messages.
+ -}
+synthesized attribute allFileDocErrors::[(String, [Message])] occurs on Grammar;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -60,7 +64,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
   ags.downDocConfig = filter((\x::DocConfigSetting -> x.fileScope), ags.upDocConfig) ++ top.downDocConfig;
   ags.docEnv = tm:add(flatMap((.docDcls), searchEnvTree(top.grammarName, top.compiledGrammars)), tm:empty());
-  top.errors <- ags.docErrors;
 }
 
 aspect production nilAGDcls
@@ -108,6 +111,7 @@ top::Grammar ::=
   top.docDcls := [];
   top.undocumentedNamed = [];
   top.documentedNamed = [];
+  top.allFileDocErrors = [];
 }
 
 aspect production consGrammar
@@ -120,6 +124,7 @@ top::Grammar ::= c1::Root  c2::Grammar
   top.docDcls := c1.docDcls ++ c2.docDcls;
   top.undocumentedNamed = c1.undocumentedNamed ++ c2.undocumentedNamed;
   top.documentedNamed = c1.documentedNamed ++ c2.documentedNamed;
+  top.allFileDocErrors = (c1.location.filename, c1.docErrors) :: c2.allFileDocErrors;
 }
 
 -- consGrammar(FILE1, consGrammar(FILE2, nilGrammar()))

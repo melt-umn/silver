@@ -8,7 +8,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   local contexts::Contexts = foldContexts(cl.contexts);
   contexts.boundVariables = boundVars;
 
-  top.genFiles := if contexts.isTypeError then [] else [pair(className ++ ".java", s"""
+  top.genFiles := if contexts.isTypeError then [] else [(className ++ ".java", s"""
 
 package ${makeName(top.grammarName)};
 
@@ -75,7 +75,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   contexts.boundVariables = boundVars;
 
   top.translation = s"""
-	public ${finalType(e).transType} ${makeInstanceMemberAccessorName(top.fullName)}(${contexts.contextParamTrans}) {
+	public ${e.finalType.transType} ${makeInstanceMemberAccessorName(top.fullName)}(${contexts.contextParamTrans}) {
 		//${e.unparse}
 		return ${e.generalizedTranslation};
 	}

@@ -16,7 +16,7 @@ concrete production genArbTerminalNoLocExpr
 top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
 {
   top.unparse = s"genArbTerminal(${te.unparse}, _)";
-  propagate freeVars;
+  propagate grammarName, env, flowEnv, freeVars;
   
   local regex::Regex =
     case getTypeDcl(te.typerep.typeName, top.env) of

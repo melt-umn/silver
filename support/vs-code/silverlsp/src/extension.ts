@@ -25,18 +25,31 @@ export function activate(context: vscode.ExtensionContext) {
 		let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
 
 		// path to the launcher.jar
-		let classPath = path.join(__dirname, '..', 'launcher', 'launcher.jar');
+		let launcherJar: string = path.join(__dirname, '..', 'launcher', 'launcher.jar');
+		let compilerJar: string = config.get('compilerJar') || "";
+		if (compilerJar && !compilerJar.startsWith("/") && vscode.workspace.workspaceFolders !== undefined) {
+			compilerJar = path.join(vscode.workspace.workspaceFolders[0].uri.path, "/", compilerJar);
+		}
+		let classPath = [launcherJar];
+		if (compilerJar) {
+			classPath.unshift(compilerJar);
+		}
+		console.log(classPath);
 		let jvmArgs: string = config.get('jvmArgs') || "";
 		const args: string[] = [
-			'-cp', classPath,
-		].concat(jvmArgs.split(' '));
+			// JVM args
+			'-cp', classPath.join(":"),
+			...jvmArgs.split(' '),
+			// The main class
+			main
+		];
 
 		// Set the server options 
 		// -- java execution path
 		// -- argument to be pass when executing the java command
 		let serverOptions: ServerOptions = {
 			command: excecutable,
-			args: [...args, main],
+			args: args,
 			options: {}
 		};
 
@@ -46,6 +59,9 @@ export function activate(context: vscode.ExtensionContext) {
 			synchronize: {
 				configurationSection: 'Silver'
 			},
+			initializationOptions: {
+				'parserName': config.get('parserName')
+			}
 		};
 
 		// Create the language client and start the client.

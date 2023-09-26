@@ -98,7 +98,7 @@ wrongCode "(a1, a)" {
   global foo::(a1, a) = 42;
 }
 wrongCode "(a, b) has initialization expression with type (silver:core:Pair<c a> ::= c a)" {
-  global foo::(a, b) = pair(_, _);
+  global foo::(a, b) = pair(fst=_, snd=_);
 }
 
 -------------------------------------- Type Decls
@@ -168,7 +168,7 @@ equalityTest(toString(false), "false", String, silver_tests);
 type MyType3 = Pair<Integer String>;
 
 wrongCode "Could not find an instance for silver:core:ConvertiblePrim silver:core:Pair<Integer String> (arising from the use of toString)" {
-  global m3t :: MyType3 = pair(0, "");
+  global m3t :: MyType3 = (0, "");
   equalityTest(toString(m3t), "<this fails>", String, silver_tests);
 }
 
@@ -324,4 +324,30 @@ wrongCode "Type incorrect in aspect signature. Expected: silver:core:Maybe<a>  G
   aspect production just
   top::Maybe<String> ::= x::String
   {}
+}
+
+-------------------------------------- Named function params
+annotation a1<a>::a;
+annotation a2<a>::a;
+nonterminal AnnoPairThing<a b> with a1<a>, a2<b>;
+production annoPair top::AnnoPairThing<a b> ::=  {}
+production annoThing top::AnnoPairThing<a Integer> ::= Boolean {}
+
+global mkPair::(AnnoPairThing<a b> ::= ; a1::a a2::b) = annoPair;
+wrongCode "(silver_features:AnnoPairThing<a b> ::= ; a1::b a2::a) has initialization expression with type (silver_features:AnnoPairThing<b a> ::= ; a1::b a2::a)" {
+  global mkPairFlipped::(AnnoPairThing<a b> ::= ; a2::a a1::b) = annoPair;
+}
+
+global mkIntStringPair::(AnnoPairThing<Integer String> ::= ; a1::Integer a2::String) = annoPair;
+global mkStringIntPair::(AnnoPairThing<String Integer> ::= ; a2::Integer a1::String) = annoPair;
+global mkThing::(AnnoPairThing<Float Integer> ::= Boolean; a1::Float a2::Integer) = annoThing;
+
+type AnnoPairCtr<(n :: * -> * -> *) a b> = (n<a b> ::= ; a1::a a2::(b :: *));
+global mkPair2::AnnoPairCtr<AnnoPairThing a b> = annoPair;
+
+type IntStringPairCtr = (_ ::= ; a1::Integer a2::String);
+global mkIntStringPair1::IntStringPairCtr<AnnoPairThing<Integer String>> = annoPair;
+
+wrongCode "Named parameters cannot be present when argument types are missing" {
+  type NamedAfterMissing = (_ ::= _; x::Integer);
 }

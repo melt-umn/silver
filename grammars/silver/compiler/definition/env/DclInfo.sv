@@ -18,6 +18,7 @@ synthesized attribute isType :: Boolean;
 synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
+synthesized attribute isClosed :: Boolean;
 
 -- instances
 inherited attribute givenInstanceType :: Type;
@@ -38,6 +39,7 @@ synthesized attribute isAnnotation :: Boolean; -- also "attrs"
 -- attrs
 synthesized attribute isSynthesized :: Boolean;
 synthesized attribute isInherited :: Boolean;
+synthesized attribute isTranslation :: Boolean;
 
 -- production attribute
 synthesized attribute prodDefs :: [Def];
@@ -78,13 +80,14 @@ top::ValueDclInfo ::= fn::String ty::Type
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type isForward::Boolean
 {
   top.fullName = fn;
   
   top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.hasForward = isForward;
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), isForward, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
 top::ValueDclInfo ::= ty::Type
@@ -149,7 +152,7 @@ top::ValueDclInfo ::= fn::String
 
 closed nonterminal TypeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts;
+  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts, isClosed;
 propagate isEqual, compareTo on TypeDclInfo excluding typeAliasDcl, clsDcl;
 
 aspect default production
@@ -162,16 +165,18 @@ top::TypeDclInfo ::=
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
+  top.isClosed = false;
 }
 
 abstract production ntDcl
-top::TypeDclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
+top::TypeDclInfo ::= fn::String ks::[Kind] data::Boolean closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(nonterminalType(fn, ks, tracked));
+  top.typeScheme = monoType(nonterminalType(fn, ks, data, tracked));
   top.kindrep = foldr(arrowKind, starKind(), ks);
   top.isType = true;
+  top.isClosed = closed;
 }
 abstract production termDcl
 top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
@@ -232,7 +237,7 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
 
 closed nonterminal AttributeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, compareKey, isEqual,
-  typeScheme, isInherited, isSynthesized, isAnnotation;
+  typeScheme, isInherited, isSynthesized, isAnnotation, isTranslation;
 propagate compareKey on AttributeDclInfo;
 
 aspect default production
@@ -246,6 +251,7 @@ top::AttributeDclInfo ::=
   top.isSynthesized = false;
   top.isInherited = false;
   top.isAnnotation = false;
+  top.isTranslation = false;
 }
 
 abstract production synDcl
@@ -263,6 +269,15 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
+}
+abstract production transDcl
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
+{
+  top.fullName = fn;
+
+  top.typeScheme = polyType(bound, ty);
+  top.isSynthesized = true;
+  top.isTranslation = true;
 }
 abstract production annoDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type

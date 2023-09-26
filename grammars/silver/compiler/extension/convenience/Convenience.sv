@@ -81,6 +81,16 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
     location=top.location);
 }
 
+concrete production attributeDclTransMultiple
+top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "translation attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
+  forwards to appendAGDcl(
+    attributeDclTrans($1, $2, a, tl, $5, te, $10, location=top.location),
+    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
+    location=top.location);
+}
+
 concrete production collectionAttributeDclInhMultiple
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator 'occurs' 'on' qs::QNames ';'
 {

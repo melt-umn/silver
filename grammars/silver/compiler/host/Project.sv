@@ -19,17 +19,16 @@ exports silver:compiler:modification:let_fix;
 exports silver:compiler:modification:lambda_fn;
 exports silver:compiler:modification:collection;
 exports silver:compiler:modification:primitivepattern;
-exports silver:compiler:modification:autocopyattr;
 exports silver:compiler:modification:ffi;
 exports silver:compiler:modification:copper;
 exports silver:compiler:modification:defaultattr;
+exports silver:compiler:modification:list;
 -- slight hacks, for the moment
 exports silver:compiler:modification:copper_mda;
 
 -- Pure extensions to Silver
 exports silver:compiler:extension:doc;
 exports silver:compiler:extension:convenience;
-exports silver:compiler:modification:list; -- Not really a pure extension, yuck.
 exports silver:compiler:extension:easyterminal;
 exports silver:compiler:extension:deprecation;
 exports silver:compiler:extension:testing;
@@ -37,7 +36,6 @@ exports silver:compiler:extension:auto_ast;
 exports silver:compiler:extension:templating;
 exports silver:compiler:extension:patternmatching;
 exports silver:compiler:extension:treegen;
-exports silver:compiler:extension:doc;
 exports silver:compiler:extension:autoattr;
 exports silver:compiler:extension:strategyattr;
 exports silver:compiler:extension:do_notation;
@@ -50,6 +48,8 @@ exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
 exports silver:compiler:extension:attrsection;
 exports silver:compiler:extension:implicit_monads;
+exports silver:compiler:extension:data;
+exports silver:compiler:extension:deriving;
 
 -- Other generally useful stuff:
 exports silver:compiler:translation:java;

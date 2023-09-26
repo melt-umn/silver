@@ -45,7 +45,7 @@ top::SyntaxRoot ::=
       g:toList(
         g:transitiveClosure(
           g:add(
-            map(\ p::Pair<String String> -> pair(p.snd, p.fst), s.superClassContribs),
+            map(\ p::Pair<String String> -> (p.snd, p.fst), s.superClassContribs),
             g:empty()))));
   s.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
   s.layoutTerms =
@@ -163,12 +163,12 @@ EnvTree<String> ::= allTerms::[String] layoutItems::[String] layoutContribs::[Pa
   local layoutTerms::[Pair<String [String]>] =
     map(
       \ item::String ->
-        pair(item, s:toList(s:intersect(terms, g:edgesFrom(item, transitiveLayout)))),
+        (item, s:toList(s:intersect(terms, g:edgesFrom(item, transitiveLayout)))),
       layoutItems);
   -- Build the layout EnvTree
   return
     directBuildTree(
       flatMap(
-        \ item::Pair<String [String]> -> map(pair(item.fst, _), item.snd),
+        \ item::Pair<String [String]> -> map(pair(fst=item.fst, snd=_), item.snd),
         layoutTerms));
 }

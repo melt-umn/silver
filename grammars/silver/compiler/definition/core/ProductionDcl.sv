@@ -11,8 +11,9 @@ flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
 flowtype decorate {forward, grammarName, flowEnv} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
-propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
-propagate defs on ProductionRHS;
+propagate config, grammarName, errors on
+  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+propagate env, defs on ProductionRHS;
 
 {--
  - Used to help give names to children, when names are omitted.
@@ -44,7 +45,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs := prodDef(top.grammarName, id.location, namedSig, length(body.uniqueSignificantExpression) > 0) ::
+  top.defs := prodDef(top.grammarName, id.location, namedSig, length(body.forwardExpr) > 0) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -58,8 +59,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     else [];
   
   top.errors <-
-    if length(body.uniqueSignificantExpression) > 1
+    if length(body.forwardExpr) > 1
     then [err(top.location, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
+    else [];
+  
+  top.errors <-
+    if length(body.undecorateExpr) > 1
+    then [err(top.location, "Production '" ++ id.name ++ "' has more than one undecorate declaration.")]
     else [];
 
   top.errors <-
@@ -87,7 +93,9 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
   
+  cl.env = top.env;
   cl.constraintPos = signaturePos(top.namedSignature);
+  lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
 
   top.defs := lhs.defs ++ rhs.defs;
@@ -118,10 +126,11 @@ concrete production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
-  top.defs := [lhsDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.defs := [lhsDef(top.grammarName, id.location, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1
@@ -154,10 +163,11 @@ concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
-  top.defs := [childDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.defs := [childDef(top.grammarName, id.location, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1 

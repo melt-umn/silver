@@ -104,12 +104,12 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String ks::[Kind] tracked::Boolean
+top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, oks, otracked) ->
-        if fn == ofn && tracked == otracked  -- Mismatched trackedness can happen when comparing interface files
+    | nonterminalType(ofn, oks, odata, otracked) ->
+        if fn == ofn --&& data == odata && tracked == otracked  -- Mismatched data/tractness can happen when comparing interface files
         then if ks == oks
           then emptySubst()
           else error("kind mismatch during unification for " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
@@ -153,14 +153,14 @@ top::Type ::= te::Type i::Type
     end;
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.unify = 
     case top.unifyWith of
-    | partiallyDecoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
+    | uniqueDecoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
     | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
-    | _ -> errorSubst("Tried to unify partially decorated type with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify unique decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -180,11 +180,11 @@ top::Type ::= nt::Type inhs::Type hidden::Type
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, oi, top.unifyWith],
                              [nt,  inhs, hidden])
-    | partiallyDecoratedType(ote, oi) ->
+    | uniqueDecoratedType(ote, oi) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, oi, top.unifyWith],
                              [nt,  inhs, hidden])
-    | nonterminalType(_, _, _) ->
+    | nonterminalType(_, _, _, _) ->
         -- Ensure compatibility between nonterminal types, then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])

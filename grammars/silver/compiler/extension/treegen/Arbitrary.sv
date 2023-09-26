@@ -6,6 +6,7 @@ imports silver:compiler:definition:concrete_syntax;
 imports silver:compiler:definition:concrete_syntax:ast;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
+imports silver:compiler:definition:flow:env;
 imports silver:compiler:extension:convenience;
 imports silver:compiler:modification:list;
 imports silver:compiler:extension:tuple;
@@ -21,13 +22,14 @@ concrete production generatorDcl
 top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorComponents '}'
 {
   top.unparse = s"generator ${n.unparse} :: ${t.unparse} { ${grammars.unparse} }";
+  propagate config, grammarName, compiledGrammars, grammarDependencies, env, flowEnv;
 
   -- Compute the defs exported by the specified grammars
   local med::ModuleExportedDefs =
     moduleExportedDefs(
       top.location, top.compiledGrammars, top.grammarDependencies,
       grammars.moduleNames, []);
-  production specEnv::Decorated Env = newScopeEnv(med.defs, emptyEnv());
+  production specEnv::Env = newScopeEnv(med.defs, emptyEnv());
   
   -- Override defs to suppress production attributes from flowing up as a paDef,
   -- to avoid a circularity as what production attributes are generated depends
@@ -85,7 +87,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
 nonterminal GeneratorComponents with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
 nonterminal GeneratorComponent with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
 
-propagate errors, moduleNames on GeneratorComponents, GeneratorComponent;
+propagate config, grammarName, compiledGrammars, grammarDependencies, env, errors, moduleNames on GeneratorComponents, GeneratorComponent;
 
 concrete production nilGeneratorComponent
 top::GeneratorComponents ::=
@@ -107,13 +109,13 @@ top::GeneratorComponent ::= m::ModuleName ';'
 
 -- Generate the expression for constructing a type
 function genForType
-Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr  t::Type
+Expr ::= loc::Location  env::Env  specEnv::Env  depth::Expr  t::Type
 {
   return
     case t of
     -- Monomorphic nonterminals that don't have an explicit Arbitrary instance,
     -- call the appropriate local generator function.
-    | nonterminalType(ntName, [], _)
+    | nonterminalType(ntName, [], _, _)
       when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
       matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName), loc)}($Expr{depth}) }
     
@@ -125,12 +127,10 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
     -- e.g. lists of nonterminals in a production RHS.
     | appType(listCtrType(), elemT) ->
       Silver_Expr {
-        silver:core:bind(random, \ len::Integer ->
-          silver:core:sequence(
+        silver:core:bind(silver:util:random:randomRange(0, $Expr{depth}), \ len::Integer ->
+          silver:core:traverseA(
             \ depth::Integer -> $Expr{genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, elemT)},
-            silver:core:take(
-              silver:core:toInteger(len * silver:core:toFloat($Expr{depth}))),
-              silver:core:reverse(silver:core:range(0, $Expr{depth}))))
+            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{depth})))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
@@ -141,11 +141,11 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
 
 -- Determine whether we can generate an arbitrary value for some type.
 function isTypeGeneratable
-Boolean ::= env::Decorated Env  specEnv::Decorated Env  t::Type
+Boolean ::= env::Env  specEnv::Env  t::Type
 {
   return
     case t of
-    | nonterminalType(ntName, [], _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
+    | nonterminalType(ntName, [], _, _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | terminalType(ntName) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, elemT)
     | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", t, env))
@@ -155,7 +155,7 @@ Boolean ::= env::Decorated Env  specEnv::Decorated Env  t::Type
 -- Determine whether we can generate an arbitrary value for some production -
 -- i.e. that it is monomorphic and all the RHS types are generatable.
 function isProdGeneratable
-Boolean ::= env::Decorated Env  specEnv::Decorated Env  p::ValueDclInfo
+Boolean ::= env::Env  specEnv::Env  p::ValueDclInfo
 {
   local prodType::Type = p.typeScheme.typerep;
   return
@@ -197,7 +197,7 @@ function takeWhile2
 
 -- local genExpr::(RandomGen<Expr> ::= Integer) = \ depth::Integer -> ...;
 function genNtLocalDecl
-ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt::String
+ProductionStmt ::= loc::Location  env::Env  specEnv::Env  nt::String
 {
   -- All productions that are generatable for nt, sorted by arity
   local prods :: [ValueDclInfo] = 
@@ -235,7 +235,7 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
 }
 
 function genTermLocalDecl
-ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
+ProductionStmt ::= loc::Location  env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
 {
   local te::TypeExpr = nominalTypeExpr(qName(loc, t).qNameType, location=loc);
 
@@ -287,12 +287,12 @@ Note that this expects lst to be non-empty!
 -}
 
 function generateExprChain
-Expr ::= loc::Location env::Decorated Env  specEnv::Decorated Env  nt::String index::Integer  lst::[ValueDclInfo]
+Expr ::= loc::Location env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
 {
   local prod::ValueDclInfo = head(lst);
   local prodType::Type = prod.typeScheme.typerep;
   local args::[(String, Type)] =
-    zipWith(pair, map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
+    zip(map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
     prodType.namedTypes;
   local argGenExprs::[Expr] =
     map(genForType(loc, env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));

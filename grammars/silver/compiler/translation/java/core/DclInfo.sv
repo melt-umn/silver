@@ -52,7 +52,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ ntty.transTypeName);
   top.attrOccursInitIndex = makeProdName(ns.fullName) ++ "." ++ top.attrOccursIndexName;
-  top.attrOccursIndex = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fnat, ntty, ns.freeVariables)}";
+  top.attrOccursIndex = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeConstraintDictName(fnat, ntty, ns.freeVariables)}";
 }
 aspect production occursSuperDcl
 top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
@@ -102,7 +102,7 @@ top::ValueDclInfo ::=
 }
 
 aspect production localDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type _
 {
   local attribute li :: Integer;
   li = lastIndexOf(":local:", fn);

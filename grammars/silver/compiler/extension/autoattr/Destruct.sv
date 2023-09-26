@@ -21,10 +21,13 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 }
 
 abstract production destructAttributionDcl
-top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
+
+  propagate grammarName, env, flowEnv;
   
   forwards to
     defaultAttributionDcl(
@@ -77,8 +80,9 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateDestruct
-top::ProductionStmt ::= attr::PartiallyDecorated QName
+top::ProductionStmt ::= attr::Decorated! QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   local numChildren::Integer = length(top.frame.signature.inputElements);
@@ -108,12 +112,12 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
                   "Destruct attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", top.location), location=top.location)} ++
                   " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", top.location), location=top.location)} ++
                   " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", top.location), location=top.location)} ++
-                  " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")
+                  " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")  -- TODO: Shouldn't really be using hackUnparse here.
               end;
           },
         filter(
           \ ie::Pair<Integer NamedSignatureElement> ->
             !null(getOccursDcl(attr.lookupAttribute.dcl.fullName, ie.snd.typerep.typeName, top.env)),
-          zipWith(pair, range(0, numChildren), top.frame.signature.inputElements))));
+          zip(range(0, numChildren), top.frame.signature.inputElements))));
 }
 

@@ -6,39 +6,44 @@ import silver:util:treeset as ts;
 nonterminal Expr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, typerep, isRoot, originRules;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
-flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
+flowtype Expr =
+  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config},
+  decorate {forward, alwaysDecorated};
 
-flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config} on Exprs;
-flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
-flowtype decorate {grammarName, env, frame, isRoot, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
+flowtype decorate {grammarName, env, frame, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
   excluding terminalAccessHandler;
-propagate freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate config, grammarName, env, freeVars, frame, compiledGrammars
+  on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate originRules on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr excluding noteAttachment;
+propagate decoratingnt, allSuppliedInhs on ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
-autocopy attribute decoratingnt :: Type;
+inherited attribute decoratingnt :: Type;
 {--
  - The inherited attributes being supplied in a decorate expression
  -}
 synthesized attribute suppliedInhs :: [String];
-autocopy attribute allSuppliedInhs :: [String];
+inherited attribute allSuppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
@@ -54,11 +59,12 @@ monoid attribute freeVars :: ts:Set<String>;
 
 -- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
 --  for the attribute/return value/etc that it is part of?
-autocopy attribute isRoot :: Boolean;
+inherited attribute isRoot :: Boolean;
 
-autocopy attribute originRules :: [Decorated Expr];
+inherited attribute originRules :: [Decorated Expr];
 
 attribute grammarName, frame occurs on Contexts, Context;
+propagate grammarName, frame on Contexts, Context;
 
 abstract production errorExpr
 top::Expr ::= e::[Message]
@@ -81,6 +87,7 @@ top::Expr ::= q::QName
 {
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
+  propagate env;
   
   forwards to (if null(q.lookupValue.dcls)
                then errorReference(q.lookupValue.errors, _, location=_)
@@ -92,8 +99,9 @@ top::Expr ::= q::QName
 }
 
 abstract production errorReference
-top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
+top::Expr ::= msg::[Message]  q::Decorated! QName
 {
+  undecorates to errorExpr(msg, location=top.location);  -- TODO: Should this be baseExpr?
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -103,8 +111,9 @@ top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 
 -- TODO: We should separate this out, even, to be "nonterminal/decorable" and "as-is"
 abstract production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -114,8 +123,9 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -124,8 +134,9 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -135,8 +146,9 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -148,8 +160,9 @@ top::Expr ::= q::PartiallyDecorated QName
 -- Later on, we do *not* distinguish for application.
 
 abstract production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -166,8 +179,9 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -184,8 +198,9 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -215,8 +230,9 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 abstract production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -250,7 +266,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
   
   local correctNumTypes :: [Type] =
     if length(t.inputTypes) > es.appExprSize
@@ -299,8 +316,9 @@ top::Expr ::= e::Expr '(' ')'
 }
 
 abstract production errorApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   top.errors <-
@@ -316,16 +334,12 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 -- We don't distinguish anymore at this point. A production reference
 -- becomes a function, effectively.
 abstract production functionApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
-  
-  -- TODO: we have an ambiguity here in the longer term.
-  -- How to distinguish between
-  -- foo(x) where there is an annotation 'a'?
-  -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
-  -- Possibly this can be solved by having somehting like "foo(x,a=?)"
+
   forwards to
     (if es.isPartial || anns.isPartial
      then partialApplication
@@ -333,8 +347,9 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 abstract production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -343,8 +358,9 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 abstract production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -364,6 +380,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   note.isRoot = false;
   e.isRoot = false;
+  note.originRules = top.originRules;
   e.originRules = top.originRules ++ [note];
 }
 
@@ -374,13 +391,16 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.unparse = e.unparse ++ ".forward";
   top.typerep = e.typerep;
+
+  e.isRoot = false;
 }
 
 concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
   q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
@@ -390,13 +410,15 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   -- This jumps to:
   -- errorAccessHandler  (e.g. 1.unparse)
   -- undecoratedAccessHandler
+  -- dataAccessHandler
   -- decoratedAccessHandler  (see that production, for how normal attribute access proceeds!)
   -- terminalAccessHandler
 }
 
 abstract production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = errorType();
@@ -409,20 +431,10 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
       end;
 }
 
-abstract production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.unparse = e.unparse ++ "." ++ q.unparse;
-  
-  production index :: Integer =
-    findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
-
-  top.typerep = q.typerep;
-}
-
 abstract production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- NO use of q.errors, as that become nonsensical here.
@@ -440,20 +452,37 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("silver:core:Location", [], false)
+    then nonterminalType("silver:core:Location", [], true, false)
     else errorType();
 }
 
 abstract production undecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
-  forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
+  forwards to (if !q.found then unknownDclAccessHandler(_, _, location=_)
                else q.attrDcl.undecoratedAccessHandler)(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
+  -- transUndecoratedAccessErrorHandler
+  -- unknownDclAccessHandler  -- unknown attribute error raised already.
+}
+
+abstract production dataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  -- Note: LHS is data, here we dispatch based on the kind of attribute.
+  forwards to (if !q.found then unknownDclAccessHandler(_, _, location=_)
+               else q.attrDcl.dataAccessHandler)(e, q, top.location);
+  -- annoAccessHandler
+  -- synDataAccessHandler
+  -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
 {--
@@ -461,59 +490,125 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
 }
 function accessBounceDecorate
-Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur  l::Location
+Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur  loc::Location
 {
-  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=l), 'with', '{', '}', location=l), q, location=l);
+  return accessBouncer(target, decorateExprWithEmpty('decorate', @e, 'with', '{', '}', location=loc), q, location=loc);
 }
+-- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
 function accessBounceUndecorate
-Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur  l::Location
+Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur  loc::Location
 {
-  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:new", [e]), q, location=l);
+  return accessBouncer(target,
+    application(
+      baseExpr(qName(loc, "silver:core:getTermThatWasDecorated"), location=loc), '(',
+      oneAppExprs(
+        presentAppExpr(@e, location=loc),
+        location=loc), ',',
+      emptyAnnoAppExprs(location=loc), ')',
+      location=loc),
+    q, location=loc);
 }
 
 abstract production decoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
-  forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
+  forwards to (if !q.found then unknownDclAccessHandler(_, _, location=_)
                else q.attrDcl.decoratedAccessHandler)(e, q, top.location);
   -- From here we go to:
   -- synDecoratedAccessHandler
   -- inhDecoratedAccessHandler
-  -- errorDecoratedAccessHandler  -- unknown attribute error raised already.
+  -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
 abstract production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
 }
 
 abstract production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
 }
 
--- TODO: change name. really "unknownDclAccessHandler"
-abstract production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+abstract production transDecoratedAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+}
+
+abstract production annoAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  production index :: Integer =
+    findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
+
+  top.typerep = q.typerep;
+}
+
+abstract production synDataAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+
+  top.typerep = q.typerep;
+}
+
+abstract production inhUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+
+  top.errors <- [err(top.location, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
+}
+
+abstract production transUndecoratedAccessErrorHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
+  top.unparse = e.unparse ++ "." ++ q.unparse;
+  
+  top.typerep = q.typerep.asNtOrDecType;
+
+  top.errors <- [err(top.location, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
+}
+
+abstract production unknownDclAccessHandler
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+{
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
 
   top.typerep = errorType();
@@ -525,7 +620,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {}";
 
-  forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
+  forwards to decorateExprWith($1, @e, $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
 }
 
 concrete production decorateExprWith
@@ -536,12 +631,21 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
   production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
 
-  -- TODO: This _could_ be partiallyDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
+  -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
   top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
   inh.decoratingnt = ntType;
   inh.allSuppliedInhs = inh.suppliedInhs;
+}
+
+concrete production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.unparse = s"@${e.unparse}";
+
+  top.typerep = e.typerep.decoratedType;
+  e.isRoot = false;
 }
 
 abstract production exprInhsEmpty
@@ -574,8 +678,11 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
   
   top.suppliedInhs = lhs.suppliedInhs;
+
+  e.isRoot = false;
 }
 
+-- TODO: permit supplying inhs on translation attributes
 concrete production exprLhsExpr
 top::ExprLHSExpr ::= q::QNameAttrOccur
 {
@@ -739,6 +846,10 @@ precedence = 0
   top.unparse = "if " ++ e1.unparse ++ " then " ++ e2.unparse ++ " else " ++ e3.unparse;
 
   top.typerep = e2.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
+  e3.isRoot=false;
 }
 
 concrete production intConst
@@ -890,6 +1001,8 @@ top::Exprs ::= e::Expr
 
   top.exprs := [e];
   top.rawExprs := [e];
+
+  e.isRoot = false;
 }
 concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
@@ -898,6 +1011,8 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 
   top.exprs := [e1] ++ e2.exprs;
   top.rawExprs := [e1] ++ e2.rawExprs;
+
+  e1.isRoot = false;
 }
 
 
@@ -907,14 +1022,19 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot, originRules;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, originRules;
+flowtype AppExprs =
+  decorate {
+    config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied, originRules,
+    downSubst, finalSubst, flowEnv
+  };
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, originRules;
 
-propagate errors, freeVars on AppExprs, AppExpr;
-propagate exprs, rawExprs on AppExprs;
+propagate config, grammarName, env, freeVars, frame, compiledGrammars, errors, originRules on AppExprs, AppExpr;
+propagate appExprApplied, exprs, rawExprs on AppExprs;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -923,7 +1043,7 @@ synthesized attribute appExprSize :: Integer;
 inherited attribute appExprIndex :: Integer;
 inherited attribute appExprTypereps :: [Type];
 inherited attribute appExprTyperep :: Type;
-autocopy attribute appExprApplied :: String;
+inherited attribute appExprApplied :: String;
 
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 concrete production missingAppExpr
@@ -949,6 +1069,8 @@ top::AppExpr ::= e::Expr
   top.rawExprs := [e];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
+
+  e.isRoot = false;
 }
 
 concrete production snocAppExprs
@@ -1007,27 +1129,32 @@ nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
-  
-propagate errors, freeVars, exprs on AnnoAppExprs, AnnoExpr;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
+flowtype decorate {
+    grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config,
+    appExprApplied, remainingFuncAnnotations, funcAnnotations
+  } on AnnoAppExprs, AnnoExpr;
+
+propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, appExprApplied, originRules
+  on AnnoAppExprs, AnnoExpr;
 
 {--
  - Annotations that have not yet been supplied
  -}
-inherited attribute remainingFuncAnnotations :: [Pair<String Type>];
+inherited attribute remainingFuncAnnotations :: [(String, Type)];
 {--
  - All annotations of this function
  -}
-autocopy attribute funcAnnotations :: [Pair<String Type>];
+inherited attribute funcAnnotations :: [(String, Type)];
 {--
  - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
  -}
-synthesized attribute missingAnnotations :: [Pair<String Type>];
+synthesized attribute missingAnnotations :: [(String, Type)];
 {--
  - Typereps of those annotations that are partial (_)
  -}
@@ -1041,7 +1168,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.unparse = qn.unparse ++ "=" ++ e.unparse;
   
-  local fq :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+  local fq :: (Maybe<(String, Type)>, [(String, Type)]) =
     extractNamedArg(qn.name, top.remainingFuncAnnotations);
     
   e.appExprIndex =
@@ -1119,24 +1246,24 @@ function reorderedAnnoAppExprs
 [Decorated Expr] ::= d::Decorated AnnoAppExprs
 {
   -- This is an annoyingly poor quality implementation
-  return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+  return map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
 }
 function reorderedLte
-Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
+Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }
 
 function extractNamedArg
-Pair<Maybe<Pair<String Type>> [Pair<String Type>]> ::= n::String  l::[Pair<String Type>]
+(Maybe<(String, Type)>, [(String, Type)]) ::= n::String  l::[(String, Type)]
 {
-  local recurse :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+  local recurse :: (Maybe<(String, Type)>, [(String, Type)]) =
     extractNamedArg(n, tail(l));
 
-  return if null(l) then pair(nothing(), [])
-  else if head(l).fst == n then pair(just(head(l)), tail(l))
-  else pair(recurse.fst, head(l) :: recurse.snd);
+  return if null(l) then (nothing(), [])
+  else if head(l).fst == n then (just(head(l)), tail(l))
+  else (recurse.fst, head(l) :: recurse.snd);
 }
 
 function findNamedArgType
-Integer ::= s::String l::[Pair<String Type>] z::Integer
+Integer ::= s::String l::[(String, Type)] z::Integer
 {
   return if null(l) then -1
   else if s == head(l).fst then z
@@ -1177,53 +1304,16 @@ AnnoExpr ::= p::Pair<String Expr>
 }
 
 {--
- - Utility for other modules to create function invocations.
- -
- - Major assumption: The expressions are already decorated, and the 
- - typing substitution threaded through them will then be fed through
- - the expr created by this function.
- -
- - The purpose of this vs just mkFunctionInvocationDecorated
- - is to avoid exponential growth from forwarding. Type checking
- - an expr, then forwarding to a function call that again type
- - checks that expr well... just nest those and boom.
- -}
-function mkFunctionInvocationDecorated
-Expr ::= l::Location  e::Expr  es::[PartiallyDecorated Expr]
-{
-  return mkFunctionInvocation(l, e, map(exprRef(_, location=l), es));
-}
-function mkStrFunctionInvocationDecorated
-Expr ::= l::Location  e::String  es::[PartiallyDecorated Expr]
-{
-  return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), map(exprRef(_, location=l), es));
-}
-
-{--
- - We allow references to existing subexpressions to appear arbitrarily in trees.
+ - Note on the use of the 'decorated here' (@) operator with already-decorated expressions:
  - 
- - There is one MAJOR restriction on the use of this production:
- -   The referenced expression (e) MUST APPEAR in the same expression tree
+ - There is one MAJOR restriction on the use of this operator:
+ -   The referenced expression MUST APPEAR in the same expression tree
  -   as it is referenced in.
  -
  - This is for type information reasons: the subtree referenced must have been
  - typechecked in the same 'typing context' as wherever this tree appears.
  -
- - This is trivially satisfied for the typical use case for this production,
+ - This is trivially satisfied for the typical use case for this operator,
  - where you're typechecking your children, then forwarding to some tree with
  - references to those children.
  -}
-abstract production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
-{
-  top.unparse = e.unparse;
-
-  -- See the major restriction. This should have been checked for error already!
-  top.typerep = e.typerep;
-  
-  -- TODO: one of the little things we might want is to make this transparent to
-  -- forwarding. e.g. e might be a 'childReference' and pattern matching would
-  -- need to separately account for this!
-  -- To accomplish this, we might want some notion of a decorated forward.
-}
-

@@ -17,7 +17,7 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	public static final TopNode singleton = new TopNode();
 	
 	private TopNode() {
-		super(0,0,0,0,null,null,null,null);
+		super(0,0,0,0,null,null,null,null,false);
 		this.originCtx = OriginContext.GLOBAL_CONTEXT;
 	}
 
@@ -27,13 +27,13 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	public <T> T inherited(final int attribute) {
-		throw new SilverInternalError("No inherited attributes given to TopNode.");
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent, final boolean prodFwrd) {
+		throw new SilverInternalError("TopNode cannot be decorated.");
 	}
 
 	@Override
-	protected Object inheritedForwarded(final int attribute) {
-		throw new SilverInternalError("TopNode does not provided inherited attributes.");
+	public <T> T inherited(final int attribute) {
+		throw new SilverInternalError("No inherited attributes given to TopNode.");
 	}
 
 	@Override

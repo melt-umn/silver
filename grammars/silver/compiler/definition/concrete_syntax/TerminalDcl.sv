@@ -10,6 +10,7 @@ terminal Named_kwd       'named'       lexer classes {MODIFIER};
 terminal Left_kwd        'left'        lexer classes {MODIFIER};
 terminal Association_kwd 'association' lexer classes {MODIFIER};
 terminal Right_kwd       'right'       lexer classes {MODIFIER};
+terminal None_kwd        'none'        lexer classes {MODIFIER};
 terminal RepeatProb_kwd  'repeatProb'  lexer classes {MODIFIER};  -- For use by the treegen extension
 
 -- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
@@ -41,7 +42,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
     then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 
-  propagate errors;
+  propagate config, grammarName, compiledGrammars, env, errors;
 
   top.syntaxAst := [
     syntaxTerminal(fName, r.terminalRegExprSpec,
@@ -126,7 +127,8 @@ closed nonterminal TerminalModifier with config, location, unparse, terminalModi
 monoid attribute terminalModifiers :: [SyntaxTerminalModifier];
 monoid attribute genRepeatProb :: Maybe<Float> with nothing(), orElse;
 
-propagate terminalModifiers, genRepeatProb, errors on TerminalModifiers;
+propagate config, grammarName, compiledGrammars, flowEnv, terminalModifiers, genRepeatProb, errors, env
+  on TerminalModifiers;
 
 aspect default production
 top::TerminalModifier ::=
@@ -164,6 +166,14 @@ top::TerminalModifier ::= 'association' '=' 'right'
   top.unparse = "association = right";
 
   top.terminalModifiers := [termAssociation("right")];
+  top.errors := [];
+}
+concrete production terminalModifierNone
+top::TerminalModifier ::= 'association' '=' 'none'
+{
+  top.unparse = "association = none";
+
+  top.terminalModifiers := [termAssociation("none")];
   top.errors := [];
 }
 

@@ -30,17 +30,14 @@ import silver.core.NLocation;
 
 public final class CopperUtil {
   private static Location svToCuLocation(String sourceGrammar,
-                                         NLocation locTerm) {
-    // datatypes when...
-    DecoratedNode locTree = locTerm.decorate();
-
+                                         NLocation loc) {
     String fileName =
         String.format("%s/%s", sourceGrammar,
-                      locTree.synthesized(
+                      loc.synthesized(
                           Init.silver_core_filename__ON__silver_core_Location));
-    Integer line = (Integer)locTree.synthesized(
+    Integer line = loc.synthesized(
         Init.silver_core_line__ON__silver_core_Location);
-    Integer column = (Integer)locTree.synthesized(
+    Integer column = loc.synthesized(
         Init.silver_core_column__ON__silver_core_Location);
 
     return new VirtualLocation(fileName, line, column);
@@ -354,7 +351,7 @@ public final class CopperUtil {
       case "right":
         terminal.setOperatorAssociativity(OperatorAssociativity.RIGHT);
         break;
-      default:
+      case "none":
         terminal.setOperatorAssociativity(OperatorAssociativity.NONASSOC);
         break;
       }

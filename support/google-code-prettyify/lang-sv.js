@@ -45,7 +45,7 @@ PR['registerLangHandler'](
          // Haskell-style comments. Just use the regex from lang-hs.js:
          [PR['PR_COMMENT'],     /^(?:(?:--+(?:[^\r\n\x0C]*)?)|(?:\{-(?:[^-]|-+[^-\}])*-\}))/],
          // Silver keyword list, borrowed from the gedit highlighting file:
-         [PR['PR_KEYWORD'],     /^(?:grammar|import|imports|exports|build|hiding|as|only|parser|parse|attribute|function|local|nonterminal|type|occurs|on|production|terminal|foreign|layout|disambiguate|action|global|productions|lexer|class|abstract|aspect|concrete|inherited|synthesized|autocopy|ignore|left|association|right|precedence|operator|dominates|submits|classes|forwarding|forwards|to|return|pluck|print|case|of|let|in|end|decorate|with|else|forward|if|new|then|toString|toInt|toFloat|length|prefix|false|true)\b/, null],
+         [PR['PR_KEYWORD'],     /^(?:grammar|import|imports|exports|build|hiding|as|only|parser|parse|attribute|function|local|nonterminal|type|occurs|on|production|terminal|foreign|layout|disambiguate|action|global|productions|lexer|class|abstract|aspect|concrete|inherited|synthesized|ignore|left|association|right|precedence|operator|dominates|submits|classes|forwarding|forwards|to|return|pluck|print|case|of|let|in|end|decorate|with|else|forward|if|new|then|toString|toInt|toFloat|length|prefix|false|true)\b/, null],
          // Ordinary identifiers:
          [PR['PR_PLAIN'],  /^[a-z][\w]*\b/],
          // Types are capitalized
