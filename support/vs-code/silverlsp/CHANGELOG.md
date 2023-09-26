@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.0.5]
+- Fix issues with loading an alternate compiler jar
+- Support for changes and features included in the forthcoming 0.5.0 release of Silver
+
 ## [0.0.4]
 - Updating dependencies
 
