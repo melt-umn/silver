@@ -49,12 +49,18 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
+  -- Other productions on the same nonterminal with the same name:
+  local sameNTProds::[ValueDclInfo] = filter(
+    \ v::ValueDclInfo ->
+      case v of
+      | prodDcl(ns, _) -> ns.outputElement.typerep == namedSig.outputElement.typerep
+      | _ -> false
+      end,
+    getValueDclAll(id.name, top.env));
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
-
-    -- TODO: Narrow this down to just a list of productions of the same nonterminal before deciding to error.
-    else if length(getValueDclAll(id.name, top.env)) > 1
+    else if length(sameNTProds) > 1
     then [err(top.location, "Production " ++ id.name ++ " shares a name with another production from an imported grammar. Either this production is meant to be an aspect, or you should use 'import ... with " ++ id.name ++ " as ...' to change the other production's apparent name.")]
     else [];
   
