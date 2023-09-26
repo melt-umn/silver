@@ -22,9 +22,8 @@ top::Expr ::=
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.uniqueRefs <-
-    case finalTy, refSet of
+    top.uniqueRefs <-
+    case top.finalType, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
         [(top.frame.fullName ++ ":" ++ q.lookupValue.fullName,
@@ -39,14 +38,14 @@ top::Expr ::= q::Decorated! QName
   top.accessUniqueRefs = [];
 
   top.errors <-
-    case finalTy of
+    case top.finalType of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
       -- Check that we are exported by the decoration site.
       if !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
-      then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
       -- Check that there is at most one unique reference taken to this decoration site.
       else if length(lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)) > 1
-      then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
       else []
     | _ -> []
     end;
@@ -54,9 +53,8 @@ top::Expr ::= q::Decorated! QName
 aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.uniqueRefs <-
-    case finalTy, refSet of
+    top.uniqueRefs <-
+    case top.finalType, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
         [(q.lookupValue.fullName,
@@ -71,14 +69,14 @@ top::Expr ::= q::Decorated! QName
   top.accessUniqueRefs = [];
 
   top.errors <-
-    case finalTy of
+    case top.finalType of
     | uniqueDecoratedType(_, _) when q.lookupValue.found ->
       -- Check that we are exported by the decoration site.
       if !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
-      then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      then [err(top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
       -- Check that there is at most one unique reference taken to this decoration site.
       else if length(lookupLocalUniqueRefs(q.lookupValue.fullName, top.flowEnv)) > 1
-      then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      then [err(top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
       else []
     | _ -> []
     end;
@@ -86,22 +84,20 @@ top::Expr ::= q::Decorated! QName
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
-    case finalTy of
+    top.errors <-
+    case top.finalType of
     | uniqueDecoratedType(_, _) ->
-      [err(top.location, s"Cannot take a unique reference of type ${prettyType(finalTy)} to ${q.name}.")]
+      [err(top.location, s"Cannot take a unique reference of type ${prettyType(top.finalType)} to ${q.name}.")]
     | _ -> []
     end;
 }
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
-    case finalTy of
+    top.errors <-
+    case top.finalType of
     | uniqueDecoratedType(_, _) ->
-      [err(top.location, s"Cannot take a unique reference of type ${prettyType(finalTy)} to the forward tree.")]
+      [err(top.location, s"Cannot take a unique reference of type ${prettyType(top.finalType)} to the forward tree.")]
     | _ -> []
     end;
 }
@@ -224,9 +220,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.uniqueRefs :=
-    case finalTy, refSet of
+    top.uniqueRefs :=
+    case top.finalType, refSet of
     | uniqueDecoratedType(_, _), just(inhs) ->
         [(case e.flowVertexInfo of
           | just(rhsVertexType(sigName)) -> s"${top.frame.fullName}:${sigName}.${q.attrDcl.fullName}"
@@ -243,38 +238,38 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     end;
 
   top.errors <-
-    case finalTy of
+    case top.finalType of
     | uniqueDecoratedType(_, _) when q.found ->
       case e.flowVertexInfo of
       | just(rhsVertexType(sigName)) ->
         -- Check that we are exported by the occurs-on or the production.
         if !isExportedBy(top.grammarName, [q.dcl.sourceGrammar, top.frame.sourceGrammar], top.compiledGrammars)
-        then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+        then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
         -- Check that there is at most one unique reference taken to this decoration site.
         else
          (if length(lookupTransUniqueRefs(top.frame.fullName, sigName, q.attrDcl.fullName, top.flowEnv)) > 1
-          then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+          then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
           -- Check that there isn't also a unique reference taken to e
           else []) ++
           if !null(lookupUniqueRefs(top.frame.fullName, sigName, top.flowEnv))
-          then [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse}.")]
+          then [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}) since there is also a unique reference taken to ${e.unparse}.")]
           else []
       | just(localVertexType(fName)) ->
         -- Check that we are exported by the occurs-on or the local.
         if !isExportedBy(top.grammarName, [q.dcl.sourceGrammar, head(getValueDcl(fName, top.env)).sourceGrammar], top.compiledGrammars)
-        then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+        then [err(top.location, s"Orphaned unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
         -- Check that there is at most one unique reference taken to this decoration site.
         else
          (if length(lookupLocalTransUniqueRefs(fName, q.attrDcl.fullName, top.flowEnv)) > 1
-          then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+          then [err(top.location, s"Multiple unique references taken to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}).")]
           -- Check that there isn't also a unique reference taken to e
           else []) ++
           case lookupLocalUniqueRefs(fName, top.flowEnv) of
           | u :: _ ->
-            [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}) since there is also a unique reference taken to ${e.unparse} at ${u.sourceGrammar}:${u.sourceLocation.unparse}.")]
+            [err(top.location, s"Cannot take a unique reference to ${top.unparse} in production ${top.frame.fullName} (reference has type ${prettyType(top.finalType)}) since there is also a unique reference taken to ${e.unparse} at ${u.sourceGrammar}:${u.sourceLocation.unparse}.")]
           | [] -> []
           end
-      | _ -> [err(top.location, s"Cannot take a unique reference (of type ${prettyType(finalTy)}) to ${top.unparse}")]
+      | _ -> [err(top.location, s"Cannot take a unique reference (of type ${prettyType(top.finalType)}) to ${top.unparse}")]
       end
     | _ -> []
     end;
@@ -316,11 +311,10 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 aspect production lambdaParamReference
 top::Expr ::= q::Decorated! QName
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.uniqueRefs <-
-    if finalTy.isUniqueDecorated
+    top.uniqueRefs <-
+    if top.finalType.isUniqueDecorated
     then [(q.name, uniqueRefSite(
-        refSet=finalTy.inhSetMembers,
+        refSet=top.finalType.inhSetMembers,
         refFlowDeps=top.flowDeps,
         sourceGrammar=top.grammarName,
         sourceLocation=top.location
@@ -346,27 +340,18 @@ top::Expr ::= params::ProductionRHS e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
+    top.errors <-
     -- This check is needed due to how we handle let binding auto-undecoration in the type system:
     -- unique and regular references can both undecorate and unique references can become regular ones,
     -- but ensure that we don't create a unique reference out of a regular one.
-    case finalTy, q.lookupValue.typeScheme.monoType of
+    case top.finalType, q.lookupValue.typeScheme.monoType of
     | uniqueDecoratedType(_, _), uniqueDecoratedType(_, _) -> []
     | uniqueDecoratedType(_, _), _ ->
-      [err(top.location, s"${q.name} was not bound as a unique reference, but here it is used with type ${prettyType(finalTy)}.")]
+      [err(top.location, s"${q.name} was not bound as a unique reference, but here it is used with type ${prettyType(top.finalType)}.")]
     | _, _ -> []
     end;
   
-  top.uniqueRefs <- map(
-    \ r::(String, UniqueRefSite) ->
-      (r.1, uniqueRefSite(
-          refSet=r.2.refSet,
-          refFlowDeps=top.flowDeps,
-          sourceGrammar=top.grammarName,
-          sourceLocation=top.location
-        )),
-    rs);
+  top.uniqueRefs <- rs;
   top.accessUniqueRefs = [];
 }
 

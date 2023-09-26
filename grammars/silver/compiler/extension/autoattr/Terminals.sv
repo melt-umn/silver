@@ -10,5 +10,5 @@ terminal Monoid_kwd      'monoid'      lexer classes {KEYWORD};
 terminal Destruct_kwd    'destruct'    lexer classes {KEYWORD};
 terminal Equality_kwd    'equality'    lexer classes {KEYWORD};
 terminal Ordering_kwd    'ordering'    lexer classes {KEYWORD};
-terminal Unification_kwd 'unification' lexer classes {KEYWORD};
+terminal Biequality_kwd  'biequality'  lexer classes {KEYWORD};
 terminal Threaded_kwd    'threaded'    lexer classes {KEYWORD};
