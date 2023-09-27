@@ -44,9 +44,9 @@ top::Env ::=
 }
 
 function toEnv
-Env ::= d::[Def]
+Env ::= d::[Def] od::[OccursDclInfo]
 {
-  return newScopeEnv(d, emptyEnv());
+  return occursEnv(od, newScopeEnv(d, emptyEnv()));
 }
 
 {--
@@ -178,6 +178,28 @@ function getAttrDclAll
 [AttributeDclInfo] ::= search::String e::Env
 {
   return searchEnvAll(search, e.attrTree);
+}
+
+{--
+ - Look up the short name of an attribute,
+ - disambiguating based on some nonterminal on which it is known to occur.
+ -}
+function getOccuringAttrDcl
+[AttributeDclInfo] ::= fnnt::String search::String e::Env
+{
+  return getOccuringAttrDclHelp(map((.attrOccurring), getAttrOccursOn(fnnt, e)), search, e.attrTree);
+}
+function getOccuringAttrDclHelp
+[AttributeDclInfo] ::= allAttrs::[String] search::String e::[EnvTree<AttributeDclInfo>]
+{
+  local found :: [AttributeDclInfo] =
+    filter(
+      \ a::AttributeDclInfo -> contains(a.fullName, allAttrs),
+      searchEnvTree(search, head(e)));
+  
+  return if null(e) then []
+         else if null(found) then getOccuringAttrDclHelp(allAttrs, search, tail(e))
+         else found;
 }
 
 function getOccursDcl
