@@ -161,7 +161,7 @@ Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  data::Boolean  closed:
   return typeDef(defaultEnvItem(ntDcl(fn,ks,data,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
-Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>  genRepeatProb::Maybe<Float>
+Def ::= sg::String  sl::Location  fn::String  regex::r:Regex  easyName::Maybe<String>  genRepeatProb::Maybe<Float>
 {
   -- Terminals are also in the value namespace as terminal identifiers
   return typeValueDef(

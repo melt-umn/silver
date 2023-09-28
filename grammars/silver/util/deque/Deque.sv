@@ -1,6 +1,6 @@
 grammar silver:util:deque;
 
-import silver:core with reverse as listReverse;
+imports silver:core with reverse as listReverse;
 
 -- This is all based on Okasaki 1998.
 

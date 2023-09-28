@@ -66,14 +66,15 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   g.grammarName = grammarName;
   
   -- Create the environments for this grammar
-  g.env = occursEnv(g.occursDefs, toEnv(g.defs));
-  g.globalImports =
-    occursEnv(
-      if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
-      else g.importedOccursDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).occursDefs,
-      toEnv(
-        if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
-        else g.importedDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).defs));
+  g.env = toEnv(g.defs, g.occursDefs);
+
+  -- silver:core gets implicitly imported in a new outermost scope, unless imported explicitly
+  local coreGrammar::Decorated RootSpec = head(searchEnvTree("silver:core", top.compiledGrammars));
+  local coreEnv::Env =
+    if contains("silver:core", g.moduleNames) || grammarName == "silver:core"
+    then emptyEnv()
+    else toEnv(coreGrammar.defs, coreGrammar.occursDefs);
+  g.globalImports = occursEnv(g.importedOccursDefs, newScopeEnv(g.importedDefs, coreEnv));
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)

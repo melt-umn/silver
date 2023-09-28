@@ -2,7 +2,8 @@ grammar silver:compiler:definition:env;
 
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax only mentionedAliases;
-imports silver:regex;
+
+imports silver:regex as r;
 
 -- Some of these nonterminals are closed, but the dispatch attributes are
 -- defined in silver:compiler:definition:core, and we don't want to have defaults for those:
@@ -179,7 +180,7 @@ top::TypeDclInfo ::= fn::String ks::[Kind] data::Boolean closed::Boolean tracked
   top.isClosed = closed;
 }
 abstract production termDcl
-top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
+top::TypeDclInfo ::= fn::String regex::r:Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
 {
   top.fullName = fn;
 
