@@ -27,8 +27,8 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
 
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(orderingKeyDcl(keySynFName, sourceGrammar=top.grammarName, sourceLocation=syn.location))),
-       attrDef(defaultEnvItem(orderingDcl(inhFName, keySynFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))]);
+      [attrDef(defaultEnvItem(orderingKeyDcl(keySynFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc))),
+       attrDef(defaultEnvItem(orderingDcl(inhFName, keySynFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
 {--

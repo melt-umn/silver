@@ -9,10 +9,12 @@ import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
 
 -- Expression creating functions
+-- TODO: These are duplicates of existing helpers, are obsolete with concrete syntax quotation,
+-- or otherwise don't belong here!
 
 -- Create an Expr from a String.
 function mkNameExpr
-Expr ::= name::String  l::Location
+Expr ::= name::String
 { 
   return baseExpr(qName(name));
 }
@@ -35,10 +37,10 @@ Expr ::= s::String
 
 -- Create an attribute reference from two names. as in "n.a"
 function attrAcc
-Expr ::= n::String a::String l::Location
+Expr ::= n::String a::String
 {
   return  
-    access(mkNameExpr(n, l), '.', qNameAttrOccur(qName(a)));
+    access(mkNameExpr(n), '.', qNameAttrOccur(qName(a)));
 }
 
 -- replace " characters with two: \ and "

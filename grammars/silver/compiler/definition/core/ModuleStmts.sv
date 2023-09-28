@@ -131,6 +131,16 @@ concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'
 {
   top.unparse = "import " ++ m.unparse ++ ";";
+
+  -- See https://github.com/melt-umn/silver/issues/444.
+  -- An explicit file-scope import of silver:core would cause silver:core to not get implicitly imported
+  -- for the whole grammar, but since it is file scope silver:core wouldn't be visible in other files.
+  -- This behaviour is unintuitative, and the user probably meant to write a grammar-scope import hiding
+  -- or renaming something - so raise an error in this case.
+  top.errors <-
+    if contains("silver:core", m.moduleNames)
+    then [errFromOrigin(top, "File-scope import of silver:core is non supported. Did you mean 'imports silver:core ...;'?")]
+    else [];
 }
 
 concrete production nilImportStmts

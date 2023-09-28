@@ -355,7 +355,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
           { $ProductionStmt{eqKind.makeAspectEquation(
-              makeDefinitionLHSFromName(spectLHS.aspectName),
+              makeDefinitionLHSFromName(aspectLHS.aspectName),
               aspectAttr,
               makeLetExprForTopRenaming(name, aspectLHS, e))}}
       },

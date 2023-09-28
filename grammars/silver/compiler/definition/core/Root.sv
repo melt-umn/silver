@@ -43,16 +43,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
   ags.env = appendEnv(top.env, newScopeEnv(ims.defs, occursEnv(ims.occursDefs, top.globalImports)));
-
-  -- See https://github.com/melt-umn/silver/issues/444.
-  -- An explicit file-scope import of silver:core would cause silver:core to not get implicitly imported
-  -- for the whole grammar, but since it is file scope silver:core wouldn't be visible in other files.
-  -- This behaviour is unintuitative, and the user probably meant to write a grammar-scope import hiding
-  -- or renaming something - so raise an error in this case.
-  top.errors <-
-    if contains("silver:core", ims.moduleNames)
-    then [err(ims.location, "File-scope import of silver:core is non supported. Did you mean 'imports silver:core ...;'?")]
-    else [];
 }
 
 concrete production noGrammarDcl

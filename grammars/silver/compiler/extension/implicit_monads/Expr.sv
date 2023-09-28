@@ -368,7 +368,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
   local baseapp::Expr = application(baseExpr(qName("f")),
                                     '(', funargs, ',', annargs, ')');
   local funapp::Expr = if wrapReturn
-                       then Silver_Expr { $Expr {monadReturn(loc)}($Expr {baseapp}) }
+                       then Silver_Expr { $Expr {monadReturn()}($Expr {baseapp}) }
                        else baseapp;
   local funbinding::ProductionRHS =
       productionRHSCons(productionRHSElem(name("f"), '::',

@@ -34,7 +34,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
     then errorExpr([errFromOrigin(top, "Generation of arbitrary terminal values requires import of silver:regex")])
     else Silver_Expr {
       let genLexeme::RandomGen<String> =
-        decorate $Expr{translate(top.location, reflect(new(regex)))} with {
+        decorate $Expr{translate(reflect(new(regex)))} with {
           starProb = $Expr{floatConst(terminal(Float_t, toString(genRepeatProb)))};
           altCountIn = 0;
         }.genArbMatch
@@ -48,7 +48,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' loc::Expr ')'
 {
   top.unparse = s"genArbTerminal(${te.unparse}, ${loc.unparse})";
   forwards to
-    mkFunctionInvocation(top.location,
+    mkFunctionInvocation(
       genArbTerminalNoLocExpr('genArbTerminal', '(', te, ',', '_', ')'),
       [loc]);
 }

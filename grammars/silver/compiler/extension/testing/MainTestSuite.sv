@@ -26,7 +26,7 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
      '::=', productionRHSNil());
 
   local bod :: [ProductionStmt] =
-    [forwardsTo('forwards', 'to', mkStrFunctionInvocation(top.location, "testsAsNT", [mkNameExpr("testsToPerform")]), ';'),
+    [forwardsTo('forwards', 'to', mkStrFunctionInvocation("testsAsNT", [mkNameExpr("testsToPerform")]), ';'),
      collectionAttributeDclProd('production', 'attribute', name("testsToPerform"), '::',
        listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test"))), ']'),
        'with', plusplusOperator('++'), ';'),
@@ -92,11 +92,11 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
          '=', mkNameExpr("mainIO"), ';'),
      -- return ...
      returnDef('return',
-        mkStrFunctionInvocation(top.location, "ioval",
+        mkStrFunctionInvocation("ioval",
          [
-          mkStrFunctionInvocation(top.location, "exitT",
+          mkStrFunctionInvocation("exitT",
            [ attrAcc("testResults","numFailed"),
-             mkStrFunctionInvocation(top.location, "printT",
+             mkStrFunctionInvocation("printT",
               [ foldStringExprs(
                  [ strCnst("\n\n"),
                    strCnst("============================================================\n"),

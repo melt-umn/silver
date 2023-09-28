@@ -156,7 +156,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
 {--
  - Qualified name looked up CONTEXTUALLY
  -}
-tracked nonterminal QNameAttrOccur with config, name, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
+tracked nonterminal QNameAttrOccur with config, name, grammarName, env, unparse, nameLoc, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
 
 flowtype QNameAttrOccur = decorate {grammarName, config, env, attrFor}, dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
 
@@ -187,6 +187,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
   top.unparse = at.unparse;
+  top.nameLoc = at.nameLoc;
   propagate env;
   
   local attrs :: [AttributeDclInfo] =

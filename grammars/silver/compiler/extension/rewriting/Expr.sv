@@ -269,8 +269,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                     productionRHSElem(
                       name("_e"), '::',
                       typerepTypeExpr(eUndec.finalType)),
-                    inh.lambdaParams,
-                    location=builtin),
+                    inh.lambdaParams),
                   Silver_Expr {
                     $Expr{
                       decorateExprWith(

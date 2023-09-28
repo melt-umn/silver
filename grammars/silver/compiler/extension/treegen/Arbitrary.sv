@@ -44,7 +44,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   -- Build the syntax AST from the specified grammars to extract lexical precedence info 
   production syntax::SyntaxRoot = cstRoot(
     n.name, t.typerep.typeName, foldr(consSyntax, nilSyntax(), med.syntaxAst),
-    nothing(), [], [], sourceGrammar=top.grammarName);
+    nothing(), [], [], sourceGrammar=top.grammarName, location=n.nameLoc);
 
   production attribute implicitImports::[String] with ++;
   implicitImports := [];

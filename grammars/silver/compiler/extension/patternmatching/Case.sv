@@ -83,7 +83,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(es.rawExprs, ml.matchRuleList, true,
       mkStrFunctionInvocation("silver:core:error",
         [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""))]),
+          "\"Error: pattern match failed at " ++ top.grammarName ++ ":" ++ getParsedOriginLocationOrFallback(top).unparse ++ "\\n\""))]),
       freshType());
 }
 

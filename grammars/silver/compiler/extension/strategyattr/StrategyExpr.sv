@@ -358,7 +358,6 @@ top::StrategyExpr ::= s::StrategyExpr
              silver:core:just(
                $Expr{
                  mkFullFunctionInvocation(
-                   top.location,
                    baseExpr(qName(top.frame.fullName)),
                    map(
                      \ a::Pair<String Boolean> ->
@@ -439,7 +438,6 @@ top::StrategyExpr ::= s::StrategyExpr
           silver:core:just(
             $Expr{
               mkFullFunctionInvocation(
-                top.location,
                 baseExpr(qName(top.frame.fullName)),
                 map(
                   \ a::Pair<String Boolean> ->
@@ -458,7 +456,6 @@ top::StrategyExpr ::= s::StrategyExpr
       {- When s is total, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
        mkFullFunctionInvocation(
-         top.location,
          baseExpr(qName(top.frame.fullName)),
          map(
            \ a::Pair<String Boolean> ->
@@ -533,7 +530,6 @@ top::StrategyExpr ::= s::StrategyExpr
                   silver:core:just(
                     $Expr{
                       mkFullFunctionInvocation(
-                        top.location,
                         baseExpr(qName(top.frame.fullName)),
                         map(
                           \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
@@ -557,7 +553,6 @@ top::StrategyExpr ::= s::StrategyExpr
       {- When s is total, optimized translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c) -}
       mkFullFunctionInvocation(
-        top.location,
         baseExpr(qName(top.frame.fullName)),
         map(
           \ a::Pair<String Boolean> ->
@@ -630,7 +625,6 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
              silver:core:just(
                $Expr{
                  mkFullFunctionInvocation(
-                   top.location,
                    baseExpr(qName(top.frame.fullName)),
                    map(
                      \ a::Pair<String Maybe<String>> ->

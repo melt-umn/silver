@@ -19,7 +19,7 @@ layout {}
   forwards to
     if null(getTypeDcl("silver:regex:Regex", top.env))
     then errorExpr([errFromOrigin(top, "Use of regexes requires import of silver:regex")])
-    else translate(top.location, reflect(reg.ast));
+    else translate(reflect(reg.ast));
 }
 
 concrete production matches
