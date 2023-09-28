@@ -22,13 +22,13 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
     productionSignature(
       nilConstraint(), '=>',
       productionLHS(name("t"), '::',
-        nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location)))),
+        nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite")))),
      '::=', productionRHSNil());
 
   local bod :: [ProductionStmt] =
-    [forwardsTo('forwards', 'to', mkStrFunctionInvocation(top.location, "testsAsNT", [mkNameExpr("testsToPerform", top.location)]), ';'),
+    [forwardsTo('forwards', 'to', mkStrFunctionInvocation(top.location, "testsAsNT", [mkNameExpr("testsToPerform")]), ';'),
      collectionAttributeDclProd('production', 'attribute', name("testsToPerform"), '::',
-       listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", top.location))), ']'),
+       listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test"))), ']'),
        'with', plusplusOperator('++'), ';'),
      valContainsBase(qName("testsToPerform"), ':=', emptyList('[',']'), ';')
     ];
@@ -64,7 +64,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
       nilConstraint(), '=>',
      functionLHS(
        appTypeExpr(
-         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOVal", top.location))),
+         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOVal"))),
          bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
      '::=',
      productionRHSCons(
@@ -80,7 +80,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
      --  local testResults :: TestSuite;
      localAttributeDcl(
       'local', 'attribute', name("testResults"), '::',
-      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite", top.location))), ';'),
+      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite"))), ';'),
      -- testResults = name()
      valueEq( qName("testResults"), '=', 
                  applicationEmpty( baseExpr( qNameId(nameIdLower(nme))), 
@@ -89,19 +89,19 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
      -- testResults.ioIn = ...
      attributeDef( 
          concreteDefLHS( qName("testResults")), '.', qNameAttrOccur(qName("ioIn")),
-         '=', mkNameExpr("mainIO", top.location), ';'),
+         '=', mkNameExpr("mainIO"), ';'),
      -- return ...
      returnDef('return',
         mkStrFunctionInvocation(top.location, "ioval",
          [
           mkStrFunctionInvocation(top.location, "exitT",
-           [ attrAcc("testResults","numFailed", top.location),
+           [ attrAcc("testResults","numFailed"),
              mkStrFunctionInvocation(top.location, "printT",
               [ foldStringExprs(
                  [ strCnst("\n\n"),
                    strCnst("============================================================\n"),
                    strCnst("Test Results:\n"), 
-                   attrAcc("testResults","msg", top.location),
+                   attrAcc("testResults","msg"),
                    strCnst("\n\n"), 
                    strCnst("Passed "), 
                    Silver_Expr { silver:core:integerToString(testResults.numPassed) },
@@ -110,10 +110,10 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
                    strCnst("\n"), 
                    strCnst("============================================================\n") 
                  ]),
-                attrAcc("testResults", "ioOut", top.location)
+                attrAcc("testResults", "ioOut")
               ])
            ]),
-           intConst( terminal(Int_t, "0", top.location)) 
+           intConst( terminal(Int_t, "0")) 
          ]), 
          ';')
     ]), '}')),

@@ -367,7 +367,7 @@ top::StrategyExpr ::= s::StrategyExpr
                        else Silver_Expr { $name{a.fst} },
                      childAccesses),
                    map(
-                     makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                     makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                      top.frame.signature.namedInputElements))})
            })],
         false,
@@ -379,7 +379,6 @@ top::StrategyExpr ::= s::StrategyExpr
       {- When s is total, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
        mkFullFunctionInvocation(
-         top.location,
          baseExpr(qName(top.frame.fullName)),
          map(
            \ a::Pair<String Boolean> ->
@@ -388,7 +387,7 @@ top::StrategyExpr ::= s::StrategyExpr
              else Silver_Expr { $name{a.fst} },
            childAccesses),
          map(
-           makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
            top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
@@ -449,7 +448,7 @@ top::StrategyExpr ::= s::StrategyExpr
                     else Silver_Expr { $name{a.fst} },
                   childAccesses),
                 map(
-                  makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                  makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                   top.frame.signature.namedInputElements))})
         else silver:core:nothing()
       };
@@ -468,7 +467,7 @@ top::StrategyExpr ::= s::StrategyExpr
              else Silver_Expr { $name{a.fst} },
            childAccesses),
          map(
-           makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
            top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
@@ -544,7 +543,7 @@ top::StrategyExpr ::= s::StrategyExpr
                           \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
                           drop(childIndex + 1, childAccesses)),
                         map(
-                          makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                          makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                           top.frame.signature.namedInputElements))})
                 })
             end end,
@@ -567,7 +566,7 @@ top::StrategyExpr ::= s::StrategyExpr
             else Silver_Expr { $name{a.fst} },
           childAccesses),
         map(
-          makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+          makeAnnoArg(top.frame.signature.outputElement.elementName, _),
           top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
@@ -642,7 +641,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                        end,
                      childAccesses),
                    map(
-                     makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                     makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                      top.frame.signature.namedInputElements))})
            })],
         false,
@@ -1046,7 +1045,7 @@ function attrMatchesFrame
 Boolean ::= env::Env attrName::String attrFor::Type
 {
   return
-    decorate qNameAttrOccur(qName(loc("", -1, -1, -1, -1, -1, -1), attrName)("", -1, -1, -1, -1, -1, -1))
+    decorate qNameAttrOccur(qName(attrName))
     with { env = env; attrFor = attrFor; }.matchesFrame;
 }
 

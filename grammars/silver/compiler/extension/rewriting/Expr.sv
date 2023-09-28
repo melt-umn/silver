@@ -268,18 +268,15 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                   productionRHSCons(
                     productionRHSElem(
                       name("_e"), '::',
-                      typerepTypeExpr(eUndec.finalType),
-                      location=builtin),
+                      typerepTypeExpr(eUndec.finalType)),
                     inh.lambdaParams,
                     location=builtin),
                   Silver_Expr {
                     $Expr{
                       decorateExprWith(
                         'decorate', baseExpr(qName("_e")),
-                        'with', '{', inh.bodyExprInhTransform, '}',
-                        location=builtin)}.$qName{q.name}
-                  },
-                  location=builtin)})
+                        'with', '{', inh.bodyExprInhTransform, '}')}.$qName{q.name}
+                  })})
           }),
         consASTExpr(eUndec.transform, inh.transform),
         nilNamedASTExpr())
@@ -409,15 +406,11 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                 productionRHSCons(
                   productionRHSElem(
                     name("_e"), '::',
-                    typerepTypeExpr(e.finalType),
-                    location=builtin),
-                  inh.lambdaParams,
-                  location=builtin),
+                    typerepTypeExpr(e.finalType)),
+                  inh.lambdaParams),
                 decorateExprWith(
                   'decorate', baseExpr(qName("_e")),
-                  'with', '{', inh.bodyExprInhTransform, '}',
-                  location=builtin),
-                location=builtin)})
+                  'with', '{', inh.bodyExprInhTransform, '}'))})
         }),
       consASTExpr(e.transform, inh.transform),
       nilNamedASTExpr());
@@ -461,13 +454,10 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   local paramName::String = implode("_", explode(":", lhs.name));
   top.lambdaParam =
     productionRHSElem(
-      name(paramName, builtin), '::',
-      typerepTypeExpr(e.finalType),
-      location=builtin);
+      name(paramName), '::',
+      typerepTypeExpr(e.finalType));
   top.bodyExprInhTransform =
-    exprInh(
-      lhs, '=', baseExpr(qName(paramName)), ';',
-      location=builtin);
+    exprInh(lhs, '=', baseExpr(qName(paramName)), ';');
 }
 
 aspect production trueConst
@@ -641,9 +631,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
                 decEs.lambdaParams,
                 caseExpr_c(
                   'case', decEs.lambdaParamRefs, 'of',
-                  o, ml, 'end',
-                  location=builtin),
-                location=builtin)})
+                  o, ml, 'end'))})
         }),
       decEs.transform,
       nilNamedASTExpr());
@@ -718,15 +706,12 @@ top::Exprs ::= e::Expr
   top.lambdaParams =
     productionRHSCons(
       productionRHSElem(
-        name(lambdaParamName, builtin), '::',
-        typerepTypeExpr(e.finalType),
-        location=builtin),
-      productionRHSNil(),
-      location=builtin);
+        name(lambdaParamName), '::',
+        typerepTypeExpr(e.finalType)),
+      productionRHSNil());
   top.lambdaParamRefs =
     exprsSingle(
-      baseExpr(qName(builtin,lambdaParamName)),
-      location=builtin);
+      baseExpr(qName(lambdaParamName)));
 }
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
@@ -737,16 +722,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.lambdaParams =
     productionRHSCons(
       productionRHSElem(
-        name(lambdaParamName, builtin), '::',
-        typerepTypeExpr(e1.finalType),
-        location=builtin),
-      e2.lambdaParams,
-      location=builtin);
+        name(lambdaParamName), '::',
+        typerepTypeExpr(e1.finalType)),
+      e2.lambdaParams);
   top.lambdaParamRefs =
     exprsCons(
       baseExpr(qName(lambdaParamName)),
-      ',', e2.lambdaParamRefs,
-      location=builtin);
+      ',', e2.lambdaParamRefs);
 }
 
 attribute transform<ASTExpr> occurs on AppExpr;

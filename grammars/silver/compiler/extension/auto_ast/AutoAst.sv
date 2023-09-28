@@ -61,7 +61,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       '=',
       mkFullFunctionInvocation(
         baseExpr(v),
-        map(accessAst(_, top.location), elems),
+        map(accessAst, elems),
         if hasLoc then
          [("location", 
             access(
@@ -91,14 +91,13 @@ Type ::= ns::NamedSignatureElement  env::Env
 }
 
 function accessAst
-Expr ::= ns::NamedSignatureElement  l::Location
+Expr ::= ns::NamedSignatureElement
 {
   return
     access(
       baseExpr(qName(ns.elementName)),
       '.',
-      qNameAttrOccur(qName("silver:langutil:ast")),
-      location=l);
+      qNameAttrOccur(qName("silver:langutil:ast")));
 }
 
 

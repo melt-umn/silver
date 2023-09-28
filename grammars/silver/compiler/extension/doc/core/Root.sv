@@ -124,7 +124,7 @@ top::Grammar ::= c1::Root  c2::Grammar
   top.docDcls := c1.docDcls ++ c2.docDcls;
   top.undocumentedNamed = c1.undocumentedNamed ++ c2.undocumentedNamed;
   top.documentedNamed = c1.documentedNamed ++ c2.documentedNamed;
-  top.allFileDocErrors = (c1.location.filename, c1.docErrors) :: c2.allFileDocErrors;
+  top.allFileDocErrors = (getParsedOriginLocation(c1).fromJust.filename, c1.docErrors) :: c2.allFileDocErrors;
 }
 
 -- consGrammar(FILE1, consGrammar(FILE2, nilGrammar()))

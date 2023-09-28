@@ -236,6 +236,6 @@ concrete productions top::StrategyExprs_c
 tracked nonterminal StrategyQName with ast<QName>;
 concrete productions top::StrategyQName
 (strategyQNameOne) | id::StrategyName_t
-{ top.ast = qNameId(name(id.lexeme, id.nameLoc)); }
+{ top.ast = qNameId(name(id.lexeme)); }
 (strategyQNameCons) | id::StrategyName_t ':' qn::StrategyQName
-{ top.ast = qNameCons(name(id.lexeme, id.nameLoc), $2, qn.ast); }
+{ top.ast = qNameCons(name(id.lexeme), $2, qn.ast); }

@@ -48,7 +48,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   local eqCtx::Context = instContext("silver:core:Eq", valueType.typerep);
   eqCtx.env = ag.env;
-  eqCtx.contextLoc = valueType.location;
+  eqCtx.contextLoc = getParsedOriginLocationOrFallback(valueType);
   eqCtx.contextSource = "equalityTest";
   eqCtx.frame = value.frame;
   eqCtx.config = ag.config;
@@ -129,7 +129,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   -- TODO: BUG: FIXME: these names should be mangled. I ran into 't' being shadowed in a test I wrote!
   local tref :: Name = name("t");
-  local testNameref :: Name = name(testName, ag.location);
+  local testNameref :: Name = name(testName);
   local valueref :: Name = name("value");
   local expectedref :: Name = name("expected");
   local msgref :: Name = name("msg");
@@ -141,7 +141,7 @@ ag::AGDcl ::= kwd::'equalityTest'
       productionSignature(
         nilConstraint(), '=>',
         productionLHS(tref, '::',
-          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location)))),
+          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test")))),
         '::=', productionRHSNil()),
       productionBody('{', foldl(productionStmtsSnoc(_, _), productionStmtsNil(), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
@@ -150,7 +150,7 @@ ag::AGDcl ::= kwd::'equalityTest'
         valueEq(qNameId(expectedref), '=', expected, ';'),
         attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
           foldStringExprs([
-            strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++
+            strCnst("Test at " ++ getParsedOriginLocationOrFallback(ag).unparse ++ " failed.\nChecking that expression\n   " ++
               stringifyString(value.unparse) ++ "\nshould be same as expression\n   " ++
               stringifyString(expected.unparse) ++ "\nActual value:\n   "),
             Silver_Expr { silver:testing:showTestValue(value) },
@@ -159,7 +159,7 @@ ag::AGDcl ::= kwd::'equalityTest'
             strCnst("\n")]), ';'),
         attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(passref)), '=',
            Silver_Expr { value == expected }, ';'),
-        forwardsTo('forwards', 'to', mkStrFunctionInvocation(ag.location, "defTest", []), ';')]), '}'));
+        forwardsTo('forwards', 'to', mkStrFunctionInvocation("defTest", []), ';')]), '}'));
 
 {-
   local aspProdCS :: AGDcl = asAGDcl (

@@ -22,15 +22,15 @@ function foldStringExprs
 Expr ::= es::[Expr]
 {
  return if null(es)
-        then stringConst(terminal(String_t, "\"\""), location=bogusLoc())
-        else plusPlus(head(es), '++', foldStringExprs(tail(es)), location=head(es).location);
+        then stringConst(terminal(String_t, "\"\""))
+        else plusPlus(head(es), '++', foldStringExprs(tail(es)));
 }
 
 -- Create an Expr that is a string constant from a string.
 function strCnst
 Expr ::= s::String
 {
-  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""), location=bogusLoc());
+  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""));
 }
 
 -- Create an attribute reference from two names. as in "n.a"

@@ -55,7 +55,7 @@ top::ClassBodyItem ::=
   top.docForName = "<undefined docForName for "++hackUnparse(top)++">";
   top.upDocConfig := [];
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
   top.docUnparse = "<undefined docUnparse for "++hackUnparse(top)++">";
 }
 
@@ -78,7 +78,9 @@ top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
   local isDoubleComment::Boolean = length(realDclDocs) != 0;
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                else [dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
+                else [attachNote logicalLocationFromOrigin(item) on
+                        dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, parsed)
+                      end];
   top.docErrors <-
     if isDoubleComment
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
@@ -92,7 +94,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 {
   top.docForName = id.name;
   top.docUnparse = "`" ++ id.unparse ++ " :: " ++ cl.unparse ++ " => " ++ ty.unparse ++ "`";
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
 }
 
 aspect production defaultConstraintClassBodyItem
@@ -100,7 +102,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
 {
   top.docForName = id.name;
   top.docUnparse = "`" ++ id.unparse ++ " :: " ++ cl.unparse ++ " => " ++ ty.unparse ++ "` (has default)";
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
 }
 
 
@@ -132,7 +134,7 @@ top::InstanceBodyItem ::=
   top.docForName = "<undefined docForName for "++hackUnparse(top)++">";
   top.upDocConfig := [];
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
   top.docUnparse = "<undefined docUnparse for "++hackUnparse(top)++">";
 }
 
@@ -155,7 +157,9 @@ top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
   local isDoubleComment::Boolean = length(realDclDocs) != 0;
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                else [dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
+                else [attachNote logicalLocationFromOrigin(item) on
+                        dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, parsed)
+                      end];
   top.docErrors <-
     if isDoubleComment
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
@@ -169,5 +173,5 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   top.docForName = id.name;
   top.docUnparse = "`" ++ id.unparse ++ "`";
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
 }

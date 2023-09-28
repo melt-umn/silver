@@ -36,8 +36,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.monadicallyUsed = false;
   top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
-  local mreturn::Expr = monadReturn(top.location);
-  local mbind::Expr = monadBind(top.location);
+  local mreturn::Expr = monadReturn();
+  local mbind::Expr = monadBind();
 
   {-
     Our rewriting here binds in anything after the let to keep names from
@@ -63,7 +63,7 @@ top::Expr ::= la::AssignExpr  e::Expr
                       buildLambda(x.fst.name,
                                   decorate x.snd with
                                      {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
-                                  y, top.location)], top.location),
+                                  y)]),
                inside, la.bindInList);
 }
 
@@ -100,7 +100,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                  then [errFromOrigin(top, "Let bindings may not use a monad type")]
                  else [];
   local errCheck::TypeCheck = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst))
-                              then check(t.typerep, monadInnerType(e.mtyperep, top.location))
+                              then check(t.typerep, monadInnerType(e.mtyperep))
                               else check(t.typerep, e.mtyperep);
   e.mDownSubst = top.mDownSubst;
   errCheck.downSubst = e.mUpSubst;

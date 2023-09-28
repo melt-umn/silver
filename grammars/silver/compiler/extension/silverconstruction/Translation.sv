@@ -29,7 +29,6 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         | right(e) ->
           just(
             mkFullFunctionInvocation(
-              givenLocation,
               baseExpr(qName("silver:compiler:metatranslation:makeQName")),
               [e, locAST.translation],
               []))
@@ -44,7 +43,6 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         | right(e) ->
           just(
             mkFullFunctionInvocation(
-              givenLocation,
               baseExpr(qName("silver:compiler:metatranslation:makeName")),
               [e, locAST.translation],
               []))

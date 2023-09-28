@@ -64,7 +64,9 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
   local isDoubleComment::Boolean = length(realDclDocs) != 0;
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                else [dclCommentItem(top.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
+                else [attachNote logicalLocationFromOrigin(item) on
+                        dclCommentItem(top.docForName, forward.docUnparse, forward.grammarName, parsed)
+                      end];
   top.docErrors <-
     if isDoubleComment
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding constructor, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
@@ -79,6 +81,6 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
   top.docForName = id.name;
   top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ top.ntName ++ top.ntTypeArgs.unparse ++ " ::= " ++ rhs.unparse ++ "`)";
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.grammarName)];
   top.upDocConfig := [];
 }

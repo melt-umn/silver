@@ -33,7 +33,7 @@ top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_
         | annoExpr(n, _, presentAppExpr(e)) when n.name == "genName" ->
           annoExpr(n, '=', presentAppExpr(plusPlus(genName, '++', e)))
         end),
-        translate(top.location, reflect(cst.ast))).fromJust;
+        translate(reflect(cst.ast))).fromJust;
 }
 
 concrete production antiquoteStrategyExpr_c

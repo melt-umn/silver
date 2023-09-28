@@ -42,11 +42,11 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
              strategyDcl(
                fName, isTotal,
                !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, e,
-               sourceGrammar=top.grammarName, sourceLocation=a.location)))]),
+               sourceGrammar=top.grammarName)))]),
       map(
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
-            d.snd.isTotalNoEnv, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd)),
+            d.snd.isTotalNoEnv, name(d.fst), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd)),
         e.liftedStrategies));
   
   -- Uncomment for debugging

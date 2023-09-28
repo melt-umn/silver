@@ -914,15 +914,10 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 concrete production terminalFunction
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
 {
-  -- So, *maybe* this is deprecated? But let's not complain for now, because
-  -- it's too widely used.
+  local locExpr :: Expr =
+    Silver_Expr { getParsedOriginLocationOrFallback(ambientOrigin()) };
 
-  --top.errors <- [wrnFromOrigin(t, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
-
-  local bogus :: Expr =
-    mkStrFunctionInvocation("silver:core:bogusLoc", []);
-
-  forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6);
+  forwards to terminalConstructor($1, $2, t, $4, e, ',', locExpr, $6);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.

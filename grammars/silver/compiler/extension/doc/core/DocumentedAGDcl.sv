@@ -77,7 +77,9 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     local isDoubleComment::Boolean = case forward of documentedAGDcl(_, _) -> true | _ -> false end;
     top.docs := if isDoubleComment
                   then [standaloneDclCommentItem(parsed)] ++ forward.docs
-                  else [dclCommentItem(forward.docForName, forward.docUnparse, forward.grammarName, dcl.location, parsed)]
+                  else [attachNote logicalLocationFromOrigin(dcl) on
+                          dclCommentItem(forward.docForName, forward.docUnparse, forward.grammarName, parsed)
+                        end]
                        ++ if length(forward.docs) > 1 then tail(forward.docs) else [];
     top.errors <- if isDoubleComment
                     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]

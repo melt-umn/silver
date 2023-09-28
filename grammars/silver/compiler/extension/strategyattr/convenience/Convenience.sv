@@ -15,7 +15,7 @@ top::AGDcl ::= 'partial' 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c 'o
   forwards to
     appendAGDcl(
       partialStrategyAttributeDcl($1, $2, $3, a, $5, e, $10),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(a), botlNone()), qs.qnames));
 }
 
 concrete production totalStrategyAttributeDclMultiple
@@ -25,5 +25,5 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c 'occurs' 'on
   forwards to
     appendAGDcl(
       totalStrategyAttributeDcl($1, $2, a, $4, e, $9),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(a), botlNone()), qs.qnames));
 }
