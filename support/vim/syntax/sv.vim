@@ -87,10 +87,10 @@ hi def link svlangDocParam		Function
 hi def link svlangDocSeeTagParam	Function
 hi def link svlangTermAttr		Keyword
 
-set autoindent
-set expandtab
-set shiftwidth=2
-set softtabstop=2
+setlocal autoindent
+setlocal expandtab
+setlocal shiftwidth=2
+setlocal softtabstop=2
 
 let b:current_syntax = "sv"
 
