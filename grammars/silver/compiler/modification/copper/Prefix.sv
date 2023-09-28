@@ -39,8 +39,9 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 {
   top.unparse = r.unparse ++ " " ++ tm.unparse;
   production regex::Regex = r.terminalRegExprSpec;
+  local loc::Location = getParsedOriginLocation(top).fromJust;
   local terminalName::String =
-    "Prefix_" ++ toString(top.location.line) ++
+    "Prefix_" ++ toString(loc.line) ++
     case regex.asLiteral of
     | just(a) when isAlpha(a) -> "_" ++ a
     | _ -> ""
@@ -50,7 +51,7 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
     [ syntaxTerminal(
         terminalFullName, regex,
         foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers),
-        location=top.location, sourceGrammar=top.grammarName)
+        location=loc, sourceGrammar=top.grammarName)
     ];
   top.genFiles <- terminalTranslation(terminalName, top.grammarName, tm.lexerClasses);
   top.terminalPrefix = makeCopperName(terminalFullName);
@@ -74,9 +75,7 @@ top::TerminalPrefix ::= t::String_t
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(
-        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars),
-        location=top.location),
-      location=top.location);
+        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars)));
 }
 
 -- Needed when generating seperated terminal declarations, this is pretty useless otherwise so abstract only
@@ -144,10 +143,7 @@ concrete production easyTerminalRefTerminalPrefixItem
 top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
   propagate env;
-  forwards to
-    qNameTerminalPrefixItem(
-      qName(head(t.dcls).fullName),
-      location=top.location);
+  forwards to qNameTerminalPrefixItem(qName(head(t.dcls).fullName));
 }
 
 -- For now, manually write this to specify priorities between terminals
@@ -173,6 +169,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   pluckTAction.originRules = [];
   
   local tName::String = t.lookupType.dcl.fullName;
+  local loc::Location = getParsedOriginLocation(top).fromJust;
   top.syntaxAst <- if !t.lookupType.found then [] else
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
@@ -182,9 +179,9 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
     map(
       \ tsNames::[String] -> 
         syntaxDisambiguationGroup(
-          s"Prefer_${toString(top.location.line)}_${tName}__${implode("__", tsNames)}",
+          s"Prefer_${toString(loc.line)}_${tName}__${implode("__", tsNames)}",
           tName :: tsNames, false, pluckTAction.translation,
-          location=top.location, sourceGrammar=top.grammarName),
+          location=loc, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
 } action {
   insert semantic token IdType_t at t.nameLoc;
@@ -201,7 +198,7 @@ top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
   top.lexerClassModifiers :=
     [ lexerClassPrefixSeperator(
         substring(1, length(s.lexeme) - 1, s.lexeme),
-        location=top.location, sourceGrammar=top.grammarName)
+        location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)
     ];
 }
 

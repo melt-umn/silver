@@ -42,7 +42,7 @@ top::TermList ::= h::QName t::TermList
   
   -- Itd be nice if we didnt need this guard
   top.defs := if null(h.lookupType.dcls) then t.defs 
-              else pluckTermDef(top.grammarName, h.location, fName) :: t.defs;
+              else pluckTermDef(top.grammarName, h.nameLoc, fName) :: t.defs;
   
   -- Since were looking it up in two ways, do the errors ourselves
   -- Todo: Consider: should this report a different error if the element of the list 

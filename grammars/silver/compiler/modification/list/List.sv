@@ -47,7 +47,7 @@ top::Expr ::= '[' ']'
 {
   top.unparse = "[]";
 
-  forwards to mkStrFunctionInvocation(top.location, "silver:core:nil", []);
+  forwards to Silver_Expr { silver:core:nil() };
 }
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
@@ -58,23 +58,7 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
 
-  -- Needed to satisfy flow analysis, since we demand translation of h and t.
-  h.decSiteVertexInfo = nothing();
-  t.decSiteVertexInfo = nothing();
-  h.alwaysDecorated = false;
-  t.alwaysDecorated = false;
-
-  forwards to application(
-    baseExpr(
-      qName("silver:core:cons")), '(',
-    snocAppExprs(
-      snocAppExprs(
-        emptyAppExprs(), ',',
-        presentAppExpr(@h)), ',',
-      presentAppExpr(@t)),
-    ',',
-    emptyAnnoAppExprs(),
-    ')');
+  forwards to Silver_Expr { silver:core:cons($Expr{@h}, $Expr{@t}) };
 }
 
 concrete production fullList
@@ -85,7 +69,7 @@ top::Expr ::= '[' es::Exprs ']'
   forwards to es.listtrans;
 }
 
-synthesized attribute listtrans :: Expr occurs on Exprs;
+translation attribute listtrans :: Expr occurs on Exprs;
 
 aspect production exprsEmpty
 top::Exprs ::=
@@ -96,11 +80,11 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = consListOp(e, '::', emptyList('[',']'));
+  top.listtrans = consListOp(@e, '::', emptyList('[',']'));
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = consListOp(e1, '::', e2.listtrans);
+  top.listtrans = consListOp(@e1, '::', @e2.listtrans);
 }

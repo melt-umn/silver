@@ -203,7 +203,7 @@ ${if isData then "" else s"""
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
           else s"return ((common.Node)${head(body.forwardExpr).translation}${
             if wantsTracking && !top.config.noRedex
-            then s".duplicateForForwarding(context.getNode(), \"${escapeString(hackUnparse(head(body.forwardExpr).location))}\")"
+            then s".duplicateForForwarding(context.getNode(), \"${escapeString(getParsedOriginLocationOrFallback(head(body.forwardExpr)).unparse)}\")"
             else ""})"};
     }
 

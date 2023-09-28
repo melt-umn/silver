@@ -233,7 +233,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         c.contextPatternOccursDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
@@ -268,7 +268,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         performContextSubstitution(c, e.downSubst).contextPatternDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
   e.isRoot = false;
@@ -313,7 +313,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         c.contextPatternOccursDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
@@ -359,7 +359,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         performContextSubstitution(c, e.finalSubst).contextPatternDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
 
@@ -526,8 +526,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, nothing(), [], []),
-     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, nothing(), [], [])];
+    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), [], []),
+     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [], [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   e.isRoot = false;

@@ -163,7 +163,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   q.operatorForType = te.typerep;
   q.env = top.env;
   
-  top.defs := [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  top.defs := [synColDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep, q.operation)];
   
   top.errors <- tl.errorsTyVars;
   top.errors <- te.errorsKindStar;
@@ -190,7 +190,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   q.operatorForType = te.typerep;
   q.env = top.env;
 
-  top.defs := [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  top.defs := [inhColDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep, q.operation)];
   
   top.errors <- tl.errorsTyVars;
   top.errors <- te.errorsKindStar;
@@ -208,7 +208,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   top.unparse = "production attribute " ++ a.name ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
   propagate config, grammarName, compiledGrammars, env, flowEnv;
 
-  top.productionAttributes := [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
+  top.productionAttributes := [localColDef(top.grammarName, a.nameLoc, fName, te.typerep, q.operation)];
 
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
@@ -377,9 +377,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    (if !dl.found || !attr.found
-     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _)
-     else attr.attrDcl.attrAppendDefDispatcher)(dl, attr, e, top.location);
+    if !dl.found || !attr.found
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e)
+    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e);
 }
 
 concrete production attrContainsBase
@@ -396,9 +396,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    (if !dl.found || !attr.found
-     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _)
-     else attr.attrDcl.attrBaseDefDispatcher)(dl, attr, e, top.location);
+    if !dl.found || !attr.found
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e)
+    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e);
 }
 
 concrete production valContainsAppend
@@ -413,9 +413,9 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   top.defs := [];
   
   forwards to
-    (if null(val.lookupValue.dcls)
-     then errorValueDef(_, _)
-     else val.lookupValue.dcl.appendDefDispatcher)(val, e, top.location);
+    if null(val.lookupValue.dcls)
+    then errorValueDef(val, e)
+    else val.lookupValue.dcl.appendDefDispatcher(val, e);
 }
 
 concrete production valContainsBase
@@ -430,8 +430,8 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   top.defs := [];
   
   forwards to
-    (if null(val.lookupValue.dcls)
-     then errorValueDef(_, _)
-     else val.lookupValue.dcl.baseDefDispatcher)(val, e, top.location);
+    if null(val.lookupValue.dcls)
+    then errorValueDef(val, e)
+    else val.lookupValue.dcl.baseDefDispatcher(val, e);
 }
 

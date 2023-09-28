@@ -15,7 +15,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 
   -- Right now parsers masquerade as functions. This is probably fine.
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
-  top.defs := [funDef(top.grammarName, n.location, namedSig)];
+  top.defs := [funDef(top.grammarName, n.nameLoc, namedSig)];
   
   -- Parser spec grammarDependancies based off grammars included in the parser spec
   m.grammarDependencies = computeDependencies(m.moduleNames, top.compiledGrammars);
@@ -40,7 +40,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   production spec :: ParserSpec =
     parserSpec(fName, t.typerep.typeName, m.moduleNames, m.customLayout,
       m.terminalPrefixes, m.grammarTerminalPrefixes, m.syntaxAst,
-      sourceGrammar=top.grammarName, location=top.location);
+      sourceGrammar=top.grammarName, location=n.nameLoc);
   spec.compiledGrammars = top.compiledGrammars;
 
   top.parserSpecs := [spec]; -- Note that this is undecorated.

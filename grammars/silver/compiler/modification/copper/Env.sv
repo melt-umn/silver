@@ -124,13 +124,13 @@ synthesized attribute lookupLexerClass :: QNameLookup<ValueDclInfo> occurs on QN
 aspect production qNameId
 top::QName ::= id::Name
 {
-  top.lookupLexerClass = customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location);
+  top.lookupLexerClass = customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name);
 }
 
 aspect production qNameCons
 top::QName ::= id::Name ':' qn::QName
 {
-  top.lookupLexerClass = customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location);
+  top.lookupLexerClass = customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name);
 }
 
 aspect production qNameError

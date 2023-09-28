@@ -34,7 +34,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   top.syntaxAst :=
     [ syntaxLexerClass(fName, 
         foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
-        location=top.location, sourceGrammar=top.grammarName)];
+        location=id.nameLoc, sourceGrammar=top.grammarName)];
 } action {
   insert semantic token IdLexerClassDcl_t at id.nameLoc;
 }
@@ -76,7 +76,7 @@ top::LexerClassModifier ::= 'extends' cls::LexerClasses
   top.unparse = "extends " ++ cls.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassExtends(cls.lexerClasses, location=top.location,
+    [ lexerClassExtends(cls.lexerClasses, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
   top.superClasses := cls.lexerClasses;
@@ -88,7 +88,7 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecs
   top.unparse = "dominates " ++ terms.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassDominates(terms.precTermList, location=top.location,
+    [ lexerClassDominates(terms.precTermList, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
 }
@@ -99,7 +99,7 @@ top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecs
   top.unparse = "submits to " ++ terms.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassSubmits(terms.precTermList, location=top.location,
+    [ lexerClassSubmits(terms.precTermList, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
 }
@@ -110,7 +110,7 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   top.unparse = "disambiguate " ++ acode.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassDisambiguate(acode.actionCode, location=top.location,
+    [ lexerClassDisambiguate(acode.actionCode, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
   

@@ -33,7 +33,7 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
   top.mdaSpecs =
     case spec of
     | parserSpec(fn,snt,hg,csl,_,_,_) :: _ -> [mdaSpec(top.grammarName ++":"++ testname.name, snt,
-        hg, m.moduleNames, csl, location=top.location, sourceGrammar=top.grammarName)]
+        hg, m.moduleNames, csl, sourceGrammar=top.grammarName)]
     | _ -> []
     end;
 }
@@ -55,18 +55,18 @@ top::MdaSpec ::= fn::String  snt::String  hostgrams::[String]  extgrams::[String
   
   -- TODO: see TODO s in ParserSpec
   production hostmed :: ModuleExportedDefs =
-    moduleExportedDefs(error("no sl"), top.compiledGrammars,
+    moduleExportedDefs(top.compiledGrammars,
       computeDependencies(hostgrams ++ extgrams, top.compiledGrammars), hostgrams, []);
 
   production extmed :: ModuleExportedDefs =
-    moduleExportedDefs(error("no sl"), top.compiledGrammars,
+    moduleExportedDefs(top.compiledGrammars,
       computeDependencies(hostgrams ++ extgrams, top.compiledGrammars), extgrams, []);
 
   top.cstAst = 
     cstCopperMdaRoot(fn, snt,
       foldr(consSyntax, nilSyntax(), hostmed.syntaxAst),
       foldr(consSyntax, nilSyntax(), extmed.syntaxAst),
-      customStartLayout, location=top.location,
+      customStartLayout, location=getParsedOriginLocationOrFallback(top),
       sourceGrammar=top.sourceGrammar);
 }
 

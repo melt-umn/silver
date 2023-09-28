@@ -36,7 +36,7 @@ ${makeTyVarDecls(5, top.finalType.freeVariables)}
 
 				@Override
 				public final String toString() {
-					return "lambda at ${top.grammarName}:${top.location.unparse}";
+					return "lambda at ${top.grammarName}:${getParsedOriginLocationOrFallback(top).unparse}";
 				}
 			})""";
 

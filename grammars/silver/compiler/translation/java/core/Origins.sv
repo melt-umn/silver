@@ -43,7 +43,8 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${top.grammarName}:${escapeString(top.location.unparse)}\"))";
+  local loc :: Location = getParsedOriginLocationOrFallback(top);
+  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${top.grammarName}:${escapeString(loc.unparse)}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 

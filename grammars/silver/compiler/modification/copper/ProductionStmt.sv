@@ -167,7 +167,7 @@ top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr 
     then [errFromOrigin(loc, s"Semantic token position expected a ${errCheck1.rightpp}, but got ${errCheck1.leftpp}")]
     else [];
 } action {
-  insert semantic token IdType_t at n.location;
+  insert semantic token IdType_t at n.nameLoc;
 }
 
 concrete production blockStmt

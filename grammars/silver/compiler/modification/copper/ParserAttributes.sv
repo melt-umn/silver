@@ -9,7 +9,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
+  top.defs := [parserAttrDef(top.grammarName, a.nameLoc, fName, te.typerep)];
 
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
@@ -30,7 +30,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   
   top.syntaxAst :=
     [ syntaxParserAttribute(fName, te.typerep, acode.actionCode,
-        location=top.location, sourceGrammar=top.grammarName)
+        location=a.nameLoc, sourceGrammar=top.grammarName)
     ];
 }
 
@@ -63,6 +63,6 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
   
   top.syntaxAst :=
     [ syntaxParserAttributeAspect(fName, acode.actionCode,
-        location=top.location, sourceGrammar=top.grammarName)
+        location=a.nameLoc, sourceGrammar=top.grammarName)
     ];
 }

@@ -12,7 +12,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   top.syntaxAst :=
     [ syntaxProduction(ns.namedSignature,
-        foldr(consProductionMod, nilProductionMod(), prodAction(acode.actionCode) :: pm.productionModifiers), sourceGrammar=top.grammarName)
+        foldr(consProductionMod, nilProductionMod(), prodAction(acode.actionCode) :: pm.productionModifiers),
+        sourceGrammar=top.grammarName,
+        location=id.nameLoc)
     ];
 
   -- oh no again!
@@ -148,5 +150,5 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.actionDefs = [actionChildDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.actionDefs = [actionChildDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 }

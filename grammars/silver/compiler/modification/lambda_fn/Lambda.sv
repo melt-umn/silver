@@ -31,7 +31,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   sigDefs := params.lambdaDefs;
   sigDefs <-
     addNewLexicalTyVars_ActuallyVariables(
-      top.grammarName, top.location, params.lexicalTyVarKinds,
+      top.grammarName, getParsedOriginLocationOrFallback(params), params.lexicalTyVarKinds,
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
   propagate downSubst, upSubst, finalSubst;
@@ -70,7 +70,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 --  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());
-  top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep, top.givenLambdaId, top.givenLambdaParamIndex)];
+  top.lambdaDefs := [lambdaParamDef(top.grammarName, id.nameLoc, fName, t.typerep, top.givenLambdaId, top.givenLambdaParamIndex)];
   top.lambdaBoundVars := [id.name];
 }
 

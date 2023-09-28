@@ -53,7 +53,7 @@ concrete production aspectDefaultProductionSignature
 top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
 {
   top.unparse = lhs.unparse ++ "::" ++ te.unparse ++ " ::=";
-  top.defs := [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
+  top.defs := [defaultLhsDef(top.grammarName, lhs.nameLoc, lhs.name, te.typerep)];
   top.namedSignature =
     namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName,
       nilContext(), nilNamedSignatureElement(),
@@ -79,7 +79,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
     | _ -> []
     end;
 } action {
-  insert semantic token IdSigNameDcl_t at lhs.location;
+  insert semantic token IdSigNameDcl_t at lhs.nameLoc;
   sigNames = [lhs.name];
 }
 

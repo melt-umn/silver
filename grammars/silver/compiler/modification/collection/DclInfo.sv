@@ -47,7 +47,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.operation = o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = collectionAttrDefError;
   top.attributionDispatcher = defaultAttributionDcl;
@@ -105,16 +105,16 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
 }
 
 global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-    errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
+    errorAttributeDef([errFromOrigin(ambientOrigin(), "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
 
 global nonCollectionAttrAppendDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-    errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
+    errorAttributeDef([errFromOrigin(ambientOrigin(), "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
 
 global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr  l::Location ->
-    errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
+  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
+    errorAttributeDef([errFromOrigin(ambientOrigin(), attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
 
 
 -- Defs
