@@ -231,7 +231,6 @@ ${if quals.data then "" else s"""
 
   public static final class Nonterminalton extends common.RTTIManager.Nonterminalton<${className}> {
       public String getName(){ return "${top.grammarName}:${id.name}"; }
-      public String[] getOccursInh() { return ${className}.occurs_inh; }
   }
 
 	${otImpl}

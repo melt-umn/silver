@@ -364,3 +364,17 @@ equalityTest(
   "Reification error at ?:\nCan't construct production silver_features:eqPair because context silver_features:myeq:MyEq a cannot be resolved at runtime",
   String, silver_tests);
 
+
+inherited attribute rIdIn::Integer;
+synthesized attribute rIdOut::Integer;
+nonterminal RThing with rIdIn, rIdOut;
+production rThing top::RThing ::=
+{ top.rIdOut = top.rIdIn; }
+
+equalityTest(getSynthesized(just(42), "silver:core:fromJust"), right(42), Either<String Integer>, silver_tests);
+equalityTest(getSynthesized(decorate rThing() with {rIdIn = 42;}, "silver_features:rIdOut"), right(42), Either<String Integer>, silver_tests);
+equalityTest(getInherited(decorate rThing() with {rIdIn = 42;}, "silver_features:rIdIn"), right(42), Either<String Integer>, silver_tests);
+equalityTest(getSynthesized(decorate rThing() with {}, "silver_features:rIdOut").isLeft, true, Boolean, silver_tests);
+equalityTest(getInherited(decorate rThing() with {}, "silver_features:rIdIn").isLeft, true, Boolean, silver_tests);
+equalityTest(getInherited(decorate rThing() with {rIdIn = 42;}, "silver_features:rIdOut").isLeft, true, Boolean, silver_tests);
+equalityTest(getSynthesized(decorate rThing() with {rIdIn = 42;}, "silver_features:rIdIn").isLeft, true, Boolean, silver_tests);

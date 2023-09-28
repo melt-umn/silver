@@ -11,49 +11,49 @@ equalityTest(identityHashCode(three), identityHashCode(three), Integer, oitests)
 
 equalityTest(
 	case getOriginInfo(four) of
-    | just(originOriginInfo(_, link, _, _)) -> identityHashCode(link)
+    | just(originOriginInfo(link, _)) -> identityHashCode(link)
     | _ -> -1
     end,
 	identityHashCode(three), Integer, oitests);
 
 equalityTest(
 	case getOriginInfo(five) of
-    | just(originOriginInfo(_, link, _, _)) -> identityHashCode(link)
+    | just(originOriginInfo(link, _)) -> identityHashCode(link)
     | _ -> -1
     end,
 	identityHashCode(four), Integer, oitests);
 
 equalityTest(
 	case getOriginInfoChain(five) of
-	| _::originOriginInfo(_, link, _, _)::_ -> identityHashCode(link)
+	| _::originOriginInfo(link, _)::_ -> identityHashCode(link)
 	| _ -> -1
 	end,
 	identityHashCode(three), Integer, oitests);
 
 equalityTest(
 	case getOriginInfo(three) of
-	| just(otherOriginInfo(setInGlobalOIT(), _, _)) -> "OK"
+	| just(otherOriginInfo(_, originType=setInGlobalOIT())) -> "OK"
 	| _ -> "NO"
 	end,
 	"OK", String, oitests);
 
 equalityTest(
 	case getOriginInfo(two) of
-	| just(originAndRedexOriginInfo(_, _, _, r, _, _)) -> identityHashCode(r)
+	| just(originAndRedexOriginInfo(_, r, _, _)) -> identityHashCode(r)
 	| _ -> -1
 	end,
 	identityHashCode(three), Integer, oitests);
 
 equalityTest(
 	case getOriginInfo(two) of
-	| just(originAndRedexOriginInfo(setAtNewOIT(), _, _, _, _, _)) -> "OK"
+	| just(originAndRedexOriginInfo(_, _, _, _, originType=setAtNewOIT())) -> "OK"
 	| _ -> "NO"
 	end,
 	"OK", String, oitests);
 
 equalityTest(
 	case getOriginInfo(four) of
-	| just(originOriginInfo(setAtConstructionOIT(), _, _, _)) -> "OK"
+	| just(originOriginInfo(_, _, originType=setAtConstructionOIT())) -> "OK"
 	| _ -> "NO"
 	end,
 	"OK", String, oitests);
@@ -62,14 +62,14 @@ global reflectedThree :: AST = reflect(three);
 
 equalityTest(
 	case getOriginInfo(reflectedThree) of
-	| just(originOriginInfo(setFromReflectionOIT(), _, _, _)) -> "OK"
+	| just(originOriginInfo(_, _, originType=setFromReflectionOIT())) -> "OK"
 	| _ -> "NO"
 	end,
 	"OK", String, oitests);
 
 equalityTest(
 	case getOriginInfo(reflectedThree) of
-	| just(originOriginInfo(_, o, _, _)) -> identityHashCode(o)
+	| just(originOriginInfo(o, _)) -> identityHashCode(o)
 	| _ -> -1
 	end,
 	identityHashCode(three), Integer, oitests);
@@ -78,14 +78,14 @@ global reifiedThree :: Nat = reify(reflectedThree).fromRight;
 
 equalityTest(
 	case getOriginInfo(reifiedThree) of
-	| just(originOriginInfo(setFromReificationOIT(), _, _, _)) -> "OK"
+	| just(originOriginInfo(_, _, originType=setFromReificationOIT())) -> "OK"
 	| _ -> "NO"
 	end,
 	"OK", String, oitests);
 
 equalityTest(
 	case getOriginInfo(reifiedThree) of
-	| just(originOriginInfo(_, o, _, _)) -> identityHashCode(o)
+	| just(originOriginInfo(o, _)) -> identityHashCode(o)
 	| _ -> -1
 	end,
 	identityHashCode(reflectedThree), Integer, oitests);

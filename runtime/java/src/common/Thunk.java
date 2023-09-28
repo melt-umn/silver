@@ -52,9 +52,14 @@ public class Thunk<T> {
 		throw new CycleException("Cycle detected in execution");
 	}
 	private void traceCycleError(Throwable t) {
+		// Reset the demanded count while unwinding the stack,
+		// to avoid superfluous cycle errors if the error is caught and this
+		// thunk is later demanded again.
+		demanded--;
 		// If we caught a cycle, report the start of it here.
 		// Otherwise just re-throw the exception.
-		if (demanded > 1) {
+		if (demanded > 0) {
+			demanded = 0;
 			throw new CycleTraceException("Cycle begins here", t);
 		} else if (t instanceof RuntimeException) {
 			throw (RuntimeException)t;

@@ -67,16 +67,6 @@ public abstract class Node implements Decorable, Typed {
                                  this, parent, inhs, fwdParent, isProdForward);
 	}
 
-	/**
-	 * A convenience method unused by generate Silver code, but useful when working with
-	 * the Silver runtime from Java.
-	 * 
-	 * @return  A node decorated with no inherited attributes, without a parent.
-	 */
-	public DecoratedNode decorate() {
-		return decorate(TopNode.singleton, null);
-	}
-
 	private Node undecoratedValue = null;
 	public final Node undecorate(final DecoratedNode context) {
 		if (undecoratedValue == null) {

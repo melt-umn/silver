@@ -142,7 +142,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getInhOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -160,7 +160,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getSynOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;

@@ -51,3 +51,29 @@ runtimeTypeable a => a ::= x::AST
     | right(a) -> a
     end;
 }
+
+-- TODO: We could add lazy versions of these, if needed.
+
+@{-
+ - Reflectively access an inherited attribute from a tree by name.
+ - Note that this deeply forces the result if it is a term, and catches any errors thrown in evaluation.
+ -}
+function getInherited
+runtimeTypeable a => Either<String a> ::= x::Decorated b with i  attr::String
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "common.Reflection.getInherited(%@0@%, %x%, %attr%.toString())";
+}
+
+@{-
+ - Reflectively access a synthesized attribute from a tree by name.
+ - Note that this deeply forces the result if it is a term, and catches any errors thrown in evaluation.
+ -}
+function getSynthesized
+runtimeTypeable a => Either<String a> ::= x::b  attr::String
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "common.Reflection.getSynthesized(%@0@%, %x%, %attr%.toString())";
+}

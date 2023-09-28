@@ -381,7 +381,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   note.isRoot = false;
   e.isRoot = false;
   note.originRules = top.originRules;
-  e.originRules = top.originRules ++ [note];
+  e.originRules = note :: top.originRules;
 }
 
 -- NOTE: this is not intended to be used normally.
