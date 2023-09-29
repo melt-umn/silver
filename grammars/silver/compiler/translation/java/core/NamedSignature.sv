@@ -347,7 +347,11 @@ String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType
       | [] -> error("Couldn't find decl for local " ++ fName)
       end
     | transAttrVertexType(lhsVertexType_real(), transAttr) ->
-      let transIndexName::String = head(getOccursDcl(transAttr, lhsNtName, env)).attrGlobalOccursInitIndex
+      let transIndexName::String =
+        case getOccursDcl(transAttr, lhsNtName, env) of
+        | h :: _ -> h.attrGlobalOccursInitIndex
+        | [] -> error(s"Trans attr ${transAttr} occurs on ${lhsNtName} dcl not found!")
+        end
       in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
       end
     | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")

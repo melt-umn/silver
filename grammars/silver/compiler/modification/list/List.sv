@@ -69,7 +69,7 @@ top::Expr ::= '[' es::Exprs ']'
   forwards to es.listtrans;
 }
 
-translation attribute listtrans :: Expr occurs on Exprs;
+synthesized attribute listtrans :: Expr occurs on Exprs;
 
 aspect production exprsEmpty
 top::Exprs ::=
@@ -80,11 +80,11 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = consListOp(@e, '::', emptyList('[',']'));
+  top.listtrans = consListOp(e, '::', emptyList('[',']'));
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = consListOp(@e1, '::', @e2.listtrans);
+  top.listtrans = consListOp(e1, '::', e2.listtrans);
 }
