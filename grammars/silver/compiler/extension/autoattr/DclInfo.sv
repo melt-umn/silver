@@ -39,11 +39,11 @@ abstract production monoidDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
 {
   top.fullName = fn;
-  propagate compareKey;
+  propagate compareTo, compareKey;
   top.isEqual =
     case top.compareTo of
     | monoidDcl(fn2, _, _, empty2, append2) ->
-      fn == fn2 && top.typeScheme == top.compareTo.typeScheme && empty.unparse == empty2.unparse && append == append2
+      fn == fn2 && top.typeScheme == top.compareTo.typeScheme && empty.unparse == empty2.unparse && append.isEqual
     | _ -> false
     end;
 
