@@ -42,6 +42,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   production givenLocation::Location =
     fromMaybe(top.givenLocation, alt(getParsedOriginLocation(top), alt(children.foundLocation, annotations.foundLocation)));
+  attachNote logicalLocationNote(givenLocation);  -- In case the quoted language doesn't use origins
   
   production attribute antiquoteTranslation::Maybe<Expr> with orElse;
   antiquoteTranslation := nothing();
