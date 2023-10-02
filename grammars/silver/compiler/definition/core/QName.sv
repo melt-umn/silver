@@ -67,7 +67,7 @@ top::QName ::= msg::[Message]
   top.lookupAttribute = errorLookup(msg);
 }
 
-data nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
+tracked data nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
 
 synthesized attribute lookupValue :: QNameLookup<ValueDclInfo> occurs on QName;
 synthesized attribute lookupType :: QNameLookup<TypeDclInfo> occurs on QName;
