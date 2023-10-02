@@ -302,17 +302,17 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 concrete production applicationAnno
 top::Expr ::= e::Expr '(' anns::AnnoAppExprs ')'
 {
-  forwards to application(e, $2, emptyAppExprs(), ',', anns, $4);
+  forwards to application(@e, $2, emptyAppExprs(), ',', @anns, $4);
 }
 concrete production applicationExpr
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 {
-  forwards to application(e, $2, es, ',', emptyAnnoAppExprs(), $4);
+  forwards to application(@e, $2, @es, ',', emptyAnnoAppExprs(), $4);
 }
 concrete production applicationEmpty
 top::Expr ::= e::Expr '(' ')'
 {
-  forwards to application(e, $2, emptyAppExprs(), ',', emptyAnnoAppExprs(), $3);
+  forwards to application(@e, $2, emptyAppExprs(), ',', emptyAnnoAppExprs(), $3);
 }
 
 abstract production errorApplication
