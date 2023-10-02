@@ -914,8 +914,11 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 concrete production terminalFunction
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
 {
-  local locExpr :: Expr =
-    Silver_Expr { getParsedOriginLocationOrFallback(ambientOrigin()) };
+  local locExpr :: Expr = Silver_Expr {
+    silver:core:fromMaybe(
+      silver:core:bogusLoc(),
+      silver:core:getParsedOriginLocation(silver:core:ambientOrigin()))
+  };
 
   forwards to terminalConstructor($1, $2, t, $4, e, ',', locExpr, $6);
 }
