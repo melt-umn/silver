@@ -58,6 +58,11 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
 
+  h.decSiteVertexInfo = nothing();
+  h.alwaysDecorated = false;
+  t.decSiteVertexInfo = nothing();
+  t.alwaysDecorated = false;
+
   forwards to Silver_Expr { silver:core:cons($Expr{@h}, $Expr{@t}) };
 }
 
