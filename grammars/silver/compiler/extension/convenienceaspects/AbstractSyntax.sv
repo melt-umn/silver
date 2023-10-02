@@ -579,7 +579,8 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
     \message::Message ->
       -- Note: If you see this error unexpectedly that might mean the string for this error has changed.
       case message of
-      | err(l, "Pattern has overlapping cases!") when l == getParsedOriginLocationOrFallback(top) -> false
+      | err(l, "Pattern has overlapping cases!")
+        when contains(l, map(getParsedOriginLocationOrFallback, ml.matchRuleList)) -> false
       | _ -> true
       end,
       forward.errors);
