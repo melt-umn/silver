@@ -44,6 +44,7 @@ MaybeT<IO RootSpec> ::=
 
         -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
         oldInterface::Maybe<InterfaceItems> <- lift(do {
+            guard(!clean);  -- Skip this if we are doing a clean build anyway, to avoid comparing old interface files.
             gen :: String <- findInterfaceLocation(gramPath, benv.silverHostGen);
             let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
             --lift(eprintln(s"Found old interface ${file}"));
