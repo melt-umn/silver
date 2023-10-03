@@ -8,7 +8,7 @@ propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPatter
     transDecoratedAccessHandler,
     annoAccessHandler, synDataAccessHandler,
     unknownDclAccessHandler, inhUndecoratedAccessErrorHandler, transUndecoratedAccessErrorHandler,
-    ifThenElse, lambdap, lambdap_new, letp, matchPrimitiveReal, consPattern;
+    ifThenElse, lambdap, letp, matchPrimitiveReal, consPattern;
 
 -- Unique references taken when this expression is wrapped in an attribute access
 synthesized attribute accessUniqueRefs::[(String, UniqueRefSite)] occurs on Expr;

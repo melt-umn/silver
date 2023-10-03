@@ -301,7 +301,7 @@ Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, Q
             ([], length(realtys) + length(monadAnns)), monadAnns).1;
   local body::Expr = buildMonadApplicationBody(monadTysLocs ++ actualMonadAnns, funargs, funannargs,
                                                head(monadTysLocs).fst, funType, bindFun, wrapReturn);
-  return lambdap_new(params, body);
+  return lambdap(params, body);
 }
 --build the parameters for the lambda applied to all the original arguments plus the function
 function buildMonadApplicationParams
@@ -360,7 +360,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
            oneAppExprs(presentAppExpr(
                           baseExpr(qName("a"++toString(head(monadTysLocs).snd))))),
            ',',
-            presentAppExpr(lambdap_new(binding, sub)));
+            presentAppExpr(lambdap(binding, sub)));
 
   local step::Expr = applicationExpr(bind, '(', bindargs, ')');
 
@@ -379,7 +379,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
            oneAppExprs(presentAppExpr(
                           baseExpr(qName("f")))),
            ',',
-            presentAppExpr(lambdap_new(funbinding, funapp)));
+            presentAppExpr(lambdap(funbinding, funapp)));
   local fullfun::Expr =
       if bindFun
       then applicationExpr(bind, '(', funbindargs, ')')
@@ -1155,7 +1155,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
      then Silver_Expr {
             $Expr{monadBind()}
               ($Expr{eUnDec},
-               $Expr{lambdap_new(params,
+               $Expr{lambdap(params,
                       Silver_Expr{
                         $Expr{monadReturn()}
                         ($Expr{decorateExprWith('decorate',

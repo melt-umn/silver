@@ -125,7 +125,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
         mkStrFunctionInvocation("silver:core:map", [
           foldr(
             \ el::LambdaRHSElem trans::Expr ->
-              lambdap_new(
+              lambdap(
                 lambdaRHSCons(el, lambdaRHSNil()), trans),
             top.appResult, top.appBindings),
           head(top.appExprs)]),
@@ -233,7 +233,7 @@ top::DoBinding ::= n::Name DoDoubleColon_t t::TypeExpr '<-' e::Expr ';'
   top.appExprs = [e];
 
   local cont :: Expr =
-    lambdap_new(
+    lambdap(
       lambdaRHSCons(
         lambdaRHSElemIdTy(n, terminal(ColonColon_t, "::"), t),
         lambdaRHSNil()),

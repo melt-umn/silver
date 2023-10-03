@@ -264,7 +264,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           Silver_Expr {
             silver:rewrite:anyASTExpr(
               $Expr{
-                lambdap_new(
+                lambdap(
                   lambdaRHSCons(
                     lambdaRHSElemIdTy(
                       name("_e"), '::',
@@ -401,7 +401,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
         Silver_Expr {
           silver:rewrite:anyASTExpr(
             $Expr{
-              lambdap_new(
+              lambdap(
                 lambdaRHSCons(
                   lambdaRHSElemIdTy(
                     name("_e"), '::',
@@ -627,7 +627,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
         Silver_Expr {
           silver:rewrite:anyASTExpr(
             $Expr{
-              lambdap_new(
+              lambdap(
                 decEs.lambdaParams,
                 caseExpr_c(
                   'case', decEs.lambdaParamRefs, 'of',

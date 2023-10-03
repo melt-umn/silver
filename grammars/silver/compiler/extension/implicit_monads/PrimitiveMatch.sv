@@ -98,13 +98,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --bind e, just do the rest
   local justBind_e::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten, f.monadRewritten))]);
   --bind e, return f based on e's type
   local bind_e_return_f::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten,
                                                               buildApplication(monadReturn(),
@@ -117,14 +117,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   prReturnify.config = top.config;
   local bind_e_returnify_pr::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
                                                               f.monadRewritten))]);
   --bind e, returnify pr, return f based on e's type
   local bind_e_returnify_pr_return_f::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
                                                               buildApplication(monadReturn(),
