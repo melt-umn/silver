@@ -46,7 +46,7 @@ instance Bind [] {
 instance Monad [] {}
 
 instance MonadFail [] {
-  fail = \ _::String -> [];
+  fail = \ String -> [];
 }
 
 instance Alt [] {
