@@ -541,8 +541,8 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   e1.alwaysDecorated = false;
 }
 
-aspect production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+aspect production lambdap_new
+top::Expr ::= params::LambdaRHS e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;

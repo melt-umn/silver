@@ -11,8 +11,8 @@ import silver:compiler:analysis:typechecking:core only finalType;
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
-aspect production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+aspect production lambdap_new
+top::Expr ::= params::LambdaRHS e::Expr
 {
   -- Attempt to solve a context `runtimeTypeable ${top.finalType)}`, from which the runtime TypeRep translation is computed.
   -- If the type somehow contains a skolem (e.g. through scoped type variables),

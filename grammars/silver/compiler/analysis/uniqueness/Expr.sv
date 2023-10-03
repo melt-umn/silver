@@ -8,7 +8,7 @@ propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPatter
     transDecoratedAccessHandler,
     annoAccessHandler, synDataAccessHandler,
     unknownDclAccessHandler, inhUndecoratedAccessErrorHandler, transUndecoratedAccessErrorHandler,
-    ifThenElse, lambdap, letp, matchPrimitiveReal, consPattern;
+    ifThenElse, lambdap, lambdap_new, letp, matchPrimitiveReal, consPattern;
 
 -- Unique references taken when this expression is wrapped in an attribute access
 synthesized attribute accessUniqueRefs::[(String, UniqueRefSite)] occurs on Expr;
@@ -323,8 +323,8 @@ top::Expr ::= q::Decorated! QName
   top.accessUniqueRefs = [];
 }
 
-aspect production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+aspect production lambdap_new
+top::Expr ::= params::LambdaRHS e::Expr
 {
   top.uniqueRefs := filter(\ r::(String, UniqueRefSite) -> !contains(r.1, params.lambdaBoundVars), e.uniqueRefs);
   top.errors <- flatMap(\ n::String ->

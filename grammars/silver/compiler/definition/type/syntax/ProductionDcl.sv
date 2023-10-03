@@ -28,3 +28,10 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
   top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
+
+--aspect production lambdaRHSCons
+--top::ProductionRHS ::= h::LambdaRHSElem t::LambdaRHS
+--{
+--  top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
+--}
+
