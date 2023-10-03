@@ -4,7 +4,7 @@ import silver:util:treeset as ts;
 --- New concrete Syntax for lambdas
 --------------------------------------------------------------------------------
 
-abstract production lambda_c_new
+concrete production lambda_c_new
 top::Expr ::= '\' params::LambdaRHS '->' e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
@@ -146,7 +146,7 @@ terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 
 -- Using ProductionRHS here, it is basicly just a list of names with type expressions
 -- It is also used for the parameter definitions in functions, so using it here for consistancy
-concrete production lambda_c
+abstract production lambda_c
 top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
   forwards to lambda_c_new ('\', params.asLamRHS, '->', @e);
