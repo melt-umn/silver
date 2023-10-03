@@ -264,9 +264,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           Silver_Expr {
             silver:rewrite:anyASTExpr(
               $Expr{
-                lambdap(
-                  productionRHSCons(
-                    productionRHSElem(
+                lambdap_new(
+                  lambdaRHSCons(
+                    lambdaRHSElemIdTy(
                       name("_e"), '::',
                       typerepTypeExpr(eUndec.finalType)),
                     inh.lambdaParams),
@@ -401,9 +401,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
         Silver_Expr {
           silver:rewrite:anyASTExpr(
             $Expr{
-              lambdap(
-                productionRHSCons(
-                  productionRHSElem(
+              lambdap_new(
+                lambdaRHSCons(
+                  lambdaRHSElemIdTy(
                     name("_e"), '::',
                     typerepTypeExpr(e.finalType)),
                   inh.lambdaParams),
@@ -416,7 +416,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 }
 
 attribute transform<ASTExprs> occurs on ExprInhs;
-synthesized attribute lambdaParams::ProductionRHS occurs on ExprInhs;
+synthesized attribute lambdaParams::LambdaRHS occurs on ExprInhs;
 functor attribute bodyExprInhTransform occurs on ExprInhs, ExprInh;
 propagate bodyExprInhTransform on ExprInhs;
 
@@ -424,7 +424,7 @@ aspect production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.transform = nilASTExpr();
-  top.lambdaParams = productionRHSNil();
+  top.lambdaParams = lambdaRHSNil();
 }
 
 aspect production exprInhsOne
@@ -432,18 +432,18 @@ top::ExprInhs ::= lhs::ExprInh
 {
   top.transform = consASTExpr(lhs.transform, nilASTExpr());
   top.lambdaParams =
-    productionRHSCons(lhs.lambdaParam, productionRHSNil());
+    lambdaRHSCons(lhs.lambdaParam, lambdaRHSNil());
 }
 
 aspect production exprInhsCons
 top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.transform = consASTExpr(lhs.transform, inh.transform);
-  top.lambdaParams = productionRHSCons(lhs.lambdaParam, inh.lambdaParams);
+  top.lambdaParams = lambdaRHSCons(lhs.lambdaParam, inh.lambdaParams);
 }
 
 attribute transform<ASTExpr> occurs on ExprInh;
-synthesized attribute lambdaParam::ProductionRHSElem occurs on ExprInh;
+synthesized attribute lambdaParam::LambdaRHSElem occurs on ExprInh;
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
@@ -452,8 +452,8 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   
   local paramName::String = implode("_", explode(":", lhs.name));
   top.lambdaParam =
-    productionRHSElem(
-      name(paramName), '::',
+    lambdaRHSElemIdTy(
+      name(paramName, builtin), '::',
       typerepTypeExpr(e.finalType));
   top.bodyExprInhTransform =
     exprInh(lhs, '=', baseExpr(qName(paramName)), ';');
@@ -627,7 +627,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
         Silver_Expr {
           silver:rewrite:anyASTExpr(
             $Expr{
-              lambdap(
+              lambdap_new(
                 decEs.lambdaParams,
                 caseExpr_c(
                   'case', decEs.lambdaParamRefs, 'of',
@@ -694,7 +694,7 @@ aspect production exprsEmpty
 top::Exprs ::=
 {
   top.transform = nilASTExpr();
-  top.lambdaParams = productionRHSNil();
+  top.lambdaParams = lambdaRHSNil();
   top.lambdaParamRefs = exprsEmpty();
 }
 aspect production exprsSingle
@@ -704,11 +704,11 @@ top::Exprs ::= e::Expr
   
   local lambdaParamName::String = "__exprs_param_" ++ toString(genInt());
   top.lambdaParams =
-    productionRHSCons(
-      productionRHSElem(
+    lambdaRHSCons(
+      lambdaRHSElemIdTy(
         name(lambdaParamName), '::',
         typerepTypeExpr(e.finalType)),
-      productionRHSNil());
+      lambdaRHSNil());
   top.lambdaParamRefs =
     exprsSingle(
       baseExpr(qName(lambdaParamName)));
@@ -720,8 +720,8 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   
   local lambdaParamName::String = "__exprs_param_" ++ toString(genInt());
   top.lambdaParams =
-    productionRHSCons(
-      productionRHSElem(
+    lambdaRHSCons(
+      lambdaRHSElemIdTy(
         name(lambdaParamName), '::',
         typerepTypeExpr(e1.finalType)),
       e2.lambdaParams);

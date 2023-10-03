@@ -65,10 +65,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
   local eBind::Expr = monadBind();
   local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep));
-  local binde_lambdaparams::ProductionRHS =
-        productionRHSCons(productionRHSElem(name(freshname), '::',
+  local binde_lambdaparams::LambdaRHS =
+        lambdaRHSCons(lambdaRHSElemIdTy(name(freshname), '::',
                                             eInnerType),
-                          productionRHSNil());
+                          lambdaRHSNil());
   --Since we sometimes need to just use pure() over the top of everything to get a
   --   monad out, we use a fresh type rather than the top.mtyperep
   local outty::TypeExpr = typerepTypeExpr(freshType());
@@ -98,13 +98,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --bind e, just do the rest
   local justBind_e::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten, f.monadRewritten))]);
   --bind e, return f based on e's type
   local bind_e_return_f::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten,
                                                               buildApplication(monadReturn(),
@@ -117,14 +117,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   prReturnify.config = top.config;
   local bind_e_returnify_pr::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
                                                               f.monadRewritten))]);
   --bind e, returnify pr, return f based on e's type
   local bind_e_returnify_pr_return_f::Expr =
     buildApplication(eBind,
-                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                     [e.monadRewritten, lambdap_new(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
                                                               buildApplication(monadReturn(),

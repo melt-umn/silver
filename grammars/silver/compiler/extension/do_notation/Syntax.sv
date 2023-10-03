@@ -63,7 +63,7 @@ synthesized attribute bindingFreeVars::ts:Set<String>;
 -- Can this do body be translated using ap/map instead of bind
 synthesized attribute isApplicative::Boolean;
 -- Parameter bindings that will be used in applicative translation
-synthesized attribute appBindings::[ProductionRHSElem];
+synthesized attribute appBindings::[LambdaRHSElem];
 -- Expressions that will be bound in applicative translation
 synthesized attribute appExprs::[Expr];
 -- The final result in applicative translation
@@ -124,10 +124,9 @@ top::DoBody ::= b::DoBinding rest::DoBody
         \ trans::Expr e::Expr -> mkStrFunctionInvocation("silver:core:ap", [trans, e]),
         mkStrFunctionInvocation("silver:core:map", [
           foldr(
-            \ el::ProductionRHSElem trans::Expr ->
-              lambdap(
-                productionRHSCons(el, productionRHSNil()),
-                trans),
+            \ el::LambdaRHSElem trans::Expr ->
+              lambdap_new(
+                lambdaRHSCons(el, lambdaRHSNil(), location=top.location), trans),
             top.appResult, top.appBindings),
           head(top.appExprs)]),
         tail(top.appExprs))
@@ -230,14 +229,14 @@ top::DoBinding ::= n::Name DoDoubleColon_t t::TypeExpr '<-' e::Expr ';'
   top.unparse = s"${n.unparse}::${t.unparse} <- ${e.unparse};";
   top.boundVars <- ts:fromList([n.name]);
   top.isApplicative = true;
-  top.appBindings = [productionRHSElem(n, terminal(ColonColon_t, "::"), t)];
+  top.appBindings = [lambdaRHSElemIdTy(n, terminal(ColonColon_t, "::"), t)];
   top.appExprs = [e];
 
   local cont :: Expr =
-    lambdap(
-      productionRHSCons(
-        productionRHSElem(n, terminal(ColonColon_t, "::"), t),
-        productionRHSNil()),
+    lambdap_new(
+      lambdaRHSCons(
+        lambdaRHSElemIdTy(n, terminal(ColonColon_t, "::"), t),
+        lambdaRHSNil()),
       top.transformIn);
   top.transform = mkStrFunctionInvocation("silver:core:bind", [e, cont]);
 
@@ -250,7 +249,7 @@ top::DoBinding ::= e::Expr ';'
   top.unparse = s"${e.unparse};";
   top.isApplicative = true;
   top.appBindings =
-    [productionRHSElemType(typerepTypeExpr(freshType()))];
+    [lambdaRHSElemTy('_', terminal(ColonColon_t, "::"), typerepTypeExpr(freshType()))];
   top.appExprs = [e];
   top.transform = mkStrFunctionInvocation("silver:core:applySecond", [e, top.transformIn]);
 
