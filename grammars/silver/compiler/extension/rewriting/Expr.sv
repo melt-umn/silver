@@ -572,14 +572,7 @@ top::Expr ::= '[' ']'
 aspect production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
-  top.transform =
-    -- This is a forwarding prod, so we can't decorate e1 and e2 with boundVars here.
-    -- TODO: need some way for the flow analysis to track that e1 and e2 will be provided with boundVars through the forward.
-    case forward of
-    | functionInvocation(_, snocAppExprs(snocAppExprs(emptyAppExprs(), _, decH), _, decT), _) ->
-      consListASTExpr(decH.transform, decT.transform)
-    | _ -> error("Unexpected forward")
-    end;
+  top.transform = consListASTExpr(h.transform, t.transform);
 }
 
 aspect production fullList
