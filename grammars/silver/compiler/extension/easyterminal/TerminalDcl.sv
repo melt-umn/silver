@@ -69,7 +69,7 @@ top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
   propagate env;
   top.errors <- reg.errors;
 
-  top.lambdaBoundVars := [id.name];  -- Needed because we are forwrding based on env
+  --top.lambdaBoundVars := [id.name];  -- Needed because we are forwrding based on env
 
   forwards to productionRHSElem(id, $2, typerepTypeExpr(reg.typerep));
 }
@@ -81,7 +81,7 @@ top::ProductionRHSElem ::= reg::EasyTerminalRef
   propagate env;
   top.errors <- reg.errors;
 
-  top.lambdaBoundVars := [];  -- Needed because we are forwrding based on env
+  --top.lambdaBoundVars := [];  -- Needed because we are forwrding based on env
 
   forwards to productionRHSElemType(typerepTypeExpr(reg.typerep));
 }

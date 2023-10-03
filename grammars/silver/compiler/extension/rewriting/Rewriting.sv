@@ -252,7 +252,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
     then requireType(antiquoteASTExpr(
       Silver_Expr {
         silver:rewrite:anyASTExpr(
-          \ dummy::$TypeExpr{typerepTypeExpr(finalRuleType)} -> unit())
+          \ _ -> unit())
       })) <* ml.transform
     else ml.transform;
   

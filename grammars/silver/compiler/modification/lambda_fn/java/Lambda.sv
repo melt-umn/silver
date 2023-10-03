@@ -11,7 +11,7 @@ import silver:compiler:analysis:typechecking:core only finalType;
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
-aspect production lambdap_new
+aspect production lambdap
 top::Expr ::= params::LambdaRHS e::Expr
 {
   -- Attempt to solve a context `runtimeTypeable ${top.finalType)}`, from which the runtime TypeRep translation is computed.

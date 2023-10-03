@@ -81,7 +81,7 @@ instance Show a => ShowTuple a {
 }
 
 instance Show () {
-  pp = \ dummy::() -> pp"()";
+  pp = \ _ -> pp"()";
 }
 
 -- Other standard lib types.

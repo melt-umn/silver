@@ -323,7 +323,7 @@ top::Expr ::= q::Decorated! QName
   top.accessUniqueRefs = [];
 }
 
-aspect production lambdap_new
+aspect production lambdap
 top::Expr ::= params::LambdaRHS e::Expr
 {
   top.uniqueRefs := filter(\ r::(String, UniqueRefSite) -> !contains(r.1, params.lambdaBoundVars), e.uniqueRefs);

@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:implicit_monads;
 
-aspect production lambdap_new
+aspect production lambdap
 top::Expr ::= params::LambdaRHS e::Expr
 {
   top.merrors := e.merrors;
@@ -11,7 +11,7 @@ top::Expr ::= params::LambdaRHS e::Expr
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
-  top.monadRewritten = lambdap_new(params, e.monadRewritten);
+  top.monadRewritten = lambdap(params, e.monadRewritten);
 }
 
 

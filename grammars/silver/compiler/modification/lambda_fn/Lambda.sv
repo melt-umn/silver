@@ -4,7 +4,7 @@ import silver:util:treeset as ts;
 --- New concrete Syntax for lambdas
 --------------------------------------------------------------------------------
 
-concrete production lambda_c_new
+concrete production lambda_c
 top::Expr ::= '\' params::LambdaRHS '->' e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
@@ -12,7 +12,7 @@ top::Expr ::= '\' params::LambdaRHS '->' e::Expr
   forwards to lambdap_new(params, e);
 }
 
-abstract production lambdap_new
+abstract production lambdap
 top::Expr ::= params::LambdaRHS e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
@@ -146,67 +146,34 @@ terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 
 -- Using ProductionRHS here, it is basicly just a list of names with type expressions
 -- It is also used for the parameter definitions in functions, so using it here for consistancy
-abstract production lambda_c
-top::Expr ::= '\' params::ProductionRHS '->' e::Expr
+abstract production lambda_c_new
+top::Expr ::= '\' params::LambdaRHS '->' e::Expr
 {
-  forwards to lambda_c_new ('\', params.asLamRHS, '->', @e);
+  forwards to lambda_c ('\', @params, '->', @e);
 }
 
-abstract production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+abstract production lambdap_new
+top::Expr ::= params::LambdaRHS e::Expr
 {
-  forwards to lambdap_new (params.asLamRHS, @e);
+  forwards to lambdap (@params, @e);
 }
 
 monoid attribute lambdaDefs::[Def];
 monoid attribute lambdaBoundVars::[String];
-attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
+--attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
 
-flowtype lambdaDefs {decorate, givenLambdaId, givenLambdaParamIndex} on ProductionRHS, ProductionRHSElem;
-flowtype lambdaBoundVars {} on ProductionRHS;
-flowtype lambdaBoundVars {deterministicCount} on ProductionRHSElem;
+--flowtype lambdaDefs {decorate, givenLambdaId, givenLambdaParamIndex} on ProductionRHS, ProductionRHSElem;
+--flowtype lambdaBoundVars {} on ProductionRHS;
+--flowtype lambdaBoundVars {deterministicCount} on ProductionRHSElem;
 
-propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
+--propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
 inherited attribute givenLambdaId::Integer occurs on ProductionRHS, ProductionRHSElem;
 inherited attribute givenLambdaParamIndex::Integer occurs on ProductionRHS, ProductionRHSElem;
-propagate givenLambdaId on ProductionRHS, ProductionRHSElem;
+--propagate givenLambdaId on ProductionRHS, ProductionRHSElem;
 
 synthesized attribute asLamRHS::LambdaRHS occurs on ProductionRHS;
 synthesized attribute asLamRHSElem::LambdaRHSElem occurs on ProductionRHSElem;
-
-aspect production productionRHSCons
-top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
-{
-  --t.givenLambdaParamIndex = top.givenLambdaParamIndex + 1;
-  --h.givenLambdaParamIndex = top.givenLambdaParamIndex;
-  top.asLamRHS = lambdaRHSCons (h.asLamRHSElem, t.asLamRHS);
-}
-
-aspect production productionRHSNil
-top::ProductionRHS ::=
-{
-  top.asLamRHS = lambdaRHSNil ();
-}
-
-aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
-{
-  {-production fName :: String = toString(genInt()) ++ ":" ++ id.name;
---  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());
-  top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep, top.givenLambdaId, top.givenLambdaParamIndex)];
-  top.lambdaBoundVars := [id.name];-}
-  
-  top.asLamRHSElem = lambdaRHSElemIdTy(id, '::', t);
-}
-
-aspect production productionRHSElemType
-top::ProductionRHSElem ::= t::TypeExpr
-{
-  --forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount), t.location), '::', t, location=top.location);
-
-  top.asLamRHSElem = lambdaRHSElemTy('_', '::', t);
-}
 
 abstract production lambdaParamReference
 top::Expr ::= q::Decorated! QName
