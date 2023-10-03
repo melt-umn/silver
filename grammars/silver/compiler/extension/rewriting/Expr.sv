@@ -453,7 +453,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   local paramName::String = implode("_", explode(":", lhs.name));
   top.lambdaParam =
     lambdaRHSElemIdTy(
-      name(paramName, builtin), '::',
+      name(paramName), '::',
       typerepTypeExpr(e.finalType));
   top.bodyExprInhTransform =
     exprInh(lhs, '=', baseExpr(qName(paramName)), ';');

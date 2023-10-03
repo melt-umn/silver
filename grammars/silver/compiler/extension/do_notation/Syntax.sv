@@ -126,7 +126,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
           foldr(
             \ el::LambdaRHSElem trans::Expr ->
               lambdap_new(
-                lambdaRHSCons(el, lambdaRHSNil(), location=top.location), trans),
+                lambdaRHSCons(el, lambdaRHSNil()), trans),
             top.appResult, top.appBindings),
           head(top.appExprs)]),
         tail(top.appExprs))

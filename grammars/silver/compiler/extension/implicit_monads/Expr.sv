@@ -360,7 +360,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
            oneAppExprs(presentAppExpr(
                           baseExpr(qName("a"++toString(head(monadTysLocs).snd))))),
            ',',
-            presentAppExpr(lambdap_new(binding, sub, location=loc)));
+            presentAppExpr(lambdap_new(binding, sub)));
 
   local step::Expr = applicationExpr(bind, '(', bindargs, ')');
 
