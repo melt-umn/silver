@@ -572,8 +572,15 @@ top::Expr ::= '[' ']'
 aspect production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
-  propagate boundVars;
-  top.transform = consListASTExpr(h.transform, t.transform);
+   top.transform =
+    -- TODO: We should be able to override boundVars on h and t here,
+    -- but currently the flow analysis forbids this due to the hidden
+    -- transitive dependencies check.
+    case forward of
+    | functionInvocation(_, snocAppExprs(oneAppExprs(presentAppExpr(decH)), _, presentAppExpr(decT)), _) ->
+      consListASTExpr(decH.transform, decT.transform)
+    | _ -> error("Unexpected forward: " ++ hackUnparse(forward))
+    end;
 }
 
 aspect production fullList
