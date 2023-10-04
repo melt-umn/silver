@@ -122,7 +122,7 @@ top::LambdaRHSElem ::= '_' '::' t::TypeExpr
   forwards to lambdaRHSElemIdTy (
     name("_G_" ++ toString(top.deterministicCount)), 
     '::', 
-    t);
+    @t);
 }
 
 concrete production lambdaRHSElemId
@@ -131,7 +131,7 @@ top::LambdaRHSElem ::= id::Name
   top.unparse = id.unparse;
 
   forwards to lambdaRHSElemIdTy (
-    id, 
+    @id, 
     '::', 
     typerepTypeExpr(freshType()));
 }
