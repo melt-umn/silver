@@ -4,7 +4,7 @@ grammar silver:compiler:extension:rewriting;
 -- the variable was explicitly (i.e. not implicitly) decorated in the pattern.
 inherited attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
 propagate boundVars on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
-  excluding baseExpr, application, access, letp, prodPatternNormal, prodPatternGadt;
+  excluding letp, prodPatternNormal, prodPatternGadt;
 
 attribute transform<ASTExpr> occurs on Expr;
 
@@ -572,6 +572,7 @@ top::Expr ::= '[' ']'
 aspect production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
+  propagate boundVars;
   top.transform = consListASTExpr(h.transform, t.transform);
 }
 
