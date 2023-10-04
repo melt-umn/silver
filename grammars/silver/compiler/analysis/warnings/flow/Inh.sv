@@ -274,7 +274,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   local lhsInhExceedsForwardFlowType :: [String] = 
     set:toList(
       set:removeAll(
-        [dl.inhAttrName],
+        [dl.inhAttrName],  -- TODO: I don't think excluding this is well-founded?
         set:difference(
           lhsInhDeps,
           inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));

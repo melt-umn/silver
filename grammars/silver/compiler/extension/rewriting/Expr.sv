@@ -572,7 +572,7 @@ top::Expr ::= '[' ']'
 aspect production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
-   top.transform =
+  top.transform =
     -- TODO: We should be able to override boundVars on h and t here,
     -- but currently the flow analysis forbids this due to the hidden
     -- transitive dependencies check.
