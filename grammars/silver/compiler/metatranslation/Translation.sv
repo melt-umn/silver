@@ -127,7 +127,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       mkFullFunctionInvocation(
         baseExpr(qName(prodName)),
         children.translation,
-        filter(\ a::(String, Expr) -> a.1 != "location", annotations.translation)),
+        annotations.translation),
       antiquoteTranslation);
   
   production attribute patternAntiquoteTranslation::Maybe<Pattern> with orElse;
