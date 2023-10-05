@@ -22,7 +22,7 @@ top::Expr ::=
 aspect production childReference
 top::Expr ::= q::Decorated! QName
 {
-    top.uniqueRefs <-
+  top.uniqueRefs <-
     case top.finalType, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
@@ -53,7 +53,7 @@ top::Expr ::= q::Decorated! QName
 aspect production localReference
 top::Expr ::= q::Decorated! QName
 {
-    top.uniqueRefs <-
+  top.uniqueRefs <-
     case top.finalType, refSet of
     | uniqueDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
@@ -84,7 +84,7 @@ top::Expr ::= q::Decorated! QName
 aspect production lhsReference
 top::Expr ::= q::Decorated! QName
 {
-    top.errors <-
+  top.errors <-
     case top.finalType of
     | uniqueDecoratedType(_, _) ->
       [errFromOrigin(top, s"Cannot take a unique reference of type ${prettyType(top.finalType)} to ${q.name}.")]
@@ -94,7 +94,7 @@ top::Expr ::= q::Decorated! QName
 aspect production forwardReference
 top::Expr ::= q::Decorated! QName
 {
-    top.errors <-
+  top.errors <-
     case top.finalType of
     | uniqueDecoratedType(_, _) ->
       [errFromOrigin(top, s"Cannot take a unique reference of type ${prettyType(top.finalType)} to the forward tree.")]
@@ -220,7 +220,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production transDecoratedAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
-    top.uniqueRefs :=
+  top.uniqueRefs :=
     case top.finalType, refSet of
     | uniqueDecoratedType(_, _), just(inhs) ->
         [(case e.flowVertexInfo of
@@ -311,7 +311,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 aspect production lambdaParamReference
 top::Expr ::= q::Decorated! QName
 {
-    top.uniqueRefs <-
+  top.uniqueRefs <-
     if top.finalType.isUniqueDecorated
     then [(q.name, uniqueRefSite(
         refSet=top.finalType.inhSetMembers,
@@ -340,7 +340,7 @@ top::Expr ::= params::ProductionRHS e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
-    top.errors <-
+  top.errors <-
     -- This check is needed due to how we handle let binding auto-undecoration in the type system:
     -- unique and regular references can both undecorate and unique references can become regular ones,
     -- but ensure that we don't create a unique reference out of a regular one.
