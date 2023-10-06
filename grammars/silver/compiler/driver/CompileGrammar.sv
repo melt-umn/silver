@@ -21,16 +21,25 @@ MaybeT<IO RootSpec> ::=
 
         -- IO Step 2: List those files, and obtain their newest modification time
         files :: [String] <- lift(listSilverFiles(grammarLocation));
-        when_(null(files), empty); -- Grammar had no files!
+        guard(!null(files)); -- Grammar had no files!
         grammarTime :: Integer <- lift(fileTimes(grammarLocation, files));
 
         return (grammarTime, grammarLocation, files);
       }.run);
+    findInterface::Maybe<RootSpec> <- lift(do {
+        guard(!clean);  -- Ignore interface files if this is a clean build
+
+        -- IO Step 3: Let's look for an interface file
+        compileInterface(grammarName, benv.silverHostGen);
+      }.run);
+    let interfaceDirty::Boolean = do {
+      -- If we found both, check if the interface file is out of date
+      foundGrammar::(Integer, String, [String]) <- findGrammar;
+      foundInterface::RootSpec <- findInterface;
+      guard(foundGrammar.1 > foundInterface.grammarTime);
+    }.isJust;
     alt(
-      -- IO Step 3: Let's look for a valid interface file
-      if clean
-        then empty  -- We just skip this search if it's a clean build
-        else compileInterface(grammarName, benv.silverHostGen, map(fst, findGrammar)),
+      if interfaceDirty then empty else maybeT(pure(findInterface)),
       do {
         -- We didn't find a valid interface file
         foundGrammar::(Integer, String, [String]) <- maybeT(pure(findGrammar));
@@ -42,18 +51,12 @@ MaybeT<IO RootSpec> ::=
         lift(eprintln("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation ++ "]\n\t[" ++ renderFileNames(files, 0) ++ "]"));
         gramCompile::([Root], [ParseError]) <- lift(compileFiles(svParser, grammarLocation, files));
 
-        -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
-        oldInterface::Maybe<InterfaceItems> <- lift(do {
-            gen :: String <- findInterfaceLocation(gramPath, benv.silverHostGen);
-            let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
-            --lift(eprintln(s"Found old interface ${file}"));
-            content::ByteArray <- lift(readBinaryFile(file));
-            case nativeDeserialize(content) of
-            | left(msg) -> empty
-            | right(ii) -> pure(ii)
-            end;
-          }.run);
-
+        -- The old interface file contents, used to tell if we need to transitively re-translate
+        let oldInterface::Maybe<InterfaceItems> =
+          case findInterface of
+          | just(interfaceRootSpec(i, _)) -> just(i)
+          | _ -> nothing()
+          end;
         return if null(gramCompile.2)
           then grammarRootSpec(foldRoot(gramCompile.1), oldInterface, grammarName, grammarLocation, grammarTime, benv.silverGen)
           else errorRootSpec(gramCompile.2, grammarName, grammarLocation, grammarTime, benv.silverGen);
