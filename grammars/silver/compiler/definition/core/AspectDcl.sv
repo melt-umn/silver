@@ -1,13 +1,13 @@
 grammar silver:compiler:definition:core;
 
-nonterminal AspectProductionSignature with config, grammarName, env, location, unparse, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement, realSignature;
+tracked nonterminal AspectProductionSignature with config, grammarName, env, unparse, errors, defs, realSignature, namedSignature, signatureName;
+tracked nonterminal AspectProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement, realSignature;
 
-nonterminal AspectFunctionSignature with config, grammarName, env, location, unparse, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectFunctionLHS with config, grammarName, env, location, unparse, errors, defs, realSignature, outputElement;
+tracked nonterminal AspectFunctionSignature with config, grammarName, env, unparse, errors, defs, realSignature, namedSignature, signatureName;
+tracked nonterminal AspectFunctionLHS with config, grammarName, env, unparse, errors, defs, realSignature, outputElement;
 
-nonterminal AspectRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, realSignature;
-nonterminal AspectRHSElem with config, grammarName, env, location, unparse, errors, defs, realSignature, inputElements, deterministicCount;
+tracked nonterminal AspectRHS with config, grammarName, env, unparse, errors, defs, inputElements, realSignature;
+tracked nonterminal AspectRHSElem with config, grammarName, env, unparse, errors, defs, realSignature, inputElements, deterministicCount;
 
 flowtype forward {realSignature, grammarName, env, flowEnv} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
 flowtype forward {deterministicCount, realSignature, grammarName, env, flowEnv} on AspectRHSElem;
@@ -28,7 +28,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   top.defs := 
     if null(body.productionAttributes) then []
-    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
+    else [prodOccursDef(top.grammarName, id.nameLoc, namedSig, body.productionAttributes)];
 
   production namedSig :: NamedSignature = ns.namedSignature;
 
@@ -55,11 +55,11 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   local contextSigDefs::[Def] =
     flatMap(
-      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
-      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local sourceGrammar::String =
     if id.lookupValue.found
@@ -73,7 +73,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=sourceGrammar); -- graph from flow:env
 } action {
-  insert semantic token IdFnProd_t at id.location;
+  insert semantic token IdFnProd_t at id.nameLoc;
   sigNames = [];
 }
 
@@ -85,7 +85,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   top.defs := 
     if null(body.productionAttributes) then []
-    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
+    else [prodOccursDef(top.grammarName, id.nameLoc, namedSig, body.productionAttributes)];
 
   production namedSig :: NamedSignature = ns.namedSignature;
 
@@ -112,11 +112,11 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   local contextSigDefs::[Def] =
     flatMap(
-      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
-      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, id.nameLoc),
       realSig.contexts);
   local sourceGrammar::String =
     if id.lookupValue.found
@@ -130,7 +130,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=sourceGrammar); -- graph from flow:env
 } action {
-  insert semantic token IdFnProd_t at id.location;
+  insert semantic token IdFnProd_t at id.nameLoc;
   sigNames = [];
 }
 
@@ -158,7 +158,7 @@ concrete production aspectProductionLHSNone
 top::AspectProductionLHS ::= '_'
 {
   top.unparse = "_";
-  forwards to aspectProductionLHSId(name("p_top", top.location), location=top.location);
+  forwards to aspectProductionLHSId(name("p_top"));
 }
 
 concrete production aspectProductionLHSId
@@ -169,9 +169,9 @@ top::AspectProductionLHS ::= id::Name
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  forwards to aspectProductionLHSFull(id, rType, location=top.location);
+  forwards to aspectProductionLHSFull(id, rType);
 } action {
-  insert semantic token IdSigNameDcl_t at id.location;
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 concrete production aspectProductionLHSTyped
@@ -182,9 +182,9 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 
   top.errors <- t.errors;
   
-  forwards to aspectProductionLHSFull(id, t.typerep, location=top.location);
+  forwards to aspectProductionLHSFull(id, t.typerep);
 } action {
-  insert semantic token IdSigNameDcl_t at id.location;
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 abstract production aspectProductionLHSFull
@@ -199,10 +199,10 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
-                then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+                then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 }
 
@@ -237,10 +237,7 @@ top::AspectRHSElem ::= '_'
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  forwards to aspectRHSElemFull(
-    name("p_" ++ toString(top.deterministicCount), $1.location),
-    rType,
-    location=top.location);
+  forwards to aspectRHSElemFull(name("p_" ++ toString(top.deterministicCount)), rType);
 }
 
 concrete production aspectRHSElemId
@@ -251,11 +248,11 @@ top::AspectRHSElem ::= id::Name
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  top.errors <- [wrn(top.location, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
+  top.errors <- [wrnFromOrigin(top, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
   
-  forwards to aspectRHSElemFull(id, rType, location=top.location);
+  forwards to aspectRHSElemFull(id, rType);
 } action {
-  insert semantic token IdSigNameDcl_t at id.location;
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 concrete production aspectRHSElemTyped
@@ -266,9 +263,9 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
   
   top.errors <- t.errors;
 
-  forwards to aspectRHSElemFull(id, t.typerep, location=top.location);
+  forwards to aspectRHSElemFull(id, t.typerep);
 } action {
-  insert semantic token IdSigNameDcl_t at id.location;
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 abstract production aspectRHSElemFull
@@ -283,10 +280,10 @@ top::AspectRHSElem ::= id::Name t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
-                then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
+                then [errFromOrigin(id, "Value '" ++ id.name ++ "' is already bound.")]
                 else [];
 }
 
@@ -322,5 +319,5 @@ top::AspectFunctionLHS ::= t::TypeExpr
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
-  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, performSubstitution(t.typerep, top.upSubst), fName)];
+  top.defs := [aliasedLhsDef(top.grammarName, getParsedOriginLocationOrFallback(t), fName, performSubstitution(t.typerep, top.upSubst), fName)];
 }

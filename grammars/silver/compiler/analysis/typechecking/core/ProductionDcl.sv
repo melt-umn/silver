@@ -17,7 +17,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
   
   top.errors <-
     if checkNT.typeerror
-    then [err(top.location, "Production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    then [errFromOrigin(top, "Production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
     else [];
 }
 

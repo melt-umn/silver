@@ -3,8 +3,8 @@ grammar silver:compiler:definition:core;
 {--
  - Top-level declarations of a Silver grammar. The "meat" of a file.
  -}
-nonterminal AGDcls with config, grammarName, env, location, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
-nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
+tracked nonterminal AGDcls with config, grammarName, env, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
+tracked nonterminal AGDcl  with config, grammarName, env, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
 
 flowtype decorate {config, grammarName, env, flowEnv, compiledGrammars, grammarDependencies} on AGDcls, AGDcl;
 flowtype forward {} on AGDcls;
@@ -29,7 +29,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
-  top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
+  top.errors <- warnIfMultJarName(h.jarName, t.jarName);
 }
 
 --------
@@ -68,15 +68,15 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
   propagate env, defs, occursDefs;
 
-  top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
+  top.errors <- warnIfMultJarName(h.jarName, t.jarName);
 }
 
 function makeAppendAGDclOfAGDcls
 AGDcl ::= dcls::AGDcls
 {
   return case dcls of
-         | nilAGDcls(location=l) -> emptyAGDcl(location=l)
-         | consAGDcls(dcl, rest, location=l) -> appendAGDcl(dcl, makeAppendAGDclOfAGDcls(rest), location=l)
+         | nilAGDcls() -> emptyAGDcl()
+         | consAGDcls(dcl, rest) -> appendAGDcl(dcl, makeAppendAGDclOfAGDcls(rest))
          end;
 }
 
@@ -94,11 +94,12 @@ top::AGDcl ::=
 }
 
 function warnIfMultJarName
-[Message] ::= n1::Maybe<String>  n2::Maybe<String>  loc::Location
+[Message] ::= n1::Maybe<String>  n2::Maybe<String>
 {
   return if n1.isJust && n2.isJust
-         then [wrn(loc, "Duplicate specification of jar name: " ++
-               n1.fromJust ++ " and " ++ n2.fromJust)]
+         then [wrnFromOrigin(ambientOrigin(),
+                 "Duplicate specification of jar name: " ++
+                 n1.fromJust ++ " and " ++ n2.fromJust)]
          else [];
 }
 

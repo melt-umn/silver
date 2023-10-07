@@ -11,19 +11,18 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
   
   top.errors <-
     if length(getAttrDclAll(inhFName, top.env)) > 1
-    then [err(inh.location, "Attribute '" ++ inhFName ++ "' is already bound.")]
+    then [errFromOrigin(inh, "Attribute '" ++ inhFName ++ "' is already bound.")]
     else [];
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.location)))],
-      location=top.location);
+      [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.nameLoc)))]);
 }
 
 abstract production destructAttributionDcl
 top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -41,16 +40,13 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
               case nttl of
               | botlSome(tl) -> 
                 appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+                  nominalTypeExpr(nt.qNameType),
+                  tl)
+              | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
-                typerepTypeExpr(inhSetType([]), location=top.location), 
-                location=top.location),
-              location=top.location),
-            '>', location=top.location),
-          location=top.location)
+                typerepTypeExpr(inhSetType([])))),
+            '>'))
       | [i] ->
         botlSome(
           bTypeList(
@@ -59,20 +55,16 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
               case nttl of
               | botlSome(tl) -> 
                 appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+                  nominalTypeExpr(nt.qNameType),
+                  tl)
+              | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
-                typerepTypeExpr(i, location=top.location), 
-                location=top.location),
-              location=top.location),
-            '>', location=top.location),
-          location=top.location)
+                typerepTypeExpr(i))),
+            '>'))
       | _ -> attl
       end,
-      nt, nttl,
-      location=top.location);
+      nt, nttl);
 }
 
 {--
@@ -82,14 +74,14 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
 abstract production propagateDestruct
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   local numChildren::Integer = length(top.frame.signature.inputElements);
   forwards to
     foldr(
-      productionStmtAppend(_, _, location=top.location),
-      errorProductionStmt([], location=top.location), -- No emptyProductionStmt?
+      productionStmtAppend(_, _),
+      errorProductionStmt([]), -- No emptyProductionStmt?
       map(
         \ ie::Pair<Integer NamedSignatureElement> ->
           Silver_ProductionStmt {
@@ -97,21 +89,20 @@ top::ProductionStmt ::= attr::Decorated! QName
               case $name{top.frame.signature.outputElement.elementName}.$QName{new(attr)} of
               | $Pattern{
                   prodAppPattern(
-                    qName(top.location, top.frame.signature.fullName),
+                    qName(top.frame.signature.fullName),
                     '(',
                     foldr(
-                      patternList_more(_, ',', _, location=top.location),
-                      patternList_nil(location=top.location),
-                      repeat(wildcPattern('_', location=top.location), ie.fst) ++
+                      patternList_more(_, ',', _),
+                      patternList_nil(),
+                      repeat(wildcPattern('_'), ie.fst) ++
                       Silver_Pattern { a } ::
-                      repeat(wildcPattern('_', location=top.location), numChildren - (ie.fst + 1)) ),
-                    ')',
-                    location=top.location)} -> a
+                      repeat(wildcPattern('_'), numChildren - (ie.fst + 1)) ),
+                    ')')} -> a
               | a ->
                 error(
-                  "Destruct attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", top.location), location=top.location)} ++
-                  " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", top.location), location=top.location)} ++
-                  " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", top.location), location=top.location)} ++
+                  "Destruct attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", attr.nameLoc))} ++
+                  " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", attr.nameLoc))} ++
+                  " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", attr.nameLoc))} ++
                   " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")  -- TODO: Shouldn't really be using hackUnparse here.
               end;
           },

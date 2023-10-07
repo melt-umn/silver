@@ -17,24 +17,23 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
 
   top.errors <-
     if length(getAttrDclAll(synPartialFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ synPartialFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ synPartialFName ++ "' is already bound.")]
     else [];
   top.errors <-
     if length(getAttrDclAll(synFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
 
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(biequalityPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
-       attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
-      location=top.location);
+      [attrDef(defaultEnvItem(biequalityPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.nameLoc))),
+       attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
 abstract production biequalityInhAttributionDcl
 top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -53,21 +52,18 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
               case nttl of
               | botlSome(tl) -> 
                 appTypeExpr(
-                  nominalTypeExpr(nt.qNameType, location=top.location),
-                  tl, location=top.location)
-              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-              end,
-              location=top.location),
-            '>', location=top.location),
-          location=top.location),
-      nt, nttl,
-      location=top.location);
+                  nominalTypeExpr(nt.qNameType),
+                  tl)
+              | botlNone() -> nominalTypeExpr(nt.qNameType)
+              end),
+            '>')),
+      nt, nttl);
 }
 
 abstract production propagateBiequalitySynPartial
 top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
 {
-  undecorates to propagateOneAttr(synPartial, location=top.location);
+  undecorates to propagateOneAttr(synPartial);
   top.unparse = s"propagate ${synPartial.unparse};";
   
   forwards to
@@ -76,20 +72,19 @@ top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
-              qName(top.location, top.frame.signature.fullName),
+              qName(top.frame.signature.fullName),
               '(',
               foldr(
-                patternList_more(_, ',', _, location=top.location),
-                patternList_nil(location=top.location),
+                patternList_more(_, ',', _),
+                patternList_nil(),
                 map(
                   \ ie::NamedSignatureElement -> Silver_Pattern { $name{ie.elementName ++ "2"} },
                   top.frame.signature.inputElements)),
-              ')',
-              location=top.location)} ->
+              ')')} ->
           $Expr{
             foldr(
-              and(_, '&&', _, location=top.location),
-              trueConst('true', location=top.location),
+              and(_, '&&', _),
+              trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
                   if null(getOccursDcl(syn, ie.typerep.typeName, top.env))
@@ -104,7 +99,7 @@ top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
 abstract production propagateBiequalitySyn
 top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
+  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   forwards to

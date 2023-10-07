@@ -111,8 +111,9 @@ Pair<Boolean Substitution> ::= t1::Type t2::Type subst::Substitution
 
 
 function monadInnerType
-Type ::= mty::Type loc::Location
+Type ::= mty::Type
 {
+  local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
   return case dropDecorated(mty) of
          | appType(c, a) -> a
          | _ -> error("The monadInnerType function should only be called " ++
@@ -152,38 +153,38 @@ String ::= ty::Type
 {-find the name of the bind/return for a given monad to use to build
   the rewritten term-}
 function monadBind
-Expr ::= l::Location
+Expr ::=
 {
-  return baseExpr(qNameId(name("silver:core:bind", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:bind")));
 }
 function monadReturn
-Expr ::= l::Location
+Expr ::=
 {
-  return baseExpr(qNameId(name("silver:core:pure", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:pure")));
 }
 
 --We want to produce a value, not a function, so we apply it to an argument
 function monadFail
-Expr ::= l::Location
+Expr ::=
 {
+  local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
   return
      buildApplication
-       (baseExpr(qNameId(name("silver:core:fail", l), location=l), location=l),
+       (baseExpr(qNameId(name("silver:core:fail"))),
         [stringConst(terminal(String_t, "\"Automatically-inserted fail at " ++
-                                           l.unparse ++ "\""),
-                     location=l)], l);
+                                           loc.unparse ++ "\""))]);
 }
 
 
 function monadPlus
-Expr ::= l::Location
+Expr ::=
 {
-  return baseExpr(qNameId(name("silver:core:alt", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:alt")));
 }
 function monadZero
-Expr ::= l::Location
+Expr ::=
 {
-  return baseExpr(qNameId(name("silver:core:empty", l), location=l), location=l);
+  return baseExpr(qNameId(name("silver:core:empty")));
 }
 
 
@@ -197,54 +198,51 @@ Expr ::= l::Location
 -}
 
 function buildApplication
-Expr ::= fun::Expr args::[Expr] loc::Location
+Expr ::= fun::Expr args::[Expr]
 {
-  return applicationExpr(fun, '(', buildApplicationReverseArgs(reverse(args), loc), ')', location=loc);
+  return applicationExpr(fun, '(', buildApplicationReverseArgs(reverse(args)), ')');
 }
 
 --because the AST is set up as a snoc list, we build the arguments in reverse
 --e.g. [a,b,c] gives application arguments (c, b, a)
 function buildApplicationReverseArgs
-AppExprs ::= args::[Expr] loc::Location
+AppExprs ::= args::[Expr]
 {
   return case args of
-         | [] -> emptyAppExprs(location=loc)
+         | [] -> emptyAppExprs()
          | hd::tl ->
-           snocAppExprs(buildApplicationReverseArgs(tl, loc), ',',
-                        presentAppExpr(hd, location=loc), location=loc)
+           snocAppExprs(buildApplicationReverseArgs(tl), ',',
+                        presentAppExpr(hd))
          end;
 }
 
 
 
 function buildLambda
-Expr ::= n::String ty::Type body::Expr loc::Location
+Expr ::= n::String ty::Type body::Expr
 {
   -- \ n::ty -> body
   return lambdap(
-           productionRHSCons(productionRHSElem(name(n, loc),
+           productionRHSCons(productionRHSElem(name(n),
                                                '::',
-                                               typerepTypeExpr(ty, location=loc),
-                                               location=loc),
-                             productionRHSNil(location=loc),
-                             location=loc),
-           body,
-           location=loc);
+                                               typerepTypeExpr(ty)),
+                             productionRHSNil()),
+           body);
 }
 
 
 function buildMultiLambda
-Expr ::= names::[Pair<String Type>] body::Expr loc::Location
+Expr ::= names::[Pair<String Type>] body::Expr
 {
   local sig::ProductionRHS =
         foldr(\ pr::Pair<String Type> p::ProductionRHS ->
                 case pr of
                 | (n, ty) ->
-                  productionRHSCons(productionRHSElem(name(n, loc), '::',
-                                       typerepTypeExpr(ty, location=loc), location=loc),
-                                    p, location=loc)
+                  productionRHSCons(productionRHSElem(name(n), '::',
+                                       typerepTypeExpr(ty)),
+                                    p)
                 end,
-              productionRHSNil(location=loc), names);
-  return lambdap(sig, body, location=loc);
+              productionRHSNil(), names);
+  return lambdap(sig, body);
 }
 

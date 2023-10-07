@@ -12,7 +12,8 @@ top::AGDcl ::= 'disambiguate' terms::TermList acode::ActionCode_c
   acode.env = newScopeEnv(disambiguationActionVars ++ acode.defs ++ terms.defs, top.env);
 
   -- Give the group a name, deterministically, based on line number
-  production fName :: String = top.grammarName ++ ":__disam" ++ toString(top.location.line);
+  local loc :: Location = getParsedOriginLocation(top).fromJust;
+  production fName :: String = top.grammarName ++ ":__disam" ++ toString(loc.line);
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -24,7 +25,6 @@ top::AGDcl ::= 'disambiguate' terms::TermList acode::ActionCode_c
   acode.frame = disambiguationContext(myFlowGraph, sourceGrammar=top.grammarName);
 
   top.syntaxAst :=
-    [ syntaxDisambiguationGroup(fName, terms.termList, false, acode.actionCode,
-        location=top.location, sourceGrammar=top.grammarName)
+    [ syntaxDisambiguationGroup(fName, terms.termList, false, acode.actionCode, sourceGrammar=top.grammarName, location=loc)
     ];
 }

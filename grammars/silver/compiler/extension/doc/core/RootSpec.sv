@@ -47,12 +47,14 @@ function toSplitFiles
 {
   return case g of
        | consGrammar(this, rest) ->
-           if getSplit(this.localDocConfig) then toSplitFiles(rest, grammarConf, forIndex, formatFile(
-             silverToMdFilename(this.location.filename),
-             getFileTitle(this.localDocConfig, silverToMdFilename(this.location.filename)),
+         let filename::String = getParsedOriginLocation(this).fromJust.filename
+         in if getSplit(this.localDocConfig) then toSplitFiles(rest, grammarConf, forIndex, formatFile(
+             silverToMdFilename(filename),
+             getFileTitle(this.localDocConfig, silverToMdFilename(filename)),
              getFileWeight(this.localDocConfig), true,
-             s"In grammar `${g.grammarName}` file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
+             s"In grammar `${g.grammarName}` file `${filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
              this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
+         end
        | nilGrammar() -> let skel::Boolean = (length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0) in
              formatFile("_index.md",
                 getGrammarTitle(grammarConf, "["++g.grammarName++"]"++(if skel then " (skel)" else "")),

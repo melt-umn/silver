@@ -21,7 +21,7 @@ top::Expr ::= 'disambiguationFailure'
 abstract production actionChildReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -38,7 +38,7 @@ top::Expr ::= q::Decorated! QName
 abstract production pluckTerminalReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -60,12 +60,12 @@ top::Expr ::= q::Decorated! QName
 abstract production terminalIdReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
   top.errors := if !top.frame.permitActions
-                then [err(top.location, "References to terminal identifiers can only be made in action blocks")]
+                then [errFromOrigin(top,  "References to terminal identifiers can only be made in action blocks")]
                 else [];
 
   top.typerep = terminalIdType();
@@ -79,12 +79,12 @@ top::Expr ::= q::Decorated! QName
 abstract production lexerClassReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
   top.errors := if !top.frame.permitActions
-                then [err(top.location, "References to lexer class members can only be made in action blocks")]
+                then [errFromOrigin(top,  "References to lexer class members can only be made in action blocks")]
                 else [];
 
   -- TODO: This should be a more specific type with type classes
@@ -99,12 +99,12 @@ top::Expr ::= q::Decorated! QName
 abstract production parserAttributeReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
   top.errors := if !top.frame.permitActions
-                then [err(top.location, "References to parser attributes can only be made in action blocks")]
+                then [errFromOrigin(top,  "References to parser attributes can only be made in action blocks")]
                 else [];
 
   top.typerep = q.lookupValue.typeScheme.monoType;
@@ -119,7 +119,7 @@ top::Expr ::= q::Decorated! QName
 abstract production termAttrValueReference
 top::Expr ::= q::Decorated! QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 

@@ -56,21 +56,21 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 
 monoid attribute precTermList :: [String];
 
-nonterminal TermPrecs with config, grammarName, unparse, location, precTermList, errors, env;
+tracked nonterminal TermPrecs with config, grammarName, unparse, precTermList, errors, env;
 propagate config, grammarName, env, errors, precTermList on TermPrecs;
 
 concrete production termPrecsOne
 top::TermPrecs ::= t::QName
 {
-  forwards to termPrecs(termPrecList(t,termPrecListNull(location=t.location), location=t.location), location=top.location);
+  forwards to termPrecs(termPrecList(t,termPrecListNull()));
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
 concrete production termPrecsList
 top::TermPrecs ::= '{' terms::TermPrecList '}'
 {
-  forwards to termPrecs(terms,location=top.location);
+  forwards to termPrecs(terms);
 }
 
 abstract production termPrecs
@@ -79,7 +79,7 @@ top::TermPrecs ::= terms::TermPrecList
   top.unparse = s"{${terms.unparse}}";
 }
 
-nonterminal TermPrecList with config, grammarName, unparse, location, precTermList, errors, env;
+tracked nonterminal TermPrecList with config, grammarName, unparse, precTermList, errors, env;
 propagate config, grammarName, env, errors, precTermList on TermPrecList;
 
 abstract production termPrecList
@@ -95,9 +95,9 @@ top::TermPrecList ::= h::QName t::TermPrecList
   
   -- Since we're looking it up in two ways, do the errors ourselves
   top.errors <- if null(h.lookupType.dcls) && null(h.lookupLexerClass.dcls)
-                then [err(h.location, "Undeclared terminal or lexer class '" ++ h.name ++ "'.")]
+                then [errFromOrigin(h, "Undeclared terminal or lexer class '" ++ h.name ++ "'.")]
                 else if length(h.lookupType.dcls) + length(h.lookupLexerClass.dcls) > 1
-                then [err(h.location, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++
+                then [errFromOrigin(h, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++
                             printPossibilities(h.lookupType.dcls) ++ if !null(h.lookupLexerClass.dcls) then ", " ++ printPossibilities(h.lookupLexerClass.dcls) else "")]
                 else [];
 }
@@ -111,34 +111,34 @@ top::TermPrecList ::=
 concrete production termPrecListOne
 top::TermPrecList ::= t::QName
 {
-  forwards to termPrecList(t, termPrecListNull(location=top.location), location=top.location);
+  forwards to termPrecList(t, termPrecListNull());
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
 concrete production termPrecListCons
 top::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
 {
-  forwards to termPrecList(t, terms_tail,location=top.location);
+  forwards to termPrecList(t, terms_tail);
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
-nonterminal LexerClasses with location, config, unparse, lexerClasses, errors, env;
+tracked nonterminal LexerClasses with config, unparse, lexerClasses, errors, env;
 propagate config, env, errors, lexerClasses on LexerClasses;
 
 concrete production lexerClassesOne
 top::LexerClasses ::= n::QName
 {
-  forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull(location=top.location), location=top.location), location=top.location);
+  forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull()));
 } action {
-  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
+  insert semantic token IdLexerClassDcl_t at n.nameLoc;
 }
 
 concrete production lexerClassesList
 top::LexerClasses ::= '{' cls::LexerClassList '}'
 {
-   forwards to lexerClasses(cls,location=top.location);
+   forwards to lexerClasses(cls);
 }
 
 abstract production lexerClasses
@@ -147,23 +147,23 @@ top::LexerClasses ::= cls::LexerClassList
   top.unparse = s"{${cls.unparse}}";
 }
 
-nonterminal LexerClassList with location, config, unparse, lexerClasses, errors, env;
+tracked nonterminal LexerClassList with config, unparse, lexerClasses, errors, env;
 propagate config, env, errors, lexerClasses on LexerClassList;
 
 concrete production lexerClassListOne
 top::LexerClassList ::= n::QName
 {
-  forwards to lexerClassListMain(n,lexerClassListNull(location=n.location), location=n.location);
+  forwards to lexerClassListMain(n,lexerClassListNull());
 } action {
-  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
+  insert semantic token IdLexerClassDcl_t at n.nameLoc;
 }
 
 concrete production lexerClassListCons
 top::LexerClassList ::= n::QName ',' cl_tail::LexerClassList
 {
-  forwards to lexerClassListMain(n,cl_tail,location=top.location);
+  forwards to lexerClassListMain(n,cl_tail);
 } action {
-  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
+  insert semantic token IdLexerClassDcl_t at n.nameLoc;
 }
 
 

@@ -4,13 +4,13 @@ grammar silver:compiler:extension:implicit_monads;
 abstract production restrictedSynDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.attrDefDispatcher = restrictedSynAttributeDef(_, _, _, location=_);
+  top.attrDefDispatcher = restrictedSynAttributeDef;
 
   --copied from synDcl
-  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.dataAccessHandler = synDataAccessHandler(_, _, location=_);
-  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.decoratedAccessHandler = synDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.dataAccessHandler = synDataAccessHandler;
+  top.attributionDispatcher = defaultAttributionDcl;
 
   top.fullName = fn;
   propagate compareKey;
@@ -25,13 +25,13 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 abstract production restrictedInhDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.attrDefDispatcher = restrictedInhAttributeDef(_, _, _, location=_);
+  top.attrDefDispatcher = restrictedInhAttributeDef;
 
   --copied from inhDcl
-  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
-  top.dataAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
-  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.decoratedAccessHandler = inhDecoratedAccessHandler;
+  top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler;
+  top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
+  top.attributionDispatcher = defaultAttributionDcl;
 
   top.fullName = fn;
   propagate compareKey;
@@ -48,13 +48,13 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 abstract production implicitSynDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.attrDefDispatcher = implicitSynAttributeDef(_, _, _, location=_);
+  top.attrDefDispatcher = implicitSynAttributeDef;
 
   --copied from synDcl
-  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.dataAccessHandler = synDataAccessHandler(_, _, location=_);
-  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.decoratedAccessHandler = synDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.dataAccessHandler = synDataAccessHandler;
+  top.attributionDispatcher = defaultAttributionDcl;
 
   top.fullName = fn;
   propagate compareKey;
@@ -69,13 +69,13 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 abstract production implicitInhDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.attrDefDispatcher = implicitInhAttributeDef(_, _, _, location=_);
+  top.attrDefDispatcher = implicitInhAttributeDef;
 
   --copied from inhDcl
-  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
-  top.dataAccessHandler = inhUndecoratedAccessErrorHandler(_, _, location=_);
-  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.decoratedAccessHandler = inhDecoratedAccessHandler;
+  top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler;
+  top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
+  top.attributionDispatcher = defaultAttributionDcl;
 
   top.fullName = fn;
   propagate compareKey;

@@ -56,7 +56,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   
   errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <- if errCheck1.typeerror
-                then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
+                then [errFromOrigin(e, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
                 else [];
 }
 
@@ -70,7 +70,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   errCheck1 = check(lhs.typerep, e.typerep);
   top.errors <- 
        if errCheck1.typeerror
-       then [err(e.location, lhs.name ++ " has expected type " ++ errCheck1.leftpp
+       then [errFromOrigin(e, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
        else [];
 }
@@ -84,7 +84,7 @@ top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
   
   errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <- if errCheck1.typeerror
-                then [err(e.location, "Undecorates's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
+                then [errFromOrigin(e, "Undecorates's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
                 else [];
 }
 
@@ -98,7 +98,7 @@ top::ProductionStmt ::= 'attachNote' e::Expr ';'
   errCheck1 = check(e.typerep, nonterminalType("silver:core:OriginNote", [], true, false));
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Origin note must have type silver:core:OriginNote, but the expression has actual type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Origin note must have type silver:core:OriginNote, but the expression has actual type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -112,7 +112,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Expected return type is " ++ errCheck1.rightpp ++ ", but the expression has actual type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Expected return type is " ++ errCheck1.rightpp ++ ", but the expression has actual type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -126,7 +126,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
 
@@ -140,7 +140,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
+    then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
 
@@ -154,14 +154,14 @@ aspect production childDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
-                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
+                else [errFromOrigin(top, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
-                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
+                else [errFromOrigin(top, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localAttributeDcl
@@ -186,6 +186,6 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Local " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Local " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
 }

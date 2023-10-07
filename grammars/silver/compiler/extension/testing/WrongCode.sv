@@ -24,13 +24,13 @@ top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)
-    then [err(top.location, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
+    then [errFromOrigin(top, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
   -- do extend its environment with its defs
   ags.env = occursEnv(ags.occursDefs, newScopeEnv(ags.defs, top.env));
   
-  forwards to emptyAGDcl(location=top.location);
+  forwards to emptyAGDcl();
 }
 
 concrete production warnDecl
@@ -41,7 +41,7 @@ top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
-    then [err(top.location, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
+    then [errFromOrigin(top, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
   forwards to makeAppendAGDclOfAGDcls(ags);
@@ -71,7 +71,7 @@ top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
   top.errors :=
     ags.errors ++
     if containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
-    then [err(top.location, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
+    then [errFromOrigin(top, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
     else [];
 
   forwards to makeAppendAGDclOfAGDcls(ags);
@@ -86,12 +86,12 @@ top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)
-    then [err(top.location, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
+    then [errFromOrigin(top, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
   -- These need to be passed up for the flow analysis to work:
   propagate defs, flowDefs, uniqueRefs;
   
-  forwards to emptyAGDcl(location=top.location);
+  forwards to emptyAGDcl();
 }
 

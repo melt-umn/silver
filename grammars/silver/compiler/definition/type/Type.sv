@@ -13,7 +13,7 @@ synthesized attribute monoType :: Type; -- Raises on error when we encounter a p
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType with boundVars, contexts, typerep, monoType;
+tracked nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
 flowtype PolyType = decorate {}, forward {};
 
@@ -48,7 +48,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
  - Represents a constraint on a type, e.g. a type class instance
  -}
 
-nonterminal Context with freeVariables;
+tracked nonterminal Context with freeVariables;
 
 abstract production instContext
 top::Context ::= cls::String t::Type
@@ -95,7 +95,7 @@ top::Context ::= msg::String
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindrep, freeVariables;
+tracked nonterminal Type with kindrep, freeVariables;
 
 flowtype Type = decorate {}, forward {};
 
@@ -337,7 +337,7 @@ top::Type ::= params::Integer namedParams::[String]
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindrep, compareTo, isEqual;
+tracked nonterminal TyVar with kindrep, compareTo, isEqual;
 propagate compareTo, isEqual on TyVar;
 
 -- In essence, this should be 'private' to this file.

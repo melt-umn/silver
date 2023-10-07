@@ -20,7 +20,7 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
 inherited attribute prefixedTerminals::[String];
 inherited attribute prefixedGrammars::[String];
 synthesized attribute terminalPrefix::String;
-nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
+tracked nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, unparse, errors, syntaxAst, genFiles, terminalPrefix;
 
 propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, errors, syntaxAst, genFiles on TerminalPrefix;
 
@@ -31,7 +31,7 @@ top::TerminalPrefix ::= s::QName
   top.errors <- s.lookupType.errors;
   top.terminalPrefix = makeCopperName(s.lookupType.fullName);
 } action {
-  insert semantic token IdType_t at s.baseNameLoc;
+  insert semantic token IdType_t at s.nameLoc;
 }
 
 concrete production newTermModifiersTerminalPrefix
@@ -39,8 +39,9 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 {
   top.unparse = r.unparse ++ " " ++ tm.unparse;
   production regex::Regex = r.terminalRegExprSpec;
+  local loc::Location = getParsedOriginLocation(top).fromJust;
   local terminalName::String =
-    "Prefix_" ++ toString(top.location.line) ++
+    "Prefix_" ++ toString(loc.line) ++
     case regex.asLiteral of
     | just(a) when isAlpha(a) -> "_" ++ a
     | _ -> ""
@@ -50,7 +51,7 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
     [ syntaxTerminal(
         terminalFullName, regex,
         foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers),
-        location=top.location, sourceGrammar=top.grammarName)
+        location=loc, sourceGrammar=top.grammarName)
     ];
   top.genFiles <- terminalTranslation(terminalName, top.grammarName, tm.lexerClasses);
   top.terminalPrefix = makeCopperName(terminalFullName);
@@ -60,7 +61,7 @@ concrete production newTermTerminalPrefix
 top::TerminalPrefix ::= r::RegExpr
 {
   top.unparse = r.unparse;
-  forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone(location=top.location), location=top.location);
+  forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone());
 }
 
 concrete production seperatedTerminalPrefix
@@ -70,13 +71,11 @@ top::TerminalPrefix ::= t::String_t
   forwards to
     newTermModifiersTerminalPrefix(
       -- We pass the string prefix as a regex that does not contain the prefix separator
-      regExpr(regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), location=top.location),
+      regExpr(regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme))),
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(
-        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars, location=top.location),
-        location=top.location),
-      location=top.location);
+        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars)));
 }
 
 -- Needed when generating seperated terminal declarations, this is pretty useless otherwise so abstract only
@@ -91,7 +90,7 @@ top::TerminalModifier ::= terms::[String]  grams::[String]
 
 synthesized attribute prefixItemNames::[String];
 synthesized attribute isAllMarking::Boolean;
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames, isAllMarking;
+tracked nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, unparse, errors, prefixItemNames, isAllMarking;
 propagate config, env, grammarName, componentGrammarName, compiledGrammars, errors on TerminalPrefixItems;
 
 concrete production consTerminalPrefixItem
@@ -127,7 +126,7 @@ top::TerminalPrefixItems ::=
   top.isAllMarking = true;
 }
 
-nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
+tracked nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, unparse, errors, prefixItemNames;
 propagate config, env, grammarName, componentGrammarName, compiledGrammars on TerminalPrefixItem;
 
 concrete production qNameTerminalPrefixItem
@@ -137,17 +136,14 @@ top::TerminalPrefixItem ::= t::QName
   top.errors := t.lookupType.errors;
   top.prefixItemNames = [t.lookupType.fullName];
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
 concrete production easyTerminalRefTerminalPrefixItem
 top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
   propagate env;
-  forwards to
-    qNameTerminalPrefixItem(
-      qName(top.location, head(t.dcls).fullName),
-      location=top.location);
+  forwards to qNameTerminalPrefixItem(qName(head(t.dcls).fullName));
 }
 
 -- For now, manually write this to specify priorities between terminals
@@ -173,6 +169,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   pluckTAction.originRules = [];
   
   local tName::String = t.lookupType.dcl.fullName;
+  local loc::Location = getParsedOriginLocation(top).fromJust;
   top.syntaxAst <- if !t.lookupType.found then [] else
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
@@ -182,12 +179,12 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
     map(
       \ tsNames::[String] -> 
         syntaxDisambiguationGroup(
-          s"Prefer_${toString(top.location.line)}_${tName}__${implode("__", tsNames)}",
+          s"Prefer_${toString(loc.line)}_${tName}__${implode("__", tsNames)}",
           tName :: tsNames, false, pluckTAction.translation,
-          location=top.location, sourceGrammar=top.grammarName),
+          location=loc, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
 } action {
-  insert semantic token IdType_t at t.baseNameLoc;
+  insert semantic token IdType_t at t.nameLoc;
 }
 
 -- Prefix separator
@@ -201,7 +198,7 @@ top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
   top.lexerClassModifiers :=
     [ lexerClassPrefixSeperator(
         substring(1, length(s.lexeme) - 1, s.lexeme),
-        location=top.location, sourceGrammar=top.grammarName)
+        location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)
     ];
 }
 

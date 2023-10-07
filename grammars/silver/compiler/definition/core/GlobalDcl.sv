@@ -16,7 +16,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   allLexicalTyVars = nub(t.lexicalTypeVariables);
   
   production attribute typeExprDefs :: [Def] with ++;
-  typeExprDefs := addNewLexicalTyVars(top.grammarName, top.location, t.lexicalTyVarKinds, allLexicalTyVars);
+  typeExprDefs := addNewLexicalTyVars(top.grammarName, t.lexicalTyVarKinds, allLexicalTyVars);
   
   -- The following environments require the definitions from the type
   -- expression, as constructed above in typeExprDefs using its lexical
@@ -26,17 +26,17 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   -- The expression also requires the constraint list definitions in its env
   e.env = occursEnv(cl.occursDefs, newScopeEnv(cl.defs, cl.env));
 
-  top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, cl.contexts, t.typerep)];
+  top.defs := [globalDef(top.grammarName, id.nameLoc, fName, boundVars, cl.contexts, t.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
-    then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
     else [];
 
   e.originRules = [];
   e.isRoot = true;
 
-  cl.constraintPos = globalPos(boundVars);
+  cl.constraintPos = globalPos(boundVars, sourceGrammar=top.grammarName);
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -55,5 +55,5 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
   top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ ";\n";
 
-  forwards to globalValueDclConcrete($1, id, $3, nilConstraint(location=top.location), '=>', t, $5, e, $7, location=top.location);
+  forwards to globalValueDclConcrete($1, id, $3, nilConstraint(), '=>', t, $5, e, $7);
 }

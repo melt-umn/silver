@@ -27,33 +27,33 @@ propagate valueRefLocs, typeRefLocs, attributeRefLocs on
   PrimPatterns, PrimPattern, ProdNameList;
 
 aspect valueRefLocs on NameList using <- of
-| nameListCons(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| nameListOne(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| nameListCons(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| nameListOne(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect typeRefLocs on NameList using <- of
-| nameListCons(q, _, _) -> if q.lookupType.found then [(q.location, q.lookupType.dcl)] else []
-| nameListOne(q) -> if q.lookupType.found then [(q.location, q.lookupType.dcl)] else []
+| nameListCons(q, _, _) -> if q.lookupType.found then [(q.nameLoc, q.lookupType.dcl)] else []
+| nameListOne(q) -> if q.lookupType.found then [(q.nameLoc, q.lookupType.dcl)] else []
 end;
 
 aspect attributeRefLocs on NameList using <- of
-| nameListCons(q, _, _) -> if q.lookupAttribute.found then [(q.location, q.lookupAttribute.dcl)] else []
-| nameListOne(q) -> if q.lookupAttribute.found then [(q.location, q.lookupAttribute.dcl)] else []
+| nameListCons(q, _, _) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
+| nameListOne(q) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
 end;
 
 attribute typeRefLocs occurs on QNameType;
 aspect typeRefLocs on top::QNameType using := of
-| _ -> if top.lookupType.found then [(top.location, top.lookupType.dcl)] else []
+| _ -> if top.lookupType.found then [(top.nameLoc, top.lookupType.dcl)] else []
 end;
 
 attribute attributeRefLocs occurs on QNameAttrOccur;
 aspect attributeRefLocs on top::QNameAttrOccur using := of
-| qNameAttrOccur(at) -> if top.found then [(at.location, top.attrDcl)] else []
+| qNameAttrOccur(at) -> if top.found then [(at.nameLoc, top.attrDcl)] else []
 end;
 
 aspect valueRefLocs on AGDcl using <- of
-| aspectProductionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| aspectFunctionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| aspectProductionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| aspectFunctionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on AGDcl using := of
@@ -64,7 +64,7 @@ aspect valueRefLocs on AGDcl using := of
 end;
 
 aspect typeRefLocs on AGDcl using <- of
-| defaultAttributionDcl(_, _, nt, _) -> if nt.lookupType.found then [(nt.location, nt.lookupType.dcl)] else []
+| defaultAttributionDcl(_, _, nt, _) -> if nt.lookupType.found then [(nt.nameLoc, nt.lookupType.dcl)] else []
 end;
 
 aspect typeRefLocs on AGDcl using := of
@@ -73,7 +73,7 @@ aspect typeRefLocs on AGDcl using := of
 end;
 
 aspect attributeRefLocs on AGDcl using <- of
-| defaultAttributionDcl(at, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
+| defaultAttributionDcl(at, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect attributeRefLocs on AGDcl using := of
@@ -95,15 +95,15 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs _ te::Type
 }
 
 aspect attributeRefLocs on Constraint using <- of
-| inhOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
-| synOccursConstraint(_, at, _, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
-| annoOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
+| inhOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
+| synOccursConstraint(_, at, _, _, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
+| annoOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect valueRefLocs on top::ProductionStmt using <- of
-| localAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
-| productionAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
-| forwardProductionAttributeDcl(_, _, _, n, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| localAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| productionAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| forwardProductionAttributeDcl(_, _, _, n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on ProductionStmt using := of
@@ -111,7 +111,7 @@ aspect valueRefLocs on ProductionStmt using := of
 end;
 
 aspect attributeRefLocs on ProductionStmt using := of
-| propagateOneAttr(at) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
+| propagateOneAttr(at) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect typeRefLocs on ProductionStmt using := of
@@ -119,13 +119,13 @@ aspect typeRefLocs on ProductionStmt using := of
 end;
 
 aspect valueRefLocs on DefLHS using <- of
-| lhsDefLHS(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| childDefLHS(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| localDefLHS(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| lhsDefLHS(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| childDefLHS(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| localDefLHS(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on Expr using <- of
-| baseExpr(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| baseExpr(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on Expr using := of
@@ -146,17 +146,17 @@ aspect typeRefLocs on Expr using := of
 end;
 
 aspect attributeRefLocs on AnnoExpr using <- of
-| annoExpr(q, _, _) -> if q.lookupAttribute.found then [(q.location, q.lookupAttribute.dcl)] else []
+| annoExpr(q, _, _) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
 end;
 
 aspect valueRefLocs on PrimPattern using <- of
-| prodPatternNormal(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| prodPatternGadt(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| prodPatternNormal(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| prodPatternGadt(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on ProdNameList using <- of
-| prodNameListCons(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| prodNameListOne(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| prodNameListCons(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| prodNameListOne(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on StrategyExpr, StrategyExprs;
@@ -168,7 +168,7 @@ propagate attributeRefLocs on StrategyExpr, StrategyExprs
   excluding partialRef, totalRef;
 
 aspect valueRefLocs on top::StrategyExpr using <- of
-| prodTraversal(q, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| prodTraversal(q, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 | rewriteRule(_, _, _) -> checkExpr.valueRefLocs
 end;
 
@@ -181,18 +181,18 @@ aspect attributeRefLocs on top::StrategyExpr using <- of
 end;
 
 aspect attributeRefLocs on StrategyExpr using := of
-| partialRef(a) -> if attrDclFound then [(a.location, attrDcl)] else []
-| totalRef(a) -> if attrDclFound then [(a.location, attrDcl)] else []
+| partialRef(a) -> if attrDclFound then [(a.nameLoc, attrDcl)] else []
+| totalRef(a) -> if attrDclFound then [(a.nameLoc, attrDcl)] else []
 end;
 
 -- Productions
 -- LHS
 aspect valueRefLocs on top::ProductionLHS using <- of
-| productionLHS(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| productionLHS(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectProductionLHS using <- of
-| aspectProductionLHSFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| aspectProductionLHSFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionLHS using <- of
@@ -209,11 +209,11 @@ end;
 
 --RHS
 aspect valueRefLocs on top::ProductionRHSElem using <- of
-| productionRHSElem(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| productionRHSElem(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectRHSElem using <- of
-| aspectRHSElemFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.location, dcl), getValueDcl(n.name, top.env))
+| aspectRHSElemFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionRHSElem using <- of

@@ -11,7 +11,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
-  top.monadRewritten = lambdap(params, e.monadRewritten, location=top.location);
+  top.monadRewritten = lambdap(params, e.monadRewritten);
 }
 
 
@@ -23,7 +23,7 @@ top::Expr ::= q::Decorated! QName
   propagate mDownSubst, mUpSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q), location=top.location)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(new(q), location=top.location);
+  top.monadRewritten = baseExpr(new(q));
 }

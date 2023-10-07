@@ -8,22 +8,22 @@ top::Expr ::= q::NameTick
 {
   top.unparse = q.unparse;
 
-  top.errors <- [wrn(top.location, "Tick suffixes no longer do ANYTHING. Remove it!")];
+  top.errors <- [wrnFromOrigin(top, "Tick suffixes no longer do ANYTHING. Remove it!")];
 
-  forwards to baseExpr(qName(q.location, q.name), location=q.location);
+  forwards to baseExpr(qName(q.name));
 }
 concrete production concreteDontDecorateExpr
 top::Expr ::= q::NameTickTick
 {
   top.unparse = q.unparse;
-  top.errors <- [wrn(top.location, "Double tick suffixes no longer do ANYTHING. Remove it!")];
+  top.errors <- [wrnFromOrigin(top, "Double tick suffixes no longer do ANYTHING. Remove it!")];
 
-  forwards to baseExpr(qName(q.location, q.name), location=q.location);
+  forwards to baseExpr(qName(q.name));
 }
 
 
-nonterminal NameTick with config, grammarName, location, unparse, name;
-nonterminal NameTickTick with config, grammarName, location, unparse, name;
+tracked nonterminal NameTick with config, grammarName, unparse, name;
+tracked nonterminal NameTickTick with config, grammarName, unparse, name;
 
 concrete production nameIdTick
 top::NameTick ::= id::IdTick_t

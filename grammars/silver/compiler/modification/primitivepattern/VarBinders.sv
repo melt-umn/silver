@@ -12,14 +12,14 @@ import silver:compiler:definition:flow:ast only just, PatternVarProjection, patt
 
 import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
 
-nonterminal VarBinders with 
+tracked nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, defs, boundNames,
+  unparse, errors, defs, boundNames,
   bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst, flowProjections, bindingNames, flowEnv, matchingAgainst;
-nonterminal VarBinder with
+tracked nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, defs, boundNames,
+  unparse, errors, defs, boundNames,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
@@ -159,7 +159,7 @@ top::VarBinder ::= n::Name
     else [];
 
   -- Unique refs are forbidden in the scrutinee.
-  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps, [])];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps, [])];
   top.boundNames <- [n.name];
 
   top.translation = 
@@ -182,14 +182,14 @@ top::VarBinder ::= n::Name
   -- (Types have to be upper case)
   top.errors <-
     if !isUpper(substring(0,1,n.name)) then []
-    else [err(top.location, "Pattern variables must start with a lower case letter")];
+    else [errFromOrigin(top, "Pattern variables must start with a lower case letter")];
 
   -- We prevent this to avoid people possibly forgetting the parens, e.g. writing 'nothing'
   -- One thing we could do is specifically raise this error, only if it's the production would be the right type.
   -- this would allow us to match 'left' and 'right' on a Pair, for example, but error on Either
   top.errors <- 
     case getValueDcl(n.name, top.env) of
-    | prodDcl(_,_) :: _ -> [err(top.location, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
+    | prodDcl(_,_) :: _ -> [errFromOrigin(top, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
     | _ -> []
     end;
 }

@@ -47,7 +47,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <- 
     if id.name == "main" && typeIOValFailed && typeIOMonadFailed -- Neither legal main function type used
-    then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++ 
+    then [errFromOrigin(top, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++ 
 		"or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }

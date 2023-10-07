@@ -3,7 +3,7 @@ grammar silver:compiler:extension:autoattr;
 abstract production propagateInh
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   local attrFullName::String = attr.lookupAttribute.dcl.fullName;
@@ -20,19 +20,17 @@ top::ProductionStmt ::= attr::Decorated! QName
       top.frame.signature.inputElements);
   forwards to
     foldr(
-      productionStmtAppend(_, _, location=top.location),
-      errorProductionStmt([], location=top.location), -- No emptyProductionStmt?
+      productionStmtAppend(_, _),
+      errorProductionStmt([]), -- No emptyProductionStmt?
       map(
         \ ie::NamedSignatureElement ->
           attributeDef(
-            concreteDefLHS(qName(top.location, ie.elementName), location=top.location), '.',
-            qNameAttrOccur(new(attr), location=top.location),
+            concreteDefLHS(qName(ie.elementName)), '.',
+            qNameAttrOccur(new(attr)),
             '=',
             access(
-              baseExpr(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location), '.',
-              qNameAttrOccur(new(attr), location=top.location),
-              location=top.location),
-            ';',
-            location=top.location),
+              baseExpr(qName(top.frame.signature.outputElement.elementName)), '.',
+              qNameAttrOccur(new(attr))),
+            ';'),
         inputsWithAttr));
 }

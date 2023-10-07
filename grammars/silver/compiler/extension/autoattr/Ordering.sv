@@ -17,19 +17,18 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
 
   top.errors <-
     if length(getAttrDclAll(synFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
 
   top.errors <-
     if length(getAttrDclAll(keySynFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ keySynFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ keySynFName ++ "' is already bound.")]
     else [];
 
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(orderingKeyDcl(keySynFName, sourceGrammar=top.grammarName, sourceLocation=syn.location))),
-       attrDef(defaultEnvItem(orderingDcl(inhFName, keySynFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
-      location=top.location);
+      [attrDef(defaultEnvItem(orderingKeyDcl(keySynFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc))),
+       attrDef(defaultEnvItem(orderingDcl(inhFName, keySynFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
 {--
@@ -38,13 +37,13 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
 abstract production propagateOrderingKey
 top::ProductionStmt ::= syn::Decorated! QName
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
+  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
 
   forwards to
     Silver_ProductionStmt {
       $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
-        $Expr{stringConst(terminal(String_t, s"\"${top.frame.fullName}\""), location=top.location)};
+        $Expr{stringConst(terminal(String_t, s"\"${top.frame.fullName}\""))};
     };
 }
 
@@ -54,7 +53,7 @@ top::ProductionStmt ::= syn::Decorated! QName
 abstract production propagateOrdering
 top::ProductionStmt ::= inh::String keySyn::String syn::Decorated! QName
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
+  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   local topName::String = top.frame.signature.outputElement.elementName;
@@ -64,16 +63,15 @@ top::ProductionStmt ::= inh::String keySyn::String syn::Decorated! QName
         case $name{topName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
-              qName(top.location, top.frame.signature.fullName),
+              qName(top.frame.signature.fullName),
               '(',
               foldr(
-                patternList_more(_, ',', _, location=top.location),
-                patternList_nil(location=top.location),
+                patternList_more(_, ',', _),
+                patternList_nil(),
                 map(
                   \ ie::NamedSignatureElement -> Silver_Pattern { $name{ie.elementName ++ "2"} },
                   top.frame.signature.inputElements)),
-              ')',
-              location=top.location)} ->
+              ')')} ->
           $Expr{
             if null(top.frame.signature.inputElements)
             then Silver_Expr { 0 }

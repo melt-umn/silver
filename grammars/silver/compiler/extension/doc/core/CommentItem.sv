@@ -1,11 +1,10 @@
 grammar silver:compiler:extension:doc:core;
 
 synthesized attribute body :: String;
-synthesized attribute loc :: Location;
 synthesized attribute stub :: Boolean;
 synthesized attribute docNames :: [String];
 synthesized attribute undocNames :: [String];
-nonterminal CommentItem with body, loc, doEmit, stub, docNames, undocNames;
+tracked nonterminal CommentItem with body, doEmit, stub, docNames, undocNames;
 
 {-
 Used by other productions to construct 
@@ -22,19 +21,19 @@ String ::= n::String
 }
 
 function makeStub
-String ::= forName::String docUnparse::String grammarName::String loc::Location
+String ::= forName::String docUnparse::String grammarName::String
 {
+  local loc::Location = getParsedOriginLocation(ambientOrigin()).fromJust;
   return
 s"""## ${docUnparse} {#${sanitizeAnchor(forName)}}
 Contained in grammar `[${grammarName}]`. Defined at [${substitute(":", "/", grammarName)}/${loc.filename} line ${toString(loc.line)}](https://github.com/melt-umn/silver/blob/develop/grammars/${substitute(":", "/", grammarName)}/${loc.filename}#L${toString(loc.line)}).""";
 }
 
 abstract production dclCommentItem
-top::CommentItem ::= forName::String docUnparse::String grammarName::String location::Location body::Decorated DclComment
+top::CommentItem ::= forName::String docUnparse::String grammarName::String body::Decorated DclComment
 {
   top.body = body.indentBy ++ substitute("\n", "\n"++body.indentBy,
-    makeStub(forName, docUnparse, grammarName, location) ++ "\n\n" ++ body.body);
-  top.loc = location;
+    makeStub(forName, docUnparse, grammarName) ++ "\n\n" ++ body.body);
   top.doEmit = body.doEmit;
   top.stub = false;
   top.docNames = [forName];
@@ -45,7 +44,6 @@ abstract production standaloneDclCommentItem
 top::CommentItem ::= body::Decorated DclComment
 {
   top.body = substitute("\n", "\n"++body.indentBy, body.body);
-  top.loc = body.location;
   top.doEmit = body.doEmit;
   top.stub = false;
   top.docNames = [];
@@ -53,10 +51,9 @@ top::CommentItem ::= body::Decorated DclComment
 }
 
 abstract production undocumentedItem
-top::CommentItem ::= forName::String docUnparse::String grammarName::String location::Location 
+top::CommentItem ::= forName::String docUnparse::String grammarName::String
 {
-  top.body = makeStub(forName, docUnparse, grammarName, location) ++ "\n\n (Undocumented.)";
-  top.loc = location;
+  top.body = makeStub(forName, docUnparse, grammarName) ++ "\n\n (Undocumented.)";
   top.doEmit = true;
   top.stub = true;
   top.docNames = [];
@@ -66,5 +63,5 @@ top::CommentItem ::= forName::String docUnparse::String grammarName::String loca
 function mkUndocumentedItem
 CommentItem ::= f::String t::Decorated AGDcl
 {
-  return undocumentedItem(f, t.docUnparse, t.grammarName, t.location);
+  return undocumentedItem(f, t.docUnparse, t.grammarName);
 }

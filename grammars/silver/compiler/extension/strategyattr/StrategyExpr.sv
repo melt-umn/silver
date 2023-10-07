@@ -40,19 +40,19 @@ synthesized attribute totalTranslation::Expr; -- a on a, can raise a runtime err
 -- but probably not much of an improvement.
 partial strategy attribute genericStep =
   rule on top::StrategyExpr of
-  | sequence(fail(), _) -> fail(location=top.location, genName=top.genName)
-  | sequence(_, fail()) -> fail(location=top.location, genName=top.genName)
+  | sequence(fail(), _) -> fail(genName=top.genName)
+  | sequence(_, fail()) -> fail(genName=top.genName)
   | sequence(id(), s) -> s
   | sequence(s, id()) -> s
   | choice(fail(), s) -> s
   | choice(s, fail()) -> s
   | choice(s, _) when s.isTotal -> s
-  | allTraversal(id()) -> id(location=top.location, genName=top.genName)
-  | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
-  | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
-  | prodTraversal(_, ss) when ss.containsFail -> fail(location=top.location, genName=top.genName)
+  | allTraversal(id()) -> id(genName=top.genName)
+  | someTraversal(fail()) -> fail(genName=top.genName)
+  | oneTraversal(fail()) -> fail(genName=top.genName)
+  | prodTraversal(_, ss) when ss.containsFail -> fail(genName=top.genName)
   | recComb(n, s) when !contains(n.name, s.freeRecVars) -> s
-  | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
+  | inlined(_, fail()) -> fail(genName=top.genName)
   end;
 -- Nonterminal-dependent, production-independent optimizations
 partial strategy attribute ntStep =
@@ -64,27 +64,27 @@ partial strategy attribute ntStep =
       !contains(n.attrDcl.fullName, top.inlinedStrategies) &&
       null(n.attrDcl.givenRecVarNameEnv) &&
       !n.attrDcl.containsTraversal ->
-    inlined(n, n.attrDcl.strategyExpr, location=top.location, genName=top.genName)
-  | partialRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
-  | inlined(n, _) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
-  | inlined(n, id()) when n.matchesFrame -> id(location=top.location, genName=top.genName)
-  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(n2, location=top.location, genName=top.genName)
+    inlined(n, n.attrDcl.strategyExpr, genName=top.genName)
+  | partialRef(n) when !n.matchesFrame -> fail(genName=top.genName)
+  | inlined(n, _) when !n.matchesFrame -> fail(genName=top.genName)
+  | inlined(n, id()) when n.matchesFrame -> id(genName=top.genName)
+  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(n2, genName=top.genName)
   end;
 -- Production-dependent optimizations
 partial strategy attribute prodStep =
   rule on top::StrategyExpr of
-  | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(location=top.location, genName=top.genName)
-  | someTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(location=top.location, genName=top.genName)
-  | oneTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(location=top.location, genName=top.genName)
-  | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail(location=top.location, genName=top.genName)
-  | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(genName=top.genName)
+  | someTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(genName=top.genName)
+  | oneTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(genName=top.genName)
+  | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail(genName=top.genName)
+  | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(genName=top.genName)
   end <+
   rewriteRule(id, id, elimInfeasibleMRules);
 partial strategy attribute elimInfeasibleMRules =
   onceBottomUp(
     rule on top::MRuleList of
     | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
-    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
+    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h)
     end);
 attribute elimInfeasibleMRules occurs on MRuleList;
 
@@ -112,13 +112,13 @@ strategy attribute optimize =
    id) <*
   try((genericStep <+ ntStep <+ prodStep) <* optimize);
 
-nonterminal StrategyExpr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
+tracked nonterminal StrategyExpr with
+  config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
   genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName, isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
-nonterminal StrategyExprs with
+tracked nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, compiledGrammars, flowEnv, -- Normal expression stuff
   outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
   inlinedStrategies, genericSimplify; -- Optimization stuff
@@ -168,7 +168,7 @@ Expr ::= t::Type e::Expr
 {
   return
     Silver_Expr {
-      let res::$TypeExpr{typerepTypeExpr(t, location=e.location)} =
+      let res::$TypeExpr{typerepTypeExpr(t)} =
           silver:core:error("Total result demanded when partial strategy failed")
       in silver:core:fromMaybe(res, $Expr{e})
       end
@@ -236,8 +236,8 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   -- the incoming tree and the result of s1 get re-decorated.
   local allInhs::ExprInhs =
     foldr(
-      exprInhsCons(_, _, location=top.location),
-      exprInhsEmpty(location=top.location),
+      exprInhsCons(_, _),
+      exprInhsEmpty(),
       map(
         \ attr::String ->
           -- TODO: translation attributes!
@@ -260,7 +260,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     | false, true ->
       Silver_Expr {
         silver:core:map(
-          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
+          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep)} ->
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name},
           $Expr{s1.partialTranslation})
       }
@@ -268,7 +268,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       Silver_Expr {
         silver:core:bind(
           $Expr{s1.partialTranslation},
-          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
+          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep)} ->
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
       }
     end;
@@ -358,8 +358,7 @@ top::StrategyExpr ::= s::StrategyExpr
              silver:core:just(
                $Expr{
                  mkFullFunctionInvocation(
-                   top.location,
-                   baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                   baseExpr(qName(top.frame.fullName)),
                    map(
                      \ a::Pair<String Boolean> ->
                        if a.snd
@@ -367,22 +366,19 @@ top::StrategyExpr ::= s::StrategyExpr
                        else Silver_Expr { $name{a.fst} },
                      childAccesses),
                    map(
-                     makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                     makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                      top.frame.signature.namedInputElements))})
-           },
-           location=top.location)],
+           })],
         false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep),
-        location=top.location);
+        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep));
   top.totalTranslation =
     if sTotal
     then
       {- When s is total, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
        mkFullFunctionInvocation(
-         top.location,
-         baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+         baseExpr(qName(top.frame.fullName)),
          map(
            \ a::Pair<String Boolean> ->
              if a.snd
@@ -390,7 +386,7 @@ top::StrategyExpr ::= s::StrategyExpr
              else Silver_Expr { $name{a.fst} },
            childAccesses),
          map(
-           makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
            top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
@@ -433,8 +429,8 @@ top::StrategyExpr ::= s::StrategyExpr
       Silver_Expr {
         if $Expr{
           foldr(
-            or(_, '||', _, location=top.location),
-            falseConst('false', location=top.location),
+            or(_, '||', _),
+            falseConst('false'),
             map(
               \ a::String -> Silver_Expr { $name{a}.$name{sName}.isJust },
               matchingChildren))}
@@ -442,8 +438,7 @@ top::StrategyExpr ::= s::StrategyExpr
           silver:core:just(
             $Expr{
               mkFullFunctionInvocation(
-                top.location,
-                baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                baseExpr(qName(top.frame.fullName)),
                 map(
                   \ a::Pair<String Boolean> ->
                     if a.snd
@@ -451,7 +446,7 @@ top::StrategyExpr ::= s::StrategyExpr
                     else Silver_Expr { $name{a.fst} },
                   childAccesses),
                 map(
-                  makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                  makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                   top.frame.signature.namedInputElements))})
         else silver:core:nothing()
       };
@@ -461,8 +456,7 @@ top::StrategyExpr ::= s::StrategyExpr
       {- When s is total, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
        mkFullFunctionInvocation(
-         top.location,
-         baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+         baseExpr(qName(top.frame.fullName)),
          map(
            \ a::Pair<String Boolean> ->
              if a.snd
@@ -470,7 +464,7 @@ top::StrategyExpr ::= s::StrategyExpr
              else Silver_Expr { $name{a.fst} },
            childAccesses),
          map(
-           makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
            top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
@@ -528,16 +522,15 @@ top::StrategyExpr ::= s::StrategyExpr
               matchRule(
                 map(
                   \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
-                  repeat(wildcPattern('_', location=top.location), i) ++
+                  repeat(wildcPattern('_'), i) ++
                   Silver_Pattern { silver:core:just($name{childI ++ "_" ++ sBaseName}) } ::
-                  repeat(wildcPattern('_', location=top.location), length(matchingChildren) - (i + 1))),
+                  repeat(wildcPattern('_'), length(matchingChildren) - (i + 1))),
                 nothing(),
                 Silver_Expr {
                   silver:core:just(
                     $Expr{
                       mkFullFunctionInvocation(
-                        top.location,
-                        baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                        baseExpr(qName(top.frame.fullName)),
                         map(
                           \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
                           take(childIndex, childAccesses)) ++
@@ -546,24 +539,21 @@ top::StrategyExpr ::= s::StrategyExpr
                           \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
                           drop(childIndex + 1, childAccesses)),
                         map(
-                          makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                          makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                           top.frame.signature.namedInputElements))})
-                },
-                location=top.location)
+                })
             end end,
             range(0, length(matchingChildren))),
         false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep),
-        location=top.location);
+        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep));
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
     then
       {- When s is total, optimized translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c) -}
       mkFullFunctionInvocation(
-        top.location,
-        baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+        baseExpr(qName(top.frame.fullName)),
         map(
           \ a::Pair<String Boolean> ->
             if a.fst == head(matchingChildren)
@@ -571,7 +561,7 @@ top::StrategyExpr ::= s::StrategyExpr
             else Silver_Expr { $name{a.fst} },
           childAccesses),
         map(
-          makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+          makeAnnoArg(top.frame.signature.outputElement.elementName, _),
           top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
@@ -587,7 +577,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   local numArgs::Integer = length(s.attrRefNames);
   top.errors <-
     if prod.lookupValue.found && numArgs != numParams
-    then [err(top.location, s"Wrong number of arguments to ${prod.name}: expected ${toString(numParams)}, got ${toString(numArgs)}")]
+    then [errFromOrigin(top,   s"Wrong number of arguments to ${prod.name}: expected ${toString(numParams)}, got ${toString(numArgs)}")]
     else [];
   
   propagate liftedStrategies;
@@ -635,8 +625,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
              silver:core:just(
                $Expr{
                  mkFullFunctionInvocation(
-                   top.location,
-                   baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                   baseExpr(qName(top.frame.fullName)),
                    map(
                      \ a::Pair<String Maybe<String>> ->
                        case a.snd of
@@ -646,14 +635,12 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                        end,
                      childAccesses),
                    map(
-                     makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                     makeAnnoArg(top.frame.signature.outputElement.elementName, _),
                      top.frame.signature.namedInputElements))})
-           },
-           location=top.location)],
+           })],
         false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep),
-        location=top.location)
+        appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep))
     else Silver_Expr { silver:core:nothing() };
 }
 
@@ -681,7 +668,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
     else nothing()) :: t.attrRefNames;
   top.errors <-
     if !null(top.givenInputElements) && !attrMatch && !h.isId
-    then [wrn(h.location, s"This (non-identity) strategy attribute does not occur on ${prettyType(hType)} and will be treated as identity")]
+    then [wrnFromOrigin(h, s"This (non-identity) strategy attribute does not occur on ${prettyType(hType)} and will be treated as identity")]
     else [];
   
   top.containsFail <- h.isFail;
@@ -758,7 +745,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   -- so we need to decorate one of those here.
   production checkExpr::Expr =
     caseExpr(
-      [hackLHSExprType(ty.typerep.asNtOrDecType, location=top.location)],
+      [hackLHSExprType(ty.typerep.asNtOrDecType)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
       decorate ml with {
@@ -767,11 +754,10 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
         matchRulePatternSize = 1;
         frame = error("not needed");
       }.matchRuleList, false,
-      errorExpr([], location=top.location),
-      ty.typerep,
-      location=top.location);
+      errorExpr([]),
+      ty.typerep);
   checkExpr.env =
-    newScopeEnv([lhsDef(top.grammarName, id.location, id.name, ty.typerep)], top.env);
+    newScopeEnv([lhsDef(top.grammarName, id.nameLoc, id.name, ty.typerep)], top.env);
   checkExpr.flowEnv = top.flowEnv;
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.alwaysDecorated = false;
@@ -793,7 +779,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   top.errors := checkExpr.errors;
   top.errors <-
     if !isDecorable(ty.typerep, top.env)
-    then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
+    then [wrnFromOrigin(ty, "Only rules on nonterminals can have an effect")]
     else [];
   top.errors <- ty.errorsKindStar;
   
@@ -802,8 +788,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation, false,
       Silver_Expr { silver:core:nothing() },
-      appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), ty.typerep),
-      location=top.location);
+      appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), ty.typerep));
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure
     then Silver_Expr { silver:core:nothing() }
@@ -822,7 +807,7 @@ top::Expr ::= t::Type
 {
   top.typerep = t;
   top.flowVertexInfo = just(lhsVertexType);
-  forwards to errorExpr([], location=top.location);
+  forwards to errorExpr([]);
 }
 
 attribute matchesFrame occurs on MRuleList, MatchRule, PatternList, Pattern;
@@ -850,8 +835,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{e}) },
-      location=top.location);
+      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{e}) });
 }
 
 aspect production matchRuleWhen_c
@@ -859,8 +843,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just((cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) },
-      location=top.location);
+      pt.patternList, just((cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) });
 }
 
 aspect production matchRuleWhenMatches_c
@@ -868,8 +851,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   top.translation =
     matchRule(
-      pt.patternList, just((cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) },
-      location=top.location);
+      pt.patternList, just((cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) });
 }
 
 aspect default production
@@ -901,12 +883,12 @@ top::StrategyExpr ::= id::QName
   local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
   forwards to
     if lookup(id.name, top.recVarNameEnv).isJust
-    then recVarRef(id, genName=top.genName, location=top.location)
+    then recVarRef(id, genName=top.genName)
     else if !null(id.lookupAttribute.errors)
-    then errorRef(id.lookupAttribute.errors, id, genName=top.genName, location=top.location)
+    then errorRef(id.lookupAttribute.errors, id, genName=top.genName)
     else if attrIsTotal(top.env, id.name)
-    then totalRef(qNameAttrOccur(id, location=top.location), genName=top.genName, location=top.location)
-    else partialRef(qNameAttrOccur(id, location=top.location), genName=top.genName, location=top.location);
+    then totalRef(qNameAttrOccur(id), genName=top.genName)
+    else partialRef(qNameAttrOccur(id), genName=top.genName);
 }
 abstract production errorRef
 top::StrategyExpr ::= msg::[Message] id::Decorated QName
@@ -949,16 +931,16 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
     if !attrDcl.isSynthesized
-    then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
+    then [errFromOrigin(attr,   s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | appType(nonterminalType("silver:core:Maybe", _, _, _), varType(a1)), [a2] when a1 == a2 && attrDcl.isSynthesized -> []
     | appType(nonterminalType("silver:core:Maybe", _, _, _), a), _
         when (a.baseType, attrDcl.isSynthesized) matches (nonterminalType(nt, _, _, _), true) ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
-      then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
+      then [wrnFromOrigin(attr, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
     | errorType(), _ -> []
-    | _, _ -> [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy")]
+    | _, _ -> [errFromOrigin(attr,   s"Attribute ${attr.name} cannot be used as a partial strategy")]
     end;
   
   propagate liftedStrategies;
@@ -985,15 +967,15 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
     if !attrDcl.isSynthesized
-    then [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it is not a synthesized attribute")]
+    then [errFromOrigin(attr,   s"Attribute ${attr.name} cannot be used as a total strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep.baseType, attrTypeScheme.boundVars of
     | varType(a1), [a2] when a1 == a2 -> []
     | nonterminalType(nt, _, _, _), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
-      then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it doesn't occur on its own nonterminal type ${nt}")]
+      then [wrnFromOrigin(attr, s"Attribute ${attr.name} cannot be used as a total strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
     | errorType(), _ -> []
-    | _, _ -> [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy")]
+    | _, _ -> [errFromOrigin(attr,   s"Attribute ${attr.name} cannot be used as a total strategy")]
     end;
   
   propagate liftedStrategies;
@@ -1057,7 +1039,7 @@ function attrMatchesFrame
 Boolean ::= env::Env attrName::String attrFor::Type
 {
   return
-    decorate qNameAttrOccur(qName(loc("", -1, -1, -1, -1, -1, -1), attrName), location=loc("", -1, -1, -1, -1, -1, -1))
+    decorate qNameAttrOccur(qName(attrName))
     with { env = env; attrFor = attrFor; }.matchesFrame;
 }
 

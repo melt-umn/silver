@@ -23,19 +23,19 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   -- TODO: We want to define our own defs here but can't forward to defsAGDcl because collections define different translation.
   -- Not sure about the best way to refactor this.
   top.defs :=
-    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.location)))];
+    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))];
 
   top.errors <- e.errors;
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
   
   local errCheck1 :: TypeCheck = check(e.typerep, te.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(e.location, "Monoid attribute " ++ fName ++ " of type " ++ errCheck1.rightpp ++ " has empty value specified with type " ++ errCheck1.leftpp)]
+    then [errFromOrigin(e, "Monoid attribute " ++ fName ++ " of type " ++ errCheck1.rightpp ++ " has empty value specified with type " ++ errCheck1.leftpp)]
     else [];
 
   e.downSubst = emptySubst();
@@ -59,8 +59,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   
   forwards to
     collectionAttributeDclSyn(
-      'synthesized', 'attribute', a, tl, '::', te, 'with', q, ';',
-      location=top.location);
+      'synthesized', 'attribute', a, tl, '::', te, 'with', q, ';');
 }
 
 concrete production tcMonoidAttributeDcl
@@ -70,47 +69,46 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   forwards to
     monoidAttributeDcl(
       $1, $2, a, tl, $5, te, 'with',
-      baseExpr(qName(te.location, "silver:core:mempty"), location=te.location), ',',
-      exprOperator(baseExpr(qName(te.location, "silver:core:append"), location=te.location), location=te.location), $7,
-      location=top.location);
+      baseExpr(qName("silver:core:mempty")), ',',
+      exprOperator(baseExpr(qName("silver:core:append"))), $7);
 }
 
-synthesized attribute appendProd :: (Expr ::= Expr Expr Location) occurs on Operation;
+synthesized attribute appendProd :: (Expr ::= Expr Expr) occurs on Operation;
 
 aspect production functionOperation
 top::Operation ::= e::Expr _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkFunctionInvocation(l, e, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr -> mkFunctionInvocation(e, [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 
 {
-  top.appendProd = plusPlus(_, '++', _, location=_);
+  top.appendProd = plusPlus(_, '++', _);
 }
 aspect production plusPlusOperationList
 top::Operation ::= 
 {
-  top.appendProd = plusPlus(_, '++', _, location=_);
+  top.appendProd = plusPlus(_, '++', _);
 }
 aspect production borOperation
 top::Operation ::= 
 {
-  top.appendProd = or(_, '||', _, location=_);
+  top.appendProd = or(_, '||', _);
 }
 aspect production bandOperation
 top::Operation ::= 
 {
-  top.appendProd = and(_, '&&', _, location=_);
+  top.appendProd = and(_, '&&', _);
 }
 aspect production addOperation
 top::Operation ::= 
 {
-  top.appendProd = plus(_, '+', _, location=_);
+  top.appendProd = plus(_, '+', _);
 }
 aspect production mulOperation
 top::Operation ::= 
 {
-  top.appendProd = multiply(_, '*', _, location=_);
+  top.appendProd = multiply(_, '*', _);
 }
 
 {--
@@ -120,7 +118,7 @@ top::Operation ::=
 abstract production propagateMonoid
 top::ProductionStmt ::= attr::Decorated! QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
@@ -138,21 +136,20 @@ top::ProductionStmt ::= attr::Decorated! QName
     then attr.lookupAttribute.dcl.emptyVal
     else
       foldr1(
-        attr.lookupAttribute.dcl.operation.appendProd(_, _, top.location),
+        attr.lookupAttribute.dcl.operation.appendProd,
         map(
           \ i::NamedSignatureElement ->
             access(
-              baseExpr(qName(top.location, i.elementName), location=top.location),
+              baseExpr(qName(i.elementName)),
               '.',
-              qNameAttrOccur(new(attr), location=top.location),
-              location=top.location),
+              qNameAttrOccur(new(attr))),
           inputsWithAttr));
 
   -- Construct an attribute def and call with the generated arguments
   forwards to
     attrContainsBase(
-      concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
+      concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
       '.',
-      qNameAttrOccur(new(attr), location=top.location),
-      ':=', res, ';', location=top.location);
+      qNameAttrOccur(new(attr)),
+      ':=', res, ';');
 }

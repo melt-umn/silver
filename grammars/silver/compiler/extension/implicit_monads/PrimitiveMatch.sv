@@ -50,7 +50,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   top.merrors := e.merrors ++ pr.merrors ++ f.merrors;
   top.merrors <- if prPattIsMonadic
-                 then [err(top.location, "Cannot match on implicit monadic type " ++ prettyType(pr.patternType))]
+                 then [errFromOrigin(top, "Cannot match on implicit monadic type " ++ prettyType(pr.patternType))]
                  else [];
 
   e.mDownSubst = top.mDownSubst;
@@ -63,15 +63,15 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.monadicNames = e.monadicNames ++ pr.monadicNames ++ f.monadicNames;
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
-  local eBind::Expr = monadBind(top.location);
-  local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location);
+  local eBind::Expr = monadBind();
+  local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep));
   local binde_lambdaparams::ProductionRHS =
-        productionRHSCons(productionRHSElem(name(freshname, top.location), '::',
-                                            eInnerType, location=top.location),
-                          productionRHSNil(location=top.location), location=top.location);
+        productionRHSCons(productionRHSElem(name(freshname), '::',
+                                            eInnerType),
+                          productionRHSNil());
   --Since we sometimes need to just use pure() over the top of everything to get a
   --   monad out, we use a fresh type rather than the top.mtyperep
-  local outty::TypeExpr = typerepTypeExpr(freshType(), location=top.location);
+  local outty::TypeExpr = typerepTypeExpr(freshType());
 
   {-We need to make sure that, if we are matching on a decorable type,
     it is decorated.  We need to check both whether the type is
@@ -81,18 +81,18 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     already).-}
   local eMTyDecorable::Boolean =
         if eIsMonadic
-        then isDecorable(performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst), top.env) ||
-             (!performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst).isDecorated && isDecorable(pr.patternType, top.env))
+        then isDecorable(performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst), top.env) ||
+             (!performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst).isDecorated && isDecorable(pr.patternType, top.env))
         else isDecorable(performSubstitution(e.mtyperep, e.mUpSubst), top.env) ||
              (!performSubstitution(e.mtyperep, e.mUpSubst).isDecorated && isDecorable(pr.patternType, top.env));
   local decName::Expr =
         if eMTyDecorable
-        then decorateExprWithEmpty('decorate', baseExpr(qName(top.location, freshname), location=top.location),
-                                   'with', '{', '}', location=top.location)
-        else baseExpr(qName(top.location, freshname), location=top.location);
+        then decorateExprWithEmpty('decorate', baseExpr(qName(freshname)),
+                                   'with', '{', '}')
+        else baseExpr(qName(freshname));
   local decE::Expr =
         if eMTyDecorable
-        then decorateExprWithEmpty('decorate', e.monadRewritten, 'with', '{', '}', location=top.location)
+        then decorateExprWithEmpty('decorate', e.monadRewritten, 'with', '{', '}')
         else e.monadRewritten;
 
   --bind e, just do the rest
@@ -100,24 +100,18 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     buildApplication(eBind,
                      [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
-                                                              outty, pr.monadRewritten, f.monadRewritten,
-                                                              location=top.location),
-                                           location=top.location)],
-                     top.location);
+                                                              outty, pr.monadRewritten, f.monadRewritten))]);
   --bind e, return f based on e's type
   local bind_e_return_f::Expr =
     buildApplication(eBind,
                      [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten,
-                                                              buildApplication(monadReturn(top.location),
-                                                                               [f.monadRewritten], top.location),
-                                                              location=top.location),
-                                           location=top.location)],
-                     top.location);
+                                                              buildApplication(monadReturn(),
+                                                                               [f.monadRewritten])))]);
   --bind e, returnify pr based on e's type
   local prReturnify::PrimPatterns = pr.monadRewritten;
-  prReturnify.returnFun = monadReturn(top.location);
+  prReturnify.returnFun = monadReturn();
   prReturnify.grammarName = top.grammarName;
   prReturnify.env = top.env;
   prReturnify.config = top.config;
@@ -126,42 +120,35 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                      [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
-                                                              f.monadRewritten, location=top.location),
-                                           location=top.location)],
-                     top.location);
+                                                              f.monadRewritten))]);
   --bind e, returnify pr, return f based on e's type
   local bind_e_returnify_pr_return_f::Expr =
     buildApplication(eBind,
                      [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
-                                                              buildApplication(monadReturn(top.location),
-                                                                 [f.monadRewritten], top.location),
-                                                              location=top.location),
-                                           location=top.location)],
-                     top.location);
+                                                              buildApplication(monadReturn(),
+                                                                 [f.monadRewritten])))]);
   --return f from pr's return type
   local return_f::Expr =
     matchPrimitiveReal(decE, outty, pr.monadRewritten,
-                       buildApplication(monadReturn(top.location), [f.monadRewritten], top.location),
-                       location=top.location);
+                       buildApplication(monadReturn(), [f.monadRewritten]));
   --returnify pr from f's type
   local ret_pr_from_f::PrimPatterns = pr.monadRewritten;
-  ret_pr_from_f.returnFun = monadReturn(top.location);
+  ret_pr_from_f.returnFun = monadReturn();
   ret_pr_from_f.grammarName = top.grammarName;
   ret_pr_from_f.env = top.env;
   ret_pr_from_f.config = top.config;
   local returnify_pr::Expr = matchPrimitiveReal(decE, outty, ret_pr_from_f.returnify,
-                                                f.monadRewritten, location=top.location);
+                                                f.monadRewritten);
   --just use monadRewritten
   local just_rewrite::Expr = matchPrimitiveReal(decE, outty, pr.monadRewritten,
-                                                f.monadRewritten, location=top.location);
+                                                f.monadRewritten);
   --t is monadic and nothing else is, so return over whole thing
   local return_whole_thing::Expr =
-    buildApplication(monadReturn(top.location),
+    buildApplication(monadReturn(),
                                  [matchPrimitiveReal(decE, outty, pr.monadRewritten,
-                                                     f.monadRewritten, location=top.location)],
-                                 top.location);
+                                                     f.monadRewritten)]);
   --pick the right rewriting
   local mRw::Expr =
         if eIsMonadic
@@ -181,7 +168,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                   else if tIsMonadic
                        then return_whole_thing
                        else if tIsMonadic --and nothing else is, so we need to add return
-                            then Silver_Expr {$Expr {monadReturn(top.location)}($Expr {just_rewrite})}
+                            then Silver_Expr {$Expr {monadReturn()}($Expr {just_rewrite})}
                             else just_rewrite;
   top.monadRewritten = mRw;
 }
@@ -199,8 +186,8 @@ top::PrimPatterns ::= p::PrimPattern
   top.monadicNames = p.monadicNames;
 
   p.returnFun = top.returnFun;
-  top.returnify = onePattern(p.returnify, location=top.location);
-  top.monadRewritten = onePattern(p.monadRewritten, location=top.location);
+  top.returnify = onePattern(p.returnify);
+  top.monadRewritten = onePattern(p.monadRewritten);
 }
 aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
@@ -222,29 +209,26 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 
   p.returnFun = top.returnFun;
   ps.returnFun = top.returnFun;
-  top.returnify = consPattern(p.returnify, terminal(Vbar_kwd, "|"), ps.returnify, location=top.location);
+  top.returnify = consPattern(p.returnify, terminal(Vbar_kwd, "|"), ps.returnify);
 
   --when both are monads or both aren't, so we don't need to change anything
-  local basicRewritten::PrimPatterns = consPattern(p.monadRewritten, terminal(Vbar_kwd, "|"), ps.monadRewritten,
-                                                   location=top.location);
+  local basicRewritten::PrimPatterns = consPattern(p.monadRewritten, terminal(Vbar_kwd, "|"), ps.monadRewritten);
   --when the current clause is a monad but the rest aren't, wrap all of them in Return()
   local psReturnify::PrimPatterns = ps.monadRewritten;
-  psReturnify.returnFun = monadReturn(top.location);
+  psReturnify.returnFun = monadReturn();
   psReturnify.env = top.env;
   psReturnify.config = top.config;
   psReturnify.grammarName = top.grammarName;
   local returnifyRewritten::PrimPatterns = consPattern(p.monadRewritten, terminal(Vbar_kwd, "|"),
-                                                       psReturnify.returnify,
-                                                       location=top.location);
+                                                       psReturnify.returnify);
   --when the current clause is not a monad but the rest are, wrap the current one in Return()
   local pReturnify::PrimPattern = p.monadRewritten;
-  pReturnify.returnFun = monadReturn(top.location);
+  pReturnify.returnFun = monadReturn();
   pReturnify.grammarName = top.grammarName;
   pReturnify.config = top.config;
   pReturnify.env = top.env;
   local returnRewritten::PrimPatterns = consPattern(pReturnify.returnify, terminal(Vbar_kwd, "|"),
-                                                    ps.monadRewritten,
-                                                    location=top.location);
+                                                    ps.monadRewritten);
   top.monadRewritten = if isMonad(p.mtyperep, top.env) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
                        then if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                             then basicRewritten     --both monads
@@ -291,9 +275,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.patternType = prod_type.outputType;
 
   top.returnify = prodPatternNormal(qn, ns,
-                                    Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                                    location=top.location);
-  top.monadRewritten = prodPatternNormal(qn, ns, e.monadRewritten, location=top.location);
+                                    Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = prodPatternNormal(qn, ns, e.monadRewritten);
 }
 
 aspect production prodPatternGadt
@@ -309,9 +292,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.patternType = prod_type.outputType;
 
   top.returnify = prodPatternGadt(qn, ns,
-                                  Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                                  location=top.location);
-  top.monadRewritten = prodPatternGadt(qn, ns, e.monadRewritten, location=top.location);
+                                  Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = prodPatternGadt(qn, ns, e.monadRewritten);
 }
 
 
@@ -329,9 +311,8 @@ top::PrimPattern ::= i::Int_t arr::Arrow_kwd e::Expr
   top.patternType = intType();
 
   top.returnify = integerPattern(i, terminal(Arrow_kwd, "->"),
-                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                                 location=top.location);
-  top.monadRewritten = integerPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten, location=top.location);
+                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = integerPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production floatPattern
 top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
@@ -346,9 +327,8 @@ top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
   top.patternType = floatType();
 
   top.returnify = floatPattern(f, terminal(Arrow_kwd, "->"),
-                               Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                               location=top.location);
-  top.monadRewritten = floatPattern(f, terminal(Arrow_kwd, "->"), e.monadRewritten, location=top.location);
+                               Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = floatPattern(f, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production stringPattern
 top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
@@ -363,9 +343,8 @@ top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
   top.patternType = stringType();
 
   top.returnify = stringPattern(i, terminal(Arrow_kwd, "->"),
-                                Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                                location=top.location);
-  top.monadRewritten = stringPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten, location=top.location);
+                                Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = stringPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production booleanPattern
 top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
@@ -380,9 +359,8 @@ top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
   top.patternType = stringType();
 
   top.returnify = booleanPattern(i, terminal(Arrow_kwd, "->"),
-                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                                 location=top.location);
-  top.monadRewritten = booleanPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten, location=top.location);
+                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = booleanPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production nilPattern
 top::PrimPattern ::= e::Expr
@@ -397,9 +375,8 @@ top::PrimPattern ::= e::Expr
   local attribute thisListType::Type = listType(freshType());
   top.patternType = thisListType;
 
-  top.returnify = nilPattern(Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                             location=top.location);
-  top.monadRewritten = nilPattern(e.monadRewritten, location=top.location);
+  top.returnify = nilPattern(Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = nilPattern(e.monadRewritten);
 }
 aspect production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
@@ -414,9 +391,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   local elemType :: Type = freshType();
   top.patternType = listType(elemType);
 
-  top.returnify = conslstPattern(h, t, Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
-                                 location=top.location);
-  top.monadRewritten = conslstPattern(h, t, e.monadRewritten, location=top.location);
+  top.returnify = conslstPattern(h, t, Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.monadRewritten = conslstPattern(h, t, e.monadRewritten);
 }
 
 

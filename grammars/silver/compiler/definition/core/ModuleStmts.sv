@@ -2,19 +2,19 @@ grammar silver:compiler:definition:core;
 
 imports silver:compiler:driver:util;
 
-nonterminal ModuleStmts with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
-nonterminal ModuleStmt with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+tracked nonterminal ModuleStmts with config, grammarName, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+tracked nonterminal ModuleStmt with config, grammarName, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
-nonterminal ImportStmt with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
-nonterminal ImportStmts with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+tracked nonterminal ImportStmt with config, grammarName, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+tracked nonterminal ImportStmts with config, grammarName, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
-nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
-nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+tracked nonterminal ModuleExpr with config, grammarName, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+tracked nonterminal ModuleName with config, grammarName, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
-nonterminal NameList with config, grammarName, location, unparse, names, env;
+tracked nonterminal NameList with config, grammarName, unparse, names, env;
 
-nonterminal WithElems with config, grammarName, location, unparse, envMaps;
-nonterminal WithElem with config, grammarName, location, unparse, envMaps;
+tracked nonterminal WithElems with config, grammarName, unparse, envMaps;
+tracked nonterminal WithElem with config, grammarName, unparse, envMaps;
 
 propagate config, grammarName, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies
   on ModuleStmts, ModuleStmt, ImportStmt, ImportStmts;
@@ -31,11 +31,10 @@ synthesized attribute names :: [String];
 synthesized attribute envMaps :: [Pair<String String>];
 
 -- TODO: eliminate, fold into ModuleName, make filter parameters inh attrs.
-nonterminal Module with defs, occursDefs, errors;
+tracked nonterminal Module with defs, occursDefs, errors;
 
 abstract production module 
-top::Module ::= l::Location
-                need::[String]
+top::Module ::= need::[String]
                 seen::[String]
                 compiledGrammars::EnvTree<Decorated RootSpec>
                 grammarDependencies::[String]
@@ -47,7 +46,7 @@ top::Module ::= l::Location
   -- TODO: the use of 'seen' below is a not fully fleshed out.
   -- what we really need is some way to eliminate duplicate imports.
   production med :: ModuleExportedDefs =
-    moduleExportedDefs(l, compiledGrammars, grammarDependencies, need, seen);
+    moduleExportedDefs(compiledGrammars, grammarDependencies, need, seen);
   
   local defs :: Defs = foldr(consDefs, nilDefs(), med.defs);
   defs.filterItems = onlyFilter;
@@ -73,11 +72,10 @@ top::Module ::= l::Location
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
-nonterminal ModuleExportedDefs with defs, occursDefs, errors;
+tracked nonterminal ModuleExportedDefs with defs, occursDefs, errors;
 
 {--
  - Computes the set of defs we get from an import
- - @param l  The location of the import, to raise an error if a module is missing
  - @param compiledGrammars  Way to look up modules by name
  - @param grammarDependencies  All imports of this grammar, closed over exports and triggers already.
  - @param need  List of grammars we need to find and include in 'defs'.
@@ -85,10 +83,10 @@ nonterminal ModuleExportedDefs with defs, occursDefs, errors;
  -        (ALWAYS INITIALLY the importing grammar.)
  -}
 abstract production moduleExportedDefs
-top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated RootSpec> grammarDependencies::[String] need::[String] seen::[String]
+top::ModuleExportedDefs ::= compiledGrammars::EnvTree<Decorated RootSpec> grammarDependencies::[String] need::[String] seen::[String]
 {
   production recurse :: ModuleExportedDefs =
-    moduleExportedDefs(l, compiledGrammars, grammarDependencies, new_need, new_seen);
+    moduleExportedDefs(compiledGrammars, grammarDependencies, new_need, new_seen);
   
   local gram :: String = head(need);
   production rs :: [Decorated RootSpec] = searchEnvTree(gram, compiledGrammars);
@@ -112,7 +110,7 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
     if null(rs) then recurse.occursDefs else head(rs).occursDefs ++ recurse.occursDefs;
   top.errors :=
     if null(need) then [] else 
-    if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
+    if null(rs) then [errFromOrigin(ambientOrigin(), "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
 }
 
 function triggeredGrammars
@@ -133,6 +131,16 @@ concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'
 {
   top.unparse = "import " ++ m.unparse ++ ";";
+
+  -- See https://github.com/melt-umn/silver/issues/444.
+  -- An explicit file-scope import of silver:core would cause silver:core to not get implicitly imported
+  -- for the whole grammar, but since it is file scope silver:core wouldn't be visible in other files.
+  -- This behaviour is unintuitative, and the user probably meant to write a grammar-scope import hiding
+  -- or renaming something - so raise an error in this case.
+  top.errors <-
+    if contains("silver:core", m.moduleNames)
+    then [errFromOrigin(top, "File-scope import of silver:core is non supported. Did you mean 'imports silver:core ...;'?")]
+    else [];
 }
 
 concrete production nilImportStmts
@@ -195,18 +203,18 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
   
   top.errors <-
     if !null(searchEnvTree(m.name, top.compiledGrammars)) then []
-    else [err(m.location, "Grammar '" ++ m.name ++ "' cannot be found.")];
+    else [errFromOrigin(m, "Grammar '" ++ m.name ++ "' cannot be found.")];
 
   top.errors <-
     if !null(searchEnvTree(c.name, top.compiledGrammars)) then []
-    else [err(c.location, "Grammar '" ++ c.name ++ "' cannot be found.")];
+    else [errFromOrigin(c, "Grammar '" ++ c.name ++ "' cannot be found.")];
 
   top.exportedGrammars := [];
   top.optionalGrammars := [];
   top.condBuild := [[m.name, c.name]];
 } action {
-  insert semantic token IdGrammarName_t at m.baseNameLoc;
-  insert semantic token IdGrammarName_t at c.baseNameLoc;
+  insert semantic token IdGrammarName_t at m.nameLoc;
+  insert semantic token IdGrammarName_t at c.nameLoc;
 }
 concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
@@ -215,13 +223,13 @@ top::ModuleStmt ::= 'option' m::QName ';'
 
   top.errors <-
     if !null(searchEnvTree(m.name, top.compiledGrammars)) then []
-    else [err(m.location, "Grammar '" ++ m.name ++ "' cannot be found.")];
+    else [errFromOrigin(m, "Grammar '" ++ m.name ++ "' cannot be found.")];
 
   top.exportedGrammars := [];
   top.optionalGrammars := [m.name];
   top.condBuild := [];
 } action {
-  insert semantic token IdGrammarName_t at m.baseNameLoc;
+  insert semantic token IdGrammarName_t at m.nameLoc;
 }
   
 
@@ -235,13 +243,13 @@ top::ModuleName ::= pkg::QName
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 -----------------------
@@ -254,13 +262,13 @@ top::ModuleExpr ::= pkg::QName
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 concrete production moduleAllWith
@@ -270,13 +278,13 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], wc.envMaps);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], wc.envMaps);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 concrete production moduleOnly
@@ -286,13 +294,13 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 concrete production moduleOnlyWith
@@ -302,13 +310,13 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], wc.envMaps);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], wc.envMaps);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 concrete production moduleHiding
@@ -318,13 +326,13 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, []);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 concrete production moduleHidingWith
@@ -334,13 +342,13 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, wc.envMaps);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, wc.envMaps);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
 }
 
 concrete production moduleAs
@@ -350,14 +358,14 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.moduleNames := [pkg1.name];
 
   production attribute m :: Module;
-  m = module(pkg1.location, [pkg1.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, pkg2.name, [], [], []);
+  m = module([pkg1.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, pkg2.name, [], [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
 } action {
-  insert semantic token IdGrammarName_t at pkg1.baseNameLoc;
-  insert semantic token IdGrammarName_t at pkg2.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg1.nameLoc;
+  insert semantic token IdGrammarName_t at pkg2.nameLoc;
 }
 
 ------------

@@ -16,12 +16,12 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   production supers::[Context] = cl.contexts; -- *Direct* super classes only, not transitive
   production boundVars::[TyVar] = [tv];
   
-  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, var.typerep.kindrep, body.classMembers) :: body.defs;
+  top.defs := classDef(top.grammarName, id.nameLoc, fName, supers, tv, var.typerep.kindrep, body.classMembers) :: body.defs;
   
   -- id *should* be just a Name, but it has to be a QNameType to avoid a reduce/reduce conflict
   top.errors <-
     if indexOf(":", id.name) == -1 then []
-    else [err(id.location, "Class name must be unqualified.")];
+    else [errFromOrigin(id, "Class name must be unqualified.")];
 
   -- Here we ensure that the type is just a type *variable*
   top.errors <- var.errorsTyVars;
@@ -29,17 +29,17 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   -- Redefinition check of the name
   top.errors <- 
     if length(getTypeDclAll(fName, top.env)) > 1 
-    then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Type '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <-
     if isLower(substring(0,1,id.name))
-    then [err(id.location, "Types must be capitalized. Invalid class name " ++ id.name)]
+    then [errFromOrigin(id, "Types must be capitalized. Invalid class name " ++ id.name)]
     else [];
     
   top.errors <-
     if contains(fName, catMaybes(map((.contextClassName), transitiveSuperContexts(top.env, var.typerep, [], fName))))
-    then [err(top.location, "Cycle exists in superclass relationships.")]
+    then [errFromOrigin(top, "Cycle exists in superclass relationships.")]
     else [];
 
   production attribute headPreDefs :: [Def] with ++;
@@ -47,9 +47,9 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
-  headDefs <- [currentInstDef(top.grammarName, id.location, fName, var.typerep)];
+  headDefs <- [currentInstDef(top.grammarName, id.nameLoc, fName, var.typerep)];
 
-  cl.constraintPos = classPos(fName, var.freeVariables);
+  cl.constraintPos = classPos(fName, var.freeVariables, sourceGrammar=top.grammarName);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
   id.env = cl.env;
@@ -60,7 +60,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   body.classHead = instContext(fName, var.typerep);
   body.frameContexts = supers;
 } action {
-  insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
+  insert semantic token IdTypeClassDcl_t at id.nameLoc;
 }
 
 concrete production typeClassDclNoCL
@@ -68,19 +68,19 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
   top.unparse = s"class ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
-  forwards to typeClassDcl($1, nilConstraint(location=top.location), '=>', id, var, $4, body, $6, location=top.location);
+  forwards to typeClassDcl($1, nilConstraint(), '=>', id, var, $4, body, $6);
 } action {
-  insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
+  insert semantic token IdTypeClassDcl_t at id.nameLoc;
 }
 
 inherited attribute classHead::Context;
 inherited attribute constraintEnv::Env;
 inherited attribute frameContexts::[Context];  -- Only used for computing frame in members
 
-nonterminal ClassBody with
-  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
-nonterminal ClassBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+tracked nonterminal ClassBody with
+  config, grammarName, env, defs, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+tracked nonterminal ClassBodyItem with
+  config, grammarName, env, defs, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 
 propagate
   config, grammarName, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars
@@ -103,9 +103,9 @@ top::ClassBody ::=
 concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
-  forwards to constraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, location=top.location);
+  forwards to constraintClassBodyItem(id, $2, nilConstraint(), '=>', ty, $4);
 } action {
-  insert semantic token IdTypeClassMemberDcl_t at id.location;
+  insert semantic token IdTypeClassMemberDcl_t at id.nameLoc;
 }
 
 concrete production constraintClassBodyItem
@@ -120,29 +120,29 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   
   cl.constraintPos =
     case top.classHead of
-    | instContext(cls, _) -> classMemberPos(cls, boundVars)
+    | instContext(cls, _) -> classMemberPos(cls, boundVars, sourceGrammar=top.grammarName)
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
 
   ty.env = top.env;
   
-  top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
+  top.defs := [classMemberDef(top.grammarName, id.nameLoc, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
-    then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
     else [];
 } action {
-  insert semantic token IdTypeClassMemberDcl_t at id.location;
+  insert semantic token IdTypeClassMemberDcl_t at id.nameLoc;
 }
 
 concrete production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
-  forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, e, $6, location=top.location);
+  forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(), '=>', ty, $4, e, $6);
 } action {
-  insert semantic token IdTypeClassMemberDcl_t at id.location;
+  insert semantic token IdTypeClassMemberDcl_t at id.nameLoc;
 }
 
 concrete production defaultConstraintClassBodyItem
@@ -157,7 +157,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   
   cl.constraintPos =
     case top.classHead of
-    | instContext(cls, _) -> classMemberPos(cls, boundVars)
+    | instContext(cls, _) -> classMemberPos(cls, boundVars, sourceGrammar=top.grammarName)
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
@@ -176,14 +176,14 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   e.frame = globalExprContext(fName, foldContexts(top.frameContexts ++ cl.contexts), ty.typerep, myFlowGraph, sourceGrammar=top.grammarName);
   e.env = occursEnv(cl.occursDefs, newScopeEnv(cl.defs, top.env));
   
-  top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
+  top.defs := [classMemberDef(top.grammarName, id.nameLoc, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
-    then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
     else [];
 } action {
-  insert semantic token IdTypeClassMemberDcl_t at id.location;
+  insert semantic token IdTypeClassMemberDcl_t at id.nameLoc;
 }
 
 -- TODO: Defaults

@@ -47,7 +47,7 @@ InterfaceItems ::= r::Decorated RootSpec
 }
 
 aspect production moduleExportedDefs
-top::ModuleExportedDefs ::= l::Location  compiled::EnvTree<Decorated RootSpec>  grammarDependencies::[String]  need::[String]  seen::[String]
+top::ModuleExportedDefs ::= compiled::EnvTree<Decorated RootSpec>  grammarDependencies::[String]  need::[String]  seen::[String]
 {
   top.syntaxAst := if null(need) || null(rs) then [] else (head(rs).syntaxAst ++ recurse.syntaxAst);
   top.parserSpecs := if null(need) || null(rs) then [] else (head(rs).parserSpecs ++ recurse.parserSpecs);

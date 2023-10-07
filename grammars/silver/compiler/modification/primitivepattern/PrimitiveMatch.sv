@@ -23,14 +23,14 @@ import silver:compiler:modification:list; -- Oh no, this is a hack! TODO
 
 terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
-nonterminal PrimPatterns with 
+tracked nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, freeVars,
+  unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
-nonterminal PrimPattern with 
+tracked nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, freeVars,
+  unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
 
@@ -46,7 +46,7 @@ top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
-  forwards to matchPrimitive(e, t, pr, f, location=top.location);
+  forwards to matchPrimitive(e, t, pr, f);
 }
 abstract production matchPrimitive
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
@@ -62,9 +62,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   forwards to
     matchPrimitiveReal(
       if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
-      then decorateExprWithEmpty('decorate', @e, 'with', '{', '}', location=e.location)
+      then decorateExprWithEmpty('decorate', @e, 'with', '{', '}')
       else @e,
-      t, pr, f, location=top.location);
+      t, pr, f);
 }
 
 {--
@@ -94,7 +94,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   errCheck2 = check(f.typerep, t.typerep);
   top.errors <-
     if errCheck2.typeerror
-    then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+    then [errFromOrigin(top, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
     else [];
 
   -- ordinary threading: e, pr, f, errCheck2
@@ -192,8 +192,8 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   -- the code. After it works, perhaps these can be merged into one non-forwarding
   -- production, once the code is understood fully.
   forwards to if isGadt
-              then prodPatternGadt(qn, ns, e, location=top.location)
-              else prodPatternNormal(qn, ns, e, location=top.location);
+              then prodPatternGadt(qn, ns, e)
+              else prodPatternNormal(qn, ns, e);
 }
 abstract production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
@@ -204,14 +204,14 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    else [errFromOrigin(qn, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
   top.errors <-
     case qn.lookupValue.dcls of
     | prodDcl (_, _) :: _ -> []
     | [] -> []
-    | _ -> [err(qn.location, qn.name ++ " is not a production.")]
+    | _ -> [errFromOrigin(qn, qn.name ++ " is not a production.")]
     end;
 
   -- Turns the existential variables existential
@@ -233,7 +233,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         c.contextPatternOccursDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
@@ -247,12 +247,12 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 
   errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
   
   -- Thread NORMALLY! YAY!
@@ -268,7 +268,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         performContextSubstitution(c, e.downSubst).contextPatternDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
   e.isRoot = false;
@@ -287,14 +287,14 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    else [errFromOrigin(qn, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
   top.errors <-
     case qn.lookupValue.dcls of
     | prodDcl (_, _) :: _ -> []
     | [] -> []
-    | _ -> [err(qn.location, qn.name ++ " is not a production.")]
+    | _ -> [errFromOrigin(qn, qn.name ++ " is not a production.")]
     end;
 
   local prod_contexts_type :: Pair<[Context] Type> = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
@@ -313,7 +313,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         c.contextPatternOccursDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
@@ -327,12 +327,12 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
   
   -- For GADTs, threading gets a bit weird.
@@ -359,7 +359,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
         performContextSubstitution(c, e.finalSubst).contextPatternDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
+          scrutineeName, qn.nameLoc, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
 
@@ -383,12 +383,12 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   
   errCheck1 = check(intType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, i.lexeme ++ " is an " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, i.lexeme ++ " is an " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
@@ -408,12 +408,12 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
   
   errCheck1 = check(floatType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, f.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, f.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
@@ -433,12 +433,12 @@ top::PrimPattern ::= i::String_t '->' e::Expr
   
   errCheck1 = check(stringType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, i.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, i.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
@@ -458,12 +458,12 @@ top::PrimPattern ::= i::String '->' e::Expr
   
   errCheck1 = check(boolType(), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, i ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, i ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
@@ -483,12 +483,12 @@ top::PrimPattern ::= e::Expr
   
   errCheck1 = check(listType(freshType()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "nil matches lists but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, "nil matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
@@ -513,12 +513,12 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   errCheck1 = check(listType(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, "cons matches lists but we're trying to match against " ++ errCheck1.rightpp)]
+                then [errFromOrigin(top, "cons matches lists but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
   top.errors <- if errCheck2.typeerror
-                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                then [errFromOrigin(e, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
@@ -526,8 +526,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, nothing(), [], []),
-     lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, nothing(), [], [])];
+    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), [], []),
+     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [], [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   e.isRoot = false;

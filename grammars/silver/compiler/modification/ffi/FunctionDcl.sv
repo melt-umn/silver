@@ -2,8 +2,8 @@ grammar silver:compiler:modification:ffi;
 
 terminal FFI_kwd 'foreign' lexer classes {KEYWORD,RESERVED};
 
-nonterminal FFIDefs with config, location, grammarName, errors, env, unparse;
-nonterminal FFIDef with config, location, grammarName, errors, env, unparse;
+tracked nonterminal FFIDefs with config, grammarName, errors, env, unparse;
+tracked nonterminal FFIDef with config, grammarName, errors, env, unparse;
 
 concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
@@ -18,9 +18,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
 
   -- TODO this is a BS use of forwarding and should be eliminated.
   
-  forwards to functionDcl($1, @id, @ns, @body, location=top.location);
+  forwards to functionDcl($1, @id, @ns, @body);
 } action {
-  insert semantic token IdFnProdDcl_t at id.location;
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
 }
 

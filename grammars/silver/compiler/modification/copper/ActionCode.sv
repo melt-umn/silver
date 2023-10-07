@@ -13,7 +13,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.syntaxAst :=
     [ syntaxProduction(ns.namedSignature,
         foldr(consProductionMod, nilProductionMod(), prodAction(acode.actionCode) :: pm.productionModifiers),
-        location=top.location, sourceGrammar=top.grammarName)
+        sourceGrammar=top.grammarName,
+        location=id.nameLoc)
     ];
 
   -- oh no again!
@@ -35,14 +36,14 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- note that we're not merging the typing contexts between action blocks and productions
   -- this seems reasonable since inference should never have effects across this border...
 
-  forwards to concreteProductionDcl($1, $2, id, ns, pm, body, location=top.location);
+  forwards to concreteProductionDcl($1, $2, id, ns, pm, body);
 } action {
-  insert semantic token IdFnProdDcl_t at id.location;
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
 }
 
 
-nonterminal ActionCode_c with location,config,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv, flowDefs;
+tracked nonterminal ActionCode_c withconfig,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv, flowDefs;
 
 synthesized attribute actionCode :: String;
 
@@ -61,7 +62,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 
   top.errors := stmts.errors;
   top.errors <- if top.frame.permitPluck && !stmts.containsPluck then
-    [err(top.location, "Disambiguation function without pluck")] else [];
+    [errFromOrigin(top, "Disambiguation function without pluck")] else [];
   
   stmts.downSubst = emptySubst();
   stmts.originRules = [];
@@ -95,7 +96,7 @@ end;
 
 aspect errors on top::ProductionStmts using <- of
 | productionStmtsSnoc(h, t) ->
-  if top.frame.permitPluck && h.containsPluck then [err(t.location, "Statement after pluck")] else []
+  if top.frame.permitPluck && h.containsPluck then [errFromOrigin(t, "Statement after pluck")] else []
 end;
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
@@ -149,5 +150,5 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.actionDefs = [actionChildDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.actionDefs = [actionChildDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 }

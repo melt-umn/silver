@@ -18,7 +18,7 @@ top::Expr ::= '$' e::Int_t
         findChild(toInteger(e.lexeme),
           [top.frame.signature.outputElement.elementName] ++ top.frame.signature.inputNames));
 
-  forwards to baseExpr(qName(top.location, ref), location=top.location);
+  forwards to baseExpr(qName(ref));
 }
 
 function findChild

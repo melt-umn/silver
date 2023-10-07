@@ -203,7 +203,7 @@ ${if isData then "" else s"""
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
           else s"return ((common.Node)${head(body.forwardExpr).translation}${
             if wantsTracking && !top.config.noRedex
-            then s".duplicateForForwarding(context.getNode(), \"${escapeString(hackUnparse(head(body.forwardExpr).location))}\")"
+            then s".duplicateForForwarding(context.getNode(), \"${escapeString(getParsedOriginLocationOrFallback(head(body.forwardExpr)).unparse)}\")"
             else ""})"};
     }
 
@@ -386,6 +386,6 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-
     if id.name == "main"
-    then [err(top.location, "main should be a function!")]
+    then [errFromOrigin(top, "main should be a function!")]
     else [];
 }

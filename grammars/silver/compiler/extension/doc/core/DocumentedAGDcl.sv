@@ -18,7 +18,7 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
 {
     local docCommentContent::String = body.lexeme;
     local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, body.location.filename);
-    local comment::DclComment = if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError, location=body.location);
+    local comment::DclComment = if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError);
     return if conf.parseDocs then comment else theEmptyDclComment;
 }
 
@@ -77,10 +77,12 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     local isDoubleComment::Boolean = case forward of documentedAGDcl(_, _) -> true | _ -> false end;
     top.docs := if isDoubleComment
                   then [standaloneDclCommentItem(parsed)] ++ forward.docs
-                  else [dclCommentItem(forward.docForName, forward.docUnparse, forward.grammarName, dcl.location, parsed)]
+                  else [attachNote logicalLocationFromOrigin(dcl) on
+                          dclCommentItem(forward.docForName, forward.docUnparse, forward.grammarName, parsed)
+                        end]
                        ++ if length(forward.docs) > 1 then tail(forward.docs) else [];
     top.errors <- if isDoubleComment
-                    then [wrn(parsed.location, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+                    then [wrnFromOrigin(parsed, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];
 
     forwards to dcl;
@@ -109,5 +111,5 @@ layout {}
 
     top.docs := [standaloneDclCommentItem(parsed)];
     top.unparse = "";
-    forwards to emptyAGDcl(location=top.location);
+    forwards to emptyAGDcl();
 }

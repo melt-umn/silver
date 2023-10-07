@@ -8,7 +8,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   -- TODO: We are building this for every nonterminal declaration, when it should
   -- be the same for all nonterminals in the grammar
   local med :: ModuleExportedDefs =
-    moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, [top.grammarName], []);
+    moduleExportedDefs(top.compiledGrammars, top.grammarDependencies, [top.grammarName], []);
   local syntax::Syntax = foldr(consSyntax, nilSyntax(), med.syntaxAst);
   
   production isThisTracked::Boolean = top.config.forceOrigins || ((!top.config.noOrigins) && quals.tracked);
@@ -20,7 +20,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
         nonterminalType(fName, map((.kindrep), tl.types), quals.data, isThisTracked),
         nilSyntax(), exportedProds, exportedLayoutTerms,
         foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers),
-        location=top.location, sourceGrammar=top.grammarName)
+        location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)
     ];
 }
 

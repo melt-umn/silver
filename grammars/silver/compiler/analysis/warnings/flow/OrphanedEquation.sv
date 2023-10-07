@@ -38,13 +38,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur e
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -70,13 +70,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -96,13 +96,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 aspect production inhBaseColAttributeDef
@@ -127,13 +127,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -143,7 +143,7 @@ top::ExprLHSExpr ::= attr::QNameAttrOccur
   -- Duplicate equation check
   top.errors <-
     if attr.attrFound && length(filter(eq(attr.attrDcl.fullName, _), top.allSuppliedInhs)) > 1
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name)]
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name)]
     else [];
 }
 

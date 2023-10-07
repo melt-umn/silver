@@ -24,7 +24,7 @@ top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignat
 
   propagate config, grammarName, compiledGrammars, errors;
   
-  local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, ns.lexicalTypeVariables);
+  local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, ns.lexicalTyVarKinds, ns.lexicalTypeVariables);
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -47,13 +47,13 @@ top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignat
   sigNames = [];
 }
 
-nonterminal AspectDefaultProductionSignature with config, grammarName, env, flowEnv, location, unparse, errors, defs, namedSignature, lexicalTypeVariables, lexicalTyVarKinds;
+tracked nonterminal AspectDefaultProductionSignature with config, grammarName, env, flowEnv, unparse, errors, defs, namedSignature, lexicalTypeVariables, lexicalTyVarKinds;
 
 concrete production aspectDefaultProductionSignature
 top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
 {
   top.unparse = lhs.unparse ++ "::" ++ te.unparse ++ " ::=";
-  top.defs := [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
+  top.defs := [defaultLhsDef(top.grammarName, lhs.nameLoc, lhs.name, te.typerep)];
   top.namedSignature =
     namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName,
       nilContext(), nilNamedSignatureElement(),
@@ -68,7 +68,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
 
   top.errors <-
     if checkNT.typeerror
-    then [err(top.location, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    then [errFromOrigin(top, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
     else [];
 
   top.errors <- te.errorsKindStar;
@@ -79,7 +79,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
     | _ -> []
     end;
 } action {
-  insert semantic token IdSigNameDcl_t at lhs.location;
+  insert semantic token IdSigNameDcl_t at lhs.nameLoc;
   sigNames = [lhs.name];
 }
 
@@ -96,16 +96,16 @@ top::ValueDclInfo ::= fn::String ty::Type
 
   top.typeScheme = monoType(ty);
   
-  top.refDispatcher = lhsReference(_, location=_);
-  top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
-  top.defLHSDispatcher = defaultLhsDefLHS(_, location=_);
-  top.transDefLHSDispatcher = errorTransAttrDefLHS(_, _, location=_);
+  top.refDispatcher = lhsReference;
+  top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message
+  top.defLHSDispatcher = defaultLhsDefLHS;
+  top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated! QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -114,7 +114,7 @@ top::DefLHS ::= q::Decorated! QName
   
   top.errors :=
     if existingProblems || top.found then []
-    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
+    else [errFromOrigin(q, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 

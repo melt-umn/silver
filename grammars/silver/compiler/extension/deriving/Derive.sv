@@ -9,7 +9,7 @@ top::AGDcl ::= 'derive' tcs::NameList 'on' nts::NameList ';'
 {
   top.unparse = s"derive ${tcs.unparse} on ${nts.unparse};";
   
-  forwards to deriveTCsOnNTListDcl(tcs, nts, location=top.location);
+  forwards to deriveTCsOnNTListDcl(tcs, nts);
 }
 
 production deriveTCsOnNTListDcl
@@ -19,12 +19,11 @@ top::AGDcl ::= tcs::NameList nts::NameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> deriveTCsOnOneNTDcl(tcs, n, location=n.location)
+    | nameListOne(n) -> deriveTCsOnOneNTDcl(tcs, n)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        deriveTCsOnOneNTDcl(tcs, n, location=n.location),
-        deriveTCsOnNTListDcl(tcs, rest, location=top.location),
-        location=top.location)
+        deriveTCsOnOneNTDcl(tcs, n),
+        deriveTCsOnNTListDcl(tcs, rest))
     end;
 }
 
@@ -35,12 +34,11 @@ top::AGDcl ::= tcs::NameList nt::QName
   
   forwards to
     case tcs of
-    | nameListOne(tc) -> deriveDcl(tc, nt, location=top.location)
+    | nameListOne(tc) -> deriveDcl(tc, nt)
     | nameListCons(tc, _, rest) ->
       appendAGDcl(
-        deriveDcl(tc, nt, location=top.location),
-        deriveTCsOnOneNTDcl(rest, nt, location=top.location),
-        location=top.location)
+        deriveDcl(tc, nt),
+        deriveTCsOnOneNTDcl(rest, nt))
     end;
 }
 
@@ -54,29 +52,29 @@ top::AGDcl ::= tc::QName nt::QName
   local localErrors::[Message] =
     tc.lookupType.errors ++ nt.lookupType.errors ++
     (if tc.lookupType.found && !tc.lookupType.dcl.isClass
-     then [err(tc.location, s"${tc.lookupType.fullName} is not a type class")]
+     then [errFromOrigin(tc, s"${tc.lookupType.fullName} is not a type class")]
      else []) ++
     (if nt.lookupType.found && !(nt.lookupType.dcl.isType && nt.lookupType.typeScheme.isNonterminal)
-     then [err(nt.location, s"${nt.lookupType.fullName} is not a nonterminal")]
+     then [errFromOrigin(nt, s"${nt.lookupType.fullName} is not a nonterminal")]
      else []) ++
     (if nt.lookupType.found && nt.lookupType.dcl.isClosed
-     then [err(nt.location, s"Cannot derive instances for ${nt.lookupType.fullName}, since that nonterminal is closed")]
+     then [errFromOrigin(nt, s"Cannot derive instances for ${nt.lookupType.fullName}, since that nonterminal is closed")]
      else []);
   top.errors := if null(localErrors) then forward.errors else localErrors;
 
   forwards to
     -- TODO: Yuck, can't forward based on env here since we need the defs from the forward.
     case if startsWith("silver:core:", tc.name) then tc.name else "silver:core:" ++ tc.name of  -- tc.lookupType.fullName
-    | "silver:core:Eq" -> deriveEqDcl(nt, location=top.location)
-    | "silver:core:Ord" -> deriveOrdDcl(nt, location=top.location)
-    | fn -> errorAGDcl([err(tc.location, s"Cannot derive type class ${fn}")], location=top.location)
+    | "silver:core:Eq" -> deriveEqDcl(nt)
+    | "silver:core:Ord" -> deriveOrdDcl(nt)
+    | fn -> errorAGDcl([errFromOrigin(tc, s"Cannot derive type class ${fn}")])
     end;
 }
 
 production deriveEqDcl
 top::AGDcl ::= nt::Decorated! QName
 {
-  undecorates to deriveDcl(qName(top.location, "silver:core:Eq"), nt, location=top.location);
+  undecorates to deriveDcl(qName("silver:core:Eq"), nt);
   top.unparse = s"derive silver:core:Eq on ${nt.unparse};";
   top.moduleNames := [];
 
@@ -90,108 +88,95 @@ top::AGDcl ::= nt::Decorated! QName
   forwards to Silver_AGDcl {
     instance $ConstraintList{
       foldr(
-        consConstraint(_, ',', _, location=top.location),
-        nilConstraint(location=top.location),
+        consConstraint(_, ',', _),
+        nilConstraint(),
         filterMap(
           \ tv::TyVar ->
             if tv.kindrep == starKind()
             then just(
               classConstraint(
-                qName(top.location, "silver:core:Eq").qNameType,
-                typerepTypeExpr(skolemType(tv), location=top.location),
-                location=top.location))
+                qName("silver:core:Eq").qNameType,
+                typerepTypeExpr(skolemType(tv))))
             else nothing(),
-          tvs))} => silver:core:Eq $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
-        eq = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+          tvs))} => silver:core:Eq $TypeExpr{typerepTypeExpr(ntty)} {
+        eq = \ x::$TypeExpr{typerepTypeExpr(ntty)} y::$TypeExpr{typerepTypeExpr(ntty)} -> $Expr{
           if null(includedProds) then Silver_Expr {true} else
           foldr(
-            and(_, '&&', _, location=top.location),
+            and(_, '&&', _),
             matchPrimitive(
               Silver_Expr {x},
               Silver_TypeExpr {Boolean},
               foldPrimPatterns(
                 map(
                   \ prod::ValueDclInfo ->
-                    prodPattern(qName(top.location, prod.fullName), '(',
+                    prodPattern(qName(prod.fullName), '(',
                     foldr(
-                      consVarBinder(_, ',', _, location=top.location),
-                      nilVarBinder(location=top.location),
+                      consVarBinder(_, ',', _),
+                      nilVarBinder(),
                       map(\ i::Integer ->
-                        varVarBinder(name(s"a${toString(i)}", top.location), location=top.location),
+                        varVarBinder(name(s"a${toString(i)}")),
                         range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                     matchPrimitive(
                       Silver_Expr {y},
                       Silver_TypeExpr {Boolean},
                       onePattern(
-                        prodPattern(qName(top.location, prod.fullName), '(',
+                        prodPattern(qName(prod.fullName), '(',
                           foldr(
-                            consVarBinder(_, ',', _, location=top.location),
-                            nilVarBinder(location=top.location),
+                            consVarBinder(_, ',', _),
+                            nilVarBinder(),
                             map(\ i::Integer ->
-                              varVarBinder(name(s"b${toString(i)}", top.location), location=top.location),
+                              varVarBinder(name(s"b${toString(i)}")),
                               range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                           foldr(
-                            and(_, '&&', _, location=top.location),
+                            and(_, '&&', _),
                             Silver_Expr {true},
                             map(
                               \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} == $name{s"b${toString(i)}"} },
-                              range(0, length(prod.namedSignature.inputElements)))),
-                          location=top.location),
-                        location=top.location),
-                      Silver_Expr {false},
-                      location=top.location),
-                    location=top.location),
-                  includedProds),
-                top.location),
-              Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")},
-              location=top.location),
+                              range(0, length(prod.namedSignature.inputElements)))))),
+                      Silver_Expr {false})),
+                  includedProds)),
+              Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")}),
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { x.$name{anno.elementName} == y.$name{anno.elementName} },
               annotationsForNonterminal(ntty, top.env)))};
-        neq = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+        neq = \ x::$TypeExpr{typerepTypeExpr(ntty)} y::$TypeExpr{typerepTypeExpr(ntty)} -> $Expr{
           if null(includedProds) then Silver_Expr {false} else
           foldr(
-            or(_, '||', _, location=top.location),
+            or(_, '||', _),
             matchPrimitive(
               Silver_Expr {x},
               Silver_TypeExpr {Boolean},
               foldPrimPatterns(
                 map(
                   \ prod::ValueDclInfo ->
-                    prodPattern(qName(top.location, prod.fullName), '(',
+                    prodPattern(qName(prod.fullName), '(',
                     foldr(
-                      consVarBinder(_, ',', _, location=top.location),
-                      nilVarBinder(location=top.location),
+                      consVarBinder(_, ',', _),
+                      nilVarBinder(),
                       map(\ i::Integer ->
-                        varVarBinder(name(s"a${toString(i)}", top.location), location=top.location),
+                        varVarBinder(name(s"a${toString(i)}")),
                         range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                     matchPrimitive(
                       Silver_Expr {y},
                       Silver_TypeExpr {Boolean},
                       onePattern(
-                        prodPattern(qName(top.location, prod.fullName), '(',
+                        prodPattern(qName(prod.fullName), '(',
                           foldr(
-                            consVarBinder(_, ',', _, location=top.location),
-                            nilVarBinder(location=top.location),
+                            consVarBinder(_, ',', _),
+                            nilVarBinder(),
                             map(\ i::Integer ->
-                              varVarBinder(name(s"b${toString(i)}", top.location), location=top.location),
+                              varVarBinder(name(s"b${toString(i)}")),
                               range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                           foldr(
-                            or(_, '||', _, location=top.location),
+                            or(_, '||', _),
                             Silver_Expr {false},
                             map(
                               \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} != $name{s"b${toString(i)}"} },
-                              range(0, length(prod.namedSignature.inputElements)))),
-                          location=top.location),
-                        location=top.location),
-                      Silver_Expr {true},
-                      location=top.location),
-                    location=top.location),
-                  includedProds),
-                top.location),
-              Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")},
-              location=top.location),
+                              range(0, length(prod.namedSignature.inputElements)))))),
+                      Silver_Expr {true})),
+                  includedProds)),
+              Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")}),
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { x.$name{anno.elementName} != y.$name{anno.elementName} },
@@ -203,7 +188,7 @@ top::AGDcl ::= nt::Decorated! QName
 production deriveOrdDcl
 top::AGDcl ::= nt::Decorated! QName
 {
-  undecorates to deriveDcl(qName(top.location, "silver:core:Ord"), nt, location=top.location);
+  undecorates to deriveDcl(qName("silver:core:Ord"), nt);
   top.unparse = s"derive silver:core:Ord on ${nt.unparse};";
   top.moduleNames := [];
 
@@ -218,19 +203,18 @@ top::AGDcl ::= nt::Decorated! QName
   forwards to Silver_AGDcl {
     instance $ConstraintList{
       foldr(
-        consConstraint(_, ',', _, location=top.location),
-        nilConstraint(location=top.location),
+        consConstraint(_, ',', _),
+        nilConstraint(),
         filterMap(
           \ tv::TyVar ->
             if tv.kindrep == starKind()
             then just(
               classConstraint(
-                qName(top.location, "silver:core:Ord").qNameType,
-                typerepTypeExpr(skolemType(tv), location=top.location),
-                location=top.location))
+                qName("silver:core:Ord").qNameType,
+                typerepTypeExpr(skolemType(tv))))
             else nothing(),
-          tvs))} => silver:core:Ord $TypeExpr{typerepTypeExpr(ntty, location=top.location)} {
-        compare = \ x::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} y::$TypeExpr{typerepTypeExpr(ntty, location=top.location)} -> $Expr{
+          tvs))} => silver:core:Ord $TypeExpr{typerepTypeExpr(ntty)} {
+        compare = \ x::$TypeExpr{typerepTypeExpr(ntty)} y::$TypeExpr{typerepTypeExpr(ntty)} -> $Expr{
           if null(includedProds) then Silver_Expr { 0 } else
           foldr(
             \ e1::Expr e2::Expr ->
@@ -241,12 +225,12 @@ top::AGDcl ::= nt::Decorated! QName
               foldPrimPatterns(
                 map(
                   \ prod::ValueDclInfo ->
-                    prodPattern(qName(top.location, prod.fullName), '(',
+                    prodPattern(qName(prod.fullName), '(',
                     foldr(
-                      consVarBinder(_, ',', _, location=top.location),
-                      nilVarBinder(location=top.location),
+                      consVarBinder(_, ',', _),
+                      nilVarBinder(),
                       map(\ i::Integer ->
-                        varVarBinder(name(s"a${toString(i)}", top.location), location=top.location),
+                        varVarBinder(name(s"a${toString(i)}")),
                         range(0, length(prod.namedSignature.inputElements)))), ')', '->',
                     matchPrimitive(
                       Silver_Expr {y},
@@ -255,15 +239,15 @@ top::AGDcl ::= nt::Decorated! QName
                         map(
                           \ prod2::ValueDclInfo ->
                             prodPattern(
-                              qName(top.location, prod2.fullName), '(',
+                              qName(prod2.fullName), '(',
                               foldr(
-                                consVarBinder(_, ',', _, location=top.location),
-                                nilVarBinder(location=top.location),
+                                consVarBinder(_, ',', _),
+                                nilVarBinder(),
                                 map(
                                   \ i::Integer ->
                                     if prod.fullName == prod2.fullName
-                                    then varVarBinder(name(s"b${toString(i)}", top.location), location=top.location)
-                                    else ignoreVarBinder('_', location=top.location),
+                                    then varVarBinder(name(s"b${toString(i)}"))
+                                    else ignoreVarBinder('_'),
                                   range(0, length(prod2.namedSignature.inputElements)))), ')', '->',
                               if prod.fullName < prod2.fullName
                               then Silver_Expr { -1 }
@@ -276,17 +260,11 @@ top::AGDcl ::= nt::Decorated! QName
                                   Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
                                 map(
                                   \ i::Integer -> Silver_Expr { silver:core:compare($name{s"a${toString(i)}"}, $name{s"b${toString(i)}"}) },
-                                  range(0, length(prod2.namedSignature.inputElements)))),
-                              location=top.location),
-                          includedProds),
-                        top.location),
-                      Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")},
-                      location=top.location),
-                    location=top.location),
-                  includedProds),
-                top.location),
-              Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")},
-              location=top.location),
+                                  range(0, length(prod2.namedSignature.inputElements))))),
+                          includedProds)),
+                      Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")})),
+                  includedProds)),
+              Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")}),
             map(
               \ anno::NamedSignatureElement ->
                 Silver_Expr { silver:core:compare(x.$name{anno.elementName}, y.$name{anno.elementName}) },
@@ -296,12 +274,12 @@ top::AGDcl ::= nt::Decorated! QName
 }
 
 function foldPrimPatterns
-PrimPatterns ::= ps::[PrimPattern]  loc::Location
+PrimPatterns ::= ps::[PrimPattern]
 {
   return
     case ps of
-    | [h] -> onePattern(h, location=loc)
-    | h :: t -> consPattern(h, '|', foldPrimPatterns(t, loc), location=loc)
+    | [h] -> onePattern(h)
+    | h :: t -> consPattern(h, '|', foldPrimPatterns(t))
     | [] -> error("empty patterns")
     end;
 }

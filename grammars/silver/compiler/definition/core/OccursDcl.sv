@@ -3,7 +3,7 @@ grammar silver:compiler:definition:core;
 abstract production defaultAttributionDcl
 top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location); 
+  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';'); 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
@@ -18,7 +18,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
       if ntParamKinds == map((.kindrep), nttl.types) && map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
       then protoatty
       else errorType(),
-      sourceGrammar=top.grammarName, sourceLocation=at.location)];
+      sourceGrammar=top.grammarName, sourceLocation=at.nameLoc)];
 
   -- binding errors in looking up these names.
   top.errors <- nt.lookupType.errors ++
@@ -27,7 +27,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors <-
     if attl.missingCount > 0
-    then [err(attl.location, "Attribute type arguments cannot contain _")]
+    then [errFromOrigin(attl, "Attribute type arguments cannot contain _")]
     else [];
   
   nttl.initialEnv = top.env;
@@ -48,12 +48,12 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     if null(nt.lookupType.dcls) then []
     else if length(ntParamKinds) != length(nttl.types)
     then
-      [err(nt.location,
+      [errFromOrigin(nt,
         nt.name ++ " expects " ++ toString(length(ntParamKinds)) ++
         " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
     else if ntParamKinds != map((.kindrep), nttl.types)
     then
-      [err(nt.location,
+      [errFromOrigin(nt,
         nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ntParamKinds).typepp ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
     else [];
@@ -61,11 +61,11 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   -- Make sure we get the number and kind of type variables correct for the ATTR
   top.errors <-
     if length(atTypeScheme.boundVars) != length(attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
     else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
-    then [err(at.location,
+    then [errFromOrigin(at,
       at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
@@ -112,26 +112,26 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors <-
     if length(occursCheck) > 1
-    then [err(at.location, "Attribute '" ++ at.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
+    then [errFromOrigin(at, "Attribute '" ++ at.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
     else [];
 
   top.errors <-
     if nt.lookupType.found && (!nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isNonterminal)
-    then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
+    then [errFromOrigin(nt, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
 
   top.errors <-
     if !nt.lookupType.found || !at.lookupAttribute.found || !at.lookupAttribute.dcl.isAnnotation ||
        isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars) then []
-    else [err(top.location, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
+    else [errFromOrigin(top, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
   
   top.errors <-
     if nt.lookupType.found && ntTypeScheme.isData && at.lookupAttribute.found
     then
       if at.lookupAttribute.dcl.isInherited
-      then [err(top.location, "Inherited attributes may not occur on data nonterminals.")]
+      then [errFromOrigin(top, "Inherited attributes may not occur on data nonterminals.")]
       else if at.lookupAttribute.dcl.isTranslation
-      then [err(top.location, "Translation attributes may not occur on data nonterminals.")]
+      then [errFromOrigin(top, "Translation attributes may not occur on data nonterminals.")]
       else []
     else [];
 }
@@ -139,7 +139,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
 abstract production errorAttributionDcl
 top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to errorAGDcl(msg, location=top.location); 
+  undecorates to errorAGDcl(msg); 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.occursDefs := [];
   top.errors <- msg;
@@ -160,11 +160,11 @@ top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs n
   top.errors <-
     case nt.lookupType.dcls of
     | ntDcl(_, ks, _, _, _) :: _ when length(ks) != length(nttl.types) ->
-      [err(nt.location,
+      [errFromOrigin(nt,
         nt.name ++ " expects " ++ toString(length(ks)) ++
         " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
     | ntDcl(_, ks, _, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
-      [err(nt.location,
+      [errFromOrigin(nt,
         nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ks).typepp ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
     | _ -> []
@@ -188,14 +188,14 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   top.moduleNames := [];
   
   forwards to
-    (if !at.lookupAttribute.found
-     then errorAttributionDcl(at.lookupAttribute.errors, _, _, _, _, location=_)
-     else at.lookupAttribute.dcl.attributionDispatcher)(at, attl, nt, nttl, top.location);
+    if !at.lookupAttribute.found
+    then errorAttributionDcl(at.lookupAttribute.errors, at, attl, nt, nttl)
+    else at.lookupAttribute.dcl.attributionDispatcher(at, attl, nt, nttl);
 }
 
 concrete production annotateDcl
 top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8, location=top.location);
+  forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8);
 }
 

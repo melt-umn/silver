@@ -5,7 +5,7 @@ import silver:compiler:modification:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
+tracked nonterminal Pattern with config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
 propagate config, frame, env, errors on Pattern;
 
 {--
@@ -76,7 +76,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
-    else [err(prod.location, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
+    else [errFromOrigin(prod, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
   
   top.patternVars = ps.patternVars ++ nps.patternVars;
   ps.patternVarEnv = top.patternVarEnv;
@@ -97,13 +97,13 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 concrete production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(location=top.location), ')', location=top.location);
+  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(), ')');
 }
 
 concrete production propAppPattern_onlyNamed
 top::Pattern ::= prod::QName '(' nps::NamedPatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', patternList_nil(location=top.location), ',', nps, ')', location=top.location);
+  forwards to prodAppPattern_named(prod, '(', patternList_nil(), ',', nps, ')');
 }
 
 {--
@@ -138,16 +138,16 @@ top::Pattern ::= v::Name
   top.unparse = v.name;
   top.errors <-
     if contains(v.name, top.patternVarEnv)
-    then [err(v.location, "Duplicate pattern variable " ++ v.name)]
+    then [errFromOrigin(v, "Duplicate pattern variable " ++ v.name)]
     else [];
   top.errors <-
     if isUpper(substring(0,1,v.name))
-    then [err(v.location, "Pattern variable names start with a lower case letter")]
+    then [errFromOrigin(v, "Pattern variable names start with a lower case letter")]
     else [];
   top.errors <-
     case getValueDcl(v.name, top.env) of
     | prodDcl(_,_) :: _ ->
-      [err(v.location, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
+      [errFromOrigin(v, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
     | _ -> []
     end;
 
@@ -322,22 +322,22 @@ aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.asListPattern = 
-    consListPattern(p, '::', nilListPattern('[', ']', location=top.location), location=top.location);
+    consListPattern(p, '::', nilListPattern('[', ']'));
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.asListPattern = consListPattern(p, '::', ps1.asListPattern, location=top.location);
+  top.asListPattern = consListPattern(p, '::', ps1.asListPattern);
 }
 aspect production patternList_nil
 top::PatternList ::=
 {
-  top.asListPattern = nilListPattern('[', ']', location=top.location);
+  top.asListPattern = nilListPattern('[', ']');
 }
 
 synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
 
-nonterminal NamedPatternList with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+tracked nonterminal NamedPatternList with config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 propagate config, frame, env, errors on NamedPatternList;
 
 concrete production namedPatternList_one
@@ -370,7 +370,7 @@ top::NamedPatternList ::=
   top.namedPatternList = [];
 }
 
-nonterminal NamedPattern with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+tracked nonterminal NamedPattern with config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 propagate config, frame, env, patternVarEnv, errors on NamedPattern;
 
 concrete production namedPattern
@@ -384,7 +384,7 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   -- (or more than one) place.
   top.errors <-
     if qn.lookupAttribute.found && !qn.lookupAttribute.dcl.isAnnotation
-    then [err(qn.location, s"${qn.name} is not an annotation")]
+    then [errFromOrigin(qn, s"${qn.name} is not an annotation")]
     else [];
   
   top.patternVars = p.patternVars;
@@ -396,9 +396,9 @@ function buildPatternList
 PatternList ::= plst::[Pattern] loc::Location
 {
   return case plst of
-         | [] -> patternList_nil(location=loc)
+         | [] -> patternList_nil()
          | h::t ->
-           patternList_more(h, ',', buildPatternList(t, loc), location=loc)
+           patternList_more(h, ',', buildPatternList(t, loc))
          end;
 }
 

@@ -8,7 +8,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   local errCheck1::TypeCheck = check(ty.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(e.location, s"Member ${id.name} has expected type ${errCheck1.leftpp}, but the expression has actual type ${errCheck1.rightpp}")]
+    then [errFromOrigin(e, s"Member ${id.name} has expected type ${errCheck1.leftpp}, but the expression has actual type ${errCheck1.rightpp}")]
     else [];
   
   e.downSubst = emptySubst();

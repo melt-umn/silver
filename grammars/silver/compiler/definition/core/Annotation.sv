@@ -11,7 +11,7 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
 
   production fName :: String = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [annoDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [annoDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -19,11 +19,11 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
 
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "The name '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "The name '" ++ fName ++ "' is already bound.")]
     else [];
   top.errors <-
     if indexOf(":", a.name) == -1 then []
-    else [err(a.location, "The name '" ++ a.name ++ "' must not be qualified.")];
+    else [errFromOrigin(a, "The name '" ++ a.name ++ "' must not be qualified.")];
 
   top.errors <- tl.errorsTyVars;
 }

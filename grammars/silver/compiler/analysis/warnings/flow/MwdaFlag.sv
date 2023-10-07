@@ -47,3 +47,16 @@ Message ::= config::Decorated CmdArgs l::Location m::String
     then err(l, m)
     else wrn(l, m);
 }
+
+function mwdaWrnFromOrigin
+attribute config occurs on a =>
+Message ::= a::Decorated a with {config}  m::String
+{
+  return mwdaWrn(a.config, getParsedOriginLocationOrFallback(a), m);
+}
+
+function mwdaWrnAmbientOrigin
+Message ::= config::Decorated CmdArgs  m::String
+{
+  return mwdaWrn(config, getParsedOriginLocationOrFallback(ambientOrigin()), m);
+}

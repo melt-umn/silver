@@ -1,5 +1,5 @@
 -- Pattern matching on tuples
-nonterminal TuplePatternList with location, unparse;
+tracked nonterminal TuplePatternList with unparse;
 
 concrete production emptyTuplePattern
 top::Pattern ::= '(' ')'

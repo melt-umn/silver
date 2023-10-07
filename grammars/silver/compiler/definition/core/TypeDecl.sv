@@ -10,7 +10,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
   
   local isCircular::Boolean = contains(fName, te.mentionedAliases);
   top.defs := [typeAliasDef(
-    top.grammarName, id.location, fName, te.mentionedAliases, tl.freeVariables,
+    top.grammarName, id.nameLoc, fName, te.mentionedAliases, tl.freeVariables,
     if isCircular then errorType() else te.typerep)];
 
   top.errors <- tl.errorsTyVars;
@@ -22,15 +22,15 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
   -- Redefinition check of the name
   top.errors <- 
        if length(getTypeDclAll(fName, top.env)) > 1 
-       then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
+       then [errFromOrigin(id, "Type '" ++ fName ++ "' is already bound.")]
        else [];
 
   top.errors <-
        if isLower(substring(0,1,id.name))
-       then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
+       then [errFromOrigin(id, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
 
-  top.errors <- if isCircular then [err(te.location, s"Definition of ${fName} is self-referential")] else [];
+  top.errors <- if isCircular then [errFromOrigin(te, s"Definition of ${fName} is self-referential")] else [];
 } action {
-  insert semantic token IdTypeDcl_t at id.location;
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }
