@@ -324,7 +324,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+top::Expr ::= params::LambdaRHS e::Expr
 {
   top.uniqueRefs := filter(\ r::(String, UniqueRefSite) -> !contains(r.1, params.lambdaBoundVars), e.uniqueRefs);
   top.errors <- flatMap(\ n::String ->

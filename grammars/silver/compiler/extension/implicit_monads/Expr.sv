@@ -290,7 +290,7 @@ Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, Q
 {
   local funargs::AppExprs = buildFunArgs(length(realtys));
   local funannargs::AnnoAppExprs = buildFunAnnArgs(monadAnns, length(realtys) + 1);
-  local params::ProductionRHS =
+  local params::LambdaRHS =
         buildMonadApplicationParams(realtys ++ map(fst, monadAnns), 1,
             if bindFun then monadOfType(expectedMonad, funType) else funType);
   local actualMonadAnns::[(Type, Integer)] =
@@ -305,14 +305,14 @@ Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, Q
 }
 --build the parameters for the lambda applied to all the original arguments plus the function
 function buildMonadApplicationParams
-ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type
+LambdaRHS ::= realtys::[Type] currentLoc::Integer funType::Type
 {
   return if null(realtys)
-         then productionRHSCons(productionRHSElem(name("f"),
+         then lambdaRHSCons(lambdaRHSElemIdTy(name("f"),
                                                   '::',
                                                   typerepTypeExpr(funType)),
-                                productionRHSNil())
-         else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc)),
+                                lambdaRHSNil())
+         else lambdaRHSCons(lambdaRHSElemIdTy(name("a"++toString(currentLoc)),
                                                   '::',
                                                   typerepTypeExpr(dropDecorated(head(realtys)))),
                                 buildMonadApplicationParams(tail(realtys), currentLoc+1, funType));
@@ -350,11 +350,11 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
                        monadType, funTy, bindFun, wrapReturn);
   local argty::Type = head(monadTysLocs).fst;
   local bind::Expr = monadBind();
-  local binding::ProductionRHS =
-        productionRHSCons(productionRHSElem(name("a"++toString(head(monadTysLocs).snd)),
+  local binding::LambdaRHS =
+        lambdaRHSCons(lambdaRHSElemIdTy(name("a"++toString(head(monadTysLocs).snd)),
                                             '::', 
                                             typerepTypeExpr(monadInnerType(argty))),
-                          productionRHSNil());
+                          lambdaRHSNil());
   local bindargs::AppExprs =
         snocAppExprs(
            oneAppExprs(presentAppExpr(
@@ -370,10 +370,10 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
   local funapp::Expr = if wrapReturn
                        then Silver_Expr { $Expr {monadReturn()}($Expr {baseapp}) }
                        else baseapp;
-  local funbinding::ProductionRHS =
-      productionRHSCons(productionRHSElem(name("f"), '::',
+  local funbinding::LambdaRHS =
+      lambdaRHSCons(lambdaRHSElemIdTy(name("f"), '::',
          typerepTypeExpr(funTy)),
-         productionRHSNil());
+         lambdaRHSNil());
   local funbindargs::AppExprs =
         snocAppExprs(
            oneAppExprs(presentAppExpr(
@@ -1141,11 +1141,11 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                  else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst), inhSetType(sort(nub(inh.suppliedInhs))));
 
   local newname::String = "__sv_bind_" ++ toString(genInt());
-  local params::ProductionRHS =
-     productionRHSCons(productionRHSElem(name(newname),
+  local params::LambdaRHS =
+     lambdaRHSCons(lambdaRHSElemIdTy(name(newname),
                                          '::',
                                          typerepTypeExpr(monadInnerType(e.mtyperep))),
-                       productionRHSNil());
+                       lambdaRHSNil());
   local eUnDec::Expr =
         if e.mtyperep.isDecorated
         then Silver_Expr {new($Expr {e.monadRewritten})}

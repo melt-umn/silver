@@ -87,9 +87,9 @@ The forward is just equivalent to `\ x::inputTy -> x.attr`
 ```silver
   forwards to
     lambdap(
-      productionRHSCons(
-        productionRHSElem(name("x"), '::', typerepTypeExpr(inputTy)),
-        productionRHSNil()),
+      lambdaRHSCons(
+        lambdaRHSElemIdTy(name("x"), '::', typerepTypeExpr(inputTy)),
+        lambdaRHSNil()),
       access(baseExpr(qName("x")), '.', q));
 }
 ```

@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:implicit_monads;
 
 aspect production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+top::Expr ::= params::LambdaRHS e::Expr
 {
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;

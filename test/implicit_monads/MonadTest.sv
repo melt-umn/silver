@@ -98,10 +98,10 @@ instance Bind Unit {
 instance Monad Unit {}
 
 instance MonadFail Unit {
-  fail = \ String -> unitA();
+  fail = \ _ -> unitA();
 }
 
 instance Eq Unit<a> {
-  eq = \ Unit<a> Unit<a> -> true;
+  eq = \ _ _ -> true;
 }
 

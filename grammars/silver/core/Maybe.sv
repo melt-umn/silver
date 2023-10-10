@@ -50,7 +50,7 @@ instance Bind Maybe {
 instance Monad Maybe {}
 
 instance MonadFail Maybe {
-  fail = \ String -> nothing();
+  fail = \ _ -> nothing();
 }
 
 instance Alt Maybe {
@@ -138,7 +138,7 @@ instance Monad m => Bind MaybeT<m _> {
 instance Monad m => Monad MaybeT<m _> {}
 
 instance Monad m => MonadFail MaybeT<m _> {
-  fail = \ String -> maybeT(pure(nothing()));
+  fail = \ _ -> maybeT(pure(nothing()));
 }
 
 instance Monad m => Alt MaybeT<m _> {

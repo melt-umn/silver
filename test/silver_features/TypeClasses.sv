@@ -14,7 +14,7 @@ class CFoo a => CBar a
 class CBaz a
 {
   cy :: a;
-  bazFromInt :: (a ::= Integer) = \ Integer -> cy;
+  bazFromInt :: (a ::= Integer) = \ _ -> cy;
   bazEq :: MyEq a => (Boolean ::= a) = \ x::a -> myeq(x, cy);  
 }
 

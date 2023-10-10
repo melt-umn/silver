@@ -1026,9 +1026,13 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   top.appExprSize = es.appExprSize + 1;
 
   e.appExprIndex = es.appExprSize;
-  e.appExprTyperep = head(top.appExprTypereps);
+  e.appExprTyperep =
+    if null(top.appExprTypereps)
+    then errorType()
+    else head(top.appExprTypereps);
   
-  es.appExprTypereps = tail(top.appExprTypereps);
+  es.appExprTypereps =
+    if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
 }
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
@@ -1043,9 +1047,10 @@ top::AppExprs ::= e::AppExpr
   top.appExprSize = 1;
 
   e.appExprIndex = 0;
-  e.appExprTyperep = if null(top.appExprTypereps)
-                     then errorType()
-                     else head(top.appExprTypereps);
+  e.appExprTyperep =
+    if null(top.appExprTypereps)
+    then errorType()
+    else head(top.appExprTypereps);
 }
 abstract production emptyAppExprs
 top::AppExprs ::=

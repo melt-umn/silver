@@ -223,10 +223,10 @@ Expr ::= n::String ty::Type body::Expr
 {
   -- \ n::ty -> body
   return lambdap(
-           productionRHSCons(productionRHSElem(name(n),
+           lambdaRHSCons(lambdaRHSElemIdTy(name(n),
                                                '::',
                                                typerepTypeExpr(ty)),
-                             productionRHSNil()),
+                             lambdaRHSNil()),
            body);
 }
 
@@ -234,15 +234,15 @@ Expr ::= n::String ty::Type body::Expr
 function buildMultiLambda
 Expr ::= names::[Pair<String Type>] body::Expr
 {
-  local sig::ProductionRHS =
-        foldr(\ pr::Pair<String Type> p::ProductionRHS ->
+  local sig::LambdaRHS =
+        foldr(\ pr::Pair<String Type> p::LambdaRHS ->
                 case pr of
                 | (n, ty) ->
-                  productionRHSCons(productionRHSElem(name(n), '::',
+                  lambdaRHSCons(lambdaRHSElemIdTy(name(n), '::',
                                        typerepTypeExpr(ty)),
                                     p)
                 end,
-              productionRHSNil(), names);
+              lambdaRHSNil(), names);
   return lambdap(sig, body);
 }
 
