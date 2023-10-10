@@ -22,7 +22,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS;
-  top.transDefLHSDispatcher = \ q::Decorated! QName  dummy::Decorated! QNameAttrOccur ->
+  top.transDefLHSDispatcher = \ q::Decorated! QName  _ ->
     parserAttributeDefLHS(q);
 }
 
@@ -96,7 +96,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = actionChildReference;
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS; -- TODO: specialize this
-  top.transDefLHSDispatcher = \ q::Decorated! QName  dummy::Decorated! QNameAttrOccur ->
+  top.transDefLHSDispatcher = \ q::Decorated! QName  _ ->
     parserAttributeDefLHS(q);
 }
 
@@ -115,6 +115,6 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS;
-  top.transDefLHSDispatcher = \ q::Decorated! QName  dummy::Decorated! QNameAttrOccur ->
+  top.transDefLHSDispatcher = \ q::Decorated! QName  _ ->
     parserAttributeDefLHS(q);
 }
