@@ -1,12 +1,17 @@
 import silver:compiler:definition:env;
 import silver:util:treeset as ts;
 
---- New concrete Syntax for lambdas
+--- Concrete Syntax for lambdas
 --------------------------------------------------------------------------------
 
 terminal Lambda_kwd '\' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 
+{--
+ - Concrete syntax for lambda expressions
+ - @param params Parameter name and signature declarations for this lambda
+ - @param e Body of the lambda
+ -}
 concrete production lambda_c
 top::Expr ::= '\' params::LambdaRHS '->' e::Expr
 {
@@ -15,6 +20,11 @@ top::Expr ::= '\' params::LambdaRHS '->' e::Expr
   forwards to lambdap(@params, @e);
 }
 
+{--
+ - Abstract syntax for lambda expressions
+ - @param params Parameter name and signature declarations for this lambda
+ - @param e Body of the lambda
+ -}
 abstract production lambdap
 top::Expr ::= params::LambdaRHS e::Expr
 {
@@ -23,7 +33,8 @@ top::Expr ::= params::LambdaRHS e::Expr
   
   propagate config, grammarName, compiledGrammars, errors, originRules;
   
-  top.typerep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
+  top.typerep = appTypes(functionType(length(params.inputElements), []), 
+                         map((.typerep), params.inputElements) ++ [e.typerep]);
 
   production attribute sigDefs::[Def] with ++;
   sigDefs := params.lambdaDefs;
@@ -44,17 +55,15 @@ top::Expr ::= params::LambdaRHS e::Expr
 
 
 nonterminal LambdaRHS with 
-  --location, 
-  givenLambdaParamIndex, givenLambdaId, env, grammarName, flowEnv,
-  lambdaBoundVars, lambdaDefs, lexicalTypeVariables, lexicalTyVarKinds, inputElements, unparse, elementCount;
+  givenLambdaParamIndex, givenLambdaId, env, grammarName, flowEnv, 
+  lambdaBoundVars, lambdaDefs, lexicalTypeVariables, lexicalTyVarKinds, 
+  inputElements, unparse, elementCount;
 
 nonterminal LambdaRHSElem with 
-  --location, 
-  givenLambdaParamIndex, givenLambdaId, grammarName, deterministicCount, env, flowEnv,
-  lambdaBoundVars, lambdaDefs, unparse, lexicalTypeVariables, inputElements, lexicalTyVarKinds;
+  givenLambdaParamIndex, givenLambdaId, grammarName, deterministicCount, env, 
+  flowEnv, lambdaBoundVars, lambdaDefs, unparse, lexicalTypeVariables, 
+  inputElements, lexicalTyVarKinds;
 
-
-{- How much of the below belongs in other grammars? -}
 
 monoid attribute lambdaDefs::[Def];
 monoid attribute lambdaBoundVars::[String];
@@ -75,8 +84,11 @@ propagate flowEnv, env, grammarName, givenLambdaId, lexicalTyVarKinds on LambdaR
 propagate lexicalTypeVariables on LambdaRHS, LambdaRHSElem excluding lambdaRHSCons;
 
 
-{- LambdaRHS productions -}
-
+{--
+ - Cons production for the lambda parameter signature list NT
+ - @param h The head parameter signature
+ - @param t The rest of the parameter signature list
+ -}
 concrete production lambdaRHSCons
 top::LambdaRHS ::= h::LambdaRHSElem t::LambdaRHS
 {
@@ -92,6 +104,9 @@ top::LambdaRHS ::= h::LambdaRHSElem t::LambdaRHS
   top.elementCount = 1 + t.elementCount;
 }
 
+{--
+ - Nil production for lambda parameter signature list NT
+ -}
 concrete production lambdaRHSNil
 top::LambdaRHS ::=
 {
@@ -100,13 +115,18 @@ top::LambdaRHS ::=
   top.elementCount = 0;
 }
 
-{- LambdaRHSElem productions -}
 
+{--
+ - Lambda parameter declarations with explicit name and type
+ - @param id The parameter name
+ - @param t The parameter type declaration
+ -}
 concrete production lambdaRHSElemIdTy
 top::LambdaRHSElem ::= id::Name '::' t::TypeExpr
 {
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
-  top.lambdaDefs := [lambdaParamDef(top.grammarName, id.nameLoc, fName, t.typerep, top.givenLambdaId, top.givenLambdaParamIndex)];
+  top.lambdaDefs := [lambdaParamDef(top.grammarName, id.nameLoc, fName, t.typerep, 
+                                    top.givenLambdaId, top.givenLambdaParamIndex)];
   top.lambdaBoundVars := [id.name];
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
@@ -114,6 +134,10 @@ top::LambdaRHSElem ::= id::Name '::' t::TypeExpr
   top.unparse = id.unparse ++ "::" ++ t.unparse;
 }
 
+{--
+ - Lambda parameter declarations with explicit type but no name
+ - @param t The parameter type declaration
+ -}
 concrete production lambdaRHSElemTy
 top::LambdaRHSElem ::= '_' '::' t::TypeExpr
 {
@@ -125,6 +149,10 @@ top::LambdaRHSElem ::= '_' '::' t::TypeExpr
     @t);
 }
 
+{--
+ - Lambda parameter declarations with explicit name but no type
+ - @param id The parameter name
+ -}
 concrete production lambdaRHSElemId
 top::LambdaRHSElem ::= id::Name
 {
@@ -136,6 +164,9 @@ top::LambdaRHSElem ::= id::Name
     typerepTypeExpr(freshType()));
 }
 
+{--
+ - Lambda parameter declarations with neither an explicit name nor type
+ -}
 concrete production lambdaRHSElemUnderline
 top::LambdaRHSElem ::= '_'
 {
@@ -146,6 +177,7 @@ top::LambdaRHSElem ::= '_'
     '::', 
     typerepTypeExpr(freshType()));
 }
+
 
 abstract production lambdaParamReference
 top::Expr ::= q::Decorated! QName
