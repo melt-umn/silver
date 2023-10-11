@@ -5,15 +5,20 @@ terminal Fun_kwd 'fun';
 concrete production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
-  propagate flowEnv, grammarName;
-  
+  propagate flowEnv, grammarName, moduleNames;
+
+  top.unparse = "fun " ++ id.unparse ++ "::" ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
+
   ns.signatureName = top.grammarName ++ ":" ++ id.name;
   ns.env = newScopeEnv(ns.defs, top.env);
 
+  local prodRHS::ProductionRHS = ns.rhs;
+  prodRHS.env = ns.env;
+
   forwards to
     globalValueDclConcrete (
-      'global', id, '::', ns.cl, '=>', typerepTypeExpr(ns.namedSignature.typerep), '=', 
-        lambda_c('\', ns.rhs.toLamRHS, '->', e),';'
+      'global', @id, '::', ns.cl, '=>', typerepTypeExpr(ns.namedSignature.typerep), '=', 
+        lambda_c('\', prodRHS.toLamRHS, '->', @e),';'
     );
 }
 
