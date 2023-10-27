@@ -9,3 +9,4 @@ grammar silver:core;
 class Ring a => CommutativeRing a {}
 
 instance CommutativeRing Integer {}
+instance CommutativeRing Float {}
