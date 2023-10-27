@@ -184,8 +184,12 @@ top::AST ::= terminalName::String lexeme::String location::Location
 
   top.translation = Silver_Expr {
     terminal(
+      -- The type expression from the name of the terminal
       $TypeExpr{nominalTypeExpr(makeQNameType(terminalName, top.givenLocation))},
+      -- The quoted lexeme
       $Expr{stringConst(terminal(String_t, s"\"${escapeString(lexeme)}\"", top.givenLocation))},
+      -- Try to get the location dynamically from the parsed origin location if tracking is available,
+      -- or else fall back to the compile-time AST location.
       silver:core:fromMaybe($Expr{locationAST.translation}, silver:core:getParsedOriginLocation(silver:core:ambientOrigin())))
   };
   
