@@ -76,11 +76,11 @@ top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | varType(j) when j.kindrep == tv.kindrep ->
+    | varType(j) when j.kind == tv.kind ->
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindrep == tv.kindrep ->
+    | t when t.kindrep == tv.kind ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -93,11 +93,11 @@ top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | skolemType(j) when j.kindrep == tv.kindrep -> 
+    | skolemType(j) when j.kind == tv.kind -> 
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindrep == tv.kindrep ->
+    | t when t.kindrep == tv.kind ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)

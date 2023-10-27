@@ -78,13 +78,13 @@ top::Type ::= tv::TyVar
 attribute typeName occurs on TyVar;
 
 aspect production tyVar
-top::TyVar ::= k::Kind i::Integer
+top::TyVar ::= 
 {
-  top.typeName = "_a" ++ toString(i);
+  top.typeName = "_a" ++ toString(top.varId);
 }
 
 aspect production tyVarNamed
-top::TyVar ::= k::Kind i::Integer n::String
+top::TyVar ::= n::String
 {
   top.typeName = n;
 }
