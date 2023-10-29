@@ -125,35 +125,37 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     case e, es of
     | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
 
-    -- Special cases for efficiency
+    -- Special cases for efficiency, and workaround for type inference issues.
+    -- TODO: This doesn't work as expected when these operators are overloaded.
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2)) ->
-      if q.lookupValue.fullName == "silver:core:eq"
-      then eqeqASTExpr(e1.transform, e2.transform)
-      else if q.lookupValue.fullName == "silver:core:neq"
-      then neqASTExpr(e1.transform, e2.transform)
-      else if q.lookupValue.fullName == "silver:core:lt"
-      then ltASTExpr(e1.transform, e2.transform)
-      else if q.lookupValue.fullName == "silver:core:lte"
-      then lteqASTExpr(e1.transform, e2.transform)
-      else if q.lookupValue.fullName == "silver:core:gt"
-      then gtASTExpr(e1.transform, e2.transform)
-      else if q.lookupValue.fullName == "silver:core:gte"
-      then gteqASTExpr(e1.transform, e2.transform)
-      else if q.lookupValue.fullName == "silver:core:append"
-      then appendASTExpr(e1.transform, e2.transform)
-      else applyASTExpr(e.transform, es.transform, anns.transform)
+      case q.lookupValue.fullName of
+      | "silver:core:conj" -> andASTExpr(e1.transform, e2.transform)
+      | "silver:core:disj" -> orASTExpr(e1.transform, e2.transform)
+      | "silver:core:eq" -> eqeqASTExpr(e1.transform, e2.transform)
+      | "silver:core:neq" -> neqASTExpr(e1.transform, e2.transform)
+      | "silver:core:lt" -> ltASTExpr(e1.transform, e2.transform)
+      | "silver:core:lte" -> lteqASTExpr(e1.transform, e2.transform)
+      | "silver:core:gt" -> gtASTExpr(e1.transform, e2.transform)
+      | "silver:core:gte" -> gteqASTExpr(e1.transform, e2.transform)
+      | "silver:core:add" -> plusASTExpr(e1.transform, e2.transform)
+      | "silver:core:sub" -> minusASTExpr(e1.transform, e2.transform)
+      | "silver:core:mul" -> multiplyASTExpr(e1.transform, e2.transform)
+      | "silver:core:div" -> divideASTExpr(e1.transform, e2.transform)
+      | "silver:core:mod" -> modulusASTExpr(e1.transform, e2.transform)
+      | "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
+      | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
+      end
     | classMemberReference(q), oneAppExprs(presentAppExpr(e)) ->
-      if q.lookupValue.fullName == "silver:core:toString"
-      then toStringASTExpr(e.transform)
-      else if q.lookupValue.fullName == "silver:core:toInteger"
-      then toIntegerASTExpr(e.transform)
-      else if q.lookupValue.fullName == "silver:core:toFloat"
-      then toFloatASTExpr(e.transform)
-      else if q.lookupValue.fullName == "silver:core:toBoolean"
-      then toBooleanASTExpr(e.transform)
-      else if q.lookupValue.fullName == "silver:core:length"
-      then lengthASTExpr(e.transform)
-      else applyASTExpr(e.transform, es.transform, anns.transform)
+      case q.lookupValue.fullName of
+      | "silver:core:not" -> notASTExpr(e.transform)
+      | "silver:core:negate" -> negASTExpr(e.transform)
+      | "silver:core:toString" -> toStringASTExpr(e.transform)
+      | "silver:core:toInteger" -> toIntegerASTExpr(e.transform)
+      | "silver:core:toFloat" -> toFloatASTExpr(e.transform)
+      | "silver:core:toBoolean" -> toBooleanASTExpr(e.transform)
+      | "silver:core:length" -> lengthASTExpr(e.transform)
+      | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
+      end
 
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
