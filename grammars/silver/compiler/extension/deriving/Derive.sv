@@ -92,7 +92,7 @@ top::AGDcl ::= nt::Decorated! QName
         nilConstraint(),
         filterMap(
           \ tv::TyVar ->
-            if tv.kindrep == starKind()
+            if tv.kind == starKind()
             then just(
               classConstraint(
                 qName("silver:core:Eq").qNameType,
@@ -207,7 +207,7 @@ top::AGDcl ::= nt::Decorated! QName
         nilConstraint(),
         filterMap(
           \ tv::TyVar ->
-            if tv.kindrep == starKind()
+            if tv.kind == starKind()
             then just(
               classConstraint(
                 qName("silver:core:Ord").qNameType,

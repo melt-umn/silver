@@ -118,7 +118,7 @@ top::Context ::= t::Type
     case top.resolved, t of
     -- We might need translate this context even when resolution fails;
     -- in that case fall back to a rigid skolem constant.
-    | [], skolemType(tv) -> s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")"
+    | [], skolemType(tv) -> s"new common.BaseTypeRep(\"b${toString(tv.varId)}\")"
     | [], _ -> t.transTypeRep
     | _, _ -> resolvedDcl.transContext
     end;

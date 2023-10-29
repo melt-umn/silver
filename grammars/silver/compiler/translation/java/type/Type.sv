@@ -22,7 +22,7 @@ synthesized attribute transTypeName :: String;
 function transFreshTypeRep
 String ::= t::Type
 {
-  t.skolemTypeReps = map(\ tv::TyVar -> (tv, s"freshTypeVar_${toString(tv.extractTyVarRep)}"), t.freeSkolemVars);
+  t.skolemTypeReps = map(\ tv::TyVar -> (tv, s"freshTypeVar_${toString(tv.varId)}"), t.freeSkolemVars);
   return t.transTypeRep;
 }
 
@@ -62,7 +62,7 @@ top::Type ::= tv::TyVar
 {
   top.transCovariantType = "? extends Object";
   top.transClassType = "Object";
-  top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
+  top.transTypeRep = s"freshTypeVar_${toString(tv.varId)}";
   top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 

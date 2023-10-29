@@ -15,7 +15,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     (if !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       nt.lookupType.fullName, at.lookupAttribute.fullName,
       protontty,
-      if ntParamKinds == map((.kindrep), nttl.types) && map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
+      if ntParamKinds == map((.kindrep), nttl.types) && map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
       then protoatty
       else errorType(),
       sourceGrammar=top.grammarName, sourceLocation=at.nameLoc)];
@@ -64,9 +64,9 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     then [errFromOrigin(at,
       at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
       " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
-    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    else if map((.kind), atTypeScheme.boundVars) != map((.kindrep), attl.types)
     then [errFromOrigin(at,
-      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kind), atTypeScheme.boundVars))) ++
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
 

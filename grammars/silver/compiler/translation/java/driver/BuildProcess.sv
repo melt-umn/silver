@@ -30,31 +30,31 @@ abstract production dontTranslateFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noJavaGeneration = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production onejarFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.buildSingleJar = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production relativejarFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.relativeJar = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production includeRTJarFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.includeRTJars = s :: forward.includeRTJars;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production buildXmlFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.buildXmlLocation = s :: forward.buildXmlLocation;
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs

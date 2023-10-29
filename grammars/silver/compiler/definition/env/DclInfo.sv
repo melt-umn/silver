@@ -195,7 +195,7 @@ top::TypeDclInfo ::= fn::String isAspect::Boolean tv::TyVar
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:compiler:definition:type:syntax:AspectDcl.sv
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
-  top.kindrep = tv.kindrep;
+  top.kindrep = tv.kind;
   top.isType = true;
 }
 abstract production typeAliasDcl
@@ -213,7 +213,7 @@ top::TypeDclInfo ::= fn::String mentionedAliases::[String] bound::[TyVar] ty::Ty
   top.isTypeAlias = true;
   top.mentionedAliases := mentionedAliases;
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
-  top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
+  top.kindrep = foldr(arrowKind, ty.kindrep, map((.kind), bound)); 
 }
 abstract production clsDcl
 top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
@@ -222,7 +222,9 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   top.isEqual =
     case top.compareTo of
     | clsDcl(fn2, s2, tv2, k2, m2) ->
-      fn == fn2 && k == k2 && supers == map(performContextRenaming(_, subst(tv2, skolemType(tv))), s2) && members == m2
+      fn == fn2 && new(k) == new(k2) &&
+      supers == map(performContextRenaming(_, subst(tv2, skolemType(tv))), s2) &&
+      members == m2
     | _ -> false
     end;
   
