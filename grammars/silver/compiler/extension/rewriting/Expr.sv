@@ -471,24 +471,6 @@ top::Expr ::= 'false'
   top.transform = booleanASTExpr(false);
 }
 
-aspect production and
-top::Expr ::= e1::Expr '&&' e2::Expr
-{
-  top.transform = andASTExpr(e1.transform, e2.transform);
-}
-
-aspect production or
-top::Expr ::= e1::Expr '||' e2::Expr
-{
-  top.transform = orASTExpr(e1.transform, e2.transform);
-}
-
-aspect production notOp
-top::Expr ::= '!' e::Expr
-{
-  top.transform = notASTExpr(e.transform);
-}
-
 aspect production intConst
 top::Expr ::= i::Int_t
 {
@@ -505,42 +487,6 @@ aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   top.transform = noteAttachmentASTExpr(note.transform, e.transform);
-}
-
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  top.transform = plusASTExpr(e1.transform, e2.transform);
-}
-
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  top.transform = minusASTExpr(e1.transform, e2.transform);
-}
-
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  top.transform = multiplyASTExpr(e1.transform, e2.transform);
-}
-
-aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
-{
-  top.transform = divideASTExpr(e1.transform, e2.transform);
-}
-
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  top.transform = modulusASTExpr(e1.transform, e2.transform);
-}
-
-aspect production neg
-top::Expr ::= '-' e::Expr
-{
-  top.transform = negASTExpr(e.transform);
 }
 
 aspect production stringConst

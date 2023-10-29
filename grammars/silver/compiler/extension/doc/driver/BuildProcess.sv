@@ -95,7 +95,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
       | grammarRootSpec(g, _, _, _, _, _) ->
           if (length(g.documentedNamed)+length(g.undocumentedNamed))!=0
           then [s" - [${g.grammarName}]: ${toString(length(g.documentedNamed))}" ++
-                s"/${toString(toInteger(length(g.undocumentedNamed)+length(g.documentedNamed)))} " ++ 
+                s"/${toString(length(g.undocumentedNamed)+length(g.documentedNamed))} " ++ 
                 s"(${toString((toFloat(length(g.documentedNamed))/toFloat(length(g.undocumentedNamed)+length(g.documentedNamed)))*toFloat(100))}%) items documented"
             ++ (if a.printUndoc && (length(g.undocumentedNamed)!=0)
                 then ", missing: " ++ implode(", ", g.undocumentedNamed)

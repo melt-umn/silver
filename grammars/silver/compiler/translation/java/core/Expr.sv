@@ -540,7 +540,9 @@ top::Expr ::= 'false'
   top.translation = "false";
   top.lazyTranslation = top.translation;
 }
-
+{- TODO: We should re-enable the specialized translations here for primitive types,
+ - but that requires some attributes on the operands that we can't supply here.
+ - See https://github.com/melt-umn/silver/issues/812
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
@@ -561,7 +563,7 @@ top::Expr ::= '!' e::Expr
   top.translation = s"(!${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
-
+-}
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -594,7 +596,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;
 }
-
+{-
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
@@ -631,7 +633,7 @@ top::Expr ::= '-' e::Expr
   top.translation = s"(-${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
-
+-}
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
