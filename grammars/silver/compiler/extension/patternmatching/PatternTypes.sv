@@ -70,7 +70,7 @@ synthesized attribute patternTypeName::String;
 concrete production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
-  top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
+  top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ (if !null(ps.patternList) && !null(nps.namedPatternList) then ", " else "") ++ nps.unparse ++ ")";
 
   local parms :: Integer = prod.lookupValue.typeScheme.arity;
 

@@ -264,8 +264,7 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- TODO: fix comma when one or the other is empty
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ (if null(es.exprs) || null(anns.exprs) then "" else ", ") ++ anns.unparse ++ ")";
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   e.isRoot = false;
   

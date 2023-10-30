@@ -3,8 +3,6 @@ import silver:reflect;
 import silver:langutil;
 import silver:langutil:pp;
 
--- TODO: Actually make hackUnparse work like this.
--- Not possible for now because core shouldn't depend on anything else. 
 function lessHackyUnparse
 String ::= x::a
 {

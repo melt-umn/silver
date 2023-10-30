@@ -90,7 +90,7 @@ equalityTest(studentGPAMatch(("Student1", true, (2020, 3.45))), 3.45, Float, sil
 equalityTest(studentGPAMatch(("Student2", false, (2020, 2.96))), 2.96, Float, silver_tests);
 
 -- Empty tuple
-equalityTest(hackUnparse(()), "silver:core:unit()", String, silver_tests);
+equalityTest(genericShow(()), "silver:core:unit()", String, silver_tests);
 
 function emptyTupleTest
 Boolean ::= tuple::()
@@ -126,7 +126,7 @@ function makeDate
   return (day, month, year);
 } 
 
-equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(silver:core:fst=1, silver:core:snd=silver:core:pair(silver:core:fst=12, silver:core:snd=2021))", String, silver_tests);
+equalityTest(genericShow(makeDate(1, 12, 2021)), "silver:core:pair(silver:core:fst=1, silver:core:snd=silver:core:pair(silver:core:fst=12, silver:core:snd=2021))", String, silver_tests);
 
 function temp
 String ::=
