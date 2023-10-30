@@ -6,6 +6,7 @@ import silver:compiler:modification:list only LSqr_t, RSqr_t;
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
 tracked nonterminal Pattern with config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
+flowtype Pattern = unparse {};
 propagate config, frame, env, errors on Pattern;
 
 {--
@@ -70,7 +71,7 @@ synthesized attribute patternTypeName::String;
 concrete production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
-  top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ (if !null(ps.patternList) && !null(nps.namedPatternList) then ", " else "") ++ nps.unparse ++ ")";
+  top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ (if ps.count > 0 && nps.count > 0 then ", " else "") ++ nps.unparse ++ ")";
 
   local parms :: Integer = prod.lookupValue.typeScheme.arity;
 
@@ -337,13 +338,14 @@ top::PatternList ::=
 
 synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
 
-tracked nonterminal NamedPatternList with config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+tracked nonterminal NamedPatternList with config, unparse, count, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 propagate config, frame, env, errors on NamedPatternList;
 
 concrete production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
 {
   top.unparse = p.unparse;
+  top.count = 1;
 
   top.patternVars = p.patternVars;
   p.patternVarEnv = top.patternVarEnv;
@@ -353,6 +355,7 @@ concrete production namedPatternList_more
 top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
 {
   top.unparse = p.unparse ++ ", " ++ ps.unparse;
+  top.count = 1 + ps.count;
 
   top.patternVars = p.patternVars ++ ps.patternVars;
   p.patternVarEnv = top.patternVarEnv;
@@ -365,6 +368,7 @@ abstract production namedPatternList_nil
 top::NamedPatternList ::=
 {
   top.unparse = "";
+  top.count = 0;
 
   top.patternVars = [];
   top.namedPatternList = [];
