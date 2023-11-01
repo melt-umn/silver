@@ -19,9 +19,47 @@ class CommutativeRing a => EuclideanRing a {
 }
 
 instance EuclideanRing Integer {
-  degree = \n::Integer -> if n < 0 then -n else n;
-  div = \a::Integer b::Integer -> a / b;
-  mod = \a::Integer b::Integer -> a % b;
+  degree = \n -> if n < 0 then -n else n;
+  div = divInteger;
+  mod = modInteger;
+}
+
+function divInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% / (int)%b%)";
+}
+
+function modInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% % (int)%b%)";
+}
+
+instance EuclideanRing Float {
+  degree = \n -> if n < 0.0 then toInteger(-n) else toInteger(n);
+  div = divFloat;
+  mod = modFloat;
+}
+
+function divFloat
+Float ::= a::Float b::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% / (float)%b%)";
+}
+
+function modFloat
+Float ::= a::Float b::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% % (float)%b%)";
 }
 
 @{- Computes the greatest common divisor of two numbers. -}

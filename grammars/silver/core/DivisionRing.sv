@@ -14,6 +14,14 @@ class Ring a => DivisionRing a {
   recip :: (a ::= a);
 }
 
+instance DivisionRing Integer {
+  recip = \ a -> 1/a;
+}
+
+instance DivisionRing Float {
+  recip = \ a -> 1.0 / a;
+}
+
 @{- Division implemented as `(1/r) * l`.
   -
   - Iff the type is a commutative ring, this is equivalent to `rightDiv`.

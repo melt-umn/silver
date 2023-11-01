@@ -438,29 +438,6 @@ top::Expr ::= '@' e::Expr
   e.alwaysDecorated = top.alwaysDecorated;
 }
 
-aspect production and
-top::Expr ::= e1::Expr '&&' e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production or
-top::Expr ::= e1::Expr '||' e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production notOp
-top::Expr ::= '!' e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
-}
-
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -470,53 +447,6 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   e1.alwaysDecorated = false;
   e2.alwaysDecorated = false;
   e3.alwaysDecorated = false;
-}
-
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production divide
-top::Expr ::= e1::Expr _ e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  e1.decSiteVertexInfo = nothing();
-  e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
-  e2.alwaysDecorated = false;
-}
-aspect production neg
-top::Expr ::= '-' e::Expr
-{
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
 }
 
 aspect production terminalConstructor

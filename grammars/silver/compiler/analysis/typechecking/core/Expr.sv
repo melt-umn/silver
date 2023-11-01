@@ -7,8 +7,7 @@ attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Expr
 propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
    excluding
-     undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
-     and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
+     undecoratedAccessHandler, forwardAccess, decoratedAccessHandler, ifThenElse,
      decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
@@ -155,60 +154,6 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
        else [];
 }
 
-aspect production and
-top::Expr ::= e1::Expr '&&' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, errCheck2, top;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  errCheck2 = check(e2.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(e1, "First operand to && must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [errFromOrigin(e2, "First operand to && must be type bool. Got instead type " ++ errCheck2.leftpp)]
-       else [];
-}
-
-aspect production or
-top::Expr ::= e1::Expr '||' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, errCheck2, top;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  errCheck2 = check(e2.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(e1, "First operand to || must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [errFromOrigin(e2, "First operand to || must be type bool. Got instead type " ++ errCheck2.leftpp)]
-       else [];
-}
-
-aspect production notOp
-top::Expr ::= '!' e1::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  
-  thread downSubst, upSubst on top, e1, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(e1, "Operand to ! must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-}
-
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -227,107 +172,6 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
        if errCheck2.typeerror
        then [errFromOrigin(e1, "Condition must have the type Boolean. Instead it is " ++ errCheck2.leftpp)]
        else [];
-}
-
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(top, "Operands to + must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [errFromOrigin(top, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(top, "Operands to - must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [errFromOrigin(top, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(top, "Operands to * must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [errFromOrigin(top, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(top, "Operands to / must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [errFromOrigin(top, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [errFromOrigin(top, "Operands to % must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [errFromOrigin(top, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production neg
-top::Expr ::= '-' e1::Expr
-{
-  
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [errFromOrigin(top, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(e1.finalType))];
 }
 
 aspect production terminalConstructor
