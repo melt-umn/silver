@@ -3,12 +3,26 @@ grammar silver:langutil:unparse;
 imports silver:reflect:util;
 imports silver:langutil;
 
+@{--
+ - Unparse a tree, preserving layout from its parse tree via origin tracking.
+ - The productions in the tree should only consist of nonterminal and terminal symbols;
+ - in a language with seperate concrete and abstract syntax, this may require defining a
+ - translation from abstract back to concrete syntax.
+ -
+ - This is intended for use in e.g. refactoring tools, where transformations can be applied
+ - on the tree, but one would like to turn the tree back into a string without affecting
+ - layout in otherwise-unchanged portions of the tree.
+ - 
+ - @param origText  The original text that was parsed to create the origin of tree.
+ - @param tree  The concrete syntax tree to unparse.
+ - @return The unparse of the tree, with layout from origText inserted in unchanged portions of the tree.
+ -}
 function unparse
-String ::= origText::String  x::a
+String ::= origText::String  tree::a
 {
-  local ast::AST = reflect(x);
+  local ast::AST = reflect(tree);
   ast.origText = origText;
-  ast.parseTree = just(getParseTree(x));
+  ast.parseTree = just(getParseTree(tree));
   local astLoc::Location = ast.matchingOriginLoc.fromJust;
   return
     substring(0, astLoc.index, origText) ++
@@ -49,7 +63,15 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   top.unparseWithLayout = children.unparseWithLayout;
-  top.matchingOriginLoc = bind(top.parseTree, getParsedOriginLocation);
+  top.matchingOriginLoc = do {
+    tree :: AST <- top.parseTree;
+    return
+      case getParsedOriginLocation(tree) of
+      | just(l) -> l
+      | nothing() ->
+        error("Tree does not have a parsed origin: " ++ showOriginInfoChain(tree))
+      end;
+  };
   children.parseTree =
     case fromMaybe(getParseTree(top), top.parseTree) of
     | nonterminalAST(p, c, _) when prodName == p -> just(c)
