@@ -1,6 +1,7 @@
 grammar silver:compiler:refactor;
 
 imports silver:compiler:definition:core;
+imports silver:compiler:definition:env;
 imports silver:compiler:definition:concrete_syntax;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:flow:syntax;
@@ -16,6 +17,14 @@ imports silver:compiler:modification:list;
 imports silver:compiler:modification:copper_mda;
 
 imports silver:rewrite;
+
+synthesized attribute transformed::Root occurs on Root;
+
+aspect production root
+top::Root ::= _ _ _ _
+{
+  top.transformed = rewriteWith(topDown(try(top.transforms)), new(top)).fromJust;
+}
 
 monoid attribute transforms::Strategy with fail(), choice;
 

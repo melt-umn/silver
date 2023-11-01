@@ -2,8 +2,6 @@ grammar silver:compiler:refactor;
 
 import silver:compiler:driver;
 import silver:compiler:translation:java:driver;
-import silver:compiler:definition:env;
-import silver:compiler:definition:core;
 
 import silver:util:cmdargs;
 
@@ -20,6 +18,7 @@ abstract production refactorFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.doRefactor = true;
+  top.doClean = true;
   top.noBindingChecking = true;
   top.noJavaGeneration = true;
   forwards to @rest;
@@ -64,8 +63,17 @@ IO<()> ::= r::Decorated RootSpec
           let fullPath::String = r.grammarSource ++ item.1;
           text::String <- readFile(fullPath);
           let newText::String = unparse(text, item.2);
-          writeFile(fullPath, newText);
+          when_(text != newText, writeFile(fullPath, newText));
         }),
       r.transformedFiles);
   };
+}
+
+monoid attribute transformedFiles::[(String, Root)] occurs on RootSpec, Grammar;
+propagate transformedFiles on RootSpec, Grammar;
+
+aspect production consGrammar
+top::Grammar ::= h::Root  t::Grammar
+{
+  top.transformedFiles <- [(getParsedOriginLocation(h).fromJust.filename, h.transformed)];
 }
