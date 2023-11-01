@@ -1,10 +1,13 @@
 grammar silver:compiler:refactor;
 
 imports silver:compiler:definition:core;
+imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:concrete_syntax;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:flow:syntax;
+
+imports silver:compiler:analysis:typechecking:core;
 
 imports silver:compiler:modification:let_fix;
 imports silver:compiler:modification:lambda_fn;
@@ -23,13 +26,13 @@ synthesized attribute transformed::Root occurs on Root;
 aspect production root
 top::Root ::= _ _ _ _
 {
-  top.transformed = rewriteWith(topDown(try(top.transforms)), new(top)).fromJust;
+  top.transformed = rewriteWith(bottomUp(try(top.transforms)), new(top)).fromJust;
 }
 
 monoid attribute transforms::Strategy with fail(), choice;
 
 attribute transforms occurs on
-  Root, AGDcls, AGDcl, 
+  Root, AGDcls, AGDcl,
   ProductionModifiers, ProductionModifierList, TerminalModifiers,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
   ClassBody, ClassBodyItem,

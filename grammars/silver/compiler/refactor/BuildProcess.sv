@@ -1,10 +1,9 @@
 grammar silver:compiler:refactor;
 
-import silver:compiler:driver;
+imports silver:util:cmdargs;
+imports silver:compiler:driver;
+
 import silver:compiler:translation:java:driver;
-
-import silver:util:cmdargs;
-
 import silver:langutil:unparse;
 
 synthesized attribute doRefactor :: Boolean occurs on CmdArgs;
@@ -24,14 +23,6 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to @rest;
 }
 
-aspect function parseArgs
-Either<String  Decorated CmdArgs> ::= args::[String]
-{
-  flags <- [ flagSpec(name="--refactor", paramString=nothing(),
-               help="Apply a transformation to the Silver specification",
-               flagParser=flag(refactorFlag))
-           ];
-}
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
 {
