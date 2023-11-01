@@ -16,7 +16,7 @@ top::StrategyExpr ::=
       silver:core:unsafeTrace(
         $name{top.frame.signature.outputElement.elementName},
         silver:core:print(
-          hackUnparse($name{top.frame.signature.outputElement.elementName}) ++ "\n\n",
+          genericShow($name{top.frame.signature.outputElement.elementName}) ++ "\n\n",
           silver:core:unsafeIO()))
     };
 }

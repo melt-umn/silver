@@ -1,6 +1,8 @@
 package common;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
@@ -390,6 +392,29 @@ public final class Util {
 			i = i.tail();
 		}
 		sb.append("]");
+	}
+
+	/**
+	 * Attempt to use the improved genericPP from silver:langutil:reflect if that library is available;
+	 * else fall back to hackUnparse.
+	 * Note that we can't actually let the runtime/silver:core depend on that library,
+	 * thus we attempt to call it via reflection.
+	 * 
+	 * @param o  The object to show
+	 * @return A string representation.
+	 */
+	public static StringCatter genericShow(Object o) {
+		try {
+			Method genericPP = Class.forName("silver.langutil.reflect.PgenericPP")
+				.getMethod("invoke", OriginContext.class, Object.class);
+			Method showDoc = Class.forName("silver.langutil.pp.PshowDoc")
+				.getMethod("invoke", OriginContext.class, Object.class, Object.class);
+			Object pp = genericPP.invoke(null, OriginContext.FFI_CONTEXT, o);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, 80, pp);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			return hackyhackyUnparse(o);
+		}
 	}
 
 	/**

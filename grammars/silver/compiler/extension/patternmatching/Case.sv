@@ -47,8 +47,10 @@ synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
 -- For completeness checking, we need to know if we have a condition
 synthesized attribute hasCondition::Boolean;
 
+synthesized attribute count::Integer;
+
 -- P , ...
-tracked nonterminal PatternList with config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
+tracked nonterminal PatternList with config, unparse, count, patternList, env, frame, errors, patternVars, patternVarEnv;
 propagate config, frame, env, errors on PatternList;
 
 -- Turns PatternList into [Pattern]
@@ -1152,6 +1154,7 @@ concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.unparse = p.unparse;
+  top.count = 1;
 
   top.patternVars = p.patternVars;
   p.patternVarEnv = top.patternVarEnv;
@@ -1169,6 +1172,7 @@ abstract production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   top.unparse = p.unparse ++ (if ps1.unparse == "" then "" else ", " ++ ps1.unparse);
+  top.count = 1 + ps1.count;
 
   top.patternVars = p.patternVars ++ ps1.patternVars;
   p.patternVarEnv = top.patternVarEnv;
@@ -1182,6 +1186,7 @@ concrete production patternList_nil
 top::PatternList ::=
 {
   top.unparse = "";
+  top.count = 0;
 
   top.patternVars = [];
   top.patternList = [];

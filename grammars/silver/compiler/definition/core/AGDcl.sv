@@ -55,7 +55,7 @@ top::AGDcl ::= e::[Message]
 abstract production defsAGDcl
 top::AGDcl ::= d::[Def]
 {
-  top.unparse = s"{- Defs:\n${hackUnparse(d)} -}";
+  top.unparse = s"{- Defs:\n${genericShow(d)} -}";
   top.defs := d;
 }
 

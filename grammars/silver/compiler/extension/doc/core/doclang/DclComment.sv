@@ -320,7 +320,7 @@ top::DclCommentBlock ::= Hide_t
 concrete production configBlock
 top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t Whitespace_t value::ConfigValue
 {
-    top.body = "@config " ++ param.lexeme ++ " = " ++ hackUnparse(value); --not emitted
+    top.body = "@config " ++ param.lexeme ++ " = " ++ genericShow(value); --not emitted
     top.otherBlocks = [];
     top.paramBlocks = [];
     top.configArgs = [(param.lexeme, value)];

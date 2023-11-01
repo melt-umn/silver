@@ -264,8 +264,7 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- TODO: fix comma when one or the other is empty
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ (if es.appExprSize > 0 && anns.appExprSize > 0 then ", " else "") ++ anns.unparse ++ ")";
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   e.isRoot = false;
   
@@ -1072,7 +1071,7 @@ top::AppExprs ::=
 
 tracked nonterminal AnnoAppExprs with
   config, grammarName, env, unparse, errors, freeVars, frame, compiledGrammars,
-  isPartial, appExprApplied, exprs,
+  isPartial, appExprApplied, exprs, appExprSize,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 tracked nonterminal AnnoExpr with
@@ -1140,6 +1139,7 @@ top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
   top.unparse = es.unparse ++ ", " ++ e.unparse;
 
   top.isPartial = es.isPartial || e.isPartial;
+  top.appExprSize = 1 + es.appExprSize;
 
   e.remainingFuncAnnotations = top.remainingFuncAnnotations;
   es.remainingFuncAnnotations = e.missingAnnotations;
@@ -1156,6 +1156,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.unparse = e.unparse;
 
   top.isPartial = e.isPartial;
+  top.appExprSize = 1;
   top.errors <-
     if null(top.missingAnnotations) then []
     else [errFromOrigin(top, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
@@ -1175,6 +1176,7 @@ top::AnnoAppExprs ::=
   top.unparse = "";
 
   top.isPartial = false;
+  top.appExprSize = 0;
   top.errors <-
     if null(top.missingAnnotations) then []
     else [errFromOrigin(top, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
