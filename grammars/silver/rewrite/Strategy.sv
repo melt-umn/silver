@@ -32,7 +32,14 @@ top::Strategy ::=
   top.result = nothing();
 }
 
-abstract production sequence
+global sequence::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
+  case s1, s2 of
+  | id(), _ -> s2
+  | _, id() -> s1
+  | _, _ -> sequence_(s1, s2)
+  end;
+
+abstract production sequence_
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"(${s1.pp} <* ${s2.pp})";
@@ -41,7 +48,14 @@ top::Strategy ::= s1::Strategy s2::Strategy
   top.result = bind(s1.result, \ AST -> s2.result);
 }
 
-abstract production choice
+global choice::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
+  case s1, s2 of
+  | fail(), _ -> s2
+  | _, fail() -> s1
+  | _, _ -> choice_(s1, s2)
+  end;
+
+abstract production choice_
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"(${s1.pp} <+ ${s2.pp})";
