@@ -1254,63 +1254,70 @@ top::Expr ::= 'false'
   top.monadRewritten = falseConst('false');
 }
 
+-- These aspects for and/or provide special-case monadic short circuit evaluation semantics,
+-- if the second operand corresponds to failure.
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
-  top.merrors := e1.merrors ++ e2.merrors;
+  -- TODO: Need to re-decorate here, to avoid hidden transitive deps flow analysis issue.
+  -- See https://github.com/melt-umn/silver/issues/812
+  forward ne1 = new(e1);
+  forward ne2 = new(e2);
+
+  top.merrors := ne1.merrors ++ ne2.merrors;
   top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
+      if isMonad(ne1.mtyperep, top.env)
+      then if monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
            then []
            else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '&&', not " ++ monadToString(e1.mtyperep))]
+                           " implicitly in this '&&', not " ++ monadToString(ne1.mtyperep))]
       else [];
   top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
+      if isMonad(ne2.mtyperep, top.env)
+      then if monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
            then []
            else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '&&', not " ++ monadToString(e2.mtyperep))]
+                           " implicitly in this '&&', not " ++ monadToString(ne2.mtyperep))]
       else [];
 
-  local ec1::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                         then check(monadInnerType(e1.mtyperep), boolType())
-                         else check(e1.mtyperep, boolType());
-  local ec2::TypeCheck = if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                         then check(monadInnerType(e2.mtyperep), boolType())
-                         else check(e2.mtyperep, boolType());
+  local ec1::TypeCheck = if isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
+                         then check(monadInnerType(ne1.mtyperep), boolType())
+                         else check(ne1.mtyperep, boolType());
+  local ec2::TypeCheck = if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
+                         then check(monadInnerType(ne2.mtyperep), boolType())
+                         else check(ne2.mtyperep, boolType());
   ec1.finalSubst = top.finalSubst;
   ec2.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec1.downSubst = e2.mUpSubst;
+  ne1.mDownSubst = top.mDownSubst;
+  ne2.mDownSubst = ne1.mUpSubst;
+  ec1.downSubst = ne2.mUpSubst;
   ec2.downSubst = ec1.upSubst;
   top.mUpSubst = ec2.upSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                 then e1.mtyperep --assume it will be well-typed
-                 else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                      then e2.mtyperep
+  top.mtyperep = if isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
+                 then ne1.mtyperep --assume it will be well-typed
+                 else if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
+                      then ne2.mtyperep
                       else boolType();
 
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+  ne1.monadicallyUsed = isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst;
+  ne2.monadicallyUsed = isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst;
+  top.monadicNames = ne1.monadicNames ++ ne2.monadicNames;
 
   local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
+        if ne1.mtyperep.isDecorated
+        then Silver_Expr {silver:core:new( $Expr {ne1.monadRewritten})}
+        else ne1.monadRewritten;
   local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
+        if ne2.mtyperep.isDecorated
+        then Silver_Expr {silver:core:new( $Expr {ne2.monadRewritten})}
+        else ne2.monadRewritten;
   --e1 >>= ( (\x y -> if x then y else Return(false))(_, e2) )
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind()}
       ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne2.mtyperep))}
+         y::$TypeExpr {typerepTypeExpr(dropDecorated(ne2.mtyperep))} ->
           if x then y else $Expr {monadReturn()}(false)) (_, $Expr {e2UnDec}))
     };
   --e1 >>= ( (\x y -> Return(x && y))(_, e2) )
@@ -1318,8 +1325,8 @@ top::Expr ::= e1::Expr '&&' e2::Expr
     Silver_Expr {
       $Expr {monadBind()}
       ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne1.mtyperep))}
+         y::$TypeExpr {typerepTypeExpr(dropDecorated(ne2.mtyperep))} ->
         $Expr {monadReturn()}
         (x && y))(_, $Expr {e2UnDec}))
     };
@@ -1328,72 +1335,77 @@ top::Expr ::= e1::Expr '&&' e2::Expr
     Silver_Expr {
       if $Expr {e1UnDec} then $Expr {e2UnDec} else $Expr {monadReturn()}(false)
     };
-  top.monadRewritten = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
+  top.monadRewritten = if isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
+                       then if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
                             then bindBoth
                             else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
+                       else if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
                             then bind2
-                            else and(e1.monadRewritten, '&&', e2.monadRewritten);
+                            else and(ne1.monadRewritten, '&&', ne2.monadRewritten);
 }
 
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
-  top.merrors := e1.merrors ++ e2.merrors;
+  -- TODO: Need to re-decorate here, to avoid hidden transitive deps flow analysis issue.
+  -- See https://github.com/melt-umn/silver/issues/812
+  forward ne1 = new(e1);
+  forward ne2 = new(e2);
+
+  top.merrors := ne1.merrors ++ ne2.merrors;
   top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
+      if isMonad(ne1.mtyperep, top.env)
+      then if monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
            then []
            else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '||', not " ++ monadToString(e1.mtyperep))]
+                           " implicitly in this '||', not " ++ monadToString(ne1.mtyperep))]
       else [];
   top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
+      if isMonad(ne2.mtyperep, top.env)
+      then if monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
            then []
            else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '||', not " ++ monadToString(e2.mtyperep))]
+                           " implicitly in this '||', not " ++ monadToString(ne2.mtyperep))]
       else [];
 
-  local ec1::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                         then check(monadInnerType(e1.mtyperep), boolType())
-                         else check(e1.mtyperep, boolType());
-  local ec2::TypeCheck = if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                         then check(monadInnerType(e2.mtyperep), boolType())
-                         else check(e2.mtyperep, boolType());
+  local ec1::TypeCheck = if isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
+                         then check(monadInnerType(ne1.mtyperep), boolType())
+                         else check(ne1.mtyperep, boolType());
+  local ec2::TypeCheck = if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
+                         then check(monadInnerType(ne2.mtyperep), boolType())
+                         else check(ne2.mtyperep, boolType());
   ec1.finalSubst = top.finalSubst;
   ec2.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec1.downSubst = e2.mUpSubst;
+  ne1.mDownSubst = top.mDownSubst;
+  ne2.mDownSubst = ne1.mUpSubst;
+  ec1.downSubst = ne2.mUpSubst;
   ec2.downSubst = ec1.upSubst;
   top.mUpSubst = ec2.upSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                then e1.mtyperep --assume it will be well-typed
-                else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                     then e2.mtyperep
+  top.mtyperep = if isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
+                then ne1.mtyperep --assume it will be well-typed
+                else if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
+                     then ne2.mtyperep
                      else boolType();
 
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+  ne1.monadicallyUsed = isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst;
+  ne2.monadicallyUsed = isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst;
+  top.monadicNames = ne1.monadicNames ++ ne2.monadicNames;
 
   local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
+        if ne1.mtyperep.isDecorated
+        then Silver_Expr {silver:core:new( $Expr {ne1.monadRewritten})}
+        else ne1.monadRewritten;
   local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
+        if ne2.mtyperep.isDecorated
+        then Silver_Expr {silver:core:new( $Expr {ne2.monadRewritten})}
+        else ne2.monadRewritten;
   --e1 >>= ( (\x y -> if x then Return(true) else y)(_, e2) )
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind()}
       ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne2.mtyperep))}
+         y::$TypeExpr {typerepTypeExpr(dropDecorated(ne2.mtyperep))} ->
           if x then $Expr {monadReturn()}(true) else y) (_, $Expr {e2UnDec}))
     };
   --e1 >>= ( (\x y -> Return(x || y))(_, e2) )
@@ -1401,8 +1413,8 @@ top::Expr ::= e1::Expr '||' e2::Expr
     Silver_Expr {
       $Expr {monadBind()}
       ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne1.mtyperep))}
+         y::$TypeExpr {typerepTypeExpr(dropDecorated(ne2.mtyperep))} ->
         $Expr {monadReturn()}
         (x || y))(_, $Expr {e2UnDec}))
     };
@@ -1411,52 +1423,13 @@ top::Expr ::= e1::Expr '||' e2::Expr
     Silver_Expr {
       if $Expr {e1UnDec} then $Expr {monadReturn()}(true) else $Expr {e2UnDec}
     };
-  top.monadRewritten = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
+  top.monadRewritten = if isMonad(ne1.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne1.mtyperep, top.mDownSubst).fst
+                       then if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
                             then bindBoth
                             else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
+                       else if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
                             then bind2
-                            else or(e1.monadRewritten, '||', e2.monadRewritten);
-}
-
-aspect production notOp
-top::Expr ::= '!' e::Expr
-{
-  top.merrors := e.merrors;
-  top.merrors <-
-      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
-      then if monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '!', not " ++ monadToString(e.mtyperep))]
-      else [];
-
-  local ec::TypeCheck = if isMonad(e.mtyperep, top.env)
-                        then check(monadInnerType(e.mtyperep), boolType())
-                        else check(e.mtyperep, boolType());
-  e.mDownSubst = top.mDownSubst;
-  ec.downSubst = e.mUpSubst;
-  top.mUpSubst = ec.upSubst;
-  ec.finalSubst = top.finalSubst;
-  top.mtyperep = e.mtyperep; --assume it will be well-typed
-
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e.monadicNames;
-
-  local eUnDec::Expr =
-        if e.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new($Expr {e.monadRewritten})}
-        else e.monadRewritten;
-  top.monadRewritten =
-    if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
-    then Silver_Expr {
-           $Expr {monadBind()}
-            ($Expr {eUnDec},
-             \x::Boolean -> 
-              $Expr {monadReturn()}(!x))
-         }
-    else notOp('!', e.monadRewritten);
+                            else or(ne1.monadRewritten, '||', ne2.monadRewritten);
 }
 
 concrete production ifThen
@@ -1627,483 +1600,6 @@ top::Expr ::= f::Float_t
   top.monadicNames = [];
   top.monadRewritten = floatConst(f);
 } 
-
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  top.merrors := e1.merrors ++ e2.merrors;
-  top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '+', not " ++ monadToString(e1.mtyperep))]
-      else [];
-  top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '+', not " ++ monadToString(e2.mtyperep))]
-      else [];
-
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
-
-  local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                        then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, e2.mtyperep)
-                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                        else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                             else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.mUpSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                 then e1.mtyperep
-                 else e2.mtyperep;
-
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
-
-  local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
-  local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
-  --e1 >>= ( (\x y -> y >>= \z -> Return(x + z))(_, e2) )
-  local bindBoth::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-          $Expr {monadBind()}
-          (y,
-           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-            $Expr {monadReturn()}
-            (x + z))) (_, $Expr {e2UnDec}))
-    };
-  --e1 >>= ( (\x y -> Return(x + y))(_, e2) )
-  local bind1::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x + y))(_, $Expr {e2UnDec}))
-    };
-  --e2 >>= ( (\x y -> Return(x + y))(e1, _) )
-  local bind2::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e2UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(e1.mtyperep)}
-         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x + y))($Expr {e1UnDec}, _))
-    };
-  top.monadRewritten = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bindBoth
-                            else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bind2
-                            else plus(e1.monadRewritten, '+', e2.monadRewritten);
-}
-
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  top.merrors := e1.merrors ++ e2.merrors;
-  top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '-', not " ++ monadToString(e1.mtyperep))]
-      else [];
-  top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '-', not " ++ monadToString(e2.mtyperep))]
-      else [];
-
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
-
-  local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                        then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, e2.mtyperep)
-                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                        else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                             else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.mUpSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                then e1.mtyperep
-                else e2.mtyperep;
-
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
-
-  local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
-  local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
-  --e1 >>= ( (\x y -> y >>= \z -> Return(x - z))(_, e2) )
-  local bindBoth::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-          $Expr {monadBind()}
-          (y,
-           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-            $Expr {monadReturn()}
-            (x - z))) (_, $Expr {e2UnDec}))
-    };
-  --e1 >>= ( (\x y -> Return(x - y))(_, e2) )
-  local bind1::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x - y))(_, $Expr {e2UnDec}))
-    };
-  --e2 >>= ( (\x y -> Return(x - y))(e1, _) )
-  local bind2::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e2UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(e1.mtyperep)}
-         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x - y))($Expr {e1UnDec}, _))
-    };
-  top.monadRewritten = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bindBoth
-                            else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bind2
-                            else minus(e1.monadRewritten, '-', e2.monadRewritten);
-}
-
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  top.merrors := e1.merrors ++ e2.merrors;
-  top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '*', not " ++ monadToString(e1.mtyperep))]
-      else [];
-  top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '*', not " ++ monadToString(e2.mtyperep))]
-      else [];
-
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
-
-  local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                        then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, e2.mtyperep)
-                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                        else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                             else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.mUpSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                then e1.mtyperep
-                else e2.mtyperep;
-
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
-
-  local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
-  local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
-  --e1 >>= ( (\x y -> y >>= \z -> Return(x * z))(_, e2) )
-  local bindBoth::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-          $Expr {monadBind()}
-          (y,
-           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-            $Expr {monadReturn()}
-            (x * z))) (_, $Expr {e2UnDec}))
-    };
-  --e1 >>= ( (\x y -> Return(x * y))(_, e2) )
-  local bind1::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x * y))(_, $Expr {e2UnDec}))
-    };
-  --e2 >>= ( (\x y -> Return(x * y))(e1, _) )
-  local bind2::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e2UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(e1.mtyperep)}
-         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x * y))($Expr {e1UnDec}, _))
-    };
-  top.monadRewritten = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bindBoth
-                            else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bind2
-                            else multiply(e1.monadRewritten, '*', e2.monadRewritten);
-}
-
-aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
-{
-  top.merrors := e1.merrors ++ e2.merrors;
-  top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '/', not " ++ monadToString(e1.mtyperep))]
-      else [];
-  top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '/', not " ++ monadToString(e2.mtyperep))]
-      else [];
-
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
-
-  local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                        then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, e2.mtyperep)
-                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                        else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                             else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.mUpSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                then e1.mtyperep
-                else e2.mtyperep;
-
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env);
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env);
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
-
-  local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
-  local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
-  --e1 >>= ( (\x y -> y >>= \z -> Return(x / z))(_, e2) )
-  local bindBoth::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-          $Expr {monadBind()}
-          (y,
-           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-            $Expr {monadReturn()}
-            (x / z))) (_, $Expr {e2UnDec}))
-    };
-  --e1 >>= ( (\x y -> Return(x / y))(_, e2) )
-  local bind1::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x / y))(_, $Expr {e2UnDec}))
-    };
-  --e2 >>= ( (\x y -> Return(x / y))(e1, _) )
-  local bind2::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e2UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(e1.mtyperep)}
-         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x / y))($Expr {e1UnDec}, _))
-    };
-  top.monadRewritten = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bindBoth
-                            else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bind2
-                            else divide(e1.monadRewritten, '/', e2.monadRewritten);
-}
-
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  top.merrors := e1.merrors ++ e2.merrors;
-  top.merrors <-
-      if isMonad(e1.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '%', not " ++ monadToString(e1.mtyperep))]
-      else [];
-  top.merrors <-
-      if isMonad(e2.mtyperep, top.env)
-      then if monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-           then []
-           else [errFromOrigin(top, "Can only use " ++ monadToString(top.expectedMonad) ++
-                           " implicitly in this '%', not " ++ monadToString(e2.mtyperep))]
-      else [];
-
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
-
-  local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                        then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, e2.mtyperep)
-                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                        else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                             else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.mUpSubst;
-  top.mtyperep = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                 then e1.mtyperep
-                 else e2.mtyperep;
-
-  e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
-  e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
-
-  local e1UnDec::Expr =
-        if e1.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
-        else e1.monadRewritten;
-  local e2UnDec::Expr =
-        if e2.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
-        else e2.monadRewritten;
-  --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
-  local bindBoth::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-          $Expr {monadBind()}
-          (y,
-           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-            $Expr {monadReturn()}
-            (x % z))) (_, $Expr {e2UnDec}))
-    };
-  --e1 >>= ( (\x y -> Return(x % y))(_, e2) )
-  local bind1::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e1UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep))}
-         y::$TypeExpr {typerepTypeExpr(dropDecorated(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x % y))(_, $Expr {e2UnDec}))
-    };
-  --e2 >>= ( (\x y -> Return(x % y))(e1, _) )
-  local bind2::Expr =
-    Silver_Expr {
-      $Expr {monadBind()}
-      ($Expr {e2UnDec},
-       (\x::$TypeExpr {typerepTypeExpr(e1.mtyperep)}
-         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x % y))($Expr {e1UnDec}, _))
-    };
-  top.monadRewritten =  if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
-                       then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bindBoth
-                            else bind1
-                       else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
-                            then bind2
-                            else modulus(e1.monadRewritten, '%', e2.monadRewritten);
-}
-
-aspect production neg
-top::Expr ::= '-' e::Expr
-{
-  top.merrors := e.merrors;
-
-  top.mtyperep = e.mtyperep;
-
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e.monadicNames;
-
-  propagate mDownSubst, mUpSubst;
-
-  local eUnDec::Expr =
-        if e.mtyperep.isDecorated
-        then Silver_Expr {silver:core:new($Expr {e.monadRewritten})}
-        else e.monadRewritten;
-  top.monadRewritten =
-    if isMonad(e.mtyperep, top.env)
-    then Silver_Expr {
-           $Expr {monadBind()}
-            ($Expr {eUnDec},
-             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep))} ->
-              $Expr {monadReturn()}(-x))
-         }
-    else neg('-', e.monadRewritten);
-}
 
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'

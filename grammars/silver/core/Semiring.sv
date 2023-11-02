@@ -31,10 +31,56 @@ class Semiring a {
 }
 
 instance Semiring Integer {
-  add = \a::Integer b::Integer -> a + b;
+  add = addInteger;
   zero = 0;
-  mul = \a::Integer b::Integer -> a * b;
+  mul = mulInteger;
   one = 1;
+}
+
+function addInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% + (int)%b%)";
+}
+
+function mulInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% * (int)%b%)";
+}
+
+instance Semiring Float {
+  add = addFloat;
+  zero = 0.0;
+  mul = mulFloat;
+  one = 1.0;
+}
+
+function addFloat
+Float ::= a::Float b::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% + (float)%b%)";
+}
+
+function mulFloat
+Float ::= a::Float b::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% * (float)%b%)";
+}
+
+instance Semiring Boolean {
+  add = disj;
+  zero = false;
+  mul = conj;
+  one = true;
 }
 
 @{- Converts a non-negative integer into an arbitrary semiring. -}

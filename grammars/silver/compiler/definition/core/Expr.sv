@@ -713,10 +713,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.unparse = e1.unparse ++ " && " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot = false;
-  e2.isRoot = false;
+  forwards to Silver_Expr { silver:core:conj($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production or
@@ -724,10 +721,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.unparse = e1.unparse ++ " || " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot = false;
-  e2.isRoot = false;
+  forwards to Silver_Expr { silver:core:disj($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production notOp
@@ -735,9 +729,7 @@ top::Expr ::= '!' e::Expr
 {
   top.unparse = "! " ++ e.unparse;
 
-  top.typerep = boolType();
-
-  e.isRoot = false;
+  forwards to Silver_Expr { silver:core:not($Expr{@e}) };
 }
 
 concrete production gtOp
@@ -745,7 +737,7 @@ top::Expr ::= e1::Expr op::'>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gt($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:gt($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production ltOp
@@ -753,7 +745,7 @@ top::Expr ::= e1::Expr op::'<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lt($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:lt($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production gteOp
@@ -761,7 +753,7 @@ top::Expr ::= e1::Expr op::'>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gte($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:gte($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production lteOp
@@ -769,7 +761,7 @@ top::Expr ::= e1::Expr op::'<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lte($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:lte($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production eqOp
@@ -777,7 +769,7 @@ top::Expr ::= e1::Expr op::'==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:eq($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:eq($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production neqOp
@@ -785,7 +777,7 @@ top::Expr ::= e1::Expr op::'!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:neq($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:neq($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production ifThenElse
@@ -822,10 +814,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.unparse = e1.unparse ++ " + " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:add($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production minus
@@ -833,10 +822,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.unparse = e1.unparse ++ " - " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:sub($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production multiply
@@ -844,10 +830,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.unparse = e1.unparse ++ " * " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:mul($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production divide
@@ -855,10 +838,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.unparse = e1.unparse ++ " / " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:div($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production modulus
@@ -866,10 +846,13 @@ top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.unparse = e1.unparse ++ " % " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
+  top.errors <-
+    case top.finalType of
+    | floatType() -> [wrnFromOrigin(top, "Float modulo always returns zero")]
+    | _ -> []
+    end;
 
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:mod($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production neg
@@ -878,9 +861,7 @@ precedence = 13
 {
   top.unparse = "- " ++ e.unparse;
 
-  top.typerep = e.typerep;
-
-  e.isRoot=false;
+  forwards to Silver_Expr { silver:core:negate($Expr{@e}) };
 }
 
 concrete production stringConst
@@ -896,7 +877,7 @@ top::Expr ::= e1::Expr op::'++' e2::Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:append($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:append($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production terminalConstructor
