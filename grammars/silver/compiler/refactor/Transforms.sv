@@ -44,7 +44,6 @@ attribute transforms occurs on
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
   FunctionSignature, FunctionLHS,
   InstanceBody, InstanceBodyItem,
-  ModuleStmts, ModuleStmt, ImportStmt, ImportStmts, ModuleExpr, ModuleName, NameList, WithElems, WithElem, Module,
   NTDeclQualifiers, NonterminalModifiers, NonterminalModifierList,
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr,
   ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
