@@ -28,7 +28,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.transforms <-
     case body of
-    | productionBody(_, productionStmtsSnoc(productionStmtsNil(), returnDef(_, e, _)), _) ->
+    | productionBody(_, productionStmtsSnoc(productionStmtsNil(), returnDef(_, e, _)), _)
+      when top.config.refactorConciseFunctions ->
       rule on AGDcl of
       | a when getParsedOriginLocation(a) == getParsedOriginLocation(top) ->
         Silver_AGDcl {
@@ -38,4 +39,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
       end
     | _ -> fail()
     end;
+}
+
+aspect production functionDclFFI
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
+{
+  -- This is a forwarding prod, we don't want to rewrite FFI functions like normal ones
+  top.transforms := ns.transforms <+ body.transforms <+ ffidefs.transforms;
 }
