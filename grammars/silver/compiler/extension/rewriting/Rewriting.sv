@@ -29,14 +29,14 @@ concrete production sequenceOperator
 top::Expr ::= s1::Expr '<*' s2::Expr
 {
   top.unparse = s"(${s1.unparse} <* ${s2.unparse})";
-  forwards to mkStrFunctionInvocation("silver:rewrite:sequence", [s1, s2]);
+  forwards to Silver_Expr { silver:rewrite:sequence($Expr{@s1}, $Expr{@s2}) };
 }
 
 concrete production choiceOperator
 top::Expr ::= s1::Expr '<+' s2::Expr
 {
   top.unparse = s"(${s1.unparse} <+ ${s2.unparse})";
-  forwards to mkStrFunctionInvocation("silver:rewrite:choice", [s1, s2]);
+  forwards to Silver_Expr { silver:rewrite:choice($Expr{@s1}, $Expr{@s2}) };
 }
 
 
