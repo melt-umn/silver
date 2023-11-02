@@ -32,14 +32,7 @@ top::Strategy ::=
   top.result = nothing();
 }
 
-global sequence::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
-  case s1, s2 of
-  | id(), _ -> s2
-  | _, id() -> s1
-  | _, _ -> sequence_(s1, s2)
-  end;
-
-abstract production sequence_
+abstract production sequence
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"(${s1.pp} <* ${s2.pp})";
@@ -48,14 +41,7 @@ top::Strategy ::= s1::Strategy s2::Strategy
   top.result = bind(s1.result, \ AST -> s2.result);
 }
 
-global choice::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
-  case s1, s2 of
-  | fail(), _ -> s2
-  | _, fail() -> s1
-  | _, _ -> choice_(s1, s2)
-  end;
-
-abstract production choice_
+abstract production choice
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"(${s1.pp} <+ ${s2.pp})";
@@ -63,6 +49,13 @@ top::Strategy ::= s1::Strategy s2::Strategy
   s2.term = top.term;
   top.result = orElse(s1.result, s2.result);
 }
+
+global choice_::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
+  case s1, s2 of
+  | fail(), _ -> s2
+  | _, fail() -> s1
+  | _, _ -> choice(s1, s2)
+  end;
 
 -- Traversals
 abstract production all

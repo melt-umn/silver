@@ -34,7 +34,7 @@ aspect transformed on AGDcls of
 | nilAGDcls() -> nilAGDcls()
 end;
 
-monoid attribute transforms::Strategy with fail(), choice;
+monoid attribute transforms::Strategy with fail(), choice_;
 
 attribute transforms occurs on
   AGDcl,
