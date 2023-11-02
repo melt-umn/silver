@@ -3,11 +3,13 @@ grammar silver:compiler:refactor;
 import silver:compiler:translation:java:driver;
 
 synthesized attribute doRefactor :: Boolean occurs on CmdArgs;
+synthesized attribute refactorGrammars :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.doRefactor = false;
+  top.refactorGrammars = [];
 }
 abstract production refactorFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -18,13 +20,38 @@ top::CmdArgs ::= rest::CmdArgs
   top.noJavaGeneration = true;
   forwards to @rest;
 }
+abstract production refactorGrammarsFlag
+top::CmdArgs ::= s::String rest::CmdArgs
+{
+  top.refactorGrammars = s :: rest.refactorGrammars;
+  forwards to @rest;
+}
+
+aspect function parseArgs
+Either<String  Decorated CmdArgs> ::= args::[String]
+{
+  flags <-
+    [ flagSpec(name="--refactor-in", paramString=just("<path>"),
+        help="parent grammar of grammars to refactor",
+        flagParser=option(refactorGrammarsFlag)) ];
+}
 
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
 {
+  local refactorGrammars::[Decorated RootSpec] =
+    filter(\ r::Decorated RootSpec ->
+      null(g.config.refactorGrammars) ||
+      case r of
+      | grammarRootSpec(_, _, grammarName, _, _, _) ->
+        any(map(startsWith(_, grammarName), g.config.refactorGrammars))
+      | _ -> false
+      end,
+      grammarsRelevant);
+
   top.postOps <-
     if top.config.doRefactor
-    then [doRefactor(top.config, grammarsRelevant)]
+    then [doRefactor(top.config, refactorGrammars)]
     else [];
 }
 
