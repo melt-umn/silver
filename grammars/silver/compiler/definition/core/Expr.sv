@@ -847,6 +847,12 @@ top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.unparse = e1.unparse ++ " % " ++ e2.unparse;
 
+  top.errors <-
+    case top.finalType of
+    | floatType() -> [wrnFromOrigin(top, "Float modulo always returns zero")]
+    | _ -> []
+    end;
+
   forwards to Silver_Expr { silver:core:mod($Expr{@e1}, $Expr{@e2}) };
 }
 
