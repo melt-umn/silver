@@ -28,7 +28,7 @@ aspect transformed on AGDcls of
 | consAGDcls(h, t) -> consAGDcls(
     case h.transforms of
     | fail() -> new(h)
-    | ts -> rewriteWith(bottomUp(try(ts)), new(h)).fromJust
+    | ts -> rewriteWith(allTopDown(ts), new(h)).fromJust
     end,
     t.transformed)
 | nilAGDcls() -> nilAGDcls()
