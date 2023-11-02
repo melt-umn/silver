@@ -1,10 +1,6 @@
 grammar silver:compiler:refactor;
 
-imports silver:util:cmdargs;
-imports silver:compiler:driver;
-
 import silver:compiler:translation:java:driver;
-import silver:langutil:unparse;
 
 synthesized attribute doRefactor :: Boolean occurs on CmdArgs;
 

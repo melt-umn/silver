@@ -44,6 +44,8 @@ AST ::= ast::a
 
 synthesized attribute unparseWithLayout::String occurs on AST, ASTs;
 synthesized attribute matchingOriginLoc::Maybe<Location> occurs on AST;
+synthesized attribute defaultPreLayout::Maybe<String> occurs on AST, ASTs;
+synthesized attribute defaultPostLayout::Maybe<String> occurs on AST, ASTs;
 
 inherited attribute origText::String occurs on AST, ASTs;
 propagate origText on AST, ASTs;
@@ -57,6 +59,8 @@ top::AST ::=
 {
   top.unparseWithLayout = error("Can't unparse " ++ genericShow(top));
   top.matchingOriginLoc = nothing();
+  top.defaultPreLayout = nothing();
+  top.defaultPostLayout = nothing();
 }
 
 aspect production nonterminalAST
@@ -77,6 +81,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     | nonterminalAST(p, c, _) when prodName == p -> just(c)
     | _ -> nothing()
     end;
+  top.defaultPreLayout = children.defaultPreLayout;
+  top.defaultPostLayout = children.defaultPostLayout;
 }
 
 aspect production terminalAST
@@ -84,21 +90,32 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.unparseWithLayout = lexeme;
   top.matchingOriginLoc = just(location);
+
+  production attribute termPreLayout::[(String, String)] with ++;
+  termPreLayout := [];
+  production attribute termPostLayout::[(String, String)] with ++;
+  termPostLayout := [];
+
+  top.defaultPreLayout = lookup(terminalName, termPreLayout);
+  top.defaultPostLayout = lookup(terminalName, termPostLayout);
 }
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
+  local layoutStr::String = fromMaybe("",
+    case t of
+    | consAST(h2, _) -> alt(
+        do {
+          l1::Location <- h.matchingOriginLoc;
+          l2::Location <- h2.matchingOriginLoc;
+          return substring(l1.endIndex, l2.index, top.origText);
+        }, alt(h.defaultPostLayout, t.defaultPreLayout))
+    | nilAST() -> empty
+    end);
   top.unparseWithLayout =
     h.unparseWithLayout ++
-    case t of
-    | consAST(h2, _) ->
-      case h.matchingOriginLoc, h2.matchingOriginLoc of
-      | just(l1), just(l2) -> substring(l1.endIndex, l2.index, top.origText)
-      | _, _ -> ""
-      end
-    | nilAST() -> ""
-    end ++
+    layoutStr ++
     t.unparseWithLayout;
   h.parseTree =
     case top.parseTree of
@@ -110,10 +127,16 @@ top::ASTs ::= h::AST t::ASTs
     | just(consAST(_, a)) -> just(a)
     | _ -> nothing()
     end;
+  top.defaultPreLayout = h.defaultPreLayout;
+  top.defaultPostLayout = alt(
+    t.defaultPostLayout,
+    if t.unparseWithLayout == "" then h.defaultPostLayout else empty);
 }
 
 aspect production nilAST
 top::ASTs ::=
 {
   top.unparseWithLayout = "";
+  top.defaultPreLayout = nothing();
+  top.defaultPostLayout = nothing();
 }
