@@ -527,7 +527,7 @@ top::Expr ::= h::Expr '::' t::Expr
     case forward of
     | functionInvocation(_, snocAppExprs(oneAppExprs(presentAppExpr(decH)), _, presentAppExpr(decT)), _) ->
       consListASTExpr(decH.transform, decT.transform)
-    | _ -> error("Unexpected forward: " ++ hackUnparse(forward))
+    | _ -> error("Unexpected forward: " ++ genericShow(forward))
     end;
 }
 

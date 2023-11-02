@@ -52,11 +52,11 @@ top::ClassBody ::= h::ClassBodyItem t::ClassBody
 aspect default production
 top::ClassBodyItem ::=
 {
-  top.docForName = "<undefined docForName for "++hackUnparse(top)++">";
+  top.docForName = "<undefined docForName for "++genericShow(top)++">";
   top.upDocConfig := [];
   top.docDcls := [];
   top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
-  top.docUnparse = "<undefined docUnparse for "++hackUnparse(top)++">";
+  top.docUnparse = "<undefined docUnparse for "++genericShow(top)++">";
 }
 
 concrete production documentedClassBodyItem
@@ -131,11 +131,11 @@ top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 aspect default production
 top::InstanceBodyItem ::=
 {
-  top.docForName = "<undefined docForName for "++hackUnparse(top)++">";
+  top.docForName = "<undefined docForName for "++genericShow(top)++">";
   top.upDocConfig := [];
   top.docDcls := [];
   top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
-  top.docUnparse = "<undefined docUnparse for "++hackUnparse(top)++">";
+  top.docUnparse = "<undefined docUnparse for "++genericShow(top)++">";
 }
 
 concrete production documentedInstanceBodyItem

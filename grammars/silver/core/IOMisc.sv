@@ -76,7 +76,7 @@ a ::= val::a str::String
 function unsafeTraceDump
 a ::= val::a
 {
-  return unsafeTrace(val, printlnT(hackUnparse(val), unsafeIO()));
+  return unsafeTrace(val, printlnT(genericShow(val), unsafeIO()));
 }
 
 
