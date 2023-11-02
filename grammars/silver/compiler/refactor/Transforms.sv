@@ -21,30 +21,33 @@ imports silver:compiler:modification:copper_mda;
 
 imports silver:rewrite;
 
-synthesized attribute transformed::Root occurs on Root;
+functor attribute transformed occurs on Root, AGDcls;
+propagate transformed on Root;
 
-aspect production root
-top::Root ::= _ _ _ _
-{
-  top.transformed = rewriteWith(bottomUp(try(top.transforms)), new(top)).fromJust;
-}
+aspect transformed on AGDcls of
+| consAGDcls(h, t) -> consAGDcls(
+    case h.transforms of
+    | fail() -> new(h)
+    | ts -> rewriteWith(bottomUp(try(ts)), new(h)).fromJust
+    end,
+    t.transformed)
+| nilAGDcls() -> nilAGDcls()
+end;
 
 monoid attribute transforms::Strategy with fail(), choice;
 
 attribute transforms occurs on
-  Root, AGDcls, AGDcl,
+  AGDcl,
   ProductionModifiers, ProductionModifierList, TerminalModifiers,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
   ClassBody, ClassBodyItem,
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
   FunctionSignature, FunctionLHS,
   InstanceBody, InstanceBodyItem,
-  ModuleStmts, ModuleStmt, ImportStmt, ImportStmts, ModuleExpr, ModuleName, NameList, WithElems, WithElem, Module, ModuleExportedDefs,
-  Name,
+  ModuleStmts, ModuleStmt, ImportStmt, ImportStmts, ModuleExpr, ModuleName, NameList, WithElems, WithElem, Module,
   NTDeclQualifiers, NonterminalModifiers, NonterminalModifierList,
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr,
   ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
-  QName, QNameType, QNameAttrOccur, GrammarDcl,
   FlowSpecs, FlowSpec, FlowSpecId, FlowSpecInhs, FlowSpecInh, NtList, NtName,
   ConstraintList, Constraint, KindExpr, TypeExpr,
   Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs,
@@ -55,19 +58,16 @@ attribute transforms occurs on
   AspectDefaultProductionSignature, FFIDefs, FFIDef,
   AssignExpr, PrimPatterns, PrimPattern, VarBinders, VarBinder;
 propagate transforms on
-  Root, AGDcls, AGDcl, 
+  AGDcl, 
   ProductionModifiers, ProductionModifierList, TerminalModifiers,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
   ClassBody, ClassBodyItem,
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
   FunctionSignature, FunctionLHS,
   InstanceBody, InstanceBodyItem,
-  ModuleStmts, ModuleStmt, ImportStmt, ImportStmts, ModuleExpr, ModuleName, NameList, WithElems, WithElem, Module, ModuleExportedDefs,
-  Name,
   NTDeclQualifiers, NonterminalModifiers, NonterminalModifierList,
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr,
   ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
-  QName, QNameType, QNameAttrOccur, GrammarDcl,
   FlowSpecs, FlowSpec, FlowSpecId, FlowSpecInhs, FlowSpecInh, NtList, NtName,
   ConstraintList, Constraint, KindExpr, TypeExpr,
   Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs,
