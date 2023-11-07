@@ -46,6 +46,8 @@ synthesized attribute unparseWithLayout::String occurs on AST, ASTs;
 synthesized attribute matchingOriginLoc::Maybe<Location> occurs on AST;
 synthesized attribute defaultPreLayout::Maybe<String> occurs on AST, ASTs;
 synthesized attribute defaultPostLayout::Maybe<String> occurs on AST, ASTs;
+inherited attribute childIndex::Integer occurs on ASTs;
+inherited attribute childLayout::[(Integer, String)] occurs on ASTs;
 
 inherited attribute origText::String occurs on AST, ASTs;
 propagate origText on AST, ASTs;
@@ -83,6 +85,13 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     end;
   top.defaultPreLayout = children.defaultPreLayout;
   top.defaultPostLayout = children.defaultPostLayout;
+
+  -- Map of productions and child indices to default layout after the child
+  production attribute prodChildLayout::[(String, Integer, String)] with ++;
+  prodChildLayout := [];
+
+  children.childIndex = 0;
+  children.childLayout = lookupAll(prodName, prodChildLayout);
 }
 
 aspect production terminalAST
@@ -91,8 +100,10 @@ top::AST ::= terminalName::String lexeme::String location::Location
   top.unparseWithLayout = lexeme;
   top.matchingOriginLoc = just(location);
 
+  -- Map of terminal names to default layout after the terminal
   production attribute termPreLayout::[(String, String)] with ++;
   termPreLayout := [];
+  -- Map of terminal names to default layout before the terminal
   production attribute termPostLayout::[(String, String)] with ++;
   termPostLayout := [];
 
@@ -110,7 +121,9 @@ top::ASTs ::= h::AST t::ASTs
           l1::Location <- h.matchingOriginLoc;
           l2::Location <- h2.matchingOriginLoc;
           return substring(l1.endIndex, l2.index, top.origText);
-        }, alt(h.defaultPostLayout, t.defaultPreLayout))
+        },
+        alt(lookup(top.childIndex, top.childLayout),
+          alt(h.defaultPostLayout, t.defaultPreLayout)))
     | nilAST() -> empty
     end);
   top.unparseWithLayout =
@@ -131,6 +144,8 @@ top::ASTs ::= h::AST t::ASTs
   top.defaultPostLayout = alt(
     t.defaultPostLayout,
     if t.unparseWithLayout == "" then h.defaultPostLayout else empty);
+  t.childIndex = top.childIndex + 1;
+  t.childLayout = top.childLayout;
 }
 
 aspect production nilAST
