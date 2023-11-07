@@ -13,12 +13,11 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 
   local rhs::ProductionRHS = ns.rhs;
   rhs.env = top.env;
-  local lhs::FunctionLHS = ns.lhs;
 
   forwards to
     globalValueDclConcrete (
       'global', id, '::', ns.cl, '=>', 
-        funTypeExpr ('(', psignature(presentSignatureLhs(lhs.tyExpr), '::=', rhs.tyExprs), ')'),
+        funTypeExpr ('(', psignature(presentSignatureLhs(ns.lhs.tyExpr), '::=', rhs.tyExprs), ')'),
       '=', lambda_c('\', rhs.toLamRHS, '->', e), ';'
     );
 }
@@ -75,12 +74,5 @@ aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.toLamRHSElem = lambdaRHSElemIdTy(id, '::', t);
-  top.tyExpr = t;
-}
-
-aspect production productionRHSElemType
-top::ProductionRHSElem ::= t::TypeExpr
-{
-  top.toLamRHSElem = lambdaRHSElemTy('_', '::', t);
   top.tyExpr = t;
 }
