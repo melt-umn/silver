@@ -1,9 +1,5 @@
 grammar silver:testing ;
 
-imports silver:reflect;
-imports silver:langutil;
-imports silver:langutil:pp;
-
 nonterminal Test 
   with msg, pass, ioIn, ioOut ;
 
@@ -112,14 +108,15 @@ Boolean ::= f::(Boolean ::=)  times::Integer
     f() && repeatTestTimes(f, times - 1);
 }
 
--- TODO: Consider replacing this with the regular Show type class,
--- would require some way of propagating the pp attribute.
+-- The expected and result values in equalityTest are bound as locals,
+-- causing them to be implicitly decorated if they are nonterminals.
+-- This exists as a workaround to ensure they are displayed properly as undecorated terms.
 class ShowTestValue a {
   showTestValue :: (String ::= a);
 }
 
 instance ShowTestValue a {
-  showTestValue = \ x::a -> show(80, reflect(x));
+  showTestValue = genericShow;
 }
 
 instance ShowTestValue a => ShowTestValue Decorated a with i {

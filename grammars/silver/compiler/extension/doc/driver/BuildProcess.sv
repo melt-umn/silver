@@ -29,7 +29,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.docGeneration = true;
   top.parseDocs = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 abstract production printUndocFlag
@@ -37,7 +37,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.printUndoc = true;
   top.parseDocs = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 abstract production countUndocFlag
@@ -45,7 +45,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.countUndoc = true;
   top.parseDocs = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 abstract production docOutFlag
@@ -55,7 +55,7 @@ top::CmdArgs ::= loc::String rest::CmdArgs
     | nothing() -> just(loc)
     | _ -> error("Duplicate arguments for docOutOption")
   end;
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs
@@ -95,7 +95,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
       | grammarRootSpec(g, _, _, _, _, _) ->
           if (length(g.documentedNamed)+length(g.undocumentedNamed))!=0
           then [s" - [${g.grammarName}]: ${toString(length(g.documentedNamed))}" ++
-                s"/${toString(toInteger(length(g.undocumentedNamed)+length(g.documentedNamed)))} " ++ 
+                s"/${toString(length(g.undocumentedNamed)+length(g.documentedNamed))} " ++ 
                 s"(${toString((toFloat(length(g.documentedNamed))/toFloat(length(g.undocumentedNamed)+length(g.documentedNamed)))*toFloat(100))}%) items documented"
             ++ (if a.printUndoc && (length(g.undocumentedNamed)!=0)
                 then ", missing: " ++ implode(", ", g.undocumentedNamed)

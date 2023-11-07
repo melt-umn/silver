@@ -10,3 +10,5 @@ grammar silver:core;
   - * Double Negation Elimination: `not(not(x)) = x`
   -}
 class HeytingAlgebra a => BooleanAlgebra a {}
+
+instance BooleanAlgebra Boolean {}

@@ -17,19 +17,19 @@ abstract production verboseFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.isVerbose = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production sillyFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.isSilly = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production noSillyFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.isSilly = false;
-  forwards to rest;
+  forwards to @rest;
 }
 
 
@@ -97,7 +97,7 @@ abstract production includeFlag
 top::CmdArgs ::= p::String rest::CmdArgs
 {
   top.includePaths = p :: forward.includePaths;
-  forwards to rest;
+  forwards to @rest;
 }
 
 -- Stil don't parse anything unrecognized.

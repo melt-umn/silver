@@ -151,8 +151,8 @@ ag::AGDcl ::= kwd::'equalityTest'
         attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
           foldStringExprs([
             strCnst("Test at " ++ getParsedOriginLocationOrFallback(ag).unparse ++ " failed.\nChecking that expression\n   " ++
-              stringifyString(value.unparse) ++ "\nshould be same as expression\n   " ++
-              stringifyString(expected.unparse) ++ "\nActual value:\n   "),
+              value.unparse ++ "\nshould be same as expression\n   " ++
+              expected.unparse ++ "\nActual value:\n   "),
             Silver_Expr { silver:testing:showTestValue(value) },
             strCnst("\nExpected value: \n   "),
             Silver_Expr { silver:testing:showTestValue(expected) },

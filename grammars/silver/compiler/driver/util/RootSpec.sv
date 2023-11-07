@@ -138,7 +138,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   extraFileErrors := [];
 
   -- Seed flow deps with {compiledGrammars, config}
-  extraFileErrors <- if false then error(hackUnparse((top.compiledGrammars, top.config))) else [];
+  extraFileErrors <- if false then error(genericShow((top.compiledGrammars, top.config))) else [];
 
   top.allFileErrors = map(
     \ fe::(String, [Message]) -> case fe of (fileName, fileErrors) ->

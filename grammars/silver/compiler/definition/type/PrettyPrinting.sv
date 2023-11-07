@@ -261,8 +261,8 @@ top::Kind ::= k1::Kind k2::Kind
 function findAbbrevFor
 String ::= tv::TyVar  bv::[TyVar]
 {
-  local named::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_, _, _) -> true | _ -> false end, bv);
-  local anon::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_, _, _) -> false | _ -> true end, bv);
+  local named::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_) -> true | _ -> false end, bv);
+  local anon::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_) -> false | _ -> true end, bv);
   return findAbbrevHelp(tv, named ++ anon, ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"], []);
 }
 
@@ -271,7 +271,7 @@ String ::= tv::TyVar  bv::[TyVar]  vn::[String] assigned::[String]
 {
   return
     case bv, vn of
-    | tyVarNamed(_, _, n) :: tbv, _ when !contains(n, assigned) ->
+    | tyVarNamed(n) :: tbv, _ when !contains(n, assigned) ->
       if tv == head(bv) then n else findAbbrevHelp(tv, tbv, vn, n :: assigned)
     | hbv :: tbv, hvn :: tvn ->
       if contains(hvn, assigned)
@@ -280,7 +280,7 @@ String ::= tv::TyVar  bv::[TyVar]  vn::[String] assigned::[String]
     | _, _ ->
       case positionOf(tv, bv) of
       | i when i > 0 && !contains("a" ++ toString(i), assigned) -> "a" ++ toString(i)
-      | _ -> "V_" ++ toString(tv.extractTyVarRep)
+      | _ -> "V_" ++ toString(tv.varId)
       end
   end;
 }

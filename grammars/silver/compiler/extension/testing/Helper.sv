@@ -32,7 +32,7 @@ Expr ::= es::[Expr]
 function strCnst
 Expr ::= s::String
 {
-  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""));
+  return stringConst(terminal(String_t, "\"" ++ escapeString(s) ++ "\""));
 }
 
 -- Create an attribute reference from two names. as in "n.a"
@@ -42,15 +42,3 @@ Expr ::= n::String a::String
   return  
     access(mkNameExpr(n), '.', qNameAttrOccur(qName(a)));
 }
-
--- replace " characters with two: \ and "
-function stringifyString
-String ::= s::String
-{
-  -- be sure to escape backslashes first!
-  return substitute("\n", "\\n",
-          substitute("\t", "\\t",
-           substitute("\"", "\\\"",
-            substitute("\\",  "\\\\", s))));
-}
-

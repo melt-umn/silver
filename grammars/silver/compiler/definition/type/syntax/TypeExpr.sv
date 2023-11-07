@@ -71,7 +71,7 @@ function addNewLexicalTyVars
 [Def] ::= gn::String lk::[Pair<String Kind>] l::[String]
 {
   local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
-  return map(\ n::String -> lexTyVarDef(gn, loc, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
+  return map(\ n::String -> lexTyVarDef(gn, loc, n, freshTyVarNamed(n, fromMaybe(starKind(), lookup(n, lk)))), l);
 }
 
 aspect default production

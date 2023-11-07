@@ -52,3 +52,36 @@ class HeytingAlgebra a {
     -}
   not :: (a ::= a);
 }
+
+instance HeytingAlgebra Boolean {
+  ff = false;
+  tt = true;
+  implies = \ p q -> disj(not(p), q);
+  conj = conjBoolean;
+  disj = disjBoolean;
+  not = notBoolean;
+}
+
+function conjBoolean
+Boolean ::= a::Boolean b::Boolean
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% && (boolean)%b%)";
+}
+
+function disjBoolean
+Boolean ::= a::Boolean b::Boolean
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% || (boolean)%b%)";
+}
+
+function notBoolean
+Boolean ::= a::Boolean
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(!(boolean)%a%)";
+}

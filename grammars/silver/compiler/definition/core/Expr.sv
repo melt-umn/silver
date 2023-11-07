@@ -264,8 +264,7 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- TODO: fix comma when one or the other is empty
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ (if es.appExprSize > 0 && anns.appExprSize > 0 then ", " else "") ++ anns.unparse ++ ")";
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   e.isRoot = false;
   
@@ -714,10 +713,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.unparse = e1.unparse ++ " && " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot = false;
-  e2.isRoot = false;
+  forwards to Silver_Expr { silver:core:conj($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production or
@@ -725,10 +721,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.unparse = e1.unparse ++ " || " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot = false;
-  e2.isRoot = false;
+  forwards to Silver_Expr { silver:core:disj($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production notOp
@@ -736,9 +729,7 @@ top::Expr ::= '!' e::Expr
 {
   top.unparse = "! " ++ e.unparse;
 
-  top.typerep = boolType();
-
-  e.isRoot = false;
+  forwards to Silver_Expr { silver:core:not($Expr{@e}) };
 }
 
 concrete production gtOp
@@ -746,7 +737,7 @@ top::Expr ::= e1::Expr op::'>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gt($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:gt($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production ltOp
@@ -754,7 +745,7 @@ top::Expr ::= e1::Expr op::'<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lt($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:lt($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production gteOp
@@ -762,7 +753,7 @@ top::Expr ::= e1::Expr op::'>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gte($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:gte($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production lteOp
@@ -770,7 +761,7 @@ top::Expr ::= e1::Expr op::'<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lte($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:lte($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production eqOp
@@ -778,7 +769,7 @@ top::Expr ::= e1::Expr op::'==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:eq($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:eq($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production neqOp
@@ -786,7 +777,7 @@ top::Expr ::= e1::Expr op::'!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:neq($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:neq($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production ifThenElse
@@ -823,10 +814,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.unparse = e1.unparse ++ " + " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:add($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production minus
@@ -834,10 +822,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.unparse = e1.unparse ++ " - " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:sub($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production multiply
@@ -845,10 +830,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.unparse = e1.unparse ++ " * " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:mul($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production divide
@@ -856,10 +838,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.unparse = e1.unparse ++ " / " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:div($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production modulus
@@ -867,10 +846,13 @@ top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.unparse = e1.unparse ++ " % " ++ e2.unparse;
 
-  top.typerep = e1.typerep;
+  top.errors <-
+    case top.finalType of
+    | floatType() -> [wrnFromOrigin(top, "Float modulo always returns zero")]
+    | _ -> []
+    end;
 
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:mod($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production neg
@@ -879,9 +861,7 @@ precedence = 13
 {
   top.unparse = "- " ++ e.unparse;
 
-  top.typerep = e.typerep;
-
-  e.isRoot=false;
+  forwards to Silver_Expr { silver:core:negate($Expr{@e}) };
 }
 
 concrete production stringConst
@@ -897,7 +877,7 @@ top::Expr ::= e1::Expr op::'++' e2::Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:append($Expr{e1}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:append($Expr{@e1}, $Expr{@e2}) };
 }
 
 concrete production terminalConstructor
@@ -1072,7 +1052,7 @@ top::AppExprs ::=
 
 tracked nonterminal AnnoAppExprs with
   config, grammarName, env, unparse, errors, freeVars, frame, compiledGrammars,
-  isPartial, appExprApplied, exprs,
+  isPartial, appExprApplied, exprs, appExprSize,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 tracked nonterminal AnnoExpr with
@@ -1140,6 +1120,7 @@ top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
   top.unparse = es.unparse ++ ", " ++ e.unparse;
 
   top.isPartial = es.isPartial || e.isPartial;
+  top.appExprSize = 1 + es.appExprSize;
 
   e.remainingFuncAnnotations = top.remainingFuncAnnotations;
   es.remainingFuncAnnotations = e.missingAnnotations;
@@ -1156,6 +1137,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.unparse = e.unparse;
 
   top.isPartial = e.isPartial;
+  top.appExprSize = 1;
   top.errors <-
     if null(top.missingAnnotations) then []
     else [errFromOrigin(top, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
@@ -1175,6 +1157,7 @@ top::AnnoAppExprs ::=
   top.unparse = "";
 
   top.isPartial = false;
+  top.appExprSize = 0;
   top.errors <-
     if null(top.missingAnnotations) then []
     else [errFromOrigin(top, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "

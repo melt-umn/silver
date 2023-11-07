@@ -22,7 +22,7 @@ abstract production copperdumpFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.forceCopperDump = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs
@@ -48,7 +48,7 @@ production copperXmlDumpFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.copperXmlDump = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs

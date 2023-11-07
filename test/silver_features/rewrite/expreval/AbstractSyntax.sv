@@ -1,6 +1,6 @@
 grammar silver_features:rewrite:expreval;
 
-imports silver:core hiding add, sub, mul, div;
+imports silver:core;
 imports silver:langutil;
 imports silver:langutil:pp;
 imports silver:rewrite;
