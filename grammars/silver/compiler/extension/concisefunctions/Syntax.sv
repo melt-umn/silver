@@ -38,10 +38,10 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 aspect production functionSignatureNoCL
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
+  propagate env;
   top.cl = nilConstraint();
   top.lhs = lhs;
   top.rhs = rhs;
-  rhs.env = top.env;
   top.funTyExpr = funTypeExpr ('(', psignature(presentSignatureLhs(lhs.tyExpr), '::=', rhs.tyExprs), ')');
 }
 
