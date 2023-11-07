@@ -14,10 +14,6 @@ class Ring a => DivisionRing a {
   recip :: (a ::= a);
 }
 
-instance DivisionRing Integer {
-  recip = \ a -> 1/a;
-}
-
 instance DivisionRing Float {
   recip = \ a -> 1.0 / a;
 }

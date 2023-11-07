@@ -41,9 +41,9 @@ Integer ::= a::Integer b::Integer
 }
 
 instance EuclideanRing Float {
-  degree = \n -> if n < 0.0 then toInteger(-n) else toInteger(n);
+  degree = \ _ -> 1;
   div = divFloat;
-  mod = modFloat;
+  mod = \ a b -> 0.0;  -- This matches what PureScript does.
 }
 
 function divFloat
@@ -52,14 +52,6 @@ Float ::= a::Float b::Float
   return error("Foreign function");
 } foreign {
   "java": return "(%a% / (float)%b%)";
-}
-
-function modFloat
-Float ::= a::Float b::Float
-{
-  return error("Foreign function");
-} foreign {
-  "java": return "(%a% % (float)%b%)";
 }
 
 @{- Computes the greatest common divisor of two numbers. -}

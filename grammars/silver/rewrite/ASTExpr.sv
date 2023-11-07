@@ -315,7 +315,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
   top.value =
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> integerAST(x % y)
-    | floatAST(x), floatAST(y) -> floatAST(x % y)
+    | floatAST(x), floatAST(y) -> floatAST(0.0)
     | _, _ -> error("Invalid values")
     end;
 }

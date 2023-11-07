@@ -13,5 +13,4 @@ grammar silver:core;
   -}
 class DivisionRing a, EuclideanRing a => Field a {}
 
-instance Field Integer {}
 instance Field Float {}
