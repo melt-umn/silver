@@ -9,10 +9,15 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 
   top.unparse = "fun " ++ id.unparse ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
 
+  ns.signatureName = top.grammarName ++ ":" ++ id.name;
+
+  local rhs::ProductionRHS = ns.rhs;
+  rhs.env = top.env;
+
   forwards to
     globalValueDclConcrete (
       'global', id, '::', ns.cl, '=>', ns.funTyExpr, '=', 
-        lambda_c('\', ns.rhs.toLamRHS, '->', e), ';'
+        lambda_c('\', rhs.toLamRHS, '->', e), ';'
     );
 }
 
