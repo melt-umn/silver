@@ -14,6 +14,7 @@ terminal AntiquoteExprInhs_t          '$ExprInhs'          lexer classes {Antiqu
 terminal AntiquoteTypeExpr_t          '$TypeExpr'          lexer classes {Antiquote};
 terminal AntiquoteConstraintList_t    '$ConstraintList'    lexer classes {Antiquote};
 terminal AntiquotePattern_t           '$Pattern'           lexer classes {Antiquote};
+terminal AntiquoteFunctionSignature_t '$FunctionSignature' lexer classes {Antiquote};
 terminal AntiquoteProductionRHS_t     '$ProductionRHS'     lexer classes {Antiquote};
 terminal AntiquoteAspectRHS_t         '$AspectRHS'         lexer classes {Antiquote};
 terminal AntiquoteProductionStmt_t    '$ProductionStmt'    lexer classes {Antiquote};
