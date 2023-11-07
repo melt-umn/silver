@@ -41,6 +41,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
   top.cl = nilConstraint();
   top.lhs = lhs;
   top.rhs = rhs;
+  rhs.env = top.env;
   top.funTyExpr = funTypeExpr ('(', psignature(presentSignatureLhs(lhs.tyExpr), '::=', rhs.tyExprs), ')');
 }
 
