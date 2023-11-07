@@ -13,18 +13,19 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 
   local rhs::ProductionRHS = ns.rhs;
   rhs.env = top.env;
+  local lhs::FunctionLHS = ns.lhs;
 
   forwards to
     globalValueDclConcrete (
-      'global', id, '::', ns.cl, '=>', ns.funTyExpr, '=', 
-        lambda_c('\', rhs.toLamRHS, '->', e), ';'
+      'global', id, '::', ns.cl, '=>', 
+        funTypeExpr ('(', psignature(presentSignatureLhs(lhs.tyExpr), '::=', rhs.tyExprs), ')'),
+      '=', lambda_c('\', rhs.toLamRHS, '->', e), ';'
     );
 }
 
 synthesized attribute cl::ConstraintList occurs on FunctionSignature;
 synthesized attribute lhs::FunctionLHS occurs on FunctionSignature;
 synthesized attribute rhs::ProductionRHS occurs on FunctionSignature;
-synthesized attribute funTyExpr::TypeExpr occurs on FunctionSignature;
 
 aspect production functionSignature
 top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS 
@@ -32,17 +33,14 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
   top.cl = cl;
   top.lhs = lhs;
   top.rhs = rhs;
-  top.funTyExpr = funTypeExpr ('(', psignature(presentSignatureLhs(lhs.tyExpr), '::=', rhs.tyExprs), ')');
 }
 
 aspect production functionSignatureNoCL
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
-  propagate env;
   top.cl = nilConstraint();
   top.lhs = lhs;
   top.rhs = rhs;
-  top.funTyExpr = funTypeExpr ('(', psignature(presentSignatureLhs(lhs.tyExpr), '::=', rhs.tyExprs), ')');
 }
 
 synthesized attribute tyExpr::TypeExpr occurs on FunctionLHS;
