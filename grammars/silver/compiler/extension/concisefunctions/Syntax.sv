@@ -5,12 +5,14 @@ terminal Fun_kwd 'fun';
 concrete production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
+  propagate flowEnv, grammarName, moduleNames, env;
+
   top.unparse = "fun " ++ id.unparse ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
 
   forwards to
     globalValueDclConcrete (
       'global', id, '::', ns.cl, '=>', ns.funTyExpr, '=', 
-        lambda_c('\', ns.rhs.toLamRHS, '->', e),';'
+        lambda_c('\', ns.rhs.toLamRHS, '->', e), ';'
     );
 }
 
