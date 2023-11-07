@@ -23,7 +23,7 @@ equalityTest(find (mapLst, "c", -1), 3, Integer, silver_tests);
 equalityTest(find (mapLst, "e", -1), -1, Integer, silver_tests);
 
 
-nonterminal TestBinding with what;
+nonterminal TestBinding;
 synthesized attribute key::String occurs on TestBinding;
 synthesized attribute val::Integer occurs on TestBinding;
 inherited attribute inhKey::String occurs on TestBinding;

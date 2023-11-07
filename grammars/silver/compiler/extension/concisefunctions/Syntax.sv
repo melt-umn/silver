@@ -2,14 +2,18 @@ grammar silver:compiler:extension:concisefunctions;
 
 terminal Fun_kwd 'fun';
 
+{--
+ - Concise function declarations - these forward to globals with lambda expressions
+ - @param id The name of the concise function
+ - @param ns The signature of the function
+ - @param e The expression that serves as the body of the function
+ -}
 concrete production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
   propagate moduleNames;
 
   top.unparse = "fun " ++ id.unparse ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
-
-  ns.signatureName = top.grammarName ++ ":" ++ id.name;
 
   local rhs::ProductionRHS = ns.rhs;
   rhs.env = top.env;
