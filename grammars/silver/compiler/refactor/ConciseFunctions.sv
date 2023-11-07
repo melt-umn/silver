@@ -29,12 +29,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.transforms <-
     case body of
     | productionBody(_, productionStmtsSnoc(productionStmtsNil(), returnDef(_, e, _)), _)
-      when top.config.refactorConciseFunctions ->
+      when top.config.refactorConciseFunctions && !e.hasImplicitDec ->
       rule on AGDcl of
       | a when getParsedOriginLocation(a) == getParsedOriginLocation(top) ->
         Silver_AGDcl {
-          -- TODO: Change this to actually be the right translation when concise functions are finished
-          global $Name{id} :: a = $Expr{new(e)};
+          fun $Name{new(id)} $FunctionSignature{new(ns)} = $Expr{new(e)};
         }
       end
     | _ -> fail()
@@ -47,3 +46,11 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   -- This is a forwarding prod, we don't want to rewrite FFI functions like normal ones
   top.transforms := ns.transforms <+ body.transforms <+ ffidefs.transforms;
 }
+
+monoid attribute hasImplicitDec::Boolean with false, || occurs on
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+propagate hasImplicitDec on
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+aspect hasImplicitDec on top::Expr using <- of
+| childReference(q) -> isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
+end;

@@ -22,8 +22,19 @@ imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:list;
 imports silver:compiler:modification:copper_mda;
 
+imports silver:compiler:extension:concisefunctions;
+
 imports silver:rewrite;
 imports silver:langutil:unparse;
+
+aspect production nonterminalAST
+top::AST ::= prodName::String children::ASTs annotations::NamedASTs
+{
+  prodChildLayout <- [
+    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 1, " "),
+    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 3, "\n  ")
+  ];
+}
 
 aspect production terminalAST
 top::AST ::= _ _ _
@@ -33,6 +44,7 @@ top::AST ::= _ _ _
   ];
   termPostLayout <- [
     ("silver:compiler:definition:core:Global_kwd", " "),
+    ("silver:compiler:extension:concisefunctions:Fun_kwd", " "),
     ("silver:compiler:definition:core:Comma_t", " "),
     ("silver:compiler:definition:core:Equal_t", " ")
   ];
