@@ -43,10 +43,12 @@ fun getVal attribute val i occurs on a => Integer ::= thing::Decorated a with i 
 global bnd::Decorated TestBinding = decorate testBinding ("a", 5) with {inhKey = "key";};
 
 equalityTest(getVal(bnd), 5, Integer, silver_tests);
+equalityTest(getVal2(bnd), 5, Integer, silver_tests);
 equalityTest(getKey(bnd), "a", String, silver_tests);
 equalityTest(getInhKey(bnd), "key", String, silver_tests);
 
 {- subset constraint -}
 fun getInhKey2 {inhKey} subset i => String ::= x::Decorated TestBinding with i = x.inhKey;
+fun getVal2 {inhKey} subset i, attribute val i occurs on a => Integer ::= thing::Decorated a with i = thing.val;
 
 equalityTest(getInhKey2(bnd), "key", String, silver_tests);
