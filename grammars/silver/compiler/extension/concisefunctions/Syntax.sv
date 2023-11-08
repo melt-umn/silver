@@ -1,6 +1,8 @@
 grammar silver:compiler:extension:concisefunctions;
 
-terminal Fun_kwd 'fun' lexer classes {Keyword};
+imports silver:langutil:lsp as lsp;
+
+terminal Fun_kwd 'fun' lexer classes {lsp:Keyword};
 
 {--
  - Concise function declarations - these forward to globals with lambda expressions
