@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:concisefunctions;
 
-terminal Fun_kwd 'fun';
+terminal Fun_kwd 'fun' lexer classes {Keyword};
 
 {--
  - Concise function declarations - these forward to globals with lambda expressions
