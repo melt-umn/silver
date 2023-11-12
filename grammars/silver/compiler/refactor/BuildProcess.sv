@@ -76,7 +76,7 @@ IO<()> ::= r::Decorated RootSpec
         do {
           let fullPath::String = r.grammarSource ++ item.1;
           text::String <- readFile(fullPath);
-          let newText::String = unparse(text, item.2);
+          let newText::String = unparse(100, text, item.2);
           when_(text != newText, writeFile(fullPath, newText));
         }),
       r.transformedFiles);
