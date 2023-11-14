@@ -35,6 +35,9 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 1, pp" "),
     ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 3, line())
   ];
+  prodChildIndent <- [
+    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 4, 2)
+  ];
 }
 
 aspect production terminalAST

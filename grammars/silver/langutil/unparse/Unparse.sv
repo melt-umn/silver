@@ -55,6 +55,8 @@ synthesized attribute defaultPreLayout::Maybe<Document> occurs on AST, ASTs;
 synthesized attribute defaultPostLayout::Maybe<Document> occurs on AST, ASTs;
 inherited attribute childIndex::Integer occurs on ASTs;
 inherited attribute childLayout::[(Integer, Document)] occurs on ASTs;
+inherited attribute childIndent::[(Integer, Integer)] occurs on ASTs;
+propagate childLayout, childIndent on ASTs;
 
 inherited attribute origText::String occurs on AST, ASTs;
 propagate origText on AST, ASTs;
@@ -96,12 +98,17 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   top.defaultPreLayout = children.defaultPreLayout;
   top.defaultPostLayout = children.defaultPostLayout;
 
+  children.childIndex = 0;
+
   -- Map of productions and child indices to default layout after the child
   production attribute prodChildLayout::[(String, Integer, Document)] with ++;
   prodChildLayout := [];
-
-  children.childIndex = 0;
   children.childLayout = lookupAll(prodName, prodChildLayout);
+
+  -- Map of productions and child indices to default indentation in the child
+  production attribute prodChildIndent::[(String, Integer, Integer)] with ++;
+  prodChildIndent := [];
+  children.childIndent = lookupAll(prodName, prodChildIndent);
 }
 
 aspect production terminalAST
@@ -139,7 +146,9 @@ top::ASTs ::= h::AST t::ASTs
   top.unparseWithLayout =
     h.unparseWithLayout ++
     maybeNest(
-      if top.parseTree.isJust then t.indent - top.indent else 2,
+      if top.parseTree.isJust
+      then t.indent - top.indent
+      else fromMaybe(0, lookup(t.childIndex, top.childIndent)),
       fromMaybe(pp"",
         alt(
           map(layoutPP(t.indent, _), origLayout),
@@ -161,7 +170,6 @@ top::ASTs ::= h::AST t::ASTs
     t.defaultPostLayout,
     if t.unparseWithLayout == pp"" then h.defaultPostLayout else empty);
   t.childIndex = top.childIndex + 1;
-  t.childLayout = top.childLayout;
 }
 
 aspect production nilAST
