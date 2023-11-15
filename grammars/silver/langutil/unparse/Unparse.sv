@@ -86,7 +86,7 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   -- On parseTree
-  top.unparseWithLayout = children.unparseWithLayout;
+  top.unparseWithLayout = group(children.unparseWithLayout);
   top.originLoc =
     case getParsedOriginLocation(top) of
     | just(l) -> l
