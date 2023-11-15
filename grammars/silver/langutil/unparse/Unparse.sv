@@ -21,20 +21,21 @@ imports silver:langutil:pp;
 function unparse
 String ::= width::Integer  origText::String  tree::a
 {
+  local parseTree::AST = getParseTree(tree);
+  parseTree.origText = origText;
+
   local ast::AST = reflect(tree);
   ast.origText = origText;
-  ast.parseTree = just(getParseTree(tree));
-  ast.indent = fromMaybe(countIndent(preLayout), layoutIndent(preLayout));
-  local astLoc::Location = ast.matchingOriginLoc.fromJust;
+  ast.parseTree = just(parseTree);
 
-  local preLayout::String = substring(0, astLoc.index, origText);
-  local postLayout::String = substring(astLoc.endIndex, length(origText), origText);
+  local preLayout::String = substring(0, parseTree.originLoc.index, origText);
+  local postLayout::String = substring(parseTree.originLoc.endIndex, length(origText), origText);
 
   return show(width,
     text(preLayout) ++
-    maybeNest(ast.indent,
+    maybeNest(parseTree.indent,
       ast.unparseWithLayout ++
-      layoutPP(ast.indent, postLayout)));
+      layoutPP(parseTree.indent, postLayout)));
 }
 
 function getParseTree
@@ -49,8 +50,21 @@ AST ::= ast::a
     end;
 }
 
+-- Attributes computed on parseTree
+inherited attribute origText::String occurs on AST, ASTs;
+propagate origText on AST, ASTs;
+
+synthesized attribute originLoc::Location occurs on AST;
+synthesized attribute indent::Integer occurs on AST;
+synthesized attribute origNest::Integer occurs on ASTs;
+synthesized attribute origLayoutPP::Document occurs on ASTs;
+
+-- Attributes computed on the unparse AST
+inherited attribute parseTree<a>::Maybe<a>;  -- This is like a destruct attribute except it's a Maybe
+attribute parseTree<Decorated AST with {origText}> occurs on AST;
+attribute parseTree<Decorated ASTs with {origText}> occurs on ASTs;
+
 synthesized attribute unparseWithLayout::Document occurs on AST, ASTs;
-synthesized attribute matchingOriginLoc::Maybe<Location> occurs on AST;
 synthesized attribute defaultPreLayout::Maybe<Document> occurs on AST, ASTs;
 synthesized attribute defaultPostLayout::Maybe<Document> occurs on AST, ASTs;
 inherited attribute childIndex::Integer occurs on ASTs;
@@ -58,20 +72,12 @@ inherited attribute childLayout::[(Integer, Document)] occurs on ASTs;
 inherited attribute childIndent::[(Integer, Integer)] occurs on ASTs;
 propagate childLayout, childIndent on ASTs;
 
-inherited attribute origText::String occurs on AST, ASTs;
-propagate origText on AST, ASTs;
-
-inherited attribute parseTree<a>::Maybe<a>;
-attribute parseTree<AST> occurs on AST;
-attribute parseTree<ASTs> occurs on ASTs;
-
-inherited attribute indent::Integer occurs on AST, ASTs;
-
 aspect default production
 top::AST ::=
 {
+  top.originLoc = error(genericShow(top) ++ " cannot appear in a parse tree");
+  top.indent = countIndent(head(drop(top.originLoc.line - 1, explode("\n", top.origText))));
   top.unparseWithLayout = error("Can't unparse " ++ genericShow(top));
-  top.matchingOriginLoc = nothing();
   top.defaultPreLayout = nothing();
   top.defaultPostLayout = nothing();
 }
@@ -79,22 +85,22 @@ top::AST ::=
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
+  -- On parseTree
   top.unparseWithLayout = children.unparseWithLayout;
-  top.matchingOriginLoc = do {
-    tree :: AST <- top.parseTree;
-    return
-      case getParsedOriginLocation(tree) of
-      | just(l) -> l
-      | nothing() ->
-        error("Tree does not have a parsed origin: " ++ showOriginInfoChain(tree))
-      end;
-  };
+  top.originLoc =
+    case getParsedOriginLocation(top) of
+    | just(l) -> l
+    | nothing() -> error("Tree does not have a parsed origin: " ++ showOriginInfoChain(top))
+    end;
+
+  -- On unparse AST
+  local parseTree::AST = getParseTree(top);
+  parseTree.origText = top.origText;
   children.parseTree =
-    case fromMaybe(getParseTree(top), top.parseTree) of
+    case fromMaybe(parseTree, top.parseTree) of
     | nonterminalAST(p, c, _) when prodName == p -> just(c)
     | _ -> nothing()
     end;
-  children.indent = top.indent;
   top.defaultPreLayout = children.defaultPreLayout;
   top.defaultPostLayout = children.defaultPostLayout;
 
@@ -114,8 +120,9 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
+  top.originLoc = location;
+
   top.unparseWithLayout = text(lexeme);
-  top.matchingOriginLoc = just(location);
 
   -- Map of terminal names to default layout after the terminal
   production attribute termPreLayout::[(String, Document)] with ++;
@@ -131,29 +138,32 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
-  local origLayout::Maybe<String> =
+  -- On parseTree
+  top.origLayoutPP =
     case t of
     | consAST(h2, _) ->
-        do {
-          l1::Location <- h.matchingOriginLoc;
-          l2::Location <- h2.matchingOriginLoc;
-          return substring(l1.endIndex, l2.index, top.origText);
-        }
-    | nilAST() -> empty
+        layoutPP(h2.indent,
+          substring(h.originLoc.endIndex, h2.originLoc.index, top.origText))
+    | nilAST() -> pp""
     end;
-  h.indent = top.indent;
-  t.indent = fromMaybe(top.indent, bind(origLayout, layoutIndent));
+  top.origNest =
+    case t of
+    | consAST(h2, _) -> h2.indent - h.indent
+    | nilAST() -> 0
+    end;
+
+  -- On unparse AST
   top.unparseWithLayout =
     h.unparseWithLayout ++
     maybeNest(
-      if top.parseTree.isJust
-      then t.indent - top.indent
-      else fromMaybe(0, lookup(t.childIndex, top.childIndent)),
+      fromMaybe(0,
+        alt(map((.origNest), top.parseTree),
+          lookup(t.childIndex, top.childIndent))),
       fromMaybe(pp"",
-        alt(
-          map(layoutPP(t.indent, _), origLayout),
+        alt(map((.origLayoutPP), top.parseTree),
           alt(lookup(top.childIndex, top.childLayout),
-            alt(h.defaultPostLayout, t.defaultPreLayout)))) ++
+            alt(case t of consAST(_, _) -> h.defaultPostLayout | _ -> empty end,
+              t.defaultPreLayout)))) ++
       t.unparseWithLayout);
   h.parseTree =
     case top.parseTree of
@@ -168,13 +178,16 @@ top::ASTs ::= h::AST t::ASTs
   top.defaultPreLayout = h.defaultPreLayout;
   top.defaultPostLayout = alt(
     t.defaultPostLayout,
-    if t.unparseWithLayout == pp"" then h.defaultPostLayout else empty);
+    case t of nilAST() -> h.defaultPostLayout | _ -> empty end);
   t.childIndex = top.childIndex + 1;
 }
 
 aspect production nilAST
 top::ASTs ::=
 {
+  top.origLayoutPP = pp"";
+  top.origNest = 0;
+
   top.unparseWithLayout = pp"";
   top.defaultPreLayout = nothing();
   top.defaultPostLayout = nothing();
@@ -182,13 +195,6 @@ top::ASTs ::=
 
 -- Count the number of spaces at the start of a line
 fun countIndent  Integer ::= s::String = length(takeWhile(eq(" ", _), explode("", s)));
-
-fun layoutIndent  Maybe<Integer> ::= layoutStr::String =
-  case explode("\n", layoutStr) of
-  | [] -> nothing()
-  | [_] -> nothing()
-  | lines -> just(countIndent(last(lines)))
-  end;
 
 fun layoutPP  Document ::= indent::Integer layoutStr::String =
   concat(
