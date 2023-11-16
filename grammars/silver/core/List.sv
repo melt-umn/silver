@@ -484,6 +484,13 @@ function unzip3
          else (head(l).1 :: rest.1, head(l).2 :: rest.2, head(l).3 :: rest.3);
 }
 
+global enumerate :: ([(Integer, a)] ::= [a]) = enumerateFrom(0, _);
+fun enumerateFrom [(Integer, a)] ::= i::Integer l::[a] =
+  case l of
+  | h :: t -> (i, h) :: enumerateFrom(i + 1, t)
+  | [] -> []
+  end;
+
 function reverse
 [a] ::= lst::[a]
 {
