@@ -3,6 +3,7 @@ grammar silver:langutil:unparse;
 imports silver:reflect:util;
 imports silver:langutil;
 imports silver:langutil:pp;
+imports silver:util:treemap as map;
 
 @{--
  - Unparse a tree, preserving layout from its parse tree via origin tracking.
@@ -23,9 +24,11 @@ Document ::= origText::String  tree::a
 {
   local parseTree::AST = getParseTree(tree);
   parseTree.origText = origText;
+  parseTree.lineIndent = map:fromList(enumerate(map(countIndent, explode("\n", origText))));
 
   local ast::AST = reflect(tree);
   ast.origText = origText;
+  ast.lineIndent = parseTree.lineIndent;
   ast.parseTree = just(parseTree);
 
   local preLayout::String = substring(0, parseTree.originLoc.index, origText);
@@ -52,17 +55,19 @@ AST ::= ast::a
 
 -- Attributes computed on parseTree
 inherited attribute origText::String occurs on AST, ASTs;
-propagate origText on AST, ASTs;
+inherited attribute lineIndent::map:Map<Integer Integer> occurs on AST, ASTs;
+propagate origText, lineIndent on AST, ASTs;
 
 synthesized attribute originLoc::Location occurs on AST;
 synthesized attribute indent::Integer occurs on AST;
+flowtype indent {lineIndent} on AST;
 synthesized attribute origNest::Integer occurs on ASTs;
 synthesized attribute origLayoutPP::Document occurs on ASTs;
 
 -- Attributes computed on the unparse AST
 inherited attribute parseTree<a>::Maybe<a>;  -- This is like a destruct attribute except it's a Maybe
-attribute parseTree<Decorated AST with {origText}> occurs on AST;
-attribute parseTree<Decorated ASTs with {origText}> occurs on ASTs;
+attribute parseTree<Decorated AST with {origText, lineIndent}> occurs on AST;
+attribute parseTree<Decorated ASTs with {origText, lineIndent}> occurs on ASTs;
 
 synthesized attribute unparseWithLayout::Document occurs on AST, ASTs;
 synthesized attribute defaultPreLayout::Maybe<Document> occurs on AST, ASTs;
@@ -76,7 +81,11 @@ aspect default production
 top::AST ::=
 {
   top.originLoc = error(genericShow(top) ++ " cannot appear in a parse tree");
-  top.indent = countIndent(head(drop(top.originLoc.line - 1, explode("\n", top.origText))));
+  top.indent =
+    case map:lookup(top.originLoc.line - 1, top.lineIndent) of
+    | i :: _ -> i
+    | [] -> error(s"Line ${toString(top.originLoc.line)} out of bounds for supplied text!")
+    end;
   top.unparseWithLayout = error("Can't unparse " ++ genericShow(top));
   top.defaultPreLayout = nothing();
   top.defaultPostLayout = nothing();
@@ -96,6 +105,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   -- On unparse AST
   local parseTree::AST = getParseTree(top);
   parseTree.origText = top.origText;
+  parseTree.lineIndent = top.lineIndent;
   children.parseTree =
     case fromMaybe(parseTree, top.parseTree) of
     | nonterminalAST(p, c, _) when prodName == p -> just(c)
