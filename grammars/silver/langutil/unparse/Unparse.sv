@@ -19,7 +19,7 @@ imports silver:langutil:pp;
  - @return The unparse of the tree, with layout from origText inserted in unchanged portions of the tree.
  -}
 function unparse
-String ::= width::Integer  origText::String  tree::a
+Document ::= origText::String  tree::a
 {
   local parseTree::AST = getParseTree(tree);
   parseTree.origText = origText;
@@ -31,11 +31,11 @@ String ::= width::Integer  origText::String  tree::a
   local preLayout::String = substring(0, parseTree.originLoc.index, origText);
   local postLayout::String = substring(parseTree.originLoc.endIndex, length(origText), origText);
 
-  return show(width,
+  return
     text(preLayout) ++
     maybeNest(parseTree.indent,
       ast.unparseWithLayout ++
-      layoutPP(parseTree.indent, postLayout)));
+      layoutPP(parseTree.indent, postLayout));
 }
 
 function getParseTree
