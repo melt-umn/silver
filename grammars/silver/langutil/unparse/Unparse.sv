@@ -91,6 +91,7 @@ synthesized attribute indent::Integer occurs on AST;
 flowtype indent {lineIndent} on AST;
 monoid attribute indents::[Integer] occurs on ASTs, AST;
 propagate indents on ASTs, AST;
+flowtype indents {lineIndent} on AST, ASTs;
 synthesized attribute isBox::Boolean occurs on AST;
 synthesized attribute origNest::Integer occurs on ASTs;
 synthesized attribute origLayoutPP::Document occurs on ASTs;
@@ -118,6 +119,7 @@ top::AST ::=
     | [] -> error(s"Line ${toString(top.originLoc.line)} out of bounds for supplied text!")
     end;
   top.indents <- [top.indent];
+  top.isBox = false;
   top.unparseWithLayout = error("Can't unparse " ++ genericShow(top));
   top.defaultPreLayout = nothing();
   top.defaultPostLayout = nothing();
