@@ -14,12 +14,14 @@ imports silver:util:treemap as map;
  - This is intended for use in e.g. refactoring tools, where transformations can be applied
  - on the tree, but one would like to turn the tree back into a string without affecting
  - layout in otherwise-unchanged portions of the tree.
+ -
+ - Layout preceeding and following the root of the tree is included in the output.
  - 
- - @param origText  The original text that was parsed to create the origin of tree.
+ - @param origText  The original text of the file that was parsed to create the origin of tree.
  - @param tree  The concrete syntax tree to unparse.
  - @return The unparse of the tree, with layout from origText inserted in unchanged portions of the tree.
  -}
-function unparse
+function unparseFile
 Document ::= origText::String  tree::a
 {
   local parseTree::AST = getParseTree(tree);
@@ -39,6 +41,29 @@ Document ::= origText::String  tree::a
     maybeNest(parseTree.indent,
       ast.unparseWithLayout ++
       layoutPP(parseTree.indent, postLayout));
+}
+
+@{--
+ - Like unparseFile, but intended for unparsing a tree corresponding to a fragment of a file.
+ - Layout preceeding and following the root of the tree is not included.
+ - 
+ - @param origText  The original text of the file that was parsed to create the origin of tree.
+ - @param tree  The concrete syntax tree to unparse.
+ - @return The unparse of the tree, with layout from origText inserted in unchanged portions of the tree.
+ -}
+function unparseFragment
+Document ::= origText::String  tree::a
+{
+  local parseTree::AST = getParseTree(tree);
+  parseTree.origText = origText;
+  parseTree.lineIndent = map:fromList(enumerate(map(countIndent, explode("\n", origText))));
+
+  local ast::AST = reflect(tree);
+  ast.origText = origText;
+  ast.lineIndent = parseTree.lineIndent;
+  ast.parseTree = just(parseTree);
+
+  return ast.unparseWithLayout;
 }
 
 function getParseTree
