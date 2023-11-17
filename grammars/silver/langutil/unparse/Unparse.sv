@@ -56,18 +56,21 @@ AST ::= ast::a
 -- Attributes computed on parseTree
 inherited attribute origText::String occurs on AST, ASTs;
 inherited attribute lineIndent::map:Map<Integer Integer> occurs on AST, ASTs;
+inherited attribute initialIndent::Integer occurs on ASTs;
 propagate origText, lineIndent on AST, ASTs;
 
 synthesized attribute originLoc::Location occurs on AST;
 synthesized attribute indent::Integer occurs on AST;
 flowtype indent {lineIndent} on AST;
+monoid attribute startColumns::[Integer] occurs on ASTs;
+propagate startColumns on ASTs;
 synthesized attribute origNest::Integer occurs on ASTs;
 synthesized attribute origLayoutPP::Document occurs on ASTs;
 
 -- Attributes computed on the unparse AST
 inherited attribute parseTree<a>::Maybe<a>;  -- This is like a destruct attribute except it's a Maybe
 attribute parseTree<Decorated AST with {origText, lineIndent}> occurs on AST;
-attribute parseTree<Decorated ASTs with {origText, lineIndent}> occurs on ASTs;
+attribute parseTree<Decorated ASTs with {origText, lineIndent, initialIndent}> occurs on ASTs;
 
 synthesized attribute unparseWithLayout::Document occurs on AST, ASTs;
 synthesized attribute defaultPreLayout::Maybe<Document> occurs on AST, ASTs;
@@ -95,12 +98,17 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   -- On parseTree
-  top.unparseWithLayout = group(children.unparseWithLayout);
+  local isBox::Boolean = all(map(gte(_, top.originLoc.column), children.startColumns));
+  top.unparseWithLayout =
+    if isBox
+    then box(group(children.unparseWithLayout))
+    else group(children.unparseWithLayout);
   top.originLoc =
     case getParsedOriginLocation(top) of
     | just(l) -> l
     | nothing() -> error("Tree does not have a parsed origin: " ++ showOriginInfoChain(top))
     end;
+  children.initialIndent = if isBox then top.originLoc.column else top.indent;
 
   -- On unparse AST
   local parseTree::AST = getParseTree(top);
@@ -149,6 +157,7 @@ aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
   -- On parseTree
+  top.startColumns <- [h.originLoc.column];
   top.origLayoutPP =
     case t of
     | consAST(h2, _) ->
@@ -158,8 +167,14 @@ top::ASTs ::= h::AST t::ASTs
     end;
   top.origNest =
     case t of
-    | consAST(h2, _) -> h2.indent - h.indent
-    | nilAST() -> 0
+    | consAST(h2, _) when h2.originLoc.line > h.originLoc.line ->
+      h2.indent - top.initialIndent
+    | _ -> 0
+    end;
+  t.initialIndent =
+    case t of
+    | consAST(h2, _) when h2.originLoc.line > h.originLoc.line -> h2.indent
+    | _ -> top.initialIndent
     end;
 
   -- On unparse AST
