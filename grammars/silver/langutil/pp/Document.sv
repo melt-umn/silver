@@ -253,7 +253,7 @@ top::Document ::=
   top.outCHorizontals = top.inCHorizontals;
   top.outRemaining = if horizontal then top.inRemaining - 1 else top.width - top.indent;
 
-  top.result = if horizontal then " " else "\n" ++ replicate(top.indent, " ");
+  top.result = if horizontal then " " else "\n" ++ replicate(max(0, top.indent), " ");
   top.horizontals = pr.snd;
 }
 
@@ -331,7 +331,7 @@ top::Document ::=
   top.outCHorizontals = top.inCHorizontals;
   top.outRemaining = top.width - top.indent;
 
-  top.result = "\n" ++ replicate(top.indent, " ");
+  top.result = "\n" ++ replicate(max(0, top.indent), " ");
   top.horizontals = pr.snd;
 }
 
