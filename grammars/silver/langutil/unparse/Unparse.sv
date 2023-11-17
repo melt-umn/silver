@@ -27,6 +27,7 @@ Document ::= origText::String  tree::a
   local parseTree::AST = getParseTree(tree);
   parseTree.origText = origText;
   parseTree.lineIndent = map:fromList(enumerate(map(countIndent, explode("\n", origText))));
+  parseTree.initialIndent = parseTree.indent;
 
   local ast::AST = reflect(tree);
   ast.origText = origText;
@@ -57,6 +58,7 @@ Document ::= origText::String  tree::a
   local parseTree::AST = getParseTree(tree);
   parseTree.origText = origText;
   parseTree.lineIndent = map:fromList(enumerate(map(countIndent, explode("\n", origText))));
+  parseTree.initialIndent = parseTree.indent;
 
   local ast::AST = reflect(tree);
   ast.origText = origText;
@@ -81,20 +83,21 @@ AST ::= ast::a
 -- Attributes computed on parseTree
 inherited attribute origText::String occurs on AST, ASTs;
 inherited attribute lineIndent::map:Map<Integer Integer> occurs on AST, ASTs;
-inherited attribute initialIndent::Integer occurs on ASTs;
+inherited attribute initialIndent::Integer occurs on AST, ASTs;
 propagate origText, lineIndent on AST, ASTs;
 
 synthesized attribute originLoc::Location occurs on AST;
 synthesized attribute indent::Integer occurs on AST;
 flowtype indent {lineIndent} on AST;
-monoid attribute startColumns::[Integer] occurs on ASTs;
-propagate startColumns on ASTs;
+monoid attribute indents::[Integer] occurs on ASTs, AST;
+propagate indents on ASTs, AST;
+synthesized attribute isBox::Boolean occurs on AST;
 synthesized attribute origNest::Integer occurs on ASTs;
 synthesized attribute origLayoutPP::Document occurs on ASTs;
 
 -- Attributes computed on the unparse AST
 inherited attribute parseTree<a>::Maybe<a>;  -- This is like a destruct attribute except it's a Maybe
-attribute parseTree<Decorated AST with {origText, lineIndent}> occurs on AST;
+attribute parseTree<Decorated AST with {origText, lineIndent, initialIndent}> occurs on AST;
 attribute parseTree<Decorated ASTs with {origText, lineIndent, initialIndent}> occurs on ASTs;
 
 synthesized attribute unparseWithLayout::Document occurs on AST, ASTs;
@@ -114,6 +117,7 @@ top::AST ::=
     | i :: _ -> i
     | [] -> error(s"Line ${toString(top.originLoc.line)} out of bounds for supplied text!")
     end;
+  top.indents <- [top.indent];
   top.unparseWithLayout = error("Can't unparse " ++ genericShow(top));
   top.defaultPreLayout = nothing();
   top.defaultPostLayout = nothing();
@@ -123,22 +127,26 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   -- On parseTree
-  local isBox::Boolean = all(map(gte(_, top.originLoc.column), children.startColumns));
-  top.unparseWithLayout =
-    if isBox
-    then box(group(children.unparseWithLayout))
-    else group(children.unparseWithLayout);
   top.originLoc =
     case getParsedOriginLocation(top) of
     | just(l) -> l
     | nothing() -> error("Tree does not have a parsed origin: " ++ showOriginInfoChain(top))
     end;
-  children.initialIndent = if isBox then top.originLoc.column else top.indent;
+  top.isBox =
+    top.originLoc.endLine > top.originLoc.line &&
+    all(map(\ i::Integer -> i == top.indent || i >= top.originLoc.column, children.indents));
+  children.initialIndent = if top.isBox then top.originLoc.column else top.initialIndent;
 
   -- On unparse AST
+  top.unparseWithLayout =
+    if fromMaybe(false, map((.isBox), top.parseTree))
+    then box(group(children.unparseWithLayout))
+    else group(children.unparseWithLayout);
+
   local parseTree::AST = getParseTree(top);
   parseTree.origText = top.origText;
   parseTree.lineIndent = top.lineIndent;
+  parseTree.initialIndent = parseTree.indent;
   children.parseTree =
     case fromMaybe(parseTree, top.parseTree) of
     | nonterminalAST(p, c, _) when prodName == p -> just(c)
@@ -182,7 +190,6 @@ aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
   -- On parseTree
-  top.startColumns <- [h.originLoc.column];
   top.origLayoutPP =
     case t of
     | consAST(h2, _) ->
@@ -196,6 +203,7 @@ top::ASTs ::= h::AST t::ASTs
       h2.indent - top.initialIndent
     | _ -> 0
     end;
+  h.initialIndent = top.initialIndent;
   t.initialIndent =
     case t of
     | consAST(h2, _) when h2.originLoc.line > h.originLoc.line -> h2.indent
