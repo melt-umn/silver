@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:concisefunctions;
 
-terminal Fun_kwd 'fun';
+terminal Fun_kwd 'fun' lexer classes {KEYWORD};
 
 {--
  - Concise function declarations - these forward to globals with lambda expressions
@@ -20,7 +20,7 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 
   forwards to
     globalValueDclConcrete (
-      'global', @id, '::', ns.cl, '=>', 
+      'global', @id, '::', ns.cl, '=>',
         funTypeExpr ('(', psignature(presentSignatureLhs(ns.lhs.tyExpr), '::=', rhs.tyExprs), ')'),
       '=', lambda_c('\', rhs.toLamRHS, '->', @e), ';'
     );
