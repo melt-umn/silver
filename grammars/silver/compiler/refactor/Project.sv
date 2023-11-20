@@ -32,11 +32,15 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   prodChildLayout <- [
-    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 1, pp" "),
+    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 1, line()),
     ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 3, line())
   ];
   prodChildIndent <- [
     ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 4, 2)
+  ];
+  prodChildGroup <- [
+    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 0, 2),
+    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 3, 5)
   ];
 }
 

@@ -107,7 +107,11 @@ synthesized attribute defaultPostLayout::Maybe<Document> occurs on AST, ASTs;
 inherited attribute childIndex::Integer occurs on ASTs;
 inherited attribute childLayout::[(Integer, Document)] occurs on ASTs;
 inherited attribute childIndent::[(Integer, Integer)] occurs on ASTs;
-propagate childLayout, childIndent on ASTs;
+inherited attribute childGroup::[(Integer, Integer)] occurs on ASTs;
+propagate childLayout, childIndent, childGroup on ASTs;
+
+inherited attribute currentGroup::Maybe<Integer> occurs on ASTs;
+synthesized attribute groupUnparse::Document occurs on ASTs;
 
 aspect default production
 top::AST ::=
@@ -142,8 +146,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   -- On unparse AST
   top.unparseWithLayout =
     if fromMaybe(false, map((.isBox), top.parseTree))
-    then box(group(children.unparseWithLayout))
-    else group(children.unparseWithLayout);
+    then box(children.unparseWithLayout)
+    else children.unparseWithLayout;
 
   local parseTree::AST = getParseTree(top);
   parseTree.origText = top.origText;
@@ -168,6 +172,12 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute prodChildIndent::[(String, Integer, Integer)] with ++;
   prodChildIndent := [];
   children.childIndent = lookupAll(prodName, prodChildIndent);
+
+  -- Map of productions to start/end indices of children that should be grouped
+  production attribute prodChildGroup::[(String, Integer, Integer)] with ++;
+  prodChildGroup := [];
+  children.childGroup = lookupAll(prodName, prodChildGroup);
+  children.currentGroup = nothing();
 }
 
 aspect production terminalAST
@@ -213,18 +223,6 @@ top::ASTs ::= h::AST t::ASTs
     end;
 
   -- On unparse AST
-  top.unparseWithLayout =
-    h.unparseWithLayout ++
-    maybeNest(
-      fromMaybe(0,
-        alt(map((.origNest), top.parseTree),
-          lookup(t.childIndex, top.childIndent))),
-      fromMaybe(pp"",
-        alt(map((.origLayoutPP), top.parseTree),
-          alt(lookup(top.childIndex, top.childLayout),
-            alt(case t of consAST(_, _) -> h.defaultPostLayout | _ -> empty end,
-              t.defaultPreLayout)))) ++
-      t.unparseWithLayout);
   h.parseTree =
     case top.parseTree of
     | just(consAST(a, _)) -> just(a)
@@ -240,6 +238,37 @@ top::ASTs ::= h::AST t::ASTs
     t.defaultPostLayout,
     case t of nilAST() -> h.defaultPostLayout | _ -> empty end);
   t.childIndex = top.childIndex + 1;
+
+  local nestAmount::Integer =
+    fromMaybe(0,
+      alt(map((.origNest), top.parseTree),
+        lookup(t.childIndex, top.childIndent)));
+  local thisLayout::Document =
+    fromMaybe(pp"",
+      alt(map((.origLayoutPP), top.parseTree),
+        alt(lookup(top.childIndex, top.childLayout),
+          alt(case t of consAST(_, _) -> h.defaultPostLayout | _ -> empty end,
+            t.defaultPreLayout))));
+
+  -- These should be mutually exclusive:
+  local endGroup::Boolean = top.currentGroup == just(top.childIndex);
+  local inGroup::Maybe<Integer> = if endGroup then empty else top.currentGroup;
+  local newGroup::Maybe<Integer> = lookup(top.childIndex, top.childGroup);
+  t.currentGroup =
+    if top.currentGroup.isJust && newGroup.isJust
+    then error("Overlapping groups!")
+    else alt(inGroup, newGroup);
+  top.unparseWithLayout =
+    if t.currentGroup.isJust
+    then
+      (if newGroup.isJust then group(top.groupUnparse) else pp"") ++
+      maybeNest(nestAmount, t.unparseWithLayout)
+    else
+      (if endGroup then pp"" else h.unparseWithLayout) ++
+      maybeNest(nestAmount, thisLayout ++ t.unparseWithLayout);
+  top.groupUnparse =
+    h.unparseWithLayout ++
+    if endGroup then pp"" else maybeNest(nestAmount, thisLayout ++ t.groupUnparse);
 }
 
 aspect production nilAST
@@ -249,6 +278,7 @@ top::ASTs ::=
   top.origNest = 0;
 
   top.unparseWithLayout = pp"";
+  top.groupUnparse = error("Group end index ${toString(top.currentGroup.fromJust)} out of bounds");
   top.defaultPreLayout = nothing();
   top.defaultPostLayout = nothing();
 }
