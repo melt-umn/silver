@@ -74,11 +74,8 @@ top::ParseResult<a> ::= t::a terminals::[TerminalDescriptor]
  - @param pr  The ParseResult returned by the parser
  - @return  The syntax tree reported by the parser.  Does not return if parsing fails.
  -}
-function parseTreeOrDieWithoutStackTrace
-a ::= pr::ParseResult<a>
-{
-  return unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exitT(-1, printT(pr.parseErrors ++ "\n\n", unsafeIO())));
-}
+fun parseTreeOrDieWithoutStackTrace a ::= pr::ParseResult<a> =
+  unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exitT(-1, printT(pr.parseErrors ++ "\n\n", unsafeIO())));
 
 
 @{--

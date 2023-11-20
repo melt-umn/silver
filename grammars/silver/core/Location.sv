@@ -87,10 +87,9 @@ top::Location ::= text::String
  -  terminal in the host language. use linesOffset, firstLineColsOffset, allLinesColsOffset, indexOffset if some
  -  part of the terminal is munged before being passed to the child parser (e.g. the {- and -} are removed from a comment.)
  -}
-function childParserLoc
-Location ::= parent::Location child::Location linesOffset::Integer firstLineColsOffset::Integer allLinesColsOffset::Integer indexOffset::Integer
-{
-  return loc(
+fun childParserLoc
+Location ::= parent::Location child::Location linesOffset::Integer firstLineColsOffset::Integer allLinesColsOffset::Integer indexOffset::Integer =
+  loc(
     parent.filename,
     parent.line - 1 + linesOffset + child.line,
     allLinesColsOffset + (if child.line == 1 then parent.column + firstLineColsOffset + child.column else child.column),
@@ -99,7 +98,6 @@ Location ::= parent::Location child::Location linesOffset::Integer firstLineCols
     parent.index + indexOffset + child.index,
     parent.endIndex + indexOffset + child.endIndex
   );
-}
 
 
 @{--
@@ -107,17 +105,9 @@ Location ::= parent::Location child::Location linesOffset::Integer firstLineCols
  -
  - @param module The name of the extension/modification/module defining the location
  -}
-function builtinLoc
-Location ::= module::String
-{
-  return txtLoc("Built in from " ++ module);
-}
+fun builtinLoc Location ::= module::String = txtLoc("Built in from " ++ module);
 
 @{--
  - A helper constructor for location information, for invalid or undefined bogus locations
  -}
-function bogusLoc
-Location ::=
-{
-  return txtLoc("Invalid or undefined bogus location");
-}
+fun bogusLoc Location ::= = txtLoc("Invalid or undefined bogus location");

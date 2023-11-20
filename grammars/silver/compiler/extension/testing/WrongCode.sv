@@ -10,11 +10,8 @@ terminal WarnCode_kwd 'warnCode' lexer classes {KEYWORD};
 terminal NoWarnCode_kwd 'noWarnCode' lexer classes {KEYWORD};
 terminal WrongFlowCode_kwd 'wrongFlowCode' lexer classes {KEYWORD};
 
-function containsMessage
-Boolean ::= text::String severity::Integer msgs::[Message]
-{
-  return any(map((\x::Message -> x.severity==severity && indexOf(text, x.output)!=-1), msgs));
-}
+fun containsMessage Boolean ::= text::String severity::Integer msgs::[Message] =
+  any(map((\x::Message -> x.severity==severity && indexOf(text, x.output)!=-1), msgs));
 
 concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'

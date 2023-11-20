@@ -31,106 +31,55 @@ instance Monoid Document {
 @{--
  - Concatenates a list of fragments into one fragment.
  -}
-function ppConcat
-Document ::= ds::[Document]
-{
-  return if null(ds) then notext()
-         else foldl(cat, head(ds), tail(ds));
-}
+fun ppConcat Document ::= ds::[Document] =
+  if null(ds) then notext()
+  else foldl(cat, head(ds), tail(ds));
 
 @{--
  - Intersperse a separator fragment between a list of fragments.
  - e.g. implode(text(", "), list)
  -}
-function ppImplode
-Document ::= sep::Document ds::[Document]
-{
-  return if null(ds) then notext()
-         else if null(tail(ds)) then head(ds)
-         else cat(cat(head(ds), sep), ppImplode(sep, tail(ds)));
-}
+fun ppImplode Document ::= sep::Document ds::[Document] =
+  if null(ds) then notext()
+  else if null(tail(ds)) then head(ds)
+  else cat(cat(head(ds), sep), ppImplode(sep, tail(ds)));
 
 @{--
  - Introduce a separator fragment after every element of a list of fragments.
  - Including the last.
  -}
-function terminate
-Document ::= sep::Document ds::[Document]
-{
-  return if null(ds)
-         then notext()
-         else cat(cat(head(ds), sep), terminate(sep, tail(ds)));
-}
+fun terminate Document ::= sep::Document ds::[Document] =
+  if null(ds)
+  then notext()
+  else cat(cat(head(ds), sep), terminate(sep, tail(ds)));
 
 @{--
  - Introduce a separator fragment before every element of a list of fragments.
  - Including the first.
  -}
-function initiate
-Document ::= sep::Document ds::[Document]
-{
-  return if null(ds)
-         then notext()
-         else cat(cat(sep, head(ds)), initiate(sep, tail(ds)));
-}
+fun initiate Document ::= sep::Document ds::[Document] =
+  if null(ds)
+  then notext()
+  else cat(cat(sep, head(ds)), initiate(sep, tail(ds)));
 
 @{--
  - Insert lines before and after the inner fragment, with proper nesting.
  - (That is, usually you want the first line inside the nest, but the second
  - OUTSIDE the nest.)
  -}
-function nestlines
-Document ::= n::Integer inner::Document
-{
-  return cat(nest(n, cat(line(), inner)), line());
-}
-function groupnest
-Document ::= n::Integer inner::Document
-{
-  return group(nest(n, inner));
-}
-function groupnestlines
-Document ::= n::Integer inner::Document
-{
-  return group(cat(nest(n, cat(line(), inner)), line()));
-}
-function softbreak
-Document ::=
-{
-  return group(line());
-}
+fun nestlines Document ::= n::Integer inner::Document = cat(nest(n, cat(line(), inner)), line());
+fun groupnest Document ::= n::Integer inner::Document = group(nest(n, inner));
+fun groupnestlines Document ::= n::Integer inner::Document =
+  group(cat(nest(n, cat(line(), inner)), line()));
+fun softbreak Document ::= = group(line());
 
 -- TODO: consider these "helpers" deprecated
-function space
-Document ::=
-{
-  return text(" ");
-}
-function semi
-Document ::=
-{
-  return text(";");
-}
-function comma
-Document ::=
-{
-  return text(",");
-}
-function braces
-Document ::= d::Document
-{
-  return cat(cat(text("{"), d), text("}"));
-}
-function parens
-Document ::= d::Document
-{
-  return cat(cat(text("("), d), text(")"));
-}
-function brackets
-Document ::= d::Document
-{
-  return cat(cat(text("["), d), text("]"));
-}
+fun space Document ::= = text(" ");
+fun semi Document ::= = text(";");
+fun comma Document ::= = text(",");
+fun braces Document ::= d::Document = cat(cat(text("{"), d), text("}"));
+fun parens Document ::= d::Document = cat(cat(text("("), d), text(")"));
+fun brackets Document ::= d::Document = cat(cat(text("["), d), text("]"));
 
 @@{- Below this line:
 text     Document ::= String

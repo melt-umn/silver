@@ -1170,14 +1170,10 @@ top::AnnoAppExprs ::=
   top.annoIndexSupplied = [];
 }
 
-function reorderedAnnoAppExprs
-[Decorated Expr] ::= d::Decorated AnnoAppExprs
-{
-  -- This is an annoyingly poor quality implementation
-  return map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
-}
-function reorderedLte
-Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }
+fun reorderedAnnoAppExprs [Decorated Expr] ::= d::Decorated AnnoAppExprs =
+  map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
+fun reorderedLte Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) =
+  l.fst <= r.fst;
 
 function extractNamedArg
 (Maybe<(String, Type)>, [(String, Type)]) ::= n::String  l::[(String, Type)]
@@ -1190,46 +1186,30 @@ function extractNamedArg
   else (recurse.fst, head(l) :: recurse.snd);
 }
 
-function findNamedArgType
-Integer ::= s::String l::[(String, Type)] z::Integer
-{
-  return if null(l) then -1
-  else if s == head(l).fst then z
-  else findNamedArgType(s, tail(l), z+1);
-}
+fun findNamedArgType Integer ::= s::String l::[(String, Type)] z::Integer =
+  if null(l) then -1
+else if s == head(l).fst then z
+else findNamedArgType(s, tail(l), z+1);
 
 
 {--
  - Utility for other modules to create function invocations.
  - This makes no assumptions, use it any way you wish!
  -}
-function mkStrFunctionInvocation
-Expr ::= e::String  es::[Expr]
-{
-  return mkFullFunctionInvocation(baseExpr(qName(e)), es, []);
-}
-function mkFunctionInvocation
-Expr ::= e::Expr  es::[Expr]
-{
-  return mkFullFunctionInvocation(e, es, []);
-}
-function mkFullFunctionInvocation
-Expr ::= e::Expr  es::[Expr]  ans::[Pair<String Expr>]
-{
-  return application(e, '(',
+fun mkStrFunctionInvocation Expr ::= e::String  es::[Expr] =
+  mkFullFunctionInvocation(baseExpr(qName(e)), es, []);
+fun mkFunctionInvocation Expr ::= e::Expr  es::[Expr] = mkFullFunctionInvocation(e, es, []);
+fun mkFullFunctionInvocation Expr ::= e::Expr  es::[Expr]  ans::[Pair<String Expr>] =
+  application(e, '(',
     foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
       map(presentAppExpr, es)),
     ',',
     foldl(snocAnnoAppExprs(_, ',', _), emptyAnnoAppExprs(),
       map(mkAnnoExpr, ans)),
     ')');
-}
 -- Internal helper function
-function mkAnnoExpr
-AnnoExpr ::= p::Pair<String Expr>
-{
-  return annoExpr(qName(p.fst), '=', presentAppExpr(p.snd));
-}
+fun mkAnnoExpr AnnoExpr ::= p::Pair<String Expr> =
+  annoExpr(qName(p.fst), '=', presentAppExpr(p.snd));
 
 {--
  - Note on the use of the 'decorated here' (@) operator with already-decorated expressions:

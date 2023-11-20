@@ -5,11 +5,7 @@ exports silver:reflect:util;
 imports silver:reflect:concretesyntax;
 import silver:langutil;
 
-function serialize
-Either<String String> ::= x::a
-{
-  return reflect(x).serialize;
-}
+fun serialize Either<String String> ::= x::a = reflect(x).serialize;
 
 parser astParser :: AST_c {
   silver:reflect:concretesyntax;
@@ -29,8 +25,5 @@ Either<String AST> ::= fileName::String text::String
     else right(parseTree.ast);
 }
 
-function deserialize
-runtimeTypeable a => Either<String a> ::= fileName::String text::String
-{
-  return bind(deserializeAST(fileName, text), reify);
-}
+fun deserialize runtimeTypeable a => Either<String a> ::= fileName::String text::String =
+  bind(deserializeAST(fileName, text), reify);

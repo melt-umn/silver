@@ -60,37 +60,29 @@ top::StitchPoint ::=
  - @param prod  ...of this production (prodType in here, others in original prod graph)
  - @return edges from 'sourceType.inhVertex(attr)' to 'targetType.inhVertex(??)'
  -}
-function projectAttribute
+fun projectAttribute
 [Pair<FlowVertex FlowVertex>] ::=
   attr::String
   sourceType::VertexType
   targetType::VertexType
   prodType::VertexType
-  prod::ProductionGraph
-{
-  -- emit edges from the src vertex of this production
-  return map(pair(fst=sourceType.inhVertex(attr), snd=_),
+  prod::ProductionGraph =
+  map(pair(fst=sourceType.inhVertex(attr), snd=_),
     -- Turn into inh vertexes (in this production) on targetType
     map(targetType.inhVertex,
       -- Filter down to just LHS Inh in that production, (string names)
       filterLhsInh(
         -- Deps of this vertex in that other production
         set:toList(prod.edgeMap(prodType.inhVertex(attr))))));
-}
 
 
 -- Useful for mapping
-function stitchEdgesFor
-[Pair<FlowVertex FlowVertex>] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph>
-{
-  return sp.stitchEdges(ntEnv, prodEnv);
-}
+fun stitchEdgesFor
+[Pair<FlowVertex FlowVertex>] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph> =
+  sp.stitchEdges(ntEnv, prodEnv);
 
-function edgeIsNew
-Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
-{
-  return !g:contains(edge, e);
-}
+fun edgeIsNew Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex> =
+  !g:contains(edge, e);
 
 {--
  - Creates edges from a "flow type" source to a "flow type" sink.
@@ -99,12 +91,9 @@ Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
  - @param vt  The vertex type we're creating edges within
  - @param edge  pair of syn/fwd and inh. The edge.
  -}
-function flowTypeEdge
-Pair<FlowVertex FlowVertex> ::= vt::VertexType  edge::Pair<String String>
-{
-  return if edge.fst == "forward" then
+fun flowTypeEdge Pair<FlowVertex FlowVertex> ::= vt::VertexType  edge::Pair<String String> =
+  if edge.fst == "forward" then
     (vt.fwdVertex, vt.inhVertex(edge.snd))
   else
     (vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
-}
 

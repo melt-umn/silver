@@ -250,9 +250,5 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 }
 
 
-function makeCAClassName
-String ::= s::String
-{
-  return substituteLast(".", ".CA", makeName(s));
-}
+fun makeCAClassName String ::= s::String = substituteLast(".", ".CA", makeName(s));
 

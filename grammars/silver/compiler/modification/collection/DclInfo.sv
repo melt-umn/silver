@@ -118,19 +118,10 @@ global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated!
 
 
 -- Defs
-function synColDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
-{
-  return attrDef(defaultEnvItem(synCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
-}
-function inhColDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
-{
-  return attrDef(defaultEnvItem(inhCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
-}
-function localColDef
-Def ::= sg::String sl::Location fn::String ty::Type o::Operation
-{
-  return valueDef(defaultEnvItem(localCollectionDcl(fn,ty,o,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun synColDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation =
+  attrDef(defaultEnvItem(synCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
+fun inhColDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation =
+  attrDef(defaultEnvItem(inhCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
+fun localColDef Def ::= sg::String sl::Location fn::String ty::Type o::Operation =
+  valueDef(defaultEnvItem(localCollectionDcl(fn,ty,o,sourceGrammar=sg,sourceLocation=sl)));
 

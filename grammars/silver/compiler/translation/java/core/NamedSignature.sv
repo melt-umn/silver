@@ -295,25 +295,16 @@ s"""if (name.equals("${n}")) {
 		} else """;
 }
 
-function makeIndexDcls
-String ::= i::Integer s::[NamedSignatureElement]
-{
-  return if null(s) then ""
+fun makeIndexDcls String ::= i::Integer s::[NamedSignatureElement] =
+  if null(s) then ""
   else s"\tpublic static final int i_${head(s).elementName} = ${toString(i)};\n" ++ makeIndexDcls(i+1, tail(s));
-}
 
-function unpackChildren
-[String] ::= i::Integer  ns::[NamedSignatureElement]
-{
-  return if null(ns) then []
+fun unpackChildren [String] ::= i::Integer  ns::[NamedSignatureElement] =
+  if null(ns) then []
   else (s"children[${toString(i)}]") :: unpackChildren(i + 1, tail(ns));
-}
-function unpackAnnotations
-[String] ::= i::Integer  ns::[NamedSignatureElement]
-{
-  return if null(ns) then []
+fun unpackAnnotations [String] ::= i::Integer  ns::[NamedSignatureElement] =
+  if null(ns) then []
   else (s"annotations[${toString(i)}]") :: unpackAnnotations(i + 1, tail(ns));
-}
 
 function makeChildAccessCase
 String ::= n::NamedSignatureElement
@@ -339,33 +330,29 @@ String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::Named
     | _, _ -> ""
     end;
 }
-function refAccessTranslation
-String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType
-{
-  return
-    case v of
-    | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
-    | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
-    | localVertexType(fName) ->
-      case getValueDcl(fName, env) of
-      | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
-      | [] -> error("Couldn't find decl for local " ++ fName)
+fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
+  case v of
+  | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
+  | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
+  | localVertexType(fName) ->
+    case getValueDcl(fName, env) of
+    | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
+    | [] -> error("Couldn't find decl for local " ++ fName)
+    end
+  | transAttrVertexType(lhsVertexType_real(), transAttr) ->
+    let transIndexName::String =
+      case getOccursDcl(transAttr, lhsNtName, env) of
+      | h :: _ -> h.attrGlobalOccursInitIndex
+      | [] -> error(s"Trans attr ${transAttr} occurs on ${lhsNtName} dcl not found!")
       end
-    | transAttrVertexType(lhsVertexType_real(), transAttr) ->
-      let transIndexName::String =
-        case getOccursDcl(transAttr, lhsNtName, env) of
-        | h :: _ -> h.attrGlobalOccursInitIndex
-        | [] -> error(s"Trans attr ${transAttr} occurs on ${lhsNtName} dcl not found!")
-        end
-      in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
-      end
-    | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
-    | forwardVertexType_real() -> s"context.forward()"
-    | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
-    | subtermVertexType(parent, prodName, sigName) ->
-      s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
-    end;
-}
+    in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
+    end
+  | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
+  | forwardVertexType_real() -> s"context.forward()"
+  | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
+  | subtermVertexType(parent, prodName, sigName) ->
+    s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+  end;
 
 function makeAnnoAssign
 String ::= n::NamedSignatureElement
@@ -393,24 +380,16 @@ ${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = 
 """;
 }
 
-function makeTyVarDecls
-String ::= indent::Integer vars::[TyVar]
-{
-  return
-    implode(
-      "\n",
-      map(
-        \ tv::TyVar ->
-          s"${concat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.varId)} = new common.VarTypeRep();",
-          vars));
-    
-}
-function makeAnnoIndexDcls
-String ::= i::Integer s::[NamedSignatureElement]
-{
-  return if null(s) then ""
+fun makeTyVarDecls String ::= indent::Integer vars::[TyVar] =
+  implode(
+    "\n",
+    map(
+      \ tv::TyVar ->
+        s"${concat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.varId)} = new common.VarTypeRep();",
+        vars));
+fun makeAnnoIndexDcls String ::= i::Integer s::[NamedSignatureElement] =
+  if null(s) then ""
   else s"\t\tfinal int i${head(s).annoRefElem} = ${toString(i)};\n" ++ makeAnnoIndexDcls(i+1, tail(s));
-}
 function makeChildUnify
 String ::= fn::String n::NamedSignatureElement
 {

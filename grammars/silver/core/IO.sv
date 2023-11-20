@@ -134,17 +134,11 @@ top::IO<Unit> ::= s::String
   top.stateVal = unit();
 }
 
-function println
-IO<Unit> ::= str::String
-{ return stateIOUnit(printlnT(str, _)); }
+fun println IO<Unit> ::= str::String = stateIOUnit(printlnT(str, _));
 
-function eprint
-IO<Unit> ::= str::String
-{ return stateIOUnit(eprintT(str, _)); }
+fun eprint IO<Unit> ::= str::String = stateIOUnit(eprintT(str, _));
 
-function eprintln
-IO<Unit> ::= str::String
-{ return stateIOUnit(eprintlnT(str, _)); }
+fun eprintln IO<Unit> ::= str::String = stateIOUnit(eprintlnT(str, _));
 
 abstract production readLineStdin
 top::IO<Maybe<String>> ::=

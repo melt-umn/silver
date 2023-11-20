@@ -113,16 +113,13 @@ top::ModuleExportedDefs ::= compiledGrammars::EnvTree<Decorated RootSpec> gramma
     if null(rs) then [errFromOrigin(ambientOrigin(), "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
 }
 
-function triggeredGrammars
-[String] ::= grammarDependencies::[String]  trig::[[String]]
-{
-  return if null(trig) then
+fun triggeredGrammars [String] ::= grammarDependencies::[String]  trig::[[String]] =
+  if null(trig) then
     []
   else if contains(head(tail(head(trig))), grammarDependencies) then 
     head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
   else
     triggeredGrammars(grammarDependencies, tail(trig));
-}
 
 --------------
 -- ImportStmts

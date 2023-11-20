@@ -103,9 +103,6 @@ top::Grammars ::=
  - @param keep  The set of grammars to keep
  - @param d  The list of grammars to filter
  -}
-function keepGrammars
-[Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec]
-{
-  return filter(\ r::Decorated RootSpec -> contains(r.declaredName, keep), d);
-}
+fun keepGrammars [Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec] =
+  filter(\ r::Decorated RootSpec -> contains(r.declaredName, keep), d);
 

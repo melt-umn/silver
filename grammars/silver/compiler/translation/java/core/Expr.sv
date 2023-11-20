@@ -252,26 +252,15 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
     end;
 }
 
-function argsTranslation
-String ::= e::Decorated AppExprs with {decorate, decSiteVertexInfo, alwaysDecorated, appProd}
-{
-  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
-  return implode(", ", map((.lazyTranslation), e.exprs));
-}
-function namedargsTranslation
-String ::= e::Decorated AnnoAppExprs
-{
-  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
-  return if null(e.exprs) then "null"
+fun argsTranslation
+String ::= e::Decorated AppExprs with {decorate, decSiteVertexInfo, alwaysDecorated, appProd} =
+  implode(", ", map((.lazyTranslation), e.exprs));
+fun namedargsTranslation String ::= e::Decorated AnnoAppExprs =
+  if null(e.exprs) then "null"
   else s"new Object[]{${implode(", ", map((.lazyTranslation), reorderedAnnoAppExprs(e)))}}";
-}
-function namedargsTranslationNOReorder
-String ::= e::Decorated AnnoAppExprs
-{
-  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
-  return if null(e.exprs) then "null"
+fun namedargsTranslationNOReorder String ::= e::Decorated AnnoAppExprs =
+  if null(e.exprs) then "null"
   else s"new Object[]{${implode(", ", map((.lazyTranslation), e.exprs))}}";
-}
 
 aspect production partialApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
@@ -666,18 +655,12 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
 }
 
-function wrapThunk
-String ::= exp::String  beLazy::Boolean
-{
-  return if beLazy then wrapThunkText(exp, "Object") else exp;
-}
-function wrapThunkText
-String ::= exp::String  ty::String
-{
-  return s"new common.Thunk<${ty}>(new common.Thunk.Evaluable<${ty}>() { public final ${ty} eval() { return ${exp}; } })";
+fun wrapThunk String ::= exp::String  beLazy::Boolean =
+  if beLazy then wrapThunkText(exp, "Object") else exp;
+fun wrapThunkText String ::= exp::String  ty::String =
+  s"new common.Thunk<${ty}>(new common.Thunk.Evaluable<${ty}>() { public final ${ty} eval() { return ${exp}; } })";
   --TODO: java lambdas are bugged
   --return s"new common.Thunk<${ty}>(() -> ${exp})";
-}
 function wrapLazy
 String ::= e::Decorated Expr
 {

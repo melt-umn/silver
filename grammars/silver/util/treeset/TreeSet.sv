@@ -10,11 +10,7 @@ type Set<a> foreign = "java.util.TreeSet<Object>";
 @{--
  - Returns a new, empty, set using Ord for comparison.
  -}
-function empty
-Ord a => Set<a> ::=
-{
-  return emptyWith(compare);
-}
+fun empty Ord a => Set<a> ::= = emptyWith(compare);
 
 @{--
  - Returns a new, empty, set using the specified comparator.
@@ -43,11 +39,7 @@ Set<a> ::= lst::[a] set::Set<a>
 @{--
  - Converts a list to a set.
  -}
-function fromList
-Ord a => Set<a> ::= lst::[a]
-{
-  return add(lst, empty());
-}
+fun fromList Ord a => Set<a> ::= lst::[a] = add(lst, empty());
 
 @{--
  - Converts a set back to a list, in sorted order.

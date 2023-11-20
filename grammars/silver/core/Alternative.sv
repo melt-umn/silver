@@ -50,8 +50,4 @@ class Applicative f, Plus f => Alternative f {}
 @{-
 Conditional failure of Alternative computations.
 -}
-function guard
-Alternative f => f<()> ::= b::Boolean
-{
-  return if b then pure(()) else empty;
-}
+fun guard Alternative f => f<()> ::= b::Boolean = if b then pure(()) else empty;

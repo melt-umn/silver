@@ -61,8 +61,4 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
 """;
 }
 
-function makeInstanceMemberAccessorName
-String ::= s::String
-{
-  return "getMember_" ++ last(explode(":", s));
-}
+fun makeInstanceMemberAccessorName String ::= s::String = "getMember_" ++ last(explode(":", s));

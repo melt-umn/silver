@@ -64,71 +64,49 @@ MaybeT<IO RootSpec> ::=
   };
 }
 
-function foldRoot
-Grammar ::= l::[Root]
-{
-  return foldr(consGrammar, nilGrammar(), l);
-}
+fun foldRoot Grammar ::= l::[Root] = foldr(consGrammar, nilGrammar(), l);
 
 {--
  - Determined whether a file name should be considered a Silver source file.
  -}
-function isValidSilverFile
-Boolean ::= f::String
-{
-  return any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
-}
-function listSilverFiles
-IO<[String]> ::= dir::String
-{
-  return do {
+fun isValidSilverFile Boolean ::= f::String =
+  any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
+fun listSilverFiles IO<[String]> ::= dir::String =
+  do {
     files :: [String] <- listContents(dir);
     return filter(isValidSilverFile, files);
   };
-}
 
 {--
  - Determines the maximum modification time of all files in a directory.
  - Including the directory itself, to detect file deletions.
  -}
-function fileTimes
-IO<Integer> ::= dir::String is::[String]
-{
-  return
-    case is of
-    | [] -> fileTime(dir) -- check the directory itself. Catches deleted files.
-    | h :: t -> do {
-        ft :: Integer <- fileTime(dir ++ h);
-        rest :: Integer <- fileTimes(dir, t);
-        return max(ft, rest);
-      }
-    end;
-}
+fun fileTimes IO<Integer> ::= dir::String is::[String] =
+  case is of
+  | [] -> fileTime(dir) -- check the directory itself. Catches deleted files.
+  | h :: t -> do {
+      ft :: Integer <- fileTime(dir ++ h);
+      rest :: Integer <- fileTimes(dir, t);
+      return max(ft, rest);
+    }
+  end;
 
 -- A crude approximation of line wrapping
-function renderFileNames
-String ::= files::[String]  depth::Integer
-{
-  return
-    if null(files) then "" else
-    if depth >= 7 then "\n\t " ++ renderFileNames(files, 0) else
-    head(files) ++
-    if null(tail(files)) then "" else " " ++ renderFileNames(tail(files), depth + 1);
-}
+fun renderFileNames String ::= files::[String]  depth::Integer =
+  if null(files) then "" else
+  if depth >= 7 then "\n\t " ++ renderFileNames(files, 0) else
+  head(files) ++
+  if null(tail(files)) then "" else " " ++ renderFileNames(tail(files), depth + 1);
 
 {--
  - Takes a grammar name (already converted to a path) and searches the grammar
  - path for the first directory that matches.
  -}
-function findGrammarLocation
-MaybeT<IO String> ::= path::String searchPaths::[String]
-{
-  return
-    case searchPaths of
-    | h :: t -> alt(findGrammarInLocation(path, h), findGrammarLocation(path, t))
-    | [] -> empty
-    end;
-}
+fun findGrammarLocation MaybeT<IO String> ::= path::String searchPaths::[String] =
+  case searchPaths of
+  | h :: t -> alt(findGrammarInLocation(path, h), findGrammarLocation(path, t))
+  | [] -> empty
+  end;
 
 {--
  - Looks to see if the grammar can be found in 'inPath'

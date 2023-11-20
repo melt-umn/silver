@@ -55,23 +55,15 @@ Float ::= a::Float b::Float
 }
 
 @{- Computes the greatest common divisor of two numbers. -}
-function gcd
-Eq a, EuclideanRing a => a ::= a::a  b::a
-{
-  return
-    if b == zero then
-      a
-    else
-      gcd(b, mod(a, b));
-}
+fun gcd Eq a, EuclideanRing a => a ::= a::a  b::a =
+  if b == zero then
+    a
+  else
+    gcd(b, mod(a, b));
 
 @{- Computes the least common multiple of two numbers. -}
-function lcm
-Eq a, EuclideanRing a => a ::= a::a  b::a
-{
-  return
-    if a == zero || b == zero then
-      zero
-    else
-      div(mul(a, b), gcd(a, b));
-}
+fun lcm Eq a, EuclideanRing a => a ::= a::a  b::a =
+  if a == zero || b == zero then
+    zero
+  else
+    div(mul(a, b), gcd(a, b));

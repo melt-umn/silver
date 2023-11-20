@@ -34,11 +34,8 @@ top::DriverAction ::= r::[Decorated RootSpec] genPath::String
   top.run = do { touchFiles(map(sviPath(_, genPath), r)); return 0; };
   top.order = 3;
 }
-function sviPath
-String ::= r::Decorated RootSpec genPath::String
-{
-  return genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi";
-}
+fun sviPath String ::= r::Decorated RootSpec genPath::String =
+  genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi";
 
 abstract production printAllBindingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
@@ -87,16 +84,10 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.order = 0;
 }
 
-function renderMessages
-String ::= grammarSource::String  msg::Pair<String [Message]>
-{
-  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ messagesToString(msg.snd) ++ "\n";
-}
+fun renderMessages String ::= grammarSource::String  msg::Pair<String [Message]> =
+  " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ messagesToString(msg.snd) ++ "\n";
 
-function grammarContainsErrors
-Boolean ::= es::[Pair<String [Message]>]  werr::Boolean
-{
-  return if null(es) then false
+fun grammarContainsErrors Boolean ::= es::[Pair<String [Message]>]  werr::Boolean =
+  if null(es) then false
   else containsErrors(head(es).snd, werr) || grammarContainsErrors(tail(es), werr);
-}
 

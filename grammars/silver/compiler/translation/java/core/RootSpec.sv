@@ -72,9 +72,6 @@ ${g.initValues}
 """)];
 }
 
-function makeOthers
-String ::= others::[String] nme::String
-{
-  return if null(others) then "" else s"\t\t${makeName(head(others))}.Init.${nme}();\n${makeOthers(tail(others),nme)}";
-}
+fun makeOthers String ::= others::[String] nme::String =
+  if null(others) then "" else s"\t\t${makeName(head(others))}.Init.${nme}();\n${makeOthers(tail(others),nme)}";
 

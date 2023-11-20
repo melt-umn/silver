@@ -66,10 +66,8 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
   top.order = 4;
 }
 
-function refactorSpec
-IO<()> ::= r::Decorated RootSpec
-{
-  return do {
+fun refactorSpec IO<()> ::= r::Decorated RootSpec =
+  do {
     eprintln("\t[" ++ r.declaredName ++ "]");
     traverse_(\ item::(String, Root) ->
       when_(!endsWith(".md", item.1),  -- TODO: Make this work with literate Silver files
@@ -81,7 +79,6 @@ IO<()> ::= r::Decorated RootSpec
         }),
       r.transformedFiles);
   };
-}
 
 monoid attribute transformedFiles::[(String, Root)] occurs on RootSpec, Grammar;
 propagate transformedFiles on RootSpec, Grammar;

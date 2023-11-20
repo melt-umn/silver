@@ -134,23 +134,21 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
-function monadicallyUsedExpr
+fun monadicallyUsedExpr
 Boolean ::= elst::[Expr] env::Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::FlowEnv em::Type
-  iR::Boolean oR::[Decorated Expr]
-{
-  return case elst of
-              | [] -> false
-              | e::etl ->
-                let etyp::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
-                                                  downSubst=sub; finalSubst=sub;
-                                                  compiledGrammars=cg; config=c; alwaysDecorated = false; flowEnv=fe;
-                                                  expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
-                in
-                  fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em, iR, oR)
-                end
-              end;
-}
+  iR::Boolean oR::[Decorated Expr] =
+  case elst of
+  | [] -> false
+  | e::etl ->
+    let etyp::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                                      downSubst=sub; finalSubst=sub;
+                                      compiledGrammars=cg; config=c; alwaysDecorated = false; flowEnv=fe;
+                                      expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
+    in
+      fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em, iR, oR)
+    end
+  end;
 --make a list of the expression types, rewritten expressions and names for
 --   binding them as well as a new list of expressions for the forward to use
 --use a name from names when that is not empty; when empty, use a new name

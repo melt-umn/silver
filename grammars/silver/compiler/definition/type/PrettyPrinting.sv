@@ -266,21 +266,17 @@ String ::= tv::TyVar  bv::[TyVar]
   return findAbbrevHelp(tv, named ++ anon, ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"], []);
 }
 
-function findAbbrevHelp
-String ::= tv::TyVar  bv::[TyVar]  vn::[String] assigned::[String]
-{
-  return
-    case bv, vn of
-    | tyVarNamed(n) :: tbv, _ when !contains(n, assigned) ->
-      if tv == head(bv) then n else findAbbrevHelp(tv, tbv, vn, n :: assigned)
-    | hbv :: tbv, hvn :: tvn ->
-      if contains(hvn, assigned)
-      then findAbbrevHelp(tv, bv, tvn, assigned)
-      else if tv == hbv then hvn else findAbbrevHelp(tv, tbv, tvn, hvn :: assigned)
-    | _, _ ->
-      case positionOf(tv, bv) of
-      | i when i > 0 && !contains("a" ++ toString(i), assigned) -> "a" ++ toString(i)
-      | _ -> "V_" ++ toString(tv.varId)
-      end
-  end;
-}
+fun findAbbrevHelp String ::= tv::TyVar  bv::[TyVar]  vn::[String] assigned::[String] =
+  case bv, vn of
+  | tyVarNamed(n) :: tbv, _ when !contains(n, assigned) ->
+    if tv == head(bv) then n else findAbbrevHelp(tv, tbv, vn, n :: assigned)
+  | hbv :: tbv, hvn :: tvn ->
+    if contains(hvn, assigned)
+    then findAbbrevHelp(tv, bv, tvn, assigned)
+    else if tv == hbv then hvn else findAbbrevHelp(tv, tbv, tvn, hvn :: assigned)
+  | _, _ ->
+    case positionOf(tv, bv) of
+    | i when i > 0 && !contains("a" ++ toString(i), assigned) -> "a" ++ toString(i)
+    | _ -> "V_" ++ toString(tv.varId)
+    end
+end;

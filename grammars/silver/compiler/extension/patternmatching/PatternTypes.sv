@@ -396,13 +396,10 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
 }
 
 --helper function for building patternLists from lists of patterns
-function buildPatternList
-PatternList ::= plst::[Pattern] loc::Location
-{
-  return case plst of
-         | [] -> patternList_nil()
-         | h::t ->
-           patternList_more(h, ',', buildPatternList(t, loc))
-         end;
-}
+fun buildPatternList PatternList ::= plst::[Pattern] loc::Location =
+  case plst of
+  | [] -> patternList_nil()
+  | h::t ->
+    patternList_more(h, ',', buildPatternList(t, loc))
+  end;
 

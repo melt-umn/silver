@@ -183,22 +183,20 @@ ts:Set<String> ::= frame::BlockContext x::a
 
 --Get the initial segment of the match rules which all have the same
 --pattern type (constructor or var) and the rest of the rules
-function initialSegmentPatternType
-Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
-{
-  return case lst of
-           --this probably shouldn't be called with an empty list, but catch it anyway
-         | [] -> ([], [])
-         | [mr] -> ([mr], [])
-         | mr1::mr2::rest ->
-           if mr1.isVarMatchRule == mr2.isVarMatchRule
-           then --both have the same type of pattern
-              let sub::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(mr2::rest)
-              in (mr1::sub.fst, sub.snd) end
-           else --the first has a different type of pattern than the second
-              ([mr1], mr2::rest)
-         end;
-}
+fun initialSegmentPatternType
+Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule] =
+  case lst of
+    --this probably shouldn't be called with an empty list, but catch it anyway
+  | [] -> ([], [])
+  | [mr] -> ([mr], [])
+  | mr1::mr2::rest ->
+    if mr1.isVarMatchRule == mr2.isVarMatchRule
+    then --both have the same type of pattern
+       let sub::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(mr2::rest)
+       in (mr1::sub.fst, sub.snd) end
+    else --the first has a different type of pattern than the second
+       ([mr1], mr2::rest)
+  end;
 
 
 {-
@@ -505,18 +503,15 @@ function checkOverlappingPatterns
   list into segments of only constructor or variable patterns in
   order, then checking each segment as its own match.
 -}
-function checkOverlappingMixedCaseMatches
-[Message] ::= es::[Expr] ml::[AbstractMatchRule]
-{
-  return if null(ml)
-         then []
-         else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-                            initialSegmentPatternType(ml)
-              in
-                checkOverlappingMixedCaseMatches(es, segments.snd) ++
-                checkOverlappingPatterns(es, segments.fst)
-              end;
-}
+fun checkOverlappingMixedCaseMatches [Message] ::= es::[Expr] ml::[AbstractMatchRule] =
+  if null(ml)
+  then []
+  else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+                     initialSegmentPatternType(ml)
+       in
+         checkOverlappingMixedCaseMatches(es, segments.snd) ++
+         checkOverlappingPatterns(es, segments.fst)
+       end;
 
 {--
  - Expand the head of a match rule as if matched, and check for
@@ -629,11 +624,7 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Env
   for expanding a variable pattern list to be the same length as an
   expanded list from a head pattern with subpatterns.
 -}
-function generateWildcards
-[Pattern] ::= n::Integer
-{
-  return repeat(wildcPattern('_'), n);
-}
+fun generateWildcards [Pattern] ::= n::Integer = repeat(wildcPattern('_'), n);
 
 {-
   Sometimes we need to decorate a list of wildcard patterns for the
@@ -641,46 +632,36 @@ function generateWildcards
   replace a variable.  We should never need to access anything on
   these, so passing in bottom values for the attributes is fine.
 -}
-function decoratePattList
-[Decorated Pattern] ::= lst::[Pattern]
-{
-  return map(\ p::Pattern -> decorate p with {
+fun decoratePattList [Decorated Pattern] ::= lst::[Pattern] =
+  map(\ p::Pattern -> decorate p with {
       config = error("not needed");
       frame = error("not needed");
       env = error("not needed");
       patternVarEnv = error("not needed");
     }, lst);
-}
 
 --Group sets of patterns by the first pattern in each set
 --The core groupBy function doesn't work because it groups contiguous
 --   sets, and the patterns might not be contiguous.
-function groupAllPattsByHead
-[[[Decorated Pattern]]] ::= pattLists::[[Decorated Pattern]]
-{
-  return
-     if null(pattLists)
-     then []
-     else case groupAllPattsByHeadHelp(head(pattLists), tail(pattLists)) of
-          | (thisGroup, others) ->
-            (head(pattLists)::thisGroup)::groupAllPattsByHead(others)
-          end;
-}
-function groupAllPattsByHeadHelp
+fun groupAllPattsByHead [[[Decorated Pattern]]] ::= pattLists::[[Decorated Pattern]] =
+  if null(pattLists)
+  then []
+  else case groupAllPattsByHeadHelp(head(pattLists), tail(pattLists)) of
+       | (thisGroup, others) ->
+         (head(pattLists)::thisGroup)::groupAllPattsByHead(others)
+       end;
+fun groupAllPattsByHeadHelp
 Pair<[[Decorated Pattern]] [[Decorated Pattern]]> ::=
-    item::[Decorated Pattern] rest::[[Decorated Pattern]]
-{
-  return
-     case rest of
-     | [] -> ([], [])
-     | h::t -> case groupAllPattsByHeadHelp(item, t) of
-               | (grp, rst) ->
-                 if head(item).patternSortKey == head(h).patternSortKey
-                 then (h::grp, rst)
-                 else (grp, h::rst)
-               end
-     end;
-}
+    item::[Decorated Pattern] rest::[[Decorated Pattern]] =
+  case rest of
+  | [] -> ([], [])
+  | h::t -> case groupAllPattsByHeadHelp(item, t) of
+            | (grp, rst) ->
+              if head(item).patternSortKey == head(h).patternSortKey
+              then (h::grp, rst)
+              else (grp, h::rst)
+            end
+  end;
 
 --This checks the primitive patterns all have the same type and generates an
 --   example of a primitive value which is not covered by the given patterns
@@ -713,27 +694,18 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
          end;
 }
 
-function generateMissingIntegerPattern
-Pattern ::= lst::[Integer] initial::Integer
-{
-  return if containsBy(\ a::Integer b::Integer -> a == b, initial, lst)
-         then generateMissingIntegerPattern(lst, initial + 1)
-         else intPattern(terminal(Int_t, toString(initial), bogusLoc()));
-}
-function generateMissingFloatPattern
-Pattern ::= lst::[Float] initial::Float
-{
-  return if containsBy(\ a::Float b::Float -> a == b, initial, lst)
-         then generateMissingFloatPattern(lst, initial + 1.0)
-         else fltPattern(terminal(Float_t, toString(initial), bogusLoc()));
-}
-function generateMissingStringPattern
-Pattern ::= lst::[String] initial::String
-{
-  return if containsBy(\ a::String b::String -> a == b, initial, lst)
-         then generateMissingStringPattern(lst, initial ++ "*")
-         else strPattern(terminal(String_t, "\"" ++ initial ++ "\"", bogusLoc()));
-}
+fun generateMissingIntegerPattern Pattern ::= lst::[Integer] initial::Integer =
+  if containsBy(\ a::Integer b::Integer -> a == b, initial, lst)
+  then generateMissingIntegerPattern(lst, initial + 1)
+  else intPattern(terminal(Int_t, toString(initial), bogusLoc()));
+fun generateMissingFloatPattern Pattern ::= lst::[Float] initial::Float =
+  if containsBy(\ a::Float b::Float -> a == b, initial, lst)
+  then generateMissingFloatPattern(lst, initial + 1.0)
+  else fltPattern(terminal(Float_t, toString(initial), bogusLoc()));
+fun generateMissingStringPattern Pattern ::= lst::[String] initial::String =
+  if containsBy(\ a::String b::String -> a == b, initial, lst)
+  then generateMissingStringPattern(lst, initial ++ "*")
+  else strPattern(terminal(String_t, "\"" ++ initial ++ "\"", bogusLoc()));
 
 --First pattern in each set in conPatts is a primitive
 --The first match can only be completed by a variable
@@ -1218,25 +1190,15 @@ Name ::= p::Decorated Pattern
     end;
   return name(n);
 }
-function convStringsToVarBinders
-VarBinders ::= s::[Name]
-{
-  return if null(s) then nilVarBinder()
-         else if null(tail(s)) then oneVarBinder(varVarBinder(head(s)))
-         else consVarBinder(varVarBinder(head(s)), ',', convStringsToVarBinders(tail(s)));
-}
-function exprFromName
-Expr ::= n::Name
-{
-  return baseExpr(qNameId(n));
-}
+fun convStringsToVarBinders VarBinders ::= s::[Name] =
+  if null(s) then nilVarBinder()
+  else if null(tail(s)) then oneVarBinder(varVarBinder(head(s)))
+  else consVarBinder(varVarBinder(head(s)), ',', convStringsToVarBinders(tail(s)));
+fun exprFromName Expr ::= n::Name = baseExpr(qNameId(n));
 
-function foldPrimPatterns
-PrimPatterns ::= l::[PrimPattern]
-{
-  return if null(tail(l)) then onePattern(head(l))
-         else consPattern(head(l), '|', foldPrimPatterns(tail(l)));
-}
+fun foldPrimPatterns PrimPatterns ::= l::[PrimPattern] =
+  if null(tail(l)) then onePattern(head(l))
+  else consPattern(head(l), '|', foldPrimPatterns(tail(l)));
 
 {--
  - Remove the first pattern from the rule, and put a let binding of it into
@@ -1283,14 +1245,11 @@ AbstractMatchRule ::= absRule::AbstractMatchRule
   end;
 }
 
-function makeLet
-Expr ::= s::String t::Type e::Expr o::Expr
-{
-  return letp(
+fun makeLet Expr ::= s::String t::Type e::Expr o::Expr =
+  letp(
     assignExpr(
       name(s), '::', typerepTypeExpr(t), '=', e),
     o);
-}
 
 instance Eq AbstractMatchRule {
   eq = \ a::AbstractMatchRule b::AbstractMatchRule ->
@@ -1306,39 +1265,31 @@ instance Ord AbstractMatchRule {
  -
  - i.e. [cons, nil, cons] becomes [[cons, cons], [nil]] (where 'cons' is the key of the head pattern)
  -}
-function groupMRules
-[[AbstractMatchRule]] ::= l::[AbstractMatchRule]
-{
-  return group(sort(l));
-}
+fun groupMRules [[AbstractMatchRule]] ::= l::[AbstractMatchRule] = group(sort(l));
 
 {--
  - Given a list of match rules, which are presumed to match empty
  - patterns (this is not checked), turn them into nested
  - conditionals.
  -}
-function buildMatchWhenConditionals
-Expr ::= ml::[AbstractMatchRule] failExpr::Expr
-{
-  return
-    case ml of
-    | matchRule(_, just((c, nothing())), e) :: tl ->
-      Silver_Expr {
-        if $Expr{c}
-        then $Expr{e}
-        else $Expr{buildMatchWhenConditionals(tl, failExpr)}
-      }
-    | matchRule(_, just((c, just(p))), e) :: tl ->
-      Silver_Expr {
-        case $Expr{c} of
-        | $Pattern{p} -> $Expr{e}
-        | _ -> $Expr{buildMatchWhenConditionals(tl, failExpr)}
-        end
-      }
-    | matchRule(_, nothing(), e) :: tl -> e
-    | [] -> failExpr
-    end;
-}
+fun buildMatchWhenConditionals Expr ::= ml::[AbstractMatchRule] failExpr::Expr =
+  case ml of
+  | matchRule(_, just((c, nothing())), e) :: tl ->
+    Silver_Expr {
+      if $Expr{c}
+      then $Expr{e}
+      else $Expr{buildMatchWhenConditionals(tl, failExpr)}
+    }
+  | matchRule(_, just((c, just(p))), e) :: tl ->
+    Silver_Expr {
+      case $Expr{c} of
+      | $Pattern{p} -> $Expr{e}
+      | _ -> $Expr{buildMatchWhenConditionals(tl, failExpr)}
+      end
+    }
+  | matchRule(_, nothing(), e) :: tl -> e
+  | [] -> failExpr
+  end;
 
 {--
  - Check whether there are patterns that overlap in a list of match
@@ -1350,17 +1301,13 @@ Expr ::= ml::[AbstractMatchRule] failExpr::Expr
  - analysis of the conditions on the patterns to determine whether
  - they are actually useless.  We do not do that.
  -}
-function areUselessPatterns
-Boolean ::= ml::[AbstractMatchRule]
-{
-  return
-    case ml of
-    | matchRule(_, just(_), _) :: tl ->
-      areUselessPatterns(tl)
-    | matchRule(_, nothing(), _) :: _ :: _ -> true
-    | matchRule(_, nothing(), _) :: [] -> false
-    | [] -> false
-    end;
-}
+fun areUselessPatterns Boolean ::= ml::[AbstractMatchRule] =
+  case ml of
+  | matchRule(_, just(_), _) :: tl ->
+    areUselessPatterns(tl)
+  | matchRule(_, nothing(), _) :: _ :: _ -> true
+  | matchRule(_, nothing(), _) :: [] -> false
+  | [] -> false
+  end;
 
 

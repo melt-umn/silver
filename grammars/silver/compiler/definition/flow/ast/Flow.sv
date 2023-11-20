@@ -488,24 +488,15 @@ top::FlowDef ::= prod::String  fName::String  transAttr::String  alwaysDec::Bool
 
 --
 
-function crossnames
-String ::= a::String b::String
-{
-  return a ++ " @ " ++ b;
-}
+fun crossnames String ::= a::String b::String = a ++ " @ " ++ b;
 
 --
 
 -- Used to get better error messages
-function collectAnonOrigin
-[Pair<String  Location>] ::= f::[FlowDef]
-{
-  return foldr(collectAnonOriginItem, [], f);
-}
-function collectAnonOriginItem
-[Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>]
-{
-  return case f of
+fun collectAnonOrigin [Pair<String  Location>] ::= f::[FlowDef] =
+  foldr(collectAnonOriginItem, [], f);
+fun collectAnonOriginItem [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>] =
+  case f of
   | anonEq(_, fN, _, _, l, _) ->
       -- Small hack to improve error messages. Ignore anonEq's that come from patterns
       if startsWith("__scrutinee", fN)
@@ -513,4 +504,3 @@ function collectAnonOriginItem
       else (fN, l) :: rest
   | _ -> rest
   end;
-}

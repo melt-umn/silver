@@ -32,11 +32,7 @@ Regex ::= r::Regex c::Integer
   return r.simplDeriv;
 }
 
-function matches
-Boolean ::= r::Regex s::String
-{
-  return foldl(matchStep, r, stringToChars(s)).nullable;
-}
+fun matches Boolean ::= r::Regex s::String = foldl(matchStep, r, stringToChars(s)).nullable;
 
 propagate simpl, simplDeriv on Regex;
 

@@ -28,11 +28,7 @@ function expandGraph
 
   return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
 }
-function onlyLhsInh
-set:Set<String> ::= s::[FlowVertex]
-{
-  return set:add(filterLhsInh(s), set:empty());
-}
+fun onlyLhsInh set:Set<String> ::= s::[FlowVertex] = set:add(filterLhsInh(s), set:empty());
 
 -- suspect edges are not in the standard graph, so iteratively add them
 -- call like expandSuspectEdges(p.edges.toList, p.edges, p)
@@ -57,47 +53,28 @@ set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p:
  - @param flow  The flow type environment (NOTE: TODO: this is currently 'myFlow' or something, NOT top.flowEnv)
  - @return A set of inherited attributes on this nonterminal, needed to compute this synthesized attribute.
  -}
-function inhDepsForSyn
-set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType>
-{
-  return g:edgesFrom(syn, findFlowType(nt, flow));
-}
+fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType> =
+  g:edgesFrom(syn, findFlowType(nt, flow));
 
 
 
-function isLhsInhSet
-Boolean ::= v::FlowVertex  inhSet::set:Set<String>
-{
-  return case v of
+fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
+  case v of
   | lhsInhVertex(a) -> set:contains(a, inhSet)
   | _ -> false
   end;
-}
 
-function createFlowGraph
-g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]
-{
-  return g:add(l, g:empty());
-}
+fun createFlowGraph g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>] = g:add(l, g:empty());
 
-function extendFlowGraph
-g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]  g::g:Graph<FlowVertex>
-{
-  return g:add(l, g);
-}
+fun extendFlowGraph g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]  g::g:Graph<FlowVertex> =
+  g:add(l, g);
 
-function transitiveClose
+fun transitiveClose
 g:Graph<FlowVertex> ::=
-  graph::g:Graph<FlowVertex>
-{
-  return g:transitiveClosure(graph);
-}
+  graph::g:Graph<FlowVertex> = g:transitiveClosure(graph);
 
-function repairClosure
+fun repairClosure
 g:Graph<FlowVertex> ::=
   newEdges::[Pair<FlowVertex FlowVertex>]
-  graph::g:Graph<FlowVertex>
-{
-  return g:repairClosure(newEdges, graph);
-}
+  graph::g:Graph<FlowVertex> = g:repairClosure(newEdges, graph);
 

@@ -172,11 +172,9 @@ function checkEqDeps
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
 }
-function checkAllEqDeps
-[Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>]
-{
-  return flatMap(checkEqDeps(_, config, prodName, flowEnv, realEnv, anonResolve), v);
-}
+fun checkAllEqDeps
+[Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>] =
+  flatMap(checkEqDeps(_, config, prodName, flowEnv, realEnv, anonResolve), v);
 
 {--
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
@@ -967,15 +965,12 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
 }
 
-function toAnonInhs
-[String] ::= vs::[FlowVertex]  vertex::String
-{
-  return filterMap(\ v::FlowVertex ->
+fun toAnonInhs [String] ::= vs::[FlowVertex]  vertex::String =
+  filterMap(\ v::FlowVertex ->
     case v of
     | anonInhVertex(n, inh) when n == vertex -> just(inh)
     | _ -> nothing()
     end, vs);
-}
 
 inherited attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
 propagate receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
@@ -1012,61 +1007,50 @@ top::VarBinder ::= n::Name
 }
 
 -- Is this there an equation for this inh attr on any decoration site for this child?
-function remoteProdMissingInhEq
-Boolean ::= prodName::String  sigName::String  attrName::String  flowEnv::FlowEnv
-{
-  return !any(unzipWith(
+fun remoteProdMissingInhEq
+Boolean ::= prodName::String  sigName::String  attrName::String  flowEnv::FlowEnv = !any(unzipWith(
     vertexHasInhEq(_, _, attrName, flowEnv),
     lookupAllDecSites(prodName, rhsVertexType(sigName), flowEnv)));
-}
 
 -- Find all decoration sites productions/vertices for this vertex
-function lookupAllDecSites
-[(String, VertexType)] ::= prodName::String  vt::VertexType  flowEnv::FlowEnv
-{
-  return
-    (prodName, vt) ::
-    case vt of
-    | lhsVertexType_real() -> []
-    | rhsVertexType(sigName) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupRefDecSite(prodName, sigName, flowEnv))
-    | localVertexType(fName) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalRefDecSite(fName, flowEnv))
-    | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupTransRefDecSite(prodName, sigName, transAttr, flowEnv))
-    | transAttrVertexType(localVertexType(fName), transAttr) ->
-      flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalTransRefDecSite(fName, transAttr, flowEnv))
-    | transAttrVertexType(_, _) -> []
-    | anonVertexType(fName) -> []
-    | forwardVertexType_real() -> []
-    | subtermVertexType(_, remoteProdName, sigName) ->
-      lookupAllDecSites(remoteProdName, rhsVertexType(sigName), flowEnv)
-    end;
-}
+fun lookupAllDecSites [(String, VertexType)] ::= prodName::String  vt::VertexType  flowEnv::FlowEnv =
+  (prodName, vt) ::
+  case vt of
+  | lhsVertexType_real() -> []
+  | rhsVertexType(sigName) ->
+    flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupRefDecSite(prodName, sigName, flowEnv))
+  | localVertexType(fName) ->
+    flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalRefDecSite(fName, flowEnv))
+  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+    flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupTransRefDecSite(prodName, sigName, transAttr, flowEnv))
+  | transAttrVertexType(localVertexType(fName), transAttr) ->
+    flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupLocalTransRefDecSite(fName, transAttr, flowEnv))
+  | transAttrVertexType(_, _) -> []
+  | anonVertexType(fName) -> []
+  | forwardVertexType_real() -> []
+  | subtermVertexType(_, remoteProdName, sigName) ->
+    lookupAllDecSites(remoteProdName, rhsVertexType(sigName), flowEnv)
+  end;
 
-function vertexHasInhEq
-Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv
-{
-  return
-    case vt of
-    | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
-    | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-    | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
-      !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
-    | transAttrVertexType(localVertexType(fName), transAttr) ->
-      !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
-    | transAttrVertexType(_, _) -> false
-    | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-    | subtermVertexType(_, remoteProdName, sigName) ->
-      vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
-    -- This is a tricky case since we don't know what decorated this prod.
-    -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
-    -- but here we are remotely looking for equations that might not be the direct dependency of
-    -- anything in the prod flow graph.
-    | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
-    | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
-    end;
-}
+fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
+  case vt of
+  | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
+  | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+    !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
+  | transAttrVertexType(localVertexType(fName), transAttr) ->
+    !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
+  | transAttrVertexType(_, _) -> false
+  | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | subtermVertexType(_, remoteProdName, sigName) ->
+    vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
+  -- This is a tricky case since we don't know what decorated this prod.
+  -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
+  -- but here we are remotely looking for equations that might not be the direct dependency of
+  -- anything in the prod flow graph.
+  | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+  | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
+  end;
 
 -- In places where we solve a synthesized attribute occurs-on context,
 -- check that the actual deps for the attribute do not exceed the one specified for the context.

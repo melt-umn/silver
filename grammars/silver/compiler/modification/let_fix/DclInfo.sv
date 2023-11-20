@@ -21,9 +21,7 @@ top::ValueDclInfo ::= fn::String ty::Type fi::Maybe<VertexType> fd::[FlowVertex]
   top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
-function lexicalLocalDef
-Def ::= sg::String sl::Location fn::String ty::Type fi::Maybe<VertexType> fd::[FlowVertex] rs::[(String, UniqueRefSite)]
-{
-  return valueDef(defaultEnvItem(lexicalLocalDcl(fn,ty,fi,fd,rs,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun lexicalLocalDef
+Def ::= sg::String sl::Location fn::String ty::Type fi::Maybe<VertexType> fd::[FlowVertex] rs::[(String, UniqueRefSite)] =
+  valueDef(defaultEnvItem(lexicalLocalDcl(fn,ty,fi,fd,rs,sourceGrammar=sg,sourceLocation=sl)));
 
