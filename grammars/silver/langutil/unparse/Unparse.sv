@@ -38,7 +38,7 @@ Document ::= origText::String  tree::a
   local postLayout::String = substring(parseTree.originLoc.endIndex, length(origText), origText);
 
   return
-    text(preLayout) ++
+    layoutPP(0, preLayout) ++
     maybeNest(parseTree.indent,
       ast.unparseWithLayout ++
       layoutPP(parseTree.indent, postLayout));
@@ -185,7 +185,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.originLoc = location;
 
-  top.unparseWithLayout = text(lexeme);
+  top.unparseWithLayout = ppImplode(realLine(), map(text, explode("\n", lexeme)));
 
   -- Map of terminal names to default layout after the terminal
   production attribute termPreLayout::[(String, Document)] with ++;
