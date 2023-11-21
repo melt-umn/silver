@@ -28,6 +28,10 @@ imports silver:rewrite;
 imports silver:langutil:pp;
 imports silver:langutil:unparse;
 
+-- Here we specify how layout/indentation should be handled for productions that are
+-- introduced as the result of a transformation, and thus don't have layout from the
+-- original CST.
+
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
