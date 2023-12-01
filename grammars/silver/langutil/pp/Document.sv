@@ -253,7 +253,7 @@ top::Document ::=
   top.outCHorizontals = top.inCHorizontals;
   top.outRemaining = if horizontal then top.inRemaining - 1 else top.width - top.indent;
 
-  top.result = if horizontal then " " else "\n" ++ replicate(top.indent, " ");
+  top.result = if horizontal then " " else "\n" ++ replicate(max(0, top.indent), " ");
   top.horizontals = pr.snd;
 }
 
@@ -322,13 +322,17 @@ abstract production realLine
 top::Document ::= 
 {
   -- I'm not 100% on this combinator
-  top.outPosition = top.inPosition + (top.inRemaining - top.outRemaining);
-  top.outDq = top.inDq;
+
+  -- For now, force all enclosing groups to be vertical.
+  local pr :: Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> = prune(top.width + 1, top.inDq);
+
+  top.outPosition = top.indent;
+  top.outDq = pr.fst;
   top.outCHorizontals = top.inCHorizontals;
   top.outRemaining = top.width - top.indent;
 
-  top.result = "\n" ++ replicate(top.indent, " ");
-  top.horizontals = [];
+  top.result = "\n" ++ replicate(max(0, top.indent), " ");
+  top.horizontals = pr.snd;
 }
 
 --------------------------------------------------------------------------------

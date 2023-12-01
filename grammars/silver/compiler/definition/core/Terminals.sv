@@ -65,7 +65,6 @@ terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, preced
 
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
-terminal DecSite_t     '@'  lexer classes {OP}, precedence = 2;
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' lexer classes {OP}, precedence = 5, association = left;
 terminal And_t         '&&' lexer classes {OP}, precedence = 6, association = left;
@@ -83,6 +82,7 @@ terminal Multiply_t    '*'  lexer classes {OP}, precedence = 12, association = l
 terminal Divide_t      '/'  lexer classes {OP}, precedence = 12, association = left;
 terminal Modulus_t     '%'  lexer classes {OP}, precedence = 12, association = left;
 terminal ColonColon_t  '::' lexer classes {OP}, precedence = 14, association = right; -- HasType AND cons. right due to cons.
+terminal DecSite_t     '@'  lexer classes {OP}, precedence = 20;
 terminal LParen_t      '('  precedence = 24;
 terminal RParen_t      ')'  precedence = 1, association = left; -- Precedence and association eeded for dangling else in action code.
 terminal LCurly_t      '{'  ;
