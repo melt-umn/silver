@@ -79,6 +79,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 
 	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][];
 
+    public static final boolean[] localDecorable = new boolean[num_local_attrs];
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -100,6 +101,14 @@ ${contexts.contextInitTrans}
 ${whatSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
+
+	@Override
+	public boolean isChildDecorable(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecorableCase(env, _), whatSig.inputElements))}
+            default: return false;
+        }
+    }
 
 	@Override
 	public Object getChild(final int index) {
@@ -140,6 +149,11 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
 	public common.Lazy[] getChildInheritedAttributes(final int key) {
 ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOccurs, "childInhContextTypeVars", "childInheritedAttributes", _), whatSig.inhOccursContextTypes)}
 		return childInheritedAttributes[key];
+	}
+
+	@Override
+	public boolean isLocalDecorable(final int key) {
+		return localDecorable[key];
 	}
 
 	@Override

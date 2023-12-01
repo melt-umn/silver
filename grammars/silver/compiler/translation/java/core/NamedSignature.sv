@@ -325,6 +325,11 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
+function makeChildDecorableCase
+String ::= env::Env n::NamedSignatureElement
+{
+  return s"\t\t\tcase i_${n.elementName}: return ${toString(isDecorable(n.typerep, env))};\n";
+}
 function makeChildDecSiteAccessCase
 String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {

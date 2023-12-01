@@ -82,6 +82,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
+    public static final boolean[] localDecorable = new boolean[num_local_attrs];
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -126,6 +127,14 @@ ${contexts.contextInitTrans}
 ${namedSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
+
+	@Override
+	public boolean isChildDecorable(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecorableCase(body.env, _), namedSig.inputElements))}
+            default: return false;
+        }
+    }
 
 	@Override
 	public Object getChild(final int index) {
@@ -216,6 +225,11 @@ ${if isData then "" else s"""
     public boolean getLocalIsForward(final int key) {
         return localIsForward[key];
     }"""}
+
+    @Override
+    public boolean isLocalDecorable(final int key) {
+        return localDecorable[key];
+    }
 
     @Override
     public common.Lazy getLocal(final int key) {

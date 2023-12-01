@@ -117,6 +117,10 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
+  top.setupInh <-
+    if isDecorable(te.typerep, top.env)
+    then s"\t\t${top.frame.className}.localDecorable[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n"
+    else "";
 
   top.translation = 
     case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
@@ -147,6 +151,10 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
+  top.setupInh <-
+    if isDecorable(te.typerep, top.env)
+    then s"\t\t${top.frame.className}.localDecorable[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n"
+    else "";
 
   top.translation = 
     case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
@@ -172,6 +180,7 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
     s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(top.frame.lhsNtName)}.num_inh_attrs];\n";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
+  top.setupInh <- s"\t\t${top.frame.className}.localDecorable[${ugh_dcl_hack.attrOccursInitIndex}] = true;\n";
 
   -- Decoration through a remote reference has no effect, since all inhs are supplied here via a forward parent
   top.translation = "";
