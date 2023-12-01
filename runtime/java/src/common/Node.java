@@ -161,6 +161,14 @@ public abstract class Node implements Decorable, Typed {
 	public abstract int getNumberOfChildren();
 
 	/**
+	 * Determine if the child should be automatically decorated.
+	 * 
+	 * @param child A number in the range <code>0 - getNumberofChildren()</code>
+	 * @return True if the child has a decorable type in the signature.
+	 */
+	public abstract boolean isChildDecorable(final int child);
+
+	/**
 	 * Access a (raw) child of this Node.
 	 * 
 	 * @param child A number in the range <code>0 - getNumberofChildren()</code>
@@ -196,6 +204,14 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The number of local and production attributes that occur on this <b>production</b>
 	 */
 	public abstract int getNumberOfLocalAttrs();
+
+	/**
+	 * Determine if the local should be automatically decorated.
+	 * 
+	 * @param index The index of a local or production attribute on this Node
+	 * @return True if the local is declared with a decorable type.
+	 */
+	public abstract boolean isLocalDecorable(final int index);
 	
 	/**
 	 * Used for debugging, stack traces especially.
@@ -206,7 +222,7 @@ public abstract class Node implements Decorable, Typed {
 	public abstract String getNameOfLocalAttr(final int index);
 
 	/**
-	 * @param name The index of a local or production attribute on this Node
+	 * @param index The index of a local or production attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getLocal(final int index);
@@ -227,7 +243,7 @@ public abstract class Node implements Decorable, Typed {
 	public abstract boolean getLocalIsForward(final int index);
 
 	/**
-	 * @param key The index for a local, to retrieve inherited attributes for.
+	 * @param index The index for a local, to retrieve inherited attributes for.
 	 * @return An array containing the inherited attributes supplied to that local 
 	 */
 	public abstract Lazy[] getLocalInheritedAttributes(final int index);
