@@ -58,3 +58,6 @@ exports silver:compiler:driver;
 exports silver:compiler:analysis:warnings:flow;
 exports silver:compiler:analysis:warnings:exporting;
 exports silver:compiler:langserver;
+
+-- scope graphs!
+exports silver:compiler:extension:scopegraphs;
