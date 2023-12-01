@@ -50,6 +50,13 @@ top::Strategy ::= s1::Strategy s2::Strategy
   top.result = orElse(s1.result, s2.result);
 }
 
+global choice_::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
+  case s1, s2 of
+  | fail(), _ -> s2
+  | _, fail() -> s1
+  | _, _ -> choice(s1, s2)
+  end;
+
 -- Traversals
 abstract production all
 top::Strategy ::= s::Strategy

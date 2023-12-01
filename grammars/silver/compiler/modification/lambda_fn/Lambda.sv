@@ -54,12 +54,12 @@ top::Expr ::= params::LambdaRHS e::Expr
 }
 
 
-nonterminal LambdaRHS with 
+tracked nonterminal LambdaRHS with 
   givenLambdaParamIndex, givenLambdaId, env, grammarName, flowEnv, 
   lambdaBoundVars, lambdaDefs, lexicalTypeVariables, lexicalTyVarKinds, 
   inputElements, unparse, elementCount;
 
-nonterminal LambdaRHSElem with 
+tracked nonterminal LambdaRHSElem with 
   givenLambdaParamIndex, givenLambdaId, grammarName, deterministicCount, env, 
   flowEnv, lambdaBoundVars, lambdaDefs, unparse, lexicalTypeVariables, 
   inputElements, lexicalTyVarKinds;

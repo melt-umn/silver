@@ -92,7 +92,7 @@ equalityTest ( "\n" ++ show(25, doc6), "\n(cons (list foo bar baz) (cons (hello 
 equalityTest ( "\n" ++ show(80, doc6), "\n(cons (list foo bar baz) (cons (hello world) (more qwerty)))", String, core_tests ) ;
 
 global doc7 :: Document =
-  group(ppConcat([text(" 1234567890"), realLine(), text(" 1234567890"), line(), text("1234567890")]));
+  group(ppConcat([text(" 1234567890"), realLine(), group(ppConcat([text(" 1234567890"), line(), text("1234567890")]))]));
 
 equalityTest ( "\n" ++ show(22, doc7), "\n 1234567890\n 1234567890 1234567890", String, core_tests ) ;
 equalityTest ( "\n" ++ show(21, doc7), "\n 1234567890\n 1234567890\n1234567890", String, core_tests ) ;
@@ -151,4 +151,8 @@ equalityTest ( pp"abc\ndef", cat(cat(text("abc"), realLine()), text("def")), Doc
 equalityTest ( pp"""abc
 def""", cat(cat(text("abc"), realLine()), text("def")), Document, core_tests );
 
-equalityTest ( show(0, pp"abc${123} ${just(3.14)}"), "abc123 just(3.14)", String, core_tests );
+equalityTest ( show(100, group(cat(line(), cat(realLine(), text(";"))))), "\n\n;", String, core_tests );
+
+equalityTest ( show(100, group(group(pp"a" ++ line() ++ pp"b") ++ realLine() ++ group(pp"c" ++ line() ++ pp"d"))), "a b\nc d", String, core_tests );
+equalityTest ( show(100, group(group(pp"a" ++ realLine() ++ pp"b") ++ line() ++ group(pp"c" ++ line() ++ pp"d"))), "a\nb\nc d", String, core_tests );
+equalityTest ( show(100, group(group(pp"a" ++ line() ++ pp"b") ++ line() ++ group(pp"c" ++ realLine() ++ pp"d"))), "a b\nc\nd", String, core_tests );

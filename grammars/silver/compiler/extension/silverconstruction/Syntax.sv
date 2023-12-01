@@ -93,6 +93,17 @@ top::Pattern ::= '$Pattern' '{' e::Expr '}'
       [errFromOrigin(top, "$Pattern should not occur outside of quoted Silver literal")]);
 }
 
+concrete production antiquoteFunctionSignature
+top::FunctionSignature ::= '$FunctionSignature' '{' e::Expr '}'
+{
+  top.unparse = s"$$FunctionSignature{${e.unparse}}";
+  forwards to
+    functionSignatureNoCL(
+      functionLHS(
+        errorTypeExpr([errFromOrigin(top, "$FunctionSignature should not occur outside of quoted Silver literal")])),
+      '::=', productionRHSNil());
+}
+
 concrete production antiquoteProductionRHS
 top::ProductionRHS ::= '$ProductionRHS' '{' e::Expr '}'
 {
