@@ -23,12 +23,12 @@ terminal Ordering_kwd 'ordering' lexer classes {KEYWORD};
 
 concrete production query_c
 top::Expr ::=
-  'query?' 
+  'query?' name::IdLower_t
   'from' scope::Expr 
-  'on' r::Regex
+  'on' '_' --r::Regex
   'ordering' '_'
 {
-  forwards to Silver_Expr { mkQuery (scope) };
+  forwards to Silver_Expr { mkQuery (scope, name.lexeme, seq(star(lex_label())), var_label()) };
 }
 
 {-

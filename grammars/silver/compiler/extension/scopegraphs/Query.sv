@@ -8,39 +8,97 @@ abstract production mkQuery
 top::Query ::= 
   s::Decorated Scope
   for::String
-  r::Regex
+  r::LabelRegex
   --o::Ordering TODO
 {
   --top.results = query_lexstar_var ([s], for);
-  top.results = [];
+  top.results = r.f(for, [s]);
 }
 
-aspect production epsilon
-top::Regex ::=
+synthesized attribute f :: ([Decorated Scope] ::= String [Decorated Scope]);
+
+nonterminal LabelRegex with f;
+
+abstract production alt
+top::LabelRegex ::= r1::LabelRegex r2::LabelRegex
+{
+
+}
+
+abstract production seq
+top::LabelRegex ::= r1::LabelRegex r2::LabelRegex
+{
+  top.f = 
+    \lookup::String scopes::[Decorated Scope] -> 
+      r2.f (lookup, r1.f (lookup, scopes));
+}
+
+abstract production star
+top::LabelRegex ::= r1::LabelRegex
+{
+  top.f = 
+    \lookup::String scopes::[Decorated Scope] -> [];
+}
+
+abstract production opt
+top::LabelRegex ::= r1::LabelRegex
+{
+  top.f = 
+    \lookup::String scopes::[Decorated Scope] -> [];
+}
+
+abstract production lbl
+top::LabelRegex ::= l1::Label
+{
+  top.f = 
+    \lookup::String scopes::[Decorated Scope] ->
+      case l1 of
+        var_label () -> concat (map ((.var_edges), scopes))
+      | lex_label () -> concat (map ((.lex_edges), scopes))
+      end;
+}
+
+nonterminal Label;
+
+abstract production var_label
+top::Label ::=
+{
+
+}
+
+abstract production lex_label
+top::Label ::=
+{
+
+}
+
+{-
+aspect production abs:epsilon
+top::abs:Regex ::=
 {
   
 }
 
-aspect production alt
-top::Regex ::= r1::Regex r2::Regex
+aspect production abs:alt
+top::abs:Regex ::= r1::abs:Regex r2::abs:Regex
 {
 }
 
-aspect production seq
-top::Regex ::= r1::Regex r2::Regex
+aspect production abs:seq
+top::abs:Regex ::= r1::abs:Regex r2::abs:Regex
 {
 }
 
-aspect production star
-top::Regex ::= r::Regex
+aspect production abs:star
+top::abs:Regex ::= r::abs:Regex
 {
 }
 
-aspect production opt
-top::Regex ::= r::Regex
+aspect production abs:opt
+top::abs:Regex ::= r::abs:Regex
 {
 }
-
+-}
 {-
 function query_lexstar_var
 [Decorated Scope] ::= ss::[Decorated Scope] id::String

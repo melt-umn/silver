@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:doc:core;
+  grammar silver:compiler:extension:doc:core;
 
 imports silver:compiler:definition:concrete_syntax;
 imports silver:compiler:modification:ffi;
@@ -49,6 +49,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
+
+-- aspect for concise functions
 
 aspect production attributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
