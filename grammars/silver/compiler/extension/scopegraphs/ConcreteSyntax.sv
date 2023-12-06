@@ -1,15 +1,34 @@
 grammar silver:compiler:extension:scopegraphs;
 
-terminal Scope_kwd 'scope' lexer classes {KEYWORD};
+terminal Scope_kwd 'scope!' lexer classes {KEYWORD};
 terminal With_kwd 'with' lexer classes {KEYWORD};
+terminal Var_kwd 'var' lexer classes {KEYWORD};
+terminal Lex_kwd 'lex' lexer classes {KEYWORD};
 
 concrete production mkScopeNoDatum_c
 top::Expr ::= 
-  'scope' 'with'
+  'scope!' '{'
   var_edges :: Expr
+  ','
   lex_edges :: Expr
+  '}'
 {
   forwards to Silver_Expr { mkScopeFull (nothing(), var_edges, lex_edges) };
+}
+
+terminal Query_kwd 'query?' lexer classes {KEYWORD};
+terminal From_kwd 'from' lexer classes {KEYWORD};
+terminal On_kwd 'on' lexer classes {KEYWORD};
+terminal Ordering_kwd 'ordering' lexer classes {KEYWORD};
+
+concrete production query_c
+top::Expr ::=
+  'query?' 
+  'from' scope::Expr 
+  'on' r::Regex
+  'ordering' '_'
+{
+  forwards to Silver_Expr { mkQuery (scope) };
 }
 
 {-
