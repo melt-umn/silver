@@ -16,7 +16,6 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
   top.unparse = "fun " ++ id.unparse ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
 
   local rhs::ProductionRHS = ns.rhs;
-  rhs.env = top.env;
 
   ns.signatureName = top.grammarName ++ ":" ++ id.name;
   ns.env = top.env;
