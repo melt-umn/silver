@@ -129,6 +129,14 @@ public final class RTTIManager {
 			}
 			return synOccursIndices.get(attrName);
 		}
+		// write a getAllInh() and getAllSyn() that return the keySet of each of these maps
+		public Set<String> getAllInh() {
+			return inhOccursIndices.keySet();
+		}
+		
+		public Set<String> getAllSynth() {
+			return synOccursIndices.keySet();
+		}
 	}
 
 }

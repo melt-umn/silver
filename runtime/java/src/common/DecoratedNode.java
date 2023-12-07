@@ -219,6 +219,16 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	}
 
+	public DecoratedNode getParent()
+	{
+		return parent;
+	}
+
+	public DecoratedNode getForwardParent()
+	{
+		return forwardParent;
+	}
+
 	/**
 	 * Decorate this (unique decorated) node with additional inherited attributes.
 	 * This has no effect if the node already has a forward parent.
