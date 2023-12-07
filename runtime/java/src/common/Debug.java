@@ -36,8 +36,7 @@ public class Debug {
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: up<>");
                     }else{
-                        //FIXME: Should prevent the root form going up but does not work
-                        if (currentNode.getParent() != null){
+                        if (currentNode.getParent() instanceof TopNode ){
                             currentNode = currentNode.getParent();
                             System.out.println("going to parent");
                         }else{
