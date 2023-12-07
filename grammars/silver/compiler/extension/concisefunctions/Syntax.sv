@@ -19,6 +19,7 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
   rhs.env = top.env;
 
   ns.signatureName = top.grammarName ++ ":" ++ id.name;
+  ns.env = top.env;
 
   forwards to
     globalValueDclConcrete (
