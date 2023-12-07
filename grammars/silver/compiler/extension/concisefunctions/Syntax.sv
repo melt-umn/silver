@@ -11,12 +11,14 @@ terminal Fun_kwd 'fun' lexer classes {KEYWORD};
 concrete production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
-  propagate moduleNames;
+  propagate moduleNames, grammarName, env, flowEnv;
 
   top.unparse = "fun " ++ id.unparse ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
 
   local rhs::ProductionRHS = ns.rhs;
   rhs.env = top.env;
+
+  ns.signatureName = top.grammarName ++ ":" ++ id.name;
 
   forwards to
     globalValueDclConcrete (
