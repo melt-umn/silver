@@ -11,11 +11,16 @@ terminal Fun_kwd 'fun' lexer classes {KEYWORD};
 concrete production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
-  propagate moduleNames;
+  propagate moduleNames, grammarName, flowEnv;
 
   top.unparse = "fun " ++ id.unparse ++ ns.unparse ++ " = " ++ e.unparse ++ ";";
 
   local rhs::ProductionRHS = ns.rhs;
+
+  -- The following two lines are only needed for doc generation
+  ns.signatureName = top.grammarName ++ ":" ++ id.name;
+  ns.env = top.env;
+
   rhs.env = top.env;
 
   forwards to

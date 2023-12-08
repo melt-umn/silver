@@ -61,6 +61,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
         | nonterminalDcl(_, _, _, tl, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
         | attributeDclInh(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
         | attributeDclSyn(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | shortFunctionDcl (_, _, ns, _, _, _) -> (just(ns.argNames), "function")
         | _ -> (just([]), if isDoubleComment then "standalone" else "other")
         end;
 
