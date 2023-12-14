@@ -137,6 +137,14 @@ public final class RTTIManager {
 		public Set<String> getAllSynth() {
 			return synOccursIndices.keySet();
 		}
+
+		public Map<String, Integer> getSynOccursIndices() {
+			return synOccursIndices;
+		}
+
+		public Map<String, Integer> getInhOccursIndices() {
+			return inhOccursIndices;
+		}
 	}
 
 }

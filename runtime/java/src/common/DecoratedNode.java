@@ -841,4 +841,18 @@ public class DecoratedNode implements Decorable, Typed {
 	public final String toString() {
 		return getDebugID();
 	}
+
+	//curesed function added by Michael who does not know how to get Inherited attributes otherwise
+	public final Object evalInhSomehowButPublic(final int attribute) {
+		// We specifically have to check here for inheritedAttributes == null, because
+		// that's what happens when we don't supply any inherited attributes...
+		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
+		// (which could be null if *no inherited attributes occur at all* on this
+		// node), this could be the result of correctly compiled, but wrongly written user
+		// code.
+		if(inheritedAttributes != null && inheritedAttributes[attribute] != null)
+			return evalInhHere(attribute);
+		else
+			return evalInhViaFwdP(attribute);
+	}
 }

@@ -1,8 +1,12 @@
 package common;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.HashSet;
 import java.util.Set;
+
+import common.Util.*;
 
 import org.w3c.dom.Node;
 
@@ -36,11 +40,13 @@ public class Debug {
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: up<>");
                     }else{
-                        if (currentNode.getParent() instanceof TopNode ){
+                        if (currentNode.getParent().getParent() instanceof TopNode || currentNode.getParent() == null){
+                            System.out.println("Root Node has no parent");
+                        }else if (currentNode.getParent() == null){
+                            System.out.println("Null parent");
+                        }else{
                             currentNode = currentNode.getParent();
                             System.out.println("going to parent");
-                        }else{
-                            System.out.println("Node has no parent");
                         }
                     }
                     break;
@@ -141,16 +147,17 @@ public class Debug {
                     break;
                 //TODO: Implement this
                 case "view": 
-                    if (userInputList.length != 3) {
-                        System.out.println("invalid, correct usage: view<node, attr>");
+                    if (userInputList.length != 2) {
+                        System.out.println("invalid, correct usage: view<attr>");
                     }else{
-                        System.out.println("do the view list");
+                        // System.out.println("do the view list");
+                        viewAttr(currentNode, userInputList[1]);
                     }
                     break;
                 case "help": 
                     System.out.println("up<>");
                     System.out.println("down<node>");
-                    System.out.println("view<node, attr>");
+                    System.out.println("view<attr>");
                     System.out.println("forwards<>");
                     System.out.println("backtrack<>");
                     System.out.println("prod<>");
@@ -266,6 +273,7 @@ public class Debug {
         }
         return num_attr;
     }
+
     public int listInher(DecoratedNode node)
     {
         // Node undecorated = node.undecorate();
@@ -314,42 +322,78 @@ public class Debug {
         }
     }
      */
-    /* 
+     
     // may want to rethink this such that view prints representation of attribute on current node, 
     // or allow an int to be passed in as the index of the child whose attribute you'd like to print info for
-    public void viewSynth(String attribute)
+    public int viewSynth(DecoratedNode node, String attribute)
     {
-        // if(currentNodeSynthAttrs == null)
-        // {
-        //     System.out.println("No synthesized attributes to view");
-        //     return;
-        // }
-        // StringObjectPair pair = currentNodeSynthAttrs.get(attribute);
-        // if(pair == null)
-        // {
-        //     System.out.println("No synthesized attribute with name " + attribute);
-        //     return;
-        // }
-        // System.out.println("Attribute = " + pair.getString() + 
-        //                  ", Value = " + pair.getObject().toString());
-        // return;
-        Nonterminalton nonterminalton = RTTIManager.getNonterminalton(currentNode.getName());
-        int index = nonterminalton.getSynOccursIndex(attribute);
-        Lazy attribute = currentNode.getSynthesized(index);
-        System.out.println("Attribute = " + attribute.getName() + 
-                         ", Value = " + attribute.eval(currentNode).toString());
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        int index = 0;
+        if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
+            index = nonterminalton.getSynOccursIndex(attribute);
+        }else{
+            System.out.println("Bad input, legal inputs:");
+            Set<String> synAttrSet = nonterminalton.getAllSynth();
+            System.out.println("Keys: " + synAttrSet);
+            return -1;
+        }
+        Lazy synthAttribute = node.getNode().getSynthesized(index);
+        Object o = synthAttribute.eval(node);
+        System.out.println(Util.genericShow(o));
+        return 1;
     }
 
-    public void viewInher(DecoratedNode node, int attribute)
+    public int viewInher(DecoratedNode node, String attribute)
     {
-        Nonterminalton nonterminalton = RTTIManager.getNonterminalton(currentNode.getName());
-        int index = nonterminalton.getInhOccursIndex(attribute);
-        Lazy attribute = currentNode.getInherited(index);
-        System.out.println("Attribute = " + attribute.getName() + 
-                         ", Value = " + attribute.eval(currentNode).toString());
-        
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        int index = 0;
+        if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+            index = nonterminalton.getInhOccursIndex(attribute);
+        }else{
+            System.out.println("Bad input, legal inputs:");
+            Set<String> inhAttrSet = nonterminalton.getAllInh();
+            System.out.println("Keys: " + inhAttrSet);
+            return -1;
+        }
+        Object o = node.evalInhSomehowButPublic(index);
+        System.out.println(Util.genericShow(o));
+        return 1;   
     }
-    */
+
+    public int viewAttr(DecoratedNode node, String attribute)
+    {
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        int index = 0;
+        boolean isSynth = false;
+        if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
+            index = nonterminalton.getSynOccursIndex(attribute);
+            isSynth = true;
+        }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+            index = nonterminalton.getInhOccursIndex(attribute);
+        }else{
+            System.out.println("Bad input, legal inputs:");
+            Set<String> allInputs = new HashSet<String>();
+            Set<String> synAttrSet = nonterminalton.getAllSynth();
+            Set<String> inhAttrSet = nonterminalton.getAllInh();
+            allInputs.addAll(synAttrSet);
+            allInputs.addAll(inhAttrSet);
+            System.out.println("Keys: " + allInputs);
+            return -1;
+        }
+        if(isSynth){
+            Lazy synthAttribute = node.getNode().getSynthesized(index);
+            Object o = synthAttribute.eval(node);
+            System.out.println(Util.genericShow(o));
+        }else{
+            Object o = node.evalInhSomehowButPublic(index);
+            System.out.println(Util.genericShow(o));
+        }
+        return 1;
+    }
+    
     public void viewLocals(DecoratedNode node, int attribute)
     {
 
