@@ -8,7 +8,7 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:modification:copper_mda;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:modification:collection;
-imports silver:compiler:extension:concisefunctions;
+imports silver:compiler:modification:concisefunctions;
 
 @@{- @warning INTENDED TO BE INTERFERED WITH like .pp. -}
 synthesized attribute docUnparse::String occurs on AGDcl;

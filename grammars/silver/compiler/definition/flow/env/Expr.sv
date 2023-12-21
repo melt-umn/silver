@@ -3,11 +3,14 @@ grammar silver:compiler:definition:flow:env;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:definition:type;
 import silver:compiler:analysis:typechecking:core;
+
+-- TODO: Extension/modification flow stuff should maybe be moved into these grammars
 import silver:compiler:modification:copper;
 import silver:compiler:modification:primitivepattern;
 import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 import silver:compiler:modification:let_fix;
 import silver:compiler:modification:lambda_fn;
+import silver:compiler:modification:concisefunctions;
 
 import silver:compiler:driver:util only isExportedBy;
 

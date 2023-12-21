@@ -105,7 +105,7 @@ Location ::= parent::Location child::Location linesOffset::Integer firstLineCols
 @{--
  - A helper constructor for location information, for built-in locations
  -
- - @param module The name of the extension/modifcation/module defining the location
+ - @param module The name of the extension/modification/module defining the location
  -}
 function builtinLoc
 Location ::= module::String

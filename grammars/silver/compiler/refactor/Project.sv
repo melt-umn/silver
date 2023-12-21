@@ -14,6 +14,7 @@ imports silver:compiler:analysis:typechecking:core;
 
 imports silver:compiler:modification:let_fix;
 imports silver:compiler:modification:lambda_fn;
+imports silver:compiler:modification:concisefunctions;
 imports silver:compiler:modification:collection;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:ffi;
@@ -21,8 +22,6 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:list;
 imports silver:compiler:modification:copper_mda;
-
-imports silver:compiler:extension:concisefunctions;
 
 imports silver:rewrite;
 imports silver:langutil:pp;
@@ -36,15 +35,15 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   prodChildLayout <- [
-    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 1, line()),
-    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 3, line())
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 1, line()),
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 3, line())
   ];
   prodChildIndent <- [
-    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 4, 2)
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 4, 2)
   ];
   prodChildGroup <- [
-    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 0, 2),
-    ("silver:compiler:extension:concisefunctions:shortFunctionDcl", 3, 5)
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 0, 2),
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 3, 5)
   ];
 }
 
@@ -56,7 +55,7 @@ top::AST ::= _ _ _
   ];
   termPostLayout <- [
     ("silver:compiler:definition:core:Global_kwd", pp" "),
-    ("silver:compiler:extension:concisefunctions:Fun_kwd", pp" "),
+    ("silver:compiler:modification:concisefunctions:Fun_kwd", pp" "),
     ("silver:compiler:definition:core:Comma_t", pp" "),
     ("silver:compiler:definition:core:Equal_t", pp" ")
   ];

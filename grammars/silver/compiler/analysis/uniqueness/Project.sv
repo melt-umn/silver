@@ -19,4 +19,5 @@ imports silver:compiler:modification:copper_mda;
 imports silver:compiler:modification:collection;
 imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:ffi;
+imports silver:compiler:modification:concisefunctions;
 
