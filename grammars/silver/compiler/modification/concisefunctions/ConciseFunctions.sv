@@ -22,8 +22,13 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 
   top.defs := [shortFunDef(top.grammarName, id.nameLoc, namedSig)];
 
+  local errCheck1 :: TypeCheck = check(e.typerep, namedSig.outputElement.typerep);
+
   e.downSubst = emptySubst();
-  e.finalSubst = e.upSubst;
+  errCheck1.downSubst = e.upSubst;
+
+  e.finalSubst = errCheck1.upSubst;
+  errCheck1.finalSubst = errCheck1.upSubst;
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
@@ -40,7 +45,7 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
   ns.signatureName = fName;
   ns.env = newScopeEnv(sigDefs, top.env);
 
-  e.env = occursEnv(ns.occursDefs, newScopeEnv(sigDefs ++ ns.constraintDefs, top.env));
+  e.env = occursEnv(ns.shortFunctionOccursDefs, newScopeEnv(sigDefs ++ ns.shortFunctionConstraintDefs, top.env));
 
   e.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
   e.originRules = [];
@@ -48,7 +53,23 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 }
 
 monoid attribute shortFunctionDefs::[Def] occurs on FunctionSignature, ProductionRHS, ProductionRHSElem;
+synthesized attribute shortFunctionConstraintDefs::[Def] occurs on FunctionSignature;
+synthesized attribute shortFunctionOccursDefs::[OccursDclInfo] occurs on FunctionSignature;
 propagate shortFunctionDefs on FunctionSignature, ProductionRHS;
+
+aspect production functionSignature
+top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS 
+{
+  -- Need to override constraintPos
+  production clGlobal::ConstraintList = new(cl);
+  clGlobal.env = top.env;
+  clGlobal.flowEnv = top.flowEnv;
+  clGlobal.grammarName = top.grammarName;
+  clGlobal.constraintPos = globalPos(top.namedSignature.freeVariables, sourceGrammar=top.grammarName);
+
+  top.shortFunctionConstraintDefs = clGlobal.defs;
+  top.shortFunctionOccursDefs = clGlobal.occursDefs;
+}
 
 aspect shortFunctionDefs on top::ProductionRHSElem using := of
 | productionRHSElem(id, _, t) -> [shortFunParamDef(top.grammarName, id.nameLoc, id.name, t.typerep)]
