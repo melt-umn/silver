@@ -27,3 +27,15 @@ top::Expr ::= q::Decorated! QName
                      else [];
   top.monadRewritten = baseExpr(new(q));
 }
+
+aspect production shortFunParamReference
+top::Expr ::= q::Decorated! QName
+{
+  top.merrors := [];
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.monoType;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q))]
+                     else [];
+  top.monadRewritten = baseExpr(new(q));
+}
