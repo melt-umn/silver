@@ -11,11 +11,7 @@ type Graph<a> foreign = "java.util.TreeMap<Object,java.util.TreeSet<Object>>";
 @{--
  - Returns an empty graph using Ord for comparison.
  -}
-function empty
-Ord a => Graph<a> ::=
-{
-  return emptyWith(compare);
-}
+fun empty Ord a => Graph<a> ::=  = emptyWith(compare);
 
 @{--
  - Returns an empty graph using the specified vertex comparator.

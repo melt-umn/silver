@@ -26,8 +26,6 @@ top::ValueDclInfo ::= fn::String ty::Type id::Integer paramIndex::Integer
   top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
-function lambdaParamDef
-Def ::= sg::String sl::Location fn::String ty::Type id::Integer paramIndex::Integer
-{
-  return valueDef(defaultEnvItem(lambdaParamDcl(fn,ty,id,paramIndex,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun lambdaParamDef
+Def ::= sg::String sl::Location fn::String ty::Type id::Integer paramIndex::Integer =
+  valueDef(defaultEnvItem(lambdaParamDcl(fn,ty,id,paramIndex,sourceGrammar=sg,sourceLocation=sl)));

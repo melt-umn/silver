@@ -43,11 +43,7 @@ top::Env ::=
   top.prodsForNtTree = [emptyEnvTree()];
 }
 
-function toEnv
-Env ::= d::[Def] od::[OccursDclInfo]
-{
-  return occursEnv(od, newScopeEnv(d, emptyEnv()));
-}
+fun toEnv Env ::= d::[Def] od::[OccursDclInfo] = occursEnv(od, newScopeEnv(d, emptyEnv()));
 
 {--
  - appendEnv exists because we do a weird scope swizzling.
@@ -116,11 +112,7 @@ top::Env ::= d::[OccursDclInfo]  e::Env
 --Environment query functions-----------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 
-function searchEnvAll
-[a] ::= search::String e::[EnvTree<a>]
-{
-  return flatMap(searchEnvTree(search, _), e);
-}
+fun searchEnvAll [a] ::= search::String e::[EnvTree<a>] = flatMap(searchEnvTree(search, _), e);
 
 function searchEnv
 [a] ::= search::String e::[EnvTree<a>]
@@ -132,63 +124,27 @@ function searchEnv
          else found;
 }
 
-function getValueDclInScope
-[ValueDclInfo] ::= search::String e::Env
-{
-  return searchEnvTree(search, head(e.valueTree));
-}
-function getValueDcl
-[ValueDclInfo] ::= search::String e::Env
-{
-  return searchEnv(search, e.valueTree);
-}
-function getValueDclAll
-[ValueDclInfo] ::= search::String e::Env
-{
-  return searchEnvAll(search, e.valueTree);
-}
+fun getValueDclInScope [ValueDclInfo] ::= search::String e::Env =
+  searchEnvTree(search, head(e.valueTree));
+fun getValueDcl [ValueDclInfo] ::= search::String e::Env = searchEnv(search, e.valueTree);
+fun getValueDclAll [ValueDclInfo] ::= search::String e::Env = searchEnvAll(search, e.valueTree);
 
-function getTypeDclInScope
-[TypeDclInfo] ::= search::String e::Env
-{
-  return searchEnvTree(search, head(e.typeTree));
-}
-function getTypeDcl
-[TypeDclInfo] ::= search::String e::Env
-{
-  return searchEnv(search, e.typeTree);
-}
-function getTypeDclAll
-[TypeDclInfo] ::= search::String e::Env
-{
-  return searchEnvAll(search, e.typeTree);
-}
+fun getTypeDclInScope [TypeDclInfo] ::= search::String e::Env =
+  searchEnvTree(search, head(e.typeTree));
+fun getTypeDcl [TypeDclInfo] ::= search::String e::Env = searchEnv(search, e.typeTree);
+fun getTypeDclAll [TypeDclInfo] ::= search::String e::Env = searchEnvAll(search, e.typeTree);
 
-function getAttrDclInScope
-[AttributeDclInfo] ::= search::String e::Env
-{
-  return searchEnvTree(search, head(e.attrTree));
-}
-function getAttrDcl
-[AttributeDclInfo] ::= search::String e::Env
-{
-  return searchEnv(search, e.attrTree);
-}
-function getAttrDclAll
-[AttributeDclInfo] ::= search::String e::Env
-{
-  return searchEnvAll(search, e.attrTree);
-}
+fun getAttrDclInScope [AttributeDclInfo] ::= search::String e::Env =
+  searchEnvTree(search, head(e.attrTree));
+fun getAttrDcl [AttributeDclInfo] ::= search::String e::Env = searchEnv(search, e.attrTree);
+fun getAttrDclAll [AttributeDclInfo] ::= search::String e::Env = searchEnvAll(search, e.attrTree);
 
 {--
  - Look up the short name of an attribute,
  - disambiguating based on some nonterminal on which it is known to occur.
  -}
-function getOccuringAttrDcl
-[AttributeDclInfo] ::= fnnt::String search::String e::Env
-{
-  return getOccuringAttrDclHelp(map((.attrOccurring), getAttrOccursOn(fnnt, e)), search, e.attrTree);
-}
+fun getOccuringAttrDcl [AttributeDclInfo] ::= fnnt::String search::String e::Env =
+  getOccuringAttrDclHelp(map((.attrOccurring), getAttrOccursOn(fnnt, e)), search, e.attrTree);
 function getOccuringAttrDclHelp
 [AttributeDclInfo] ::= allAttrs::[String] search::String e::[EnvTree<AttributeDclInfo>]
 {
@@ -202,21 +158,13 @@ function getOccuringAttrDclHelp
          else found;
 }
 
-function getOccursDcl
-[OccursDclInfo] ::= fnat::String fnnt::String e::Env
-{
-  -- retrieve all attribute Dcls on NT fnnt
-  return occursOnHelp(searchEnvTree(fnnt, e.occursTree), fnat);
-}
-function occursOnHelp
-[OccursDclInfo] ::= i::[OccursDclInfo] fnat::String
-{
-  -- Inefficiency. Linear search for attribute on a nonterminal
-  return if null(i) then []
-         else if head(i).attrOccurring == fnat
-              then head(i) :: occursOnHelp(tail(i), fnat)
-              else occursOnHelp(tail(i), fnat);
-}
+fun getOccursDcl [OccursDclInfo] ::= fnat::String fnnt::String e::Env =
+  occursOnHelp(searchEnvTree(fnnt, e.occursTree), fnat);
+fun occursOnHelp [OccursDclInfo] ::= i::[OccursDclInfo] fnat::String =
+  if null(i) then []
+  else if head(i).attrOccurring == fnat
+       then head(i) :: occursOnHelp(tail(i), fnat)
+       else occursOnHelp(tail(i), fnat);
 
 -- Determines whether a type is automatically promoted to a decorated type
 -- and whether a type may be supplied with inherited attributes.
@@ -233,11 +181,8 @@ Boolean ::= t::Type e::Env
     end;
 }
 
-function getProdAttrs
-[ProductionAttrDclInfo] ::= fnprod::String e::Env
-{
-  return searchEnvTree(fnprod, e.prodOccursTree);
-}
+fun getProdAttrs [ProductionAttrDclInfo] ::= fnprod::String e::Env =
+  searchEnvTree(fnprod, e.prodOccursTree);
 
 {--
  - Get all productions for a nonterminal known to local environment.
@@ -252,11 +197,7 @@ function getProdAttrs
  -       - to implement propagate on all the known non-forwarding productions of a nonterminal.
  - You should probably have a good reason for using this, and document it here if you do.
  -}
-function getKnownProds
-[ValueDclInfo] ::= fnnt::String e::Env
-{
-  return searchEnvAll(fnnt, e.prodsForNtTree);
-}
+fun getKnownProds [ValueDclInfo] ::= fnnt::String e::Env = searchEnvAll(fnnt, e.prodsForNtTree);
 
 -- The list of non-forwarding productions may contain productions from `options` not
 -- imported locally, and so we must consult the "flow environment" for that information:
@@ -267,51 +208,39 @@ function getKnownProds
  - Obviously we can never know all attributes, but we generally don't need to for
  - any reason.
  -}
-function getAttrOccursOn
-[OccursDclInfo] ::= fnnt::String e::Env
-{
-  return searchEnvTree(fnnt, e.occursTree);
-}
+fun getAttrOccursOn [OccursDclInfo] ::= fnnt::String e::Env = searchEnvTree(fnnt, e.occursTree);
 
 {--
  - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
  -}
-function getSynAttrsOn
-[String] ::= fnnt::String e::Env
-{
-  return flatMap(
+fun getSynAttrsOn [String] ::= fnnt::String e::Env =
+  flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
       | at :: _ when at.isSynthesized -> [o.attrOccurring]
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));
-}
 
 {--
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
  -}
-function getInhAttrsOn
-[String] ::= fnnt::String e::Env
-{
-  return flatMap(
+fun getInhAttrsOn [String] ::= fnnt::String e::Env =
+  flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
       | at :: _ when at.isInherited -> [o.attrOccurring]
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));
-}
 
 {--
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
  - Also includes all inherited attributes occuring on translation attributes on the
  - nonterminal, when we want to treat these like inherited attributes.
  -}
-function getInhAndInhOnTransAttrsOn
-[String] ::= fnnt::String e::Env
-{
-  return flatMap(
+fun getInhAndInhOnTransAttrsOn [String] ::= fnnt::String e::Env =
+  flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
       | at :: _ when at.isInherited -> [o.attrOccurring]
@@ -322,7 +251,6 @@ function getInhAndInhOnTransAttrsOn
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));
-}
 
 -- This ensure the annotation list is in the properly sorted order!
 function annotationsForNonterminal

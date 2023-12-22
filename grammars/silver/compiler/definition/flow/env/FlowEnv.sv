@@ -60,136 +60,81 @@ top::FlowEnv ::=
 
 
 -- synthesized equation in a production
-function lookupSyn
-[FlowDef] ::= prod::String  attr::String  e::FlowEnv
-{
-  return searchEnvTree(crossnames(prod, attr), e.synTree);
-}
+fun lookupSyn [FlowDef] ::= prod::String  attr::String  e::FlowEnv =
+  searchEnvTree(crossnames(prod, attr), e.synTree);
 
 -- inherited equation for a child in a production
-function lookupInh
-[FlowDef] ::= prod::String  sigName::String  attr::String  e::FlowEnv
-{
-  return searchEnvTree(crossnames(prod, crossnames(sigName, attr)), e.inhTree);
-}
+fun lookupInh [FlowDef] ::= prod::String  sigName::String  attr::String  e::FlowEnv =
+  searchEnvTree(crossnames(prod, crossnames(sigName, attr)), e.inhTree);
 
 -- default equation for a nonterminal
-function lookupDef
-[FlowDef] ::= nt::String  attr::String  e::FlowEnv
-{
-  return searchEnvTree(crossnames(nt, attr), e.defTree);
-}
+fun lookupDef [FlowDef] ::= nt::String  attr::String  e::FlowEnv =
+  searchEnvTree(crossnames(nt, attr), e.defTree);
 
 -- forward equation for a production
-function lookupFwd
-[FlowDef] ::= prod::String  e::FlowEnv
-{
-  return searchEnvTree(prod, e.fwdTree);
-}
+fun lookupFwd [FlowDef] ::= prod::String  e::FlowEnv = searchEnvTree(prod, e.fwdTree);
 
 -- inherited equation for the forward in a production
-function lookupFwdInh
-[FlowDef] ::= prod::String  attr::String  e::FlowEnv
-{
-  return searchEnvTree(crossnames(prod, attr), e.fwdInhTree);
-}
+fun lookupFwdInh [FlowDef] ::= prod::String  attr::String  e::FlowEnv =
+  searchEnvTree(crossnames(prod, attr), e.fwdInhTree);
 
 -- inherited equation for a local in a production
-function lookupLocalInh
-[FlowDef] ::= prod::String  fName::String  attr::String  e::FlowEnv
-{
-  return searchEnvTree(crossnames(prod, crossnames(fName, attr)), e.localInhTree);
-}
+fun lookupLocalInh [FlowDef] ::= prod::String  fName::String  attr::String  e::FlowEnv =
+  searchEnvTree(crossnames(prod, crossnames(fName, attr)), e.localInhTree);
 
-function lookupLocalEq
-[FlowDef] ::= prod::String  fName::String  e::FlowEnv
-{
-  return searchEnvTree(crossnames(prod, fName), e.localTree);
-}
+fun lookupLocalEq [FlowDef] ::= prod::String  fName::String  e::FlowEnv =
+  searchEnvTree(crossnames(prod, fName), e.localTree);
 
 -- unique references taken for a child
-function lookupUniqueRefs
-[UniqueRefSite] ::= prod::String sigName::String  e::FlowEnv
-{
-  return searchEnvTree(prod ++ ":" ++ sigName, e.uniqueRefTree);
-}
+fun lookupUniqueRefs [UniqueRefSite] ::= prod::String sigName::String  e::FlowEnv =
+  searchEnvTree(prod ++ ":" ++ sigName, e.uniqueRefTree);
 
 -- unique references taken for a local/production attribute
-function lookupLocalUniqueRefs
-[UniqueRefSite] ::= fName::String  e::FlowEnv
-{
-  return searchEnvTree(fName, e.uniqueRefTree);
-}
+fun lookupLocalUniqueRefs [UniqueRefSite] ::= fName::String  e::FlowEnv =
+  searchEnvTree(fName, e.uniqueRefTree);
 
 -- unique references taken for a translation attribute on a child
-function lookupTransUniqueRefs
-[UniqueRefSite] ::= prod::String sigName::String attrName::String e::FlowEnv
-{
-  return searchEnvTree(prod ++ ":" ++ sigName ++ "." ++ attrName, e.uniqueRefTree);
-}
+fun lookupTransUniqueRefs
+[UniqueRefSite] ::= prod::String sigName::String attrName::String e::FlowEnv =
+  searchEnvTree(prod ++ ":" ++ sigName ++ "." ++ attrName, e.uniqueRefTree);
 
 -- unique references taken for a translation attribute on a local
-function lookupLocalTransUniqueRefs
-[UniqueRefSite] ::= fName::String attrName::String e::FlowEnv
-{
-  return searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
-}
+fun lookupLocalTransUniqueRefs [UniqueRefSite] ::= fName::String attrName::String e::FlowEnv =
+  searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
 
 -- possible decoration sites for unique references taken for a child
-function lookupRefPossibleDecSites
-[VertexType] ::= prod::String  sigName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${prod}:${sigName}", e.refPossibleDecSiteTree);
-}
+fun lookupRefPossibleDecSites [VertexType] ::= prod::String  sigName::String  e::FlowEnv =
+  searchEnvTree(s"${prod}:${sigName}", e.refPossibleDecSiteTree);
 
 -- possible decoration sites for unique references taken for a local/production attribute
-function lookupLocalRefPossibleDecSites
-[VertexType] ::= fName::String  e::FlowEnv
-{
-  return searchEnvTree(fName, e.refPossibleDecSiteTree);
-}
+fun lookupLocalRefPossibleDecSites [VertexType] ::= fName::String  e::FlowEnv =
+  searchEnvTree(fName, e.refPossibleDecSiteTree);
 
 -- possible decoration sites for unique references taken for a translation attribute on a child
-function lookupTransRefPossibleDecSites
-[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refPossibleDecSiteTree);
-}
+fun lookupTransRefPossibleDecSites
+[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv =
+  searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refPossibleDecSiteTree);
 
 -- possible decoration sites for unique references taken for a translation attribute on a local/production attribute
-function lookupLocalTransRefPossibleDecSites
-[VertexType] ::= fName::String  attrName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${fName}.${attrName}", e.refPossibleDecSiteTree);
-}
+fun lookupLocalTransRefPossibleDecSites [VertexType] ::= fName::String  attrName::String  e::FlowEnv =
+  searchEnvTree(s"${fName}.${attrName}", e.refPossibleDecSiteTree);
 
 -- unconditional decoration sites for unique references taken for a child
-function lookupRefDecSite
-[VertexType] ::= prod::String  sigName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${prod}:${sigName}", e.refDecSiteTree);
-}
+fun lookupRefDecSite [VertexType] ::= prod::String  sigName::String  e::FlowEnv =
+  searchEnvTree(s"${prod}:${sigName}", e.refDecSiteTree);
 
 -- unconditional decoration sites for unique references taken for a local/production attribute
-function lookupLocalRefDecSite
-[VertexType] ::= fName::String  e::FlowEnv
-{
-  return searchEnvTree(fName, e.refDecSiteTree);
-}
+fun lookupLocalRefDecSite [VertexType] ::= fName::String  e::FlowEnv =
+  searchEnvTree(fName, e.refDecSiteTree);
 
 -- unconditional decoration sites for unique references taken for a translation attribute on a child
-function lookupTransRefDecSite
-[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refDecSiteTree);
-}
+fun lookupTransRefDecSite
+[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv =
+  searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refDecSiteTree);
 
 -- unconditional decoration sites for unique references taken for a translation attribute on a local/production attribute
-function lookupLocalTransRefDecSite
-[VertexType] ::= fName::String  attrName::String  e::FlowEnv
-{
-  return searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);
-}
+fun lookupLocalTransRefDecSite [VertexType] ::= fName::String  attrName::String  e::FlowEnv =
+  searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);
 
 {--
  - This is a glorified lambda function, to help look for equations.
@@ -199,25 +144,14 @@ function lookupLocalTransRefDecSite
  -           e.g. `lookupInh(prod, rhs, _, env)`
  - @param attr  The attribute to look up.
  -}
-function isEquationMissing
-Boolean ::= f::([FlowDef] ::= String)  attr::String
-{
-  return null(f(attr));
-}
+fun isEquationMissing Boolean ::= f::([FlowDef] ::= String)  attr::String = null(f(attr));
 
 -- default set of inherited attributes required/assumed to exist for references
-function getInhsForNtRef
-[[String]] ::= nt::String  e::FlowEnv
-{
-  return searchEnvTree(nt, e.refTree);
-}
+fun getInhsForNtRef [[String]] ::= nt::String  e::FlowEnv = searchEnvTree(nt, e.refTree);
 
 -- implicit forward syn copy equations that are allowed to affect the flow type
-function getNonSuspectAttrsForProd
-[String] ::= prod::String  e::FlowEnv
-{
-  return concat(searchEnvTree(prod, e.nonSuspectTree));
-}
+fun getNonSuspectAttrsForProd [String] ::= prod::String  e::FlowEnv =
+  concat(searchEnvTree(prod, e.nonSuspectTree));
 
 -- all (non-forwarding) productions constructing a nonterminal
 function getNonforwardingProds
@@ -240,22 +174,13 @@ function getHostSynsFor
 }
 
 -- Get syns (and "forward") that have flow types specified
-function getSpecifiedSynsForNt
-[String] ::= nt::String  e::FlowEnv
-{
-  return map(fst, searchEnvTree(nt, e.specTree));
-}
-function getFlowTypeSpecFor
-[(String, [String], [String])] ::= nt::String  e::FlowEnv
-{
-  return searchEnvTree(nt, e.specTree);
-}
+fun getSpecifiedSynsForNt [String] ::= nt::String  e::FlowEnv =
+  map(fst, searchEnvTree(nt, e.specTree));
+fun getFlowTypeSpecFor [(String, [String], [String])] ::= nt::String  e::FlowEnv =
+  searchEnvTree(nt, e.specTree);
 
-function getGraphContribsFor
-[FlowDef] ::= prod::String  e::FlowEnv
-{
-  return searchEnvTree(prod, e.prodGraphTree);
-}
+fun getGraphContribsFor [FlowDef] ::= prod::String  e::FlowEnv =
+  searchEnvTree(prod, e.prodGraphTree);
 
 monoid attribute occursContextInhDeps::[(String, String, [String])]  -- (type name, syn, inhs)
   occurs on Contexts, Context;

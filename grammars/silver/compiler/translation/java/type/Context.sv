@@ -258,8 +258,4 @@ String ::= i1::Type i2::Type tvs::[TyVar]
   return s"inhSubset_${i1.transTypeName}_${i2.transTypeName}";
 }
 
-function makeInstanceSuperAccessorName
-String ::= s::String
-{
-  return "getSuper_" ++ substitute(":", "_", s);
-}
+fun makeInstanceSuperAccessorName String ::= s::String = "getSuper_" ++ substitute(":", "_", s);

@@ -118,11 +118,8 @@ top::EitherT<e m a> ::= x::m<Either<e a>>
 @{--
  - Transform the computation inside an EitherT.
  -}
-function mapEitherT
-EitherT<f n b> ::= f::(n<Either<f b>> ::= m<Either<e a>>) x::EitherT<e m a>
-{
-  return eitherT(f(x.run));
-}
+fun mapEitherT EitherT<f n b> ::= f::(n<Either<f b>> ::= m<Either<e a>>) x::EitherT<e m a> =
+  eitherT(f(x.run));
 
 instance Functor m => Functor EitherT<e m _> {
   map = \ f::(b ::= a) x::EitherT<e m a> -> mapEitherT(map(map(f, _), _), x);
@@ -209,14 +206,11 @@ Pair<[a] [b]> ::= l::[Either<a b>]
  - @param e The either being discriminated
  - @param o The fallback value
  -}
-function fromLeft
-a ::= e::Either<a b> o::a
-{
-  return case e of
+fun fromLeft a ::= e::Either<a b> o::a =
+  case e of
   | left(a) -> a
   | right(_) -> o
   end;
-}
 
 @{--
  - Returns the right value, or the default if there is no right value.
@@ -224,12 +218,9 @@ a ::= e::Either<a b> o::a
  - @param e The either being discriminated
  - @param o The fallback value
  -}
-function fromRight
-b ::= e::Either<a b> o::b
-{
-  return case e of
+fun fromRight b ::= e::Either<a b> o::b =
+  case e of
   | left(_) -> o
   | right(b) -> b
   end;
-}
 

@@ -91,32 +91,20 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
 
 
-function restrictedSynDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(restrictedSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun restrictedSynDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(restrictedSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 
 
-function restrictedInhDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(restrictedInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun restrictedInhDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(restrictedInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 
 
 
 
-function implicitSynDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(implicitSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun implicitSynDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(implicitSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 
 
-function implicitInhDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(implicitInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun implicitInhDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(implicitInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 

@@ -96,12 +96,7 @@ EnvItem<a> ::= di::a
 {
   return renamedEnvItem(fullNameToShort(di.fullName), di);
 }
-function fullNameToShort
-String ::= s::String
-{
-  -- Works just fine, even when lastIndexOf returns -1
-  return substring(lastIndexOf(":", s) + 1, length(s), s);
-}
+fun fullNameToShort String ::= s::String = substring(lastIndexOf(":", s) + 1, length(s), s);
 
 
 global mapGetDcls :: ([a] ::= [EnvItem<a>]) = map((.dcl), _);

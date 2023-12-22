@@ -73,35 +73,25 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.order = 0;
 }
 
-function generateDotGraph
-String ::= specs::[Decorated RootSpec]
-{
-  return case specs of
+fun generateDotGraph String ::= specs::[Decorated RootSpec] =
+  case specs of
   | [] -> ""
   | h::t ->
       "\"" ++ h.declaredName ++ "\"[label=\"" ++ h.declaredName ++ "\"];\n" ++
       implode("", map(makeDotArrow(h.declaredName, _), h.moduleNames)) ++
       generateDotGraph(t)
   end;
-}
 
-function generateDotExportGraph
-String ::= specs::[Decorated RootSpec]
-{
-  return case specs of
+fun generateDotExportGraph String ::= specs::[Decorated RootSpec] =
+  case specs of
   | [] -> ""
   | h::t ->
       "\"" ++ h.declaredName ++ "\"[label=\"" ++ h.declaredName ++ "\"];\n" ++
       implode("", map(makeDotArrow(h.declaredName, _), computeOptionalDeps([h.declaredName], h.compiledGrammars))) ++
       generateDotExportGraph(t)
   end;
-}
 
-function makeDotArrow
-String ::= f::String t::String
-{
-  -- A heuristic to try to make the graph more readable...
-  return if t == "silver:core" then "" 
+fun makeDotArrow String ::= f::String t::String =
+  if t == "silver:core" then "" 
   else "\"" ++ f ++ "\" -> \"" ++ t ++ "\";\n";
-}
 

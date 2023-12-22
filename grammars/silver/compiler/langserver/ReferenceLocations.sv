@@ -245,15 +245,14 @@ top::Compilation ::= g::Grammars r::Grammars _ _
   top.allAttributeRefs = buildAllRefs((.attributeRefLocs), g.grammarList);
 }
 
-function buildFileRefs
+fun buildFileRefs
 annotation sourceLocation occurs on a,
 annotation sourceGrammar occurs on a =>
 map:Map<String (Location, Decorated RootSpec, a)> ::= 
   accessor::([(Location, a)] ::= Decorated RootSpec)  
   accessList::([EnvItem<a>] ::= Def)
-  rs::[Decorated RootSpec]
-{
-  return directBuildTree(flatMap(\ r::Decorated RootSpec ->
+  rs::[Decorated RootSpec] =
+  directBuildTree(flatMap(\ r::Decorated RootSpec ->
     map(\ item::(Location, a) ->
       (r.grammarSource ++ item.1.filename, item.1, head(map:lookup(item.2.sourceGrammar, r.compiledGrammars)), item.2),
       accessor(r)) ++
@@ -265,7 +264,6 @@ map:Map<String (Location, Decorated RootSpec, a)> ::=
         accessList(def)),
       r.defs),
     rs));
-}
 
 -- Create a map from a reference's unique id to its path & location
 function buildAllRefs
@@ -327,61 +325,45 @@ InterfaceItems ::= r::Decorated RootSpec
   ];
 }
 
-function lookupPos
-[a] ::= line::Integer col::Integer items::[(Location, a)]
-{
-  return map(snd, filter(
+fun lookupPos [a] ::= line::Integer col::Integer items::[(Location, a)] =
+  map(snd, filter(
     \ item::(Location, a) ->
       item.1.line <= line && item.1.endLine >= line && item.1.column <= col && item.1.endColumn >= col,
     items));
-}
 
-function updateLocPath
-Location ::= p::String l::Location
-{
-  return loc(p, l.line, l.column, l.endLine, l.endColumn, l.index, l.endIndex);
-}
+fun updateLocPath Location ::= p::String l::Location =
+  loc(p, l.line, l.column, l.endLine, l.endColumn, l.index, l.endIndex);
 
-function lookupDeclLocation
+fun lookupDeclLocation
 annotation sourceGrammar occurs on a,
 annotation sourceLocation occurs on a =>
-[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)>
-{
-  return map(\ item::(Decorated RootSpec, a) ->
+[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> =
+  map(\ item::(Decorated RootSpec, a) ->
     updateLocPath(item.1.grammarSource ++ item.2.sourceLocation.filename, item.2.sourceLocation),
     lookupPos(line, col, map:lookup(fileName, decls)));
-}
 
-function findDeclLocation
-[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation
-{
-  return
-    lookupDeclLocation(fileName, line, col, c.valueFileRefLocs) ++
-    lookupDeclLocation(fileName, line, col, c.typeFileRefLocs) ++
-    lookupDeclLocation(fileName, line, col, c.attributeFileRefLocs);
-}
+fun findDeclLocation
+[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation =
+  lookupDeclLocation(fileName, line, col, c.valueFileRefLocs) ++
+  lookupDeclLocation(fileName, line, col, c.typeFileRefLocs) ++
+  lookupDeclLocation(fileName, line, col, c.attributeFileRefLocs);
 
 -- Looks up all references to symbol at the given location
 -- Returns a list of all reference locations
 -- Input is filename, line & col number, & decl map to resolve the symbol
 -- Uses refs map to lookup the reference paths & locations from the symbol unique id  
-function lookupReferenceLocations
+fun lookupReferenceLocations
 annotation sourceGrammar occurs on a,
 annotation sourceLocation occurs on a,
 attribute fullName {} occurs on a =>
-[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)>
-{
-  return flatMap(\ item::(Decorated RootSpec, a) -> 
+[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)> =
+  flatMap(\ item::(Decorated RootSpec, a) -> 
     map(\ loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
       map:lookup(makeRefId(item.2), refs)), 
     lookupPos(line, col, map:lookup(fileName, decls)));
-}
 
-function findReferences
-[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation
-{
-  return
-    lookupReferenceLocations(fileName, line, col, c.valueFileRefLocs, c.allValueRefs) ++
-    lookupReferenceLocations(fileName, line, col, c.typeFileRefLocs, c.allTypeRefs) ++
-    lookupReferenceLocations(fileName, line, col, c.attributeFileRefLocs, c.allAttributeRefs);
-}
+fun findReferences
+[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation =
+  lookupReferenceLocations(fileName, line, col, c.valueFileRefLocs, c.allValueRefs) ++
+  lookupReferenceLocations(fileName, line, col, c.typeFileRefLocs, c.allTypeRefs) ++
+  lookupReferenceLocations(fileName, line, col, c.attributeFileRefLocs, c.allAttributeRefs);

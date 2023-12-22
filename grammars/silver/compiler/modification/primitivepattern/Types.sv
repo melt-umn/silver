@@ -318,16 +318,13 @@ Substitution ::= te1::[Type] te2::[Type]
 
 
 --------
-function isOnlyTyVars
-Boolean ::= ls::[Type]
-{
-  return case ls of
-         | [] -> true
-         | varType(_) :: t -> isOnlyTyVars(t)
-         | skolemType(_) :: t -> isOnlyTyVars(t)
-         | _ -> false
-         end;
-}
+fun isOnlyTyVars Boolean ::= ls::[Type] =
+  case ls of
+  | [] -> true
+  | varType(_) :: t -> isOnlyTyVars(t)
+  | skolemType(_) :: t -> isOnlyTyVars(t)
+  | _ -> false
+  end;
 
 
 --------

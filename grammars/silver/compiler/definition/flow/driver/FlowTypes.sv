@@ -28,32 +28,15 @@ EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
   
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
-function initialFlowType
-Pair<NtName FlowType> ::= x::(NtName, [(String, [String])])
-{
-  return (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
-}
-function ntListLte
-Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
-{
-  return a.fst <= b.fst;
-}
-function ntListEq
-Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
-{
-  return a.fst == b.fst;
-}
-function ntListCoalesce
-[(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]]
-{
-  return if null(l) then []
+fun initialFlowType Pair<NtName FlowType> ::= x::(NtName, [(String, [String])]) =
+  (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
+fun ntListLte Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst <= b.fst;
+fun ntListEq Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst == b.fst;
+fun ntListCoalesce [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]] =
+  if null(l) then []
   else (head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
-}
-function toFlatEdges
-[Pair<String String>] ::= x::Pair<String [String]>
-{
-  return map(pair(fst=x.fst, snd=_), x.snd);
-}
+fun toFlatEdges [Pair<String String>] ::= x::Pair<String [String]> =
+  map(pair(fst=x.fst, snd=_), x.snd);
 
 
 {--
@@ -127,22 +110,13 @@ function findBrandNewEdges
 }
 
 -- Expand 'ver' using 'graph', then filter down to just those in 'inhs'
-function expandVertexFilterTo
-Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph
-{
-  -- TODO: we might return 'Pair<String Set<String>>' instead of [String] and gain speed?
-  -- Have set:filter, don't have "set:map" yet... (FlowVertex->String)
-  return (ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
-}
+fun expandVertexFilterTo Pair<String [String]> ::= ver::FlowVertex  graph::ProductionGraph =
+  (ver.flowTypeName, filterLhsInh(set:toList(graph.edgeMap(ver))));
 
 {--
  - Filters vertexes down to just the names of inherited attributes on the LHS
  -}
-function filterLhsInh
-[String] ::= f::[FlowVertex]
-{
-  return foldr(collectInhs, [], f);
-}
+fun filterLhsInh [String] ::= f::[FlowVertex] = foldr(collectInhs, [], f);
 
 {--
  - Used to filter down to just the inherited attributes (on the LHS)
@@ -151,14 +125,11 @@ function filterLhsInh
  - @param l  The current set of inherited attribute dependencies
  - @return  {l} with {f} added to it
  -}
-function collectInhs
-[String] ::= f::FlowVertex  l::[String]
-{
-  return case f of
+fun collectInhs [String] ::= f::FlowVertex  l::[String] =
+  case f of
   | lhsInhVertex(a) -> a::l
   | _ -> l
   end;
-}
 
 
 {--

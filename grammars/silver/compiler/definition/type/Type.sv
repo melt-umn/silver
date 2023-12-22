@@ -351,20 +351,8 @@ instance Eq TyVar {
 global freshTyVar::(TyVar ::= Kind) = \ k::Kind -> tyVar(kind=k, varId=genInt());
 global freshTyVarNamed::(TyVar ::= String Kind) = \ n::String k::Kind -> tyVarNamed(n, kind=k, varId=genInt());
 
-function freshType
-Type ::=
-{
-  return varType(freshTyVar(starKind()));
-}
+fun freshType Type ::= = varType(freshTyVar(starKind()));
 
-function newSkolemConstant
-Type ::=
-{
-  return skolemType(freshTyVar(starKind()));
-}
+fun newSkolemConstant Type ::= = skolemType(freshTyVar(starKind()));
 
-function freshInhSet
-Type ::=
-{
-  return varType(freshTyVar(inhSetKind()));
-}
+fun freshInhSet Type ::= = varType(freshTyVar(inhSetKind()));

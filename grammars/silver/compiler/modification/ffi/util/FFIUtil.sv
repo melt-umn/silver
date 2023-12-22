@@ -5,35 +5,15 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:modification:ffi;
 
-function substituteAll
-String ::= s::String names::[String] results::[String]
-{
-  return if null(names) then s
-         else substituteAll(substitute(head(names), head(results), s), tail(names), tail(results));
-}
+fun substituteAll String ::= s::String names::[String] results::[String] =
+  if null(names) then s
+  else substituteAll(substitute(head(names), head(results), s), tail(names), tail(results));
 
-function wrapStrictNotation
-String ::= s::String
-{
-  return "%" ++ s ++ "%";
-}
-function wrapLazyNotation
-String ::= s::String
-{
-  return "%?" ++ s ++ "?%";
-}
-function wrapContextNotation
-String ::= i::Integer
-{
-  return "%@" ++ toString(i) ++ "@%";
-}
+fun wrapStrictNotation String ::= s::String = "%" ++ s ++ "%";
+fun wrapLazyNotation String ::= s::String = "%?" ++ s ++ "?%";
+fun wrapContextNotation String ::= i::Integer = "%@" ++ toString(i) ++ "@%";
 
-function cleanStringLexeme
-String ::= s::String
-{
-  -- peel off outer quotes
-  return cleanStringEscapes(substring(1,length(s)-1, s));
-}
+fun cleanStringLexeme String ::= s::String = cleanStringEscapes(substring(1,length(s)-1, s));
 
 --TODO is this necessary? I... don't think it is.
 function cleanStringEscapes

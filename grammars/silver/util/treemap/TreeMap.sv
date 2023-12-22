@@ -10,11 +10,7 @@ type Map<a b> foreign = "java.util.TreeMap<Object,common.ConsCell>";
 @{--
  - Returns a new, empty, multimap using Ord for comparison.
  -}
-function empty
-Ord a => Map<a b> ::=
-{
-  return emptyWith(compare);
-}
+fun empty Ord a => Map<a b> ::= = emptyWith(compare);
 
 @{--
  - Returns a new, empty, multimap using the specified comparator.
@@ -65,11 +61,7 @@ function lookup
 @{--
  - Converts a list of pairs to a multimap.
  -}
-function fromList
-Ord a => Map<a b> ::= l::[Pair<a b>]
-{
-  return add(l, empty());
-}
+fun fromList Ord a => Map<a b> ::= l::[Pair<a b>] = add(l, empty());
 
 @{--
  - Converts a multimap back to a list of pairs, in sorted order by key.

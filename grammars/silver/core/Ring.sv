@@ -59,12 +59,8 @@ Float ::= a::Float
 }
 
 @{- Converts an integer into an arbitrary ring. -}
-function fromInteger
-Ring a => a ::= n::Integer
-{
-  return
-    if n < 0 then
-      negate(fromNonnegativeInteger(-n))
-    else
-      fromNonnegativeInteger(n);
-}
+fun fromInteger Ring a => a ::= n::Integer =
+  if n < 0 then
+    negate(fromNonnegativeInteger(-n))
+  else
+    fromNonnegativeInteger(n);

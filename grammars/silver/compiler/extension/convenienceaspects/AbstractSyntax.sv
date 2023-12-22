@@ -7,15 +7,11 @@ import silver:compiler:modification:let_fix;
   - @param l the list of patterns to modify
   - @return A patternList List-Like Nonterminal instance.
   -}
-function makePatternListFromListofPatterns
-PatternList ::= l::[Pattern]
-{
-  return
-    foldr(
-      \next::Pattern accum::PatternList -> patternList_more(next, ',', accum),
-      patternList_nil(),
-      l);
-}
+fun makePatternListFromListofPatterns PatternList ::= l::[Pattern] =
+  foldr(
+    \next::Pattern accum::PatternList -> patternList_more(next, ',', accum),
+    patternList_nil(),
+    l);
 
 
 
@@ -44,10 +40,8 @@ function collectPatternsFromPatternList
   - @return A patternList List-like construct containing only the subpatterns of the list that was provided.
   - @warning Note that the subpatterns being extracted here are only applications of productions.
 -}
-function extractSubPatternListsFromProdPatterns
-PatternList ::= pl::PatternList
-{
-  return makePatternListFromListofPatterns(
+fun extractSubPatternListsFromProdPatterns PatternList ::= pl::PatternList =
+  makePatternListFromListofPatterns(
     foldr(
       append,
       [],
@@ -57,7 +51,6 @@ PatternList ::= pl::PatternList
         | _ -> []
         end,
         collectPatternsFromPatternList(pl,[])))));
-}
 
 
 @{-
@@ -65,17 +58,13 @@ PatternList ::= pl::PatternList
   - @param l A list of Expr's.
   - @return A combined Exprs List-like construct made from the Expr's in the input list.
 -}
-function makeExprsFromExprList
-Exprs ::= l::[Expr]
-{
-  return
-    if null(l) then exprsEmpty()
-    else
-      foldrLastElem(
-        \leftelem::Expr accum::Exprs -> exprsCons(leftelem,',',accum),
-        \elem::Expr -> exprsSingle(elem),
-        l);
-}
+fun makeExprsFromExprList Exprs ::= l::[Expr] =
+  if null(l) then exprsEmpty()
+  else
+    foldrLastElem(
+      \leftelem::Expr accum::Exprs -> exprsCons(leftelem,',',accum),
+      \elem::Expr -> exprsSingle(elem),
+      l);
 
 
 @{-
@@ -83,15 +72,11 @@ Exprs ::= l::[Expr]
   - @param l A list of match rules.
   - @return A MRuleList list-like construct from the list of match rules.
 -}
-function makeMRuleListFromListMatchRules
-MRuleList ::= l::[MatchRule]
-{
-  return foldrLastElem(
+fun makeMRuleListFromListMatchRules MRuleList ::= l::[MatchRule] =
+  foldrLastElem(
    \leftelem::MatchRule accum::MRuleList -> mRuleList_cons(leftelem,'|',accum),
    \a::MatchRule -> mRuleList_one(a),
    l);
-
-}
 
 @{-
   - Given a MRuleList element, transforms it into a regular list of MatchRules
@@ -162,11 +147,7 @@ PatternList ::= mr::MatchRule
   - @param name The name being defined.
   - @return a concrete definition LHS element that uses the name provided.
 -}
-function makeDefinitionLHSFromName
-DefLHS ::= name::Name
-{
-  return concreteDefLHS(qNameId(name));
-}
+fun makeDefinitionLHSFromName DefLHS ::= name::Name = concreteDefLHS(qNameId(name));
 
 @{-
   - This function takes in a name, aspectRHS, and expr, returning a let expression that binds the name we provide to the name of
@@ -177,19 +158,15 @@ DefLHS ::= name::Name
   - @param e The expression that uses the name we're defining and will be surrounded by let.
   - @return A Let expr that binds the name we provide to the "top" term in our aspect production with let, and surrounds the expression we gave.
 -}
-function makeLetExprForTopRenaming
-Expr ::= newName::Name aspectLHS::Decorated ConvAspectLHS e::Expr
-{
-    return letp(
-      assignExpr(
-        newName,
-        '::',
-        aspectLHS.aspectType,
-        '=',
-        baseExpr(qNameId(aspectLHS.aspectName))),
-      e);
-
-}
+fun makeLetExprForTopRenaming Expr ::= newName::Name aspectLHS::Decorated ConvAspectLHS e::Expr =
+  letp(
+    assignExpr(
+      newName,
+      '::',
+      aspectLHS.aspectType,
+      '=',
+      baseExpr(qNameId(aspectLHS.aspectName))),
+    e);
 
 
 @{- @hide
@@ -448,18 +425,10 @@ Pattern ::= mRule::MatchRule
   - @param r second match rule
   - @return Boolean telling us if the head pattern of two match rules uses the same production (or are equivalent in terms of being a wildcard or varpattern).
 -}
-function eqHeadPatternMatchRule
-Boolean ::= l::MatchRule r::MatchRule
-{
-  -- The reason this isn't done with attributes is that demanding attributes
-  -- (from silver core lang elements) has caused infinite loops and mwda errors
-  -- for me (due to me working with concrete syntax elements, I'm presuming), so I've been
-  -- avoiding demanding attributes as much as possible.
-  return
-    eqProdNamePattern(
-      extractHeadPatternFromMatchRule(l),
-      extractHeadPatternFromMatchRule(r));
-}
+fun eqHeadPatternMatchRule Boolean ::= l::MatchRule r::MatchRule =
+  eqProdNamePattern(
+    extractHeadPatternFromMatchRule(l),
+    extractHeadPatternFromMatchRule(r));
 
 
 @{-

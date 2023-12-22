@@ -68,17 +68,13 @@ Document ::= origText::String  tree::a
   return ast.unparseWithLayout;
 }
 
-function getParseTree
-AST ::= ast::a
-{
-  return
-    case getOriginInfo(ast) of
-    | just(parsedOriginInfo(l)) -> reflect(ast)
-    | just(originOriginInfo(o, _)) -> getParseTree(o)
-    | just(originAndRedexOriginInfo(o, _, _, _)) -> getParseTree(o)
-    | _ -> error("Tree does not have a parsed origin: " ++ showOriginInfoChain(ast))
-    end;
-}
+fun getParseTree AST ::= ast::a =
+  case getOriginInfo(ast) of
+  | just(parsedOriginInfo(l)) -> reflect(ast)
+  | just(originOriginInfo(o, _)) -> getParseTree(o)
+  | just(originAndRedexOriginInfo(o, _, _, _)) -> getParseTree(o)
+  | _ -> error("Tree does not have a parsed origin: " ++ showOriginInfoChain(ast))
+  end;
 
 -- Attributes computed on parseTree
 inherited attribute origText::String occurs on AST, ASTs;

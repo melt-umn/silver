@@ -158,22 +158,16 @@ propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize o
 propagate elimInfeasibleMRules on MRuleList;
 
 -- Convert an expression of type a to Maybe<a>
-function asPartial
-Expr ::= e::Expr
-{ return Silver_Expr { silver:core:just($Expr{e}) }; }
+fun asPartial Expr ::= e::Expr = Silver_Expr { silver:core:just($Expr{e}) };
 
 -- Convert an expression of type Maybe<a> to a
-function asTotal
-Expr ::= t::Type e::Expr
-{
-  return
-    Silver_Expr {
-      let res::$TypeExpr{typerepTypeExpr(t)} =
-          silver:core:error("Total result demanded when partial strategy failed")
-      in silver:core:fromMaybe(res, $Expr{e})
-      end
-    };
-}
+fun asTotal Expr ::= t::Type e::Expr =
+  Silver_Expr {
+    let res::$TypeExpr{typerepTypeExpr(t)} =
+        silver:core:error("Total result demanded when partial strategy failed")
+    in silver:core:fromMaybe(res, $Expr{e})
+    end
+  };
 
 aspect default production
 top::StrategyExpr ::=
@@ -1035,13 +1029,9 @@ Boolean ::= env::Env attrName::String
     end;
 }
 
-function attrMatchesFrame
-Boolean ::= env::Env attrName::String attrFor::Type
-{
-  return
-    decorate qNameAttrOccur(qName(attrName))
-    with { env = env; attrFor = attrFor; }.matchesFrame;
-}
+fun attrMatchesFrame Boolean ::= env::Env attrName::String attrFor::Type =
+  decorate qNameAttrOccur(qName(attrName))
+  with { env = env; attrFor = attrFor; }.matchesFrame;
 
 function attrMatchesChild
 Boolean ::= env::Env attrName::String frame::BlockContext

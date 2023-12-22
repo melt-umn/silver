@@ -85,15 +85,12 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
  - Used when an error occurs. e.g. aspecting a non-existant production.
  - Or, in contexts that have no valid signature, which maybe we should do something about...
  -}
-function bogusNamedSignature
-NamedSignature ::= 
-{
-  return namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
-}
+fun bogusNamedSignature NamedSignature ::= =
+  namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
 
 {--
- - Represents a collection of NamedSignatureElements
- -}
+  - Represents a collection of NamedSignatureElements
+  -}
 nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, freeVariables, boundVariables;
 propagate boundVariables on NamedSignatureElements;
 
@@ -168,13 +165,11 @@ Boolean ::= a::NamedSignatureElement  b::NamedSignatureElement
 }
 
 -- This is a big of an awful pile. Related to annotations, for now.
-function findNamedSigElem
-Integer ::= s::String l::[NamedSignatureElement] z::Integer
-{
-  return if null(l) then -1
+fun findNamedSigElem
+Integer ::= s::String l::[NamedSignatureElement] z::Integer =
+  if null(l) then -1
   else if s == head(l).elementName then z
   else findNamedSigElem(s, tail(l), z+1);
-}
 
 function findNamedSigElemType
 Type ::= n::String l::[NamedSignatureElement]

@@ -53,13 +53,10 @@ top::QNames ::= id1::QNameWithTL ',' id2::QNames
 
 --------------------------------------------------------------------------------
 
-function makeOccursDcls
-AGDcl ::= ats::[QNameWithTL] nts::[QNameWithTL]
-{
-  return if null(ats) 
-	 then emptyAGDcl()
-	 else appendAGDcl(makeOccursDclsHelp(head(ats), nts), makeOccursDcls(tail(ats), nts));
-}
+fun makeOccursDcls AGDcl ::= ats::[QNameWithTL] nts::[QNameWithTL] =
+  if null(ats) 
+	then emptyAGDcl()
+	else appendAGDcl(makeOccursDclsHelp(head(ats), nts), makeOccursDcls(tail(ats), nts));
 
 function makeOccursDclsHelp
 AGDcl ::= at::QNameWithTL nts::[QNameWithTL]

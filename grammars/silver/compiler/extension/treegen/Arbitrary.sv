@@ -186,14 +186,11 @@ Boolean ::= v::ValueDclInfo
 }
 
 -- splits where operator becomes false in list
-function takeWhile2
-[a] ::= f::(Boolean ::= a a)  l::[a]
-{
-  return if null(l) then []
+fun takeWhile2 [a] ::= f::(Boolean ::= a a)  l::[a] =
+  if null(l) then []
   else if null(tail(l)) then l
   else if f(head(l), head(tail(l))) then head(l) :: takeWhile2(f, tail(l))
   else [head(l)];
-}
 
 -- local genExpr::(RandomGen<Expr> ::= Integer) = \ depth::Integer -> ...;
 function genNtLocalDecl

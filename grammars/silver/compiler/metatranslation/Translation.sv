@@ -333,14 +333,10 @@ top::NamedAST ::= n::String v::AST
 -- the functions below are directly referenced in reflection code in silver:compiler:extensions:silverconstruction
 -- so make sure you grep for that if you change/move them.
 
-function makeName
-Name ::= n::String loc::Location
-{
-  return
-    if isUpper(head(explode("", n)))
-    then nameIdUpper(terminal(IdUpper_t, n, loc))
-    else nameIdLower(terminal(IdLower_t, n, loc));
-}
+fun makeName Name ::= n::String loc::Location =
+  if isUpper(head(explode("", n)))
+  then nameIdUpper(terminal(IdUpper_t, n, loc))
+  else nameIdLower(terminal(IdLower_t, n, loc));
 
 function makeQName
 QName ::= n::String loc::Location

@@ -24,11 +24,9 @@ top::UniqueRefSite ::=
 {}
 
 -- Append lists of references, ignoring duplicate refs to the same ref site
-function unionMutuallyExclusiveRefs
-[(String, UniqueRefSite)] ::= rs1::[(String, UniqueRefSite)] rs2::[(String, UniqueRefSite)]
-{
-  return rs1 ++ filter(\ r::(String, UniqueRefSite) -> !lookup(r.1, rs1).isJust, rs2);
-}
+fun unionMutuallyExclusiveRefs
+[(String, UniqueRefSite)] ::= rs1::[(String, UniqueRefSite)] rs2::[(String, UniqueRefSite)] =
+  rs1 ++ filter(\ r::(String, UniqueRefSite) -> !lookup(r.1, rs1).isJust, rs2);
 
 -- Compare unique ref sites based on ref set.
 -- Source location doesn't matter, and we should never be comparing unique ref sites from different grammars.

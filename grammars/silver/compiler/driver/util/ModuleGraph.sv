@@ -30,19 +30,14 @@ mentionedGrammars: Any mentioned grammar (for build process, what grammars to lo
  - @param e  All built grammars
  - @return  Whether the target is exported by the sources.
  -}
-function isExportedBy
-Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
-{
-  return contains(target, computeOptionalDeps(sources, e));
-}
+fun isExportedBy Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec> =
+  contains(target, computeOptionalDeps(sources, e));
 {--
  - Alternate for the "reference set" heuristic: ignore options, but otherwise follow exports
  -}
-function isStrictlyExportedBy
-Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
-{
-  return contains(target, computeDependencies(sources, e));
-}
+fun isStrictlyExportedBy
+Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec> =
+  contains(target, computeDependencies(sources, e));
 
 
 {--
@@ -98,11 +93,8 @@ function expandAllDeps
  - @param e  All built grammars
  - @return  The initial set, plus any grammar directly or indirectly exported by it, even conditionally.
  -}
-function computeDependencies
-[String] ::= need::[String] e::EnvTree<Decorated RootSpec>
-{
-  return expandCondBuilds(expandExports(need, [], e), [], [], e);
-}
+fun computeDependencies [String] ::= need::[String] e::EnvTree<Decorated RootSpec> =
+  expandCondBuilds(expandExports(need, [], e), [], [], e);
 
 {--
  - Closes over triggered grammars, including the exports (and triggers ofc) of those triggered grammars.
@@ -207,18 +199,11 @@ function inductivelyExpand
  - @param rules  A set of rules [[trigger, triggered by any of...]...]
  - @return  A list of triggers that the initial set tripped, not in the inital set already.
  -}
-function noninductiveExpansion
-[String] ::= initial::[String] rules::[[String]]
-{
-  return if null(rules) then []
-         else if any(map(contains(_, initial), tail(head(rules)))) && !contains(head(head(rules)), initial)
-              then head(head(rules)) :: noninductiveExpansion(initial, tail(rules))
-              else noninductiveExpansion(initial, tail(rules));
-}
+fun noninductiveExpansion [String] ::= initial::[String] rules::[[String]] =
+  if null(rules) then []
+  else if any(map(contains(_, initial), tail(head(rules)))) && !contains(head(head(rules)), initial)
+       then head(head(rules)) :: noninductiveExpansion(initial, tail(rules))
+       else noninductiveExpansion(initial, tail(rules));
 
-function skipNulls
-[b] ::= f::([b] ::= a)  l::[a]
-{
-  return if null(l) then [] else f(head(l));
-}
+fun skipNulls [b] ::= f::([b] ::= a)  l::[a] = if null(l) then [] else f(head(l));
 

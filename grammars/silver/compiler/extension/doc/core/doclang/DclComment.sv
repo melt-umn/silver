@@ -126,11 +126,8 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
         (!fromMaybe(false, fromMaybe(kwdValue(terminal(ConfigValueKeyword_t, "off")), lookup("hide", blocks.configArgs)).asBool));
 }
 
-function getBlocksNamed
-[String] ::= l::[Pair<String String>] f::String
-{
-    return flatMap((\x::Pair<String String> -> if x.fst==f then [x.snd] else []), l);
-}
+fun getBlocksNamed [String] ::= l::[Pair<String String>] f::String =
+  flatMap((\x::Pair<String String> -> if x.fst==f then [x.snd] else []), l);
 
 function processConfigOptions
 Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String ConfigValue>] conf::[DocConfigSetting]
@@ -178,15 +175,12 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
            end;
 }
 
-function checkParams
-[String] ::= p::[String] b::[String]
-{
-    return case p, b of
-           | pn::p_, bn::b_ when pn==bn -> checkParams(p_, b_)
-           | pn::p_, bn::b_ -> s"Param '${pn}' in wrong order in doc-comment" :: checkParams(p_, b_)
-           | _, _ -> []
-           end;
-}
+fun checkParams [String] ::= p::[String] b::[String] =
+  case p, b of
+  | pn::p_, bn::b_ when pn==bn -> checkParams(p_, b_)
+  | pn::p_, bn::b_ -> s"Param '${pn}' in wrong order in doc-comment" :: checkParams(p_, b_)
+  | _, _ -> []
+  end;
 
 abstract production errorDclComment
 top::DclComment ::= content::String error::ParseError

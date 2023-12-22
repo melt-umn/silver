@@ -22,14 +22,10 @@ instance DivisionRing Float {
   -
   - Iff the type is a commutative ring, this is equivalent to `rightDiv`.
   -}
-function leftDiv
-DivisionRing a => a ::= l::a  r::a
-{ return mul(recip(r), l); }
+fun leftDiv DivisionRing a => a ::= l::a  r::a = mul(recip(r), l);
 
 @{- Division implemented as `l * (1/r)`.
   -
   - Iff the type is a commutative ring, this is equivalent to `leftDiv`.
   -}
-function rightDiv
-DivisionRing a => a ::= l::a  r::a
-{ return mul(l, recip(r)); }
+fun rightDiv DivisionRing a => a ::= l::a  r::a = mul(l, recip(r));

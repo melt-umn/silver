@@ -93,15 +93,12 @@ top::AGDcl ::=
   propagate moduleNames, defs, occursDefs, jarName;
 }
 
-function warnIfMultJarName
-[Message] ::= n1::Maybe<String>  n2::Maybe<String>
-{
-  return if n1.isJust && n2.isJust
-         then [wrnFromOrigin(ambientOrigin(),
-                 "Duplicate specification of jar name: " ++
-                 n1.fromJust ++ " and " ++ n2.fromJust)]
-         else [];
-}
+fun warnIfMultJarName [Message] ::= n1::Maybe<String>  n2::Maybe<String> =
+  if n1.isJust && n2.isJust
+  then [wrnFromOrigin(ambientOrigin(),
+          "Duplicate specification of jar name: " ++
+          n1.fromJust ++ " and " ++ n2.fromJust)]
+  else [];
 
 -- All AGDcls have their own file, or modification. None here.
 
