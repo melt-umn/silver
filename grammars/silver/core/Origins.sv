@@ -165,11 +165,8 @@ fun getUrOrigin Maybe<OriginInfo> ::= arg::a =
   end;
 
 @{- Try to walk back to a parsedOriginInfo and extract the location the node came from in the source -}
-function getParsedOriginLocation
-Maybe<Location> ::= arg::a
-{
-  return getParsedOriginLocationFromChain(getOriginInfoChain(arg));
-}
+fun getParsedOriginLocation Maybe<Location> ::= arg::a =
+  getParsedOriginLocationFromChain(getOriginInfoChain(arg));
 
 fun getParsedOriginLocationFromChain Maybe<Location> ::= chain::[OriginInfo] =
   case chain of
@@ -193,15 +190,11 @@ fun getParsedOriginLocation_findLogicalLocationNote Maybe<Location> ::= notes::[
 
 fun originNotesToString String ::= ns::[OriginNote] = implode(", ", filterMap((.notepp), ns));
 
-function getOriginNotesString
-String ::= arg::a
-{
-  return
-    case getOriginInfo(arg) of
-    | just(oi) -> originNotesToString(oi.originNotes)
-    | nothing() -> ""
-    end;
-}
+fun getOriginNotesString String ::= arg::a =
+  case getOriginInfo(arg) of
+  | just(oi) -> originNotesToString(oi.originNotes)
+  | nothing() -> ""
+  end;
 
 @{-
   - Dump out two objects in a format for svdraw2 to consume and draw their
