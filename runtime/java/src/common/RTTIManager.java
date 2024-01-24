@@ -117,6 +117,9 @@ public final class RTTIManager {
 		public final boolean hasSyn(String attrName) {
 			return synOccursIndices.containsKey(attrName);
 		}
+		public final boolean hasAttribute(String attrName) {
+			return synOccursIndices.containsKey(attrName) || inhOccursIndices.containsKey(attrName);
+		}
 		public final int getInhOccursIndex(String attrName) {
 			if (!hasInh(attrName)) {
 				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
@@ -137,6 +140,17 @@ public final class RTTIManager {
 		public Set<String> getAllSynth() {
 			return synOccursIndices.keySet();
 		}
+
+		public List<String> alhpabeticalAttributes() {
+			Set<String> allAttributesSet = new HashSet<>();
+			allAttributesSet.addAll(inhOccursIndices.keySet());
+			allAttributesSet.addAll(synOccursIndices.keySet());
+			List<String> allAttributesList = new ArrayList<>();
+			allAttributesList.addAll(allAttributesSet);
+			allAttributesList.sort(null);
+			return allAttributesList;
+
+		} 
 
 		public Map<String, Integer> getSynOccursIndices() {
 			return synOccursIndices;

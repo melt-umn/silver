@@ -1,3 +1,5 @@
+//TODO: Error handling is not good right now
+
 package common;
 
 import java.util.HashMap;
@@ -5,6 +7,10 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Stack;
+import java.util.ArrayList;
+import java.util.List;
+
 
 import common.Util.*;
 
@@ -21,22 +27,30 @@ public class Debug {
     }
 
     public void runingDebug(DecoratedNode tree) {
-        // Do interactive debug stuff
         Scanner inp = new Scanner(System.in);
-  
-        System.out.println("Enter characters, "
-                           + " and 'q' to quit.");
+        System.out.println("Enter characters, and 'q' to quit.");
         String userInput; 
         String[] userInputList;
+        boolean toggleProdDisplay = true;
+        DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
+        this.nodeStack = new Stack<DecoratedNode>();
 
-        //COntrol loop
+        if(toggleProdDisplay){
+            printProduction(currentNode);
+        }
+
+        //Control loop
         loop: do { 
             userInput = inp.nextLine();
             userInputList = userInput.split(" ");
+
+            //Each case has a set of conditionals to make everything is in order befor running
+            //in the final case they call a helper function that does most of the work
             switch (userInputList[0]) {
-                case "up": 
+
+                case "up": case "u": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: up<>");
                     }else{
@@ -45,67 +59,128 @@ public class Debug {
                         }else if (currentNode.getParent() == null){
                             System.out.println("Null parent");
                         }else{
+                            nodeStack.push(currentNode);
                             currentNode = currentNode.getParent();
-                            System.out.println("going to parent");
+                            //System.out.println("going to parent");
+                            if(toggleProdDisplay){
+                                printProduction(currentNode);
+                            }
                         }
                     }
                     break;
-                case "down":  
+
+                case "down": case "d":  
+                    int childNum = 0; 
                     if (userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: down<node>");
+                        //System.out.println("invalid, correct usage: down <node>");
+                        System.out.println("Which child?");
+                        printChildren(currentNode);
+                        childNum = inp.nextInt();
+                        inp.nextLine();
                     }else{
-                        DecoratedNode childNode = down(Integer.parseInt(userInputList[1]));
-                        if(childNode == null){
-                            System.out.println("invalid child number");
+                        childNum = Integer.parseInt(userInputList[1]);
+                    }
+
+                    childNode = down(childNum);
+                    if(childNode == null){
+                        System.out.println("invalid child number");
+                    } 
+                    else{
+                        nodeStack.push(currentNode);
+                        currentNode = childNode;
+                        //System.out.println("going down");
+                        if(toggleProdDisplay){
+                            printProduction(currentNode);
+                        }
+                    }
+                    break;
+
+                case "undo":
+                    if (userInputList.length != 1) {
+                        System.out.println("invalid, correct usage: undo<>");
+                    }else{
+                        if(nodeStack.empty()){
+                            System.out.println("invalid no node to undo");
                         } 
                         else{
-                            System.out.println("going down");
-                            currentNode = childNode;
+                            DecoratedNode newNode = nodeStack.pop();
+                            currentNode = newNode;
+                            //System.out.println("undoing last movement");
+                            if(toggleProdDisplay){
+                                printProduction(currentNode);
+                            }
                         }
                     }
                     break;
+
+                //TODO: Untested, find good test case
                 case "forwards": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: forwards<>");
                     }else{
-                        DecoratedNode childNode = forwards(currentNode);
+                        childNode = forwards(currentNode);
                         if(childNode == null){
                             System.out.println("invalid no node to forward");
-                        } 
+                        }
                         else{
                             System.out.println("going forward");
                             currentNode = childNode;
+                            if(toggleProdDisplay){
+                                printProduction(currentNode);
+                            }
                         }
                     }
                     break;
+
+                //TODO: Untested, find good test case
                 case "backtrack": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: backtrack<>");
                     }else{
-
-                        DecoratedNode childNode = forwards(currentNode);
+                        childNode = backtrack(currentNode);
                         if(childNode == null){
                             System.out.println("invalid no node to backtrack to");
                         } 
                         else{
                             System.out.println("going backwrds");
                             currentNode = childNode;
+                            if(toggleProdDisplay){
+                                printProduction(currentNode);
+                            }
                         }
                     }
                     break;
+
+                case "toggle":
+                    if (userInputList.length != 2) {
+                        System.out.println("please indicate what you want to toggle ex: 'toggle prodDisplay'");
+                    }else{
+                        if(userInputList[1].equals("prodDisplay")){
+                            if(toggleProdDisplay){
+                                System.out.println("Production Display off");
+                                toggleProdDisplay = false;
+                            }else{
+                                System.out.println("Production Display on");
+                                 toggleProdDisplay = true;
+                            }
+                        }
+                        else{
+                            System.out.println("legal toggles: prodDisplay");
+                            System.out.println(userInputList[1]);
+                        }
+                    }
+                    break;
+
+
                 //Display the production
                 case "prod": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: prod<>");
                     }else{
-                        String partent_type = currentNode.undecorate().getProdleton().getName();
-                        String child_types[] = currentNode.undecorate().getProdleton().getChildTypes();
-                        System.out.println(partent_type);
-                        for (int i = 0; i < child_types.length; i++){
-                            System.out.println(child_types[i]);
-                        }
+                        printProduction(currentNode);
                     }
                     break;
+                
                 //TODO:Implement this - use genericShow
                 case "eq": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
@@ -115,6 +190,7 @@ public class Debug {
 
                     }
                     break;
+
                 //List synthesized attributes
                 case "listSynth": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
@@ -125,6 +201,7 @@ public class Debug {
                         }
                     }
                     break;
+                
                 //List inherited attributes
                 case "listInher": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
@@ -135,38 +212,50 @@ public class Debug {
                         }
                     }
                     break;
+
                 //list all attributes
-                case "list":
+                case "list": case "l":
                     if (userInputList.length != 1 && userInputList.length != 2) {
                         System.out.println("invalid, correct usage: list<node?>");
                     }else{
-                        if(listSynth(currentNode) + listInher(currentNode) == 0){
-                            System.out.println("no attributes");
-                        }
+                        // if(listSynth(currentNode) + listInher(currentNode) == 0){
+                        //     System.out.println("no attributes");
+                        // }
+                        printAttributes(currentNode);
                     }
                     break;
-                //TODO: Implement this
-                case "view": 
+
+                //Show the values of a specific attribute
+                case "view": case "v": 
+                    String attributeName = ""; 
+                    Integer attributeNum = 0;
                     if (userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: view<attr>");
+                        System.out.println("Which attribute?");
+                        printAttributes(currentNode);       
+                        attributeNum = inp.nextInt();
+                        inp.nextLine();
+                        attributeName = getAttributeNameFromNum(currentNode, attributeNum);
                     }else{
-                        // System.out.println("do the view list");
-                        viewAttr(currentNode, userInputList[1]);
+                        attributeNum = Integer.parseInt(userInputList[1]);
+                        attributeName = getAttributeNameFromNum(currentNode, attributeNum);
                     }
+                    printAttrFromName(currentNode, attributeName);
                     break;
+
                 case "help": 
-                    System.out.println("up<>");
-                    System.out.println("down<node>");
-                    System.out.println("view<attr>");
-                    System.out.println("forwards<>");
-                    System.out.println("backtrack<>");
-                    System.out.println("prod<>");
-                    System.out.println("eq<attr?>");
-                    System.out.println("listSynth<node?>");
-                    System.out.println("listInher<node?>");
-                    System.out.println("list<node?>");
+                    System.out.println("up");
+                    System.out.println("down <node>");
+                    System.out.println("view <attr>");
+                    System.out.println("forwards");
+                    System.out.println("backtrack");
+                    System.out.println("prod");
+                    System.out.println("eq");
+                    System.out.println("listSynth");
+                    System.out.println("listInher");
+                    System.out.println("list");
                     System.out.println("exit");
                     break;
+
                 //Many ways to leave
                 case "exit": 
                 case "q": 
@@ -175,24 +264,20 @@ public class Debug {
                     break loop;
                 default: 
                     System.out.println("invalid input call help for legal inputs");
+                    System.out.println(userInput);
                     break;
             }
         } while(true); 
     }
     private DecoratedNode root;
     private DecoratedNode currentNode;
+    private Stack<DecoratedNode> nodeStack;
     HashMap<Integer, StringObjectPair> currentNodeSynthAttrs;
     HashMap<Integer, StringObjectPair> currentNodeInhAttrs;
     HashMap<Integer, StringObjectPair> currentNodeLocalAttrs;
     private int currentLine;
     private int currentColumn;
-    // public Debugger(DecoratedNode root)
-    // {
-    //     this.root = root;
-    //     this.currentNode = root;
-    //     this.currentLine = 0;
-    //     this.currentColumn = 0;
-    // }
+
     public void setCurrentNode(DecoratedNode node)
     {
         currentNodeSynthAttrs = null;
@@ -200,6 +285,7 @@ public class Debug {
         currentNodeLocalAttrs = null;
         currentNode = node;
     }
+
     public DecoratedNode up()
     {
         if (currentNode.getParent() != null)
@@ -209,6 +295,7 @@ public class Debug {
         }
         return null;
     }
+
     public DecoratedNode down(int child)
     {
         if (currentNode.getNode().getNumberOfChildren() > child)
@@ -218,25 +305,41 @@ public class Debug {
         }
         return null;
     }
-    public DecoratedNode forwards(DecoratedNode Node)
+
+    public void printChildren(DecoratedNode node)
     {
-        if (Node.getNode().hasForward()){
-            currentNode = Node.forward();
+        String child_productions[] = node.undecorate().getProdleton().getChildTypes();
+        for (int i = 0; i < child_productions.length; i++){
+            System.out.println(Integer.toString(i) + ": " + child_productions[i] + " ");
+        } 
+    }
+
+    public DecoratedNode forwards(DecoratedNode node)
+    {
+        if (node.getNode().hasForward()){
+            currentNode = node.forward();
             return currentNode;
         }
         return null;
     }
-    public DecoratedNode backtrack(DecoratedNode Node)
+    public DecoratedNode backtrack(DecoratedNode node)
     {
-        currentNode = Node.getForwardParent();
+        currentNode = node.getForwardParent();
         return currentNode;
 
     }
-    // ask erik how this works again
-    public void printProduction()
+    
+    public void printProduction(DecoratedNode node)
     {
-        currentNode.getNode().getProdleton().getName();
+        String partent_production = node.undecorate().getProdleton().getName();
+        String child_productions[] = node.undecorate().getProdleton().getChildTypes();
+        System.out.print(partent_production + " ");
+        for (int i = 0; i < child_productions.length; i++){
+            System.out.print(child_productions[i] + " ");
+        }
+        System.out.print("\n");
     }
+    
     // Prints out the equation of the specified attr.
     // If attr is not specified, prints out the equations for all the attributes on the current node.
     // via eric we can just add equations as an attribute within our AG
@@ -244,23 +347,15 @@ public class Debug {
     {
 
     }
+
     public void eqInher(int attribute)
     {
 
     }
+
     // no optional params in java, could use overloading or just pass in null
     public int listSynth(DecoratedNode node)
     {
-        // Node undecorated = node.undecorate();
-        // int count = undecorated.getNumberOfSynAttrs();
-        // HashMap<Integer, StringObjectPair> hash = new HashMap<Integer, StringObjectPair>();
-        // for(int i = 0; i < count; i++)
-        // {
-        //     Lazy attribute = node.getSynthesized(i);
-        //     // do whatever printing, no method getSynAttrValue
-        //     hash.put(i, new StringObjectPair(currentNode.getNameOfSynAttr(i), currentNode.evalSyn(i)));
-        // }
-        // currentNodeSynthAttrs = hash;
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         Set<String> synAttrSet = nonterminalton.getAllSynth();
@@ -276,15 +371,6 @@ public class Debug {
 
     public int listInher(DecoratedNode node)
     {
-        // Node undecorated = node.undecorate();
-        // int count = undecorated.getNumberOfInhAttrs();
-        // HashMap<Integer, StringObjectPair> hash = new HashMap<Integer, StringObjectPair>();
-        // for(int i = 0; i < count; i++)
-        // {
-        //     // no getInherited method;
-        //     // Lazy attribute = node.getInherited(i);
-        //     Lazy attribute = node.inherited(i);
-        // }
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         Set<String> inhAttrSet = nonterminalton.getAllInh();
@@ -296,33 +382,29 @@ public class Debug {
             num_attr++;
         }
         return num_attr;
-    }
-    /* 
-    public void listLocalAttrs(DecoratedNode node)
-    {
-        // Node undecorated = node.undecorate();
-        // int count = undecorated.getNumberOfLocalAttrs();
-        // HashMap<Integer, StringObjectPair> hash = new HashMap<Integer, StringObjectPair>();
-        // for(int i = 0; i < count; i++)
-        // {
-        //     Lazy attribute = node.getLocal(i);
-        //     // do whatever printing
-        //     hash.put(i, new StringObjectPair(currentNode.getNameOfLocalAttr(i), currentNode.evalLocalDecorated(i)));
-        //     System.out.println("Attribute = " + entry.getKey() + 
-        //                      ", Index = " + entry.getValue())
-        // }
-        // currentNodeLocalAttrs = hash;
-        int count = node.getNumberOfLocalAttrs();
-        for(int i = 0; i < count; i++)
+    }   
+
+    public void printAttributes(DecoratedNode node){
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        List<String> attributeList = nonterminalton.alhpabeticalAttributes();
+        int i = 0;
+
+        for (String attribute : attributeList)
         {
-            Lazy attribute = node.getLocal(i);
-            // do whatever printing
-            System.out.println("Attribute = " + currentNode.getNameOfLocalAttr(i) + 
-                             ", Index = " + Integer.toString(i));
+            System.out.println(Integer.toString(i) + ": " + attribute);
+            i++;
         }
     }
-     */
-     
+
+    public String getAttributeNameFromNum(DecoratedNode node, Integer attributeNum){
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        List<String> attributeList = nonterminalton.alhpabeticalAttributes();
+
+        return attributeList.get(attributeNum);
+    }
+
     // may want to rethink this such that view prints representation of attribute on current node, 
     // or allow an int to be passed in as the index of the child whose attribute you'd like to print info for
     public int viewSynth(DecoratedNode node, String attribute)
@@ -362,7 +444,7 @@ public class Debug {
         return 1;   
     }
 
-    public int viewAttr(DecoratedNode node, String attribute)
+    public Integer printAttrFromName(DecoratedNode node, String attribute)
     {
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
@@ -374,13 +456,13 @@ public class Debug {
         }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
             index = nonterminalton.getInhOccursIndex(attribute);
         }else{
-            System.out.println("Bad input, legal inputs:");
-            Set<String> allInputs = new HashSet<String>();
-            Set<String> synAttrSet = nonterminalton.getAllSynth();
-            Set<String> inhAttrSet = nonterminalton.getAllInh();
-            allInputs.addAll(synAttrSet);
-            allInputs.addAll(inhAttrSet);
-            System.out.println("Keys: " + allInputs);
+            // System.out.println("Bad input, legal inputs:");
+            // Set<String> allInputs = new HashSet<String>();
+            // Set<String> synAttrSet = nonterminalton.getAllSynth();
+            // Set<String> inhAttrSet = nonterminalton.getAllInh();
+            // allInputs.addAll(synAttrSet);
+            // allInputs.addAll(inhAttrSet);
+            // System.out.println("Keys: " + allInputs);
             return -1;
         }
         if(isSynth){
@@ -398,10 +480,39 @@ public class Debug {
     {
 
     }
-    public boolean isContractum()
+
+    //TODO: fix 
+    /* 
+    public void listLocalAttrs(DecoratedNode node)
     {
-        return false;
+        // Node undecorated = node.undecorate();
+        // int count = undecorated.getNumberOfLocalAttrs();
+        // HashMap<Integer, StringObjectPair> hash = new HashMap<Integer, StringObjectPair>();
+        // for(int i = 0; i < count; i++)
+        // {
+        //     Lazy attribute = node.getLocal(i);
+        //     // do whatever printing
+        //     hash.put(i, new StringObjectPair(currentNode.getNameOfLocalAttr(i), currentNode.evalLocalDecorated(i)));
+        //     System.out.println("Attribute = " + entry.getKey() + 
+        //                      ", Index = " + entry.getValue())
+        // }
+        // currentNodeLocalAttrs = hash;
+        int count = node.getNumberOfLocalAttrs();
+        for(int i = 0; i < count; i++)
+        {
+            Lazy attribute = node.getLocal(i);
+            // do whatever printing
+            System.out.println("Attribute = " + currentNode.getNameOfLocalAttr(i) + 
+                             ", Index = " + Integer.toString(i));
+        }
     }
+     */
+     
+    public boolean isContractum(DecoratedNode node)
+    {
+        return node.getNode().hasForward();
+    }
+
     public static class StringObjectPair {
         private String stringValue;
         private Object objectValue;
