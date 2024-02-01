@@ -149,7 +149,6 @@ public final class RTTIManager {
 			allAttributesList.addAll(allAttributesSet);
 			allAttributesList.sort(null);
 			return allAttributesList;
-
 		} 
 
 		public Map<String, Integer> getSynOccursIndices() {
@@ -160,5 +159,7 @@ public final class RTTIManager {
 			return inhOccursIndices;
 		}
 	}
+
+	//TODO: Add way to access children names
 
 }

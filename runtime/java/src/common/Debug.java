@@ -78,6 +78,7 @@ public class Debug {
                         childNum = inp.nextInt();
                         inp.nextLine();
                     }else{
+                        //Explodes if the input is not a integer should gracefully exit
                         childNum = Integer.parseInt(userInputList[1]);
                     }
 
@@ -226,6 +227,9 @@ public class Debug {
                     break;
 
                 //Show the values of a specific attribute
+
+                //Clear the prefix that is identical
+                //Print names of children not just types
                 case "view": case "v": 
                     String attributeName = ""; 
                     Integer attributeNum = 0;
@@ -236,10 +240,15 @@ public class Debug {
                         inp.nextLine();
                         attributeName = getAttributeNameFromNum(currentNode, attributeNum);
                     }else{
+                        //Explodes if the input is not a integer should gracefully exit
                         attributeNum = Integer.parseInt(userInputList[1]);
                         attributeName = getAttributeNameFromNum(currentNode, attributeNum);
                     }
                     printAttrFromName(currentNode, attributeName);
+                    break;
+
+                case "local":
+                    listLocalAttrs(currentNode);
                     break;
 
                 case "help": 
@@ -481,32 +490,36 @@ public class Debug {
 
     }
 
-    //TODO: fix 
-    /* 
+    //TODO: Add to the other attributes
+    //TODO: Print alst if unique otherwise print entire
     public void listLocalAttrs(DecoratedNode node)
     {
-        // Node undecorated = node.undecorate();
-        // int count = undecorated.getNumberOfLocalAttrs();
+        // int count = node.getNode().getNumberOfLocalAttrs();
         // HashMap<Integer, StringObjectPair> hash = new HashMap<Integer, StringObjectPair>();
         // for(int i = 0; i < count; i++)
         // {
-        //     Lazy attribute = node.getLocal(i);
+        //     Lazy attribute = node.getNode().getLocal(i);
         //     // do whatever printing
         //     hash.put(i, new StringObjectPair(currentNode.getNameOfLocalAttr(i), currentNode.evalLocalDecorated(i)));
         //     System.out.println("Attribute = " + entry.getKey() + 
-        //                      ", Index = " + entry.getValue())
+        //                      ", Index = " + entry.getValue());
         // }
         // currentNodeLocalAttrs = hash;
-        int count = node.getNumberOfLocalAttrs();
+
+
+
+        int count = node.getNode().getNumberOfLocalAttrs();
+        //System.out.println("Attribute = " + Integer.toString(count));
+
         for(int i = 0; i < count; i++)
         {
-            Lazy attribute = node.getLocal(i);
-            // do whatever printing
-            System.out.println("Attribute = " + currentNode.getNameOfLocalAttr(i) + 
-                             ", Index = " + Integer.toString(i));
+            Lazy attribute = node.getNode().getLocal(i);
+            Object o = attribute.eval(node);
+            // System.out.println();
+            System.out.println("Attribute = " + node.getNode().getNameOfLocalAttr(i) + 
+                               "\nValue = " + Util.genericShow(o));
         }
     }
-     */
      
     public boolean isContractum(DecoratedNode node)
     {
