@@ -856,3 +856,280 @@ public class DecoratedNode implements Decorable, Typed {
 			return evalInhViaFwdP(attribute);
 	}
 }
+
+
+	// **************************************************************
+	// Functions and attributes added for context message support
+	
+	// To add:
+	// setDebuggingIndex() 	DONE
+	// getDebuggingIndex() 	DONE
+	// getRedex() 			DONE
+	// getIsRedex() 		DONE
+	// getContractum() 		DONE
+	// getIsContractum() 	DONE
+	// getFilename() 		DONE
+	// getStartCoordinates()DONE
+	// getEndCoordinates() 	DONE
+
+	// getOrigin() 			DONE
+	// getIsNew() 			DONE
+	
+	// getPrettyPrint()		DONE
+
+	// getIsAttribute() 	SORT-OF-DONE
+	
+	private int debugging_index;
+	private boolean is_redex;
+	private boolean is_contractum;
+	private boolean is_attribute;
+	private boolean need_set_is_attribute = true;
+
+	private boolean need_compute_redex_contractum = true;
+
+	public void setDebuggingIndex(int i) {
+		this.debugging_index = i;
+	}
+	public int getDebuggingIndex() {
+		return this.debugging_index;
+	}
+
+	public boolean getIsRedex() {
+		if (this.need_compute_redex_contractum) {
+			this.compute_redex_contractum();
+		}
+		return this.is_redex;
+	}
+	public boolean getIsContractum() {
+		if (this.need_compute_redex_contractum) {
+			this.compute_redex_contractum();
+		}
+		return this.is_contractum;
+	}
+
+	private void compute_redex_contractum() {
+		if (!this.need_compute_redex_contractum) {
+			return;
+		} 
+
+		// Consider as not mutually exclusive categories for now
+		// Something could forward to something that forwards again
+		// e.g. case -> ifthen -> ifthenelse
+
+		// This is a very basic implementation that only looks
+		// at forwards as the only way to have reduction semantics
+
+		if (this.self.hasForward()) {
+			this.is_redex = true;
+		}
+		else {
+			this.is_redex = false;
+		}
+		
+		if (this.forwardParent) {
+			this.is_contractum = true;
+		}
+		else {
+			this.is_contractum = false;
+		}
+		this.need_compute_redex_contractum = false;
+	}
+
+	public DecoratedNode getRedex() {
+		// Wrapper for recursive helper
+		return this.getRedexHelper(this); 
+	}
+	private DecoratedNode getRedexHelper(DecoratedNode dn) {
+		// For now assume abstract syntax tree root has null parent
+		// or just that dn.parent repeatedly will eventually find null 
+		
+		// parent of DecoratedNode root is TopNode. Might need that and not null
+		if (dn instanceof TopNode) {
+			return null;
+		}
+		
+		if (dn.is_redex) {
+			return dn;
+		}
+		else {
+			return getRedexHelper(dn.parent);
+		}
+	} 
+
+	public DecoratedNode getContractum() {
+		// Wrapper for recursive helper
+		return this.getContractumHelper(this); 
+	}
+	private DecoratedNode getContractumHelper(DecoratedNode dn) {
+		// For now assume abstract syntax tree root has null parent
+		// or just that dn.parent repeatedly will eventually find null 
+		if (dn == null) {
+			return null;
+		}
+		
+		if (dn.is_contractum) {
+			return dn;
+		}
+		else {
+			return getContractumHelper(dn.parent);
+		}
+	} 
+
+	public String getFilename() {
+		if (this.self == null) {
+			return "";
+		} 
+		else if (this.self instanceof silver.core.Alocation) {
+			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+			return file;
+		} else {
+			return "";
+		}
+	}
+
+	public FileCoordinate getStartCoordinates() {
+		if (this.self == null) {
+			return null;
+		} 
+		else if (this.self instanceof silver.core.Alocation) {
+			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+			return new FileCoordinate(line, col);
+		} 
+		else {
+			return null;
+		}
+	}
+
+	public FileCoordinate getEndCoordinates() {
+		if (this.self == null) {
+			return null;
+		} 
+		else if (this.self instanceof silver.core.Alocation) {
+			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
+			return new FileCoordinate(line, col);
+		} 
+		else {
+			return null;
+		}
+	}
+
+	// Wrapper around OriginUtils.getOriginOrNull()
+	// for the sake of my naming convention
+	// Not yet used but probably need for reference attributes
+	public NOriginInfo getOrigin() {
+		return OriginUtils.getOriginOrNull(this);
+	}
+
+	// If not a contractum or redex, 
+	// if getOrigin(this) == getRedex(this)
+	// implies a node is "newly" created
+	// like const(0) from neg(x) -> sub(0, x)
+	public boolean getIsNew() {
+		// Silver origin tracking does
+		// not return Nodes or Decorated nodes
+		// to do == comparison
+
+		// From Lucas on Slack
+		// "You just want to get the NOriginInfo, 
+		// check if the result is a PoriginOriginInfo 
+		// or PoriginAndRedexOriginInfo, if it is then
+		//  pull out the first child and do .getName() on that"
+		
+		NOriginInfo oinfo = OriginUtils.getOriginOrNull(this);
+		if (oinfo == null) {
+			return false;
+		}
+		if (oinfo instanceof PoriginAndRedexOriginInfo || 
+			oinfo instanceof PoriginOriginInfo) {
+			
+			// Might need check types here
+			// Should get only Nodes from here
+			Object origin = (Object)oinfo.getChild_origin();
+			// I don't know if this is will be a Node or DecoratedNode yet
+			String child_prod_name = "";
+			if (origin instanceof Node) {
+				child_prod_name = origin.getName();
+			}
+			// Not going to be a DecoratedNode
+			else if (origin instanceof DecoratedNode) {
+				child_prod_name = origin.getNode().getName();
+			}
+			else {
+				System.err.println("ERROR. origin not Node nor DecoratedNode");
+			}
+			// New if different production only
+			return !child_prod_name.equals(this.self.getName());
+		}
+		return false;
+	}
+
+	// access pretty print attribute
+	// through this function (a synthesized attribute)
+	// "pp" seems to be standard pretty print name
+	public String getPrettyPrint() {
+
+		// use genericShow(): it accesses pp if it exists
+		return this.genericShow().toString();
+
+		// int num_attrs = this.self.getNumberOfSynAttrs();
+		// for (int i = 0; i < num_attrs; i++) {
+			
+		// 	// Search until find name that is "pp"
+		// 	String name = this.self.getNameOfSynAttr(i);
+		// 	if (name.equals("pp")) {
+		// 		Lazy l_pp = this.self.getSynthesized(i);
+		// 		Object pp = evalSyn(l_pp);
+		// 		assert(l_pp != null)
+		// 		assert(pp instanceof String)
+		// 		return (String)pp;
+		// 	}
+		// }
+		// System.err.println("No pretty print (pp) attribute defined");
+		// return ""
+	}
+
+	// only set is_attribute once
+	public boolean getIsAttribute() {
+		if (this.need_set_is_attribute) {
+			this.setIsAttribute();
+			this.need_set_is_attribute = false;
+		}
+		return this.is_attribute;
+	}
+
+	// For now, assume there is a Silver annotation 
+	// "is-attribute" of type String on 
+	// higher-order attributes that is set to "TRUE" 
+	// when true and not existant or FALSE when false
+	// https://melt.cs.umn.edu/silver/ref/decl/annotations/ 
+	public void setIsAttribute() {
+		// Just walk through children of parent. .child() give you decorated node or something else
+		// just do == comparison. If same object, then child and not local higher-order attribute
+		
+		// if (this.need_set_is_attribute) {
+		// 	Object o = this.self.getAnno("is-attribute");
+		// 	if (o) {
+		// 		String s = (String)o;
+		// 		if (s.equals("TRUE")) {
+		// 			this.is_attribute = true;
+		// 			return;
+		// 		}
+		// 	}
+		// 	this.is_attribute = false;
+		// }
+
+		for (int i = 0; i < this.parent.childrenValues.length, i++) {
+			DecoratedNode dn = this.parent.childDecorated(i);
+			if (dn == this) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+}
