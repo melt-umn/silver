@@ -391,10 +391,8 @@ top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[
   top.flowEdges = [];
 }
 
-nonterminal PatternVarProjection;
-abstract production patternVarProjection
-top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
-{}
+data PatternVarProjection
+  = patternVarProjection child::String  typeName::String  patternVar::String;
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.
