@@ -141,7 +141,7 @@ public final class RTTIManager {
 			return synOccursIndices.keySet();
 		}
 
-		public List<String> alhpabeticalAttributes() {
+		public List<String> alphabeticalAttributes() {
 			Set<String> allAttributesSet = new HashSet<>();
 			allAttributesSet.addAll(inhOccursIndices.keySet());
 			allAttributesSet.addAll(synOccursIndices.keySet());

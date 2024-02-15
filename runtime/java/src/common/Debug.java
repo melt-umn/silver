@@ -32,6 +32,7 @@ public class Debug {
         String userInput; 
         String[] userInputList;
         boolean toggleProdDisplay = true;
+        boolean toggleHeadlessAttributes = true;
         DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
@@ -165,9 +166,17 @@ public class Debug {
                                  toggleProdDisplay = true;
                             }
                         }
+                        if(userInputList[1].equals("fullAttributeNames")){
+                            if(toggleHeadlessAttributes){
+                                System.out.println("Headless Attributes off");
+                                toggleHeadlessAttributes = false;
+                            }else{
+                                System.out.println("Headless Attributes on");
+                                toggleHeadlessAttributes = true;
+                            }
+                        }
                         else{
-                            System.out.println("legal toggles: prodDisplay");
-                            System.out.println(userInputList[1]);
+                            System.out.println("legal toggles: prodDisplay, fullAttributeNames");
                         }
                     }
                     break;
@@ -182,7 +191,7 @@ public class Debug {
                     }
                     break;
                 
-                //TODO:Implement this - use genericShow
+                //TODO:Implement this - use genericShow?
                 case "eq": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
                         System.out.println("invalid, correct usage: eq<attr?>");
@@ -222,30 +231,31 @@ public class Debug {
                         // if(listSynth(currentNode) + listInher(currentNode) == 0){
                         //     System.out.println("no attributes");
                         // }
-                        printAttributes(currentNode);
+                        printAttributes(currentNode, toggleHeadlessAttributes);
                     }
                     break;
 
                 //Show the values of a specific attribute
-
                 //Clear the prefix that is identical
-                //Print names of children not just types
+                //Print names of children not just types -- HARD!
                 case "view": case "v": 
                     String attributeName = ""; 
                     Integer attributeNum = 0;
+                    List<String> attributeList = allAttributesList(currentNode);
                     if (userInputList.length != 2) {
                         System.out.println("Which attribute?");
-                        printAttributes(currentNode);       
+                        printAttributes(currentNode, toggleHeadlessAttributes);       
                         attributeNum = inp.nextInt();
                         inp.nextLine();
-                        attributeName = getAttributeNameFromNum(currentNode, attributeNum);
+                        attributeName = attributeList.get(attributeNum);
                     }else{
                         //Explodes if the input is not a integer should gracefully exit
                         attributeNum = Integer.parseInt(userInputList[1]);
-                        attributeName = getAttributeNameFromNum(currentNode, attributeNum);
+                        attributeName = attributeList.get(attributeNum);
                     }
                     printAttrFromName(currentNode, attributeName);
                     break;
+
 
                 case "local":
                     listLocalAttrs(currentNode);
@@ -393,132 +403,142 @@ public class Debug {
         return num_attr;
     }   
 
-    public void printAttributes(DecoratedNode node){
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        List<String> attributeList = nonterminalton.alhpabeticalAttributes();
+    public void printAttributes(DecoratedNode node, boolean toggleHeadlessAttributes){
+        List<String> attributeList = allAttributesList(node);
+        if(toggleHeadlessAttributes){
+            attributeList = removeHeaders(allAttributesList(node));
+        }
         int i = 0;
+        //int prefixLength = commonPrefixLength(attributeList);
 
         for (String attribute : attributeList)
         {
+            //String attributeNoPrefix = attribute.substring(prefixLength);
             System.out.println(Integer.toString(i) + ": " + attribute);
             i++;
         }
     }
 
-    public String getAttributeNameFromNum(DecoratedNode node, Integer attributeNum){
+    //Should this be in Util? -- Also probably no what we want thinking about it a bit more
+    // public int commonPrefixLength(List<String> stringList){
+    //     String firstString = stringList.get(0);
+
+    //     //i is the prefix lenght we are testing
+    //     for (int i = 0; i < firstString.length(); i++) {
+    //         //look at all the strings and make sure they are all identical to the first at index i 
+    //         for (String element : stringList){
+    //             //If any sting is shorter than we are done
+    //             if (element.length() < i){
+    //                 return i;
+    //             }//If any string is not equal to the first we are done
+    //             else if(element.charAt(i) != firstString.charAt(i)){
+    //                 return i;
+    //             }
+    //         }
+    //     }
+    //     //If we broke out of the loop the first string is the common prefix
+    //     return firstString.length();
+    // }
+
+    //Should this be in Util?
+    public List<String> removeHeaders(List<String> stringList){
+        List<String> headlessList = new ArrayList<>();
+        for (String element : stringList){
+            int lastIndex = element.lastIndexOf(":");
+            headlessList.add(element.substring(lastIndex + 1));
+        }
+        return headlessList;
+    }
+
+    public void printAttrFromName(DecoratedNode node, String printAttribute){
+        List<String> attributeList = allAttributesList(node);
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        List<String> attributeList = nonterminalton.alhpabeticalAttributes();
+        Map<String, Object> attributeMap = new HashMap<>();
 
-        return attributeList.get(attributeNum);
-    }
-
-    // may want to rethink this such that view prints representation of attribute on current node, 
-    // or allow an int to be passed in as the index of the child whose attribute you'd like to print info for
-    public int viewSynth(DecoratedNode node, String attribute)
-    {
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        int index = 0;
-        if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
-            index = nonterminalton.getSynOccursIndex(attribute);
-        }else{
-            System.out.println("Bad input, legal inputs:");
-            Set<String> synAttrSet = nonterminalton.getAllSynth();
-            System.out.println("Keys: " + synAttrSet);
-            return -1;
+        for(String attribute : attributeList)
+        {
+            if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
+                Integer index = nonterminalton.getSynOccursIndex(attribute);
+                Lazy synthAttribute = node.getNode().getSynthesized(index);
+                Object o = synthAttribute.eval(node);
+                attributeMap.put(attribute, o);
+            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+                Integer index = nonterminalton.getInhOccursIndex(attribute);
+                Object o = node.evalInhSomehowButPublic(index);
+                attributeMap.put(attribute, o);
+            }else{ //Should be local
+                List<String> listLocals = listLocalAttrs(node);
+                Integer index = listLocals.indexOf(attribute);
+                Lazy localAttribute = node.getNode().getLocal(index);
+                Object o = localAttribute.eval(node);
+                attributeMap.put(attribute, o);
+            }
         }
-        Lazy synthAttribute = node.getNode().getSynthesized(index);
-        Object o = synthAttribute.eval(node);
-        System.out.println(Util.genericShow(o));
-        return 1;
+        System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
     }
 
-    public int viewInher(DecoratedNode node, String attribute)
+    //List of all and only local attributes
+    public List<String> listLocalAttrs(DecoratedNode node)
     {
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        int index = 0;
-        if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
-            index = nonterminalton.getInhOccursIndex(attribute);
-        }else{
-            System.out.println("Bad input, legal inputs:");
-            Set<String> inhAttrSet = nonterminalton.getAllInh();
-            System.out.println("Keys: " + inhAttrSet);
-            return -1;
-        }
-        Object o = node.evalInhSomehowButPublic(index);
-        System.out.println(Util.genericShow(o));
-        return 1;   
-    }
-
-    public Integer printAttrFromName(DecoratedNode node, String attribute)
-    {
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        int index = 0;
-        boolean isSynth = false;
-        if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
-            index = nonterminalton.getSynOccursIndex(attribute);
-            isSynth = true;
-        }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
-            index = nonterminalton.getInhOccursIndex(attribute);
-        }else{
-            // System.out.println("Bad input, legal inputs:");
-            // Set<String> allInputs = new HashSet<String>();
-            // Set<String> synAttrSet = nonterminalton.getAllSynth();
-            // Set<String> inhAttrSet = nonterminalton.getAllInh();
-            // allInputs.addAll(synAttrSet);
-            // allInputs.addAll(inhAttrSet);
-            // System.out.println("Keys: " + allInputs);
-            return -1;
-        }
-        if(isSynth){
-            Lazy synthAttribute = node.getNode().getSynthesized(index);
-            Object o = synthAttribute.eval(node);
-            System.out.println(Util.genericShow(o));
-        }else{
-            Object o = node.evalInhSomehowButPublic(index);
-            System.out.println(Util.genericShow(o));
-        }
-        return 1;
-    }
-    
-    public void viewLocals(DecoratedNode node, int attribute)
-    {
-
-    }
-
-    //TODO: Add to the other attributes
-    //TODO: Print alst if unique otherwise print entire
-    public void listLocalAttrs(DecoratedNode node)
-    {
-        // int count = node.getNode().getNumberOfLocalAttrs();
-        // HashMap<Integer, StringObjectPair> hash = new HashMap<Integer, StringObjectPair>();
-        // for(int i = 0; i < count; i++)
-        // {
-        //     Lazy attribute = node.getNode().getLocal(i);
-        //     // do whatever printing
-        //     hash.put(i, new StringObjectPair(currentNode.getNameOfLocalAttr(i), currentNode.evalLocalDecorated(i)));
-        //     System.out.println("Attribute = " + entry.getKey() + 
-        //                      ", Index = " + entry.getValue());
-        // }
-        // currentNodeLocalAttrs = hash;
-
-
-
         int count = node.getNode().getNumberOfLocalAttrs();
-        //System.out.println("Attribute = " + Integer.toString(count));
+        List<String> listLocals = new ArrayList<>();
 
         for(int i = 0; i < count; i++)
         {
             Lazy attribute = node.getNode().getLocal(i);
             Object o = attribute.eval(node);
-            // System.out.println();
-            System.out.println("Attribute = " + node.getNode().getNameOfLocalAttr(i) + 
-                               "\nValue = " + Util.genericShow(o));
+            listLocals.add(node.getNode().getNameOfLocalAttr(i));
         }
+        return listLocals;
+    }
+    
+
+    //Helper for printAttrFromName 
+    public List<String> allAttributesList(DecoratedNode node)
+    {
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        List<String> attributeList = nonterminalton.alphabeticalAttributes();
+        List<String> localAttributeList = listLocalAttrs(node);
+
+        attributeList.addAll(localAttributeList);
+        attributeList.sort(null);
+
+        return attributeList;
+    }
+
+    // Another Helper Currently not used but might be important later
+    public Map<String, Object> allAttributesObjectMap(DecoratedNode node)
+    {
+        List<String> attributeList = allAttributesList(node);
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        Map<String, Object> attributeMap = new HashMap<>();
+
+        for(String attribute : attributeList)
+        {
+            if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
+                //System.out.println("Synthisized!!!");
+                Integer index = nonterminalton.getSynOccursIndex(attribute);
+                Lazy synthAttribute = node.getNode().getSynthesized(index);
+                Object o = synthAttribute.eval(node);
+                attributeMap.put(attribute, o);
+            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+                //System.out.println("Inherited!!!");
+                Integer index = nonterminalton.getInhOccursIndex(attribute);
+                Object o = node.evalInhSomehowButPublic(index);
+                attributeMap.put(attribute, o);
+            }else{ //Should be local
+                //System.out.println("local!!!");
+                List<String> listLocals = listLocalAttrs(node);
+                Integer index = listLocals.indexOf(attribute);
+                Lazy localAttribute = node.getNode().getLocal(index);
+                Object o = localAttribute.eval(node);
+                attributeMap.put(attribute, o);
+            }
+        }
+        return attributeMap;
     }
      
     public boolean isContractum(DecoratedNode node)
