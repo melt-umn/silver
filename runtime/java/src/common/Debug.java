@@ -1,4 +1,5 @@
 //TODO: Error handling is not good right now
+//Thing to remeber: ./silver_compile --forced-origins --clean
 
 package common;
 
@@ -43,7 +44,9 @@ public class Debug {
         }
 
         //Control loop
+        //TODO: Horizontal seperator between user inut and $ for inputs
         loop: do { 
+            System.out.print("     $");
             userInput = inp.nextLine();
             userInputList = userInput.split(" ");
 
@@ -76,6 +79,7 @@ public class Debug {
                         //System.out.println("invalid, correct usage: down <node>");
                         System.out.println("Which child?");
                         printChildren(currentNode);
+                        System.out.print("     $");
                         childNum = inp.nextInt();
                         inp.nextLine();
                     }else{
@@ -115,7 +119,7 @@ public class Debug {
                     }
                     break;
 
-                //TODO: Untested, find good test case
+                //TODO: Works but known bug view is weird a forward nodes
                 case "forwards": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: forwards<>");
@@ -244,7 +248,8 @@ public class Debug {
                     List<String> attributeList = allAttributesList(currentNode);
                     if (userInputList.length != 2) {
                         System.out.println("Which attribute?");
-                        printAttributes(currentNode, toggleHeadlessAttributes);       
+                        printAttributes(currentNode, toggleHeadlessAttributes);
+                        System.out.print("     $");       
                         attributeNum = inp.nextInt();
                         inp.nextLine();
                         attributeName = attributeList.get(attributeNum);
@@ -409,48 +414,29 @@ public class Debug {
             attributeList = removeHeaders(allAttributesList(node));
         }
         int i = 0;
-        //int prefixLength = commonPrefixLength(attributeList);
 
         for (String attribute : attributeList)
         {
-            //String attributeNoPrefix = attribute.substring(prefixLength);
             System.out.println(Integer.toString(i) + ": " + attribute);
             i++;
         }
     }
-
-    //Should this be in Util? -- Also probably no what we want thinking about it a bit more
-    // public int commonPrefixLength(List<String> stringList){
-    //     String firstString = stringList.get(0);
-
-    //     //i is the prefix lenght we are testing
-    //     for (int i = 0; i < firstString.length(); i++) {
-    //         //look at all the strings and make sure they are all identical to the first at index i 
-    //         for (String element : stringList){
-    //             //If any sting is shorter than we are done
-    //             if (element.length() < i){
-    //                 return i;
-    //             }//If any string is not equal to the first we are done
-    //             else if(element.charAt(i) != firstString.charAt(i)){
-    //                 return i;
-    //             }
-    //         }
-    //     }
-    //     //If we broke out of the loop the first string is the common prefix
-    //     return firstString.length();
-    // }
 
     //Should this be in Util?
     public List<String> removeHeaders(List<String> stringList){
         List<String> headlessList = new ArrayList<>();
         for (String element : stringList){
             int lastIndex = element.lastIndexOf(":");
-            headlessList.add(element.substring(lastIndex + 1));
+            if(lastIndex == -1){
+                headlessList.add(element);
+            }else{
+                headlessList.add(element.substring(lastIndex + 1));
+            }
         }
         return headlessList;
     }
 
-    public void printAttrFromName(DecoratedNode node, String printAttribute){
+    public Map<String, Object> attriburteNameObjectMap(DecoratedNode node){
         List<String> attributeList = allAttributesList(node);
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
@@ -475,6 +461,11 @@ public class Debug {
                 attributeMap.put(attribute, o);
             }
         }
+        return attributeMap;
+    }
+
+    public void printAttrFromName(DecoratedNode node, String printAttribute){
+        Map<String, Object> attributeMap = attriburteNameObjectMap(node);
         System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
     }
 
@@ -492,6 +483,8 @@ public class Debug {
         }
         return listLocals;
     }
+
+    //TODO: Add access to higher order attriburte
     
 
     //Helper for printAttrFromName 
