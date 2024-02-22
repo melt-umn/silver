@@ -1,5 +1,9 @@
 package common;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
 // Context implementation.
 
 // Headers are either TRANSLATION (for contractum) or HIGHER-ORDER
@@ -14,15 +18,15 @@ public class NodeContextMessage {
     public String GetSection1() {
         String res = "";
         boolean first_set = false;
-        if (this.is_translation) {
-            res += "TRANSLATION";
+        if (this.translation_x > 0) {
+            res += "TRANSLATION-" + this.translation_x;
             first_set = true;
         }
-        if (this.is_higher_order) {
+        if (this.higher_order_y > 0) {
             if (first_set) {
                 res += " & ";
             }
-            res += "HIGHER-ORDER";
+            res += "HIGHER-ORDER-" + this.higher_order_y;
         }
         return res;
     }
@@ -51,8 +55,8 @@ public class NodeContextMessage {
         if (this.is_new) {
             res += "*is-new\n";
         }
-        if (this.is_attribute) {
-            res += "*is-attribute\n";
+        if (this.is_attribute_root) {
+            res += "*is-attribute_root\n";
         }
         return res;
     }
@@ -65,7 +69,7 @@ public class NodeContextMessage {
         // Try to do all this within java given a node n
     
         // Section 2
-        this.prod_name = node.getName();
+        this.prod_name = node.getNode().getName();
         this.fill_in_rows_and_cols(node);
 
         // Section 4
@@ -76,45 +80,29 @@ public class NodeContextMessage {
 
         // Section 3. Determine file lines last
         //  because they depend on computing boolean attributes
-        if (this.is_translation || this.is_higher_order ||
-            this.is_attribute || this.is_contractum || this.is_new) {
-            this.text_repr = this.pretty_print(node);
+        if ((this.translation_x > 0) || (this.higher_order_y > 0) ||
+            this.is_attribute_root || this.is_contractum || this.is_new) {
+            this.pretty_print(node);
         }
         else {
-            this.text_repr = this.pull_filelines();
+            this.pull_filelines();
         }
 
         this.has_been_initialized = true;  
     }
 
     private void set_index() {
-        next_index = 0;
-        this.num_index = next++;
+        next_index++;
+        this.num_index = next_index;
     }
 
-    // Set is_higher_order and is_translation bools here
+    // Set translation_x and translation_x bools here
     // Is there a way to know something is an attribute 
     // just from its node values?
     private void initialize_headers(DecoratedNode node) {
 
-        // Can figure out if translation is hasForward is true on self 
-        // (Node of Decorated Node)
-        // This is used to set TRANSLATION header flag
-        if (node.getIsContractum()) {
-            // Only current way to determine if translation
-            this.is_translation = true;
-        }
-        else {
-            this.is_translation = false;
-        }
-
-        // Trickier case is know if something is an attribute
-        // Rely on getter function that is to be added to Node.
-        // Basically if go "into" a node and not "down" as in a parent,
-        // want to set the is_attribute flag to TRUE. The getter 
-        // returns true if the current DecoratedNode n is an attribute or  
-        // if any parent was (recursively, until root was found)
-        this.is_higher_order = node.getIsAttribute();
+        this.translation_x = node.getIsTranslation();
+        this.higher_order_y = node.getIsAttribute();
     }
 
     // Use file location method I wrote in DecoratedNode
@@ -132,16 +120,16 @@ public class NodeContextMessage {
         this.is_redex = node.getIsRedex();
         this.is_contractum = node.getIsContractum();
         // Will always work for forwarding. Only use this value if is_contractum
-        this.contractum_of = node.getDebuggingIndex - 1;
+        this.contractum_of = node.getDebuggingIndex() - 1;
         this.is_new = node.getIsNew();
-        this.is_attribute = node.getIsAttribute();
-        this.attribute_of = node.getIsAttributeOf();
+        this.is_attribute_root = node.getIsAttributeRoot();
+        this.attribute_of = node.getDebuggingIndex() - 1;
     }
 
     // access pp attribute if present  
     private void pretty_print(DecoratedNode node) {
         
-        this.pretty_print = node.getPrettyPrint();
+        this.text_repr = node.getPrettyPrint();
     }
 
     // probably need some file I/O, but might find it
@@ -149,37 +137,44 @@ public class NodeContextMessage {
     // from row x col y to row x' to y'.
     private void pull_filelines() {
        
-    //    Currently not the most efficient but should get the job done for now
+        // Currently not the most efficient but should get the job done for now
        try (BufferedReader br = new BufferedReader(new FileReader(this.filename))) {
             
-            int row = 0;
-            int col = 0;
+            int row = 1;
+            int col = 1;
             String res = "";
-            while (row < this.fc_start.getRow()) {
+            for (; row < this.fc_start.getRow(); row++) {
+                // System.out.println("skipping row: " + row);
                 String line = br.readLine();
             }
             // Advance to starting char
-            while (col < this.fc_start.getCol()) {
+            for (; col < this.fc_start.getCol(); col++) {
                 //Single char read
-                char c = br.read(); 
+                // System.out.println("skipping col: " + col);
+                int c = br.read(); 
             }
             // reset col to 0 for last read
-            col = 0;
+            // col = 1;
             // Now in correct row to start actually noting down file contents
-            while (row < this.fc_end.getRow()) {
+
+            // Get whole lines here
+            for (; row < this.fc_end.getRow(); row++) {
+                // System.out.println("reading row: " + row);
                 res += br.readLine();
             }
             // Now row = row.end
-            while (col <= this.fc_end.getCol()) {
-                res += br.read();
+            for (; col <= this.fc_end.getCol(); col++) {
+                // System.out.println("reading col: " + col);
+                char c = (char)br.read();
+                res += Character.toString(c);
             }
             // Done. Can close file now
             br.close();
 
             // Just set filebytes (text_repr) to res
             this.text_repr = res;
-
-        } catch (IOException e) {
+        } 
+        catch (IOException e) {
             System.out.println("ERROR READING FROM FILE " + this.filename);
             e.printStackTrace();
         }
@@ -194,12 +189,12 @@ public class NodeContextMessage {
     private boolean has_been_initialized = false; 
 
     // Section 0. Every context box will have a numeric index label
-    private int num_index;
+    private int num_index = 0;
     private static int next_index = 0;
 
     // Section 1. Header will contain TRANSLATION and/or HIGHER-ORDER 
-    private boolean is_translation;
-    private boolean is_higher_order;
+    private int translation_x;
+    private int higher_order_y;
     
     // Section 2. Actual text representation 
     // (either copied from file or prity print (pp) represenation)
@@ -216,6 +211,6 @@ public class NodeContextMessage {
     private boolean is_contractum;
     private int contractum_of;
     private boolean is_new;
-    private boolean is_attribute;
+    private boolean is_attribute_root;
     private int attribute_of;
 }

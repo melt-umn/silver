@@ -1,6 +1,13 @@
 package common;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+
+import silver.core.NOriginInfo;
+// import silver.core.OriginsUtils;
+import silver.core.PoriginOriginInfo;
+import silver.core.PoriginAndRedexOriginInfo;
 
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
@@ -855,10 +862,9 @@ public class DecoratedNode implements Decorable, Typed {
 		else
 			return evalInhViaFwdP(attribute);
 	}
-}
 
 
-	// **************************************************************
+		// **************************************************************
 	// Functions and attributes added for context message support
 	
 	// To add:
@@ -873,17 +879,19 @@ public class DecoratedNode implements Decorable, Typed {
 	// getEndCoordinates() 	DONE
 
 	// getOrigin() 			DONE
-	// getIsNew() 			DONE
+	// getIsNew() 				TODO
 	
 	// getPrettyPrint()		DONE
 
 	// getIsAttribute() 	SORT-OF-DONE
+
+	// getIsTranslation()   SORT-OF-DONE
 	
 	private int debugging_index;
 	private boolean is_redex;
 	private boolean is_contractum;
-	private boolean is_attribute;
-	private boolean need_set_is_attribute = true;
+	private boolean is_attribute_root;
+	private boolean need_set_is_attribute_root = true;
 
 	private boolean need_compute_redex_contractum = true;
 
@@ -926,7 +934,7 @@ public class DecoratedNode implements Decorable, Typed {
 			this.is_redex = false;
 		}
 		
-		if (this.forwardParent) {
+		if (this.forwardParent != null) {
 			this.is_contractum = true;
 		}
 		else {
@@ -975,54 +983,86 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	} 
 
-	public String getFilename() {
-		if (this.self == null) {
-			return "";
-		} 
-		else if (this.self instanceof silver.core.Alocation) {
-			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+	public String getFilename() { 
+				
+		boolean res = this.self instanceof silver.core.Alocation;
+		// System.out.println("IS ALOCATION? " + res);
+		res = this.self instanceof Tracked;
+		// System.out.println("IS TRACKED? " + res);
+
+		if(self == null) {
+			return "<top>";
+		}
+		NLocation loc = null;
+		if(self instanceof silver.core.Alocation) {
+			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+		} else if(self instanceof Tracked) {
+			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+			if(maybeLoc instanceof silver.core.Pjust) {
+				loc = (silver.core.NLocation)maybeLoc.getChild(0);
+			}
+		}
+		if(loc != null) {
 			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
 			return file;
-		} else {
-			return "";
 		}
+	
+		return "<NO-FILE-FOUND>";
+
 	}
 
 	public FileCoordinate getStartCoordinates() {
-		if (this.self == null) {
-			return null;
-		} 
-		else if (this.self instanceof silver.core.Alocation) {
-			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+		
+		if(self == null) {
+			return new FileCoordinate(-2, -2);
+		}
+		NLocation loc = null;
+		if(self instanceof silver.core.Alocation) {
+			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+		} else if(self instanceof Tracked) {
+			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+			if(maybeLoc instanceof silver.core.Pjust) {
+				loc = (silver.core.NLocation)maybeLoc.getChild(0);
+			}
+		}
+		if(loc != null) {
 			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
 			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
 			return new FileCoordinate(line, col);
-		} 
-		else {
-			return null;
 		}
+		
+		return new FileCoordinate(-1, -1);
 	}
 
 	public FileCoordinate getEndCoordinates() {
-		if (this.self == null) {
-			return null;
-		} 
-		else if (this.self instanceof silver.core.Alocation) {
-			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+		
+		if(self == null) {
+			return new FileCoordinate(-2, -2);
+		}
+		NLocation loc = null;
+		if(self instanceof silver.core.Alocation) {
+			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+		} else if(self instanceof Tracked) {
+			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+			if(maybeLoc instanceof silver.core.Pjust) {
+				loc = (silver.core.NLocation)maybeLoc.getChild(0);
+			}
+		}
+		if(loc != null) {
 			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
 			return new FileCoordinate(line, col);
-		} 
-		else {
-			return null;
 		}
+		
+		return new FileCoordinate(-1, -1);
 	}
 
-	// Wrapper around OriginUtils.getOriginOrNull()
+	// Wrapper around OriginsUtil.getOriginOrNull()
 	// for the sake of my naming convention
 	// Not yet used but probably need for reference attributes
 	public NOriginInfo getOrigin() {
-		return OriginUtils.getOriginOrNull(this);
+		// return OriginsUtil.getOriginOrNull(this);
+		return null;
 	}
 
 	// If not a contractum or redex, 
@@ -1040,7 +1080,8 @@ public class DecoratedNode implements Decorable, Typed {
 		// or PoriginAndRedexOriginInfo, if it is then
 		//  pull out the first child and do .getName() on that"
 		
-		NOriginInfo oinfo = OriginUtils.getOriginOrNull(this);
+		NOriginInfo oinfo = OriginsUtil.getOriginOrNull(this.self);
+		// System.out.println("NOriginInfo: " + oinfo);
 		if (oinfo == null) {
 			return false;
 		}
@@ -1049,21 +1090,21 @@ public class DecoratedNode implements Decorable, Typed {
 			
 			// Might need check types here
 			// Should get only Nodes from here
-			Object origin = (Object)oinfo.getChild_origin();
-			// I don't know if this is will be a Node or DecoratedNode yet
-			String child_prod_name = "";
-			if (origin instanceof Node) {
-				child_prod_name = origin.getName();
-			}
-			// Not going to be a DecoratedNode
-			else if (origin instanceof DecoratedNode) {
-				child_prod_name = origin.getNode().getName();
-			}
-			else {
-				System.err.println("ERROR. origin not Node nor DecoratedNode");
-			}
-			// New if different production only
-			return !child_prod_name.equals(this.self.getName());
+			// Object origin = oinfo.getChild_origin();
+			// // I don't know if this is will be a Node or DecoratedNode yet
+			// String child_prod_name = "";
+			// if (origin instanceof Node) {
+			// 	child_prod_name = origin.getName();
+			// }
+			// // Not going to be a DecoratedNode
+			// else if (origin instanceof DecoratedNode) {
+			// 	child_prod_name = origin.getNode().getName();
+			// }
+			// else {
+			// 	System.err.println("ERROR. origin not Node nor DecoratedNode");
+			// }
+			// // New if different production only
+			// return !child_prod_name.equals(this.self.getName());
 		}
 		return false;
 	}
@@ -1074,62 +1115,87 @@ public class DecoratedNode implements Decorable, Typed {
 	public String getPrettyPrint() {
 
 		// use genericShow(): it accesses pp if it exists
-		return this.genericShow().toString();
+		// return Util.genericShow(this).toString();
 
-		// int num_attrs = this.self.getNumberOfSynAttrs();
-		// for (int i = 0; i < num_attrs; i++) {
+		int num_attrs = this.self.getNumberOfSynAttrs();
+		for (int i = 0; i < num_attrs; i++) {
 			
-		// 	// Search until find name that is "pp"
-		// 	String name = this.self.getNameOfSynAttr(i);
-		// 	if (name.equals("pp")) {
-		// 		Lazy l_pp = this.self.getSynthesized(i);
-		// 		Object pp = evalSyn(l_pp);
-		// 		assert(l_pp != null)
-		// 		assert(pp instanceof String)
-		// 		return (String)pp;
-		// 	}
-		// }
-		// System.err.println("No pretty print (pp) attribute defined");
-		// return ""
+			// Search until find name that is "pp"
+			String name = this.self.getNameOfSynAttr(i);
+			// Want last three characters to be ":pp"
+			if (name.substring(name.length() - 3).equals(":pp")) {
+				Object pp = evalSyn(i);
+				return pp.toString();
+			}
+		}
+		System.err.println("No pretty print (pp) attribute defined");
+		return "";
 	}
 
-	// only set is_attribute once
-	public boolean getIsAttribute() {
-		if (this.need_set_is_attribute) {
-			this.setIsAttribute();
-			this.need_set_is_attribute = false;
+	// only set is_attribute_root once
+	public boolean getIsAttributeRoot() {
+		if (this.need_set_is_attribute_root) {
+			this.setIsAttributeRoot();
+			this.need_set_is_attribute_root = false;
 		}
-		return this.is_attribute;
+		return this.is_attribute_root;
+	}
+
+
+
+	public int getIsAttribute() {
+		if (this.isRoot()) {
+			return 0;
+		}
+		else {
+			if (this.getIsAttributeRoot()) {
+				return 1 + this.parent.getIsAttribute();
+			}
+			return this.parent.getIsAttribute();	
+		}
 	}
 
 	// For now, assume there is a Silver annotation 
-	// "is-attribute" of type String on 
+	// "is-attribute-root" of type String on 
 	// higher-order attributes that is set to "TRUE" 
 	// when true and not existant or FALSE when false
 	// https://melt.cs.umn.edu/silver/ref/decl/annotations/ 
-	public void setIsAttribute() {
-		// Just walk through children of parent. .child() give you decorated node or something else
-		// just do == comparison. If same object, then child and not local higher-order attribute
-		
-		// if (this.need_set_is_attribute) {
-		// 	Object o = this.self.getAnno("is-attribute");
-		// 	if (o) {
-		// 		String s = (String)o;
-		// 		if (s.equals("TRUE")) {
-		// 			this.is_attribute = true;
-		// 			return;
-		// 		}
-		// 	}
-		// 	this.is_attribute = false;
-		// }
+	
 
-		for (int i = 0; i < this.parent.childrenValues.length, i++) {
-			DecoratedNode dn = this.parent.childDecorated(i);
-			if (dn == this) {
-				return false;
-			}
-		}
-		return true;
+	public boolean isRoot() {
+		return this.getNode().getName().contains("root"); 
 	}
 	
+	public void setIsAttributeRoot() {
+		
+		if (! this.isRoot()) {
+			System.out.println("HERE!");
+			Map<String, Object> map = Debug.allAttributesObjectMap(this.parent);
+			Collection<Object> values = map.values();
+			for (Object obj: values) {
+				if (obj == this) {
+					this.is_attribute_root = true;
+				}
+			}
+		}
+		
+		this.is_attribute_root = false;
+	}
+
+	public int getIsTranslation() {
+		// See how many parents are contractums
+		if (this.isRoot()) {
+			return 0;
+		}
+		else if (this.getIsContractum()) {
+			return 1 + this.parent.getIsTranslation();
+		}
+		else {
+			return this.parent.getIsTranslation();
+		}
+	}
 }
+
+
+
+	
