@@ -883,9 +883,9 @@ public class DecoratedNode implements Decorable, Typed {
 	
 	// getPrettyPrint()		DONE
 
-	// getIsAttribute() 	SORT-OF-DONE
+	// getIsAttribute() 	DONE
 
-	// getIsTranslation()   SORT-OF-DONE
+	// getIsTranslation()   DONE
 	
 	private int debugging_index;
 	private boolean is_redex;
@@ -1095,12 +1095,42 @@ public class DecoratedNode implements Decorable, Typed {
 			// Should get only Nodes from here
 			Object origin = oinfo.getChild(0);
 
-			// Could do a hacky version with origin.toString() 
-			// since last part of production name will be in there
-			// and will have a 'c' if concrete syntax (so false if _c@ in)
-			// But these don't seem to work as intended
-			// System.out.println("Origin: " + origin.toString());
-			// String prod_name = this.self.getName().sub
+			// For regular (non-root) nonterminals, there appear to be 2 origins,
+			// the second of which is just true, so only use the first
+
+			// DecoratedNode dn = (DecoratedNode)origin;
+			// System.out.println("Origin: " + oinfo.getNumberOfChildren());
+			// for (int i = 0; i < oinfo.getNumberOfChildren(); i++) {
+			// 	System.out.println("Origin name: " + oinfo.getChild(i).toString());
+			// }
+
+			String full_prod_name = this.self.getName();
+			int lastIndex = full_prod_name.lastIndexOf(':');
+			String prod_name = full_prod_name.substring(lastIndex + 1);
+			// System.out.println("PROD NAME: " + prod_name);
+
+			// Will do a hacky version with origin.toString() for now
+			// since last part of production name will be in there between 
+			// P and @ if origin is another node of the same name. 
+			// Also, there will be a '_c@' if concrete syntax (so false if _c@ in)
+			String ostr = origin.toString();
+			// System.out.println("ORIGIN NAME: " + ostr);
+			// Origin in concrete syntax case
+			if (ostr.contains("_c@")) {
+				// Never going to be new
+				// System.out.println("CONCRETE SYNTAX ORIGIN");
+				return false;
+			}
+			else if (ostr.contains("P" + prod_name + "@")) {
+				// System.out.println("ABSTRACT SYNTAX ORIGIN");
+				// Not new since same name
+				return false;
+			}
+			else {
+				// System.out.println("!!!!!!!!IS-NEW!!!!!!!!");
+				return true;
+			}
+			
 		}
 		else {
 			System.out.println("NO ORIGIN FOUND!!!");
