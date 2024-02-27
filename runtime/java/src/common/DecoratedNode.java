@@ -1159,6 +1159,7 @@ public class DecoratedNode implements Decorable, Typed {
 			for (Object obj: values) {
 				if (obj == this) {
 					this.is_attribute_root = true;
+					return;
 				}
 			}
 		}
