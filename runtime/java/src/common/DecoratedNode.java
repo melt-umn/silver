@@ -1097,7 +1097,8 @@ public class DecoratedNode implements Decorable, Typed {
 			// Could do a hacky version with origin.toString() 
 			// since last part of production name will be in there
 			// and will have a 'c' if concrete syntax (so false if _c@ in)
-			System.out.println("Origin: " + origin.toString());
+			// But these don't seem to work as intended
+			// System.out.println("Origin: " + origin.toString());
 			// String prod_name = this.self.getName().sub
 		}
 		else {
@@ -1150,9 +1151,9 @@ public class DecoratedNode implements Decorable, Typed {
 		
 		// Had to hack this as well with this.parent.isMain()
 		if (! (this == null || this.isRoot() || this.isMain() || 
-			this.parent == null || this.parent.isRoot() || this.parent.isMain())) {
+			this.parent == null || this.parent.isMain())) {
 			
-			System.out.println("SET-IS-ATTR: " + this.toString());
+			// System.out.println("SET-IS-ATTR: " + this.toString());
 			Map<String, Object> map = Debug.allAttributesObjectMap(this.parent);
 			Collection<Object> values = map.values();
 			for (Object obj: values) {
