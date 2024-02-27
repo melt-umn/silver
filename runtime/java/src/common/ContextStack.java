@@ -10,7 +10,7 @@ public class ContextStack {
 
     public void push(DecoratedNode n) {
         this.height++;
-        NodeContextMessage ncm = new NodeContextMessage(n);
+        NodeContextMessage ncm = new NodeContextMessage(n, this.next_index++);
         this.stack.push(ncm);
     }
 
@@ -33,32 +33,6 @@ public class ContextStack {
 
     private Stack<NodeContextMessage> stack = new Stack<NodeContextMessage>();
     private int height = 0;
+    // Used for indices
+    private int next_index = 1;
 }
-
-// public class ContextStack {
-
-//     public void push(Integer n) {
-//         this.height++;
-//         this.stack.push(n);
-//     }
-
-//     public Integer pop() {
-//         this.height--;
-//         return this.stack.pop();
-//     }    
-
-//     public Integer peak() {
-//         return this.stack.peek();
-//     }
-
-//     public int get_height() {
-//         return this.height;
-//     }
-
-//     public Iterator<Integer> iterator() {
-//         return this.stack.iterator();
-//     }
-
-//     private Stack<Integer> stack = new Stack<Integer>();
-//     private int height = 0;
-// }

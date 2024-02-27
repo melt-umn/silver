@@ -952,7 +952,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// or just that dn.parent repeatedly will eventually find null 
 		
 		// parent of DecoratedNode root is TopNode. Might need that and not null
-		if (dn instanceof TopNode) {
+		if (dn == null || dn.isRoot() || dn.isMain()) {
 			return null;
 		}
 		
@@ -971,7 +971,8 @@ public class DecoratedNode implements Decorable, Typed {
 	private DecoratedNode getContractumHelper(DecoratedNode dn) {
 		// For now assume abstract syntax tree root has null parent
 		// or just that dn.parent repeatedly will eventually find null 
-		if (dn == null) {
+		if (dn == null || dn instanceof TopNode || dn.isRoot() || dn.isMain()) {
+		// if (dn == null || dn.isRoot()) {
 			return null;
 		}
 		
@@ -1061,8 +1062,8 @@ public class DecoratedNode implements Decorable, Typed {
 	// for the sake of my naming convention
 	// Not yet used but probably need for reference attributes
 	public NOriginInfo getOrigin() {
-		// return OriginsUtil.getOriginOrNull(this);
-		return null;
+		return OriginsUtil.getOriginOrNull(this);
+		// return null;
 	}
 
 	// If not a contractum or redex, 
@@ -1088,23 +1089,19 @@ public class DecoratedNode implements Decorable, Typed {
 		if (oinfo instanceof PoriginAndRedexOriginInfo || 
 			oinfo instanceof PoriginOriginInfo) {
 			
+			// System.out.println("IS PoriginAndRedexOriginInfo or PoriginOriginInfo");
 			// Might need check types here
 			// Should get only Nodes from here
-			// Object origin = oinfo.getChild_origin();
-			// // I don't know if this is will be a Node or DecoratedNode yet
-			// String child_prod_name = "";
-			// if (origin instanceof Node) {
-			// 	child_prod_name = origin.getName();
-			// }
-			// // Not going to be a DecoratedNode
-			// else if (origin instanceof DecoratedNode) {
-			// 	child_prod_name = origin.getNode().getName();
-			// }
-			// else {
-			// 	System.err.println("ERROR. origin not Node nor DecoratedNode");
-			// }
-			// // New if different production only
-			// return !child_prod_name.equals(this.self.getName());
+			Object origin = oinfo.getChild(0);
+
+			// Could do a hacky version with origin.toString() 
+			// since last part of production name will be in there
+			// and will have a 'c' if concrete syntax (so false if _c@ in)
+			System.out.println("Origin: " + origin.toString());
+			// String prod_name = this.self.getName().sub
+		}
+		else {
+			System.out.println("NO ORIGIN FOUND!!!");
 		}
 		return false;
 	}
@@ -1141,10 +1138,37 @@ public class DecoratedNode implements Decorable, Typed {
 		return this.is_attribute_root;
 	}
 
+	public boolean isRoot() {
+		return this.getNode().getName().contains("root"); 
+	}
+
+	public boolean isMain() {
+		return this.getNode().getName().contains("main"); 
+	}
+	
+	public void setIsAttributeRoot() {
+		
+		// Had to hack this as well with this.parent.isMain()
+		if (! (this == null || this.isRoot() || this.isMain() || 
+			this.parent == null || this.parent.isRoot() || this.parent.isMain())) {
+			
+			System.out.println("SET-IS-ATTR: " + this.toString());
+			Map<String, Object> map = Debug.allAttributesObjectMap(this.parent);
+			Collection<Object> values = map.values();
+			for (Object obj: values) {
+				if (obj == this) {
+					this.is_attribute_root = true;
+				}
+			}
+		}
+		
+		this.is_attribute_root = false;
+	}
+
 
 
 	public int getIsAttribute() {
-		if (this.isRoot()) {
+		if (this.parent == null || this.isRoot() || this.isMain()) {
 			return 0;
 		}
 		else {
@@ -1162,31 +1186,18 @@ public class DecoratedNode implements Decorable, Typed {
 	// https://melt.cs.umn.edu/silver/ref/decl/annotations/ 
 	
 
-	public boolean isRoot() {
-		return this.getNode().getName().contains("root"); 
-	}
 	
-	public void setIsAttributeRoot() {
-		
-		if (! this.isRoot()) {
-			System.out.println("HERE!");
-			Map<String, Object> map = Debug.allAttributesObjectMap(this.parent);
-			Collection<Object> values = map.values();
-			for (Object obj: values) {
-				if (obj == this) {
-					this.is_attribute_root = true;
-				}
-			}
-		}
-		
-		this.is_attribute_root = false;
-	}
 
 	public int getIsTranslation() {
 		// See how many parents are contractums
-		if (this.isRoot()) {
+		// System.out.println("GET-IS-TRANSLATION node:" + this.toString());
+		// System.out.println("GET-IS-TRANSLATION has contractum:" + this.self.hasForward());
+		if (this.parent == null || this.isRoot() || this.isMain()) {
 			return 0;
 		}
+		// else if (this.self.hasForward()) {
+		// 	return 1 + this.parent.getIsTranslation();
+		// }
 		else if (this.getIsContractum()) {
 			return 1 + this.parent.getIsTranslation();
 		}

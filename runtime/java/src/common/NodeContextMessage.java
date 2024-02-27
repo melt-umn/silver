@@ -62,9 +62,14 @@ public class NodeContextMessage {
     }
 
     // Constructor for NodeContextMessage
-    public NodeContextMessage(DecoratedNode node) {
+    public NodeContextMessage(DecoratedNode node, int num_index) {
+        
+        // Set the current index. Keep track of it in the stack
+        // to make decrementing on pop() easy
+        this.num_index = num_index;
+
         // Section 0
-        this.set_index();
+        // this.set_index();
 
         // Try to do all this within java given a node n
     
@@ -91,10 +96,10 @@ public class NodeContextMessage {
         this.has_been_initialized = true;  
     }
 
-    private void set_index() {
-        next_index++;
-        this.num_index = next_index;
-    }
+    // private void set_index() {
+    //     next_index++;
+    //     this.num_index = next_index;
+    // }
 
     // Set translation_x and translation_x bools here
     // Is there a way to know something is an attribute 
@@ -161,6 +166,7 @@ public class NodeContextMessage {
             for (; row < this.fc_end.getRow(); row++) {
                 // System.out.println("reading row: " + row);
                 res += br.readLine();
+                res += '\n'; // Since not added with readLine()
             }
             // Now row = row.end
             for (; col <= this.fc_end.getCol(); col++) {
@@ -185,12 +191,18 @@ public class NodeContextMessage {
         return this.GetSection0() + "\n" + this.GetSection1() + "\n" + this.GetSection2() + "\n" + this.GetSection3() + "\n" + this.GetSection4();
     }
 
+    // @Override
+    // protected void finalize() throws Throwable {
+    //     next_index--;
+    //     super.finalize();
+    // }
+
     // Only perform attribute setting once
     private boolean has_been_initialized = false; 
 
     // Section 0. Every context box will have a numeric index label
-    private int num_index = 0;
-    private static int next_index = 0;
+    private int num_index;
+    // private static int next_index = 0;
 
     // Section 1. Header will contain TRANSLATION and/or HIGHER-ORDER 
     private int translation_x;
