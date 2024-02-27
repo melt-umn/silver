@@ -125,10 +125,10 @@ public class NodeContextMessage {
         this.is_redex = node.getIsRedex();
         this.is_contractum = node.getIsContractum();
         // Will always work for forwarding. Only use this value if is_contractum
-        this.contractum_of = node.getDebuggingIndex() - 1;
+        this.contractum_of = this.num_index - 1;
         this.is_new = node.getIsNew();
         this.is_attribute_root = node.getIsAttributeRoot();
-        this.attribute_of = node.getDebuggingIndex() - 1;
+        this.attribute_of = this.num_index - 1;
     }
 
     // access pp attribute if present  

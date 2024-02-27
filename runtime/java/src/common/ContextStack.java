@@ -16,6 +16,7 @@ public class ContextStack {
 
     public NodeContextMessage pop() {
         this.height--;
+        this.next_index--;
         return this.stack.pop();
     }    
 

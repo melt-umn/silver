@@ -952,7 +952,8 @@ public class DecoratedNode implements Decorable, Typed {
 		// or just that dn.parent repeatedly will eventually find null 
 		
 		// parent of DecoratedNode root is TopNode. Might need that and not null
-		if (dn == null || dn.isRoot() || dn.isMain()) {
+		if (dn == null || dn.parent == null || dn.parent instanceof TopNode || 
+			dn.isRoot() || dn.isMain()) {
 			return null;
 		}
 		
@@ -971,8 +972,8 @@ public class DecoratedNode implements Decorable, Typed {
 	private DecoratedNode getContractumHelper(DecoratedNode dn) {
 		// For now assume abstract syntax tree root has null parent
 		// or just that dn.parent repeatedly will eventually find null 
-		if (dn == null || dn instanceof TopNode || dn.isRoot() || dn.isMain()) {
-		// if (dn == null || dn.isRoot()) {
+		if (dn == null || dn.parent == null || dn.parent instanceof TopNode || 
+			dn.isRoot() || dn.isMain()) {
 			return null;
 		}
 		
@@ -1126,8 +1127,8 @@ public class DecoratedNode implements Decorable, Typed {
 				return pp.toString();
 			}
 		}
-		System.err.println("No pretty print (pp) attribute defined");
-		return "";
+		System.err.println("No pretty print (pp) attribute defined--using genericShow() instead");
+		return Util.genericShow(this).toString();
 	}
 
 	// only set is_attribute_root once
@@ -1150,7 +1151,8 @@ public class DecoratedNode implements Decorable, Typed {
 	public void setIsAttributeRoot() {
 		
 		// Had to hack this as well with this.parent.isMain()
-		if (! (this == null || this.isRoot() || this.isMain() || 
+		if (! (this == null || this.parent instanceof TopNode || 
+			this.isRoot() || this.isMain() || 
 			this.parent == null || this.parent.isMain())) {
 			
 			// System.out.println("SET-IS-ATTR: " + this.toString());
@@ -1194,7 +1196,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// See how many parents are contractums
 		// System.out.println("GET-IS-TRANSLATION node:" + this.toString());
 		// System.out.println("GET-IS-TRANSLATION has contractum:" + this.self.hasForward());
-		if (this.parent == null || this.isRoot() || this.isMain()) {
+		if (this.parent == null || this.parent instanceof TopNode || this.isRoot() || this.isMain()) {
 			return 0;
 		}
 		// else if (this.self.hasForward()) {

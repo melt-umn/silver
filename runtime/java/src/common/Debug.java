@@ -55,7 +55,7 @@ public class Debug {
         //Control loop
         //TODO: Horizontal seperator between user inut and $ for inputs
         loop: do { 
-            System.out.print("     $");
+            System.out.print(">DEBUGGER-PROMPT$");
             userInput = inp.nextLine();
             userInputList = userInput.split(" ");
 
