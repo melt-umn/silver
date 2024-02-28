@@ -33,7 +33,8 @@ public class Debug {
         String userInput; 
         String[] userInputList;
         boolean toggleProdDisplay = true;
-        boolean toggleHeadlessAttributes = true;
+        boolean toggleCStackDisplay = true;
+        boolean toggleHeadlessAttributes = false;
         DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
@@ -50,10 +51,11 @@ public class Debug {
         // if we want an HTML visualization:
         // HTMLContextVisualization cStack = new HTMLContextVisualization();
         cStack.push(currentNode);
-        cStack.show();
+        if(toggleCStackDisplay){
+            cStack.show();
+        }
 
         //Control loop
-        //TODO: Horizontal seperator between user inut and $ for inputs
         loop: do { 
             System.out.print(">DEBUGGER-PROMPT$");
             userInput = inp.nextLine();
@@ -81,40 +83,52 @@ public class Debug {
                             // if we navigate up to a parent, push it on to the stack (?)
                             cStack.pop();
                             // when we push, update and show the context
-                            cStack.show();
+                            if(toggleCStackDisplay){
+                                cStack.show();
+                            }
                         }
                     }
                     break;
 
                 case "down": case "d":  
-                    int childNum = 0; 
-                    if (userInputList.length != 2) {
-                        //System.out.println("invalid, correct usage: down <node>");
+                    int childNum = -1; 
+                    if (userInputList.length == 1) {
                         System.out.println("Which child?");
                         printChildren(currentNode);
-                        System.out.print("     $");
-                        childNum = inp.nextInt();
-                        inp.nextLine();
+                        childNum = inputInt(inp);
+                        if(childNum == -1){
+                            break;
+                        }
+                    }else if(userInputList.length == 2){
+                        try{
+                            childNum = Integer.parseInt(userInputList[1]);
+                        }catch (NumberFormatException e) {
+                            System.out.println("invalid, correct usage: down <node #>");
+                            break;
+                        }
                     }else{
-                        //Explodes if the input is not a integer should gracefully exit
-                        childNum = Integer.parseInt(userInputList[1]);
+                        System.out.println("invalid, correct usage: down <node #>");
+                        break;
                     }
 
                     childNode = down(childNum);
+
                     if(childNode == null){
                         System.out.println("invalid child number");
+                        break;
                     } 
                     else{
                         nodeStack.push(currentNode);
                         currentNode = childNode;
-                        //System.out.println("going down");
                         if(toggleProdDisplay){
                             printProduction(currentNode);
                         }
                         // if we navigate down to a child, push it on to the stack
                         cStack.push(currentNode);
                         // when we push, update and show the context
-                        cStack.show();
+                        if(toggleCStackDisplay){
+                            cStack.show();
+                        }
                     }
                     break;
 
@@ -134,12 +148,15 @@ public class Debug {
                             }
                             // remove from the stack
                             cStack.pop();
-                            cStack.show();
+                            if(toggleCStackDisplay){
+                                cStack.show();
+                            }
                         }
                     }
                     break;
 
-                //TODO: Works but known bug view is weird a forward nodes
+                //TODO: Works but known bug view is weird a forward nodes 
+                //bug update: looks like the problem is with getSyhthized called in allAttributesObjectMap not sure how to fix
                 case "forwards": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: forwards<>");
@@ -157,12 +174,37 @@ public class Debug {
                             // if we navigate to a forward, push it on to the stack
                             cStack.push(currentNode);
                             // when we push, update and show the context
-                            cStack.show();
+                            if(toggleCStackDisplay){
+                                cStack.show();
+                            }
                         }
                     }
                     break;
 
-                //TODO: Untested, find good test case
+                
+                //TODO: make a test case
+                case "into":
+                    if (userInputList.length != 2) {
+                        System.out.println("invalid, correct usage: forwards <attribute>");
+                    }else{
+                        childNode = into(currentNode, userInputList[1]);
+                        if(childNode == null){
+                            System.out.println("invalid input");
+                        }
+                        else{
+                            System.out.println("going inot");
+                            currentNode = childNode;
+                            // if(toggleProdDisplay){
+                            //     printProduction(currentNode);
+                            // }
+                            // // if we navigate to a forward, push it on to the stack
+                            // cStack.push(currentNode);
+                            // // when we push, update and show the context
+                            // cStack.show();
+                        }
+                    }
+                    break;
+
                 case "backtrack": 
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: backtrack<>");
@@ -180,7 +222,9 @@ public class Debug {
                             // if we navigate backwards, push it on to the stack (?)
                             cStack.push(currentNode);
                             // when we push, update and show the context
-                            cStack.show();
+                            if(toggleCStackDisplay){
+                                cStack.show();
+                            }
                         }
                     }
                     break;
@@ -205,6 +249,14 @@ public class Debug {
                             }else{
                                 System.out.println("Headless Attributes on");
                                 toggleHeadlessAttributes = true;
+                            }
+                        }if(userInputList[1].equals("cStackDisplay")){
+                            if(toggleCStackDisplay){
+                                System.out.println("cStack Display off");
+                                toggleCStackDisplay = false;
+                            }else{
+                                System.out.println("cStack Display on");
+                                toggleCStackDisplay = true;
                             }
                         }
                         else{
@@ -274,17 +326,32 @@ public class Debug {
                     String attributeName = ""; 
                     Integer attributeNum = 0;
                     List<String> attributeList = allAttributesList(currentNode);
-                    if (userInputList.length != 2) {
+                    if (userInputList.length == 1) {
                         System.out.println("Which attribute?");
-                        printAttributes(currentNode, toggleHeadlessAttributes);
-                        System.out.print("     $");       
-                        attributeNum = inp.nextInt();
-                        inp.nextLine();
-                        attributeName = attributeList.get(attributeNum);
+                        printAttributes(currentNode, toggleHeadlessAttributes);  
+                        attributeNum = inputInt(inp);
+                        if(attributeNum == -1){
+                            break;
+                        }else if(attributeNum >= attributeList.size()){
+                            System.out.println("Invaild attribute number");
+                            break;
+                        }else{
+                            attributeName = attributeList.get(attributeNum);
+                        }
+                    }else if(userInputList.length == 2){
+                        try{
+                            attributeNum = Integer.parseInt(userInputList[1]);
+                            attributeName = attributeList.get(attributeNum);
+                        }catch (NumberFormatException e) {
+                            System.out.println("invalid, correct usage: view <node #>");
+                            break;
+                        }catch (IndexOutOfBoundsException e){
+                            System.out.println("Index out of bounds");
+                            break;
+                        }
                     }else{
-                        //Explodes if the input is not a integer should gracefully exit
-                        attributeNum = Integer.parseInt(userInputList[1]);
-                        attributeName = attributeList.get(attributeNum);
+                        System.out.println("invalid, correct usage: down <node #>");
+                        break;
                     }
                     printAttrFromName(currentNode, attributeName);
                     break;
@@ -350,12 +417,50 @@ public class Debug {
 
     public DecoratedNode down(int child)
     {
-        if (currentNode.getNode().getNumberOfChildren() > child)
-        {
+        String child_productions[] = currentNode.undecorate().getProdleton().getChildTypes();
+        //System.out.println("Inside of Down function");
+        try{
+            System.out.println("null name: " + child_productions[child]);
+            if(child_productions[child].equals("null")){ 
+                return null;
+            }
             DecoratedNode childNode = currentNode.childDecorated(child);
             return childNode;
+        }catch(NullPointerException e){
+            System.out.println("Null pointer");
+            return null;
+        }catch(IndexOutOfBoundsException e){
+            System.out.println("Index out of bound");
+            return null;
         }
-        return null;
+        //if (currentNode.getNode().getNumberOfChildren() > child && child >= 0){
+            //Might be a bandaid fix not sure I understand why the problem exists
+        //     DecoratedNode childNode = currentNode.childDecorated(child);
+        //     return childNode;
+        // //}
+        // return null;
+    }
+
+    public static int inputInt(Scanner inp){
+        boolean continueLoop = true;
+        int returnInt = -1;
+        String stopper = "";
+        while(continueLoop){
+            System.out.print(">DEBUGGER-PROMPT$");
+            if (inp.hasNextInt()) {
+                returnInt = inp.nextInt();
+                inp.nextLine();
+                continueLoop = false;
+            }else{
+                stopper = inp.nextLine();
+                if (stopper.equals("e")){
+                    continueLoop = false;
+                }else{
+                    System.out.println("Please choose an integer or e to exit");
+                }
+            }
+        }
+        return returnInt;
     }
 
     public void printChildren(DecoratedNode node)
@@ -383,7 +488,7 @@ public class Debug {
     
     public void printProduction(DecoratedNode node)
     {
-        String partent_production = node.undecorate().getProdleton().getName();
+        String partent_production = node.undecorate().getProdleton().getTypeUnparse();
         String child_productions[] = node.undecorate().getProdleton().getChildTypes();
         System.out.print(partent_production + " ");
         for (int i = 0; i < child_productions.length; i++){
@@ -464,36 +569,8 @@ public class Debug {
         return headlessList;
     }
 
-    public Map<String, Object> attriburteNameObjectMap(DecoratedNode node){
-        List<String> attributeList = allAttributesList(node);
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        Map<String, Object> attributeMap = new HashMap<>();
-
-        for(String attribute : attributeList)
-        {
-            if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
-                Integer index = nonterminalton.getSynOccursIndex(attribute);
-                Lazy synthAttribute = node.getNode().getSynthesized(index);
-                Object o = synthAttribute.eval(node);
-                attributeMap.put(attribute, o);
-            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
-                Integer index = nonterminalton.getInhOccursIndex(attribute);
-                Object o = node.evalInhSomehowButPublic(index);
-                attributeMap.put(attribute, o);
-            }else{ //Should be local
-                List<String> listLocals = listLocalAttrs(node);
-                Integer index = listLocals.indexOf(attribute);
-                Lazy localAttribute = node.getNode().getLocal(index);
-                Object o = localAttribute.eval(node);
-                attributeMap.put(attribute, o);
-            }
-        }
-        return attributeMap;
-    }
-
     public void printAttrFromName(DecoratedNode node, String printAttribute){
-        Map<String, Object> attributeMap = attriburteNameObjectMap(node);
+        Map<String, Object> attributeMap = allAttributesObjectMap(node);
         System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
     }
 
@@ -513,6 +590,15 @@ public class Debug {
     }
 
     //TODO: Add access to higher order attriburte
+    public DecoratedNode into(DecoratedNode node, String attriburteName){
+        Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        if (attributeMap.containsKey(attriburteName)) {
+            System.out.println("In into function");
+            Object attributeObject = attributeMap.get(attriburteName);
+            return (DecoratedNode) attributeObject; //Does not work 
+        }
+        return null;
+    }
     
 
     //Helper for printAttrFromName 
@@ -529,7 +615,7 @@ public class Debug {
         return attributeList;
     }
 
-    // Another Helper Currently not used but might be important later
+    // Another Helper 
     public static Map<String, Object> allAttributesObjectMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
@@ -540,9 +626,9 @@ public class Debug {
         for(String attribute : attributeList)
         {
             if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
-                //System.out.println("Synthisized!!!");
+                //System.out.println("Synthisized!!! \"" + attribute + "\"");
                 Integer index = nonterminalton.getSynOccursIndex(attribute);
-                Lazy synthAttribute = node.getNode().getSynthesized(index);
+                Lazy synthAttribute = node.getNode().getSynthesized(index); //scuffed
                 Object o = synthAttribute.eval(node);
                 attributeMap.put(attribute, o);
             }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
