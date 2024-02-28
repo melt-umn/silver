@@ -242,6 +242,11 @@ ${if isData then "" else s"""
         return "${fName}";
     }
 
+    @Override
+    public String[] getChildNames() {
+        return namedSig.inputNames;
+    }
+
     ${otImpl}
     
     @Override
@@ -309,6 +314,7 @@ ${body.translation}
         }
 
         public String getName(){ return "${fName}"; }
+        public String[] getChildNames(){return namedSig.inputNames;}
         public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
         public String getTypeUnparse() { return "${escapeString(ns.unparse)}"; }

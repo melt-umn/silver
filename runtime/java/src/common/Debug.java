@@ -1,5 +1,4 @@
-//TODO: Error handling is not good right now
-//Thing to remeber: ./silver_compile --forced-origins --clean
+//Thing to remeber: ./silver-compile --force-origins --clean
 
 package common;
 
@@ -11,6 +10,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 
 import common.Util.*;
@@ -35,12 +35,14 @@ public class Debug {
         boolean toggleProdDisplay = true;
         boolean toggleCStackDisplay = true;
         boolean toggleHeadlessAttributes = false;
+        String[] toggleChoices = {"prodDisplay", "cStackDisplay", "fullAttributeNames"};
         DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
         this.nodeStack = new Stack<DecoratedNode>();
 
         if(toggleProdDisplay){
+            //printNames(currentNode);
             printProduction(currentNode);
         }
 
@@ -94,8 +96,7 @@ public class Debug {
                     int childNum = -1; 
                     if (userInputList.length == 1) {
                         System.out.println("Which child?");
-                        printChildren(currentNode);
-                        childNum = inputInt(inp);
+                        childNum = chooseFormList(inp, currentNode.undecorate().getProdleton().getChildTypes());
                         if(childNum == -1){
                             break;
                         }
@@ -182,7 +183,7 @@ public class Debug {
                     break;
 
                 
-                //TODO: make a test case
+                //TODO: known bug, don't know how to represent higher order nodes as decoratedNodes
                 case "into":
                     if (userInputList.length != 2) {
                         System.out.println("invalid, correct usage: forwards <attribute>");
@@ -192,7 +193,7 @@ public class Debug {
                             System.out.println("invalid input");
                         }
                         else{
-                            System.out.println("going inot");
+                            System.out.println("going into");
                             currentNode = childNode;
                             // if(toggleProdDisplay){
                             //     printProduction(currentNode);
@@ -230,38 +231,38 @@ public class Debug {
                     break;
 
                 case "toggle":
-                    if (userInputList.length != 2) {
-                        System.out.println("please indicate what you want to toggle ex: 'toggle prodDisplay'");
+                    String toggelChoice = "";
+                    if (userInputList.length == 1) {
+                        toggelChoice = toggleChoices[chooseFormList(inp, toggleChoices)];
+                    }else if (userInputList.length == 2){
+                        toggelChoice = userInputList[1];
+                    } 
+                    if(toggelChoice.equals("prodDisplay")){
+                        if(toggleProdDisplay){
+                            System.out.println("Production Display off");
+                            toggleProdDisplay = false;
+                        }else{
+                            System.out.println("Production Display on");
+                            toggleProdDisplay = true;
+                        }
+                    }else if(toggelChoice.equals("fullAttributeNames")){
+                        if(toggleHeadlessAttributes){
+                           System.out.println("Headless Attributes off");
+                            toggleHeadlessAttributes = false;
+                        }else{
+                            System.out.println("Headless Attributes on");
+                            toggleHeadlessAttributes = true;
+                        }
+                    }else if(toggelChoice.equals("cStackDisplay")){
+                        if(toggleCStackDisplay){
+                            System.out.println("cStack Display off");
+                            toggleCStackDisplay = false;
+                        }else{
+                            System.out.println("cStack Display on");
+                            toggleCStackDisplay = true;
+                        }
                     }else{
-                        if(userInputList[1].equals("prodDisplay")){
-                            if(toggleProdDisplay){
-                                System.out.println("Production Display off");
-                                toggleProdDisplay = false;
-                            }else{
-                                System.out.println("Production Display on");
-                                 toggleProdDisplay = true;
-                            }
-                        }
-                        if(userInputList[1].equals("fullAttributeNames")){
-                            if(toggleHeadlessAttributes){
-                                System.out.println("Headless Attributes off");
-                                toggleHeadlessAttributes = false;
-                            }else{
-                                System.out.println("Headless Attributes on");
-                                toggleHeadlessAttributes = true;
-                            }
-                        }if(userInputList[1].equals("cStackDisplay")){
-                            if(toggleCStackDisplay){
-                                System.out.println("cStack Display off");
-                                toggleCStackDisplay = false;
-                            }else{
-                                System.out.println("cStack Display on");
-                                toggleCStackDisplay = true;
-                            }
-                        }
-                        else{
-                            System.out.println("legal toggles: prodDisplay, fullAttributeNames");
-                        }
+                        System.out.println("legal toggles: prodDisplay, fullAttributeNames, cStackDisplay");
                     }
                     break;
 
@@ -275,7 +276,8 @@ public class Debug {
                     }
                     break;
                 
-                //TODO:Implement this - use genericShow?
+                //TODO:Implement this - use genericShow?, see ProductionDcl in grammer/silver/compiler/translation/java/core
+                //Somehow this needs to create a new function for RTTI manager but current attempt does not work
                 case "eq": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
                         System.out.println("invalid, correct usage: eq<attr?>");
@@ -299,7 +301,7 @@ public class Debug {
                 //List inherited attributes
                 case "listInher": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: listInher<node?>");
+                        System.out.println("invalid, correct usage: listInher <node?>");
                     }else{
                         if(listInher(currentNode) == 0){
                             System.out.println("no inherited attributes");
@@ -328,8 +330,9 @@ public class Debug {
                     List<String> attributeList = allAttributesList(currentNode);
                     if (userInputList.length == 1) {
                         System.out.println("Which attribute?");
-                        printAttributes(currentNode, toggleHeadlessAttributes);  
-                        attributeNum = inputInt(inp);
+                        List<String> attriburteList =  allAttributesList(currentNode);
+                        String[] attriburteArray =  attriburteList.toArray(new String[attriburteList.size()]);
+                        attributeNum = chooseFormList(inp, attriburteArray);
                         if(attributeNum == -1){
                             break;
                         }else if(attributeNum >= attributeList.size()){
@@ -358,21 +361,81 @@ public class Debug {
 
 
                 case "local":
-                    listLocalAttrs(currentNode);
+                    if (userInputList.length != 1 && userInputList.length != 2) {
+                        System.out.println("invalid, correct usage: local <node?>");
+                    }else{
+                        List<String> listLocals = getLocalAttrs(currentNode);
+                        if(listLocals.size() == 0){
+                            System.out.println("no inherited attributes");
+                        }else{
+                            for (String localAttribute : listLocals){
+                                System.out.println("Attribute = " + localAttribute);
+                            }
+                        }
+                    }
                     break;
 
                 case "help": 
-                    System.out.println("up");
-                    System.out.println("down <node>");
-                    System.out.println("view <attr>");
-                    System.out.println("forwards");
-                    System.out.println("backtrack");
-                    System.out.println("prod");
-                    System.out.println("eq");
-                    System.out.println("listSynth");
-                    System.out.println("listInher");
-                    System.out.println("list");
-                    System.out.println("exit");
+                    if (userInputList.length == 1) {
+                        System.out.println("call help with one of these keywords to see its functionality:");
+                        System.out.println("toggle <feature>");
+                        System.out.println("up");
+                        System.out.println("down <node>");
+                        System.out.println("view <attr>");
+                        System.out.println("forwards");
+                        System.out.println("backtrack");
+                        System.out.println("prod");
+                        System.out.println("eq");
+                        System.out.println("listSynth");
+                        System.out.println("listInher");
+                        System.out.println("local");
+                        System.out.println("list");
+                        System.out.println("into");
+                        System.out.println("exit");
+                    }else if(userInputList.length == 2){
+                        if(userInputList[1].equals("up")){
+                            System.out.println("The current node changes to its the parent");
+                        }else if(userInputList[1].equals("down")){
+                            System.out.println("The current node changes to its child");
+                            System.out.println("One optional input is the child number you want to travel to");
+                            System.out.println("If no input is provided you will be prompted with a choice of child");
+                            System.out.println("You cn call this function with \"d\"");
+                        }else if(userInputList[1].equals("view")){
+                            System.out.println("look at the value of an attribute in the current node");
+                            System.out.println("One optional input is the attribute number you want to view");
+                            System.out.println("If no input is provided you will be prompted with a choice of attribute");
+                            System.out.println("You can call this function with \"v\"");
+                        }else if(userInputList[1].equals("forwards")){
+                            System.out.println("The current node changes to its forward");
+                        }else if(userInputList[1].equals("backtrack")){
+                            System.out.println("The current node changes to its backtrack");
+                        }else if(userInputList[1].equals("prod")){
+                            System.out.println("prints the production of the current node");
+                        }else if(userInputList[1].equals("eq")){
+                            System.out.println("prints the equation of the current node");
+                        }else if(userInputList[1].equals("listSynth")){
+                            System.out.println("prints the Synthisized attributes of the current node");
+                        }else if(userInputList[1].equals("listInher")){
+                            System.out.println("prints the inherited attributes of the current node");
+                        }else if(userInputList[1].equals("list")){
+                            System.out.println("prints the attributes of the current node");
+                        }else if(userInputList[1].equals("local")){
+                            System.out.println("prints the local attributes of the current node");
+                        }else if(userInputList[1].equals("into")){
+                            System.out.println("The current node changes to its higer order attribute");
+                            System.out.println("One optional input is the attribute number you want to go into");
+                            System.out.println("If no input is provided you will be prompted with a choice of attribute");
+                        }else if(userInputList[1].equals("toggle")){
+                            System.out.println("Activate or disactivate a feature");
+                            System.out.println("One input is the feature number you want to toggle");
+                            System.out.println("If no input is provided you will be prompted with a choice of toggles");
+                        }else{
+                            System.out.println("try just calling help");
+                        }
+                    }else{
+                        System.out.println("try just calling help");
+
+                    }
                     break;
 
                 //Many ways to leave
@@ -383,7 +446,6 @@ public class Debug {
                     break loop;
                 default: 
                     System.out.println("invalid input call help for legal inputs");
-                    System.out.println(userInput);
                     break;
             }
         } while(true); 
@@ -418,9 +480,7 @@ public class Debug {
     public DecoratedNode down(int child)
     {
         String child_productions[] = currentNode.undecorate().getProdleton().getChildTypes();
-        //System.out.println("Inside of Down function");
         try{
-            System.out.println("null name: " + child_productions[child]);
             if(child_productions[child].equals("null")){ 
                 return null;
             }
@@ -440,29 +500,7 @@ public class Debug {
         // //}
         // return null;
     }
-
-    public static int inputInt(Scanner inp){
-        boolean continueLoop = true;
-        int returnInt = -1;
-        String stopper = "";
-        while(continueLoop){
-            System.out.print(">DEBUGGER-PROMPT$");
-            if (inp.hasNextInt()) {
-                returnInt = inp.nextInt();
-                inp.nextLine();
-                continueLoop = false;
-            }else{
-                stopper = inp.nextLine();
-                if (stopper.equals("e")){
-                    continueLoop = false;
-                }else{
-                    System.out.println("Please choose an integer or e to exit");
-                }
-            }
-        }
-        return returnInt;
-    }
-
+    
     public void printChildren(DecoratedNode node)
     {
         String child_productions[] = node.undecorate().getProdleton().getChildTypes();
@@ -497,6 +535,18 @@ public class Debug {
         System.out.print("\n");
     }
     
+
+    // public void printNames(DecoratedNode node)
+    // {
+    //     String partent_production = node.undecorate().getProdleton().getName();
+    //     String child_productions[] = node.undecorate().getProdleton().getChildNames();
+    //     System.out.print(partent_production + " ");
+    //     for (int i = 0; i < child_productions.length; i++){
+    //         System.out.print(child_productions[i] + " ");
+    //     }
+    //     System.out.print("\n");
+    // }
+
     // Prints out the equation of the specified attr.
     // If attr is not specified, prints out the equations for all the attributes on the current node.
     // via eric we can just add equations as an attribute within our AG
@@ -575,7 +625,7 @@ public class Debug {
     }
 
     //List of all and only local attributes
-    public static List<String> listLocalAttrs(DecoratedNode node)
+    public static List<String> getLocalAttrs(DecoratedNode node)
     {
         int count = node.getNode().getNumberOfLocalAttrs();
         List<String> listLocals = new ArrayList<>();
@@ -595,7 +645,7 @@ public class Debug {
         if (attributeMap.containsKey(attriburteName)) {
             System.out.println("In into function");
             Object attributeObject = attributeMap.get(attriburteName);
-            return (DecoratedNode) attributeObject; //Does not work 
+            return (DecoratedNode) attributeObject; //Does not work class translator.Pprogram cannot be cast to class common.DecoratedNode
         }
         return null;
     }
@@ -607,7 +657,7 @@ public class Debug {
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         List<String> attributeList = nonterminalton.alphabeticalAttributes();
-        List<String> localAttributeList = listLocalAttrs(node);
+        List<String> localAttributeList = getLocalAttrs(node);
 
         attributeList.addAll(localAttributeList);
         attributeList.sort(null);
@@ -628,7 +678,7 @@ public class Debug {
             if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
                 //System.out.println("Synthisized!!! \"" + attribute + "\"");
                 Integer index = nonterminalton.getSynOccursIndex(attribute);
-                Lazy synthAttribute = node.getNode().getSynthesized(index); //scuffed
+                Lazy synthAttribute = node.getNode().getSynthesized(index); //breaks for forwarded nodes
                 Object o = synthAttribute.eval(node);
                 attributeMap.put(attribute, o);
             }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
@@ -638,7 +688,7 @@ public class Debug {
                 attributeMap.put(attribute, o);
             }else{ //Should be local
                 //System.out.println("local!!!");
-                List<String> listLocals = listLocalAttrs(node);
+                List<String> listLocals = getLocalAttrs(node);
                 Integer index = listLocals.indexOf(attribute);
                 Lazy localAttribute = node.getNode().getLocal(index);
                 Object o = localAttribute.eval(node);
@@ -646,6 +696,33 @@ public class Debug {
             }
         }
         return attributeMap;
+    }
+
+    public static Integer chooseFormList(Scanner inp, String[] list){
+        for (int i = 0; i < list.length; i++){
+            System.out.println(Integer.toString(i) + ": " + list[i]);
+        } 
+
+        boolean continueLoop = true;
+        int returnInt = -1;
+        String stopper = "";
+        while(continueLoop){
+            System.out.print(">DEBUGGER-PROMPT$");
+            if (inp.hasNextInt()) {
+                returnInt = inp.nextInt();
+                inp.nextLine();
+                continueLoop = false;
+            }else{
+                stopper = inp.nextLine();
+                if (stopper.equals("e")){
+                    continueLoop = false;
+                }else{
+                    System.out.println("Please choose an integer or e to exit");
+                }
+            }
+        }
+        return returnInt;
+
     }
      
     public boolean isContractum(DecoratedNode node)
