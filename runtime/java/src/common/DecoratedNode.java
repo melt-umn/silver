@@ -949,6 +949,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// Wrapper for recursive helper
 		return this.getRedexHelper(this); 
 	}
+	
 	private DecoratedNode getRedexHelper(DecoratedNode dn) {
 		// For now assume abstract syntax tree root has null parent
 		// or just that dn.parent repeatedly will eventually find null 
@@ -1162,7 +1163,9 @@ public class DecoratedNode implements Decorable, Typed {
 			// Search until find name that is "pp"
 			String name = this.self.getNameOfSynAttr(i);
 			// Want last three characters to be ":pp"
-			if (name.substring(name.length() - 3).equals(":pp")) {
+			if (name.substring(name.length() - 3).toLowerCase.equals(":pp") ||
+				name.substring(name.length() - 13).toLowerCase().equals(":pretty_print") || 
+				name.substring(name.length() - 12).toLowerCase().equals(":prettyprint")) {
 				Object pp = evalSyn(i);
 				return pp.toString();
 			}
@@ -1239,9 +1242,6 @@ public class DecoratedNode implements Decorable, Typed {
 		if (this.parent == null || this.parent instanceof TopNode || this.isRoot() || this.isMain()) {
 			return 0;
 		}
-		// else if (this.self.hasForward()) {
-		// 	return 1 + this.parent.getIsTranslation();
-		// }
 		else if (this.getIsContractum()) {
 			return 1 + this.parent.getIsTranslation();
 		}
