@@ -32,7 +32,7 @@ public class Debug {
         System.out.println("Enter characters, and 'q' to quit.");
         String userInput; 
         String[] userInputList;
-        boolean toggleProdDisplay = true;
+        boolean toggleNameDisplay = false;
         boolean toggleCStackDisplay = true;
         boolean toggleHeadlessAttributes = false;
         String[] toggleChoices = {"prodDisplay", "cStackDisplay", "fullAttributeNames"};
@@ -41,9 +41,9 @@ public class Debug {
         this.currentNode = tree;
         this.nodeStack = new Stack<DecoratedNode>();
 
-        if(toggleProdDisplay){
+        if(toggleNameDisplay){
             //printNames(currentNode);
-            printProduction(currentNode);
+            printName(currentNode);
         }
 
         // creating a context stack when we run the debugger
@@ -79,8 +79,8 @@ public class Debug {
                             nodeStack.push(currentNode);
                             currentNode = currentNode.getParent();
                             //System.out.println("going to parent");
-                            if(toggleProdDisplay){
-                                printProduction(currentNode);
+                            if(toggleNameDisplay){
+                                printName(currentNode);
                             }
                             // if we navigate up to a parent, push it on to the stack (?)
                             cStack.pop();
@@ -121,8 +121,8 @@ public class Debug {
                     else{
                         nodeStack.push(currentNode);
                         currentNode = childNode;
-                        if(toggleProdDisplay){
-                            printProduction(currentNode);
+                        if(toggleNameDisplay){
+                            printName(currentNode);
                         }
                         // if we navigate down to a child, push it on to the stack
                         cStack.push(currentNode);
@@ -144,8 +144,8 @@ public class Debug {
                             DecoratedNode newNode = nodeStack.pop();
                             currentNode = newNode;
                             //System.out.println("undoing last movement");
-                            if(toggleProdDisplay){
-                                printProduction(currentNode);
+                            if(toggleNameDisplay){
+                                printName(currentNode);
                             }
                             // remove from the stack
                             cStack.pop();
@@ -169,8 +169,8 @@ public class Debug {
                         else{
                             System.out.println("going forward");
                             currentNode = childNode;
-                            if(toggleProdDisplay){
-                                printProduction(currentNode);
+                            if(toggleNameDisplay){
+                                printName(currentNode);
                             }
                             // if we navigate to a forward, push it on to the stack
                             cStack.push(currentNode);
@@ -185,24 +185,51 @@ public class Debug {
                 
                 //TODO: known bug, don't know how to represent higher order nodes as decoratedNodes
                 case "into":
-                    if (userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: forwards <attribute>");
+                    //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
+                    String attributeNameinto = ""; 
+                    Integer attributeNuminto = 0;
+                    List<String> attributeListinto = allAttributesList(currentNode);
+                    if (userInputList.length == 1) {
+                        System.out.println("Which attribute?");
+                        String[] attriburteArrayinto =  attributeListinto.toArray(new String[attributeListinto.size()]);
+                        attributeNuminto = chooseFormList(inp, attriburteArrayinto);
+                        if(attributeNuminto == -1){
+                            break;
+                        }else if(attributeNuminto >= attributeListinto.size()){
+                            System.out.println("Invaild attribute number");
+                            break;
+                        }else{
+                            attributeNameinto = attributeListinto.get(attributeNuminto);
+                        }
+                    }else if(userInputList.length == 2){
+                            try{
+                            attributeNuminto = Integer.parseInt(userInputList[1]);
+                            attributeNameinto = attributeListinto.get(attributeNuminto);
+                        }catch (NumberFormatException e) {
+                            System.out.println("invalid, correct usage: view <node #>");
+                            break;
+                        }catch (IndexOutOfBoundsException e){
+                            System.out.println("Index out of bounds");
+                            break;
+                        }
                     }else{
-                        childNode = into(currentNode, userInputList[1]);
-                        if(childNode == null){
-                            System.out.println("invalid input");
-                        }
-                        else{
-                            System.out.println("going into");
-                            currentNode = childNode;
-                            // if(toggleProdDisplay){
-                            //     printProduction(currentNode);
-                            // }
-                            // // if we navigate to a forward, push it on to the stack
-                            // cStack.push(currentNode);
-                            // // when we push, update and show the context
-                            // cStack.show();
-                        }
+                        System.out.println("invalid, correct usage: into <node #>");
+                        break;
+                    }
+                    childNode = into(currentNode, attributeNameinto);
+                    if(childNode == null){
+                        System.out.println("invalid input");
+                    }
+                    else{
+                        System.out.println("going into");
+                        currentNode = childNode;
+                        // if(toggleNameDisplay){
+                        //     printName(currentNode);
+                        // }
+                        // // if we navigate to a forward, push it on to the stack
+                        // cStack.push(currentNode);
+                        // // when we push, update and show the context
+                        // cStack.show();
                     }
                     break;
 
@@ -217,8 +244,8 @@ public class Debug {
                         else{
                             System.out.println("going backwrds");
                             currentNode = childNode;
-                            if(toggleProdDisplay){
-                                printProduction(currentNode);
+                            if(toggleNameDisplay){
+                                printName(currentNode);
                             }
                             // if we navigate backwards, push it on to the stack (?)
                             cStack.push(currentNode);
@@ -238,12 +265,12 @@ public class Debug {
                         toggelChoice = userInputList[1];
                     } 
                     if(toggelChoice.equals("prodDisplay")){
-                        if(toggleProdDisplay){
+                        if(toggleNameDisplay){
                             System.out.println("Production Display off");
-                            toggleProdDisplay = false;
+                            toggleNameDisplay = false;
                         }else{
                             System.out.println("Production Display on");
-                            toggleProdDisplay = true;
+                            toggleNameDisplay = true;
                         }
                     }else if(toggelChoice.equals("fullAttributeNames")){
                         if(toggleHeadlessAttributes){
@@ -278,6 +305,7 @@ public class Debug {
                 
                 //TODO:Implement this - use genericShow?, see ProductionDcl in grammer/silver/compiler/translation/java/core
                 //Somehow this needs to create a new function for RTTI manager but current attempt does not work
+                //We want - user defined names (ex: left right), attribute equations (ex: left = parent + 1) and nearby code (filename and linenumber?)
                 case "eq": 
                     if (userInputList.length != 1 && userInputList.length != 2) {
                         System.out.println("invalid, correct usage: eq<attr?>");
@@ -330,8 +358,7 @@ public class Debug {
                     List<String> attributeList = allAttributesList(currentNode);
                     if (userInputList.length == 1) {
                         System.out.println("Which attribute?");
-                        List<String> attriburteList =  allAttributesList(currentNode);
-                        String[] attriburteArray =  attriburteList.toArray(new String[attriburteList.size()]);
+                        String[] attriburteArray =  attributeList.toArray(new String[attributeList.size()]);
                         attributeNum = chooseFormList(inp, attriburteArray);
                         if(attributeNum == -1){
                             break;
@@ -353,7 +380,7 @@ public class Debug {
                             break;
                         }
                     }else{
-                        System.out.println("invalid, correct usage: down <node #>");
+                        System.out.println("invalid, correct usage: view <node #>");
                         break;
                     }
                     printAttrFromName(currentNode, attributeName);
@@ -500,7 +527,7 @@ public class Debug {
         // //}
         // return null;
     }
-    
+
     public void printChildren(DecoratedNode node)
     {
         String child_productions[] = node.undecorate().getProdleton().getChildTypes();
@@ -535,6 +562,11 @@ public class Debug {
         System.out.print("\n");
     }
     
+    public void printName(DecoratedNode node)
+    {
+        String name = node.undecorate().getProdleton().getName();
+        System.out.println(name);
+    }
 
     // public void printNames(DecoratedNode node)
     // {
@@ -640,6 +672,7 @@ public class Debug {
     }
 
     //TODO: Add access to higher order attriburte
+    // Translation attribute or Decorated, locals only locals should all be decorated
     public DecoratedNode into(DecoratedNode node, String attriburteName){
         Map<String, Object> attributeMap = allAttributesObjectMap(node);
         if (attributeMap.containsKey(attriburteName)) {
@@ -679,7 +712,7 @@ public class Debug {
                 //System.out.println("Synthisized!!! \"" + attribute + "\"");
                 Integer index = nonterminalton.getSynOccursIndex(attribute);
                 Lazy synthAttribute = node.getNode().getSynthesized(index); //breaks for forwarded nodes
-                Object o = synthAttribute.eval(node);
+                Object o = synthAttribute.eval(node); //.sythisized() found in Decorated node add thunks (.sythisizedlazy() then eval )
                 attributeMap.put(attribute, o);
             }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
                 //System.out.println("Inherited!!!");

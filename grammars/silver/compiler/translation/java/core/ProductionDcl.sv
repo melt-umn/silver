@@ -314,7 +314,6 @@ ${body.translation}
         }
 
         public String getName(){ return "${fName}"; }
-        public String[] getChildNames(){return namedSig.inputNames;}
         public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
         public String getTypeUnparse() { return "${escapeString(ns.unparse)}"; }
