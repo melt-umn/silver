@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+import javax.sound.midi.SysexMessage;
+
 import silver.core.NOriginInfo;
 // import silver.core.OriginsUtils;
 import silver.core.PoriginOriginInfo;
@@ -1095,6 +1097,11 @@ public class DecoratedNode implements Decorable, Typed {
 			// Should get only Nodes from here
 			Object origin = oinfo.getChild(0);
 
+			if (origin instanceof Node) {
+				// Use this name
+				// System.out.println("NAME: " + (((Node)origin).getName()));
+			}
+
 			// For regular (non-root) nonterminals, there appear to be 2 origins,
 			// the second of which is just true, so only use the first
 
@@ -1116,6 +1123,9 @@ public class DecoratedNode implements Decorable, Typed {
 			String ostr = origin.toString();
 			// System.out.println("ORIGIN NAME: " + ostr);
 			// Origin in concrete syntax case
+
+
+			// FIXME: Don't count on this!
 			if (ostr.contains("_c@")) {
 				// Never going to be new
 				// System.out.println("CONCRETE SYNTAX ORIGIN");
