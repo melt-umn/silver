@@ -14,6 +14,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production namedSig :: NamedSignature = ns.namedSignature;
   
   ns.signatureName = fName;
+  ns.implementedSig = nothing();
   ns.env = newScopeEnv(ns.defs, top.env);
   pm.productionSig = ns.namedSignature;
   pm.env = newScopeEnv(ns.actionDefs, top.env);
@@ -27,7 +28,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
         location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)
     ];
   
-  forwards to productionDcl('abstract', $2, id, ns, body);
+  forwards to productionDcl('abstract', $2, id, productionImplementsNone(), ns, body);
 } action {
   insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
@@ -115,7 +116,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   
   local lhsHasLocation :: Boolean =
     case top.namedSignature.namedInputElements of
-    | [namedSignatureElement("silver:core:location", _)] -> true
+    | [namedSignatureElement("silver:core:location", _, _)] -> true
     | _ -> false
     end;
   local lhsHasOrigin :: Boolean = top.namedSignature.outputElement.typerep.isTracked;
@@ -123,7 +124,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   top.concreteSyntaxTypeErrors <-
     case top.namedSignature.namedInputElements of
     | [] -> []
-    | [namedSignatureElement("silver:core:location", _)] -> []
+    | [namedSignatureElement("silver:core:location", _, _)] -> []
     | _ -> [errFromOrigin(top, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only silver:core:location is supported.)")]
     end;
 

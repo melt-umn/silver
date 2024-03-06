@@ -9,16 +9,18 @@ import silver:compiler:definition:flow:driver;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
 
 attribute flowEnv occurs on
-  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
+  DispatchSignature, DispatchRHS, DispatchRHSElem,
+  ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
 propagate flowEnv on
-  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
+  DispatchSignature, DispatchRHS, DispatchRHSElem,
+  ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   -- TODO: bit of a hack, isn't it?
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;

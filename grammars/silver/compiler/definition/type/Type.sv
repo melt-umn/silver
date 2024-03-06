@@ -335,6 +335,13 @@ top::Type ::= params::Integer namedParams::[String]
   top.freeVariables = [];
 }
 
+abstract production dispatchType
+top::Type ::= fn::String
+{
+  top.kindrep = starKind();
+  top.freeVariables = [];
+}
+
 --------------------------------------------------------------------------------
 
 annotation varId :: Integer;

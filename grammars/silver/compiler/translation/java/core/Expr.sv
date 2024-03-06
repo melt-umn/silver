@@ -291,6 +291,22 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
+aspect production dispatchApplication
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+{
+  top.translation = e.invokeTranslation;
+  top.lazyTranslation = e.invokeLazyTranslation;
+
+  e.invokeIsUnique = true;
+  e.invokeArgs = es;
+  e.invokeNamedArgs = annos;
+  e.sameProdAsProductionDefinedOn =
+    case e of
+    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+    | _ -> false
+    end;
+}
+
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {

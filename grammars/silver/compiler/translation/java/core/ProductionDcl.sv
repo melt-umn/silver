@@ -3,7 +3,7 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:driver;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   local className :: String = "P" ++ id.name;
 

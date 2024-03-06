@@ -57,7 +57,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
   top.namedSignature =
     namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName,
       nilContext(), nilNamedSignatureElement(),
-      namedSignatureElement(lhs.name, te.typerep),
+      namedSignatureElement(lhs.name, te.typerep, false),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
   propagate config, grammarName, env, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds, flowEnv;

@@ -147,7 +147,7 @@ top::Pattern ::= v::Name
     else [];
   top.errors <-
     case getValueDcl(v.name, top.env) of
-    | prodDcl(_,_) :: _ ->
+    | prodDcl(_,_,_) :: _ ->
       [errFromOrigin(v, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
     | _ -> []
     end;

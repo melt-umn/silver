@@ -197,7 +197,7 @@ top::AspectProductionLHS ::= id::Name t::Type
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  top.outputElement = namedSignatureElement(id.name, t);
+  top.outputElement = namedSignatureElement(id.name, t, false);
   
   top.defs := [aliasedLhsDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), id.name)];
 
@@ -277,8 +277,9 @@ top::AspectRHSElem ::= id::Name t::Type
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+  production shared::Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
-  top.inputElements = [namedSignatureElement(id.name, t)];
+  top.inputElements = [namedSignatureElement(id.name, t, shared)];
 
   top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), id.name)];
 
@@ -316,7 +317,7 @@ top::AspectFunctionLHS ::= t::TypeExpr
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  top.outputElement = namedSignatureElement(fName, t.typerep);
+  top.outputElement = namedSignatureElement(fName, t.typerep, false);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
   top.defs := [aliasedLhsDef(top.grammarName, getParsedOriginLocationOrFallback(t), fName, performSubstitution(t.typerep, top.upSubst), fName)];

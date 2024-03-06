@@ -125,20 +125,22 @@ global foldNamedSignatureElements::(NamedSignatureElements ::= [NamedSignatureEl
 {--
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
-nonterminal NamedSignatureElement with elementName, elementShortName, typerep, freeVariables, boundVariables;
+nonterminal NamedSignatureElement with elementName, elementShortName, elementShared, typerep, freeVariables, boundVariables;
 propagate boundVariables on NamedSignatureElement;
 
 synthesized attribute elementName :: String;
 synthesized attribute elementShortName :: String;
+synthesized attribute elementShared :: Boolean;
 
 {--
  - Represents an element of the function/production signature.
  -}
 abstract production namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::Type
+top::NamedSignatureElement ::= n::String ty::Type shared::Boolean
 {
   top.elementName = n;
-  top.typerep = ty;
+  top.typerep = if shared then decoratedType(inhSetType([]), ty) else ty;
+  top.elementShared = shared;
   top.freeVariables = ty.freeVariables;
 
   -- When we convert from a SignatureElement to a functionType, we cut down to the short name only:
@@ -153,7 +155,7 @@ top::NamedSignatureElement ::= n::String ty::Type
 abstract production bogusNamedSignatureElement
 top::NamedSignatureElement ::=
 {
-  forwards to namedSignatureElement("__SV_BOGUS_ELEM", errorType());
+  forwards to namedSignatureElement("__SV_BOGUS_ELEM", errorType(), false);
 }
 
 ----------------

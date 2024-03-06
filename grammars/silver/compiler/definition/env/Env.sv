@@ -268,7 +268,7 @@ NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
   -- Used to compute the local typerep for this nonterminal
   anno.givenNonterminalType = nt;
   
-  return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
+  return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep, false);
 }
 
 -- Looks up class instances matching a type
@@ -343,5 +343,15 @@ Maybe<[String]> ::= t::Type e::Env
     | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
     | uniqueDecoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
     | _ -> just([])
+    end;
+}
+
+function asFunctionType
+Type ::= t::Type e::Env
+{
+  return
+    case t.baseType of
+    | dispatchType(fn) when getTypeDcl(fn, e) matches dispatchDcl(ns) :: _ -> ns.typerep
+    | _ -> t
     end;
 }

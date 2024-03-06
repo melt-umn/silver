@@ -277,7 +277,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
-  local t :: Type = performSubstitution(e.typerep, e.upSubst);
+  local t :: Type = asFunctionType(performSubstitution(e.typerep, e.upSubst), top.env);
+  -- TODO: These should maybe be supplied after forwarding?
   es.appExprTypereps = reverse(correctNumTypes);
   es.appExprApplied = e.unparse;
   anns.appExprApplied = e.unparse;
@@ -368,6 +369,15 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     appTypes(
       functionType(length(es.missingTypereps) + length(anns.partialAnnoTypereps), map(fst, anns.missingAnnotations)),
       es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
+}
+
+abstract production dispatchApplication
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+{
+  undecorates to application(e, '(', es, ',', anns, ')');
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  top.typerep = asFunctionType(performSubstitution(e.typerep, e.upSubst), top.env).outputType;
 }
 
 concrete production noteAttachment

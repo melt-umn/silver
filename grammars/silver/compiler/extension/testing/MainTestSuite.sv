@@ -34,7 +34,8 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
     ];
 
   forwards to
-    productionDcl('abstract', 'production', nameIdLower(nme), sig,
+    productionDcl('abstract', 'production', nameIdLower(nme), 
+      productionImplementsNone(), sig,
       productionBody('{',
         foldl(productionStmtsSnoc(_, _), productionStmtsNil(), bod), '}'));
 

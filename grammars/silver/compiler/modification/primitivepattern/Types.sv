@@ -240,6 +240,19 @@ top::Type ::= params::Integer namedParams::[String]
     end;
 }
 
+aspect production dispatchType
+top::Type ::= fn::String
+{
+  top.refine = 
+    case top.refineWith of
+    | dispatchType(ofn) ->
+        if fn == ofn
+        then emptySubst()
+        else errorSubst("Tried to refine conflicting dispatch types " ++ fn ++ " and " ++ ofn)
+    | _ -> errorSubst("Tried to refine dispatch type " ++ fn ++ " with " ++ prettyType(top.refineWith))
+    end;
+}
+
 aspect production foreignType
 top::Type ::= fn::String  transType::String  params::[Type]
 {

@@ -196,3 +196,11 @@ top::Type ::= params::Integer namedParams::[String]
     s"new common.FunctionTypeRep(${toString(params)}, new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", namedParams))}})";
   top.transTypeName = "Fn_" ++ toString(params) ++ "_" ++ implode("_", namedParams);
 }
+
+aspect production dispatchType
+top::Type ::= fn::String
+{
+  top.transClassType = "common.NodeFactory";
+  top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
+  top.transTypeName = substitute(":", "_", fn);
+}

@@ -216,6 +216,20 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
   es.alwaysDecorated = false;
 }
 
+aspect production dispatchApplication
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+{
+  top.flowVertexInfo = top.decSiteVertexInfo;
+  es.appProd =
+    case e.typerep of
+    | dispatchType(fn) when getTypeDcl(fn, top.env) matches d :: _ -> just(d.dispatchSignature)
+    | _ -> nothing()
+    end;
+  e.decSiteVertexInfo = nothing();
+  es.decSiteVertexInfo = top.decSiteVertexInfo;
+  es.alwaysDecorated = top.alwaysDecorated;
+}
+
 aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {

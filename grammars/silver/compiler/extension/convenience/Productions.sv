@@ -4,9 +4,9 @@ import silver:compiler:modification:copper;
 
 -- "production" short for "abstract production"
 concrete production productionDclImplicitAbs
-top::AGDcl ::= 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
-  forwards to productionDcl('abstract', $1, id, ns, body);
+  forwards to productionDcl('abstract', $1, id, d, ns, body);
 }
 
 -- "concrete productions" syntax

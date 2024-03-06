@@ -173,7 +173,7 @@ top::ProdNameList ::= n::QName
     if n.lookupValue.found
     then
       case n.lookupValue.dcl of
-      | prodDcl(_, _) -> []
+      | prodDcl(_, _, _) -> []
       | _ -> [errFromOrigin(n, n.name ++ " is not a production")]
       end
     else [];
@@ -189,7 +189,7 @@ top::ProdNameList ::= h::QName ',' t::ProdNameList
     if h.lookupValue.found
     then
       case h.lookupValue.dcl of
-      | prodDcl(_, _) -> []
+      | prodDcl(_, _, _) -> []
       | _ -> [errFromOrigin(h, h.name ++ " is not a production")]
       end
     else [];

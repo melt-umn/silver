@@ -209,7 +209,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors <- qn.lookupValue.errors;
   top.errors <-
     case qn.lookupValue.dcls of
-    | prodDcl (_, _) :: _ -> []
+    | prodDcl (_, _, _) :: _ -> []
     | [] -> []
     | _ -> [errFromOrigin(qn, qn.name ++ " is not a production.")]
     end;
@@ -292,7 +292,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors <- qn.lookupValue.errors;
   top.errors <-
     case qn.lookupValue.dcls of
-    | prodDcl (_, _) :: _ -> []
+    | prodDcl (_, _, _) :: _ -> []
     | [] -> []
     | _ -> [errFromOrigin(qn, qn.name ++ " is not a production.")]
     end;

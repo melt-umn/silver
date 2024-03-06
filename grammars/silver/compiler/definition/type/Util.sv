@@ -276,6 +276,12 @@ top::Type ::= params::Integer namedParams::[String]
   top.isApplicable = true;
 }
 
+aspect production dispatchType
+top::Type ::= fn::String
+{
+  top.isApplicable = true;
+}
+
 -- Strict type equality, assuming all type vars are skolemized
 instance Eq Type {
   eq = \ t1::Type t2::Type -> !unifyDirectional(t1, t2).failure;

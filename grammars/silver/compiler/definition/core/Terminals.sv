@@ -37,6 +37,7 @@ terminal Closed_kwd      'closed'       lexer classes {KEYWORD};
 terminal Concrete_kwd    'concrete'     lexer classes {KEYWORD,RESERVED};
 terminal Data_kwd        'data'         lexer classes {KEYWORD};
 terminal Decorate_kwd    'decorate'     lexer classes {KEYWORD,RESERVED};
+terminal Dispatch_kwd    'dispatch'     lexer classes {KEYWORD};
 terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4, association = left; -- Association needed for dangling else in action code.
 terminal End_kwd         'end'          lexer classes {KEYWORD,RESERVED};
 terminal Forwarding_kwd  'forwarding'   lexer classes {KEYWORD,RESERVED};
@@ -45,6 +46,7 @@ terminal Forwards_kwd    'forwards'     lexer classes {KEYWORD,RESERVED};
 terminal Function_kwd    'function'     lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
 terminal If_kwd          'if'           lexer classes {KEYWORD,RESERVED};
+terminal Implements_kwd  'implements'   lexer classes {KEYWORD,RESERVED};
 terminal Inherited_kwd   'inherited'    lexer classes {KEYWORD,RESERVED};
 terminal Instance_kwd    'instance'     lexer classes {KEYWORD};
 terminal Local_kwd       'local'        lexer classes {KEYWORD,RESERVED};

@@ -206,6 +206,16 @@ top::Type ::= params::Integer namedParams::[String]
     end;
 }
 
+aspect production dispatchType
+top::Type ::= fn::String
+{
+  top.unify = 
+    case top.unifyWith of
+    | dispatchType(ofn) when fn == ofn -> emptySubst()
+    | _ -> errorSubst("Tried to unify conflicting dispatch types " ++ fn ++ " and " ++ prettyType(top.unifyWith))
+    end;
+}
+
 --------------------------------------------------------------------------------
 
 function unify
