@@ -151,6 +151,8 @@ fun aspectLexTyVarDef Def ::= sg::String  sl::Location  fn::String  tv::TyVar =
 fun typeAliasDef
 Def ::= sg::String sl::Location fn::String mentionedAliases::[String] bound::[TyVar] ty::Type =
   typeDef(defaultEnvItem(typeAliasDcl(fn,mentionedAliases,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun dispatchDef Def ::= sg::String  sl::Location  sig::NamedSignature =
+  typeDef(defaultEnvItem(dispatchDcl(sig,sourceGrammar=sg,sourceLocation=sl)));
 fun synDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
   attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun inhDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =

@@ -5,6 +5,8 @@ top::AGDcl ::= 'dispatch' id::Name '=' sig::DispatchSignature ';'
 {
   top.unparse = "dispatch " ++ id.unparse ++ " = " ++ sig.unparse ++ ";";
 
+  top.defs := [dispatchDef(top.grammarName, id.nameLoc, sig.namedSignature)];
+
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   sig.signatureName = fName;
   sig.env = newScopeEnv(sig.defs, top.env);
