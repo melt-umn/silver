@@ -90,7 +90,7 @@ top::Expr ::= q::QName
   propagate env;
   
   forwards to if null(q.lookupValue.dcls)
-              then errorReference(q.lookupValue.errors, q)
+              then errorReference(q)
               else q.lookupValue.dcl.refDispatcher(q);
 } action {
   if (contains(q.name, sigNames)) {
@@ -99,17 +99,16 @@ top::Expr ::= q::QName
 }
 
 abstract production errorReference
-top::Expr ::= msg::[Message]  q::Decorated! QName
+top::Expr ::= q::Decorated! QName
 {
-  undecorates to errorExpr(msg);  -- TODO: Should this be baseExpr?
+  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.errors <- msg;
+  top.errors <- q.lookupValue.errors;
   top.typerep = errorType();
 }
 
--- TODO: We should separate this out, even, to be "nonterminal/decorable" and "as-is"
 abstract production childReference
 top::Expr ::= q::Decorated! QName
 {
