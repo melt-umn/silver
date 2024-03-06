@@ -71,15 +71,9 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
     | botlNone() -> ntBaseType
     | botlSome(btl) -> appTypeExpr(ntBaseType, btl)
     end;
-  top.ctorDcls = 
-    productionDcl('abstract', 'production', id, 
-      productionImplementsNone(),
-      productionSignatureNoCL(productionLHS(name("top"), '::', ntType), '::=', rhs),
-      productionBody('{', productionStmtsNil(), '}'));
--- TODO: Restore after bootstrapping change to productionDcl
-{-Silver_AGDcl {
+  top.ctorDcls = Silver_AGDcl {
     abstract production $Name{id}
     top::$TypeExpr{ntType} ::= $ProductionRHS{rhs}
     {}
-  };-}
+  };
 }
