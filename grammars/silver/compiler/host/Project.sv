@@ -36,7 +36,7 @@ exports silver:compiler:extension:testing;
 exports silver:compiler:extension:auto_ast;
 exports silver:compiler:extension:templating;
 exports silver:compiler:extension:patternmatching;
---exports silver:compiler:extension:treegen;
+exports silver:compiler:extension:treegen;
 exports silver:compiler:extension:autoattr;
 exports silver:compiler:extension:strategyattr;
 exports silver:compiler:extension:do_notation;
