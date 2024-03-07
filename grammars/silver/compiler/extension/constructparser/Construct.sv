@@ -42,10 +42,10 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
             bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
         '::=',
         productionRHSCons(
-          productionRHSElem(name("args"), '::',
+          productionRHSElem(elemNotShared(), name("args"), '::',
             listTypeExpr('[', stringTypeExpr('String'), ']')),
           productionRHSCons(
-            productionRHSElem(name("ioIn"), '::',
+            productionRHSElem(elemNotShared(), name("ioIn"), '::',
               nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOToken")))),
             productionRHSNil()))),
       productionBody('{',

@@ -68,6 +68,11 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
       lhs.outputElement,
       -- For the moment, functions do not have named parameters (hence, nilNamedSignatureElement)
       nilNamedSignatureElement());
+  
+  top.errors <-
+    if any(map((.elementShared), rhs.inputElements))
+    then [errFromOrigin(rhs, "Sharing in function parameters is not permitted.")]
+    else [];
 } action {
   sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }

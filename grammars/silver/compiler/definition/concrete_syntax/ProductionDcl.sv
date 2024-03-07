@@ -139,11 +139,14 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.concreteSyntaxTypeErrors <-
     if t.typerep.permittedInConcreteSyntax then []
     else [errFromOrigin(t, t.unparse ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
+  top.concreteSyntaxTypeErrors <-
+    if ms.elementShared then [errFromOrigin(ms, "Sharing is not permitted in concrete productions.")]
+    else [];
 }
 
 synthesized attribute permittedInConcreteSyntax :: Boolean occurs on Type;

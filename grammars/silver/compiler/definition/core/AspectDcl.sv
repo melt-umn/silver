@@ -236,23 +236,31 @@ top::AspectRHSElem ::= '_'
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+  production shared :: Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
-  forwards to aspectRHSElemFull(name("p_" ++ toString(top.deterministicCount)), rType);
+  forwards to aspectRHSElemFull(shared, name("p_" ++ toString(top.deterministicCount)), rType);
 }
 
-concrete production aspectRHSElemId
+concrete production aspectRHSElemIdConcrete
+top::AspectRHSElem ::= id::Name
+{
+  top.errors <- [wrnFromOrigin(top, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
+  
+  forwards to aspectRHSElemId(@id);
+} action {
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
+}
+
+abstract production aspectRHSElemId
 top::AspectRHSElem ::= id::Name
 {
   top.unparse = id.unparse;
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+  production shared :: Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
-  top.errors <- [wrnFromOrigin(top, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
-  
-  forwards to aspectRHSElemFull(id, rType);
-} action {
-  insert semantic token IdSigNameDcl_t at id.nameLoc;
+  forwards to aspectRHSElemFull(shared, id, rType);
 }
 
 concrete production aspectRHSElemTyped
@@ -263,21 +271,33 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
   
   top.errors <- t.errors;
 
-  forwards to aspectRHSElemFull(id, t.typerep);
+  forwards to aspectRHSElemFull(false, @id, t.typerep);
+} action {
+  insert semantic token IdSigNameDcl_t at id.nameLoc;
+}
+
+concrete production aspectRHSElemSharedTyped
+top::AspectRHSElem ::= '@' id::Name '::' t::TypeExpr
+{
+  top.unparse = "@" ++ id.unparse ++ "::" ++ t.unparse;
+  propagate env, grammarName, config;
+  
+  top.errors <- t.errors;
+
+  forwards to aspectRHSElemFull(true, @id, t.typerep);
 } action {
   insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
 abstract production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::Type
+top::AspectRHSElem ::= shared::Boolean id::Name t::Type
 {
-  top.unparse = id.unparse ++ "::" ++ prettyType(t);
+  top.unparse = (if shared then "@" else "") ++ id.unparse ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
-  production shared::Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
   top.inputElements = [namedSignatureElement(id.name, t, shared)];
 

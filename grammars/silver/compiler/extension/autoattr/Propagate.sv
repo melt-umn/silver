@@ -91,6 +91,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
           map(
             \ ie::NamedSignatureElement ->
               aspectRHSElemFull(
+                ie.elementShared,
                 name(ie.elementName),
                 freshenType(ie.elementDclType, ie.typerep.freeVariables)),
             d.namedSignature.inputElements))),

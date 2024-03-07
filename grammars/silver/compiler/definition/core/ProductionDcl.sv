@@ -180,6 +180,14 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
   insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
 
+concrete production productionLHSType
+top::ProductionLHS ::= t::TypeExpr
+{
+  top.unparse = t.unparse;
+
+  forwards to productionLHS(name("_G_lhs"), '::', @t);
+}
+
 concrete production productionRHSNil
 top::ProductionRHS ::=
 {
@@ -205,17 +213,12 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 concrete production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
-  top.unparse = id.unparse ++ "::" ++ t.unparse;
+  top.unparse = ms.unparse ++ id.unparse ++ "::" ++ t.unparse;
   propagate env;
 
-  local shared::Boolean =
-    case top.implementedSig of
-    | just(e) -> e.elementShared
-    | nothing() -> false
-    end;
-  top.inputElements = [namedSignatureElement(id.name, t.typerep, shared)];
+  top.inputElements = [namedSignatureElement(id.name, t.typerep, ms.elementShared)];
 
   top.defs := [childDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 
@@ -228,10 +231,20 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 }
 
 concrete production productionRHSElemType
-top::ProductionRHSElem ::= t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared t::TypeExpr
 {
-  top.unparse = t.unparse;
+  top.unparse = ms.unparse ++ t.unparse;
 
-  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount)), '::', t);
+  forwards to productionRHSElem(@ms, name("_G_" ++ toString(top.deterministicCount)), '::', @t);
 }
+
+tracked nonterminal MaybeShared with unparse, elementShared;
+
+concrete production elemShared
+top::MaybeShared ::= '@'
+{ top.unparse = "@"; top.elementShared = true; }
+
+concrete production elemNotShared
+top::MaybeShared ::=
+{ top.unparse = "";  top.elementShared = false; }
 

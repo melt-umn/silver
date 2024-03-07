@@ -31,7 +31,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.errors <- t.errorsKindStar;
   
@@ -39,6 +39,12 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
   checkImplementedSig.downSubst = emptySubst();
   checkImplementedSig.finalSubst = emptySubst();
   
+  top.errors <-
+    case top.implementedSig of
+    | just(e) when e.elementShared != ms.elementShared ->
+      [errFromOrigin(top, s"Child ${id.name} does not match the sharedness from the implemented dispatch signature.")]
+    | _ -> []
+    end;
   top.errors <-
     if top.implementedSig.isJust && checkImplementedSig.typeerror
     then [errFromOrigin(top, "Child " ++ id.name ++ " does not match the type from the implemented dispatch signature " ++ checkImplementedSig.rightpp ++ ".  Instead it is of type " ++ checkImplementedSig.leftpp)]

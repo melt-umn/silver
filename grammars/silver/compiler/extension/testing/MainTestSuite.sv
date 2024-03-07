@@ -69,9 +69,10 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
          bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
      '::=',
      productionRHSCons(
-      productionRHSElemType(listTypeExpr('[', stringTypeExpr('String'), ']')),
+      productionRHSElemType(elemNotShared(), listTypeExpr('[', stringTypeExpr('String'), ']')),
       productionRHSCons(
        productionRHSElem(
+        elemNotShared(),
         name("mainIO"),
         '::', typerepTypeExpr(ioForeignType)),
        productionRHSNil()))),

@@ -43,7 +43,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 }
 
 aspect production dispatchSigDcl
-top::AGDcl ::= 'dispatch' id::Name '=' ns::DispatchSignature ';'
+top::AGDcl ::= 'dispatch' id::Name '=' ns::ProductionSignature ';'
 {
   top.docForName = id.name;
   top.docUnparse = "`dispatch " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";

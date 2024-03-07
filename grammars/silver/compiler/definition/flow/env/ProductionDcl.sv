@@ -9,12 +9,10 @@ import silver:compiler:definition:flow:driver;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
 
 attribute flowEnv occurs on
-  DispatchSignature, DispatchRHS, DispatchRHSElem,
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
 propagate flowEnv on
-  DispatchSignature, DispatchRHS, DispatchRHSElem,
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
@@ -70,6 +68,12 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 
 aspect production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
+{
+  propagate flowEnv;
+}
+
+aspect production aspectRHSElemSharedTyped
+top::AspectRHSElem ::= '@' id::Name '::' t::TypeExpr
 {
   propagate flowEnv;
 }

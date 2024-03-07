@@ -80,6 +80,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
   top.inputNames = error("Not a production or function");
   top.inputTypes = ty.inputTypes; -- Does anything actually use this? TODO: eliminate?
   top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, ty);
+  top.dclTypeScheme = top.typeScheme;
   top.freeVariables = setUnionTyVars(ctxs.freeVariables, ty.freeVariables);
   top.typerep = ty;
   

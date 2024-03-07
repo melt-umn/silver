@@ -149,7 +149,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.actionDefs = [actionChildDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 }
