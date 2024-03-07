@@ -43,9 +43,9 @@ top::Expr ::= e::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= msg::[Message]  q::Decorated! QName
 {
-  top.merrors := q.lookupValue.errors;
+  top.merrors := msg;
   propagate mDownSubst, mUpSubst;
   top.mtyperep = errorType();
   top.monadicNames = [];
