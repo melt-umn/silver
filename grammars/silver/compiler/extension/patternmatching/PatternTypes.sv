@@ -73,7 +73,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ (if ps.count > 0 && nps.count > 0 then ", " else "") ++ nps.unparse ++ ")";
 
-  local parms :: Integer = prod.lookupValue.typeScheme.arity;
+  local parms :: Integer = length(prod.lookupValue.dcl.namedSignature.inputElements);
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
@@ -92,7 +92,10 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.isPrimitivePattern = false;
   top.isBoolPattern = false;
   top.isListPattern = false;
-  top.patternTypeName = prod.lookupValue.typeScheme.typerep.outputType.baseType.typeName;
+  top.patternTypeName =
+    if prod.lookupValue.found
+    then prod.lookupValue.dcl.namedSignature.outputElement.typerep.typeName
+    else "";
 }
 
 concrete production prodAppPattern
