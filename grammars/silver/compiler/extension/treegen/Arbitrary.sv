@@ -17,7 +17,7 @@ imports silver:compiler:metatranslation;
 import silver:util:treemap as tm;
 
 terminal Generator_t 'generator' lexer classes {KEYWORD};
-{-
+
 concrete production generatorDcl
 top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorComponents '}'
 {
@@ -318,4 +318,3 @@ Expr ::= env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
     else $Expr{generateExprChain(env, specEnv, nt, index + 1, tail(lst))}
   };
 }
--}
