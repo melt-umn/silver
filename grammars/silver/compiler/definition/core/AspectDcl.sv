@@ -195,7 +195,7 @@ top::AspectProductionLHS ::= id::Name t::Type
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
   production attribute rType :: Type;
-  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
 
   top.outputElement = namedSignatureElement(id.name, t, false);
   
@@ -276,7 +276,7 @@ top::AspectRHSElem ::= id::Name t::Type
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
   production attribute rType :: Type;
-  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
   production shared::Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
   top.inputElements = [namedSignatureElement(id.name, t, shared)];

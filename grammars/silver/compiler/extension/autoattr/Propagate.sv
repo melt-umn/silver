@@ -83,7 +83,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
       aspectProductionSignature(
         aspectProductionLHSFull(
           name(d.namedSignature.outputElement.elementName),
-          d.namedSignature.outputElement.typerep),
+          d.namedSignature.outputElement.elementDclType),
         '::=',
         foldr(
           aspectRHSElemCons(_, _),
@@ -92,7 +92,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
             \ ie::NamedSignatureElement ->
               aspectRHSElemFull(
                 name(ie.elementName),
-                freshenType(ie.typerep, ie.typerep.freeVariables)),
+                freshenType(ie.elementDclType, ie.typerep.freeVariables)),
             d.namedSignature.inputElements))),
       productionBody(
         '{',

@@ -8,7 +8,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
-  errCheck1 = check(realSig.typeScheme.typerep, namedSig.typeScheme.typerep);
+  errCheck1 = check(realSig.dclTypeScheme.typerep, namedSig.dclTypeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [errFromOrigin(top, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
@@ -34,7 +34,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
-  errCheck1 = check(realSig.typeScheme.typerep, namedSig.typeScheme.typerep);
+  errCheck1 = check(realSig.dclTypeScheme.typerep, namedSig.dclTypeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [errFromOrigin(top, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "

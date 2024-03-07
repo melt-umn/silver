@@ -15,7 +15,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
   checkNT.downSubst = emptySubst();
   checkNT.finalSubst = emptySubst();
   
-  local checkImplementedSig::TypeCheck = check(t.typerep, top.implementedSig.fromJust.typerep);
+  local checkImplementedSig::TypeCheck = check(t.typerep, top.implementedSig.fromJust.elementDclType);
   checkImplementedSig.downSubst = emptySubst();
   checkImplementedSig.finalSubst = emptySubst();
 
@@ -35,7 +35,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.errors <- t.errorsKindStar;
   
-  local checkImplementedSig::TypeCheck = check(t.typerep, top.implementedSig.fromJust.typerep);
+  local checkImplementedSig::TypeCheck = check(t.typerep, top.implementedSig.fromJust.elementDclType);
   checkImplementedSig.downSubst = emptySubst();
   checkImplementedSig.finalSubst = emptySubst();
   
