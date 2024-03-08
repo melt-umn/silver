@@ -244,6 +244,7 @@ top::AspectRHSElem ::= '_'
 concrete production aspectRHSElemIdConcrete
 top::AspectRHSElem ::= id::Name
 {
+  -- aspectRHSElemId is used by extensions, so avoid giving the warning there:
   top.errors <- [wrnFromOrigin(top, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
   
   forwards to aspectRHSElemId(@id);
@@ -257,7 +258,7 @@ top::AspectRHSElem ::= id::Name
   top.unparse = id.unparse;
 
   production attribute rType :: Type;
-  rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
+  rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
   production shared :: Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
   forwards to aspectRHSElemFull(shared, id, rType);
