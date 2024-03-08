@@ -4,6 +4,13 @@ aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   body.downSubst = emptySubst();
+
+  top.errors <-
+    case d.implementsSig of
+    | just(sig) when length(sig.inputElements) > length(ns.namedSignature.inputElements) ->
+      [errFromOrigin(top, "Production signature missing items from implemented dispatch signature.")]
+    | _ -> []
+    end;
 }
 
 aspect production productionLHS

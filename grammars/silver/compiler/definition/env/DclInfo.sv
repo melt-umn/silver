@@ -103,7 +103,7 @@ top::ValueDclInfo ::= ty::Type
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<String> hasForward::Boolean
+top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForward::Boolean
 {
   top.fullName = ns.fullName;
   
@@ -111,7 +111,14 @@ top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<String> hasForward::Boo
   top.typeScheme =
     case dispatch of
     | nothing() -> ns.typeScheme
-    | just(fn) -> monoType(dispatchType(fn))
+    | just(dSig) ->
+      if length(ns.inputElements) == length(dSig.inputElements)
+      then monoType(dispatchType(dSig.fullName))
+      else (if null(ns.contexts) then polyType else constraintType(_, ns.contexts, _))(
+        ns.freeVariables,
+        appTypes(
+          functionType(length(ns.inputElements) - length(dSig.inputElements), []),
+          drop(length(dSig.inputElements), ns.inputTypes) ++ [dispatchType(dSig.fullName)]))
     end;
   top.hasForward = hasForward;
 }

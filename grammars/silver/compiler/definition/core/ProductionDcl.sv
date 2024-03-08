@@ -50,7 +50,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs := prodDef(top.grammarName, id.nameLoc, namedSig, map((.fullName), d.implementsSig), length(body.forwardExpr) > 0) ::
+  top.defs := prodDef(top.grammarName, id.nameLoc, namedSig, d.implementsSig, length(body.forwardExpr) > 0) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.nameLoc, namedSig, body.productionAttributes)];
 
