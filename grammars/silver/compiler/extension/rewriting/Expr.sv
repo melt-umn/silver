@@ -113,13 +113,13 @@ top::Expr ::= @q::QName
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.transform =
     case e, es of
@@ -178,7 +178,7 @@ aspect isPrimitive on Type of
 end;
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
 }

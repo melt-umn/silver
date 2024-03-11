@@ -272,7 +272,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   forward t = application(e, '(', es, ',', anns, ')');
 
@@ -285,7 +285,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   forward t = application(e, '(', es, ',', anns, ')');
 
@@ -397,7 +397,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
 
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.merrors := error("merrors not defined on partial applications");
   top.mUpSubst = error("mUpSubst not defined on partial applications");
@@ -409,7 +409,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.merrors := [];
 

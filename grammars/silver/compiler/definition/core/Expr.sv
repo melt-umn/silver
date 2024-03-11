@@ -307,8 +307,10 @@ top::Expr ::= e::Expr '(' ')'
   forwards to application(@e, $2, emptyAppExprs(), ',', emptyAnnoAppExprs(), $3);
 }
 
-abstract production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+dispatch Application = Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs;
+
+abstract production errorApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -325,8 +327,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 -- Note that this applies to both function and productions.
 -- We don't distinguish anymore at this point. A production reference
 -- becomes a function, effectively.
-abstract production functionApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production functionApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -338,8 +340,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
      else functionInvocation)(e, es, anns);
 }
 
-abstract production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production functionInvocation implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -349,8 +351,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
   top.typerep = ety.outputType;
 }
 
-abstract production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production partialApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
@@ -363,8 +365,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
       es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
 }
 
-abstract production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production dispatchApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";

@@ -241,14 +241,14 @@ top::Expr ::= @q::QName
     else s"${directThunk}.eval()";
 }
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
   top.lazyTranslation = e.invokeLazyTranslation;
@@ -274,7 +274,7 @@ fun namedargsTranslationNOReorder String ::= e::Decorated AnnoAppExprs =
   else s"new Object[]{${implode(", ", map((.lazyTranslation), e.exprs))}}";
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   local step1 :: String = e.translation;
   -- Note: we check for nullity of the index lists instead of use
@@ -303,7 +303,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
 }
 
 aspect production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
   top.lazyTranslation = e.invokeLazyTranslation;

@@ -181,7 +181,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
@@ -190,7 +190,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =
@@ -204,7 +204,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   es.appProd =
     case e of
@@ -217,7 +217,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =

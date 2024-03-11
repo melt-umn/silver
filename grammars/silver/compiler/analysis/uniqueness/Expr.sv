@@ -156,7 +156,7 @@ monoid attribute appExprUniquenessErrors::[Message] occurs on AppExprs, AppExpr,
 propagate appExprUniquenessErrors on AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.errors <- es.appExprUniquenessErrors ++ anns.appExprUniquenessErrors;
   es.isNtUniquenessPreserving =
@@ -168,7 +168,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.errors <- es.appExprUniquenessErrors ++ anns.appExprUniquenessErrors;
   es.isNtUniquenessPreserving =
@@ -180,7 +180,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.errors <- es.appExprUniquenessErrors ++ anns.appExprUniquenessErrors;
   es.isNtUniquenessPreserving = true;
