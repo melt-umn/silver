@@ -3,6 +3,38 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:modification:ffi only ioForeignType; -- for main type check only
 import silver:compiler:modification:list only listCtrType;
 
+import silver:compiler:modification:concisefunctions;
+
+aspect production shortFunctionDcl
+top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
+{
+	-- For main functions which return IOVal<Integer>
+  local attribute typeIOValFailed::Boolean = unify(namedSig.typerep,
+    appTypes(
+      functionType(2, []),
+        [appType(listCtrType(), stringType()),
+          ioForeignType,
+          appType(nonterminalType("silver:core:IOVal", [starKind()], true, false), intType())])).failure;
+
+  -- For main functions which return IO<Integer>
+  local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
+    appTypes(
+      functionType(1, []),
+        [appType(listCtrType(), stringType()),
+          appType(nonterminalType("silver:core:IO", [starKind()], false, false), intType())])).failure;
+
+	top.genFiles <-
+		if id.name == "main"
+			then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))]
+			else [];
+
+	top.errors <-
+    if id.name == "main" && typeIOValFailed && typeIOMonadFailed -- Neither legal main function type used
+			then [errFromOrigin(top, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++
+				"or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
+			else [];
+}
+
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
