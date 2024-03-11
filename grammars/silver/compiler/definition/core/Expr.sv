@@ -99,9 +99,8 @@ top::Expr ::= q::QName
 }
 
 abstract production errorReference
-top::Expr ::= msg::[Message]  q::Decorated! QName
+top::Expr ::= msg::[Message]  @q::QName
 {
-  undecorates to errorExpr(msg);  -- TODO: Should this be baseExpr?
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -109,11 +108,11 @@ top::Expr ::= msg::[Message]  q::Decorated! QName
   top.typerep = errorType();
 }
 
--- TODO: We should separate this out, even, to be "nonterminal/decorable" and "as-is"
-abstract production childReference
-top::Expr ::= q::Decorated! QName
+dispatch Reference = Expr ::= @q::QName;
+
+abstract production childReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -122,10 +121,9 @@ top::Expr ::= q::Decorated! QName
                 else q.lookupValue.typeScheme.monoType;
 }
 
-abstract production lhsReference
-top::Expr ::= q::Decorated! QName
+abstract production lhsReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -133,10 +131,9 @@ top::Expr ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
 }
 
-abstract production localReference
-top::Expr ::= q::Decorated! QName
+abstract production localReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -145,10 +142,9 @@ top::Expr ::= q::Decorated! QName
                 else q.lookupValue.typeScheme.monoType;
 }
 
-abstract production forwardReference
-top::Expr ::= q::Decorated! QName
+abstract production forwardReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -159,10 +155,9 @@ top::Expr ::= q::Decorated! QName
 -- Note here that production and function *references* are distinguished.
 -- Later on, we do *not* distinguish for application.
 
-abstract production productionReference
-top::Expr ::= q::Decorated! QName
+abstract production productionReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -178,10 +173,9 @@ top::Expr ::= q::Decorated! QName
   contexts.compiledGrammars = top.compiledGrammars;
 }
 
-abstract production functionReference
-top::Expr ::= q::Decorated! QName
+abstract production functionReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -197,10 +191,9 @@ top::Expr ::= q::Decorated! QName
   contexts.compiledGrammars = top.compiledGrammars;
 }
 
-abstract production classMemberReference
-top::Expr ::= q::Decorated! QName
+abstract production classMemberReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -229,10 +222,9 @@ top::Expr ::= q::Decorated! QName
   contexts.compiledGrammars = top.compiledGrammars;
 }
 
-abstract production globalValueReference
-top::Expr ::= q::Decorated! QName
+abstract production globalValueReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 

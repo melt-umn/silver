@@ -5,7 +5,7 @@ import silver:compiler:modification:copper only terminalIdReference;
 {--
  - The production a variable reference should forward to for this type of value
  -}
-synthesized attribute refDispatcher :: (Expr ::= Decorated! QName) occurs on ValueDclInfo;
+synthesized attribute refDispatcher :: Reference occurs on ValueDclInfo;
 {--
  - The production an "assignment" should forward to for this type of value
  -}

@@ -26,7 +26,7 @@ top::Expr ::=
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName _ _ _
+top::Expr ::= @q::QName _ _ _
 {
   -- In regular pattern matching nonterminal values are always effectively decorated, but we are
   -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
@@ -67,49 +67,49 @@ top::Expr ::= q::Decorated! QName _ _ _
       -- The variable is bound in an enclosing let/match
       -- Explicitly undecorate the variable, if appropriate for the final expected type
       if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-      else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) })
+      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
+      else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) })
     end;
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production errorApplication

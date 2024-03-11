@@ -76,10 +76,9 @@ aspect shortFunctionDefs on top::ProductionRHSElem using := of
 | productionRHSElemType(_, _) -> []
 end;
 
-abstract production shortFunParamReference
-top::Expr ::= q::Decorated! QName
+abstract production shortFunParamReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
 
   propagate errors;

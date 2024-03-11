@@ -58,14 +58,14 @@ top::Expr ::= msg::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated! QName
+top::Expr ::= msg::[Message]  @q::QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local childIDref :: String =
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
@@ -102,7 +102,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
@@ -128,7 +128,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation =
     if top.finalType.isDecorated
@@ -139,7 +139,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation =
     if top.finalType.isDecorated
@@ -151,7 +151,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local factory::String =
     if null(typeScheme.contexts)
@@ -185,7 +185,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
@@ -211,7 +211,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local transContextMember::String =
     s"${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)})";
@@ -227,7 +227,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local directThunk :: String =
     s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.global_${fullNameToShort(q.lookupValue.fullName)}" ++

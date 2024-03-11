@@ -17,7 +17,7 @@ top::Expr ::= params::LambdaRHS e::Expr
 
 
 aspect production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -29,7 +29,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production shortFunParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

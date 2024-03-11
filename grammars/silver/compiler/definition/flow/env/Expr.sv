@@ -75,7 +75,7 @@ top::Expr ::=
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   -- Note that q should find the actual type written in the signature, and so
   -- isDecorable on that indeed tells us whether it's something autodecorated.
@@ -106,7 +106,7 @@ top::Expr ::= q::Decorated! QName
     end;
 }
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   -- Always a decorable type, so just check how it's being used:
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
@@ -120,7 +120,7 @@ top::Expr ::= q::Decorated! QName
     else nothing();
 }
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   -- Again, q give the actual type written.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
@@ -154,7 +154,7 @@ top::Expr ::= q::Decorated! QName
     end;
 }
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   -- Again, always a decorable type.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
@@ -516,7 +516,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 {
   -- Because of the auto-undecorate behavior, we need to check for the case
   -- where `t` should be equivalent to `new(t)` and report accoringly.

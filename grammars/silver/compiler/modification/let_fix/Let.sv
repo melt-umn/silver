@@ -119,10 +119,9 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   e.isRoot = false;
 }
 
-abstract production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+abstract production lexicalLocalReference implements Reference
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);

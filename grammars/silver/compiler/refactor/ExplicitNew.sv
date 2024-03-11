@@ -24,7 +24,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.transforms <-
     if top.config.refactorExplicitNew
@@ -38,7 +38,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.transforms <-
     if top.config.refactorExplicitNew

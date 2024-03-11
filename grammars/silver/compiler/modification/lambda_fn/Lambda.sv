@@ -179,10 +179,9 @@ top::LambdaRHSElem ::= '_'
 }
 
 
-abstract production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+abstract production lambdaParamReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   propagate errors;
   top.freeVars := ts:fromList([q.name]);

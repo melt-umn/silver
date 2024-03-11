@@ -133,7 +133,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  _ _ _
+top::Expr ::= @q::QName  _ _ _
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

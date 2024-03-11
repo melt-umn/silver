@@ -69,7 +69,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 }
 
 aspect production shortFunParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation = s"common.Util.<${top.finalType.transType}>demand(${top.lazyTranslation})";
   top.lazyTranslation = "c_" ++ q.lookupValue.fullName;

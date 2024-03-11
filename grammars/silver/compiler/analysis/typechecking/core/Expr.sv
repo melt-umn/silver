@@ -22,7 +22,7 @@ top::Expr ::=
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
@@ -31,7 +31,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
@@ -40,7 +40,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
@@ -49,7 +49,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   instHead.contextLoc = q.nameLoc;
   instHead.contextSource = "the use of " ++ q.name;

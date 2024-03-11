@@ -634,7 +634,7 @@ Step 2: Let's go check on expressions. This has two purposes:
 -}
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
     top.errors <-
     if top.config.warnMissingInh
@@ -644,7 +644,7 @@ top::Expr ::= q::Decorated! QName
     else [];
 }
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
     top.errors <-
     if top.config.warnMissingInh
@@ -653,7 +653,7 @@ top::Expr ::= q::Decorated! QName
     else [];
 }
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
     top.errors <-
     if top.config.warnMissingInh
@@ -663,7 +663,7 @@ top::Expr ::= q::Decorated! QName
     else [];
 }
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
     top.errors <-
     if top.config.warnMissingInh

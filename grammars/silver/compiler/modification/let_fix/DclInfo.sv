@@ -15,7 +15,7 @@ top::ValueDclInfo ::= fn::String ty::Type fi::Maybe<VertexType> fd::[FlowVertex]
 
   top.typeScheme = monoType(ty);
 
-  top.refDispatcher = lexicalLocalReference(_, fi, fd, rs);
+  top.refDispatcher = lexicalLocalReference(fi, fd, rs);
   top.defDispatcher = errorValueDef; -- should be impossible (never in scope at production level?)
   top.defLHSDispatcher = errorDefLHS; -- ditto
   top.transDefLHSDispatcher = errorTransAttrDefLHS;

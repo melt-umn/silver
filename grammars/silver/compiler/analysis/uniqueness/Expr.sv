@@ -20,7 +20,7 @@ top::Expr ::=
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.uniqueRefs <-
     case top.finalType, refSet of
@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated! QName
     end;
 }
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.uniqueRefs <-
     case top.finalType, refSet of
@@ -82,7 +82,7 @@ top::Expr ::= q::Decorated! QName
     end;
 }
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.errors <-
     case top.finalType of
@@ -92,7 +92,7 @@ top::Expr ::= q::Decorated! QName
     end;
 }
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.errors <-
     case top.finalType of
@@ -102,7 +102,7 @@ top::Expr ::= q::Decorated! QName
     end;
 }
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.errors <- flatMap(\ tv::TyVar ->
     let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
@@ -113,7 +113,7 @@ top::Expr ::= q::Decorated! QName
     top.typerep.freeVariables);
 }
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.errors <- flatMap(\ tv::TyVar ->
     let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
@@ -124,7 +124,7 @@ top::Expr ::= q::Decorated! QName
     top.typerep.freeVariables);
 }
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.errors <- flatMap(\ tv::TyVar ->
     let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
@@ -135,7 +135,7 @@ top::Expr ::= q::Decorated! QName
     top.typerep.freeVariables);
 }
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.errors <- flatMap(\ tv::TyVar ->
     let substTy::Type = performSubstitution(varType(tv), top.finalSubst)
@@ -316,7 +316,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 }
 
 aspect production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.uniqueRefs <-
     if top.finalType.isUniqueDecorated
@@ -345,7 +345,7 @@ top::Expr ::= params::LambdaRHS e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
   top.errors <-
     -- This check is needed due to how we handle let binding auto-undecoration in the type system:
