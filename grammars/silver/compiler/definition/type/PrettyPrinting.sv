@@ -236,9 +236,9 @@ top::Type ::= params::Integer namedParams::[String]
 }
 
 aspect production dispatchType
-top::Type ::= fn::String
+top::Type ::= ns::NamedSignature
 {
-  top.typepp = fn;
+  top.typepp = ns.fullName;
 }
 
 aspect production starKind

@@ -207,12 +207,12 @@ top::Type ::= params::Integer namedParams::[String]
 }
 
 aspect production dispatchType
-top::Type ::= fn::String
+top::Type ::= ns::NamedSignature
 {
   top.unify = 
     case top.unifyWith of
-    | dispatchType(ofn) when fn == ofn -> emptySubst()
-    | _ -> errorSubst("Tried to unify conflicting dispatch types " ++ fn ++ " and " ++ prettyType(top.unifyWith))
+    | dispatchType(ons) when ns.fullName == ons.fullName -> emptySubst()
+    | _ -> errorSubst("Tried to unify conflicting dispatch types " ++ ns.fullName ++ " and " ++ prettyType(top.unifyWith))
     end;
 }
 

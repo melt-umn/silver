@@ -277,9 +277,11 @@ top::Type ::= params::Integer namedParams::[String]
 }
 
 aspect production dispatchType
-top::Type ::= fn::String
+top::Type ::= ns::NamedSignature
 {
   top.isApplicable = true;
+  top.inputTypes = ns.inputTypes;
+  top.outputType = ns.outputElement.typerep;
 }
 
 -- Strict type equality, assuming all type vars are skolemized
