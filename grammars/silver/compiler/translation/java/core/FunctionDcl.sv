@@ -8,7 +8,7 @@ import silver:compiler:modification:concisefunctions;
 aspect production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
-	-- For main functions which return IOVal<Integer>
+  -- For main functions which return IOVal<Integer>
   local attribute typeIOValFailed::Boolean = unify(namedSig.typerep,
     appTypes(
       functionType(2, []),
@@ -23,16 +23,16 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
         [appType(listCtrType(), stringType()),
           appType(nonterminalType("silver:core:IO", [starKind()], false, false), intType())])).failure;
 
-	top.genFiles <-
-		if id.name == "main"
-			then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))]
-			else [];
+  top.genFiles <-
+    if id.name == "main"
+      then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))]
+      else [];
 
-	top.errors <-
+  top.errors <-
     if id.name == "main" && typeIOValFailed && typeIOMonadFailed -- Neither legal main function type used
-			then [errFromOrigin(top, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++
-				"or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
-			else [];
+      then [errFromOrigin(top, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++
+        "or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
+      else [];
 }
 
 aspect production functionDcl
