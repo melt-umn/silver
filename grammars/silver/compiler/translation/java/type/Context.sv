@@ -1,6 +1,5 @@
 grammar silver:compiler:translation:java:type;
 
-import silver:compiler:definition:env;
 import silver:compiler:definition:core only QNameAttrOccur, QName, qNameAttrOccur;
 
 -- Translation of *solved* contexts, not *constraint* contexts

@@ -1,6 +1,7 @@
 grammar silver:compiler:translation:java:type;
 
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core;
 
 -- The Java type corresponding to the Silver Type
@@ -198,12 +199,10 @@ top::Type ::= params::Integer namedParams::[String]
 }
 
 aspect production dispatchType
-top::Type ::= fn::String
+top::Type ::= ns::NamedSignature
 {
-  -- TODO: This should ideally be specialized to the nonterminal,
-  -- but that requires an env lookup.
-  top.transType = "common.NodeFactory<common.Node>";
+  top.transType = s"common.NodeFactory<${ns.outputElement.typerep.transType}>";
   top.transClassType = "common.NodeFactory";
-  top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
-  top.transTypeName = substitute(":", "_", fn);
+  top.transTypeRep = s"new common.BaseTypeRep(\"${ns.fullName}\")";
+  top.transTypeName = substitute(":", "_", ns.fullName);
 }

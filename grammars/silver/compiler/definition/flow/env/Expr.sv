@@ -222,7 +222,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
   top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =
     case e.typerep of
-    | dispatchType(fn) when getTypeDcl(fn, top.env) matches d :: _ -> just(d.dispatchSignature)
+    | dispatchType(ns) -> just(ns)
     | _ -> nothing()
     end;
   e.decSiteVertexInfo = nothing();

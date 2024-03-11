@@ -160,8 +160,8 @@ top::Expr ::= @q::QName
   local prodArity::Integer = length(q.lookupValue.dcl.namedSignature.inputElements);
   top.translation =
     case top.finalType.outputType of
-    | dispatchType(fn) when getTypeDcl(fn, top.env) matches dcl :: _ ->
-      s"new common.DispatchNodeFactory<${q.lookupValue.dcl.namedSignature.outputElement.typerep.transType}>(${factory}, ${toString(length(dcl.dispatchSignature.inputElements))})"
+    | dispatchType(ns) ->
+      s"new common.DispatchNodeFactory<${q.lookupValue.dcl.namedSignature.outputElement.typerep.transType}>(${factory}, ${toString(length(ns.inputElements))})"
     | _ -> factory
     end;
   top.lazyTranslation = top.translation;

@@ -113,12 +113,13 @@ top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForw
     | nothing() -> ns.typeScheme
     | just(dSig) ->
       if length(ns.inputElements) == length(dSig.inputElements)
-      then monoType(dispatchType(dSig.fullName))
+      then monoType(dispatchType(dSig))
       else (if null(ns.contexts) then polyType else constraintType(_, ns.contexts, _))(
         ns.freeVariables,
         appTypes(
           functionType(length(ns.inputElements) - length(dSig.inputElements), []),
-          drop(length(dSig.inputElements), ns.inputTypes) ++ [dispatchType(dSig.fullName)]))
+          drop(length(dSig.inputElements), ns.inputTypes) ++
+        [dispatchType(dSig)]))
     end;
   top.hasForward = hasForward;
 }
@@ -256,7 +257,7 @@ top::TypeDclInfo ::= ns::NamedSignature
 {
   top.fullName = ns.fullName;
 
-  top.typeScheme = monoType(dispatchType(ns.fullName));
+  top.typeScheme = monoType(dispatchType(ns));
   top.dispatchSignature = ns;
   top.isType = true;
 }

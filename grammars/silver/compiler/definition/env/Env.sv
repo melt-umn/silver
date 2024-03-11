@@ -345,13 +345,3 @@ Maybe<[String]> ::= t::Type e::Env
     | _ -> just([])
     end;
 }
-
-function asFunctionType
-Type ::= t::Type e::Env
-{
-  return
-    case t.baseType of
-    | dispatchType(fn) when getTypeDcl(fn, e) matches dispatchDcl(ns) :: _ -> ns.typerep
-    | _ -> t
-    end;
-}
