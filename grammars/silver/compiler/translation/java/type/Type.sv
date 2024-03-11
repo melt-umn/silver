@@ -200,6 +200,9 @@ top::Type ::= params::Integer namedParams::[String]
 aspect production dispatchType
 top::Type ::= fn::String
 {
+  -- TODO: This should ideally be specialized to the nonterminal,
+  -- but that requires an env lookup.
+  top.transType = "common.NodeFactory<common.Node>";
   top.transClassType = "common.NodeFactory";
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
   top.transTypeName = substitute(":", "_", fn);
