@@ -128,8 +128,8 @@ top::ProductionStmt ::= attr::Decorated! QName
   local inputsWithAttr::[NamedSignatureElement] =
     filter(
       \ input::NamedSignatureElement ->
-        (isDecorable(input.typerep, top.env) || input.typerep.isNonterminal) &&
-        !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
+        (isDecorable(input.elementDclType, top.env) || input.elementDclType.isNonterminal) &&
+        !null(getOccursDcl(attrFullName, input.elementDclType.typeName, top.env)),
       top.frame.signature.inputElements);
   local res :: Expr = 
     if null(inputsWithAttr)
