@@ -44,7 +44,7 @@ top::AttributeDclInfo ::=
   top.isStrategy = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = strategyAttributionDcl;

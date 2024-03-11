@@ -23,17 +23,17 @@ synthesized attribute transDefLHSDispatcher :: (DefLHS ::= Decorated! QName  Dec
  - The handler for 'x.a' for 'a', given that 'x' is DECORATED.
  - @see decoratedAccessHandler production for where this is used
  -}
-synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) occurs on AttributeDclInfo;
+synthesized attribute decoratedAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is UNdecorated.
  - @see undecoratedAccessHandler production for where this is used
  -}
-synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) occurs on AttributeDclInfo;
+synthesized attribute undecoratedAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is data.
  - @see dataAccessHandler production for where this is used
  -}
-synthesized attribute dataAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) occurs on AttributeDclInfo;
+synthesized attribute dataAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
@@ -129,7 +129,7 @@ aspect production synDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
@@ -155,7 +155,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 aspect production annoDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler, _, _);
+  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler);
   top.undecoratedAccessHandler = annoAccessHandler;
   top.dataAccessHandler = annoAccessHandler;
   top.attrDefDispatcher =

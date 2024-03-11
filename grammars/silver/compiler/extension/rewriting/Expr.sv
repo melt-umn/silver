@@ -206,7 +206,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -220,7 +220,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -234,7 +234,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -248,7 +248,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -263,7 +263,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -323,7 +323,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -345,7 +345,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -367,7 +367,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -389,7 +389,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.

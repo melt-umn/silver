@@ -278,7 +278,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= e::Expr  @q::QNameAttrOccur target::Access
 {
   propagate flowEnv;
   e.alwaysDecorated = false;
@@ -298,19 +298,19 @@ top::Expr ::= e::Expr '.' 'forward'
 
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
@@ -320,7 +320,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   e.decSiteVertexInfo = nothing();
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
@@ -330,7 +330,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   e.decSiteVertexInfo = nothing();
 }
 aspect production transDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   top.flowVertexInfo = map(transAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
@@ -365,29 +365,29 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   e.decSiteVertexInfo = nothing();
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
 aspect production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- No flow vertex, since there are never any inh deps
 
   e.decSiteVertexInfo = nothing();
 }
 aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
 aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }
 aspect production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.decSiteVertexInfo = nothing();
 }

@@ -418,8 +418,10 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   -- terminalAccessHandler
 }
 
-abstract production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+dispatch Access = Expr ::= @e::Expr @q::QNameAttrOccur;
+
+abstract production errorAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -434,8 +436,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       end;
 }
 
-abstract production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production terminalAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -459,8 +461,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     else errorType();
 }
 
-abstract production undecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production undecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -474,8 +476,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
-abstract production dataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production dataAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -493,7 +495,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= e::Expr  @q::QNameAttrOccur target::Access
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -503,26 +505,27 @@ top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::E
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q);
 }
-function accessBounceDecorate
-Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Decorated! Expr  q::Decorated! QNameAttrOccur
+production accessBounceDecorate implements Access
+Expr ::= @e::Expr @q::QNameAttrOccur target::Access
 {
-  return accessBouncer(target, decorateExprWithEmpty('decorate', @e, 'with', '{', '}'), q);
+  forwards to
+    accessBouncer(decorateExprWithEmpty('decorate', @e, 'with', '{', '}'), q, target);
 }
 -- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
-function accessBounceUndecorate
-Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Decorated! Expr  q::Decorated! QNameAttrOccur
+production accessBounceUndecorate implements Access
+Expr ::= @e::Expr @q::QNameAttrOccur target::Access
 {
-  return accessBouncer(target,
+  forwards to accessBouncer(
     application(
       baseExpr(qName("silver:core:getTermThatWasDecorated")), '(',
       oneAppExprs(
         presentAppExpr(@e)), ',',
       emptyAnnoAppExprs(), ')'),
-    q);
+    q, target);
 }
 
-abstract production decoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production decoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -536,8 +539,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
-abstract production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production synDecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -545,8 +548,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
-abstract production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production inhDecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -554,8 +557,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
-abstract production transDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production transDecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -563,8 +566,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep.asNtOrDecType;
 }
 
-abstract production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production annoAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -575,8 +578,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
-abstract production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production synDataAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -584,8 +587,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
-abstract production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production inhUndecoratedAccessErrorHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -595,8 +598,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.errors <- [errFromOrigin(top, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
 
-abstract production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production transUndecoratedAccessErrorHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
@@ -606,8 +609,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.errors <- [errFromOrigin(top, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
 
-abstract production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production unknownDclAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;

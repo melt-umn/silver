@@ -205,27 +205,27 @@ top::AppExpr ::= e::Expr
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production transDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs :=
     case top.finalType, refSet of
@@ -282,27 +282,27 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     end;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }
 aspect production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.uniqueRefs := e.accessUniqueRefs;
 }

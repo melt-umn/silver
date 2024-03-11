@@ -47,7 +47,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.operation = o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = collectionAttrDefError;
   top.attributionDispatcher = defaultAttributionDcl;
