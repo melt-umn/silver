@@ -117,6 +117,9 @@ top::ProductionImplements ::= 'implements' id::QName
     | dispatchDcl(_) -> []
     | _ -> [errFromOrigin(id, "Type '" ++ id.unparse ++ "' is not a dispatch signature type.")]
     end;
+} action {
+  insert semantic token IdType_t at id.nameLoc;
+  sigNames = [];
 }
 
 concrete production productionImplementsNone
