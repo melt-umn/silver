@@ -41,7 +41,8 @@ inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
 
 {--
  - Is this expression unconditionally decorated.
- - Can be false when decSiteVertexInfo is just(...)! For example:
+ - This determines whether we can rely on projected inherited equations being present.
+ - Can be false when decSiteVertexInfo is just(...) - for example:
  -
  - local foo::Expr = if cond then @e else bar;
  - foo.env = top.env;
@@ -221,13 +222,18 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =
-    case e.typerep of
-    | dispatchType(ns) -> just(ns)
-    | _ -> nothing()
+    case e, e.typerep of
+    | productionReference(q), _ -> just(q.lookupValue.dcl.namedSignature)
+    | _, dispatchType(ns) -> just(ns)
+    | _, _ -> error("dispatchApplication: unexpected type")
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
-  es.alwaysDecorated = false;
+  es.alwaysDecorated =
+    case e of
+    | productionReference(q) -> top.alwaysDecorated
+    | _ -> false
+    end;
 }
 
 aspect production annoExpr
