@@ -72,7 +72,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
@@ -87,7 +87,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
@@ -107,7 +107,7 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
   top.errors <- uniqueContextErrors(condition.uniqueRefs);
 }
 aspect production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   top.errors <- uniqueContextErrors(e.uniqueRefs);
 }

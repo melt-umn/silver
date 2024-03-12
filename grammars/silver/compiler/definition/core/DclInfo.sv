@@ -9,7 +9,7 @@ synthesized attribute refDispatcher :: Reference occurs on ValueDclInfo;
 {--
  - The production an "assignment" should forward to for this type of value
  -}
-synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated! QName  Expr) occurs on ValueDclInfo;
+synthesized attribute defDispatcher :: ValueDef occurs on ValueDclInfo;
 {--
  - The production an "equation" left hand side should forward to for this type of value (i.e. the 'x' in 'x.a = e')
  -}

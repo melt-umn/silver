@@ -187,7 +187,7 @@ public class ${className} extends common.CollectionAttribute {
 
 ---------- LOCALS ---
 aspect production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -196,7 +196,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 """;
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = s"""

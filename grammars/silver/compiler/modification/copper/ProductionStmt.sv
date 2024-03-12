@@ -86,10 +86,9 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   -- TODO see ugly hack in ActionCode.sv
 }
 
-abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production parserAttributeValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
@@ -259,10 +258,9 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   forwards to parserAttributeDefLHS(q);
 }
 
-abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production termAttrValueValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 

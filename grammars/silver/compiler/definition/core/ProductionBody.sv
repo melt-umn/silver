@@ -581,10 +581,11 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
               else val.lookupValue.dcl.defDispatcher(val, e);
 }
 
-abstract production errorValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+dispatch ValueDef = ProductionStmt ::= @val::QName e::Expr;
+
+abstract production errorValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -594,10 +595,9 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
     else [errFromOrigin(val, val.name ++ " cannot be assigned to.")];
 }
 
-abstract production localValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production localValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here

@@ -184,14 +184,14 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 }
 
 aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
@@ -261,7 +261,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 }
 
 aspect production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   -- We actually don't want reference site flow projections in e,
   -- since we don't actually know the entire tree in which it is decorated.
@@ -269,7 +269,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   e.alwaysDecorated = false;
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
 
@@ -306,7 +306,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   e.alwaysDecorated = false;
 }
 aspect production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
@@ -330,7 +330,7 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
   condition.alwaysDecorated = false;
 }
 aspect production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+top::ProductionStmt ::= @val::QName e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;

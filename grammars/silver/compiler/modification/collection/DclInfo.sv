@@ -8,8 +8,8 @@ synthesized attribute isCollection::Boolean;
 synthesized attribute attrBaseDefDispatcher :: AttributeDef;
 synthesized attribute attrAppendDefDispatcher :: AttributeDef;
 
-synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr);
-synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr);
+synthesized attribute baseDefDispatcher :: ValueDef;
+synthesized attribute appendDefDispatcher :: ValueDef;
 
 aspect default production
 top::AttributeDclInfo ::=
