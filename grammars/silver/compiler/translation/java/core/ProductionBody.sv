@@ -193,37 +193,37 @@ top::DefLHS ::=
 }
 
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.translation = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
 }
 
 aspect production lhsDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.translation = s"${top.frame.className}.synthesizedAttributes";
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.translation = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}]";
 }
 
 aspect production forwardDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.translation = s"${top.frame.className}.forwardInheritedAttributes";
 }
 
 aspect production errorDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production childTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   local inhsIndex::String = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}][${attr.attrOccursIndex}_inhs]";
   top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
@@ -234,7 +234,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 }
 
 aspect production localTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   local inhsIndex::String = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}][${attr.attrOccursIndex}_inhs]";
   top.translation = s"((common.TransInhs)${inhsIndex}).inhs";
@@ -245,7 +245,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 }
 
 aspect production errorTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }

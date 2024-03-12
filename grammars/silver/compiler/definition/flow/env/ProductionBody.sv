@@ -141,42 +141,42 @@ top::DefLHS ::=
   top.inhAttrName = "";
 }
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = rhsVertexType(q.lookupValue.fullName);
   top.defLHSInhEq = [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production lhsDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = lhsVertexType;
   top.defLHSInhEq = [];
   top.inhAttrName = "";
 }
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = localVertexType(q.lookupValue.fullName);
   top.defLHSInhEq = [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production forwardDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = forwardVertexType;
   top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production childTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.defLHSVertex = transAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
   top.defLHSInhEq = [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
 }
 aspect production localTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.defLHSVertex = transAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
   top.defLHSInhEq = [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];

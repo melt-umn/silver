@@ -322,7 +322,7 @@ top::DefLHS ::=
   top.refDecSiteInhDeps = nothing();
 }
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.lhsUniqueRefs = lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
   top.refDecSiteInhDeps =
@@ -336,7 +336,7 @@ top::DefLHS ::= q::Decorated! QName
     end;
 }
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.lhsUniqueRefs = lookupLocalUniqueRefs(q.lookupValue.fullName, top.flowEnv);
   top.refDecSiteInhDeps =
@@ -350,7 +350,7 @@ top::DefLHS ::= q::Decorated! QName
     end;
 }
 aspect production childTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   local childUniqueRefs::[UniqueRefSite] =
     lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
@@ -373,7 +373,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
     end;
 }
 aspect production localTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   local localUniqueRefs::[UniqueRefSite] =
     lookupUniqueRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);

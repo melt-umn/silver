@@ -234,10 +234,9 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
 }
 
 
-abstract production parserAttributeDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production parserAttributeDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -252,6 +251,12 @@ top::DefLHS ::= q::Decorated! QName
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 
   top.typerep = q.lookupValue.typeScheme.monoType;
+}
+
+abstract production parserAttributeTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
+{
+  forwards to parserAttributeDefLHS(q);
 }
 
 abstract production termAttrValueValueDef

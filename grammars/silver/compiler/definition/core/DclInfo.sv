@@ -13,11 +13,11 @@ synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated! QName  Exp
 {--
  - The production an "equation" left hand side should forward to for this type of value (i.e. the 'x' in 'x.a = e')
  -}
-synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated! QName) occurs on ValueDclInfo;
+synthesized attribute defLHSDispatcher :: BaseDefLHS occurs on ValueDclInfo;
 {--
  - The production a translation attribute left hand side should forward to, for this type of value (i.e. the 'x.a' in 'x.a.b = e')
  -}
-synthesized attribute transDefLHSDispatcher :: (DefLHS ::= Decorated! QName  Decorated!  QNameAttrOccur) occurs on ValueDclInfo;
+synthesized attribute transDefLHSDispatcher :: TransAttrDefLHS occurs on ValueDclInfo;
 
 {--
  - The handler for 'x.a' for 'a', given that 'x' is DECORATED.

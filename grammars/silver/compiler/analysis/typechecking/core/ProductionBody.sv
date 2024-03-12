@@ -151,14 +151,14 @@ top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
 }
 
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
                 else [errFromOrigin(top, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated! QName
+top::DefLHS ::= @q::QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
                 else [errFromOrigin(top, s"Inherited attributes can only be defined on (undecorated) nonterminal and unique decorated types, not ${prettyType(top.typerep)}.")];

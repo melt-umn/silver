@@ -398,10 +398,11 @@ top::DefLHS ::= q::QName
   }
 }
 
-abstract production errorDefLHS
-top::DefLHS ::= q::Decorated! QName
+dispatch BaseDefLHS = DefLHS ::= @q::QName;
+
+abstract production errorDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -418,10 +419,9 @@ top::DefLHS ::= 'forward'
   forwards to concreteDefLHS(qName("forward"));
 }
 
-abstract production childDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production childDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -435,10 +435,9 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production lhsDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production lhsDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -452,10 +451,9 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production localDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production localDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -469,10 +467,9 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production forwardDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production forwardDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -502,10 +499,11 @@ top::DefLHS ::= q::QName attr::QNameAttrOccur
               else q.lookupValue.dcl.transDefLHSDispatcher(q, attr);
 }
 
-abstract production errorTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+dispatch TransAttrDefLHS = DefLHS ::= @q::QName @attr::QNameAttrOccur;
+
+abstract production errorTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = false;
@@ -516,10 +514,9 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.typerep = attr.typerep;
 }
 
-abstract production childTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+abstract production childTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -541,10 +538,9 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.typerep = attr.typerep;
 }
 
-abstract production localTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+abstract production localTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
