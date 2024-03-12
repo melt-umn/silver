@@ -19,10 +19,9 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
       [attrDef(defaultEnvItem(functorDcl(fName, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
 }
 
-abstract production functorAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production functorAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 

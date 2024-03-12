@@ -19,10 +19,9 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
       [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.nameLoc)))]);
 }
 
-abstract production destructAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production destructAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 

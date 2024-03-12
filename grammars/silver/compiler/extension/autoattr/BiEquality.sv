@@ -31,9 +31,8 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
 }
 
 abstract production biequalityInhAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 

@@ -55,10 +55,9 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   forwards to fwrd;
 }
 
-abstract production strategyAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production strategyAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   propagate grammarName, env, flowEnv;
 
   production attribute localErrors::[Message] with ++;

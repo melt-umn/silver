@@ -41,7 +41,7 @@ synthesized attribute attrDefDispatcher :: AttributeDef occurs on AttributeDclIn
 {--
  - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh attrs.)
  -}
-synthesized attribute attributionDispatcher :: (AGDcl ::= Decorated! QName  BracketedOptTypeExprs  QName  BracketedOptTypeExprs) occurs on AttributeDclInfo;
+synthesized attribute attributionDispatcher :: AttributionDcl occurs on AttributeDclInfo;
 
 -- -- non-interface values
 aspect production childDcl
