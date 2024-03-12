@@ -96,10 +96,9 @@ concrete productions top::Direction
   { top.unparse = "right to left";
     top.reversed = true; }
 
-abstract production propagateThreadedInh
-top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::String
+abstract production propagateThreadedInh implements Propagate
+top::ProductionStmt ::= @inh::QName isCol::Boolean rev::Boolean syn::String
 {
-  undecorates to propagateOneAttr(inh);
   top.unparse = s"propagate ${inh.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
@@ -133,10 +132,9 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
         else [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]));
 }
 
-abstract production propagateThreadedSyn
-top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! QName
+abstract production propagateThreadedSyn implements Propagate
+top::ProductionStmt ::= @syn::QName isCol::Boolean rev::Boolean inh::String
 {
-  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;

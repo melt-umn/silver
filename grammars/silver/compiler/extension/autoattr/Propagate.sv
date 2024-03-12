@@ -143,10 +143,11 @@ top::ProductionStmt ::= attr::QName
     else attr.lookupAttribute.dcl.propagateDispatcher(attr);
 }
 
-abstract production propagateError
-top::ProductionStmt ::= attr::Decorated! QName
+dispatch Propagate = ProductionStmt ::= @attr::QName;
+
+abstract production propagateError implements Propagate
+top::ProductionStmt ::= @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   forwards to
     errorProductionStmt(
       [errFromOrigin(attr, s"Attribute ${attr.name} cannot be propagated")]);

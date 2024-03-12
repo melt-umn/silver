@@ -115,10 +115,9 @@ top::Operation ::=
  - Propagate a monoid attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateMonoid
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateMonoid implements Propagate
+top::ProductionStmt ::= @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not

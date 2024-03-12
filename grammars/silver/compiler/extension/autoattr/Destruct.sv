@@ -70,10 +70,9 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
  - Propagate a destruct inherited attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateDestruct
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateDestruct implements Propagate
+top::ProductionStmt ::= @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   local numChildren::Integer = length(top.frame.signature.inputElements);

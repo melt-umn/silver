@@ -116,10 +116,9 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
  - Propagate a strategy attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateStrategy
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateStrategy implements Propagate
+top::ProductionStmt ::= @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;

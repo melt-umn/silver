@@ -34,10 +34,9 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
 {--
  - Propagate a ordering key synthesized attribute on the enclosing production
  -}
-abstract production propagateOrderingKey
-top::ProductionStmt ::= syn::Decorated! QName
+abstract production propagateOrderingKey implements Propagate
+top::ProductionStmt ::= @syn::QName
 {
-  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
 
   forwards to
@@ -50,10 +49,9 @@ top::ProductionStmt ::= syn::Decorated! QName
 {--
  - Propagate a ordering synthesized attribute on the enclosing production
  -}
-abstract production propagateOrdering
-top::ProductionStmt ::= inh::String keySyn::String syn::Decorated! QName
+abstract production propagateOrdering implements Propagate
+top::ProductionStmt ::= @syn::QName inh::String keySyn::String
 {
-  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   local topName::String = top.frame.signature.outputElement.elementName;

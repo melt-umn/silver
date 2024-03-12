@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:autoattr;
 
-synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated! QName) occurs on AttributeDclInfo;
+synthesized attribute propagateDispatcher :: Propagate occurs on AttributeDclInfo;
 
 synthesized attribute emptyVal::Expr occurs on AttributeDclInfo;
 
@@ -95,7 +95,7 @@ top::AttributeDclInfo ::= inh::String syn::String
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateEquality(inh, _);
+  top.propagateDispatcher = propagateEquality(inh);
 }
 
 abstract production orderingKeyDcl
@@ -129,7 +129,7 @@ top::AttributeDclInfo ::= inh::String keySyn::String syn::String
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateOrdering(inh, keySyn, _);
+  top.propagateDispatcher = propagateOrdering(inh, keySyn);
 }
 
 abstract production biequalityPartialDcl
@@ -146,7 +146,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateBiequalitySynPartial(inh, _, syn);
+  top.propagateDispatcher = propagateBiequalitySynPartial(inh, syn);
 }
 
 abstract production biequalityDcl
@@ -163,7 +163,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateBiequalitySyn(inh, synPartial, _);
+  top.propagateDispatcher = propagateBiequalitySyn(inh, synPartial);
 }
 
 abstract production threadedInhDcl
@@ -199,7 +199,7 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
     then inhAppendColAttributeDef  -- Allow normal inh append equations
     else nonCollectionErrorAppendAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateThreadedInh(o.isJust, rev, _, syn);
+  top.propagateDispatcher = propagateThreadedInh(o.isJust, rev, syn);
 }
 
 abstract production threadedSynDcl
@@ -235,5 +235,5 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
     then synAppendColAttributeDef  -- Allow normal syn append equations
     else nonCollectionErrorAppendAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateThreadedSyn(o.isJust, rev, inh, _);
+  top.propagateDispatcher = propagateThreadedSyn(o.isJust, rev, inh);
 }

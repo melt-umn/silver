@@ -52,10 +52,9 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
  - Propagate a functor attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateFunctor
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateFunctor implements Propagate
+top::ProductionStmt ::= @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not

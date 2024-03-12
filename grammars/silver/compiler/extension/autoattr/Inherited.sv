@@ -1,9 +1,8 @@
 grammar silver:compiler:extension:autoattr;
 
-abstract production propagateInh
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateInh implements Propagate
+top::ProductionStmt ::= @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   top.unparse = s"propagate ${attr.unparse};";
   
   local attrFullName::String = attr.lookupAttribute.dcl.fullName;
