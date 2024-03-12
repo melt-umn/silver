@@ -31,9 +31,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
   local undecChild :: (String ::= NamedSignatureElement) =
     \ x::NamedSignatureElement ->
       if x.typerep.isDecorated
-      then if isDecorable(x.typerep, body.env)
-        then error("Production " ++ fName ++ " has a decorable decorated child but no 'undecorates to'.")  -- TODO: Remove this when this becomes a uniqueness analysis warning 
-        else s"context.childDecoratedLazy(i_${x.elementName})"
+      then s"context.childDecoratedLazy(i_${x.elementName})"
       else if isDecorable(x.typerep, body.env)
       then s"context.childUndecoratedLazy(i_${x.elementName})"
       else s"child_${x.elementName}";
@@ -185,19 +183,14 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 ${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if !null(body.undecorateExpr)
-          then s"return (common.Node)${head(body.undecorateExpr).translation};"
-          else if !null(decorableChildren)
+    	${if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
-            -- A production node with no special undecoration behavior has the same origin as the
-            -- original node when implicitly undecorated.
+            -- An implicitly undecorated production node has the same origin as the original node.
             -- This will be overidden by duplicate when calling new().
             (if wantsTracking then ["this.origin"] else []) ++
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-          -- TODO: Consider if all decorable children are directly undecorable.
-          -- This must avoid forcing children that are thunks, and probably also should be cached.
           else "return this;"}
     }
 

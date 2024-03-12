@@ -73,11 +73,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     if length(body.forwardExpr) > 1
     then [errFromOrigin(top, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
     else [];
-  
-  top.errors <-
-    if length(body.undecorateExpr) > 1
-    then [errFromOrigin(top, "Production '" ++ id.name ++ "' has more than one undecorate declaration.")]
-    else [];
 
   top.errors <-
     if isLower(substring(0,1,id.name)) then []

@@ -3,7 +3,7 @@ grammar silver:compiler:analysis:typechecking:core;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
-  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, undecoratesTo, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
 propagate finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr excluding productionStmtAppend;
 
 {--
@@ -73,19 +73,6 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
        then [errFromOrigin(e, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
        else [];
-}
-
-aspect production undecoratesTo
-top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  
-  thread downSubst, upSubst on top, e, errCheck1, top;
-  
-  errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
-  top.errors <- if errCheck1.typeerror
-                then [errFromOrigin(e, "Undecorates's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
-                else [];
 }
 
 aspect production attachNoteStmt

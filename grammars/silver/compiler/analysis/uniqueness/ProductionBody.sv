@@ -3,15 +3,6 @@ grammar silver:compiler:analysis:uniqueness;
 attribute uniqueRefs occurs on ProductionBody, ProductionStmts, ProductionStmt;
 propagate uniqueRefs on ProductionBody, ProductionStmts, ProductionStmt;
 
-aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
-{
-  top.errors <-
-    if any(map((.isUniqueDecorated), namedSig.inputTypes)) && null(body.undecorateExpr)
-    then [errFromOrigin(top, s"Production '${id.name}' has a unique reference in its signature but no 'undecorates to'.")]
-    else [];
-}
-
 aspect production attachNoteStmt
 top::ProductionStmt ::= 'attachNote' note::Expr ';'
 {
@@ -31,11 +22,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
         s"Unique reference to ${r.1} taken outside of a unique context. " ++
         s"The return of ${top.frame.fullName} is not a unique context as this function has no unique parameters."),
       e.uniqueRefs);
-}
-aspect production undecoratesTo
-top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
-{
-  top.errors <- uniqueContextErrors(e.uniqueRefs);
 }
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr

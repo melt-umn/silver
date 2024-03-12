@@ -78,12 +78,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }
-aspect production undecoratesTo
-top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
-{
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
-}
 
 aspect production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'

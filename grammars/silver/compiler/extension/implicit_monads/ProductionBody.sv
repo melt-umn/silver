@@ -19,7 +19,6 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -59,7 +58,6 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -100,7 +98,6 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -140,7 +137,6 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -198,7 +194,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -224,7 +219,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -257,7 +251,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   forwards to
          if null(e.merrors)
@@ -288,7 +281,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   forwards to
          if null(e.merrors)

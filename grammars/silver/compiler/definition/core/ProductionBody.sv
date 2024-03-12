@@ -2,13 +2,13 @@ grammar silver:compiler:definition:core;
 
 tracked nonterminal ProductionBody with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, undecorateExpr;
+  productionAttributes, forwardExpr, returnExpr;
 tracked nonterminal ProductionStmts with 
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, originRules;
 tracked nonterminal ProductionStmt with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody;
@@ -42,12 +42,11 @@ inherited attribute frame :: BlockContext;
  -}
 monoid attribute productionAttributes :: [Def];
 {--
- - The forward, return and undecorate expressions for production/function bodies.
+ - The forward and return expressions for production/function bodies.
  - These are lists since we check for duplicates at the top level
  -}
 monoid attribute forwardExpr :: [Decorated Expr];
 monoid attribute returnExpr :: [Decorated Expr];
-monoid attribute undecorateExpr :: [Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.
@@ -60,7 +59,7 @@ synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStm
 
 propagate config, grammarName, env, errors, frame, compiledGrammars on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
-propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr on ProductionBody, ProductionStmts;
+propagate defs, productionAttributes, forwardExpr, returnExpr on ProductionBody, ProductionStmts;
 propagate originRules on ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding attachNoteStmt;
 
@@ -97,7 +96,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
-  propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr;
+  propagate defs, productionAttributes, forwardExpr, returnExpr;
 }
 
 abstract production errorProductionStmt
@@ -117,7 +116,6 @@ top::ProductionStmt ::=
   top.productionAttributes := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
   
   top.defs := [];
 
@@ -275,21 +273,6 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.typerep = q.typerep;
   
   q.attrFor = top.frame.signature.outputElement.typerep;
-}
-
-concrete production undecoratesTo
-top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
-{
-  top.unparse = "\tundecorates to " ++ e.unparse;
-
-  e.isRoot = true;
-  
-  top.undecorateExpr := [e];
-
-  top.errors <-
-    if !top.frame.permitForward  -- Permitted in the same place as forwards to
-    then [errFromOrigin(top, "Undecorates is not permitted in this context. (Only permitted in non-aspect productions.)")]
-    else [];
 }
 
 concrete production attributeDef
