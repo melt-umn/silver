@@ -251,13 +251,13 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
@@ -266,7 +266,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++

@@ -305,10 +305,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
   
-  local problems :: [Message] =
-    if attr.found && attr.attrDcl.isAnnotation
-    then [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
-    else dl.errors ++ attr.errors;
+  local problems :: [Message] = dl.errors ++ attr.errors;
 
   forwards to
     -- oddly enough we may have no errors and need to forward to error production:
@@ -323,9 +320,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
 abstract production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to errorProductionStmt(msg);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, config, env, frame, compiledGrammars, originRules;
   e.isRoot = true;
@@ -333,8 +329,18 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! Q
   forwards to errorProductionStmt(msg ++ e.errors);
 }
 
-abstract production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
+
+abstract production annoErrorAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
+  forwards to errorAttributeDef(
+    [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")],
+    dl, attr, e);
+}
+
+abstract production synthesizedAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -349,8 +355,8 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     end;
 }
 
-abstract production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+abstract production inheritedAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";

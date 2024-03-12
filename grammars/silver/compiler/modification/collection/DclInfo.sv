@@ -5,8 +5,8 @@ attribute operation, baseDefDispatcher, appendDefDispatcher occurs on ValueDclIn
 
 synthesized attribute isCollection::Boolean;
 
-synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr);
-synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr);
+synthesized attribute attrBaseDefDispatcher :: AttributeDef;
+synthesized attribute attrAppendDefDispatcher :: AttributeDef;
 
 synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr);
 synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr);
@@ -17,8 +17,8 @@ top::AttributeDclInfo ::=
   top.isCollection = false;
   top.operation = error("Internal compiler error: must be defined for all collection attribute declarations");
   
-  top.attrBaseDefDispatcher = nonCollectionAttrBaseDefError;
-  top.attrAppendDefDispatcher = nonCollectionAttrAppendDefError;
+  top.attrBaseDefDispatcher = nonCollectionErrorBaseAttributeDef;
+  top.attrAppendDefDispatcher = nonCollectionErrorAppendAttributeDef;
 }
 
 aspect default production
@@ -49,7 +49,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.decoratedAccessHandler = synDecoratedAccessHandler;
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
-  top.attrDefDispatcher = collectionAttrDefError;
+  top.attrDefDispatcher = collectionErrorRegularAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
@@ -74,7 +74,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler;
   top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
-  top.attrDefDispatcher = collectionAttrDefError;
+  top.attrDefDispatcher = collectionErrorRegularAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef;
@@ -103,19 +103,6 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   -- We shouldn't be forwarding here
   forwards to localDcl(fn,ty,false,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
 }
-
-global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-    errorAttributeDef([errFromOrigin(ambientOrigin(), "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
-
-global nonCollectionAttrAppendDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-    errorAttributeDef([errFromOrigin(ambientOrigin(), "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
-
-global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-    errorAttributeDef([errFromOrigin(ambientOrigin(), attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
-
 
 -- Defs
 fun synColDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation =

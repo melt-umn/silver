@@ -37,7 +37,7 @@ synthesized attribute dataAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
-synthesized attribute attrDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) occurs on AttributeDclInfo;
+synthesized attribute attrDefDispatcher :: AttributeDef occurs on AttributeDclInfo;
 {--
  - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh attrs.)
  -}
@@ -158,8 +158,6 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler);
   top.undecoratedAccessHandler = annoAccessHandler;
   top.dataAccessHandler = annoAccessHandler;
-  top.attrDefDispatcher =
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-      errorAttributeDef([errFromOrigin(ambientOrigin(), "Annotations are not defined as equations within productions")], dl, attr, e);
+  top.attrDefDispatcher = annoErrorAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
 }

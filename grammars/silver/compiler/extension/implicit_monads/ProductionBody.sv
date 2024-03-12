@@ -49,10 +49,6 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
-global partialDefaultAttributeDef::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr ->
-    attributeDef(newUnique(dl), '.', newUnique(attr), '=', e, ';');
-
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
@@ -82,12 +78,12 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   attr.attrFor = dl.typerep;
 
   forwards to
-           (if null(merrors)
-            then if attr.found
-                 then attr.attrDcl.attrDefDispatcher
-                      --if not found, let the normal dispatcher handle it
-                 else partialDefaultAttributeDef
-            else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+          if null(merrors)
+          then if attr.found
+               then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
+                    --if not found, let the normal dispatcher handle it
+               else attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+          else errorAttributeDef(merrors, dl, attr, @e);
 }
 
 
@@ -123,12 +119,12 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   attr.attrFor = dl.typerep;
 
   forwards to
-           (if null(merrors)
-            then if attr.found
-                 then attr.attrDcl.attrDefDispatcher
-                      --if not found, let the normal dispatcher handle it
-                 else partialDefaultAttributeDef
-            else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+          if null(merrors)
+          then if attr.found
+               then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
+                    --if not found, let the normal dispatcher handle it
+               else attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+          else errorAttributeDef(merrors, dl, attr, @e);
 }
 
 
@@ -160,16 +156,16 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
                 "Unrestricted equations can only be used for attributes " ++
                 "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit")];
   forwards to
-            (if attr.found
-             then case attr.attrDcl of
-                  | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _)
-                  | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _)
-                  | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, _, _, _)
-                  | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, _, _, _)
-                  | _ -> partialDefaultAttributeDef
-                  end
-                 --if not found, let the normal dispatcher handle it
-             else partialDefaultAttributeDef)(dl, attr, e);
+          if attr.found
+          then case attr.attrDcl of
+               | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
+               | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
+               | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
+               | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
+               | _ -> attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+               end
+          --if not found, let the normal dispatcher handle it
+          else attributeDef(new(dl), '.', new(attr), '=', @e, ';');
 }
 
 
@@ -189,8 +185,8 @@ fun buildExplicitAttrErrors [Message] ::= l::[Decorated QNameAttrOccur] =
 
 
 --productions for error checking on restricted attributes
-abstract production restrictedSynAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production restrictedSynAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -210,14 +206,14 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
   forwards to
-    (if null(merrors)
-     then synthesizedAttributeDef(_, _, _)
-     else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+    if null(merrors)
+    then synthesizedAttributeDef(dl, attr, @e)
+    else errorAttributeDef(merrors, dl, attr, @e);
 }
 
 
-abstract production restrictedInhAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production restrictedInhAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -237,17 +233,17 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
   forwards to
-    (if null(merrors)
-     then inheritedAttributeDef(_, _, _)
-     else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+    if null(merrors)
+    then inheritedAttributeDef(dl, attr, @e)
+    else errorAttributeDef(merrors, dl, attr, @e);
 }
 
 
 
 
 --productions for error checking on implicit attributes
-abstract production implicitSynAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production implicitSynAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -267,19 +263,19 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
   top.undecorateExpr := [];
 
   forwards to
-         (if null(e.merrors)
-          then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-               then synthesizedAttributeDef(_, _, e.monadRewritten)
-               else synthesizedAttributeDef(_, _, Silver_Expr {
+         if null(e.merrors)
+         then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+              then synthesizedAttributeDef(dl, attr, e.monadRewritten)
+              else synthesizedAttributeDef(dl, attr, Silver_Expr {
                                                     $Expr {monadReturn()}
                                                         ($Expr {e.monadRewritten})
                                                   })
-          else errorAttributeDef(e.merrors, _, _, e.monadRewritten))(dl, attr);
+         else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten);
 }
 
 
-abstract production implicitInhAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production implicitInhAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
@@ -299,13 +295,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e:
   top.undecorateExpr := [];
 
   forwards to
-         (if null(e.merrors)
-          then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-               then inheritedAttributeDef(_, _, e.monadRewritten)
-               else inheritedAttributeDef(_, _, Silver_Expr {
-                                                  $Expr {monadReturn()}
-                                                      ($Expr {e.monadRewritten})
-                                                })
-          else errorAttributeDef(e.merrors, _, _, e.monadRewritten))(dl, attr);
+         if null(e.merrors)
+         then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+              then synthesizedAttributeDef(dl, attr, e.monadRewritten)
+              else synthesizedAttributeDef(dl, attr, Silver_Expr {
+                                                    $Expr {monadReturn()}
+                                                        ($Expr {e.monadRewritten})
+                                                  })
+         else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten);
 }
 

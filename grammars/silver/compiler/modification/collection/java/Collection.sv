@@ -207,7 +207,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
 ---------- SYNTHESIZED ----
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- := -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
@@ -217,7 +217,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 """;
 }
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
@@ -229,7 +229,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 
 ---------- INHERITED ----
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- := -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
@@ -239,7 +239,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 """;
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}

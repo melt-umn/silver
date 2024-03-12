@@ -55,9 +55,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
   top.decoratedAccessHandler = synDecoratedAccessHandler;
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
-  top.attrDefDispatcher = 
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-      errorAttributeDef([errFromOrigin(ambientOrigin(), attr.name ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
+  top.attrDefDispatcher = monoidErrorRegularAttributeDef;
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
   top.attrAppendDefDispatcher = synAppendColAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
@@ -190,16 +188,16 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
   top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
   top.attrDefDispatcher =
     if o.isJust
-    then collectionAttrDefError
-    else inheritedAttributeDef(_, _, _); -- Allow normal inh equations
+    then collectionErrorRegularAttributeDef
+    else inheritedAttributeDef; -- Allow normal inh equations
   top.attrBaseDefDispatcher = 
     if o.isJust
-    then inhBaseColAttributeDef(_, _, _) -- Allow normal inh base equations
-    else nonCollectionAttrBaseDefError;
+    then inhBaseColAttributeDef -- Allow normal inh base equations
+    else nonCollectionErrorBaseAttributeDef;
   top.attrAppendDefDispatcher = 
     if o.isJust
-    then inhAppendColAttributeDef(_, _, _)  -- Allow normal inh append equations
-    else nonCollectionAttrAppendDefError;
+    then inhAppendColAttributeDef  -- Allow normal inh append equations
+    else nonCollectionErrorAppendAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
   top.propagateDispatcher = propagateThreadedInh(o.isJust, rev, _, syn);
 }
@@ -226,16 +224,16 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher =
     if o.isJust
-    then collectionAttrDefError
-    else synthesizedAttributeDef(_, _, _); -- Allow normal syn equations
+    then collectionErrorRegularAttributeDef
+    else synthesizedAttributeDef; -- Allow normal syn equations
   top.attrBaseDefDispatcher = 
     if o.isJust
-    then synBaseColAttributeDef(_, _, _) -- Allow normal syn base equations
-    else nonCollectionAttrBaseDefError;
+    then synBaseColAttributeDef -- Allow normal syn base equations
+    else nonCollectionErrorBaseAttributeDef;
   top.attrAppendDefDispatcher = 
     if o.isJust
-    then synAppendColAttributeDef(_, _, _)  -- Allow normal syn append equations
-    else nonCollectionAttrAppendDefError;
+    then synAppendColAttributeDef  -- Allow normal syn append equations
+    else nonCollectionErrorAppendAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
   top.propagateDispatcher = propagateThreadedSyn(o.isJust, rev, inh, _);
 }
