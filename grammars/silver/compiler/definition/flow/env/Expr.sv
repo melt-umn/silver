@@ -227,7 +227,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
-  es.alwaysDecorated = top.alwaysDecorated;
+  es.alwaysDecorated = false;
 }
 
 aspect production annoExpr
