@@ -188,7 +188,6 @@ fun buildExplicitAttrErrors [Message] ::= l::[Decorated QNameAttrOccur] =
 abstract production restrictedSynAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
@@ -215,7 +214,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 abstract production restrictedInhAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
@@ -245,7 +243,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 abstract production implicitSynAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
@@ -277,7 +274,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 abstract production implicitInhAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 

@@ -342,7 +342,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 abstract production synthesizedAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -358,7 +357,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 abstract production inheritedAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;

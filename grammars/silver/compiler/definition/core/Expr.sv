@@ -312,7 +312,6 @@ dispatch Application = Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs;
 abstract production errorApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   top.errors <-
@@ -330,7 +329,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 abstract production functionApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
 
@@ -343,7 +341,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 abstract production functionInvocation implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -354,7 +351,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 abstract production partialApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -368,7 +364,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 abstract production dispatchApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
@@ -423,7 +418,6 @@ dispatch Access = Expr ::= @e::Expr @q::QNameAttrOccur;
 abstract production errorAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = errorType();
@@ -439,7 +433,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production terminalAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- NO use of q.errors, as that become nonsensical here.
@@ -464,7 +457,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production undecoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
@@ -479,7 +471,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production dataAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is data, here we dispatch based on the kind of attribute.
@@ -497,7 +488,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production accessBouncer
 top::Expr ::= e::Expr  @q::QNameAttrOccur target::Access
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   e.isRoot = false;
@@ -527,7 +517,6 @@ Expr ::= @e::Expr @q::QNameAttrOccur target::Access
 abstract production decoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
@@ -542,7 +531,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production synDecoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
@@ -551,7 +539,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production inhDecoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
@@ -560,7 +547,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production transDecoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep.asNtOrDecType;
@@ -569,7 +555,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production annoAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   production index :: Integer =
@@ -581,7 +566,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production synDataAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
 
   top.typerep = q.typerep;
@@ -590,7 +574,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production inhUndecoratedAccessErrorHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep.asNtOrDecType;
@@ -601,7 +584,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production transUndecoratedAccessErrorHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep.asNtOrDecType;
@@ -612,7 +594,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 abstract production unknownDclAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
 
   top.typerep = errorType();

@@ -140,7 +140,6 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
 abstract production errorAttributionDcl
 top::AGDcl ::= msg::[Message] @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to errorAGDcl(msg); 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.occursDefs := [];
   top.errors <- msg;
