@@ -955,8 +955,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// or just that dn.parent repeatedly will eventually find null 
 		
 		// parent of DecoratedNode root is TopNode. Might need that and not null
-		if (dn == null || dn.parent == null || dn.parent instanceof TopNode || 
-			dn.isRoot() || dn.isMain()) {
+		if (dn == null || dn.isRoot()) {
 			return null;
 		}
 		
@@ -975,8 +974,7 @@ public class DecoratedNode implements Decorable, Typed {
 	private DecoratedNode getContractumHelper(DecoratedNode dn) {
 		// For now assume abstract syntax tree root has null parent
 		// or just that dn.parent repeatedly will eventually find null 
-		if (dn == null || dn.parent == null || dn.parent instanceof TopNode || 
-			dn.isRoot() || dn.isMain()) {
+		if (dn == null || dn.isRoot()) {
 			return null;
 		}
 		
@@ -1163,7 +1161,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// Search until find name that is "pp"
 			String name = this.self.getNameOfSynAttr(i);
 			// Want last three characters to be ":pp"
-			if (name.substring(name.length() - 3).toLowerCase.equals(":pp") ||
+			if (name.substring(name.length() - 3).toLowerCase().equals(":pp") ||
 				name.substring(name.length() - 13).toLowerCase().equals(":pretty_print") || 
 				name.substring(name.length() - 12).toLowerCase().equals(":prettyprint")) {
 				Object pp = evalSyn(i);
@@ -1184,19 +1182,24 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	public boolean isRoot() {
-		return this.getNode().getName().contains("root"); 
+		// return this.getNode().getName().contains("root"); 
+		
+		// This is better solution
+		return 
+			this.parent == null || 
+			this.parent instanceof TopNode ||
+			this.parent.parent == null ||
+			this.parent.parent instanceof TopNode;
 	}
 
-	public boolean isMain() {
-		return this.getNode().getName().contains("main"); 
-	}
+	// public boolean isMain() {
+	// 	// return this.getNode().getName().contains("main"); 
+	// 	return this == null || this.parent == null || this.parent instanceof TopNode;
+	// }
 	
 	public void setIsAttributeRoot() {
 		
-		// Had to hack this as well with this.parent.isMain()
-		if (! (this == null || this.parent instanceof TopNode || 
-			this.isRoot() || this.isMain() || 
-			this.parent == null || this.parent.isMain())) {
+		if (! (this == null || this.isRoot())) {
 			
 			// System.out.println("SET-IS-ATTR: " + this.toString());
 			Map<String, Object> map = Debug.allAttributesObjectMap(this.parent);
@@ -1215,7 +1218,7 @@ public class DecoratedNode implements Decorable, Typed {
 
 
 	public int getIsAttribute() {
-		if (this.parent == null || this.isRoot() || this.isMain()) {
+		if (this == null || this.isRoot()) {
 			return 0;
 		}
 		else {
@@ -1225,21 +1228,15 @@ public class DecoratedNode implements Decorable, Typed {
 			return this.parent.getIsAttribute();	
 		}
 	}
-
-	// For now, assume there is a Silver annotation 
-	// "is-attribute-root" of type String on 
-	// higher-order attributes that is set to "TRUE" 
-	// when true and not existant or FALSE when false
-	// https://melt.cs.umn.edu/silver/ref/decl/annotations/ 
-	
-
 	
 
 	public int getIsTranslation() {
 		// See how many parents are contractums
 		// System.out.println("GET-IS-TRANSLATION node:" + this.toString());
-		// System.out.println("GET-IS-TRANSLATION has contractum:" + this.self.hasForward());
-		if (this.parent == null || this.parent instanceof TopNode || this.isRoot() || this.isMain()) {
+		// System.out.println("GET-IS-TRANSLATION has contractum:" + this.getIsContractum());
+		// Calling parent repeatedly will ignore forwarding nodes, so operate on 
+		// getIsContractum only as the case to determine whether forwarding occurs or not
+		if (this == null || this.isRoot()) {
 			return 0;
 		}
 		else if (this.getIsContractum()) {
