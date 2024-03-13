@@ -94,7 +94,11 @@ public class Debug {
 
                 case "down": case "d":  
                     int childNum = -1; 
-                    if (userInputList.length == 1) {
+                    if(currentNode.getNode().hasForward()){
+                        System.out.println("can't go down on a forwarding node");
+                        break;
+                    }
+                    else if (userInputList.length == 1) {
                         System.out.println("Which child?");
                         childNum = chooseFormList(inp, currentNode.undecorate().getProdleton().getChildTypes());
                         if(childNum == -1){

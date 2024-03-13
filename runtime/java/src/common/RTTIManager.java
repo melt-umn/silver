@@ -85,7 +85,9 @@ public final class RTTIManager {
 			final Object[] annos); // NO reify or other checking, used by native[De]Serialize
 
 		public abstract String getName();
+		//need to return an array literal 
 		//public abstract String[] getChildNames();
+		//public static final String[] child_names = new String[${implode(",", namedSig.inputNames)}]; - but names of children
 		public abstract Nonterminalton<? super T> getNonterminalton();
 		
 		public abstract String getTypeUnparse(); // Nominally opaque representation of the type
