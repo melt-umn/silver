@@ -49,9 +49,9 @@ public class Debug {
         // creating a context stack when we run the debugger
         CMDContextVisualization cStack = new CMDContextVisualization("********************************");
         // if we want a file visualization:
-        // FileContextVisualization cStack = new FileContextVisualization();
+        // FileContextVisualization cStack = new FileContextVisualization("context.txt", "********************************");
         // if we want an HTML visualization:
-        // HTMLContextVisualization cStack = new HTMLContextVisualization();
+        // HTMLContextVisualization cStack = new HTMLContextVisualization("********************************");
         cStack.push(currentNode);
         if(toggleCStackDisplay){
             cStack.show();
