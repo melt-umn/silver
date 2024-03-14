@@ -163,7 +163,7 @@ public abstract class Node implements Decorable, Typed {
 	/**
 	 * Determine if the child should be automatically decorated.
 	 * 
-	 * @param child A number in the range <code>0 - getNumberofChildren()</code>
+	 * @param child A number in the range <code>0 - getNumberOfChildren()</code>
 	 * @return True if the child has a decorable type in the signature.
 	 */
 	public abstract boolean isChildDecorable(final int child);
