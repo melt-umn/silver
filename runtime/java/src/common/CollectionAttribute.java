@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.TraceException;
 
+import silver.core.NLocation;
+
 /**
  * This class is a specialized Lazy that allows additional elements to be inserted
  * during start-up initialization.  These elements are then used by the custom
@@ -47,6 +49,10 @@ public abstract class CollectionAttribute implements Lazy {
 	}
 
 	public abstract Object eval(final DecoratedNode context);
+
+	public NLocation getSourceLocation() {
+	  return base.getSourceLocation();
+	}
 	
 	private static class BaseDefault implements Lazy {
 		private final int index;
