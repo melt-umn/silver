@@ -1,8 +1,11 @@
 package common;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.Iterator;
+import java.io.IOException;
 
 public class FileContextVisualization extends CMDContextVisualization {
     protected final String filename; 
@@ -15,15 +18,20 @@ public class FileContextVisualization extends CMDContextVisualization {
 
     @Override
     public void show() {
+        
         File file = new File(this.filename);
 
-        try(PrintStream replacementStream = new PrintStream(file)) {
-            System.setOut(replacementStream);
-            super.show();
-            replacementStream.close();
 
-            System.setOut(System.out);
-        } catch (FileNotFoundException e) {
+        try{
+            FileWriter myWriter = new FileWriter(this.filename);
+            Iterator<NodeContextMessage> iterator = this.contextStack.iterator();
+            while (iterator.hasNext()) {
+                NodeContextMessage nodeContextMessage = iterator.next();
+                myWriter.write(this.border + "\n" + nodeContextMessage.toString() + "\n" + this.border);
+            }
+            myWriter.close();
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }

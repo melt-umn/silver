@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 public class CMDContextVisualization extends ContextVisualization {
     private final String printFormat = "%s\n%s\n%s\n";
-    private String border;
+    protected String border;
 
     public CMDContextVisualization(String border) {
         super();
