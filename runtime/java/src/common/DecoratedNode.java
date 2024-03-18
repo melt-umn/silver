@@ -881,7 +881,7 @@ public class DecoratedNode implements Decorable, Typed {
 	// getEndCoordinates() 	DONE
 
 	// getOrigin() 			DONE
-	// getIsNew() 				TODO
+	// getIsNew() 			MOSTLY-DONE (concrete syntax node hacks still)
 	
 	// getPrettyPrint()		DONE
 
@@ -1068,10 +1068,14 @@ public class DecoratedNode implements Decorable, Typed {
 		// return null;
 	}
 
+
+	// TODO: only check getIsNew on is-translation nodes (to avoid _c concrete syntax hack!)
 	// If not a contractum or redex, 
 	// if getOrigin(this) == getRedex(this)
 	// implies a node is "newly" created
 	// like const(0) from neg(x) -> sub(0, x)
+	// Also require it to be Is-TRANSLATION 
+	// (since only forwarding can do this anyway)
 	public boolean getIsNew() {
 		// Silver origin tracking does
 		// not return Nodes or Decorated nodes
@@ -1082,6 +1086,12 @@ public class DecoratedNode implements Decorable, Typed {
 		// check if the result is a PoriginOriginInfo 
 		// or PoriginAndRedexOriginInfo, if it is then
 		//  pull out the first child and do .getName() on that"
+
+		this.compute_redex_contractum();
+		if (this.getIsTranslation() < 1) {
+			// Cannot be a translation
+			return false;
+		}
 		
 		NOriginInfo oinfo = OriginsUtil.getOriginOrNull(this.self);
 		// System.out.println("NOriginInfo: " + oinfo);
@@ -1120,11 +1130,11 @@ public class DecoratedNode implements Decorable, Typed {
 			// P and @ if origin is another node of the same name. 
 			// Also, there will be a '_c@' if concrete syntax (so false if _c@ in)
 			String ostr = origin.toString();
-			// System.out.println("ORIGIN NAME: " + ostr);
+			System.out.println("ORIGIN NAME: " + ostr);
 			// Origin in concrete syntax case
 
 
-			// FIXME: Don't count on this!
+			// // FIXME: Don't count on this!
 			if (ostr.contains("_c@")) {
 				// Never going to be new
 				// System.out.println("CONCRETE SYNTAX ORIGIN");
@@ -1135,6 +1145,12 @@ public class DecoratedNode implements Decorable, Typed {
 				// Not new since same name
 				return false;
 			}
+
+			// if (ostr.contains("P" + prod_name + "@")) {
+			// 	// System.out.println("ABSTRACT SYNTAX ORIGIN");
+			// 	// Not new since same name
+			// 	return false;
+			// }
 			else {
 				// System.out.println("!!!!!!!!IS-NEW!!!!!!!!");
 				return true;

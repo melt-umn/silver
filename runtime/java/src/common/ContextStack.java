@@ -32,6 +32,16 @@ public class ContextStack {
         return this.stack.iterator();
     }
 
+    public NodeContextMessage get(int index) {
+        // Index 0 is the bottom of the stack
+        int stackIndex = this.stack.size() - index - 1;
+        if (stackIndex >= 0 && stackIndex < this.stack.size()) {
+            return this.stack.get(stackIndex);
+        } else {
+            throw new IndexOutOfBoundsException("Index " + index + " is out of bounds.");
+        }
+    }
+
     private Stack<NodeContextMessage> stack = new Stack<NodeContextMessage>();
     private int height = 0;
     // Used for indices

@@ -205,17 +205,41 @@ public class NodeContextMessage {
     // private static int next_index = 0;
 
     // Section 1. Header will contain TRANSLATION and/or HIGHER-ORDER 
+    public int getTranslationX() {
+        return this.translation_x;
+    }
+    public int getHigherOrderY() {
+        return this.higher_order_y;
+    }
     private int translation_x;
     private int higher_order_y;
     
     // Section 2. Actual text representation 
     // (either copied from file or prity print (pp) represenation)
+    public String getTextRepr() {
+        return this.text_repr;
+    }
     private String text_repr;
     
     // Section 3. Production name and file lines
+    public String getProdName() {
+        return this.prod_name;
+    }
     private String prod_name;
+    
+    public String getFilenmae() {
+        return this.filename;
+    }
     private String filename;
+
+    public FileCoordinate getFileCoordianteStart() {
+        return this.fc_start;
+    }
     private FileCoordinate fc_start;
+    
+    public FileCoordinate getFileCoordianteEnd() {
+        return this.fc_end;
+    }
     private FileCoordinate fc_end;
 
     // Section 4. Labels and associated info
@@ -225,4 +249,28 @@ public class NodeContextMessage {
     private boolean is_new;
     private boolean is_attribute_root;
     private int attribute_of;
+
+    public boolean isRedex() {
+        return is_redex;
+    }
+
+    public boolean isContractum() {
+        return is_contractum;
+    }
+
+    public int getContractumOf() {
+        return contractum_of;
+    }
+
+    public boolean isNew() {
+        return is_new;
+    }
+
+    public boolean isAttributeRoot() {
+        return is_attribute_root;
+    }
+
+    public int getAttributeOf() {
+        return attribute_of;
+    }
 }

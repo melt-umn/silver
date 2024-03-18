@@ -251,8 +251,8 @@ public class Debug {
                             if(toggleNameDisplay){
                                 printName(currentNode);
                             }
-                            // if we navigate backwards, push it on to the stack (?)
-                            cStack.push(currentNode);
+                            // if we navigate backwards, pop (?)
+                            cStack.pop();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
