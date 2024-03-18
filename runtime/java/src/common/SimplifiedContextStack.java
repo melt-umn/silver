@@ -2,14 +2,19 @@ package common;
 
 import java.util.Iterator;
 import java.util.Stack;
+import java.util.Arrays;
 
 // Basically a decorator over a ContextStack to 
-// generate a simplified (one node per tree order)
+// generate a simplified (one node per tree order) staco
 public class SimplifiedContextStack {
 
     public SimplifiedContextStack(ContextStack full_stack) {
         this.full_stack = full_stack;
+    }
+
+    public Stack<SimplifiedContextBox> getSimplifiedStack() {
         this.makeSimplifiedStack();
+        return this.simple_stack;
     }
 
     private void makeSimplifiedStack() {
@@ -38,6 +43,12 @@ public class SimplifiedContextStack {
 
     // Inclusive Partition Indices
     private SimplifiedContextBox makeSimplifiedBox(int i, int j) {
+        
+        if (j > i) {
+            System.out.println("Invalid Partition Indices: " + i + ", " + j);
+            return null;
+        }
+        
         // 4 sections to fill in 
         SimplifiedContextBox sbox = new SimplifiedContextBox();
 
@@ -52,14 +63,36 @@ public class SimplifiedContextStack {
         sbox.syntax_to_highlight = last.getTextRepr();
 
         // 3. Need some counting logic to keep track of unique indices
-        Production all_prods[] = new Production[j - i + 1];
-        for (int index = i; index <= j; index++) {
+        sbox.prods_visited = Arrays.copyOfRange(this.productions, i, j + 1);
+
+        // TODO 4. Make features list now
+        sbox.features = null;
+
+
+        return sbox;
+        
+        
+    }
+
+    private void SetAllProds() {
+
+        if (all_prods_static.length > 1) {
+            this.productions = all_prods_static;
+            return;
+        }
+        // Only do this once 
+        // Not worried about multiple instances of SimplifiedContextStack;
+        // rather, don't want to do this for every SimplifiedContextBox created
+
+        Production all_prods[] = new Production[this.full_stack.get_height()];
+        for (int index = 0; index < this.full_stack.get_height(); index++) {
             all_prods[index].name = this.full_stack.get(index).getProdName();
             all_prods[index].index = -1;
         }
 
 
         // Going to be fine with O(n^2) worst case time complexity here for now
+        // Simply a prototype implementation of simplified stack
 
         // Unique prod names get the 0 index (not to be displayed)
         // Non-unique prod names are numbered from 1..n, so need extra
@@ -96,15 +129,10 @@ public class SimplifiedContextStack {
                 }
             }
         }
-        sbox.prods_visited = all_prods;
 
-        // TODO 4. Make features list now
-        sbox.features = null;
-
-
-        return sbox;
-        
-        
+        this.productions = all_prods;
+        all_prods_static = all_prods;
+        return;
     }
 
     private void fillInPartition() {
@@ -129,14 +157,15 @@ public class SimplifiedContextStack {
         }
     }
 
-    public Stack<SimplifiedContextBox> getSimplifiedStack() {
-        return this.simple_stack;
-    }
+    
 
 
     private ContextStack full_stack;
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
+    
+    private Production productions[];
+    private static Production all_prods_static[];
 
     // Put 0 for each respective element in the first 
     // stack partition, then 1, etc. Index 0 into stack is bottom
