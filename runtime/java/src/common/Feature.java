@@ -1,7 +1,4 @@
 package common;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Stack;
 
 public class Feature {
     public String base_prod;
