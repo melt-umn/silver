@@ -56,6 +56,14 @@ public class Debug {
         if(toggleCStackDisplay){
             cStack.show();
         }
+    
+        // Fine to call this
+        ContextStack contextStack = (ContextStack)cStack.getContextStack();
+        // System.out.println(cStack);
+
+        // Need to debug why first line causes NullPointerException before SimplifiedContextStack constructor called
+        // SimplifiedContextStack sStack = new SimplifiedContextStack(cStack.getContextStack());
+        // sStack.getSimplifiedStack();
 
         //Control loop
         loop: do { 

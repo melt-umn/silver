@@ -16,4 +16,8 @@ public abstract class ContextVisualization {
     }
 
     public abstract void show();
+
+    public ContextStack getContextStack() {
+        return this.contextStack;
+    }
 }

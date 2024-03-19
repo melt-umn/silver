@@ -21,6 +21,7 @@ public class SimplifiedContextStack {
     }
 
     private void makeSimplifiedStack() {
+        
         // Clear previous simplified stack to get a brand new one
         this.simple_stack = new Stack<SimplifiedContextBox>();
         
@@ -181,6 +182,9 @@ public class SimplifiedContextStack {
     }
 
     private void fillInPartition() {
+
+        this.partition = new int[full_stack.get_height()];
+
         int previous_x = 0;
         int previous_y = 0;
         int partition_index = 0;
@@ -201,9 +205,6 @@ public class SimplifiedContextStack {
             }
         }
     }
-
-    
-
 
     private ContextStack full_stack;
     private Stack<SimplifiedContextBox> simple_stack = 
