@@ -1145,12 +1145,6 @@ public class DecoratedNode implements Decorable, Typed {
 				// Not new since same name
 				return false;
 			}
-
-			// if (ostr.contains("P" + prod_name + "@")) {
-			// 	// System.out.println("ABSTRACT SYNTAX ORIGIN");
-			// 	// Not new since same name
-			// 	return false;
-			// }
 			else {
 				// System.out.println("!!!!!!!!IS-NEW!!!!!!!!");
 				return true;

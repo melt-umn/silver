@@ -20,15 +20,15 @@ public class Feature {
         this.sep = "";
     }
 
-    public void setSep() {
-        if (this.label.contains("redex")) {
+    private void setSep() {
+        if (this.label.contains("redex") && ! this.target.equals("")) {
             this.sep = "to";
         }
         else if (this.label.contains("contractum")) {
             this.sep = "of";
         }
-        else if (this.label.contains("higher-order")) {
-            this.sep = "";
+        else if (this.label.contains("attribute")) {
+            this.sep = "of";
         }
         else if (this.label.contains("new")) {
             this.sep = "";
@@ -39,7 +39,8 @@ public class Feature {
     }
 
     public String toString() {
-        if (! this.label.contains("new")) {
+        this.setSep();
+        if (! this.target.equals("")) {
             return this.base_prod + ": " + this.label + 
             " (" + this.sep + " " + this.target + ")";
         } 

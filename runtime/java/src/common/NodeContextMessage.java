@@ -96,11 +96,6 @@ public class NodeContextMessage {
         this.has_been_initialized = true;  
     }
 
-    // private void set_index() {
-    //     next_index++;
-    //     this.num_index = next_index;
-    // }
-
     // Set translation_x and translation_x bools here
     // Is there a way to know something is an attribute 
     // just from its node values?

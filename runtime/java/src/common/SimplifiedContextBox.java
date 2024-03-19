@@ -1,5 +1,8 @@
 package common;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SimplifiedContextBox {
 
     // 4 sections
@@ -16,5 +19,5 @@ public class SimplifiedContextBox {
     public Production prods_visited[];
 
     // 4. Interesting Features
-    public Feature features[];
+    public List<Feature> features;
 }

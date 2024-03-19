@@ -3,9 +3,11 @@ package common;
 import java.util.Iterator;
 import java.util.Stack;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 // Basically a decorator over a ContextStack to 
-// generate a simplified (one node per tree order) staco
+// generate a simplified (one node per tree order) stack
 public class SimplifiedContextStack {
 
     public SimplifiedContextStack(ContextStack full_stack) {
@@ -70,13 +72,52 @@ public class SimplifiedContextStack {
         this.SetAllProds();
         sbox.prods_visited = Arrays.copyOfRange(this.productions, i, j + 1);
 
-        // TODO 4. Make features list now
-        sbox.features = null;
-
+        // Make features list now (list, not array, since unknown length)
+        sbox.features = new ArrayList<Feature>();
+        this.fillInFeaturesList(sbox, i, j);
 
         return sbox;
+    }
+
+    private void fillInFeaturesList(SimplifiedContextBox sbox, int i, int j) {
         
-        
+        for (int k = i; k <= j; k++) {
+            NodeContextMessage node = this.full_stack.get(k);
+
+            if (node.isRedex()) {
+                String nodeName = productions[k].toString();
+                String targetName = "";
+                if (k < j) {
+                    targetName = productions[k + 1].toString();
+                }
+                Feature f = new Feature(nodeName, "redex", targetName);
+                sbox.features.add(f);
+            }
+            if (node.isContractum()) {
+                String nodeName = productions[k].toString();
+                String targetName = "";
+                if (k > 0) {
+                    targetName = productions[k - 1].toString();
+                }
+                Feature f = new Feature(nodeName, "contractum", targetName);
+                sbox.features.add(f);
+            }
+            if (node.isNew()) {
+                String nodeName = productions[k].toString();
+                // No origin tracking to find prod name of origin
+                Feature f = new Feature(nodeName, "new");
+                sbox.features.add(f);
+            }
+            if (node.isAttributeRoot()) {
+                String nodeName = productions[k].toString();
+                String targetName = "";
+                if (k > 0) {
+                    targetName = productions[k - 1].toString();
+                }
+                Feature f = new Feature(nodeName, "attribute root", targetName);
+                sbox.features.add(f);
+            }
+        }
     }
 
     private void SetAllProds() {
