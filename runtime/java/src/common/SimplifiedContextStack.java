@@ -13,11 +13,15 @@ public class SimplifiedContextStack {
     }
 
     public Stack<SimplifiedContextBox> getSimplifiedStack() {
+        this.need_set_all_prods = true;
         this.makeSimplifiedStack();
         return this.simple_stack;
     }
 
     private void makeSimplifiedStack() {
+        // Clear previous simplified stack to get a brand new one
+        this.simple_stack = new Stack<SimplifiedContextBox>();
+        
         this.fillInPartition();
 
         // Now make one box per partition
@@ -63,6 +67,7 @@ public class SimplifiedContextStack {
         sbox.syntax_to_highlight = last.getTextRepr();
 
         // 3. Need some counting logic to keep track of unique indices
+        this.SetAllProds();
         sbox.prods_visited = Arrays.copyOfRange(this.productions, i, j + 1);
 
         // TODO 4. Make features list now
@@ -76,8 +81,7 @@ public class SimplifiedContextStack {
 
     private void SetAllProds() {
 
-        if (all_prods_static.length > 1) {
-            this.productions = all_prods_static;
+        if (! this.need_set_all_prods) {
             return;
         }
         // Only do this once 
@@ -131,7 +135,7 @@ public class SimplifiedContextStack {
         }
 
         this.productions = all_prods;
-        all_prods_static = all_prods;
+        this.need_set_all_prods = false;
         return;
     }
 
@@ -164,8 +168,8 @@ public class SimplifiedContextStack {
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
     
+    private boolean need_set_all_prods = true;
     private Production productions[];
-    private static Production all_prods_static[];
 
     // Put 0 for each respective element in the first 
     // stack partition, then 1, etc. Index 0 into stack is bottom
