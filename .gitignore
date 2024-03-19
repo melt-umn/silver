@@ -30,8 +30,10 @@ runtime/java/bin/
 test/**/test.jar
 tutorials/**/output.c
 
-# direnv
+# direnv and Nix
 .direnv/
+result
+result-*
 
 # Useful spot to stash your experiments
 sandbox
