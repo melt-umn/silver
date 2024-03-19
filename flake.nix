@@ -35,6 +35,27 @@
           '';
         };
 
+        legacyPackages = {
+          mkComposedSilver =
+            pkgs.callPackage ./support/nix/mkComposedSilver.nix {
+              inherit java;
+              inherit (legacyPackages) mkSilverBin;
+              inherit (packages) silver;
+            };
+          mkSilverBin = pkgs.callPackage ./support/nix/mkSilverBin {
+            default-java = java;
+            default-silver = packages.silver;
+          };
+          mkSilverLanguageServer =
+            pkgs.callPackage ./support/nix/mkSilverLanguageServer {
+              inherit java;
+              default-silver = packages.silver;
+            };
+          mkSilverLib = pkgs.callPackage ./support/nix/mkSilverLib {
+            default-silver = packages.silver;
+          };
+        };
+
         packages = {
           default = packages.silver;
           silver = pkgs.stdenvNoCC.mkDerivation {
