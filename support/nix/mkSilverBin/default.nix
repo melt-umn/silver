@@ -18,7 +18,7 @@ in stdenv.mkDerivation ({
     lib.unique (outputs ++ [ "out" "dev" ] ++ lib.optional enableMdbook "doc");
   buildInputs = buildInputs ++ builtins.map lib.getDev silverInputs;
   nativeBuildInputs = nativeBuildInputs ++ lib.optional enableMdbook mdbook
-    ++ [ silver ];
+    ++ [ java silver ];
 
   buildPhase = ''
     runHook preBuild
