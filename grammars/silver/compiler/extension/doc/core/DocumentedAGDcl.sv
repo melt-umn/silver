@@ -22,24 +22,18 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
     return if conf.parseDocs then comment else theEmptyDclComment;
 }
 
-function getFreeTypeNames
-[String] ::= l::[TyVar]
-{
-    return case l of
-           | tyVarNamed(s)::xs -> s :: getFreeTypeNames(xs)
-           | _::xs -> getFreeTypeNames(xs)
-           | [] -> []
-           end;
-}
+fun getFreeTypeNames [String] ::= l::[TyVar] =
+  case l of
+  | tyVarNamed(s)::xs -> s :: getFreeTypeNames(xs)
+  | _::xs -> getFreeTypeNames(xs)
+  | [] -> []
+  end;
 
-function getFirstAGDcl
-Decorated AGDcl ::= a::Decorated AGDcl
-{
-    return case a of
-           | appendAGDcl(x, _) -> getFirstAGDcl(x)
-           | x -> x
-           end;
-}
+fun getFirstAGDcl Decorated AGDcl ::= a::Decorated AGDcl =
+  case a of
+  | appendAGDcl(x, _) -> getFirstAGDcl(x)
+  | x -> x
+  end;
 
 @{-
  - This wraps an AGDcl to allow it to be prefixed with a doc comment. AGDcls will by default
@@ -61,6 +55,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
         | nonterminalDcl(_, _, _, tl, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
         | attributeDclInh(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
         | attributeDclSyn(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | shortFunctionDcl (_, _, ns, _, _, _) -> (just(ns.argNames), "function")
         | _ -> (just([]), if isDoubleComment then "standalone" else "other")
         end;
 

@@ -352,15 +352,9 @@ String ::= s::String
   return if i > 0 then substring(0, i, s) else "";
 }
 -- Source grammar of a lookup of an attribute occurrence dcl
-function hackGramFromDcl
-String ::= qn::Decorated QNameAttrOccur
-{
-  return if qn.found then qn.dcl.sourceGrammar else "";
-}
+fun hackGramFromDcl String ::= qn::Decorated QNameAttrOccur =
+  if qn.found then qn.dcl.sourceGrammar else "";
 -- Source grammar of a lookup of a local dcl
-function hackGramFromQName
-String ::= qn::QNameLookup<ValueDclInfo>
-{
-  return if qn.found then qn.dcl.sourceGrammar else "";
-}
+fun hackGramFromQName String ::= qn::QNameLookup<ValueDclInfo> =
+  if qn.found then qn.dcl.sourceGrammar else "";
 

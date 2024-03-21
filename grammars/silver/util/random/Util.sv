@@ -6,19 +6,15 @@ Randomly shuffle the elements of a list.
 @param elems The list to shuffle.
 @return A RandomGen monadic action to shuffle the list.
 -}
-function randomShuffle
-RandomGen<[a]> ::= elems::[a]
-{
-  return
-    if null(elems) then pure([])
-    else do {
-      i :: Integer <- randomRange(0, length(elems) - 1);
-      let hd :: [a] = take(i, elems);
-      let tl :: [a] = drop(i, elems);
-      rest :: [a] <- randomShuffle(hd ++ tail(tl));
-      return head(tl) :: rest;
-    };
-}
+fun randomShuffle RandomGen<[a]> ::= elems::[a] =
+  if null(elems) then pure([])
+  else do {
+    i :: Integer <- randomRange(0, length(elems) - 1);
+    let hd :: [a] = take(i, elems);
+    let tl :: [a] = drop(i, elems);
+    rest :: [a] <- randomShuffle(hd ++ tail(tl));
+    return head(tl) :: rest;
+  };
 
 @{--
 Select a random element from a non-empty list.
@@ -27,15 +23,12 @@ An error is raised when the list is empty.
 @param elems The list from which to select an element.
 @return A RandomGen monadic action to select an element from the list.
 -}
-function randomElem
-RandomGen<a> ::= elems::[a]
-{
-  return if null(elems) then error("randomElem of empty list!") else
+fun randomElem RandomGen<a> ::= elems::[a] =
+  if null(elems) then error("randomElem of empty list!") else
     do {
       i :: Integer <- randomRange(0, length(elems) - 1);
       return head(drop(i, elems));
     };
-}
 
 
 @{--
@@ -45,7 +38,7 @@ Example:
   thread randomIn, randomOut on top, foo, top;
   local fooVal::Integer = foo.randomValue;
 -}
-nonterminal RandomVal<a> with randomIn, randomOut, randomValue<a>;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            nonterminal RandomVal<a> with randomIn, randomOut, randomValue<a>;
 
 synthesized attribute randomValue<a>::a;
 

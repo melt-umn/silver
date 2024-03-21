@@ -304,43 +304,34 @@ Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, Q
   return lambdap(params, body);
 }
 --build the parameters for the lambda applied to all the original arguments plus the function
-function buildMonadApplicationParams
-LambdaRHS ::= realtys::[Type] currentLoc::Integer funType::Type
-{
-  return if null(realtys)
-         then lambdaRHSCons(lambdaRHSElemIdTy(name("f"),
-                                                  '::',
-                                                  typerepTypeExpr(funType)),
-                                lambdaRHSNil())
-         else lambdaRHSCons(lambdaRHSElemIdTy(name("a"++toString(currentLoc)),
-                                                  '::',
-                                                  typerepTypeExpr(dropDecorated(head(realtys)))),
-                                buildMonadApplicationParams(tail(realtys), currentLoc+1, funType));
-}
+fun buildMonadApplicationParams LambdaRHS ::= realtys::[Type] currentLoc::Integer funType::Type =
+  if null(realtys)
+  then lambdaRHSCons(lambdaRHSElemIdTy(name("f"),
+                                           '::',
+                                           typerepTypeExpr(funType)),
+                         lambdaRHSNil())
+  else lambdaRHSCons(lambdaRHSElemIdTy(name("a"++toString(currentLoc)),
+                                           '::',
+                                           typerepTypeExpr(dropDecorated(head(realtys)))),
+                         buildMonadApplicationParams(tail(realtys), currentLoc+1, funType));
 --build the arguments for the application inside all the binds
 --currentIndex is the numerical index of the argument for the name (a<currentIndex>, like a3)
-function buildFunArgs
-AppExprs ::= currentIndex::Integer
-{
-  return if currentIndex == 0
-         then emptyAppExprs()
-         else snocAppExprs(buildFunArgs(currentIndex - 1), ',',
-                           presentAppExpr(baseExpr(qName("a"++toString(currentIndex)))));
-}
+fun buildFunArgs AppExprs ::= currentIndex::Integer =
+  if currentIndex == 0
+  then emptyAppExprs()
+  else snocAppExprs(buildFunArgs(currentIndex - 1), ',',
+                    presentAppExpr(baseExpr(qName("a"++toString(currentIndex)))));
 --build the annotation arguments for the application inside all the binds
 --annotations are the annotations given to the original call
 --currentIndex is the numerical index of the argument for the name (a<currentIndex>, like a3)
-function buildFunAnnArgs
-AnnoAppExprs ::= annotations::[(Type, QName, Boolean)] currentIndex::Integer
-{
-  return case annotations of
-         | [] -> emptyAnnoAppExprs()
-         | (ty, q, _)::rest ->
-           snocAnnoAppExprs(buildFunAnnArgs(rest, currentIndex + 1), ',',
-              annoExpr(q, '=',
-                 presentAppExpr(baseExpr(qName("a" ++ toString(currentIndex))))))
-         end;
-}
+fun buildFunAnnArgs AnnoAppExprs ::= annotations::[(Type, QName, Boolean)] currentIndex::Integer =
+  case annotations of
+  | [] -> emptyAnnoAppExprs()
+  | (ty, q, _)::rest ->
+    snocAnnoAppExprs(buildFunAnnArgs(rest, currentIndex + 1), ',',
+       annoExpr(q, '=',
+          presentAppExpr(baseExpr(qName("a" ++ toString(currentIndex))))))
+  end;
 --build the body of the lambda which includes all the binds
 function buildMonadApplicationBody
 Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppExprs

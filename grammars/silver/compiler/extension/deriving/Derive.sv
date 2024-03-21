@@ -273,13 +273,9 @@ top::AGDcl ::= nt::Decorated! QName
   };
 }
 
-function foldPrimPatterns
-PrimPatterns ::= ps::[PrimPattern]
-{
-  return
-    case ps of
-    | [h] -> onePattern(h)
-    | h :: t -> consPattern(h, '|', foldPrimPatterns(t))
-    | [] -> error("empty patterns")
-    end;
-}
+fun foldPrimPatterns PrimPatterns ::= ps::[PrimPattern] =
+  case ps of
+  | [h] -> onePattern(h)
+  | h :: t -> consPattern(h, '|', foldPrimPatterns(t))
+  | [] -> error("empty patterns")
+  end;

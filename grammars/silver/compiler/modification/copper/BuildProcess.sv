@@ -66,12 +66,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 
 -- Skips parser specs from SILVER_HOST_GEN
 -- The way that feature works, they shouldn't need regeneration.
-function obtainParserSpecs
-[ParserSpec] ::= g::Decorated RootSpec  benv::BuildEnv
-{
-  return if g.generateLocation != benv.silverGen then []
-         else g.parserSpecs;
-}
+fun obtainParserSpecs [ParserSpec] ::= g::Decorated RootSpec  benv::BuildEnv =
+  if g.generateLocation != benv.silverGen then []
+  else g.parserSpecs;
 
 aspect production compilation
 top::Compilation ::= g::Grammars  _  _  benv::BuildEnv

@@ -133,6 +133,11 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
+		public boolean isChildDecorable(final int child) {
+			return ref.getNode().isChildDecorable(child);
+		}
+
+		@Override
 		public Object getChild(final int child) {
 			return ref.getNode().getChild(child);
 		}
@@ -161,6 +166,11 @@ ${if quals.data then "" else s"""
 
 		@Override
 		public int getNumberOfLocalAttrs() {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
+		}
+
+		@Override
+		public boolean isLocalDecorable(final int child) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 

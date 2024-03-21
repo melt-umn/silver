@@ -71,10 +71,6 @@ BuildEnv ::=
 {--
  - Ensures a string ends with a forward slash. Safe to use if it already has one.
  -}
-function endWithSlash
-String ::= s::String
-{
-  return if endsWith("/", s) then s else s ++ "/";
-}
+fun endWithSlash String ::= s::String = if endsWith("/", s) then s else s ++ "/";
 
 

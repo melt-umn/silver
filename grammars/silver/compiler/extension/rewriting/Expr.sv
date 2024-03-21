@@ -125,9 +125,9 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     case e, es of
     | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
 
-    -- Special cases for efficiency, and workaround for type inference issues.
-    -- TODO: This doesn't work as expected when these operators are overloaded.
-    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2)) ->
+    -- Special cases for efficiency.
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2)) 
+        when e1.finalType.isPrimitive ->
       case q.lookupValue.fullName of
       | "silver:core:conj" -> andASTExpr(e1.transform, e2.transform)
       | "silver:core:disj" -> orASTExpr(e1.transform, e2.transform)
@@ -145,7 +145,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
       | "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
       | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
       end
-    | classMemberReference(q), oneAppExprs(presentAppExpr(e)) ->
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e)) 
+        when e.finalType.isPrimitive ->
       case q.lookupValue.fullName of
       | "silver:core:not" -> notASTExpr(e.transform)
       | "silver:core:negate" -> negASTExpr(e.transform)
@@ -156,10 +157,25 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
       | "silver:core:length" -> lengthASTExpr(e.transform)
       | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
       end
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e)) 
+        when e.finalType matches appType(listCtrType(), _) ->
+      case q.lookupValue.fullName of
+      | "silver:core:length" -> lengthASTExpr(e.transform)
+      | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
+      end
 
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
 }
+
+synthesized attribute isPrimitive::Boolean occurs on Type;
+aspect isPrimitive on Type of
+| intType() -> true
+| floatType() -> true
+| boolType() -> true
+| stringType() -> true
+| _ -> false
+end;
 
 aspect production partialApplication
 top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs

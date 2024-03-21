@@ -1,5 +1,7 @@
 package common;
 
+import silver.core.NLocation;
+
 /**
  * Lazy is the interface used to create function pointers, essentially.
  * 
@@ -14,13 +16,30 @@ public interface Lazy {
 	public Object eval(DecoratedNode context);
 
     /**
+     * Get the source file location of the equation defining this Lazy.
+     * Null if this Lazy does not correspond to an equation.
+     * TODO: we should include this in stack traces.
+     * 
+     * @return The source location of the equation defining this Lazy, or null if it is not available.
+     */
+    public default NLocation getSourceLocation() {
+        return null;
+    }
+
+    /**
      * Create a Lazy that evaluates in some context and ignores the supplied one.
      * 
      * @param context The context to evaluate in.
      * @return A Lazy that evaluates in the supplied context.
      */
     public default Lazy withContext(final DecoratedNode context) {
-        return (ignoredNewContext) -> eval(context);
+        return new Lazy() {
+            @Override
+            public Object eval(DecoratedNode ignoredNewContext) { return Lazy.this.eval(context); }
+
+            @Override
+            public NLocation getSourceLocation() { return Lazy.this.getSourceLocation(); }
+        };
     }
 
     public static class Trap implements Lazy {
@@ -32,6 +51,10 @@ public interface Lazy {
 
         public Object eval(DecoratedNode context) {
             return Util.error(m);
+        }
+
+        public NLocation getSourceLocation() {
+            return null;
         }
     }
 }

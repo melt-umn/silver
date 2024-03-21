@@ -8,6 +8,7 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:modification:copper_mda;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:modification:collection;
+imports silver:compiler:modification:concisefunctions;
 
 @@{- @warning INTENDED TO BE INTERFERED WITH like .pp. -}
 synthesized attribute docUnparse::String occurs on AGDcl;
@@ -19,6 +20,15 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.docForName = id.name;
   top.docUnparse = "`function " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production shortFunctionDcl
+top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
+{
+  top.docForName = id.name;
+  top.docUnparse = "`fun " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
   top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }

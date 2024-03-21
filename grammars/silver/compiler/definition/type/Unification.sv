@@ -222,11 +222,8 @@ Substitution ::= te1::Type te2::Type
          else rightward; -- arbitrary choice of errors. Non-confluent!!
 }
 
-function unifyCheck
-Substitution ::= te1::Type te2::Type s::Substitution
-{
-  return composeSubst(ignoreFailure(s), unify(performSubstitution(te1, s), performSubstitution(te2, s)));
-}
+fun unifyCheck Substitution ::= te1::Type te2::Type s::Substitution =
+  composeSubst(ignoreFailure(s), unify(performSubstitution(te1, s), performSubstitution(te2, s)));
 
 -- This function is meant to produce a simple rewriting FROM `fromte` to `tote`
 -- suitable for use with `performRenaming` (vs `performSubstitution`).
@@ -236,14 +233,7 @@ Substitution ::= te1::Type te2::Type s::Substitution
 -- should yield: v1 -> int, v2 -> v1.
 -- Rewriting should apply this without `v2` becoming `int`. (As normal subst would do.)
 -- TODO this code is obviously implemented in a fragile way.
-function unifyDirectional
-Substitution ::= fromte::Type tote::Type
-{
-  -- Currently, this is built on the assumption that the unification will not fail.
-  -- Therefore, for now we will FRAGILEY just call unify 
-  -- This is a possible source of bugs/unexpected behavior?
-  return unify(fromte, tote);
-}
+fun unifyDirectional Substitution ::= fromte::Type tote::Type = unify(fromte, tote);
 
 function unifyAll
 Substitution ::= te1::[Type] te2::[Type]

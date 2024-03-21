@@ -79,7 +79,7 @@ instance MonadFix IO {
 function runIO
 IOToken ::= st::IO<a> ioIn::IOToken
 {
-  return evalIO(st, ioIn).io;
+  return evalIO(new(st), ioIn).io;
 }
 
 function evalIO
@@ -92,7 +92,7 @@ IOVal<a> ::= st::IO<a> ioIn::IOToken
 function unsafeEvalIO
 a ::= st::IO<a>
 {
-  local res::IOVal<a> = evalIO(st, unsafeIO());
+  local res::IOVal<a> = evalIO(new(st), unsafeIO());
   return unsafeTrace(res.iovalue, res.io);
 }
 
@@ -134,17 +134,11 @@ top::IO<Unit> ::= s::String
   top.stateVal = unit();
 }
 
-function println
-IO<Unit> ::= str::String
-{ return stateIOUnit(printlnT(str, _)); }
+fun println IO<Unit> ::= str::String = stateIOUnit(printlnT(str, _));
 
-function eprint
-IO<Unit> ::= str::String
-{ return stateIOUnit(eprintT(str, _)); }
+fun eprint IO<Unit> ::= str::String = stateIOUnit(eprintT(str, _));
 
-function eprintln
-IO<Unit> ::= str::String
-{ return stateIOUnit(eprintlnT(str, _)); }
+fun eprintln IO<Unit> ::= str::String = stateIOUnit(eprintlnT(str, _));
 
 abstract production readLineStdin
 top::IO<Maybe<String>> ::=

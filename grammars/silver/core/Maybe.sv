@@ -93,11 +93,7 @@ top::MaybeT<m a> ::= x::m<Maybe<a>>
 @{--
  - Transform the computation inside a MaybeT.
  -}
-function mapMaybeT
-MaybeT<n b> ::= f::(n<Maybe<b>> ::= m<Maybe<a>>) x::MaybeT<m a>
-{
-  return maybeT(f(x.run));
-}
+fun mapMaybeT MaybeT<n b> ::= f::(n<Maybe<b>> ::= m<Maybe<a>>) x::MaybeT<m a> = maybeT(f(x.run));
 
 instance Functor m => Functor MaybeT<m _> {
   map = \ f::(b ::= a) x::MaybeT<m a> -> mapMaybeT(map(map(f, _), _), x); 
@@ -174,11 +170,8 @@ instance MonadTrans MaybeT {
  - @param ifJust  The maybe value to scrutinize
  - @return  Either the contents of the Maybe (if 'just'), or the otherwise element.
  -}
-function fromMaybe
-a ::= otherwise::a ifJust::Maybe<a>
-{
-  return if ifJust.isJust then ifJust.fromJust else otherwise;
-}
+fun fromMaybe a ::= otherwise::a ifJust::Maybe<a> =
+  if ifJust.isJust then ifJust.fromJust else otherwise;
 
 @{--
  - Selects the first existing element, favoring the left.
@@ -187,25 +180,17 @@ a ::= otherwise::a ifJust::Maybe<a>
  - @param r  The second element
  - @return  A wrapped element, if any, favoring 'l'
  -}
-function orElse
-Maybe<a> ::= l::Maybe<a> r::Maybe<a>
-{
-  return if l.isJust then l else r;
-}
+fun orElse Maybe<a> ::= l::Maybe<a> r::Maybe<a> = if l.isJust then l else r;
 
 @{--
   - The eliminator for Maybe. Runs ifJust on the wrapped value if there is one,
   - otherwise returns ifNothing.
   -}
-function mapOrElse
-b ::= ifNothing::b  ifJust::(b ::= a)  value::Maybe<a>
-{
-  return
-    case value of
-    | just(x)   -> ifJust(x)
-    | nothing() -> ifNothing
-    end;
-}
+fun mapOrElse b ::= ifNothing::b  ifJust::(b ::= a)  value::Maybe<a> =
+  case value of
+  | just(x)   -> ifJust(x)
+  | nothing() -> ifNothing
+  end;
 
 @{--
  - Maybe cons a value to a list, or not.
@@ -214,11 +199,7 @@ b ::= ifNothing::b  ifJust::(b ::= a)  value::Maybe<a>
  - @param t  The list to amend, if there's a value
  - @return  The list, possibly with a new value at its head.
  -}
-function consMaybe
-[a] ::= h::Maybe<a>  t::[a]
-{
-  return if h.isJust then h.fromJust :: t else t;
-}
+fun consMaybe [a] ::= h::Maybe<a>  t::[a] = if h.isJust then h.fromJust :: t else t;
 
 @{--
  - Turn a list of possible values into a list of values, skipping over
@@ -227,22 +208,15 @@ function consMaybe
  - @param l  A list of optional values
  - @return  The list with all absent values removed, and present values unwrapped.
  -}
-function catMaybes
-[a] ::= l::[Maybe<a>]
-{
-  return foldr(consMaybe, [], l);
-}
+fun catMaybes [a] ::= l::[Maybe<a>] = foldr(consMaybe, [], l);
 
 @{--
  - Finds the first value matching a predicate.
  -}
-function find
-Maybe<a> ::= f::(Boolean ::= a) l::[a]
-{
-  return if null(l) then
+fun find Maybe<a> ::= f::(Boolean ::= a) l::[a] =
+  if null(l) then
     nothing()
   else if f(head(l)) then
     just(head(l))
   else
     find(f, tail(l));
-}

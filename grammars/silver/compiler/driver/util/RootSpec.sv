@@ -200,10 +200,8 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.serInterface = error("errorRootSpec demanded interface");
 }
 
-function parseErrorToMessage
-Pair<String [Message]> ::= grammarSource::String  e::ParseError
-{
-  return case e of
+fun parseErrorToMessage Pair<String [Message]> ::= grammarSource::String  e::ParseError =
+  case e of
   | syntaxError(str, locat, _, _) ->
       (locat.filename, 
         [err(locat,
@@ -213,7 +211,6 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
         [err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
           "Unknown error while parsing:\n" ++ str)])
   end;
-}
 
 monoid attribute maybeGrammarSource::Maybe<String> with nothing(), orElse;
 monoid attribute maybeGrammarTime::Maybe<Integer> with nothing(), orElse;
@@ -392,11 +389,8 @@ InterfaceItems ::= r::Decorated RootSpec
 {--
  - All grammar names mentioned by this root spec (not transitive!)
  -}
-function mentionedGrammars
-[String] ::= r::Decorated RootSpec
-{
-  return nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
-}
+fun mentionedGrammars [String] ::= r::Decorated RootSpec =
+  nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
 
 -- We're comparing INTERFACE TIME against GRAMMAR TIME, just to emphasize what's going on here...
 function isOutOfDate

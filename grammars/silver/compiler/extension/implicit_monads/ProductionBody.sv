@@ -178,16 +178,13 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
 
 --take a list of unallowed attributes and generate error messages for them
-function buildExplicitAttrErrors
-[Message] ::= l::[Decorated QNameAttrOccur]
-{
-  return case l of
-         | [] -> []
-         | a::t ->
-           errFromOrigin(a, "Attributes accessed in restricted equations must be restricted; " ++
-                     a.name ++ " is not")::buildExplicitAttrErrors(t)
-         end;
-}
+fun buildExplicitAttrErrors [Message] ::= l::[Decorated QNameAttrOccur] =
+  case l of
+  | [] -> []
+  | a::t ->
+    errFromOrigin(a, "Attributes accessed in restricted equations must be restricted; " ++
+              a.name ++ " is not")::buildExplicitAttrErrors(t)
+  end;
 
 
 

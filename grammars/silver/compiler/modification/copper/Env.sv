@@ -31,41 +31,23 @@ top::Def ::= d::EnvItem<ValueDclInfo>
   top.valueList = [d];
 }
 
-function parserAttrDef
-Def ::= sg::String sl::Location fn::String ty::Type
-{
-  return valueDef(defaultEnvItem(parserAttrDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun parserAttrDef Def ::= sg::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(parserAttrDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 
-function pluckTermDef
-Def ::= sg::String sl::Location fn::String
-{
-  return valueDef(defaultEnvItem(pluckTermDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun pluckTermDef Def ::= sg::String sl::Location fn::String =
+  valueDef(defaultEnvItem(pluckTermDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
 
-function lexerClassDef
-Def ::= sg::String sl::Location fn::String sc::[String]
-{
-  return lxrClsDef(defaultEnvItem(lexerClassDcl(fn,sc,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun lexerClassDef Def ::= sg::String sl::Location fn::String sc::[String] =
+  lxrClsDef(defaultEnvItem(lexerClassDcl(fn,sc,sourceGrammar=sg,sourceLocation=sl)));
 
-function termAttrValueDef
-Def ::= sg::String sl::Location fn::String ty::Type
-{
-  return valueDef(defaultEnvItem(termAttrValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun termAttrValueDef Def ::= sg::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(termAttrValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 
-function actionChildDef
-Def ::= sg::String sl::Location fn::String ty::Type
-{
-  return valueDef(defaultEnvItem(actionChildDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun actionChildDef Def ::= sg::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(actionChildDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 
-function parserLocalDef
-Def ::= sg::String sl::Location fn::String ty::Type
-{
-  return valueDef(defaultEnvItem(parserLocalDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun parserLocalDef Def ::= sg::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(parserLocalDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 
 --------------------------------------------------------------------------------
 -- Env.sv
@@ -96,25 +78,18 @@ top::Env ::= _  e::Env
   top.lexerClassTree = e.lexerClassTree;
 }
 
-function getLexerClassDcl
-[ValueDclInfo] ::= search::String e::Env
-{
-  return searchEnvTree(search, e.lexerClassTree);
-}
+fun getLexerClassDcl [ValueDclInfo] ::= search::String e::Env =
+  searchEnvTree(search, e.lexerClassTree);
 
-function expandTransitiveSuperClasses
-[String] ::= seen::[String] toExpand::[String] e::Env
-{
-  return
-    case toExpand of
-    | [] -> seen
-    | c :: cs ->
-      if contains(c, seen)
-      then expandTransitiveSuperClasses(seen, cs, e)
-      else expandTransitiveSuperClasses(
-        c :: seen, flatMap((.superClasses), getLexerClassDcl(c, e)) ++ cs, e)
-    end;
-}
+fun expandTransitiveSuperClasses [String] ::= seen::[String] toExpand::[String] e::Env =
+  case toExpand of
+  | [] -> seen
+  | c :: cs ->
+    if contains(c, seen)
+    then expandTransitiveSuperClasses(seen, cs, e)
+    else expandTransitiveSuperClasses(
+      c :: seen, flatMap((.superClasses), getLexerClassDcl(c, e)) ++ cs, e)
+  end;
 
 --------------------------------------------------------------------------------
 -- QName.sv

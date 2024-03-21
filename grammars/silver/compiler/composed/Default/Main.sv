@@ -6,6 +6,7 @@ parser svParse::Root {
   silver:compiler:host;
 }
 
+-- TODO: Change to a concise function
 function main 
 IOVal<Integer> ::= args::[String] ioin::IOToken
 {

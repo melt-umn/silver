@@ -42,15 +42,11 @@ Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<
   "java" : return "(common.Reflection.applyAST(originCtx, %fn%, %args%, %namedArgs%))";
 }
 
-function reifyUnchecked
-runtimeTypeable a => a ::= x::AST
-{
-  return 
-    case reify(x) of
-    | left(msg) -> error(msg)
-    | right(a) -> a
-    end;
-}
+fun reifyUnchecked runtimeTypeable a => a ::= x::AST =
+  case reify(x) of
+  | left(msg) -> error(msg)
+  | right(a) -> a
+  end;
 
 -- TODO: We could add lazy versions of these, if needed.
 

@@ -10,13 +10,8 @@ data Pair<a b> = pair
   with fst<a>, snd<b>;
 derive Eq, Ord on Pair;
 
-function fst
-a ::= p::Pair<a b>
-{ return p.fst; }
-
-function snd
-b ::= p::Pair<a b>
-{ return p.snd; }
+global fst :: (a ::= Pair<a b>) = (.fst);
+global snd :: (b ::= Pair<a b>) = (.snd);
 
 @{--
  - Look up an element in an association list, using the specified equality
@@ -28,15 +23,12 @@ b ::= p::Pair<a b>
  - @return  The first association pair found in the list, where the element
  -   equaled the first element of the pair.
  -}
-function lookupBy
-Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
-{
-  return if null(lst)
-         then nothing()
-         else if eqf(elem, head(lst).fst)
-              then just(head(lst).snd)
-              else lookupBy(eqf, elem, tail(lst));
-}
+fun lookupBy Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>] =
+  if null(lst)
+  then nothing()
+  else if eqf(elem, head(lst).fst)
+       then just(head(lst).snd)
+       else lookupBy(eqf, elem, tail(lst));
 
 @{--
  - Look up an element in an association list, using ==.
@@ -46,27 +38,16 @@ Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
  - @return  The first association pair found in the list, where the element
  -   equaled the first element of the pair.
  -}
-function lookup
-Eq a => Maybe<b> ::= elem::a  lst::[Pair<a b>]
-{
-  return lookupBy(eq, elem, lst);
-}
+fun lookup Eq a => Maybe<b> ::= elem::a  lst::[Pair<a b>] = lookupBy(eq, elem, lst);
 
-function lookupAllBy
-[b] ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
-{
-  return if null(lst)
-         then []
-         else if eqf(elem, head(lst).fst)
-              then head(lst).snd :: lookupAllBy(eqf, elem, tail(lst))
-              else lookupAllBy(eqf, elem, tail(lst));
-}
+fun lookupAllBy [b] ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>] =
+  if null(lst)
+  then []
+  else if eqf(elem, head(lst).fst)
+       then head(lst).snd :: lookupAllBy(eqf, elem, tail(lst))
+       else lookupAllBy(eqf, elem, tail(lst));
 
-function lookupAll
-Eq a => [b] ::= elem::a  lst::[Pair<a b>]
-{
-  return lookupAllBy(eq, elem, lst);
-}
+fun lookupAll Eq a => [b] ::= elem::a  lst::[Pair<a b>] = lookupAllBy(eq, elem, lst);
 
 @{--
  - Decomposes a list of pairs into a pair of lists.

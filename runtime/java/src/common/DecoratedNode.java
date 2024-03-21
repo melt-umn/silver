@@ -305,6 +305,23 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
+	 * Returns the child of this DecoratedNode, decorating it if needed.
+	 * 
+	 * This may be useful for debugging/reflection but is not used in the translation;
+	 * prefer calling childAsIs/childDecorated directly for performance.
+	 * 
+	 * @param child The number of the child to obtain.
+	 * @return The value of the child.
+	 */
+	public Object child(final int child) {
+		if(self.isChildDecorable(child)) {
+			return childDecorated(child);
+		} else {
+			return childAsIs(child);
+		}
+	}
+
+	/**
 	 * Returns the child of this DecoratedNode, without potentially decorating it.
 	 * 
 	 * <p>Warning: do not mix {@link #childAsIs} and {@link #childDecorated} on the same child!
@@ -344,7 +361,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Separate function to keep {@link #childDecorated} small and inlineable.
 	 * This is, after all, the "slow path."
 	 */
-	private final DecoratedNode obtainDecoratedChild(final int child) { 
+	private final DecoratedNode obtainDecoratedChild(final int child) {
 		Lazy decSite = self.getChildDecSite(child);
 		if(decSite == null) {
 			return createDecoratedChild(child);
@@ -362,12 +379,30 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return The decorated value of the child.
 	 */
 	public final DecoratedNode createDecoratedChild(final int child) {
+		assert self.isChildDecorable(child);
 		if(childCreated[child]) {
 			throw new SilverInternalError("Decorated child " + child + " created more than once in " + getDebugID());
 		}
 		DecoratedNode result = ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
 		childCreated[child] = true;
 		return result;
+	}
+
+	/**
+	 * Returns the value of a local, decorating it if needed.
+	 * 
+	 * This may be useful for debugging/reflection but is not used in the translation;
+	 * prefer calling localAsIs/localDecorated directly for performance.
+	 * 
+	 * @param attribute The index of the local to obtain.
+	 * @return The value of the local.
+	 */
+	public Object local(final int attribute) {
+		if(self.isLocalDecorable(attribute)) {
+			return localDecorated(attribute);
+		} else {
+			return localAsIs(attribute);
+		}
 	}
 
 	/**
@@ -459,6 +494,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return The decorated value of the local.
 	 */
 	public final DecoratedNode evalLocalDecorated(final int attribute) {
+		assert self.isLocalDecorable(attribute);
 		if(localCreated[attribute]) {
 			throw new SilverInternalError("Decorated local '" + self.getNameOfLocalAttr(attribute) + "' created more than once in " + getDebugID());
 		}
@@ -765,6 +801,13 @@ public class DecoratedNode implements Decorable, Typed {
 		// childAsIs does not store in the childrenValues array, so...
 		// Straight up use whatever thunk (or not!) is in the node.
 		return self.getChildLazy(child);
+	}
+	public final Object localLazy(final int index) {
+		if(localValues[index] != null)
+			return localValues[index];
+		
+		return new Thunk<Object>(() -> this.local(index));
+	
 	}
 	public final Object localDecoratedLazy(final int index) {
 		if(localValues[index] != null)

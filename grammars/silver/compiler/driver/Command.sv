@@ -181,20 +181,14 @@ Either<String  Decorated CmdArgs> ::= args::[String]
          else right(cmdArgs);
 }
 
-function parseArgsOrError
-Decorated CmdArgs ::= args::[String]
-{
-  return
-    case parseArgs(args) of
-    | left(msg) -> error("Failed to parse args: " ++ msg)
-    | right(a) -> a
-    end;
-}
+fun parseArgsOrError Decorated CmdArgs ::= args::[String] =
+  case parseArgs(args) of
+  | left(msg) -> error("Failed to parse args: " ++ msg)
+  | right(a) -> a
+  end;
 
-function determineBuildEnv
-IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
-{
-  return do {
+fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
+  do {
     benv :: BuildEnv <- lift(do {
       -- Let's locally set up and verify the environment
       envSH :: String <- envVar("SILVER_HOME");
@@ -221,12 +215,9 @@ IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
 
     return benv;
   };
-}
 
-function checkEnvironment
-IO<[String]> ::= benv::BuildEnv
-{
-  return do {
+fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
+  do {
     isGenDir :: Boolean <- isDirectory(benv.silverGen);
     isGramDir :: Boolean <- isDirectory(benv.defaultGrammarPath);
 
@@ -243,14 +234,12 @@ IO<[String]> ::= benv::BuildEnv
       -- TODO: We should probably check everything in grammarPath?
       -- TODO: Maybe look for 'core' specifically?
   };
-}
 
-function checkPreBuild
+fun checkPreBuild
 IO<[String]> ::=
   benv::BuildEnv
-  buildGrammars::[String]
-{
-  return pure(
+  buildGrammars::[String] =
+  pure(
     if null(buildGrammars) then ["No grammar(s) to build were specified.\n"]
     else flatMap(\ buildGrammar::String ->
       if indexOf("/", buildGrammar) != -1 -- basic sanity check
@@ -259,8 +248,6 @@ IO<[String]> ::=
       then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
       else [],
       buildGrammars));
-  -- TODO: presently, we check whether we find this grammar elsewhere. Maybe it should be here? not sure.
-}
 
 -- This code has to live in the generated jar for the program, as putting it in the
 -- standard library may someday return the location of the standard library jar instead

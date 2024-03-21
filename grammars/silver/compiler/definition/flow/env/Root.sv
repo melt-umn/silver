@@ -5,6 +5,7 @@ import silver:compiler:definition:concrete_syntax;
 import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
+import silver:compiler:modification:concisefunctions;
 
 attribute flowDefs, refDefs, specDefs, flowEnv occurs on Root, AGDcls, AGDcl, Grammar;
 flowtype flowDefs {decorate} on Root, AGDcls, AGDcl, Grammar;

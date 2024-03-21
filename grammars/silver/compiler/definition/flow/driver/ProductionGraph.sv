@@ -88,23 +88,19 @@ top::ProductionGraph ::=
     end end;
 }
 
-function updateGraph
+fun updateGraph
 ProductionGraph ::=
   graph::ProductionGraph
   prodEnv::EnvTree<ProductionGraph>
-  ntEnv::EnvTree<FlowType>
-{
-  return graph.stitchedGraph(ntEnv, prodEnv).cullSuspect(ntEnv);
-}
+  ntEnv::EnvTree<FlowType> =
+    graph.stitchedGraph(ntEnv, prodEnv).cullSuspect(ntEnv);
 
 -- construct a production graph for each production
-function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Env
-{
-  return if null(prods) then []
+fun computeAllProductionGraphs
+[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Env =
+  if null(prods) then []
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
     computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
-}
 
 
 --------------------------------------------------------------------------------
@@ -354,11 +350,8 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
   return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
-function getPhantomEdge
-Pair<FlowVertex FlowVertex> ::= at::String
-{
-  return (lhsSynVertex(at), forwardEqVertex());
-}
+fun getPhantomEdge Pair<FlowVertex FlowVertex> ::= at::String =
+  (lhsSynVertex(at), forwardEqVertex());
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
@@ -366,60 +359,47 @@ Pair<FlowVertex FlowVertex> ::= at::String
  - Introduces implicit 'lhs.syn -> forward.syn' (& forward.eq) equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
-function addFwdSynEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::FlowEnv
-{
-  return if null(syns) then []
+fun addFwdSynEqs [Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::FlowEnv =
+  if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
     then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
           (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
-}
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.
  - Inherited equations are never suspect.
  -}
-function addFwdInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
-{
-  return if null(inhs) then []
+fun addFwdInhEqs [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv =
+  if null(inhs) then []
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
-}
 {--
  - Introduces implicit 'fwrd.inh = lhs.inh' equations for forward production attributes.
  - Inherited equations are never suspect.
  -}
-function addFwdProdAttrInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv
-{
-  return if null(inhs) then []
+fun addFwdProdAttrInhEqs
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv =
+  if null(inhs) then []
   else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
-}
-function allFwdProdAttrs
-[String] ::= d::[FlowDef]
-{
-  return case d of
+fun allFwdProdAttrs [String] ::= d::[FlowDef] =
+  case d of
   | [] -> []
   | localEq(_, fN, _, true, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
   | _ :: rest -> allFwdProdAttrs(rest)
   end;
-}
 {--
  - Introduces default equations deps. Realistically, should be empty, always.
  -}
-function addDefEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv
-{
-  return if null(syns) then []
+fun addDefEqs
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv =
+  if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv)) 
         then let x :: [FlowDef] = lookupDef(nt, head(syns), flowEnv)
               in if null(x) then [] else head(x).flowEdges 
              end
         else []) ++
     addDefEqs(prod, nt, tail(syns), flowEnv);
-}
 
 ---- End helpers for fixing up graphs ------------------------------------------
 
@@ -428,26 +408,20 @@ function addDefEqs
 {--
  - Stitch points for the flow type of 'nt', and the flow types of all translation attributes on 'nt'.
  -}
-function nonterminalStitchPoints
-[StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType
-{
-  return
-    nonterminalStitchPoint(nt, vertexType) ::
-    flatMap(
-      \ o::OccursDclInfo ->
-        case getAttrDcl(o.attrOccurring, realEnv) of
-        | at :: _ when at.isSynthesized && at.isTranslation ->
-          [nonterminalStitchPoint(
-            at.typeScheme.typeName,
-            transAttrVertexType(vertexType, o.attrOccurring))]
-        | _ -> []
-        end,
-      getAttrOccursOn(nt, realEnv));
-}
-function localStitchPoints
-[StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef]
-{
-  return flatMap(\ d::FlowDef ->
+fun nonterminalStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType =
+  nonterminalStitchPoint(nt, vertexType) ::
+  flatMap(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, realEnv) of
+      | at :: _ when at.isSynthesized && at.isTranslation ->
+        [nonterminalStitchPoint(
+          at.typeScheme.typeName,
+          transAttrVertexType(vertexType, o.attrOccurring))]
+      | _ -> []
+      end,
+    getAttrOccursOn(nt, realEnv));
+fun localStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef] =
+  flatMap(\ d::FlowDef ->
     case d of
     -- We add the forward stitch point here, too!
     | fwdEq(_, _, _) -> nonterminalStitchPoints(realEnv, nt, forwardVertexType)
@@ -458,7 +432,6 @@ function localStitchPoints
     -- Ignore all other flow def info
     | _ -> []
     end, ds);
-}
 function rhsStitchPoints
 [StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement
 {
@@ -468,32 +441,24 @@ function rhsStitchPoints
     then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
     else [];
 }
-function patternStitchPoints
-[StitchPoint] ::= realEnv::Env  defs::[FlowDef]
-{
-  return case defs of
+fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
+  case defs of
   | [] -> []
   | patternRuleEq(_, matchProd, scrutinee, vars) :: rest ->
       flatMap(patVarStitchPoints(matchProd, scrutinee, realEnv, _), vars) ++
       patternStitchPoints(realEnv, rest)
   | _ :: rest -> patternStitchPoints(realEnv, rest)
   end;
-}
-function patVarStitchPoints
-[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection
-{
-  return case var of
+fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection =
+  case var of
   | patternVarProjection(child, typeName, patternVar) -> 
       projectionStitchPoint(
         matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
         getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
       nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
-}
-function subtermDecSiteStitchPoints
-[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef]
-{
-  return flatMap(\ d::FlowDef ->
+fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
+  flatMap(\ d::FlowDef ->
     case d of
     | subtermDecEq(prodName, parent, termProdName, sigName) ->
       map(\ prodDcl::ValueDclInfo ->
@@ -504,15 +469,10 @@ function subtermDecSiteStitchPoints
     | _ -> []
     end,
     defs);
-}
 
 ---- End helpers for figuring our stitch points --------------------------------
 
-function prodGraphToEnv
-Pair<String ProductionGraph> ::= p::ProductionGraph
-{
-  return (p.prod, p);
-}
+fun prodGraphToEnv Pair<String ProductionGraph> ::= p::ProductionGraph = (p.prod, p);
 
 ---- Begin Suspect edge handling -----------------------------------------------
 

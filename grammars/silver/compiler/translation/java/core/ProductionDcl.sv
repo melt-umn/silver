@@ -52,6 +52,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local copyAnno :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> s"anno_${makeIdName(x.elementName)}");
 
+  local getChildNames :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> s"\"${x.elementName}\"");
+
   local getChildTypes :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> case x.typerep of
                                   | nonterminalType(fn, _, _, _) -> s"\"${fn}\""
@@ -74,6 +77,7 @@ public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}
 
+    public static final String childNames[] = {${implode(",", map(getChildNames, namedSig.inputElements))}};
     public static final String childTypes[] = {${implode(",", map(getChildTypes, namedSig.inputElements))}};
 
     public static final int num_local_attrs = Init.${localVar};
@@ -82,6 +86,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
+    public static final boolean[] localDecorable = new boolean[num_local_attrs];
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -126,6 +131,14 @@ ${contexts.contextInitTrans}
 ${namedSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
+
+	@Override
+	public boolean isChildDecorable(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecorableCase(body.env, _), namedSig.inputElements))}
+            default: return false;
+        }
+    }
 
 	@Override
 	public Object getChild(final int index) {
@@ -216,6 +229,11 @@ ${if isData then "" else s"""
     public boolean getLocalIsForward(final int key) {
         return localIsForward[key];
     }"""}
+
+    @Override
+    public boolean isLocalDecorable(final int key) {
+        return localDecorable[key];
+    }
 
     @Override
     public common.Lazy getLocal(final int key) {
@@ -321,6 +339,7 @@ ${body.translation}
         public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
+        public String[] getChildNames() { return ${className}.childNames; }
         public String[] getChildTypes() { return ${className}.childTypes; }
         public common.Lazy[][] getChildInheritedAttributes() { return ${className}.childInheritedAttributes; }
     }

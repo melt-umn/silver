@@ -111,13 +111,11 @@ top::QNameLookup<a> ::= msg::[Message]
   top.errors := msg;
 }
 
-function printPossibilities
+fun printPossibilities
 attribute fullName {} occurs on a,
 annotation sourceLocation occurs on a =>
-String ::= lst::[a]
-{
-  return implode("\n", map(dclinfo2possibility, lst));
-}
+String ::= lst::[a] =
+  implode("\n", map(dclinfo2possibility, lst));
 function dclinfo2possibility
 attribute fullName {} occurs on a,
 annotation sourceLocation occurs on a =>
@@ -252,10 +250,7 @@ top::QNameAttrOccur ::= at::QName
  - `occ` is a mapped list of occurrence declarations for the corresponding attribute
  - we return only those `at` which have a non-empty element in `occ`
  -}
-function zipFilterDcls
-[AttributeDclInfo] ::= at::[AttributeDclInfo]  occ::[[OccursDclInfo]]
-{
-  return if null(at) then []
-  else if null(head(occ)) then zipFilterDcls(tail(at), tail(occ))
-  else head(at) :: zipFilterDcls(tail(at), tail(occ));
-}
+fun zipFilterDcls [AttributeDclInfo] ::= at::[AttributeDclInfo]  occ::[[OccursDclInfo]] =
+  if null(at) then []
+else if null(head(occ)) then zipFilterDcls(tail(at), tail(occ))
+else head(at) :: zipFilterDcls(tail(at), tail(occ));

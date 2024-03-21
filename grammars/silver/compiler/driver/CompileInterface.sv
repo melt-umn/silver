@@ -48,15 +48,11 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]
 {--
  - Takes a grammar name (already converted to a path) and searches for Silver.svi
  -}
-function findInterfaceLocation
-MaybeT<IO String> ::= gramPath::String searchPaths::[String]
-{
-  return
-    case searchPaths of
-    | [] -> empty
-    | h :: t -> do {
-        exists :: Boolean <- lift(isFile(h ++ "src/" ++ gramPath ++ "Silver.svi"));
-        if exists then pure(h) else findInterfaceLocation(gramPath, t);
-      }
-    end;
-}
+fun findInterfaceLocation MaybeT<IO String> ::= gramPath::String searchPaths::[String] =
+  case searchPaths of
+  | [] -> empty
+  | h :: t -> do {
+      exists :: Boolean <- lift(isFile(h ++ "src/" ++ gramPath ++ "Silver.svi"));
+      if exists then pure(h) else findInterfaceLocation(gramPath, t);
+    }
+  end;
