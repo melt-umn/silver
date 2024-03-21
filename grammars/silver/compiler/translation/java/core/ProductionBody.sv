@@ -104,9 +104,8 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     if isDecorable(te.typerep, top.env)
     then
       s"\t\t//${top.unparse}\n" ++
-      if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
-      then
-        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
+      if te.typerep.isNonterminal
+      then s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
       else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
@@ -117,12 +116,12 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     else "";
 
   top.translation = 
-    case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
-    | [u], [v] ->
+    case lookupRefDecSite(top.frame.fullName, localVertexType(fName), top.flowEnv) of
+    | [v] ->
         s"\t\t//${top.unparse}\n" ++
         s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
         s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, v)};\n"
-    | _, _ -> ""
+    | _ -> ""
     end;
 }
 
@@ -138,9 +137,8 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     if isDecorable(te.typerep, top.env)
     then
       s"\t\t//${top.unparse}\n" ++
-      if te.typerep.isNonterminal || te.typerep.isUniqueDecorated
-      then
-        s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
+      if te.typerep.isNonterminal
+      then s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
       else s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
@@ -151,12 +149,12 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     else "";
 
   top.translation = 
-    case lookupLocalUniqueRefs(fName, top.flowEnv), lookupLocalRefDecSite(fName, top.flowEnv) of
-    | [u], [v] ->
+    case lookupRefDecSite(top.frame.fullName, localVertexType(fName), top.flowEnv) of
+    | [v] ->
         s"\t\t//${top.unparse}\n" ++
         s"\t\t${top.frame.className}.localDecSites[${ugh_dcl_hack.attrOccursInitIndex}] = " ++
         s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, v)};\n"
-    | _, _ -> ""
+    | _ -> ""
     end;
 }
 

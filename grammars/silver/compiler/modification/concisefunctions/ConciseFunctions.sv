@@ -50,6 +50,9 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
   e.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
   e.originRules = [];
   e.isRoot = true;
+} action {
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
+  sigNames = [];
 }
 
 monoid attribute shortFunctionDefs::[Def] occurs on FunctionSignature, ProductionRHS, ProductionRHSElem;

@@ -15,7 +15,7 @@ monoid attribute flowDefs :: [FlowDef];
 monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
-data nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, uniqueRefTree, refPossibleDecSiteTree, refDecSiteTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
+data nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, sharedRefTree, refPossibleDecSiteTree, refDecSiteTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 
 synthesized attribute synTree :: EnvTree<FlowDef>;
 synthesized attribute inhTree :: EnvTree<FlowDef>;
@@ -24,7 +24,7 @@ synthesized attribute fwdTree :: EnvTree<FlowDef>;
 synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
 synthesized attribute prodTree :: EnvTree<FlowDef>;
 synthesized attribute refTree :: EnvTree<[String]>;
-synthesized attribute uniqueRefTree :: EnvTree<UniqueRefSite>;
+synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
 synthesized attribute refDecSiteTree :: EnvTree<VertexType>;
 synthesized attribute localInhTree ::EnvTree<FlowDef>;
@@ -37,7 +37,7 @@ synthesized attribute prodGraphTree :: EnvTree<FlowDef>;
 abstract production flowEnv
 top::FlowEnv ::=
   specContribs::[(String, String, [String], [String])] refContribs::[(String, [String])]
-  uniqueRefContribs::[(String, UniqueRefSite)]
+  sharedRefContribs::[(String, SharedRefSite)]
   d::FlowDefs
 {
   top.synTree = directBuildTree(d.synTreeContribs);
@@ -47,7 +47,7 @@ top::FlowEnv ::=
   top.fwdInhTree = directBuildTree(d.fwdInhTreeContribs);
   top.prodTree = directBuildTree(d.prodTreeContribs);
   top.refTree = directBuildTree(refContribs);
-  top.uniqueRefTree = directBuildTree(uniqueRefContribs);
+  top.sharedRefTree = directBuildTree(sharedRefContribs);
   top.refPossibleDecSiteTree = directBuildTree(d.refPossibleDecSiteContribs);
   top.refDecSiteTree = directBuildTree(d.refDecSiteContribs);
   top.localInhTree = directBuildTree(d.localInhTreeContribs);
@@ -85,56 +85,17 @@ fun lookupLocalInh [FlowDef] ::= prod::String  fName::String  attr::String  e::F
 fun lookupLocalEq [FlowDef] ::= prod::String  fName::String  e::FlowEnv =
   searchEnvTree(crossnames(prod, fName), e.localTree);
 
--- unique references taken for a child
-fun lookupUniqueRefs [UniqueRefSite] ::= prod::String sigName::String  e::FlowEnv =
-  searchEnvTree(prod ++ ":" ++ sigName, e.uniqueRefTree);
+-- places where this tree is shared
+fun lookupSharedRefs [SharedRefSite] ::= prod::String v::VertexType e::FlowEnv =
+  searchEnvTree(s"${prod}:${v.vertexName}", e.sharedRefTree);
 
--- unique references taken for a local/production attribute
-fun lookupLocalUniqueRefs [UniqueRefSite] ::= fName::String  e::FlowEnv =
-  searchEnvTree(fName, e.uniqueRefTree);
+-- possible decoration sites for places where this tree is shared
+fun lookupRefPossibleDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv =
+  searchEnvTree(s"${prod}:${v.vertexName}", e.refPossibleDecSiteTree);
 
--- unique references taken for a translation attribute on a child
-fun lookupTransUniqueRefs
-[UniqueRefSite] ::= prod::String sigName::String attrName::String e::FlowEnv =
-  searchEnvTree(prod ++ ":" ++ sigName ++ "." ++ attrName, e.uniqueRefTree);
-
--- unique references taken for a translation attribute on a local
-fun lookupLocalTransUniqueRefs [UniqueRefSite] ::= fName::String attrName::String e::FlowEnv =
-  searchEnvTree(fName ++ "." ++ attrName, e.uniqueRefTree);
-
--- possible decoration sites for unique references taken for a child
-fun lookupRefPossibleDecSites [VertexType] ::= prod::String  sigName::String  e::FlowEnv =
-  searchEnvTree(s"${prod}:${sigName}", e.refPossibleDecSiteTree);
-
--- possible decoration sites for unique references taken for a local/production attribute
-fun lookupLocalRefPossibleDecSites [VertexType] ::= fName::String  e::FlowEnv =
-  searchEnvTree(fName, e.refPossibleDecSiteTree);
-
--- possible decoration sites for unique references taken for a translation attribute on a child
-fun lookupTransRefPossibleDecSites
-[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv =
-  searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refPossibleDecSiteTree);
-
--- possible decoration sites for unique references taken for a translation attribute on a local/production attribute
-fun lookupLocalTransRefPossibleDecSites [VertexType] ::= fName::String  attrName::String  e::FlowEnv =
-  searchEnvTree(s"${fName}.${attrName}", e.refPossibleDecSiteTree);
-
--- unconditional decoration sites for unique references taken for a child
-fun lookupRefDecSite [VertexType] ::= prod::String  sigName::String  e::FlowEnv =
-  searchEnvTree(s"${prod}:${sigName}", e.refDecSiteTree);
-
--- unconditional decoration sites for unique references taken for a local/production attribute
-fun lookupLocalRefDecSite [VertexType] ::= fName::String  e::FlowEnv =
-  searchEnvTree(fName, e.refDecSiteTree);
-
--- unconditional decoration sites for unique references taken for a translation attribute on a child
-fun lookupTransRefDecSite
-[VertexType] ::= prod::String  sigName::String  attrName::String  e::FlowEnv =
-  searchEnvTree(s"${prod}:${sigName}.${attrName}", e.refDecSiteTree);
-
--- unconditional decoration sites for unique references taken for a translation attribute on a local/production attribute
-fun lookupLocalTransRefDecSite [VertexType] ::= fName::String  attrName::String  e::FlowEnv =
-  searchEnvTree(s"${fName}.${attrName}", e.refDecSiteTree);
+-- unconditional decoration sites for places where this tree is shared
+fun lookupRefDecSite [VertexType] ::= prod::String v::VertexType e::FlowEnv =
+  searchEnvTree(s"${prod}:${v.vertexName}", e.refDecSiteTree);
 
 {--
  - This is a glorified lambda function, to help look for equations.

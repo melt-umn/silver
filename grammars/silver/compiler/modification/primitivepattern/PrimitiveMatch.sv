@@ -537,8 +537,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), [], []),
-     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [], [])];
+    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), []),
+     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   e.isRoot = false;

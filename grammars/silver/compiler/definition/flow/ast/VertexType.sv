@@ -81,7 +81,7 @@ top::VertexType ::= v::VertexType  transAttr::String
   top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
   top.inhVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
   top.fwdVertex = v.synVertex(s"${transAttr}.forward");
-  top.eqVertex = [v.synVertex(transAttr)];
+  top.eqVertex = v.synVertex(transAttr) :: v.eqVertex;
 }
 
 {--

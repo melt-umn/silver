@@ -51,7 +51,7 @@ top::ProductionGraph ::=
   lhsNt::String
   flowTypeVertexes::[FlowVertex]
   graph::g:Graph<FlowVertex>
-  suspectEdges::[Pair<FlowVertex FlowVertex>]
+  suspectEdges::[(FlowVertex, FlowVertex)]
   stitchPoints::[StitchPoint]
 {
   top.prod = prod;
@@ -59,7 +59,7 @@ top::ProductionGraph ::=
   top.flowTypeVertexes = flowTypeVertexes;
   
   top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
-    let newEdges :: [Pair<FlowVertex FlowVertex>] =
+    let newEdges :: [(FlowVertex, FlowVertex)] =
           filter(edgeIsNew(_, graph),
             flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), stitchPoints))
     in let repaired :: g:Graph<FlowVertex> =
@@ -79,7 +79,7 @@ top::ProductionGraph ::=
   
   top.cullSuspect = \ flowTypes::EnvTree<FlowType> ->
     -- this potentially introduces the same edge twice, but that's a nonissue
-    let newEdges :: [Pair<FlowVertex FlowVertex>] =
+    let newEdges :: [(FlowVertex, FlowVertex)] =
           flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, flowTypes)), suspectEdges)
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
@@ -155,11 +155,11 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
     
   -- Normal edges!
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
   -- Insert implicit equations.
-  local fixedEdges :: [Pair<FlowVertex FlowVertex>] =
+  local fixedEdges :: [(FlowVertex, FlowVertex)] =
     normalEdges ++
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
@@ -167,14 +167,15 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
           (lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
-    flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs));
+    flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
+    flatMap(addSharingEqs(realEnv, _), defs);
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
     partition(contains(_, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
   
   -- No implicit equations here, just keep track.
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+  local suspectEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.suspectFlowEdges), defs) ++
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
@@ -218,15 +219,19 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
   local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
 
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
+  local fixedEdges :: [(FlowVertex, FlowVertex)] =
+    normalEdges ++
+    flatMap(addSharingEqs(realEnv, _), defs);
+  
   -- In functions, this is just `<-` contributions to local collections from aspects.
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+  local suspectEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.suspectFlowEdges), defs);
     
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(normalEdges);
+    createFlowGraph(fixedEdges);
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
@@ -258,11 +263,11 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   local prod :: String = "_NULL_";
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
 
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
   -- suspectEdges should always be empty! (No "aspects" where they could arise.)
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(normalEdges);
@@ -292,11 +297,11 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Env  prodEnv::
   local prod :: String = ns.fullName;
   local nt :: NtName = ns.outputElement.typerep.typeName;
   
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
   -- suspectEdges should always be empty! (No "aspects" where they could arise.)
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
     
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(normalEdges);
@@ -335,7 +340,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
   local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);
 
   -- The phantom edges: ext syn -> fwd.eq
-  local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+  local phantomEdges :: [(FlowVertex, FlowVertex)] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
     (lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, extSyns);
@@ -345,12 +350,12 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
     
   local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
-fun getPhantomEdge Pair<FlowVertex FlowVertex> ::= at::String =
+fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
   (lhsSynVertex(at), forwardEqVertex());
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
@@ -359,7 +364,7 @@ fun getPhantomEdge Pair<FlowVertex FlowVertex> ::= at::String =
  - Introduces implicit 'lhs.syn -> forward.syn' (& forward.eq) equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
-fun addFwdSynEqs [Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::FlowEnv =
+fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv =
   if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
     then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
@@ -369,7 +374,7 @@ fun addFwdSynEqs [Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String]
  - Introduces implicit 'forward.inh = lhs.inh' equations.
  - Inherited equations are never suspect.
  -}
-fun addFwdInhEqs [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv =
+fun addFwdInhEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv =
   if null(inhs) then []
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
@@ -378,7 +383,7 @@ fun addFwdInhEqs [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String]
  - Inherited equations are never suspect.
  -}
 fun addFwdProdAttrInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv =
+[(FlowVertex, FlowVertex)] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv =
   if null(inhs) then []
   else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
@@ -392,7 +397,7 @@ fun allFwdProdAttrs [String] ::= d::[FlowDef] =
  - Introduces default equations deps. Realistically, should be empty, always.
  -}
 fun addDefEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv =
+[(FlowVertex, FlowVertex)] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv =
   if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv)) 
         then let x :: [FlowDef] = lookupDef(nt, head(syns), flowEnv)
@@ -400,6 +405,21 @@ fun addDefEqs
              end
         else []) ++
     addDefEqs(prod, nt, tail(syns), flowEnv);
+{--
+ - Introduce edges for inherited attributes on shared references to their decoration sites.
+ -}
+ fun addSharingEqs [(FlowVertex, FlowVertex)] ::= realEnv::Env d::FlowDef =
+   case d of
+   | refDecSiteEq(_, nt, ref, decSite, _) when
+        case ref of
+        | localVertexType(fName) -> !isForwardProdAttr(fName, realEnv)
+        | _ -> false
+        end ->
+      map(
+        \ attr::String -> (ref.inhVertex(attr), decSite.inhVertex(attr)),
+        getInhAndInhOnTransAttrsOn(nt, realEnv))
+   | _ -> []
+   end;
 
 ---- End helpers for fixing up graphs ------------------------------------------
 
@@ -506,7 +526,7 @@ fun prodGraphToEnv Pair<String ProductionGraph> ::= p::ProductionGraph = (p.prod
  -          always an lhsInhVertex.
  -}
 function findAdmissibleEdges
-[Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::FlowType
+[(FlowVertex, FlowVertex)] ::= edge::(FlowVertex, FlowVertex)  graph::g:Graph<FlowVertex>  ft::FlowType
 {
   -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
   local currentDeps :: set:Set<String> =

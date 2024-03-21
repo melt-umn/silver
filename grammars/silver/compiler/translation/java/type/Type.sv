@@ -179,16 +179,6 @@ top::Type ::= te::Type i::Type
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
-  top.transType = "common.DecoratedNode";
-  top.transClassType = "common.DecoratedNode";
-  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
-  top.transTypeName = "Decorated_" ++ te.transTypeName;
-}
-
 aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {

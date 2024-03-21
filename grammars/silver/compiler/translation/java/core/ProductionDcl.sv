@@ -102,9 +102,7 @@ ${namedSig.childStatic}
         super(${implode(", ",
         	(if wantsTracking then ["origin"] else []) ++
         	(if isData then []
-             else if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
-		     then ["true"]
-		     else ["isUniqueInvocation"]) ++
+             else ["isUniqueInvocation"]) ++
         	map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}

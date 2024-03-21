@@ -1232,7 +1232,7 @@ top::Expr ::= '@' e::Expr
   e.mDownSubst = top.mDownSubst;
   errCheck1.downSubst = e.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
-  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  errCheck1 = check(e.typerep, decoratedType(freshType(), inhSetType([])));
   top.merrors <-
        if errCheck1.typeerror
        then [errFromOrigin(top, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]

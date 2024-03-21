@@ -96,7 +96,7 @@ Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
   local validTypeHead :: Boolean = 
-    (isDecorable(input.typerep, env) || input.typerep.isNonterminal) && !input.typerep.isUniqueDecorated;
+    isDecorable(input.typerep, env) || input.typerep.isNonterminal;
   
   return
     if validTypeHead && attrOccursOnHead

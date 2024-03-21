@@ -87,7 +87,7 @@ top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
     else [];
   
   -- These need to be passed up for the flow analysis to work:
-  propagate defs, flowDefs, uniqueRefs;
+  propagate defs, flowDefs, sharedRefs;
   
   forwards to emptyAGDcl();
 }

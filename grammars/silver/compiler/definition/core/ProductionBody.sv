@@ -512,7 +512,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
-    if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
+    if attr.found && !ty.isNonterminal
     then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(new(ty))} are not supported")]
     else [];
 
@@ -536,7 +536,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
-    if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
+    if attr.found && !ty.isNonterminal
     then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(new(ty))} are not supported")]
     else [];
 

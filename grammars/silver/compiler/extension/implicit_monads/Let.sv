@@ -116,7 +116,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.mdefs = [lexicalLocalDef(top.grammarName, id.nameLoc, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
-                               e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
+                               e.flowVertexInfo, e.flowDeps)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                    then [(id, t)]
@@ -133,7 +133,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= @q::QName  _ _ _
+top::Expr ::= @q::QName  _ _
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

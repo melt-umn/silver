@@ -46,12 +46,6 @@ top::Type ::= te::Type _
   top.accessHandler = decoratedAccessHandler;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type _
-{
-  top.accessHandler = decoratedAccessHandler;
-}
-
 aspect production functionType
 top::Type ::= _ _
 {

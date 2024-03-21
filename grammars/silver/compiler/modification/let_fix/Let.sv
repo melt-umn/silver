@@ -95,7 +95,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -120,7 +120,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 abstract production lexicalLocalReference implements Reference
-top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 {
   top.unparse = q.unparse;
   top.errors := [];
@@ -145,7 +145,6 @@ top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, 
     case q.lookupValue.typeScheme.monoType of
     | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
     | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;
 

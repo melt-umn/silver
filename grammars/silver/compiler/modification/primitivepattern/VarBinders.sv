@@ -159,7 +159,7 @@ top::VarBinder ::= n::Name
     else [];
 
   -- Unique refs are forbidden in the scrutinee.
-  top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps, [])];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps)];
   top.boundNames <- [n.name];
 
   top.translation = 

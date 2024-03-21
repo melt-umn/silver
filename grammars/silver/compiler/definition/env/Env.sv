@@ -176,7 +176,6 @@ Boolean ::= t::Type e::Env
     case t of
     | skolemType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))
     | varType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))  -- Can happen when pattern matching on a prod with occurs contexts
-    | uniqueDecoratedType(nt, _) -> isDecorable(nt, e)
     | _ -> t.isNonterminal && !t.isData
     end;
 }
@@ -306,7 +305,6 @@ function getMinRefSet
   return
     case t of
     | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
-    | uniqueDecoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
     | _ -> []
     end;
 }
@@ -341,7 +339,12 @@ Maybe<[String]> ::= t::Type e::Env
   return
     case t of
     | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
-    | uniqueDecoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
     | _ -> just([])
     end;
 }
+
+fun isForwardProdAttr Boolean ::= a::String  e::Env =
+  case getValueDclAll(a, e) of
+  | d :: _ -> d.hasForward
+  | _ -> false
+  end;

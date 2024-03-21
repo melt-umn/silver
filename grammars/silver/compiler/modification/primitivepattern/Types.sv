@@ -220,16 +220,6 @@ top::Type ::= te::Type i::Type
     end;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  top.refine = 
-    case top.refineWith of
-    | uniqueDecoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
-    | _ -> errorSubst("Tried to refine unique decorated type with " ++ prettyType(top.refineWith))
-    end;
-}
-
 aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {

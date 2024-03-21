@@ -264,7 +264,7 @@ s"""private Object child_${n};
   top.childStaticElem =
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
-    else if ty.isNonterminal && !ty.isData || ty.isUniqueDecorated && ntType.isNonterminal
+    else if ty.isNonterminal && !ty.isData
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
@@ -325,11 +325,13 @@ function makeChildDecSiteAccessCase
 String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
-    case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
-    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
-    | _, _ -> ""
+    case lookupRefDecSite(prodName, rhsVertexType(n.elementName), flowEnv) of
+    | [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
+    | _ -> ""
     end;
 }
+
+-- Translation of accessing the a tree that is shared in a position corresponding to some flow vertex type.
 fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
   case v of
   | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
@@ -353,6 +355,32 @@ fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String 
   | subtermVertexType(parent, prodName, sigName) ->
     s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
   end;
+
+-- Translation of demanding the tree corresponding to a flow vertex type, to be shared.
+-- Note that this is not cached; uniqueness analysis guarantees that it should only be demanded once.
+fun sharedRefTranslation String ::= env::Env frame::BlockContext v::VertexType =
+  case v of
+  | rhsVertexType(sigName) -> s"context.createDecoratedChild(${frame.className}.i_${sigName})"
+  | localVertexType(fName) ->
+    case getValueDcl(fName, env) of
+    | dcl :: _ -> s"context.evalLocalDecorated(${dcl.attrOccursIndex})"
+    | _ -> error("Couldn't find decl for local " ++ fName)
+    end
+  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+    case lookup(sigName, zip(frame.signature.inputNames, frame.signature.inputTypes)) of
+    | just(ty) when getOccursDcl(transAttr, ty.typeName, env) matches occDcl :: _ ->
+      s"context.childDecorated(${frame.className}.i_${sigName}).evalTrans(${occDcl.attrOccursIndex}, ${occDcl.attrOccursIndex}_inhs)"
+    | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
+    end
+  | transAttrVertexType(localVertexType(fName), transAttr) ->
+    case getValueDcl(fName, env) of
+    | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, env) matches occDcl :: _ ->
+      s"context.localDecorated(${dcl.attrOccursIndex}).evalTrans(${occDcl.attrOccursIndex}, ${occDcl.attrOccursIndex}_inhs)"
+    | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
+    end
+  | _ -> error("Sharing for invalid sort of tree " ++ v.vertexName)
+  end;
+  
 
 function makeAnnoAssign
 String ::= n::NamedSignatureElement

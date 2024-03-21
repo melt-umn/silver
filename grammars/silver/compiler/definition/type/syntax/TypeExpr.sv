@@ -59,7 +59,7 @@ flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
 flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
-propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs excluding refTypeExpr, uniqueRefTypeExpr;
+propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs excluding refTypeExpr;
 propagate config, grammarName, env, flowEnv, lexicalTypeVariables, lexicalTyVarKinds
   on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -358,56 +358,6 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     | skolemType(_) -> [errFromOrigin(t, "polymorphic Decorated types must specify an explicit reference set")]
     | varType(_) -> [errFromOrigin(t, "polymorphic Decorated types must specify an explicit reference set")]
     | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
-    end;
-}
-
-concrete production uniqueRefTypeExpr
-top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
-{
-  top.unparse = "Decorated! " ++ t.unparse ++ " with " ++ i.unparse;
-  
-  i.onNt = t.typerep;
-
-  top.typerep = uniqueDecoratedType(t.typerep, i.typerepInhSet);
-  
-  top.errors := i.errorsInhSet ++ t.errors;
-  top.errors <-
-    case t.typerep.baseType of
-    | nonterminalType(fn,_,true,_) -> [errFromOrigin(t, s"${fn} is a data nonterminal and cannot be decorated")]
-    | nonterminalType(_,_,_,_) -> []
-    | skolemType(_) -> []
-    | varType(_) -> []
-    | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
-    end;
-  top.errors <-
-    if i.typerep.kindrep != inhSetKind()
-    then [errFromOrigin(i, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
-    else [];
-  top.errors <- t.errorsKindStar;
-
-  top.lexicalTyVarKinds <-
-    case i of
-    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
-    | _ -> []
-    end;
-}
-
-concrete production uniqueRefDefaultTypeExpr
-top::TypeExpr ::= 'Decorated!' t::TypeExpr
-{
-  top.unparse = "Decorated! " ++ t.unparse;
-
-  top.typerep =
-    uniqueDecoratedType(t.typerep,
-      inhSetType(sort(concat(getInhsForNtRef(t.typerep.typeName, top.flowEnv)))));
-  
-  top.errors <-
-    case t.typerep.baseType of
-    | nonterminalType(fn,_,true,_) -> [errFromOrigin(t, s"${fn} is a data nonterminal and cannot be decorated")]
-    | nonterminalType(_,_,_,_) -> []
-    | skolemType(_) -> [errFromOrigin(t, "polymorphic Decorated! types must specify an explicit reference set")]
-    | varType(_) -> [errFromOrigin(t, "polymorphic Decorated! types must specify an explicit reference set")]
-    | _ -> [errFromOrigin(t, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
 }
 
