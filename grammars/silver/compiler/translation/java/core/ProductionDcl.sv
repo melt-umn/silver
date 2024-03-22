@@ -50,6 +50,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
   local copyAnno :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> s"anno_${makeIdName(x.elementName)}");
 
+  local getChildNames :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> s"\"${x.elementName}\"");
+
   local getChildTypes :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> case x.typerep of
                                   | nonterminalType(fn, _, _, _) -> s"\"${fn}\""
@@ -72,6 +75,7 @@ public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}
 
+    public static final String childNames[] = {${implode(",", map(getChildNames, namedSig.inputElements))}};
     public static final String childTypes[] = {${implode(",", map(getChildTypes, namedSig.inputElements))}};
 
     public static final int num_local_attrs = Init.${localVar};
@@ -321,6 +325,7 @@ ${body.translation}
         public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
+        public String[] getChildNames() { return ${className}.childNames; }
         public String[] getChildTypes() { return ${className}.childTypes; }
         public common.Lazy[][] getChildInheritedAttributes() { return ${className}.childInheritedAttributes; }
     }

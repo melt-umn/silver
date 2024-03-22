@@ -93,6 +93,7 @@ public final class RTTIManager {
 		public abstract int getChildCount();
 		public abstract int getAnnoCount();
 		
+		public abstract String[] getChildNames();
 		public abstract String[] getChildTypes();
 		public abstract Lazy[][] getChildInheritedAttributes(); // Originally for autocopy, not currently used
 	}
