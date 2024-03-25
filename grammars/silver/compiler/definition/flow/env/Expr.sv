@@ -165,7 +165,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
     end;
-  e.decSiteVertexInfo = nothing();
+  e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
 }
@@ -193,7 +193,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     | _, dispatchType(ns) -> just(ns)
     | _, _ -> error("dispatchApplication: unexpected type")
     end;
-  e.decSiteVertexInfo = nothing();
+  e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated =
     case e of
@@ -226,11 +226,25 @@ top::AppExpr ::= e::Expr
     end;
   e.decSiteVertexInfo =
     case top.decSiteVertexInfo, top.appProd of
-    | just(parent), just(ns) when isDecorable(e.finalType, top.env) ->  -- TODO: Signature sharing???
+    | just(parent), just(ns) when isDecorable(e.finalType, top.env) ->
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
     end;
   e.alwaysDecorated = top.alwaysDecorated && e.decSiteVertexInfo.isJust;
+
+  production sigIsShared::Boolean =
+    case top.appProd of
+    | just(ns) ->
+      top.appExprIndex < length(ns.inputNames) &&
+      head(drop(top.appExprIndex, ns.inputElements)).elementShared
+    | _ -> false
+    end;
+  top.flowDefs <-
+    case top.appProd, e.flowVertexInfo of
+    | just(ns), just(v) when sigIsShared ->
+      [sigShareSite(top.frame.fullName, v, ns.fullName, sigName)]
+    | _, _ -> []
+    end;
 }
 
 aspect production noteAttachment

@@ -47,9 +47,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 --------------------------------------------------------------------------------
 
 {--
- - Given a name of a child, return whether it has a normal decorated nonterminal
- - type (covered by the more specific checks on accesses from references) or a
- - unique decorated nonterminal type decorated with the attr.
+ - Given a name of a child, return whether it has a decorated nonterminal
+ - type (covered by the more specific checks on accesses from references)
+ - decorated with the attr.
  - True if nonsensicle.
  -}
 function sigAttrViaReference
@@ -60,9 +60,9 @@ Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Env
 }
 
 {--
- - Given a name of a local, return whether it has a normal decorated nonterminal
- - type (covered by the more specific checks on accesses from references) or a
- - unique decorated nonterminal type decorated with the attr.
+ - Given a name of a local, return whether it has a decorated nonterminal
+ - type (covered by the more specific checks on accesses from references)
+ - decorated with the attr.
  - True if nonsensicle.
  -}
 function localAttrViaReference
@@ -73,6 +73,26 @@ Boolean ::= sigName::String  attrName::String  e::Env
 
   return null(d) || !isDecorable(ty, e) || contains(attrName, getMinRefSet(ty, e));
 }
+
+{--
+ - Given the name of a child, return whether it is shared in the production's
+ - signature, with all productions forwarding to this production supplying the
+ - inherited attribute to the child.
+ -}
+fun sigAttrViaSharing
+Boolean ::= sigName::String attrName::String ns::NamedSignature flowEnv::FlowEnv realEnv::Env =
+  lookup(sigName, zip(ns.inputNames, ns.inputElements)).fromJust.elementShared &&
+  all(map(
+    \ s::(String, VertexType) -> !remoteProdMissingInhEq(s.1, s.2, attrName, flowEnv),
+    lookupSigShareSites(ns.fullName, sigName, flowEnv) ++
+    case getValueDcl(ns.fullName, realEnv) of
+    | v :: _ when v.implementedSignature matches just(sig) ->
+      lookupSigShareSites(
+        sig.fullName,
+        head(drop(positionOf(sigName, ns.inputNames), sig.inputNames)),
+        flowEnv)
+    | _ -> []
+    end));
 
 {--
  - Used as a stop-gap measure to ensure equations exist.
@@ -120,6 +140,7 @@ function checkEqDeps
   | rhsInhVertex(sigName, attrName) ->
       if !null(lookupInh(prodName, sigName, attrName, flowEnv))
       || sigAttrViaReference(sigName, attrName, ns, realEnv)
+      || sigAttrViaSharing(sigName, attrName, ns, flowEnv, realEnv)
       || !null(lookupRefDecSite(prodName, rhsVertexType(sigName), flowEnv))
       || case splitTransAttrInh(attrName) of
          | just((transAttr, _)) ->
@@ -168,7 +189,7 @@ function checkEqDeps
   -- A dependency on a projected equation in another production.
   -- Again, SYN are safe. We need to check only for INH.
   | subtermInhVertex(parent, termProdName, sigName, attrName) ->
-      if !remoteProdMissingInhEq(termProdName, sigName, attrName, flowEnv)
+      if !remoteProdMissingInhEq(termProdName, rhsVertexType(sigName), attrName, flowEnv)
       then []
       else [mwdaWrnAmbientOrigin(config, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
@@ -925,7 +946,7 @@ top::VarBinder ::= n::Name
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
   local missingInhs :: [String] =
-    filter(remoteProdMissingInhEq(top.matchingAgainst.fromJust.fullName, top.bindingName, _, top.flowEnv),
+    filter(remoteProdMissingInhEq(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), _, top.flowEnv),
       removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs));
 
   top.errors <-
@@ -937,11 +958,12 @@ top::VarBinder ::= n::Name
     else [];
 }
 
--- Is this there an equation for this inh attr on any decoration site for this child?
+-- Is this there an equation for this inh attr on any decoration site for this vertex?
 fun remoteProdMissingInhEq
-Boolean ::= prodName::String  sigName::String  attrName::String  flowEnv::FlowEnv = !any(unzipWith(
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
+  !any(unzipWith(
     vertexHasInhEq(_, _, attrName, flowEnv),
-    lookupAllDecSites(prodName, rhsVertexType(sigName), flowEnv)));
+    lookupAllDecSites(prodName, vt, flowEnv)));
 
 -- Find all decoration sites productions/vertices for this vertex
 fun lookupAllDecSites [(String, VertexType)] ::= prodName::String  vt::VertexType  flowEnv::FlowEnv =

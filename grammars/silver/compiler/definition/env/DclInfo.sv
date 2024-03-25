@@ -30,6 +30,7 @@ synthesized attribute definedMembers :: [String];
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
+synthesized attribute implementedSignature :: Maybe<NamedSignature>;
 synthesized attribute hasForward :: Boolean;
 
 -- occurs
@@ -51,7 +52,7 @@ inherited attribute givenSubstitution :: Substitution;
 
 closed nonterminal ValueDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+  typeScheme, namedSignature, implementedSignature, hasForward, substitutedDclInfo, givenSubstitution;
 propagate isEqual on ValueDclInfo excluding globalValueDcl, classMemberDcl;
 
 aspect default production
@@ -59,6 +60,7 @@ top::ValueDclInfo ::=
 {
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
+  top.implementedSignature = nothing();
   top.hasForward = false;
   
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
@@ -121,6 +123,7 @@ top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForw
           drop(length(dSig.inputElements), ns.inputTypes) ++
         [dispatchType(dSig)]))
     end;
+  top.implementedSignature = dispatch;
   top.hasForward = hasForward;
 }
 abstract production funDcl

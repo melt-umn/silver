@@ -16,6 +16,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnEqdef = true;
   top.warnOrphaned = true;
   top.warnFwd = true;
+  top.warnSharing = true;
   forwards to rest;
 }
 
@@ -28,6 +29,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnEqdef = true;
   top.warnOrphaned = true;
   top.warnFwd = true;
+  top.warnSharing = true;
 }
 
 aspect function parseArgs

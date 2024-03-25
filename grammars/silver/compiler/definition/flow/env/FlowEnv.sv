@@ -15,7 +15,11 @@ monoid attribute flowDefs :: [FlowDef];
 monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
-data nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, sharedRefTree, refPossibleDecSiteTree, refDecSiteTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
+data nonterminal FlowEnv with
+  synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree,
+  sharedRefTree, refPossibleDecSiteTree, refDecSiteTree, sigShareTree,
+  localInhTree, localTree, nonSuspectTree, hostSynTree, specTree,
+  prodGraphTree;
 
 synthesized attribute synTree :: EnvTree<FlowDef>;
 synthesized attribute inhTree :: EnvTree<FlowDef>;
@@ -27,6 +31,7 @@ synthesized attribute refTree :: EnvTree<[String]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
 synthesized attribute refDecSiteTree :: EnvTree<VertexType>;
+synthesized attribute sigShareTree :: EnvTree<(String, VertexType)>;
 synthesized attribute localInhTree ::EnvTree<FlowDef>;
 synthesized attribute localTree :: EnvTree<FlowDef>;
 synthesized attribute nonSuspectTree :: EnvTree<[String]>;
@@ -50,6 +55,7 @@ top::FlowEnv ::=
   top.sharedRefTree = directBuildTree(sharedRefContribs);
   top.refPossibleDecSiteTree = directBuildTree(d.refPossibleDecSiteContribs);
   top.refDecSiteTree = directBuildTree(d.refDecSiteContribs);
+  top.sigShareTree = directBuildTree(d.sigShareContribs);
   top.localInhTree = directBuildTree(d.localInhTreeContribs);
   top.localTree = directBuildTree(d.localTreeContribs);
   top.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
@@ -96,6 +102,10 @@ fun lookupRefPossibleDecSites [VertexType] ::= prod::String v::VertexType e::Flo
 -- unconditional decoration sites for places where this tree is shared
 fun lookupRefDecSite [VertexType] ::= prod::String v::VertexType e::FlowEnv =
   searchEnvTree(s"${prod}:${v.vertexName}", e.refDecSiteTree);
+
+-- places where this child was decorated in a production forwarding to this one
+fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
+  searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
 
 {--
  - This is a glorified lambda function, to help look for equations.

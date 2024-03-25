@@ -10,45 +10,45 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-data nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, refPossibleDecSiteContribs, refDecSiteContribs;
-data nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, refPossibleDecSiteContribs, refDecSiteContribs;
+data nonterminal FlowDef with flowEdges, suspectFlowEdges;
+data nonterminal FlowDefs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
  - Also decides whether to add a forward or default equation while computing flow types. -}
-monoid attribute synTreeContribs :: [Pair<String FlowDef>];
+monoid attribute synTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, sig, attribute) to find inherited equation
  - Used to ensure a necessary rhs.inh equation exists. -}
-monoid attribute inhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute inhTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (nonterminal, attribute) to find default syn equations
  - Used to obtain default equation dependencies, when it exists. -}
-monoid attribute defTreeContribs :: [Pair<String FlowDef>];
+monoid attribute defTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production) to find forward equations.
  - Decides whether default or forward equations should be added. -}
-monoid attribute fwdTreeContribs :: [Pair<String FlowDef>];
+monoid attribute fwdTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, attr) to find forward INHERITED equations
  - Used to ensure equations for inherited attributes exist for all inh of a fwd. -}
-monoid attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute fwdInhTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, local, attr) to find local INHERITED equations.
  - ONLY used to check whether an equation exists. -}
-monoid attribute localInhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute localInhTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, local) to find the local equation -}
-monoid attribute localTreeContribs :: [Pair<String FlowDef>];
+monoid attribute localTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (nonterminal) to find all non-forwarding production.
  - ONLY used to determine all productions that need an equation for a new attribute. -}
-monoid attribute prodTreeContribs :: [Pair<String FlowDef>];
+monoid attribute prodTreeContribs :: [(String, FlowDef)];
 
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
     affect it)  These FlowDefs MUST have a flowEdges for this production. -}
-monoid attribute prodGraphContribs :: [Pair<String FlowDef>];
+monoid attribute prodGraphContribs :: [(String, FlowDef)];
 
 {-- Edge lists from equations
  - ONLY used to extract edges for a production graph from production-internal flowDefs. -}
@@ -61,7 +61,7 @@ synthesized attribute flowEdges :: [(FlowVertex, FlowVertex)];
 synthesized attribute suspectFlowEdges :: [(FlowVertex, FlowVertex)];
 
 {-- A list of extension syn attr occurrences, subject to ft lower bounds. -}
-monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
+monoid attribute hostSynTreeContribs :: [(String, FlowDef)];
 
 {-- A list of attributes for a production that are non-suspect -}
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
@@ -73,7 +73,19 @@ monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 {-- lookup dec site to find places that a unique reference to this ref site are *unconditionally* decorated. -}
 monoid attribute refDecSiteContribs :: [(String, VertexType)];
 
-propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, refPossibleDecSiteContribs, refDecSiteContribs
+monoid attribute sigShareContribs :: [(String, String, VertexType)];
+
+attribute
+  synTreeContribs, inhTreeContribs, defTreeContribs,
+  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs,
+  prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
+  occurs on FlowDefs, FlowDef;
+propagate
+  synTreeContribs, inhTreeContribs, defTreeContribs,
+  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs,
+  prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -106,6 +118,7 @@ top::FlowDef ::=
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
   top.refPossibleDecSiteContribs := [];
   top.refDecSiteContribs := [];
+  top.sigShareContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -425,6 +438,14 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
   top.flowEdges = [];  -- Added as fixed edges duing flow graph computation, when we know all inh attributes on nt.
   top.refPossibleDecSiteContribs := [(s"${prod}:${ref.vertexName}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
+}
+
+abstract production sigShareSite
+top::FlowDef ::= sourceProd::String source::VertexType targetProd::String target::String
+{
+  top.prodGraphContribs := [];
+  top.flowEdges = [];
+  top.sigShareContribs := [(crossnames(targetProd, target), sourceProd, source)];
 }
 
 --
