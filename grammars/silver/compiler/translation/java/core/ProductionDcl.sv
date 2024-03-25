@@ -260,11 +260,6 @@ ${if isData then "" else s"""
         return "${fName}";
     }
 
-    @Override
-    public String[] getChildNames() {
-        return namedSig.inputNames;
-    }
-
     ${otImpl}
     
     @Override

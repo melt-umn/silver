@@ -206,6 +206,25 @@ public class SimplifiedContextStack {
         }
     }
 
+    public static class Production {
+        public String name;
+        public int  index;
+
+        public Production(String name, int index) {
+            this.name = name;
+            this.index = index;
+        }
+
+        public String toString() {
+            if (this.index == 0) {
+                return this.name;
+            }
+            else {
+                return this.name + " (" + this.index + ")";
+            }
+        }
+    }
+
     private ContextStack full_stack;
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
