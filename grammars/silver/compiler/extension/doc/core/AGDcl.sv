@@ -42,8 +42,17 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.docs := []; -- Not considered to need docs
 }
 
+aspect production dispatchSigDcl
+top::AGDcl ::= 'dispatch' id::Name '=' ns::ProductionSignature ';'
+{
+  top.docForName = id.name;
+  top.docUnparse = "`dispatch " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   top.docForName = id.name;
   top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";

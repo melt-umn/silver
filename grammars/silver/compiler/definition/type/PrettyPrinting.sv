@@ -235,6 +235,12 @@ top::Type ::= params::Integer namedParams::[String]
   top.typepp = s"(_ ::=${replicate(params, " _") }${if null(namedParams) then "" else "; " ++ implode("::_; ", namedParams) ++ "::_"})";
 }
 
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.typepp = ns.fullName;
+}
+
 aspect production starKind
 top::Kind ::=
 {

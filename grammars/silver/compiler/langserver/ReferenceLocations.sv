@@ -209,19 +209,20 @@ end;
 
 --RHS
 aspect valueRefLocs on top::ProductionRHSElem using <- of
-| productionRHSElem(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| productionRHSElem(_, n, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectRHSElem using <- of
-| aspectRHSElemFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| aspectRHSElemFull(_, n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionRHSElem using <- of
-| productionRHSElem(_, _, t) -> t.typeRefLocs
+| productionRHSElem(_, _, _, t) -> t.typeRefLocs
 end;
 
 aspect typeRefLocs on AspectRHSElem using <- of
 | aspectRHSElemTyped(_, _, t) -> t.typeRefLocs
+| aspectRHSElemSharedTyped(_, _, _, t) -> t.typeRefLocs
 end;
 
 synthesized attribute valueFileRefLocs::map:Map<String (Location, Decorated RootSpec, ValueDclInfo)>;

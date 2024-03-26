@@ -34,7 +34,8 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
     ];
 
   forwards to
-    productionDcl('abstract', 'production', nameIdLower(nme), sig,
+    productionDcl('abstract', 'production', nameIdLower(nme), 
+      productionImplementsNone(), sig,
       productionBody('{',
         foldl(productionStmtsSnoc(_, _), productionStmtsNil(), bod), '}'));
 
@@ -68,9 +69,10 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
          bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
      '::=',
      productionRHSCons(
-      productionRHSElemType(listTypeExpr('[', stringTypeExpr('String'), ']')),
+      productionRHSElemType(elemNotShared(), listTypeExpr('[', stringTypeExpr('String'), ']')),
       productionRHSCons(
        productionRHSElem(
+        elemNotShared(),
         name("mainIO"),
         '::', typerepTypeExpr(ioForeignType)),
        productionRHSNil()))),

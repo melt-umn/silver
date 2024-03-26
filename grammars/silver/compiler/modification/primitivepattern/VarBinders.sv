@@ -189,7 +189,7 @@ top::VarBinder ::= n::Name
   -- this would allow us to match 'left' and 'right' on a Pair, for example, but error on Either
   top.errors <- 
     case getValueDcl(n.name, top.env) of
-    | prodDcl(_,_) :: _ -> [errFromOrigin(top, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
+    | prodDcl(_,_,_) :: _ -> [errFromOrigin(top, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
     | _ -> []
     end;
 }

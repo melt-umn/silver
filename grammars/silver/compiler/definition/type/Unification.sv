@@ -206,6 +206,16 @@ top::Type ::= params::Integer namedParams::[String]
     end;
 }
 
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.unify = 
+    case top.unifyWith of
+    | dispatchType(ons) when ns.fullName == ons.fullName -> emptySubst()
+    | _ -> errorSubst("Tried to unify conflicting dispatch types " ++ ns.fullName ++ " and " ++ prettyType(top.unifyWith))
+    end;
+}
+
 --------------------------------------------------------------------------------
 
 function unify

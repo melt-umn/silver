@@ -200,20 +200,6 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
 {
   attachNote if null(rules) then logicalLocationFromOrigin(aspectLHS) else logicalLocationFromOrigin(head(rules));
 
-  local lookupProdInputTypes::([Type] ::= String) = \prodName::String ->
-      case (getValueDcl(prodName,env)) of
-      -- Productions that aren't in scope, and names that
-      -- aren't productions will be caught later in the primitive match.
-      | [] -> []
-      | dcl:: _ ->
-          if dcl.typeScheme.typerep.isApplicable
-          then dcl.typeScheme.typerep.inputTypes
-          else []
-      end;
-
-  local makeAspectRHSElemListFromNameAndTypeLists::([AspectRHSElem] ::= [Name] [Type]) =
-    zipWith(aspectRHSElemFull, _, _);
-
   local makeAspectRHSFromParamsList::(AspectRHS ::= [AspectRHSElem] ) =
     foldr(aspectRHSElemCons, aspectRHSElemNil(), _);
 
@@ -280,10 +266,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
             makeBaseExprFromQNames(makeQNamesFromNames(paramNames)),
             rules),
         name,
-        makeAspectRHSFromParamsList(
-            makeAspectRHSElemListFromNameAndTypeLists(
-              paramNames,
-              lookupProdInputTypes(name.name)))),
+        makeAspectRHSFromParamsList(map(aspectRHSElemId, paramNames))),
       [])
     end
     | matchRule_c(patternList_more(prodAppPattern(name,_,_,_),_,_),_,e) :: _
@@ -296,10 +279,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
             makeBaseExprFromQNames(makeQNamesFromNames(paramNames)),
             rules),
         name,
-        makeAspectRHSFromParamsList(
-            makeAspectRHSElemListFromNameAndTypeLists(
-              paramNames,
-              lookupProdInputTypes(name.name)))),
+        makeAspectRHSFromParamsList(map(aspectRHSElemId, paramNames))),
       [])
     end
     -- Handling for wildcard patterns

@@ -110,6 +110,7 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
         \ ie::NamedSignatureElement ->
           isDecorable(ie.typerep, top.env) &&
           -- Only propagate for unique decorated children that don't have the inh attribute
+          -- TODO: Handle dispatch signatures
           case getMaxRefSet(ie.typerep, top.env) of
           | just(inhs) -> !contains(inh.lookupAttribute.fullName, inhs)
           | nothing() -> false
@@ -146,6 +147,7 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! 
         \ ie::NamedSignatureElement ->
           isDecorable(ie.typerep, top.env) &&
           -- Only propagate for unique decorated children that don't have the inh attribute
+          -- TODO: Handle dispatch signatures
           case getMaxRefSet(ie.typerep, top.env) of
           | just(inhs) -> !contains(inh, inhs)
           | nothing() -> false

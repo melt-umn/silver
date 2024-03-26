@@ -75,6 +75,12 @@ top::Type ::= tv::TyVar
   top.typeName = tv.typeName;
 }
 
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.typeName = ns.fullName;
+}
+
 attribute typeName occurs on TyVar;
 
 aspect production tyVar

@@ -179,6 +179,13 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     end;
 }
 
+aspect production dispatchApplication
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+{
+  top.errors <- es.appExprUniquenessErrors ++ anns.appExprUniquenessErrors;
+  es.isNtUniquenessPreserving = true;
+}
+
 aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {

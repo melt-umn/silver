@@ -283,6 +283,20 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 
   top.monadicNames = t.monadicNames;
 }
+
+aspect production dispatchApplication
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+{
+  forward t = application(e, '(', es, ',', anns, ')');
+
+  top.merrors := t.merrors;
+  top.mUpSubst = t.mUpSubst;
+  top.mtyperep = t.mtyperep;
+  top.monadRewritten = t.monadRewritten;
+
+  top.monadicNames = t.monadicNames;
+}
+
 --build the lambda to apply to all the original arguments plus the function
 function buildMonadApplicationLambda
 Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] monadAnns::[(Type, QName, Boolean)]

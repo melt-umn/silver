@@ -29,13 +29,13 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.argNames = [id.name];
 }
 
 aspect production productionRHSElemType
-top::ProductionRHSElem ::= t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared t::TypeExpr
 {
   top.argNames = []; -- Don't consider unnamed parameters against count
 }
@@ -75,7 +75,7 @@ top::AspectRHSElem ::= '_'
 }
 
 aspect production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::Type
+top::AspectRHSElem ::= shared::Boolean id::Name t::Type
 {
   top.argNames = [id.name];
 }

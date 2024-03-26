@@ -153,18 +153,29 @@ top::Expr ::= q::Decorated! QName
 aspect production productionReference
 top::Expr ::= q::Decorated! QName
 {
-  top.translation =
+  local factory::String =
     if null(typeScheme.contexts)
     then makeProdName(q.lookupValue.fullName) ++ ".factory"
     else s"new ${makeProdName(q.lookupValue.fullName)}.Factory(${implode(", ", contexts.transContexts)})";
+  local prodArity::Integer = length(q.lookupValue.dcl.namedSignature.inputElements);
+  top.translation =
+    case top.finalType.outputType of
+    | dispatchType(ns) ->
+      s"new common.DispatchNodeFactory<${q.lookupValue.dcl.namedSignature.outputElement.typerep.transType}>(${factory}, ${toString(length(ns.inputElements))})"
+    | _ -> factory
+    end;
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
-    -- static constructor invocation
-    s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ",
-      makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++
-      toString(top.invokeIsUnique) ::
-      contexts.transContexts ++
-      map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})";
+    case top.finalType.outputType of
+    | dispatchType(fn) -> s"${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)})"
+    | _ ->
+      -- static constructor invocation
+      s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ",
+        makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++
+        toString(top.invokeIsUnique) ::
+        contexts.transContexts ++
+        map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})"
+    end;
   -- Safe to be eager here, since the only work being done is constructing a term.
   -- This means that large nested terms will be built eagerly, but we rarely define a term without
   -- demanding it, so overall this is a performance win.
@@ -289,6 +300,22 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
   top.translation = step3;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
+aspect production dispatchApplication
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+{
+  top.translation = e.invokeTranslation;
+  top.lazyTranslation = e.invokeLazyTranslation;
+
+  e.invokeIsUnique = true;
+  e.invokeArgs = es;
+  e.invokeNamedArgs = annos;
+  e.sameProdAsProductionDefinedOn =
+    case e of
+    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+    | _ -> false
+    end;
 }
 
 aspect production errorAccessHandler

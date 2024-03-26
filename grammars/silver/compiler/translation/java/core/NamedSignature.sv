@@ -240,14 +240,14 @@ top::NamedSignatureElements ::=
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
 aspect production namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::Type
+top::NamedSignatureElement ::= n::String ty::Type shared::Boolean
 {
   top.childSigElem = "final Object c_" ++ n;
   top.childRefElem = "c_" ++ n;
   top.childDeclElem =
 s"""private Object child_${n};
-  public final ${ty.transType} getChild_${n}() {
-    final ${ty.transType} result = common.Util.<${ty.transType}>demand(child_${n});
+  public final ${top.typerep.transType} getChild_${n}() {
+    final ${top.typerep.transType} result = common.Util.<${top.typerep.transType}>demand(child_${n});
     child_${n} = result;
     return result;
   }
@@ -319,7 +319,7 @@ String ::= n::NamedSignatureElement
 function makeChildDecorableCase
 String ::= env::Env n::NamedSignatureElement
 {
-  return s"\t\t\tcase i_${n.elementName}: return ${toString(isDecorable(n.typerep, env))};\n";
+  return s"\t\t\tcase i_${n.elementName}: return ${toString(isDecorable(n.typerep, env) || n.elementShared)};\n";
 }
 function makeChildDecSiteAccessCase
 String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement

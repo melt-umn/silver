@@ -50,7 +50,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     local paramNamesAndForWhat::Pair<Maybe<[String]> String> = case getFirstAGDcl(forward) of
         | functionDcl(_, _, ns, _) -> (just(ns.argNames), "function")
         | aspectFunctionDcl(_, _, _, ns, _) -> (just(ns.argNames), "function")
-        | productionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
+        | productionDcl(_, _, _, _, ns, _) -> (just(ns.argNames), "production")
         | aspectProductionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
         | nonterminalDcl(_, _, _, tl, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
         | attributeDclInh(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")

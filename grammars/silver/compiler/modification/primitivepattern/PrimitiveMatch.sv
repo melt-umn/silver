@@ -175,8 +175,9 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 
   top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
 
-  local t::Type = qn.lookupValue.typeScheme.typerep.outputType;
+  local t::Type = qn.lookupValue.dcl.namedSignature.outputElement.typerep;
   local isGadt :: Boolean =
+    qn.lookupValue.found &&
     case t.baseType of
     -- If the lookup is successful, and it's a production type, and it 
     -- constructs a nonterminal that either:
@@ -209,13 +210,18 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors <- qn.lookupValue.errors;
   top.errors <-
     case qn.lookupValue.dcls of
-    | prodDcl (_, _) :: _ -> []
+    | prodDcl (_, _, _) :: _ -> []
     | [] -> []
     | _ -> [errFromOrigin(qn, qn.name ++ " is not a production.")]
     end;
+  
+  local sig::NamedSignature =
+    if qn.lookupValue.found
+    then qn.lookupValue.dcl.namedSignature
+    else bogusNamedSignature();
 
   -- Turns the existential variables existential
-  local prod_contexts_type :: Pair<[Context] Type> = skolemizeProductionType(qn.lookupValue.typeScheme);
+  local prod_contexts_type :: Pair<[Context] Type> = skolemizeProductionType(sig.typeScheme);
   production prod_contexts :: [Context] = prod_contexts_type.fst;
   production prod_type :: Type = prod_contexts_type.snd;
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
@@ -292,12 +298,17 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors <- qn.lookupValue.errors;
   top.errors <-
     case qn.lookupValue.dcls of
-    | prodDcl (_, _) :: _ -> []
+    | prodDcl (_, _, _) :: _ -> []
     | [] -> []
     | _ -> [errFromOrigin(qn, qn.name ++ " is not a production.")]
     end;
+  
+  local sig::NamedSignature =
+    if qn.lookupValue.found
+    then qn.lookupValue.dcl.namedSignature
+    else bogusNamedSignature();
 
-  local prod_contexts_type :: Pair<[Context] Type> = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
+  local prod_contexts_type :: Pair<[Context] Type> = fullySkolemizeProductionType(sig.typeScheme); -- that says FULLY. See the comments on that function.
   production prod_contexts :: [Context] = prod_contexts_type.fst;
   production prod_type :: Type = prod_contexts_type.snd;
   

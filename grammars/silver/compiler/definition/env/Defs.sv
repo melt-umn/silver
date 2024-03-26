@@ -126,8 +126,8 @@ fun lhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
   valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun localDef Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean =
   valueDef(defaultEnvItem(localDcl(fn,ty,isForward,sourceGrammar=sg,sourceLocation=sl)));
-fun prodDef Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean =
-  prodDclDef(defaultEnvItem(prodDcl(ns,hasForward,sourceGrammar=sg,sourceLocation=sl)));
+fun prodDef Def ::= sg::String  sl::Location  ns::NamedSignature  dispatch::Maybe<NamedSignature>  hasForward::Boolean =
+  prodDclDef(defaultEnvItem(prodDcl(ns,dispatch,hasForward,sourceGrammar=sg,sourceLocation=sl)));
 fun funDef Def ::= sg::String  sl::Location  ns::NamedSignature =
   valueDef(defaultEnvItem(funDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
 fun globalDef
@@ -151,6 +151,8 @@ fun aspectLexTyVarDef Def ::= sg::String  sl::Location  fn::String  tv::TyVar =
 fun typeAliasDef
 Def ::= sg::String sl::Location fn::String mentionedAliases::[String] bound::[TyVar] ty::Type =
   typeDef(defaultEnvItem(typeAliasDcl(fn,mentionedAliases,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun dispatchDef Def ::= sg::String  sl::Location  sig::NamedSignature =
+  typeDef(defaultEnvItem(dispatchDcl(sig,sourceGrammar=sg,sourceLocation=sl)));
 fun synDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
   attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun inhDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
