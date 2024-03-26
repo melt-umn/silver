@@ -52,6 +52,9 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);
   es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false, false), numChildren);
   es.appExprApplied = n.unparse;
+  es.decSiteVertexInfo = nothing();
+  es.appProd = nothing();
+  es.appIndexOffset = 0;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
     map(pair(fst=_, snd=nonterminalType("silver:rewrite:Strategy", [], false, false)), annotations);

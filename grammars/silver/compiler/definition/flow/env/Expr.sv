@@ -138,7 +138,10 @@ top::Expr ::= @q::QName
 -- The named signature of the applied production.
 -- Note that we don't project functions at the moment, since we don't build function flow graphs during inference.
 inherited attribute appProd::Maybe<NamedSignature> occurs on AppExprs, AppExpr;
-propagate appProd on AppExprs;
+
+-- The offset of the first supplied signature element, if the production implements a dispatch signautre and has extra children.
+inherited attribute appIndexOffset::Integer occurs on AppExprs, AppExpr;
+propagate appProd, appIndexOffset on AppExprs;
 
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
@@ -154,6 +157,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
   es.appProd = nothing();
+  es.appIndexOffset = 0;
 }
 
 aspect production functionInvocation
@@ -164,6 +168,14 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
+    end;
+  es.appIndexOffset =
+    case e of
+    | productionReference(q) when q.lookupValue.dcl.implementedSignature matches just(dSig) ->
+      if length(q.lookupValue.dcl.namedSignature.inputElements) > length(dSig.inputElements)
+      then length(dSig.inputElements)
+      else 0
+    | _ -> 0
     end;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
@@ -177,6 +189,14 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
+    end;
+  es.appIndexOffset =
+    case e of
+    | productionReference(q) when q.lookupValue.dcl.implementedSignature matches just(dSig) ->
+      if length(q.lookupValue.dcl.namedSignature.inputElements) > length(dSig.inputElements)
+      then length(dSig.inputElements)
+      else 0
+    | _ -> 0
     end;
   e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
@@ -193,6 +213,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     | _, dispatchType(ns) -> just(ns)
     | _, _ -> error("dispatchApplication: unexpected type")
     end;
+  es.appIndexOffset = 0;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated =
@@ -207,15 +228,17 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   e.decSiteVertexInfo = nothing();
   e.appProd = nothing();
+  e.appIndexOffset = 0;
   e.alwaysDecorated = false;
 }
 
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
+  production sigIndex::Integer = top.appExprIndex + top.appIndexOffset;
   production sigName::String =
     case top.appProd of
-    | just(ns) when top.appExprIndex < length(ns.inputNames) -> head(drop(top.appExprIndex, ns.inputNames))
+    | just(ns) when sigIndex < length(ns.inputNames) -> head(drop(sigIndex, ns.inputNames))
     | _ -> "err"
     end;
   top.flowDefs <-
@@ -235,8 +258,7 @@ top::AppExpr ::= e::Expr
   production sigIsShared::Boolean =
     case top.appProd of
     | just(ns) ->
-      top.appExprIndex < length(ns.inputNames) &&
-      head(drop(top.appExprIndex, ns.inputElements)).elementShared
+      sigIndex < length(ns.inputNames) && head(drop(sigIndex, ns.inputElements)).elementShared
     | _ -> false
     end;
   top.flowDefs <-

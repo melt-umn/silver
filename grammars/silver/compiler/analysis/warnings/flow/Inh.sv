@@ -75,26 +75,6 @@ Boolean ::= sigName::String  attrName::String  e::Env
 }
 
 {--
- - Given the name of a child, return whether it is shared in the production's
- - signature, with all productions forwarding to this production supplying the
- - inherited attribute to the child.
- -}
-fun sigAttrViaSharing
-Boolean ::= sigName::String attrName::String ns::NamedSignature flowEnv::FlowEnv realEnv::Env =
-  lookup(sigName, zip(ns.inputNames, ns.inputElements)).fromJust.elementShared &&
-  all(map(
-    \ s::(String, VertexType) -> !remoteProdMissingInhEq(s.1, s.2, attrName, flowEnv),
-    lookupSigShareSites(ns.fullName, sigName, flowEnv) ++
-    case getValueDcl(ns.fullName, realEnv) of
-    | v :: _ when v.implementedSignature matches just(sig) ->
-      lookupSigShareSites(
-        sig.fullName,
-        head(drop(positionOf(sigName, ns.inputNames), sig.inputNames)),
-        flowEnv)
-    | _ -> []
-    end));
-
-{--
  - Used as a stop-gap measure to ensure equations exist.
  - Given a needed equation (represented by FlowVertex 'v'),
  - ensure such an equation exists, accounting for:
@@ -140,7 +120,7 @@ function checkEqDeps
   | rhsInhVertex(sigName, attrName) ->
       if !null(lookupInh(prodName, sigName, attrName, flowEnv))
       || sigAttrViaReference(sigName, attrName, ns, realEnv)
-      || sigAttrViaSharing(sigName, attrName, ns, flowEnv, realEnv)
+      || sigNameIsShared(sigName, ns) && null(sharingSitesLackingSigAttr(sigName, attrName, ns, flowEnv, realEnv))
       || !null(lookupRefDecSite(prodName, rhsVertexType(sigName), flowEnv))
       || case splitTransAttrInh(attrName) of
          | just((transAttr, _)) ->
@@ -189,7 +169,7 @@ function checkEqDeps
   -- A dependency on a projected equation in another production.
   -- Again, SYN are safe. We need to check only for INH.
   | subtermInhVertex(parent, termProdName, sigName, attrName) ->
-      if !remoteProdMissingInhEq(termProdName, rhsVertexType(sigName), attrName, flowEnv)
+      if remoteProdHasInhEq(termProdName, rhsVertexType(sigName), attrName, flowEnv, realEnv)
       then []
       else [mwdaWrnAmbientOrigin(config, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
@@ -698,9 +678,17 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                     isEquationMissing(
                       lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps))))
+                    getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env)))
              in if null(inhs) then []
+                else if sigNameIsShared(lq.lookupValue.fullName, top.frame.signature)
+                then
+                  flatMap(\ inh::String ->
+                    case sharingSitesLackingSigAttr(lq.lookupValue.fullName, inh, top.frame.signature, top.flowEnv, top.env) of
+                    | [] -> []
+                    | sites -> [mwdaWrnFromOrigin(top,
+                      s"Access of syn attribute ${q.name} on ${e.unparse} requires missing inherited attribute ${inh} to be supplied in the following places: " ++
+                      implode(", ", map(\ s::(String, VertexType) -> s"${s.2.vertexName} in production ${s.1}", sites)))]
+                    end, inhs)
                 else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
@@ -721,8 +709,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps))))
+                      set:toList(inhDeps)))
              in if null(inhs) then []
                 else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -839,10 +826,18 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                     isEquationMissing(
                       lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps))))
+                    set:toList(inhDeps)))
              in if null(inhs) then []
-                else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+                else if sigNameIsShared(lq.lookupValue.fullName, top.frame.signature)
+                then
+                  flatMap(\ inh::String ->
+                    case sharingSitesLackingSigAttr(lq.lookupValue.fullName, inh, top.frame.signature, top.flowEnv, top.env) of
+                    | [] -> []
+                    | sites -> [mwdaWrnFromOrigin(top,
+                      s"Access of trans attribute ${q.name} on ${e.unparse} requires missing inherited attribute ${inh} to be supplied in the following places: " ++
+                      implode(", ", map(\ s::(String, VertexType) -> s"${s.2.vertexName} in production ${s.1}", sites)))]
+                    end, inhs)
+                else [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
       | localReference(lq) ->
@@ -862,10 +857,9 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                      set:toList(inhDeps))))
+                    set:toList(inhDeps)))
              in if null(inhs) then []
-                else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+                else [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
           else []
       | _ -> []
@@ -946,7 +940,7 @@ top::VarBinder ::= n::Name
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
   local missingInhs :: [String] =
-    filter(remoteProdMissingInhEq(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), _, top.flowEnv),
+    filter(remoteProdMissingInhEq(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), _, top.flowEnv, top.env),
       removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs));
 
   top.errors <-
@@ -958,14 +952,49 @@ top::VarBinder ::= n::Name
     else [];
 }
 
--- Is this there an equation for this inh attr on any decoration site for this vertex?
+-- Is this child shared in the signature of the production?
+fun sigNameIsShared Boolean ::= sigName::String ns::NamedSignature =
+  lookup(sigName, zip(ns.inputNames, ns.inputElements)).fromJust.elementShared;
+
+{--
+ - Given the name of a child shared in the production's signature,
+ - return the list of all productions/places this child can be decorated before forwarding to this production,
+ - where the needed inherited attribute is not supplied.
+ -}
+fun sharingSitesLackingSigAttr
+[(String, VertexType)] ::= sigName::String attrName::String ns::NamedSignature flowEnv::FlowEnv realEnv::Env =
+  filter(
+    \ s::(String, VertexType) -> !vertexHasInhEq(s.1, s.2, attrName, flowEnv),
+    lookupSigShareSites(ns.fullName, sigName, flowEnv) ++
+    case getValueDcl(ns.fullName, realEnv) of
+    | v :: _ when v.implementedSignature matches just(sig) ->
+      lookupSigShareSites(
+        sig.fullName,
+        head(drop(positionOf(sigName, ns.inputNames), sig.inputNames)),
+        flowEnv)
+    | _ -> []
+    end);
+
+-- Just a helper for filtering, above.
 fun remoteProdMissingInhEq
-Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
-  !any(unzipWith(
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv realEnv::Env =
+  !remoteProdHasInhEq(prodName, vt, attrName, flowEnv, realEnv);
+
+-- Is this there an equation for this inh attr on any decoration site for this vertex?
+fun remoteProdHasInhEq
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv realEnv::Env =
+  any(unzipWith(
     vertexHasInhEq(_, _, attrName, flowEnv),
-    lookupAllDecSites(prodName, vt, flowEnv)));
+    lookupAllDecSites(prodName, vt, flowEnv))) ||
+  case vt of
+  | rhsVertexType(sigName) when getValueDcl(prodName, realEnv) matches dcl :: _ ->
+      sigNameIsShared(sigName, dcl.namedSignature) &&
+      null(sharingSitesLackingSigAttr(sigName, attrName, dcl.namedSignature, flowEnv, realEnv))
+  | _ -> false
+  end;
 
 -- Find all decoration sites productions/vertices for this vertex
+-- TODO: This doesn't gracefully handle cycles in sharing.
 fun lookupAllDecSites [(String, VertexType)] ::= prodName::String  vt::VertexType  flowEnv::FlowEnv =
   (prodName, vt) ::
   case vt of
