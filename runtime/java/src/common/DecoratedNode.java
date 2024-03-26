@@ -783,6 +783,13 @@ public class DecoratedNode implements Decorable, Typed {
 		// Straight up use whatever thunk (or not!) is in the node.
 		return self.getChildLazy(child);
 	}
+	public final Object localLazy(final int index) {
+		if(localValues[index] != null)
+			return localValues[index];
+		
+		return new Thunk<Object>(() -> this.local(index));
+	
+	}
 	public final Object localDecoratedLazy(final int index) {
 		if(localValues[index] != null)
 			return localValues[index];
