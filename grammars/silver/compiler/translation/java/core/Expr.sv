@@ -698,5 +698,12 @@ String ::= e::Decorated Expr
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
   local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
-  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } }";
+  local loc::Location = getParsedOriginLocationOrFallback(e);
+  local fileName::String =
+    case searchEnvTree(e.grammarName, e.compiledGrammars) of
+    | r :: _ -> r.grammarSource
+    | [] -> ""
+    end ++ loc.filename;
+  local sourceLocationTrans::String = s"new silver.core.Ploc(\"${fileName}\", ${toString(loc.line)}, ${toString(loc.column)}, ${toString(loc.endLine)}, ${toString(loc.endColumn)}, ${toString(loc.index)}, ${toString(loc.endIndex)})";
+  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } public final silver.core.NLocation getSourceLocation() { return ${sourceLocationTrans}; } }";
 }

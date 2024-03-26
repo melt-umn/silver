@@ -7,8 +7,6 @@ generator generate :: simple:concretesyntax:Root {
   simple:host;
 }
 
-function main 
-IOVal<Integer> ::= args::[String] io_in::IOToken
-{
-  return ioval(arbDriver(args, io_in, generate), 0);
-}
+fun main
+IOVal<Integer> ::= args::[String] io_in::IOToken =
+  ioval(arbDriver(args, io_in, generate), 0);
