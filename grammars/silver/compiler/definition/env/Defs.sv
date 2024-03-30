@@ -120,8 +120,8 @@ top::Def ::= d::InstDclInfo
   top.instList = [d];
 }
 
-fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
-  valueDef(defaultEnvItem(childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean =
+  valueDef(defaultEnvItem(childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
 fun lhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
   valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun localDef Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean =
@@ -166,8 +166,8 @@ fun forwardDef Def ::= sg::String  sl::Location  ty::Type =
 -- These aliased functions are used for aspects.
 fun aliasedLhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String =
   valueDef(onlyRenamedEnvItem(alias, lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-fun aliasedChildDef Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String =
-  valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun aliasedChildDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean  alias::String =
+  valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
 fun annoDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
   attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun classDef

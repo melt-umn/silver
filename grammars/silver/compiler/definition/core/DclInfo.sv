@@ -45,7 +45,7 @@ synthesized attribute attributionDispatcher :: AttributionDcl occurs on Attribut
 
 -- -- non-interface values
 aspect production childDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type _
 {
   top.refDispatcher = childReference;
   top.defDispatcher = errorValueDef; -- TODO: we should be smarted about error messages, and mention its a child

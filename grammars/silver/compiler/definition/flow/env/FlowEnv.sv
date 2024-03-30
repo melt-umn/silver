@@ -107,6 +107,66 @@ fun lookupRefDecSite [VertexType] ::= prod::String v::VertexType e::FlowEnv =
 fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
   searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
 
+-- places where this child was decorated in a production forwarding to this one,
+-- or in a dispatch signature that this production implements
+fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv realEnv::Env =
+  lookupSigShareSites(prod, sigName, e) ++
+  case getValueDcl(prod, realEnv) of
+  | dcl :: _ when dcl.implementedSignature matches just(sig) ->
+    lookupSigShareSites(
+      sig.fullName,
+      head(drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames)),
+      e)
+  | _ -> []
+  end;
+
+-- Just a helper for filtering.
+fun remoteProdMissingInhEq
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv realEnv::Env =
+  !remoteProdHasInhEq(prodName, vt, attrName, flowEnv, realEnv);
+
+-- Is this there an equation for this inh attr on any decoration site for this vertex?
+fun remoteProdHasInhEq
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv realEnv::Env =
+  any(unzipWith(vertexHasInhEq(_, _, attrName, flowEnv), lookupAllDecSites(prodName, vt, flowEnv))) ||
+  case vt of
+  | rhsVertexType(sigName) when getValueDcl(sigName, realEnv) matches dcl :: _ ->
+      dcl.isShared &&
+      all(unzipWith(vertexHasInhEq(_, _, attrName, flowEnv),
+        lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
+  | _ -> false
+  end;
+
+-- Find all decoration sites productions/vertices for this vertex
+-- TODO: This doesn't gracefully handle cycles in sharing.
+fun lookupAllDecSites [(String, VertexType)] ::= prodName::String  vt::VertexType  flowEnv::FlowEnv =
+  (prodName, vt) ::
+  case vt of
+  | subtermVertexType(_, remoteProdName, sigName) ->
+    lookupAllDecSites(remoteProdName, rhsVertexType(sigName), flowEnv)
+  | _ -> flatMap(lookupAllDecSites(prodName, _, flowEnv), lookupRefDecSite(prodName, vt, flowEnv))
+  end;
+
+fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
+  case vt of
+  | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
+  | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+    !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
+  | transAttrVertexType(localVertexType(fName), transAttr) ->
+    !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
+  | transAttrVertexType(_, _) -> false
+  | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | subtermVertexType(_, remoteProdName, sigName) ->
+    vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
+  -- This is a tricky case since we don't know what decorated this prod.
+  -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
+  -- but here we are remotely looking for equations that might not be the direct dependency of
+  -- anything in the prod flow graph.
+  | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+  | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
+  end;
+
 {--
  - This is a glorified lambda function, to help look for equations.
  - Literally, we're just checking for null here.

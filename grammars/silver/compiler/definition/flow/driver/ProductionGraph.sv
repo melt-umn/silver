@@ -1,7 +1,6 @@
 grammar silver:compiler:definition:flow:driver;
 
 import silver:compiler:definition:type only isNonterminal, typerep;
-import silver:compiler:analysis:warnings:flow only sigAttrViaReference, localAttrViaReference;
 
 data nonterminal ProductionGraph with stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes;
 

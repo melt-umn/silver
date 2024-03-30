@@ -187,12 +187,12 @@ Integer ::= s::String l::[NamedSignatureElement] z::Integer =
   else if s == head(l).elementName then z
   else findNamedSigElem(s, tail(l), z+1);
 
-function findNamedSigElemType
-Type ::= n::String l::[NamedSignatureElement]
-{
-  local elems::NamedSignatureElements = foldNamedSignatureElements(l);
-  return fromMaybe(errorType(), lookup(n, zip(elems.elementNames, elems.elementTypes)));
-}
+fun lookupSignatureInputElem
+NamedSignatureElement ::= s::String ns::NamedSignature =
+  case lookup(s, zip(ns.inputNames, ns.inputElements)) of
+  | just(e) -> e
+  | nothing() -> bogusNamedSignatureElement()
+  end;
 
 --------------
 

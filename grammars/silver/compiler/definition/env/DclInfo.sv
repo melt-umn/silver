@@ -31,6 +31,7 @@ synthesized attribute definedMembers :: [String];
 -- values
 synthesized attribute namedSignature :: NamedSignature;
 synthesized attribute implementedSignature :: Maybe<NamedSignature>;
+synthesized attribute isShared :: Boolean;
 synthesized attribute hasForward :: Boolean;
 
 -- occurs
@@ -52,7 +53,7 @@ inherited attribute givenSubstitution :: Substitution;
 
 closed nonterminal ValueDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, namedSignature, implementedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+  typeScheme, namedSignature, implementedSignature, isShared, hasForward, substitutedDclInfo, givenSubstitution;
 propagate isEqual on ValueDclInfo excluding globalValueDcl, classMemberDcl;
 
 aspect default production
@@ -61,6 +62,7 @@ top::ValueDclInfo ::=
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
   top.implementedSignature = nothing();
+  top.isShared = false;
   top.hasForward = false;
   
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
@@ -68,11 +70,12 @@ top::ValueDclInfo ::=
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type isShared::Boolean
 {
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
+  top.isShared = isShared;
 }
 abstract production lhsDcl
 top::ValueDclInfo ::= fn::String ty::Type

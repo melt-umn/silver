@@ -213,9 +213,9 @@ top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
   top.unparse = ms.unparse ++ id.unparse ++ "::" ++ t.unparse;
   propagate env;
 
-  top.inputElements = [namedSignatureElement(id.name, t.typerep, ms.elementShared)];
+  top.inputElements = [namedSignatureElement(id.name, t.typerep, ms.isShared)];
 
-  top.defs := [childDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
+  top.defs := [childDef(top.grammarName, id.nameLoc, id.name, t.typerep, ms.isShared)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1 
@@ -233,13 +233,13 @@ top::ProductionRHSElem ::= ms::MaybeShared t::TypeExpr
   forwards to productionRHSElem(@ms, name("_G_" ++ toString(top.deterministicCount)), '::', @t);
 }
 
-tracked nonterminal MaybeShared with unparse, elementShared;
+tracked nonterminal MaybeShared with unparse, isShared;
 
 concrete production elemShared
 top::MaybeShared ::= '@'
-{ top.unparse = "@"; top.elementShared = true; }
+{ top.unparse = "@"; top.isShared = true; }
 
 concrete production elemNotShared
 top::MaybeShared ::=
-{ top.unparse = "";  top.elementShared = false; }
+{ top.unparse = "";  top.isShared = false; }
 

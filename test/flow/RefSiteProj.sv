@@ -131,19 +131,10 @@ production incrementalDec
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  local e1::Decorated! RSExpr with {env1} = e;
+  local e1::Expr = @e;
   e1.env2 = top.env2;
 
   top.errors1 = e1.errors1;
-  top.errors2 = e.errors2;
-}
-
-production implProd
-top::RSExpr ::= e::Decorated! RSExpr with {env1}
-{
-  undecorates to e;
-  e.env2 = top.env2;
-  top.errors1 = e.errors1;
   top.errors2 = e.errors2;
 }
 
@@ -238,36 +229,27 @@ top::RSExpr ::= e::RSExpr
     if top.env1 == [] then copy12From2(@e) else base();
 }
 
-production overrideInRefSet
-top::RSExpr ::= e::RSExpr
-{
-  e.env1 = top.env1;
-  e.env2 = top.env1;
-  local e1::Decorated! RSExpr with {env1} = e;
-  e1.env2 = [];
-  top.errors1 = e1.errors1;
-  top.errors2 = e1.errors2;
-}
-
 warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production overrideNotInRefSet
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
   e.env2 = top.env2;
-  local e1::Decorated! RSExpr with {env1} = e;
+  local e1::Expr = @e;
   e1.env2 = [];
   top.errors1 = e1.errors1;
   top.errors2 = e1.errors2;
 }
 }
 
-production dispatchGood
-top::RSExpr ::= e::RSExpr
+dispatch UnaryOp = RSExpr ::= @e::RSExpr;
+
+production implProd implements UnaryOp
+top::RSExpr ::= @e::RSExpr
 {
-  e.env1 = top.env1;
-  local implProdRef::(RSExpr ::= Decorated! RSExpr with {env1}) = implProd;
-  forwards to implProdRef(e); 
+  e.env2 = top.env2;
+  top.errors1 = e.errors1;
+  top.errors2 = e.errors2;
 }
 
 production dispatchOverrideKnownProd
@@ -278,15 +260,13 @@ top::RSExpr ::= e::RSExpr
   forwards to implProd(e); 
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production dispatchOverrideUnknownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
   e.env2 = top.env2;
-  local implProdRef::(RSExpr ::= Decorated! RSExpr with {env1}) = implProd;
+  local implProdRef::UnaryOp = implProd;
   forwards to implProdRef(e); 
-}
 }
 
 warnCode "Access of syn attribute errors2 on e requires missing inherited attributes flow:env2 to be supplied" {

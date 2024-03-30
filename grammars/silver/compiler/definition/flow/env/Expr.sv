@@ -255,6 +255,12 @@ top::AppExpr ::= e::Expr
     end;
   e.alwaysDecorated = top.alwaysDecorated && e.decSiteVertexInfo.isJust;
 
+  production inputSigIsShared::Boolean =
+    case e.flowVertexInfo of
+    | just(rhsVertexType(sigName))
+        when getValueDcl(sigName, top.env) matches dcl :: _ -> dcl.isShared
+    | _ -> false
+    end;
   production sigIsShared::Boolean =
     case top.appProd of
     | just(ns) ->
@@ -263,7 +269,7 @@ top::AppExpr ::= e::Expr
     end;
   top.flowDefs <-
     case top.appProd, e.flowVertexInfo of
-    | just(ns), just(v) when sigIsShared ->
+    | just(ns), just(v) when sigIsShared && !inputSigIsShared ->
       [sigShareSite(top.frame.fullName, v, ns.fullName, sigName)]
     | _, _ -> []
     end;
@@ -437,6 +443,8 @@ aspect production decorationSiteExpr
 top::Expr ::= '@' e::Expr
 {
   top.flowVertexInfo = e.flowVertexInfo;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 
   top.flowDefs <-
     case e.flowVertexInfo, top.decSiteVertexInfo of
