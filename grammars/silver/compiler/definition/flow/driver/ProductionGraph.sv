@@ -167,7 +167,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
-    flatMap(addSharingEqs(realEnv, _), defs);
+    flatMap(addSharingEqs(flowEnv, realEnv, _), defs);
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
@@ -224,7 +224,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
   
   local fixedEdges :: [(FlowVertex, FlowVertex)] =
     normalEdges ++
-    flatMap(addSharingEqs(realEnv, _), defs);
+    flatMap(addSharingEqs(flowEnv, realEnv, _), defs);
   
   -- In functions, this is just `<-` contributions to local collections from aspects.
   local suspectEdges :: [(FlowVertex, FlowVertex)] =
@@ -408,15 +408,18 @@ fun addDefEqs
 {--
  - Introduce edges for inherited attributes on shared references to their decoration sites.
  -}
- fun addSharingEqs [(FlowVertex, FlowVertex)] ::= realEnv::Env d::FlowDef =
+ fun addSharingEqs [(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv realEnv::Env d::FlowDef =
    case d of
-   | refDecSiteEq(_, nt, ref, decSite, _) when
+   | refDecSiteEq(prod, nt, ref, decSite, _) when
         case ref of
         | localVertexType(fName) -> !isForwardProdAttr(fName, realEnv)
-        | _ -> false
+        | _ -> true
         end ->
-      map(
-        \ attr::String -> (ref.inhVertex(attr), decSite.inhVertex(attr)),
+      filterMap(
+        \ attr::String ->
+          if vertexHasInhEq(prod, ref, attr, flowEnv)
+          then nothing()  -- There is an override equation, so the attribute isn't supplied through sharing
+          else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv))
    | _ -> []
    end;

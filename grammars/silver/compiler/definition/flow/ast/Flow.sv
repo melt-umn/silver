@@ -427,6 +427,7 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::St
  - A tree that is elsewhere decorated with additional inherited attributes.
  -
  - @param prod      the full name of the production
+ - @param nt        the full name of the nonterminal
  - @param ref       the vertex type of the shared tree
  - @param decSite   the vertex type that is supplying the attributes
  - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
