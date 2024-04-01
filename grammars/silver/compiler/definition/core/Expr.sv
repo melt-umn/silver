@@ -18,15 +18,18 @@ tracked nonterminal ExprLHSExpr with
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr =
-  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config},
-  decorate {forward, alwaysDecorated};
+  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, compiledGrammars, config},
+  decorate {forward, alwaysDecorated, originRules},
+  errors {forward, alwaysDecorated};
 
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
 flowtype decorate {grammarName, env, frame, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
-flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype errors {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config} on Exprs;
+flowtype errors {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
+flowtype errors {grammarName, env, frame, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
   excluding terminalAccessHandler;
@@ -935,6 +938,10 @@ flowtype AppExprs =
   decorate {
     config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied, originRules,
     downSubst, finalSubst, flowEnv
+  },
+  errors {
+    config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied,
+    downSubst, finalSubst, flowEnv
   };
 
 tracked nonterminal AppExpr with
@@ -1050,6 +1057,10 @@ tracked nonterminal AnnoExpr with
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 flowtype decorate {
     grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config,
+    appExprApplied, remainingFuncAnnotations, funcAnnotations
+  } on AnnoAppExprs, AnnoExpr;
+flowtype errors {
+    grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config,
     appExprApplied, remainingFuncAnnotations, funcAnnotations
   } on AnnoAppExprs, AnnoExpr;
 

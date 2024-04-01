@@ -562,7 +562,6 @@ top::Expr ::= '[' es::Exprs ']'
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
   decEs.boundVars = top.boundVars;
-  decEs.originRules = top.originRules;
 
   top.transform = listASTExpr(decEs.transform);
 }
@@ -583,7 +582,6 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
   decEs.boundVars = top.boundVars;
-  decEs.originRules = top.originRules;
   
   top.transform =
     applyASTExpr(

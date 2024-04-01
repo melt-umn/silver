@@ -46,7 +46,7 @@ concrete production traverseProdExprAnno
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
-  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, flowEnv;
   
   local numChildren::Integer = n.lookupValue.typeScheme.arity;
   local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);

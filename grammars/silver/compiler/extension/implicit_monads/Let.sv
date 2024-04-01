@@ -20,7 +20,6 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
   ne.alwaysDecorated = top.alwaysDecorated;
-  ne.originRules = top.originRules;
   ne.isRoot = top.isRoot;
 
   la.mDownSubst = top.mDownSubst;

@@ -13,7 +13,7 @@ concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
   top.unparse = "\timplicit " ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -52,7 +52,7 @@ concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\timplicit" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -92,7 +92,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 {
   e.downSubst = top.downSubst;
   top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -131,7 +131,7 @@ concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -185,7 +185,7 @@ abstract production restrictedSynAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   e.downSubst = top.downSubst;
   e.alwaysDecorated = false;
@@ -210,7 +210,7 @@ abstract production restrictedInhAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   e.downSubst = top.downSubst;
   e.alwaysDecorated = false;
@@ -238,7 +238,7 @@ abstract production implicitSynAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
@@ -268,7 +268,7 @@ abstract production implicitInhAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;

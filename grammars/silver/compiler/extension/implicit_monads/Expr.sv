@@ -13,9 +13,14 @@ propagate expectedMonad on Expr;
 
 
 type MonadInhs = {
-  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot, originRules,
+  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 };
+
+flowtype merrors {
+  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot,
+  compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
+} on Expr;
 
 
 --list of the attributes accessed in an explicit expression not allowed there
@@ -174,7 +179,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   ne.downSubst = top.downSubst;
   ne.alwaysDecorated = false;
   ne.decSiteVertexInfo = nothing();
-  ne.originRules = top.originRules;
   ne.isRoot = false;
   local nes::AppExprs = new(es);
   nes.mDownSubst = ne.mUpSubst;
@@ -189,7 +193,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.alwaysDecorated = false;
   nes.decSiteVertexInfo = nothing();
   nes.appProd = nothing();
-  nes.originRules = top.originRules;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
@@ -203,7 +206,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nanns.frame = top.frame;
   nanns.finalSubst = top.finalSubst;
   nanns.downSubst = top.downSubst;
-  nanns.originRules = top.originRules;
   nanns.appExprApplied = ne.unparse;
   nanns.remainingFuncAnnotations = anns.remainingFuncAnnotations;
   nanns.funcAnnotations = anns.funcAnnotations;
@@ -452,7 +454,6 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.env = top.env;
   ne.flowEnv = top.flowEnv;
   ne.alwaysDecorated = false;
-  ne.originRules = top.originRules;
   ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
 
@@ -468,7 +469,6 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.flowEnv = top.flowEnv;
   res_e.alwaysDecorated = false;
   res_e.isRoot = false;
-  res_e.originRules = top.originRules;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
 
   top.merrors := ne.errors;
@@ -1445,7 +1445,7 @@ concrete production ifThen
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything else to do
 {
   top.unparse = "if " ++ e1.unparse  ++ " then " ++ e2.unparse ++ " end";
-  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, finalSubst;
 
   top.merrors <-
       if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
