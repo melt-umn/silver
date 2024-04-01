@@ -478,6 +478,18 @@ top::Expr ::= e::Expr '.' 'forward'
   top.monadRewritten = forwardAccess(ne.monadRewritten, '.', 'forward');
 }
 
+aspect production access
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
+{
+  propagate mDownSubst, mUpSubst;
+}
+
+aspect production accessBouncer
+top::Expr ::= e::Expr @q::QNameAttrOccur target::Access
+{
+  propagate mDownSubst, mUpSubst;
+}
+
 aspect production errorAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
@@ -486,7 +498,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -556,7 +567,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production annoAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -615,7 +625,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production synDataAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -688,7 +697,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production terminalAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
 
   top.merrors := e.merrors;
   top.mUpSubst = top.mDownSubst;
@@ -736,7 +744,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production synDecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -809,7 +816,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -938,8 +944,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production unknownDclAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-
   top.monadicNames = [];
 
    --Why do we rewrite here, in an error production?  We can get here from the basic access
