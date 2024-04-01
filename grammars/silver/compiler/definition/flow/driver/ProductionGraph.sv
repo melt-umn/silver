@@ -184,7 +184,8 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
     flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements) ++
     localStitchPoints(realEnv, nt, defs) ++
     patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
+    subtermDecSiteStitchPoints(flowEnv, realEnv, defs) ++
+    sigSharingStitchPoints(flowEnv, realEnv, defs);
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -485,6 +486,18 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env 
           termProdName, subtermVertexType(parent, termProdName, sigName), parent, rhsVertexType(sigName),
           getInhAndInhOnTransAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
         getValueDcl(termProdName, realEnv))
+    | _ -> []
+    end,
+    defs);
+fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
+  flatMap(\ d::FlowDef ->
+    case d of
+    | sigShareSite(_, sigName, sourceProd, vt) ->
+      map(\ prodDcl::ValueDclInfo ->
+        projectionStitchPoint(
+          sourceProd, rhsVertexType(sigName), lhsVertexType, vt,
+          getInhAndInhOnTransAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
+        getValueDcl(sourceProd, realEnv))
     | _ -> []
     end,
     defs);

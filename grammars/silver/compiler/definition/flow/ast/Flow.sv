@@ -441,11 +441,11 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
 }
 
 abstract production sigShareSite
-top::FlowDef ::= sourceProd::String source::VertexType targetProd::String target::String
+top::FlowDef ::= prod::String sigName::String sourceProd::String source::VertexType
 {
-  top.prodGraphContribs := [];
+  top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];
-  top.sigShareContribs := [(crossnames(targetProd, target), sourceProd, source)];
+  top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, source)];
 }
 
 --

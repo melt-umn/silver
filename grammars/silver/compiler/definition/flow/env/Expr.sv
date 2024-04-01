@@ -270,7 +270,7 @@ top::AppExpr ::= e::Expr
   top.flowDefs <-
     case top.appProd, e.flowVertexInfo of
     | just(ns), just(v) when sigIsShared && !inputSigIsShared ->
-      [sigShareSite(top.frame.fullName, v, ns.fullName, sigName)]
+      [sigShareSite(ns.fullName, sigName, top.frame.fullName, v)]
     | _, _ -> []
     end;
 }
