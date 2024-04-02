@@ -332,7 +332,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     then
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation may exceed a flow type with hidden transitive dependencies on ${implode(", ", lhsInhExceedsRefDecSiteDeps)}; " ++
-        s"${attr.attrDcl.fullName} on some reference to ${dl.defLHSVertex.vertexName} may be expected to depend only on ${implode(", ", set:toList(refDecSiteInhDepsLhsInh.fromJust))}")]
+        s"${attr.attrDcl.fullName} on some reference to ${dl.defLHSVertex.vertexPP} may be expected to depend only on ${implode(", ", set:toList(refDecSiteInhDepsLhsInh.fromJust))}")]
     else [];
   top.errors <-
     case dl.defLHSVertex of
@@ -340,7 +340,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
         when top.config.warnMissingInh && !null(lhsInhExceedsTransBaseRefDecSiteDeps) ->
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation may exceed a flow type with hidden transitive dependencies on ${implode(", ", lhsInhExceedsTransBaseRefDecSiteDeps)}; " ++
-        s"${transAttr}.${attr.attrDcl.fullName} on some reference to ${v.vertexName} may be expected to depend only on ${implode(", ", set:toList(transBaseRefDecSiteInhDepsLhsInh.fromJust))}")]
+        s"${transAttr}.${attr.attrDcl.fullName} on some reference to ${v.vertexPP} may be expected to depend only on ${implode(", ", set:toList(transBaseRefDecSiteInhDepsLhsInh.fromJust))}")]
     | _ -> []
     end;
 }
@@ -690,7 +690,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                     | [] -> []
                     | sites -> [mwdaWrnFromOrigin(top,
                       s"Access of syn attribute ${q.name} on ${e.unparse} requires missing inherited attribute ${inh} to be supplied in the following places:\n" ++
-                      implode("\n", map(\ s::(String, VertexType) -> s"  ${s.2.vertexName} in production ${s.1}", sites)))]
+                      implode("\n", map(\ s::(String, VertexType) -> s"  ${s.2.vertexPP} in production ${s.1}", sites)))]
                     end, inhs)
                 else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -839,7 +839,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                     | [] -> []
                     | sites -> [mwdaWrnFromOrigin(top,
                       s"Access of trans attribute ${q.name} on ${e.unparse} requires missing inherited attribute ${inh} to be supplied in the following places:\n" ++
-                      implode("\n", map(\ s::(String, VertexType) -> s"  ${s.2.vertexName} in production ${s.1}", sites)))]
+                      implode("\n", map(\ s::(String, VertexType) -> s"  ${s.2.vertexPP} in production ${s.1}", sites)))]
                     end, inhs)
                 else [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end

@@ -516,7 +516,7 @@ top::Expr ::= '@' e::Expr
       | just(transAttrVertexType(rhsVertexType(sigName), transAttr)) ->
         case lookup(sigName, zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)) of
         | just(ty) when getOccursDcl(transAttr, ty.typeName, top.env) matches occDcl :: _ ->
-          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexName}: ${decSite.vertexName}\n" ++
+          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
           s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrOccursInitIndex}_dec_site] = " ++
           s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
         | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
@@ -524,7 +524,7 @@ top::Expr ::= '@' e::Expr
       | just(transAttrVertexType(localVertexType(fName), transAttr)) ->
         case getValueDcl(fName, top.env) of
         | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, top.env) matches occDcl :: _ ->
-          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexName}: ${decSite.vertexName}\n" ++
+          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
           s"\t\t${top.frame.className}.localInheritedAttributes[${dcl.attrOccursIndex}][${occDcl.attrOccursInitIndex}_dec_site] = " ++
           s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
         | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)

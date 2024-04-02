@@ -46,7 +46,7 @@ top::Expr ::=  '@' e::Expr
     | just(v) ->
       -- Check that we are exported by the decoration site.
       if !isExportedBy(top.grammarName, vertexGrammars, top.compiledGrammars)
-      then [errFromOrigin(top, s"Orphaned sharing of ${v.vertexName} in production ${top.frame.fullName}.")]
+      then [errFromOrigin(top, s"Orphaned sharing of ${v.vertexPP} in production ${top.frame.fullName}.")]
       -- Check that there is at most one unique reference taken to this decoration site.
       else
         case lookupSharedRefs(top.frame.fullName, v, top.flowEnv) of
@@ -63,7 +63,7 @@ top::Expr ::=  '@' e::Expr
     case e.flowVertexInfo of
     | just(transAttrVertexType(v, transAttr))
         when lookupSharedRefs(top.frame.fullName, v, top.flowEnv) matches sr :: _ ->
-      [errFromOrigin(e, s"Cannot share ${v.vertexName}.${transAttr} in production ${top.frame.fullName}, because ${v.vertexName} is also shared (at ${sr.sourceGrammar}:${sr.sourceLocation.unparse}).")]
+      [errFromOrigin(e, s"Cannot share ${v.vertexName}.${transAttr} in production ${top.frame.fullName}, because ${v.vertexPP} is also shared (at ${sr.sourceGrammar}:${sr.sourceLocation.unparse}).")]
     | _ -> []
     end;
 }

@@ -378,7 +378,7 @@ fun sharedRefTranslation String ::= env::Env frame::BlockContext v::VertexType =
       s"context.localDecorated(${dcl.attrOccursIndex}).evalTrans(${occDcl.attrOccursIndex}, ${occDcl.attrOccursIndex}_inhs)"
     | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
     end
-  | _ -> error("Sharing for invalid sort of tree " ++ v.vertexName)
+  | _ -> error("Sharing for invalid sort of tree " ++ v.vertexPP)
   end;
   
 
