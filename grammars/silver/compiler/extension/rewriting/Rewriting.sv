@@ -227,7 +227,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.alwaysDecorated = false;
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.isRoot = false;
-  checkExpr.originRules = top.originRules;
+  checkExpr.originRules = [];
   
   ml.env = top.env;
   ml.matchRulePatternSize = 1;

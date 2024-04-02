@@ -19,8 +19,8 @@ flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr =
   forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, compiledGrammars, config},
-  decorate {forward, alwaysDecorated, originRules},
-  errors {forward, alwaysDecorated};
+  decorate {forward, decSiteVertexInfo, alwaysDecorated, originRules},
+  errors {forward, decSiteVertexInfo};
 
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
@@ -937,11 +937,11 @@ tracked nonterminal AppExprs with
 flowtype AppExprs =
   decorate {
     config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied, originRules,
-    downSubst, finalSubst, flowEnv
+    downSubst, finalSubst, flowEnv, appIndexOffset
   },
   errors {
     config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied,
-    downSubst, finalSubst, flowEnv
+    downSubst, finalSubst, flowEnv, decSiteVertexInfo, appProd, appIndexOffset
   };
 
 tracked nonterminal AppExpr with

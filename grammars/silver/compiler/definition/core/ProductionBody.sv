@@ -320,7 +320,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
     [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")],
-    dl, attr, e);
+    dl, attr, @e);
 }
 
 abstract production synthesizedAttributeDef implements AttributeDef

@@ -88,6 +88,8 @@ aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   propagate flowEnv;
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
 }
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr

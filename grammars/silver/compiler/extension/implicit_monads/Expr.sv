@@ -193,6 +193,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.alwaysDecorated = false;
   nes.decSiteVertexInfo = nothing();
   nes.appProd = nothing();
+  nes.appIndexOffset = 0;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
@@ -453,6 +454,7 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.config = top.config;
   ne.env = top.env;
   ne.flowEnv = top.flowEnv;
+  ne.decSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
   ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
@@ -552,6 +554,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                       then q.typerep
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
+  top.mUpSubst = top.mDownSubst;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found

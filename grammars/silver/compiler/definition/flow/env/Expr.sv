@@ -139,7 +139,7 @@ top::Expr ::= @q::QName
 -- Note that we don't project functions at the moment, since we don't build function flow graphs during inference.
 inherited attribute appProd::Maybe<NamedSignature> occurs on AppExprs, AppExpr;
 
--- The offset of the first supplied signature element, if the production implements a dispatch signautre and has extra children.
+-- The offset of the first supplied signature element, if the production implements a dispatch signature and has extra children.
 inherited attribute appIndexOffset::Integer occurs on AppExprs, AppExpr;
 propagate appProd, appIndexOffset on AppExprs;
 
