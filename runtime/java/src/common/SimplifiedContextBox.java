@@ -16,7 +16,7 @@ public class SimplifiedContextBox {
     public String syntax_to_highlight;
 
     // 3. Productions Visited
-    public SimplifiedContextStack.Production prods_visited[];
+    public ProductionName prods_visited[];
 
     // 4. Interesting Features
     public List<Feature> features;

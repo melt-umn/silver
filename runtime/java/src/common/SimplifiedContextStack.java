@@ -12,11 +12,15 @@ public class SimplifiedContextStack {
 
     public SimplifiedContextStack(ContextStack full_stack) {
         this.full_stack = full_stack;
+        this.partition = new int[full_stack.get_height()];
     }
 
     public Stack<SimplifiedContextBox> getSimplifiedStack() {
         this.need_set_all_prods = true;
         this.makeSimplifiedStack();
+        
+        // UNCOMMENT-ME. FOR-DEMO
+        System.out.println("NEW SIMPLIFIED STACK SIZE: " + this.simple_stack.size());
         return this.simple_stack;
     }
 
@@ -26,18 +30,22 @@ public class SimplifiedContextStack {
         this.simple_stack = new Stack<SimplifiedContextBox>();
         
         this.fillInPartition();
-
+        
         // Now make one box per partition
-        int prev_partition_index = -1; 
+        int prev_partition_index = 0; 
         int start = 0;
         int end = -1;
+
+        // System.out.println(this.partition[0]);
         for (int i = 0; i < this.partition.length; i++) {
+            
             if (this.partition[i] > prev_partition_index) {
                 // Make box on existing start and end
                 SimplifiedContextBox sbox = this.makeSimplifiedBox(start, end);
                 this.simple_stack.push(sbox);
                 start = i;
                 end = start;
+                prev_partition_index++;
             }
             else {
                 end++;
@@ -51,7 +59,11 @@ public class SimplifiedContextStack {
     // Inclusive Partition Indices
     private SimplifiedContextBox makeSimplifiedBox(int i, int j) {
         
-        if (j > i) {
+        // UNCOMMENT-ME. FOR-DEMO
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // System.out.println("MAKING SIMPLIFIED BOX: " + i + ", " + j);
+
+        if (i > j) {
             System.out.println("Invalid Partition Indices: " + i + ", " + j);
             return null;
         }
@@ -61,22 +73,38 @@ public class SimplifiedContextStack {
 
         NodeContextMessage first = this.full_stack.get(i);
         NodeContextMessage last = this.full_stack.get(j);
+        // System.out.println(first.getProdName());
+        
         // 1. Tree Order Trivial
         sbox.translation_x = first.getTranslationX();
         sbox.higher_order_y = first.getHigherOrderY();
 
-        // 2. Text Syntax (highlight later when rendering)
+        // // 2. Text Syntax (highlight later when rendering)
         sbox.text_syntax = first.getTextRepr();
         sbox.syntax_to_highlight = last.getTextRepr();
 
-        // 3. Need some counting logic to keep track of unique indices
+        // // 3. Need some counting logic to keep track of unique indices
         this.SetAllProds();
         sbox.prods_visited = Arrays.copyOfRange(this.productions, i, j + 1);
 
-        // Make features list now (list, not array, since unknown length)
+        // // Make features list now (list, not array, since unknown length)
         sbox.features = new ArrayList<Feature>();
         this.fillInFeaturesList(sbox, i, j);
+        
+        // for (i = 0; i < sbox.prods_visited.length; i++) {
+        //     System.out.println(sbox.prods_visited[i]);
+        // }
+        // System.out.println("text: " + sbox.text_syntax);
+        // System.out.println("to highlight: " + sbox.syntax_to_highlight);
 
+        
+        // UNCOMMENT-ME. FOR-DEMO
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // System.out.println("first prod: " + sbox.prods_visited[0]);
+        // if (sbox.features.size() > 0) {
+        //     System.out.println("first feature: " + sbox.features.get(0));
+        // }
+        
         return sbox;
     }
 
@@ -122,7 +150,8 @@ public class SimplifiedContextStack {
     }
 
     private void SetAllProds() {
-
+        
+        // System.out.println(this.need_set_all_prods);
         if (! this.need_set_all_prods) {
             return;
         }
@@ -130,10 +159,11 @@ public class SimplifiedContextStack {
         // Not worried about multiple instances of SimplifiedContextStack;
         // rather, don't want to do this for every SimplifiedContextBox created
 
-        Production all_prods[] = new Production[this.full_stack.get_height()];
+        ProductionName all_prods[] = new ProductionName[this.full_stack.get_height()];
         for (int index = 0; index < this.full_stack.get_height(); index++) {
-            all_prods[index].name = this.full_stack.get(index).getProdName();
-            all_prods[index].index = -1;
+            // System.out.println(all_prods.length);
+            ProductionName pn = new ProductionName(this.full_stack.get(index).getProdName(), -1);
+            all_prods[index] = pn;
         }
 
 
@@ -178,6 +208,14 @@ public class SimplifiedContextStack {
 
         this.productions = all_prods;
         this.need_set_all_prods = false;
+        // System.out.println(this.productions[0]);
+        // String res = "Prods visted: [\n";
+        // for (int i = 0; i < this.productions.length; i++) {
+        //     res += "\t" + this.productions[i].name + ", \n";
+        // }
+        // res += "]";
+        // System.out.println(res);
+
         return;
     }
 
@@ -189,7 +227,7 @@ public class SimplifiedContextStack {
         int previous_y = 0;
         int partition_index = 0;
         for (int i = 0; i < this.full_stack.get_height(); i++) {
-            NodeContextMessage node = this.full_stack.get(0);
+            NodeContextMessage node = this.full_stack.get(i);
             int cur_x = node.getTranslationX();
             int cur_y = node.getHigherOrderY();
             if (cur_x == previous_x && cur_y == previous_y) {
@@ -204,37 +242,44 @@ public class SimplifiedContextStack {
                 this.partition[i] = partition_index;
             }
         }
+
+        // String res = "PARTITION: [\n";
+        // for (int i = 0; i < this.partition.length; i++) {
+        //     res += "\t" + this.partition[i] + ", \n";
+        // }
+        // res += "]";
+        // System.out.println(res);
     }
 
-    public static class Production {
-        public String name;
-        public int  index;
+    // public static class Production {
+    //     public String name;
+    //     public int  index;
 
-        public Production(String name, int index) {
-            this.name = name;
-            this.index = index;
-        }
+    //     public Production(String name, int index) {
+    //         this.name = name;
+    //         this.index = index;
+    //     }
 
-        public String toString() {
-            if (this.index == 0) {
-                return this.name;
-            }
-            else {
-                return this.name + " (" + this.index + ")";
-            }
-        }
-    }
+    //     public String toString() {
+    //         if (this.index == 0) {
+    //             return this.name;
+    //         }
+    //         else {
+    //             return this.name + " (" + this.index + ")";
+    //         }
+    //     }
+    // }
 
     private ContextStack full_stack;
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
     
     private boolean need_set_all_prods = true;
-    private Production productions[];
+    private ProductionName productions[];
 
-    // Put 0 for each respective element in the first 
-    // stack partition, then 1, etc. Index 0 into stack is bottom
-    private int[] partition = new int[full_stack.get_height()];
+    // // Put 0 for each respective element in the first 
+    // // stack partition, then 1, etc. Index 0 into stack is bottom
+    private int[] partition;
     
 }
 
