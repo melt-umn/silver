@@ -23,6 +23,10 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
   top.defs := [shortFunDef(top.grammarName, id.nameLoc, namedSig)];
 
   local errCheck1 :: TypeCheck = check(e.typerep, namedSig.outputElement.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [errFromOrigin(e, s"Expected result type is ${errCheck1.rightpp}, but the expression has type ${errCheck1.leftpp}.")]
+    else [];
 
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
