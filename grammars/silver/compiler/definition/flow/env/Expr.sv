@@ -267,9 +267,16 @@ top::AppExpr ::= e::Expr
       sigIndex < length(ns.inputNames) && head(drop(sigIndex, ns.inputElements)).elementShared
     | _ -> false
     end;
+  production isForwardParam::Boolean =
+    -- Don't try to share if someone uses an implementation prod somewhere invalid.
+    case top.decSiteVertexInfo of
+    | just(forwardVertexType_real()) -> true
+    | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> true
+    | _ -> false
+    end;
   top.flowDefs <-
     case top.appProd, e.flowVertexInfo of
-    | just(ns), just(v) when sigIsShared && !inputSigIsShared ->
+    | just(ns), just(v) when sigIsShared && !inputSigIsShared && isForwardParam ->
       [sigShareSite(ns.fullName, sigName, top.frame.fullName, v)]
     | _, _ -> []
     end;
