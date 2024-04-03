@@ -483,13 +483,13 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
-  propagate mDownSubst, mUpSubst;
+  propagate mDownSubst, mUpSubst, expectedMonad;
 }
 
 aspect production accessBouncer
 top::Expr ::= e::Expr @q::QNameAttrOccur target::Access
 {
-  propagate mDownSubst, mUpSubst;
+  propagate mDownSubst, mUpSubst, expectedMonad;
 }
 
 aspect production errorAccessHandler
