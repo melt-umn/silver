@@ -28,9 +28,9 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateEquality implements Propagate
-top::ProductionStmt ::= @syn::QName inh::String
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String
 {
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
   
   forwards to
     Silver_ProductionStmt {

@@ -117,9 +117,9 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateStrategy implements Propagate
-top::ProductionStmt ::= @attr::QName
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  top.unparse = s"propagate ${attr.unparse}";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;
   production e::StrategyExpr = attr.lookupAttribute.dcl.strategyExpr;
@@ -169,7 +169,7 @@ top::ProductionStmt ::= @attr::QName
         if isTotal then e2.totalTranslation else e2.partialTranslation,
         ';'),
       map(
-        \ n::String -> propagateOneAttr(qName(n)),
+        \ n::String -> propagateOneAttr(if includeShared then elemShared('@') else elemNotShared(), qName(n)),
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
   -- Uncomment for debugging

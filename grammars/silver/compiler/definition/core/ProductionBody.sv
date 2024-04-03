@@ -107,6 +107,12 @@ top::ProductionStmt ::= e::[Message]
   top.errors <- e;
 }
 
+abstract production emptyProductionStmt
+top::ProductionStmt ::= 
+{
+  top.unparse = "";
+}
+
 --------------------------------------------------------------------------------
 
 aspect default production

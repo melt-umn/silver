@@ -60,7 +60,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
 }
 
 abstract production propagateBiequalitySynPartial implements Propagate
-top::ProductionStmt ::= @synPartial::QName inh::String syn::String
+top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String syn::String
 {
   top.unparse = s"propagate ${synPartial.unparse};";
   
@@ -95,7 +95,7 @@ top::ProductionStmt ::= @synPartial::QName inh::String syn::String
 }
 
 abstract production propagateBiequalitySyn implements Propagate
-top::ProductionStmt ::= @syn::QName inh::String synPartial::String
+top::ProductionStmt ::= propagateShared::Boolean @syn::QName inh::String synPartial::String
 {
   top.unparse = s"propagate ${syn.unparse};";
   

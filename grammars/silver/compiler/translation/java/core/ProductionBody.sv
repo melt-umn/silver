@@ -45,6 +45,12 @@ top::ProductionStmt ::= e::[Message]
   top.translation = "";
 }
 
+aspect production emptyProductionStmt
+top::ProductionStmt ::=
+{
+  top.translation = "";
+}
+
 --------------------------------------------------------------------------------
 
 aspect default production

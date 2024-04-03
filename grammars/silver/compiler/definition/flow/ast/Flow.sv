@@ -449,6 +449,13 @@ top::FlowDef ::= prod::String sigName::String sourceProd::String source::VertexT
   top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, source)];
 }
 
+abstract production emptyFlowDef
+top::FlowDef ::=
+{
+  top.prodGraphContribs := [];
+  top.flowEdges = [];
+}
+
 --
 
 fun crossnames String ::= a::String b::String = a ++ " @ " ++ b;

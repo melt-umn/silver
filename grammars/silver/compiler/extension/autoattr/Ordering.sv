@@ -35,9 +35,9 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
  - Propagate a ordering key synthesized attribute on the enclosing production
  -}
 abstract production propagateOrderingKey implements Propagate
-top::ProductionStmt ::= @syn::QName
+top::ProductionStmt ::= includeShared::Boolean @syn::QName
 {
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
 
   forwards to
     Silver_ProductionStmt {
@@ -50,9 +50,9 @@ top::ProductionStmt ::= @syn::QName
  - Propagate a ordering synthesized attribute on the enclosing production
  -}
 abstract production propagateOrdering implements Propagate
-top::ProductionStmt ::= @syn::QName inh::String keySyn::String
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String keySyn::String
 {
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
   
   local topName::String = top.frame.signature.outputElement.elementName;
   forwards to

@@ -71,15 +71,15 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateDestruct implements Propagate
-top::ProductionStmt ::= @attr::QName
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse};";
   
   local numChildren::Integer = length(top.frame.signature.inputElements);
   forwards to
     foldr(
       productionStmtAppend(_, _),
-      errorProductionStmt([]), -- No emptyProductionStmt?
+      emptyProductionStmt(),
       map(
         \ ie::Pair<Integer NamedSignatureElement> ->
           Silver_ProductionStmt {
@@ -106,7 +106,9 @@ top::ProductionStmt ::= @attr::QName
           },
         filter(
           \ ie::Pair<Integer NamedSignatureElement> ->
-            !null(getOccursDcl(attr.lookupAttribute.dcl.fullName, ie.snd.typerep.typeName, top.env)),
+            isDecorable(ie.2.elementDclType, top.env) &&
+            !null(getOccursDcl(attr.lookupAttribute.dcl.fullName, ie.snd.typerep.typeName, top.env)) &&
+            (includeShared || !ie.2.elementShared),
           zip(range(0, numChildren), top.frame.signature.inputElements))));
 }
 
