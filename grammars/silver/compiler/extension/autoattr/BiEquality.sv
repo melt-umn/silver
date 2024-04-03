@@ -95,7 +95,7 @@ top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String sy
 }
 
 abstract production propagateBiequalitySyn implements Propagate
-top::ProductionStmt ::= propagateShared::Boolean @syn::QName inh::String synPartial::String
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String synPartial::String
 {
   top.unparse = s"propagate ${syn.unparse};";
   
