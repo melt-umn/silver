@@ -25,4 +25,3 @@ public class CMDContextVisualization extends ContextVisualization {
         }
     }
 }
-

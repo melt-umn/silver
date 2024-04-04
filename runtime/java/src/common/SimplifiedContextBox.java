@@ -64,4 +64,12 @@ public class SimplifiedContextBox {
         }
         return res;
     }
+
+    public String toString() {
+        return 
+            getSection1Str() + 
+            getSection2Str() + 
+            getSection3Str() + 
+            getSection4Str();
+    }
 }
