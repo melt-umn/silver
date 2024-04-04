@@ -13,6 +13,13 @@ public class SimplifiedContextStack {
     public SimplifiedContextStack(ContextStack full_stack) {
         this.full_stack = full_stack;
         this.partition = new int[full_stack.get_height()];
+        this.filename = "debugcontext.txt";
+    }
+
+    public SimplifiedContextStack(ContextStack full_stack, String fn) {
+        this.full_stack = full_stack;
+        this.partition = new int[full_stack.get_height()];
+        this.filename = fn;
     }
 
     public Stack<SimplifiedContextBox> getSimplifiedStack() {
@@ -22,6 +29,25 @@ public class SimplifiedContextStack {
         // UNCOMMENT-ME. FOR-DEMO
         System.out.println("NEW SIMPLIFIED STACK SIZE: " + this.simple_stack.size());
         return this.simple_stack;
+    }
+
+    public void show(){
+        this.getSimplifiedStack();
+        File file = new File(this.filename);
+        String border = "*******************";
+        
+        try{
+            FileWriter myWriter = new FileWriter(this.filename);
+            Iterator<SimplifiedContextBox> iterator = this.simple_stack.iterator();
+            while (iterator.hasNext()) {
+                SimplifiedContextBox sbox = iterator.next();
+                myWriter.write(border + "\n" + sbox.toString() + "\n" + border);
+            }
+            myWriter.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void makeSimplifiedStack() {
@@ -271,6 +297,7 @@ public class SimplifiedContextStack {
     // }
 
     private ContextStack full_stack;
+    private String filename;
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
     
