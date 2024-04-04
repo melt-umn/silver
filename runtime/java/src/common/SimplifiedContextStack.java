@@ -61,7 +61,7 @@ public class SimplifiedContextStack {
         
         // UNCOMMENT-ME. FOR-DEMO
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // System.out.println("MAKING SIMPLIFIED BOX: " + i + ", " + j);
+        System.out.println("MAKING SIMPLIFIED BOX: " + i + ", " + j);
 
         if (i > j) {
             System.out.println("Invalid Partition Indices: " + i + ", " + j);
@@ -100,10 +100,10 @@ public class SimplifiedContextStack {
         
         // UNCOMMENT-ME. FOR-DEMO
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // System.out.println("first prod: " + sbox.prods_visited[0]);
-        // if (sbox.features.size() > 0) {
-        //     System.out.println("first feature: " + sbox.features.get(0));
-        // }
+        System.out.println("first prod: " + sbox.prods_visited[0]);
+        if (sbox.features.size() > 0) {
+            System.out.println("first feature: " + sbox.features.get(0));
+        }
         
         return sbox;
     }
