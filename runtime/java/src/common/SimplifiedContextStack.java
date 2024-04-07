@@ -6,6 +6,13 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import java.util.Iterator;
+import java.io.IOException;
+
 // Basically a decorator over a ContextStack to 
 // generate a simplified (one node per tree order) stack
 public class SimplifiedContextStack {
@@ -13,7 +20,7 @@ public class SimplifiedContextStack {
     public SimplifiedContextStack(ContextStack full_stack) {
         this.full_stack = full_stack;
         this.partition = new int[full_stack.get_height()];
-        this.filename = "debugcontext.txt";
+        this.filename = "simpleDebugContext.txt";
     }
 
     public SimplifiedContextStack(ContextStack full_stack, String fn) {
@@ -25,14 +32,16 @@ public class SimplifiedContextStack {
     public Stack<SimplifiedContextBox> getSimplifiedStack() {
         this.need_set_all_prods = true;
         this.makeSimplifiedStack();
-        
-        // UNCOMMENT-ME. FOR-DEMO
-        System.out.println("NEW SIMPLIFIED STACK SIZE: " + this.simple_stack.size());
         return this.simple_stack;
     }
 
+    public void updateSimplifiedStack() {
+        this.need_set_all_prods = true;
+        this.makeSimplifiedStack();
+    }
+
     public void show(){
-        this.getSimplifiedStack();
+        this.updateSimplifiedStack();
         File file = new File(this.filename);
         String border = "*******************";
         

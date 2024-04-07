@@ -21,7 +21,9 @@ public class SimplifiedContextBox {
     // 4. Interesting Features
     public List<Feature> features;
 
-    public getSection1Str() {
+    private String sectionSep = "--------------------\n";
+
+    public String getSection1Str() {
         
         String top = "Tree Order: ";
         if (this.translation_x == 0 && this.higher_order_y == 0) {
@@ -39,26 +41,25 @@ public class SimplifiedContextBox {
         return top + trans + higher;
     }
 
-    public getSection2Str() {
-        String header1 = "^^^^^^^^^^^^^^^^^^^^ALL SYNTAX^^^^^^^^^^^^^^^^^^^^\n";
-        String header2 = "^^^^^^^^^^^^^^^^^^^^TO HIGHLIGHT^^^^^^^^^^^^^^^^^^^^\n";
-        String sep = "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n";
-        return header1 + this.text_syntax + header2 + this.syntax_to_highlight + sep;
+    public String getSection2Str() {
+        String header1 = "^^^^^ALL SYNTAX^^^^^\n";
+        String header2 = "\n^^^^^TO HIGHLIGHT^^^^^\n";
+        return header1 + this.text_syntax + header2 + this.syntax_to_highlight + "\n";
     }
 
-    public getSection3Str() {
-        String res = "Productions Visited: ";
+    public String getSection3Str() {
+        String res = "Productions Visited: \n";
         for (int i = 0; i < this.prods_visited.length; i++) {
-            res += "\t" + this.prods_visited[i].toString + "\n";
+            res += "\t" + this.prods_visited[i].toString() + "\n";
         }
         return res;
     }
 
-    public getSection4Str() {
+    public String getSection4Str() {
         if (this.features.size() == 0) {
             return "";
         }
-        String res = "Features: ";
+        String res = "Features: \n";
         for (Feature feature: this.features) {
             res += "\t" + feature.toString() + "\n";
         }
@@ -68,8 +69,11 @@ public class SimplifiedContextBox {
     public String toString() {
         return 
             getSection1Str() + 
+            this.sectionSep + 
             getSection2Str() + 
+            this.sectionSep + 
             getSection3Str() + 
+            this.sectionSep + 
             getSection4Str();
     }
 }
