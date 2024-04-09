@@ -94,10 +94,6 @@ public class SimplifiedContextStack {
     // Inclusive Partition Indices
     private SimplifiedContextBox makeSimplifiedBox(int i, int j) {
         
-        // UNCOMMENT-ME. FOR-DEMO
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        System.out.println("MAKING SIMPLIFIED BOX: " + i + ", " + j);
-
         if (i > j) {
             System.out.println("Invalid Partition Indices: " + i + ", " + j);
             return null;
@@ -108,7 +104,6 @@ public class SimplifiedContextStack {
 
         NodeContextMessage first = this.full_stack.get(i);
         NodeContextMessage last = this.full_stack.get(j);
-        // System.out.println(first.getProdName());
         
         // 1. Tree Order Trivial
         sbox.translation_x = first.getTranslationX();
@@ -125,20 +120,6 @@ public class SimplifiedContextStack {
         // // Make features list now (list, not array, since unknown length)
         sbox.features = new ArrayList<Feature>();
         this.fillInFeaturesList(sbox, i, j);
-        
-        // for (i = 0; i < sbox.prods_visited.length; i++) {
-        //     System.out.println(sbox.prods_visited[i]);
-        // }
-        // System.out.println("text: " + sbox.text_syntax);
-        // System.out.println("to highlight: " + sbox.syntax_to_highlight);
-
-        
-        // UNCOMMENT-ME. FOR-DEMO
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        System.out.println("first prod: " + sbox.prods_visited[0]);
-        if (sbox.features.size() > 0) {
-            System.out.println("first feature: " + sbox.features.get(0));
-        }
         
         return sbox;
     }
@@ -186,7 +167,6 @@ public class SimplifiedContextStack {
 
     private void SetAllProds() {
         
-        // System.out.println(this.need_set_all_prods);
         if (! this.need_set_all_prods) {
             return;
         }
@@ -196,7 +176,6 @@ public class SimplifiedContextStack {
 
         ProductionName all_prods[] = new ProductionName[this.full_stack.get_height()];
         for (int index = 0; index < this.full_stack.get_height(); index++) {
-            // System.out.println(all_prods.length);
             ProductionName pn = new ProductionName(this.full_stack.get(index).getProdName(), -1);
             all_prods[index] = pn;
         }
@@ -243,13 +222,6 @@ public class SimplifiedContextStack {
 
         this.productions = all_prods;
         this.need_set_all_prods = false;
-        // System.out.println(this.productions[0]);
-        // String res = "Prods visted: [\n";
-        // for (int i = 0; i < this.productions.length; i++) {
-        //     res += "\t" + this.productions[i].name + ", \n";
-        // }
-        // res += "]";
-        // System.out.println(res);
 
         return;
     }
@@ -277,33 +249,7 @@ public class SimplifiedContextStack {
                 this.partition[i] = partition_index;
             }
         }
-
-        // String res = "PARTITION: [\n";
-        // for (int i = 0; i < this.partition.length; i++) {
-        //     res += "\t" + this.partition[i] + ", \n";
-        // }
-        // res += "]";
-        // System.out.println(res);
     }
-
-    // public static class Production {
-    //     public String name;
-    //     public int  index;
-
-    //     public Production(String name, int index) {
-    //         this.name = name;
-    //         this.index = index;
-    //     }
-
-    //     public String toString() {
-    //         if (this.index == 0) {
-    //             return this.name;
-    //         }
-    //         else {
-    //             return this.name + " (" + this.index + ")";
-    //         }
-    //     }
-    // }
 
     private ContextStack full_stack;
     private String filename;
