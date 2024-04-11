@@ -681,16 +681,16 @@ public class Debug {
                 int endline = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
                 
                 equationHTML(file, line, endline);
-                writeToJason(file, line, endline);
+                writeTojson(file, line, endline);
             }
         }
     }
 
     // makes html of the production containing the inputed attribute name
     // the specific attribute is highlighted
-    public void writeToJason(String filename, int lineNumber, int endline)
+    public void writeTojson(String filename, int lineNumber, int endline)
     {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.jason"))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.json"))) {
             String currentDirectory = System.getProperty("user.dir");
             System.out.println(currentDirectory);
             int lastIndex = filename.lastIndexOf("/");
@@ -859,26 +859,47 @@ public class Debug {
     //List of all and only local attributes
     public void algorithmicDebugg(DecoratedNode node, String attriburteName)
     {
-        Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
-        if (lazyMap.containsKey(attriburteName)) {
-            Lazy attributeLazy = lazyMap.get(attriburteName);
-            NLocation loc = attributeLazy.getSourceLocation();
-            String qualifier = Integer.toHexString(System.identityHashCode(this));
-            if(loc != null) {
-                String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-                int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
-                int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+        // Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
+        // if (lazyMap.containsKey(attriburteName)) {
+        //     Lazy attributeLazy = lazyMap.get(attriburteName);
+        //     NLocation loc = attributeLazy.getSourceLocation();
+        //     String qualifier = Integer.toHexString(System.identityHashCode(this));
+        //     if(loc != null) {
+        //         String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+        //         int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+        //         int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 
-                try {
-                    printLines(filePath, startLine, endLine);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        //TODO: fix when thunks work
-        Map<String, Object> attributeMap = allAttributesObjectMap(node);
-        System.out.println(attriburteName + ": " + Util.genericShow(attributeMap.get(attriburteName)));
+        //         try {
+        //             System.out.println("Equation: \n");
+        //             printLines(filePath, startLine, endLine);
+        //         } catch (IOException e) {
+        //             e.printStackTrace();
+        //         }
+        //     }
+        // }
+
+        // System.out.println("Data: \n");
+        // //TODO: fix when thunks work
+        // Map<String, Object> attributeMap = allAttributesObjectMap(node);
+
+        // //HACK: this entire prossess is based on string meddling
+        // String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
+        // int index1 = partentProduction.indexOf("::");
+        // int index2 = attriburteName.indexOf(":");
+        // String parentNameInEquation = partentProduction.substring(0, index1) + "." + attriburteName.substring(index2+1);
+        // System.out.println(parentNameInEquation + ": " + Util.genericShow(attributeMap.get(attriburteName)));
+
+        // String[] listCurrentProduction = currentProduction.split("\\s+");
+        // String[] childFullNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+        // String[] childFrontNames = new String[childFullNames.length()];
+        // for (int i = 0; i < childFullNames.length();  i++) {
+        //     int index = childFullNames[i].indexOf("::");
+        //     childFrontNames = childFullNames[i].substring(0, index);
+        //     System.out.println(childFrontNames[i]);
+        // }
+
+
+        //int nextChild = chooseFormList(inp, childNames);
 
     }
 
