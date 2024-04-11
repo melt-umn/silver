@@ -1178,7 +1178,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// P and @ if origin is another node of the same name. 
 			// Also, there will be a '_c@' if concrete syntax (so false if _c@ in)
 			String ostr = origin.toString();
-			System.out.println("ORIGIN NAME: " + ostr);
+			// System.out.println("ORIGIN NAME: " + ostr);
 			// Origin in concrete syntax case
 
 

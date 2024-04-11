@@ -6,12 +6,27 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import java.util.Iterator;
+import java.io.IOException;
+
 // Basically a decorator over a ContextStack to 
 // generate a simplified (one node per tree order) stack
 public class SimplifiedContextStack {
 
     public SimplifiedContextStack(ContextStack full_stack) {
         this.full_stack = full_stack;
+        this.partition = new int[full_stack.get_height()];
+        this.filename = "simpleDebugContext.txt";
+    }
+
+    public SimplifiedContextStack(ContextStack full_stack, String fn) {
+        this.full_stack = full_stack;
+        this.partition = new int[full_stack.get_height()];
+        this.filename = fn;
     }
 
     public Stack<SimplifiedContextBox> getSimplifiedStack() {
@@ -20,24 +35,52 @@ public class SimplifiedContextStack {
         return this.simple_stack;
     }
 
+    public void updateSimplifiedStack() {
+        this.need_set_all_prods = true;
+        this.makeSimplifiedStack();
+    }
+
+    public void show(){
+        this.updateSimplifiedStack();
+        File file = new File(this.filename);
+        String border = "*******************";
+        
+        try{
+            FileWriter myWriter = new FileWriter(this.filename);
+            Iterator<SimplifiedContextBox> iterator = this.simple_stack.iterator();
+            while (iterator.hasNext()) {
+                SimplifiedContextBox sbox = iterator.next();
+                myWriter.write(border + "\n" + sbox.toString() + "\n" + border);
+            }
+            myWriter.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void makeSimplifiedStack() {
         
         // Clear previous simplified stack to get a brand new one
         this.simple_stack = new Stack<SimplifiedContextBox>();
         
         this.fillInPartition();
-
+        
         // Now make one box per partition
-        int prev_partition_index = -1; 
+        int prev_partition_index = 0; 
         int start = 0;
         int end = -1;
+
+        // System.out.println(this.partition[0]);
         for (int i = 0; i < this.partition.length; i++) {
+            
             if (this.partition[i] > prev_partition_index) {
                 // Make box on existing start and end
                 SimplifiedContextBox sbox = this.makeSimplifiedBox(start, end);
                 this.simple_stack.push(sbox);
                 start = i;
                 end = start;
+                prev_partition_index++;
             }
             else {
                 end++;
@@ -51,7 +94,7 @@ public class SimplifiedContextStack {
     // Inclusive Partition Indices
     private SimplifiedContextBox makeSimplifiedBox(int i, int j) {
         
-        if (j > i) {
+        if (i > j) {
             System.out.println("Invalid Partition Indices: " + i + ", " + j);
             return null;
         }
@@ -61,22 +104,23 @@ public class SimplifiedContextStack {
 
         NodeContextMessage first = this.full_stack.get(i);
         NodeContextMessage last = this.full_stack.get(j);
+        
         // 1. Tree Order Trivial
         sbox.translation_x = first.getTranslationX();
         sbox.higher_order_y = first.getHigherOrderY();
 
-        // 2. Text Syntax (highlight later when rendering)
+        // // 2. Text Syntax (highlight later when rendering)
         sbox.text_syntax = first.getTextRepr();
         sbox.syntax_to_highlight = last.getTextRepr();
 
-        // 3. Need some counting logic to keep track of unique indices
+        // // 3. Need some counting logic to keep track of unique indices
         this.SetAllProds();
         sbox.prods_visited = Arrays.copyOfRange(this.productions, i, j + 1);
 
-        // Make features list now (list, not array, since unknown length)
+        // // Make features list now (list, not array, since unknown length)
         sbox.features = new ArrayList<Feature>();
         this.fillInFeaturesList(sbox, i, j);
-
+        
         return sbox;
     }
 
@@ -122,7 +166,7 @@ public class SimplifiedContextStack {
     }
 
     private void SetAllProds() {
-
+        
         if (! this.need_set_all_prods) {
             return;
         }
@@ -130,10 +174,10 @@ public class SimplifiedContextStack {
         // Not worried about multiple instances of SimplifiedContextStack;
         // rather, don't want to do this for every SimplifiedContextBox created
 
-        Production all_prods[] = new Production[this.full_stack.get_height()];
+        ProductionName all_prods[] = new ProductionName[this.full_stack.get_height()];
         for (int index = 0; index < this.full_stack.get_height(); index++) {
-            all_prods[index].name = this.full_stack.get(index).getProdName();
-            all_prods[index].index = -1;
+            ProductionName pn = new ProductionName(this.full_stack.get(index).getProdName(), -1);
+            all_prods[index] = pn;
         }
 
 
@@ -178,6 +222,7 @@ public class SimplifiedContextStack {
 
         this.productions = all_prods;
         this.need_set_all_prods = false;
+
         return;
     }
 
@@ -189,7 +234,7 @@ public class SimplifiedContextStack {
         int previous_y = 0;
         int partition_index = 0;
         for (int i = 0; i < this.full_stack.get_height(); i++) {
-            NodeContextMessage node = this.full_stack.get(0);
+            NodeContextMessage node = this.full_stack.get(i);
             int cur_x = node.getTranslationX();
             int cur_y = node.getHigherOrderY();
             if (cur_x == previous_x && cur_y == previous_y) {
@@ -206,35 +251,17 @@ public class SimplifiedContextStack {
         }
     }
 
-    public static class Production {
-        public String name;
-        public int  index;
-
-        public Production(String name, int index) {
-            this.name = name;
-            this.index = index;
-        }
-
-        public String toString() {
-            if (this.index == 0) {
-                return this.name;
-            }
-            else {
-                return this.name + " (" + this.index + ")";
-            }
-        }
-    }
-
     private ContextStack full_stack;
+    private String filename;
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
     
     private boolean need_set_all_prods = true;
-    private Production productions[];
+    private ProductionName productions[];
 
-    // Put 0 for each respective element in the first 
-    // stack partition, then 1, etc. Index 0 into stack is bottom
-    private int[] partition = new int[full_stack.get_height()];
+    // // Put 0 for each respective element in the first 
+    // // stack partition, then 1, etc. Index 0 into stack is bottom
+    private int[] partition;
     
 }
 

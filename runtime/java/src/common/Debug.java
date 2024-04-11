@@ -68,11 +68,11 @@ public class Debug {
     
         // Fine to call this
         ContextStack contextStack = (ContextStack)cStack.getContextStack();
-        // System.out.println(cStack);
+        // System.out.println(cStack.getContextStack());
 
         // Need to debug why first line causes NullPointerException before SimplifiedContextStack constructor called
-        // SimplifiedContextStack sStack = new SimplifiedContextStack(cStack.getContextStack());
-        // sStack.getSimplifiedStack();
+        SimplifiedContextStack sStack = new SimplifiedContextStack(contextStack);
+        sStack.show();
 
         //Control loop
         loop: do { 
@@ -101,6 +101,7 @@ public class Debug {
                             }
                             // if we navigate up to a parent, push it on to the stack (?)
                             cStack.pop();
+                            sStack.show();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
@@ -150,6 +151,7 @@ public class Debug {
                         }
                         // if we navigate down to a child, push it on to the stack
                         cStack.push(currentNode);
+                        sStack.show();
                         // when we push, update and show the context
                         if(toggleCStackDisplay){
                             cStack.show();
@@ -173,6 +175,7 @@ public class Debug {
                             }
                             // remove from the stack
                             cStack.pop();
+                            sStack.show();
                             if(toggleCStackDisplay){
                                 cStack.show();
                             }
@@ -198,6 +201,7 @@ public class Debug {
                             }
                             // if we navigate to a forward, push it on to the stack
                             cStack.push(currentNode);
+                            sStack.show();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
@@ -273,6 +277,7 @@ public class Debug {
                             }
                             // if we navigate backwards, pop (?)
                             cStack.pop();
+                            sStack.show();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
