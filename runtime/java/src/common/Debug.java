@@ -1,4 +1,4 @@
-//Thing to remeber: ./silver-compile --force-origins --clean
+//needed to run: ./silver-compile --force-origins --clean
 
 package common;
 
@@ -44,7 +44,7 @@ public class Debug {
         boolean toggleNameDisplay = false;
         boolean toggleCStackDisplay = true;
         boolean toggleHeadlessAttributes = false;
-        String[] toggleChoices = {"prodDisplay", "cStackDisplay", "fullAttributeNames"};
+        String[] toggleChoices = {"nameDisplay", "cStackDisplay", "fullAttributeNames"};
         DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
@@ -293,7 +293,7 @@ public class Debug {
                     }else if (userInputList.length == 2){
                         toggelChoice = userInputList[1];
                     } 
-                    if(toggelChoice.equals("prodDisplay")){
+                    if(toggelChoice.equals("nameDisplay")){
                         if(toggleNameDisplay){
                             System.out.println("Production Display off");
                             toggleNameDisplay = false;
@@ -318,7 +318,7 @@ public class Debug {
                             toggleCStackDisplay = true;
                         }
                     }else{
-                        System.out.println("legal toggles: prodDisplay, fullAttributeNames, cStackDisplay");
+                        System.out.println("legal toggles: nameDisplay, fullAttributeNames, cStackDisplay");
                     }
                     break;
 
@@ -331,12 +331,17 @@ public class Debug {
                         printProduction(currentNode);
                     }
                     break;
-                
-                //TODO:Implement this - use genericShow?, see ProductionDcl in grammer/silver/compiler/translation/java/core
-                //Somehow this needs to create a new function for RTTI manager but current attempt does not work
-                //We want - user defined names (ex: left right), attribute equations (ex: left = parent + 1) and nearby code (filename and linenumber?)
+
+                case "name": 
+                    if (userInputList.length != 1) {
+                        System.out.println("invalid, correct usage: prod<>");
+                    }else{
+                        printName(currentNode);
+                    }
+                    break;
+
+                //Makes html of the production with the specific production highlighted
                 case "eq": 
-                    //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
                     String attributeNameView = ""; 
                     Integer attributeNumView = 0;
                     List<String> attributeListView = allAttributesList(currentNode);
@@ -411,9 +416,6 @@ public class Debug {
                     if (userInputList.length != 1 && userInputList.length != 2) {
                         System.out.println("invalid, correct usage: list<node?>");
                     }else{
-                        // if(listSynth(currentNode) + listInher(currentNode) == 0){
-                        //     System.out.println("no attributes");
-                        // }
                         printAttributes(currentNode, toggleHeadlessAttributes);
                     }
                     break;
@@ -576,9 +578,9 @@ public class Debug {
 
     public DecoratedNode down(int child)
     {
-        String child_productions[] = currentNode.undecorate().getProdleton().getChildTypes();
+        String childProductions[] = currentNode.undecorate().getProdleton().getChildTypes();
         try{
-            if(child_productions[child].equals("null")){ 
+            if(childProductions[child].equals("null")){ 
                 return null;
             }
             DecoratedNode childNode = currentNode.childDecorated(child);
@@ -590,20 +592,6 @@ public class Debug {
             System.out.println("Index out of bound");
             return null;
         }
-        //if (currentNode.getNode().getNumberOfChildren() > child && child >= 0){
-            //Might be a bandaid fix not sure I understand why the problem exists
-        //     DecoratedNode childNode = currentNode.childDecorated(child);
-        //     return childNode;
-        // //}
-        // return null;
-    }
-
-    public void printChildren(DecoratedNode node)
-    {
-        String child_productions[] = node.undecorate().getProdleton().getChildTypes();
-        for (int i = 0; i < child_productions.length; i++){
-            System.out.println(Integer.toString(i) + ": " + child_productions[i] + " ");
-        } 
     }
 
     public DecoratedNode forwards(DecoratedNode node)
@@ -614,6 +602,7 @@ public class Debug {
         }
         return null;
     }
+
     public DecoratedNode backtrack(DecoratedNode node)
     {
         currentNode = node.getForwardParent();
@@ -621,87 +610,74 @@ public class Debug {
 
     }
     
-    public void printProduction(DecoratedNode node)
-    {
-        String partent_production = node.undecorate().getProdleton().getTypeUnparse();
-        // String child_productions[] = node.undecorate().getProdleton().getChildTypes();
-        System.out.print(partent_production + "\n");
-        // for (int i = 0; i < child_productions.length; i++){
-        //     System.out.print(child_productions[i] + " ");
-        // }
-        // System.out.print("\n");
-    }
-    
+    //Most user frindly print
     public void printName(DecoratedNode node)
     {
+        String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
+        System.out.println(partentProduction);
+    }
+    
+    //Gives production
+    public void printProduction(DecoratedNode node)
+    {
         String name = node.undecorate().getProdleton().getName();
-        System.out.println(name);
+        String childProductions[] = node.undecorate().getProdleton().getChildTypes();
+        System.out.print(name + " ");
+        for (int i = 0; i < childProductions.length; i++){
+            System.out.print(childProductions[i] + " ");
+        }
+        System.out.print("\n");
     }
 
-    // public void printNames(DecoratedNode node)
-    // {
-    //     String partent_production = node.undecorate().getProdleton().getName();
-    //     String child_productions[] = node.undecorate().getProdleton().getChildNames();
-    //     System.out.print(partent_production + " ");
-    //     for (int i = 0; i < child_productions.length; i++){
-    //         System.out.print(child_productions[i] + " ");
-    //     }
-    //     System.out.print("\n");
-    // }
-
-    //TODO: file for the production you are on
-    //Also a file with list of attribute values
-    //Optional: Replace variables with values )_)
-    //ask lucas for endline
-
-    // Prints out the equation of the specified attr.
-    // If attr is not specified, prints out the equations for all the attributes on the current node.
-    // via eric we can just add equations as an attribute within our AG
+    // makes html of the production containing the inputed attribute name
+    // the specific attribute is highlighted
     public void printEquation(DecoratedNode node, String attriburteName)
     {
         Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
         if (lazyMap.containsKey(attriburteName)) {
-            // System.out.println("In print Equation function");
             Lazy attributeLazy = lazyMap.get(attriburteName);
             NLocation loc = attributeLazy.getSourceLocation();
-            String notes = "";
             String qualifier = Integer.toHexString(System.identityHashCode(this));
             if(loc != null) {
-                // Object filenameObj = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location);
-                // Class<?> synthesizedClass = filenameObj.getClass();
-                // System.out.println("Type of synthesized object: " + synthesizedClass.getName());
-
                 String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-
                 int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
-                int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
-                // System.out.println("our line, col: " + line + "," + col);
-                // System.out.println("our filename: " + file);
-                printContent(file, line, col);
-                //qualifier += ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
+                int endline = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+
+                equationHTML(file, line, endline);
+                writToJason(file, line, endline);
             }
-            if(!notes.isEmpty()) {
-                qualifier += ", " + notes;
-            }
-            //Lazy attributeObject = attributeMap.get(attriburteName);
         }
-        //System.out.println("made it here at least");
     }
 
-    public static void printContent(String filename, int lineNumber, int col) {
+    // makes html of the production containing the inputed attribute name
+    // the specific attribute is highlighted
+    public void writToJason(String filename, int lineNumber, int endline)
+    {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.jason"))) {
+                writer.write("{\"file_path\": \"" + filename + "\", \"line_begin\": " + lineNumber + "\"line_end\":" + endline+ "}");
+        }catch (IOException e) {
+            System.out.println("in catch");
+            e.printStackTrace();
+        }
+    }
+
+    
+
+    //Helper for printEquation
+    public static void equationHTML(String filename, int lineNumber, int endline) {
         //System.out.println("in print content");
         try (BufferedReader br1 = new BufferedReader(new FileReader(filename));
             BufferedWriter writer = new BufferedWriter(new FileWriter("current_production.html"))) {
             writer.write("<!DOCTYPE html>\n");
             writer.write("<html>\n");
             writer.write("<body>\n");
-            // System.out.println("in try");
             String line;
             int currentLineNumber = 1;
             int productionLineNum = 0;
             while ((line = br1.readLine()) != null) {
+                //HACK:Relies on the the fact that "::=" is only and always used in production declarations
                 if (line.contains("::=")) {
-                    productionLineNum = currentLineNumber; // Stop printing when encountering the line containing "}"
+                    productionLineNum = currentLineNumber; 
                 }
                 if (currentLineNumber >= lineNumber ) {
                     break;
@@ -713,17 +689,20 @@ public class Debug {
             BufferedReader br2 = new BufferedReader(new FileReader(filename));
             writer.write("<pre>\n");
             while ((line = br2.readLine()) != null) {
-                if (currentLineNumber >= productionLineNum && currentLineNumber != lineNumber) {
-                    writer.write(line);
-                    writer.newLine();
-                }else if(currentLineNumber == lineNumber){
+                if(currentLineNumber == lineNumber){
                     writer.write("<span style=\"color: red;\"><strong>");
+                }
+                if (currentLineNumber >= productionLineNum) {
                     writer.write(line);
-                    writer.write("</strong></span>");
+                    if(currentLineNumber == endline){
+                        writer.write("</strong></span>");
+                        writer.newLine();
+                    }
                     writer.newLine();
                 }
+                //HACK:Relies on the the fact that the line "}" is only and always used in production ends
                 if (currentLineNumber >= productionLineNum && line.trim().equals("}")) {
-                    break; // Stop printing when encountering the line exactly containing "}"
+                    break; 
                 }
                 currentLineNumber++;
             }
@@ -736,47 +715,39 @@ public class Debug {
         }
     }
 
-    public void eqSynth(int attribute)
-    {
-
-    }
-
-    public void eqInher(int attribute)
-    {
-
-    }
-
-    // no optional params in java, could use overloading or just pass in null
+    //Old function not sure if we still want it
     public int listSynth(DecoratedNode node)
     {
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         Set<String> synAttrSet = nonterminalton.getAllSynth();
-        int num_attr = 0;
+        int numAttr = 0;
 
         for (String synAttr : synAttrSet)
         {
             System.out.println("Attribute = " + synAttr);
-            num_attr++;
+            numAttr++;
         }
-        return num_attr;
+        return numAttr;
     }
 
+    //Old function not sure if we still want it
     public int listInher(DecoratedNode node)
     {
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         Set<String> inhAttrSet = nonterminalton.getAllInh();
-        int num_attr = 0;
+        int numAttr = 0;
 
         for (String inhAttr : inhAttrSet)
         {
             System.out.println("Attribute = " + inhAttr);
-            num_attr++;
+            numAttr++;
         }
-        return num_attr;
+        return numAttr;
     }   
 
+    //Prints all attributes using allAttributesList
     public void printAttributes(DecoratedNode node, boolean toggleHeadlessAttributes){
         List<String> attributeList = allAttributesList(node);
         if(toggleHeadlessAttributes){
@@ -816,6 +787,7 @@ public class Debug {
         System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
     }
 
+    //TODO: update by using the thunk map inplace of the object map
     public void printAllAttributeData(DecoratedNode node, String printAttribute){
         //Map<String, Object> attributeMap = allAttributesThunkMap(node);
         Map<String, Object> attributeMap = allAttributesObjectMap(node);
@@ -861,7 +833,7 @@ public class Debug {
     }
 
     //TODO: Add access to higher order attriburte
-    // Translation attribute or Decorated, locals only locals should all be decorated
+    //Translation attribute or Decorated, locals only locals should all be decorated
     public DecoratedNode into(DecoratedNode node, String attriburteName){
         Map<String, Object> attributeMap = allAttributesObjectMap(node);
         if (attributeMap.containsKey(attriburteName)) {
@@ -873,7 +845,7 @@ public class Debug {
     }
     
 
-    //Helper for printAttrFromName 
+    //Helper for printing Attributes
     public static List<String> allAttributesList(DecoratedNode node)
     {
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
@@ -887,7 +859,7 @@ public class Debug {
         return attributeList;
     }
 
-    // Another Helper 
+    //TODO: We want change this to use the thunk version below.
     public static Map<String, Object> allAttributesObjectMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
@@ -920,7 +892,8 @@ public class Debug {
         return attributeMap;
     }
 
-    //TODO: replace all uses of allAttributesObjectMap with this once it works (see known bug on printAttrFromName)
+    //TODO: replace all uses of allAttributesObjectMap with this once it works 
+    //known bug: only can use thunks once then breaks
     public static Map<String, Object> allAttributesThunkMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
@@ -948,7 +921,7 @@ public class Debug {
         return attributeMap;
     }
 
-    
+    //Another helper
     public static Map<String, Lazy> allAttributesLazyMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
@@ -976,7 +949,7 @@ public class Debug {
         return attributeMap;
     }
 
-
+    //Should be in util?
     public static Integer chooseFormList(Scanner inp, String[] list){
         for (int i = 0; i < list.length; i++){
             System.out.println(Integer.toString(i) + ": " + list[i]);
