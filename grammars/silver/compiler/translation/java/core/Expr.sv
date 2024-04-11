@@ -430,9 +430,15 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
+  local decSite::String =
+    case top.decSiteVertexInfo of
+    | just(decSite) when top.alwaysDecorated ->
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)}"
+    | _ -> "(common.Lazy)null"
+    end;
   top.translation = s"((common.Decorable)${e.translation})" ++ 
     case inh of
-    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
+    | exprInhsEmpty() -> s".decorate(context, (common.Lazy[])null, ${decSite})"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
       -- When the user forgets to provide inherited attributes
       -- (especially important because we're implicitly inserted when accessing attributes
@@ -445,7 +451,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
-      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
+      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}), " ++
+      s"${decSite})"
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -499,14 +506,7 @@ top::Expr ::= '@' e::Expr
   top.translation =
     s"new ${top.finalType.transType}.DecorationSiteWrapper(${
       if top.finalType.isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${
-      if top.alwaysDecorated
-      -- This production may depend on additional inherited attributes supplied through this tree
-      -- through its shared decoration site, so e.translation will access the tree through its decoration site.
-      -- We need the raw tree here to avoid a circularity.
-      -- This is not cached, as the uniqueness analysis gurantees it will only be demanded once.
-      then sharedRefTranslation(top.env, top.frame, e.flowVertexInfo.fromJust)
-      -- We won't depend on any attributes later supplied to the tree, just demand it the normal way here.
-      else e.translation})";
+      e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
   top.initTransDecSites <-

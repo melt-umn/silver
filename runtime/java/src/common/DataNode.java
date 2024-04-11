@@ -57,8 +57,8 @@ public abstract class DataNode extends Node {
 	 * @return The "decorated" form of this DataNode.
 	 */
 	@Override
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
-		if (inhs != null) {
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy decSite) {
+		if (inhs != null || decSite != null) {
         	throw new SilverInternalError("Data nonterminals cannot be decorated with inherited attributes!");
 		}
 		if (context == null) {
@@ -70,7 +70,7 @@ public abstract class DataNode extends Node {
 	private DecoratedNode createContext() {
 		return new DecoratedNode(
 			getNumberOfChildren(), 0, getNumberOfSynAttrs(), getNumberOfLocalAttrs(),
-			this, TopNode.singleton, null, null, false);
+			this, TopNode.singleton, null, null, false, null);
 	}
 
 	// These methods have implementations here since we never forward or supply inherited attributes:

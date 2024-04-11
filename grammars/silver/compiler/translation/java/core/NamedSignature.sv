@@ -357,31 +357,6 @@ fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String 
     s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
   end;
 
--- Translation of demanding the tree corresponding to a flow vertex type, to be shared.
--- Note that this is not cached; uniqueness analysis guarantees that it should only be demanded once.
-fun sharedRefTranslation String ::= env::Env frame::BlockContext v::VertexType =
-  case v of
-  | rhsVertexType(sigName) -> s"context.createDecoratedChild(${frame.className}.i_${sigName})"
-  | localVertexType(fName) ->
-    case getValueDcl(fName, env) of
-    | dcl :: _ -> s"context.evalLocalDecorated(${dcl.attrOccursIndex})"
-    | _ -> error("Couldn't find decl for local " ++ fName)
-    end
-  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
-    case lookup(sigName, zip(frame.signature.inputNames, frame.signature.inputTypes)) of
-    | just(ty) when getOccursDcl(transAttr, ty.typeName, env) matches occDcl :: _ ->
-      s"context.childDecorated(${frame.className}.i_${sigName}).evalTrans(${occDcl.attrOccursIndex}, ${occDcl.attrOccursIndex}_inhs)"
-    | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
-    end
-  | transAttrVertexType(localVertexType(fName), transAttr) ->
-    case getValueDcl(fName, env) of
-    | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, env) matches occDcl :: _ ->
-      s"context.localDecorated(${dcl.attrOccursIndex}).evalTrans(${occDcl.attrOccursIndex}, ${occDcl.attrOccursIndex}_inhs)"
-    | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
-    end
-  | _ -> error("Sharing for invalid sort of tree " ++ v.vertexPP)
-  end;
-
 function makeAnnoAssign
 String ::= n::NamedSignatureElement
 {
