@@ -120,7 +120,7 @@ public class Debug {
                         System.out.println("Which child?");
                         String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
                         String[] listCurrentProduction = currentProduction.split("\\s+");
-                        String[] childNames =  Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+                        String[] childNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
                         childNum = chooseFormList(inp, childNames);
                         if(childNum == -1){
                             break;
@@ -372,7 +372,9 @@ public class Debug {
                         System.out.println("invalid, correct usage: into <node #>");
                         break;
                     }
-                    printEquation(currentNode, attributeNameView);
+
+                    printEquation(currentNode, attributeNameView) ;
+                    attributeDataHTML(currentNode, "");
                     // if(childNode == null){
                     //     System.out.println("invalid input");
                     // }
@@ -455,7 +457,42 @@ public class Debug {
                         break;
                     }
                     //printAttrFromName(currentNode, attributeName);
-                    printAllAttributeData(currentNode, attributeName);
+                    attributeDataHTML(currentNode, attributeName);
+                    break;
+
+                case "algoDebugg": case "a": 
+                    attributeName = ""; 
+                    attributeNum = 0;
+                    attributeList = allAttributesList(currentNode);
+                    if (userInputList.length == 1) {
+                        System.out.println("Which attribute?");
+                        String[] attriburteArray =  attributeList.toArray(new String[attributeList.size()]);
+                        attributeNum = chooseFormList(inp, attriburteArray);
+                        if(attributeNum == -1){
+                            break;
+                        }else if(attributeNum >= attributeList.size()){
+                            System.out.println("Invaild attribute number");
+                            break;
+                        }else{
+                            attributeName = attributeList.get(attributeNum);
+                        }
+                    }else if(userInputList.length == 2){
+                        try{
+                            attributeNum = Integer.parseInt(userInputList[1]);
+                            attributeName = attributeList.get(attributeNum);
+                        }catch (NumberFormatException e) {
+                            System.out.println("invalid, correct usage: view <node #>");
+                            break;
+                        }catch (IndexOutOfBoundsException e){
+                            System.out.println("Index out of bounds");
+                            break;
+                        }
+                    }else{
+                        System.out.println("invalid, correct usage: view <node #>");
+                        break;
+                    }
+                    //printAttrFromName(currentNode, attributeName);
+                    algorithmicDebugg(currentNode, attributeName);
                     break;
 
 
@@ -642,21 +679,24 @@ public class Debug {
                 String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
                 int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
                 int endline = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
-
+                
                 equationHTML(file, line, endline);
-                writToJason(file, line, endline);
+                writeToJason(file, line, endline);
             }
         }
     }
 
     // makes html of the production containing the inputed attribute name
     // the specific attribute is highlighted
-    public void writToJason(String filename, int lineNumber, int endline)
+    public void writeToJason(String filename, int lineNumber, int endline)
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.jason"))) {
-                writer.write("{\"file_path\": \"" + filename + "\", \"line_begin\": " + lineNumber + "\"line_end\":" + endline+ "}");
+            String currentDirectory = System.getProperty("user.dir");
+            System.out.println(currentDirectory);
+            int lastIndex = filename.lastIndexOf("/");
+            String fileEnd = filename.substring(lastIndex + 1);
+            writer.write("{\"file_path\": \"" + currentDirectory + fileEnd + "\", \"line_begin\": " + lineNumber + ", \"line_end\": " + endline+ "}");
         }catch (IOException e) {
-            System.out.println("in catch");
             e.printStackTrace();
         }
     }
@@ -710,7 +750,6 @@ public class Debug {
             writer.write("</body>\n");
             writer.write("</html>\n");
         }catch (IOException e) {
-            System.out.println("in catch");
             e.printStackTrace();
         }
     }
@@ -777,18 +816,18 @@ public class Debug {
     }
 
     public void printAttrFromName(DecoratedNode node, String printAttribute){
-        //Map<String, Object> attributeMap = allAttributesThunkMap(node);
-        Map<String, Object> attributeMap = allAttributesObjectMap(node);
-        // @SuppressWarnings("unchecked")
+        Map<String, Object> attributeMap = allAttributesThunkMap(node);
+        @SuppressWarnings("unchecked")
         //TODO: fix known bug can't access the same thunk twice
-        // Thunk finalTunk = (Thunk<Object>) attributeMap.get(printAttribute);
-        // System.out.println(Util.genericShow(finalTunk.eval()));
-
-        System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
+        Thunk finalTunk = (Thunk<Object>) attributeMap.get(printAttribute);
+        System.out.println(Util.genericShow(finalTunk.eval()));
+        
+        //Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        //System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
     }
 
     //TODO: update by using the thunk map inplace of the object map
-    public void printAllAttributeData(DecoratedNode node, String printAttribute){
+    public void attributeDataHTML(DecoratedNode node, String printAttribute){
         //Map<String, Object> attributeMap = allAttributesThunkMap(node);
         Map<String, Object> attributeMap = allAttributesObjectMap(node);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
@@ -814,6 +853,54 @@ public class Debug {
 
         }catch (IOException e) {
             System.err.println("Error writing to file: " + e.getMessage());
+        }
+    }
+
+    //List of all and only local attributes
+    public void algorithmicDebugg(DecoratedNode node, String attriburteName)
+    {
+        Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
+        if (lazyMap.containsKey(attriburteName)) {
+            Lazy attributeLazy = lazyMap.get(attriburteName);
+            NLocation loc = attributeLazy.getSourceLocation();
+            String qualifier = Integer.toHexString(System.identityHashCode(this));
+            if(loc != null) {
+                String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+                int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+                int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+
+                try {
+                    printLines(filePath, startLine, endLine);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        //TODO: fix when thunks work
+        Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        System.out.println(attriburteName + ": " + Util.genericShow(attributeMap.get(attriburteName)));
+
+    }
+
+    //helper foralgorithmicDebugg
+    public static void printLines(String filePath, int startLine, int endLine) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            int currentLine = 1;
+
+            // Read lines until reaching the start line
+            while ((line = reader.readLine()) != null && currentLine < startLine) {
+                currentLine++;
+            }
+
+            // Print lines from startLine to endLine
+            while (line != null && currentLine <= endLine) {
+                System.out.println(line);
+                line = reader.readLine();
+                currentLine++;
+            }
+        }catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -966,10 +1053,10 @@ public class Debug {
                 continueLoop = false;
             }else{
                 stopper = inp.nextLine();
-                if (stopper.equals("e")){
+                if (stopper.equals("q")){
                     continueLoop = false;
                 }else{
-                    System.out.println("Please choose an integer or e to exit");
+                    System.out.println("Please choose an integer or q to exit");
                 }
             }
         }
