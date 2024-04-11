@@ -12,6 +12,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 
+import silver.core.NLocation;
+import silver.core.NMaybe;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Collections;
 
 import common.Util.*;
 
@@ -108,7 +117,10 @@ public class Debug {
                     }
                     else if (userInputList.length == 1) {
                         System.out.println("Which child?");
-                        childNum = chooseFormList(inp, currentNode.undecorate().getProdleton().getChildTypes());
+                        String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
+                        String[] listCurrentProduction = currentProduction.split("\\s+");
+                        String[] childNames =  Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+                        childNum = chooseFormList(inp, childNames);
                         if(childNum == -1){
                             break;
                         }
@@ -319,12 +331,52 @@ public class Debug {
                 //Somehow this needs to create a new function for RTTI manager but current attempt does not work
                 //We want - user defined names (ex: left right), attribute equations (ex: left = parent + 1) and nearby code (filename and linenumber?)
                 case "eq": 
-                    if (userInputList.length != 1 && userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: eq<attr?>");
+                    //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
+                    String attributeNameView = ""; 
+                    Integer attributeNumView = 0;
+                    List<String> attributeListView = allAttributesList(currentNode);
+                    if (userInputList.length == 1) {
+                        System.out.println("Which attribute?");
+                        String[] attriburteArrayView =  attributeListView.toArray(new String[attributeListView.size()]);
+                        attributeNumView = chooseFormList(inp, attriburteArrayView);
+                        if(attributeNumView == -1){
+                            break;
+                        }else if(attributeNumView >= attributeListView.size()){
+                            System.out.println("Invaild attribute number");
+                            break;
+                        }else{
+                            attributeNameView = attributeListView.get(attributeNumView);
+                        }
+                    }else if(userInputList.length == 2){
+                            try{
+                            attributeNumView = Integer.parseInt(userInputList[1]);
+                            attributeNameView = attributeListView.get(attributeNumView);
+                        }catch (NumberFormatException e) {
+                            System.out.println("invalid, correct usage: view <node #>");
+                            break;
+                        }catch (IndexOutOfBoundsException e){
+                            System.out.println("Index out of bounds");
+                            break;
+                        }
                     }else{
-                        System.out.println("do the eq stuff");
-
+                        System.out.println("invalid, correct usage: into <node #>");
+                        break;
                     }
+                    printEquation(currentNode, attributeNameView);
+                    // if(childNode == null){
+                    //     System.out.println("invalid input");
+                    // }
+                    // else{
+                    //     System.out.println("going into");
+                    //     currentNode = childNode;
+                    //     // if(toggleNameDisplay){
+                    //     //     printName(currentNode);
+                    //     // }
+                    //     // // if we navigate to a forward, push it on to the stack
+                    //     // cStack.push(currentNode);
+                    //     // // when we push, update and show the context
+                    //     // cStack.show();
+                    // }
                     break;
 
                 //List synthesized attributes
@@ -395,7 +447,8 @@ public class Debug {
                         System.out.println("invalid, correct usage: view <node #>");
                         break;
                     }
-                    printAttrFromName(currentNode, attributeName);
+                    //printAttrFromName(currentNode, attributeName);
+                    printAllAttributeData(currentNode, attributeName);
                     break;
 
 
@@ -566,12 +619,12 @@ public class Debug {
     public void printProduction(DecoratedNode node)
     {
         String partent_production = node.undecorate().getProdleton().getTypeUnparse();
-        String child_productions[] = node.undecorate().getProdleton().getChildTypes();
-        System.out.print(partent_production + " ");
-        for (int i = 0; i < child_productions.length; i++){
-            System.out.print(child_productions[i] + " ");
-        }
-        System.out.print("\n");
+        // String child_productions[] = node.undecorate().getProdleton().getChildTypes();
+        System.out.print(partent_production + "\n");
+        // for (int i = 0; i < child_productions.length; i++){
+        //     System.out.print(child_productions[i] + " ");
+        // }
+        // System.out.print("\n");
     }
     
     public void printName(DecoratedNode node)
@@ -591,9 +644,93 @@ public class Debug {
     //     System.out.print("\n");
     // }
 
+    //TODO: file for the production you are on
+    //Also a file with list of attribute values
+    //Optional: Replace variables with values )_)
+    //ask lucas for endline
+
     // Prints out the equation of the specified attr.
     // If attr is not specified, prints out the equations for all the attributes on the current node.
     // via eric we can just add equations as an attribute within our AG
+    public void printEquation(DecoratedNode node, String attriburteName)
+    {
+        Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
+        if (lazyMap.containsKey(attriburteName)) {
+            // System.out.println("In print Equation function");
+            Lazy attributeLazy = lazyMap.get(attriburteName);
+            NLocation loc = attributeLazy.getSourceLocation();
+            String notes = "";
+            String qualifier = Integer.toHexString(System.identityHashCode(this));
+            if(loc != null) {
+                // Object filenameObj = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location);
+                // Class<?> synthesizedClass = filenameObj.getClass();
+                // System.out.println("Type of synthesized object: " + synthesizedClass.getName());
+
+                String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+
+                int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+                int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+                // System.out.println("our line, col: " + line + "," + col);
+                // System.out.println("our filename: " + file);
+                printContent(file, line, col);
+                //qualifier += ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
+            }
+            if(!notes.isEmpty()) {
+                qualifier += ", " + notes;
+            }
+            //Lazy attributeObject = attributeMap.get(attriburteName);
+        }
+        //System.out.println("made it here at least");
+    }
+
+    public static void printContent(String filename, int lineNumber, int col) {
+        //System.out.println("in print content");
+        try (BufferedReader br1 = new BufferedReader(new FileReader(filename));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("current_production.html"))) {
+            writer.write("<!DOCTYPE html>\n");
+            writer.write("<html>\n");
+            writer.write("<body>\n");
+            // System.out.println("in try");
+            String line;
+            int currentLineNumber = 1;
+            int productionLineNum = 0;
+            while ((line = br1.readLine()) != null) {
+                if (line.contains("::=")) {
+                    productionLineNum = currentLineNumber; // Stop printing when encountering the line containing "}"
+                }
+                if (currentLineNumber >= lineNumber ) {
+                    break;
+                }
+                currentLineNumber++;
+            }
+            currentLineNumber = 1;
+            br1.close();
+            BufferedReader br2 = new BufferedReader(new FileReader(filename));
+            writer.write("<pre>\n");
+            while ((line = br2.readLine()) != null) {
+                if (currentLineNumber >= productionLineNum && currentLineNumber != lineNumber) {
+                    writer.write(line);
+                    writer.newLine();
+                }else if(currentLineNumber == lineNumber){
+                    writer.write("<span style=\"color: red;\"><strong>");
+                    writer.write(line);
+                    writer.write("</strong></span>");
+                    writer.newLine();
+                }
+                if (currentLineNumber >= productionLineNum && line.trim().equals("}")) {
+                    break; // Stop printing when encountering the line exactly containing "}"
+                }
+                currentLineNumber++;
+            }
+            writer.write("</pre>\n");
+            writer.write("</body>\n");
+            writer.write("</html>\n");
+        }catch (IOException e) {
+            System.out.println("in catch");
+            e.printStackTrace();
+        }
+    }
+
     public void eqSynth(int attribute)
     {
 
@@ -664,8 +801,43 @@ public class Debug {
     }
 
     public void printAttrFromName(DecoratedNode node, String printAttribute){
+        //Map<String, Object> attributeMap = allAttributesThunkMap(node);
         Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        // @SuppressWarnings("unchecked")
+        //TODO: fix known bug can't access the same thunk twice
+        // Thunk finalTunk = (Thunk<Object>) attributeMap.get(printAttribute);
+        // System.out.println(Util.genericShow(finalTunk.eval()));
+
         System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
+    }
+
+    public void printAllAttributeData(DecoratedNode node, String printAttribute){
+        //Map<String, Object> attributeMap = allAttributesThunkMap(node);
+        Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
+            writer.write("<!DOCTYPE html>\n");
+            writer.write("<html>\n");
+            writer.write("<body>\n");
+            writer.write("<pre>\n");
+            for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (key.equals(printAttribute)){
+                    writer.write("<span style=\"color: red;\"><strong>");
+                }
+                writer.write(key + ": " + Util.genericShow(value));
+                if (key.equals(printAttribute)){
+                    writer.write("</strong></span>");
+                }
+                writer.newLine();
+            }
+            writer.write("</pre>\n");
+            writer.write("</body>\n");
+            writer.write("</html>\n");
+
+        }catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
+        }
     }
 
     //List of all and only local attributes
@@ -742,6 +914,63 @@ public class Debug {
         }
         return attributeMap;
     }
+
+    //TODO: replace all uses of allAttributesObjectMap with this once it works (see known bug on printAttrFromName)
+    public static Map<String, Object> allAttributesThunkMap(DecoratedNode node)
+    {
+        List<String> attributeList = allAttributesList(node);
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        Map<String, Object> attributeMap = new HashMap<>();
+
+        for(String attribute : attributeList)
+        {
+            if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
+                Integer index = nonterminalton.getSynOccursIndex(attribute);
+                Object o = node.contextSynthesizedLazy(index); 
+                attributeMap.put(attribute, o);
+            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+                Integer index = nonterminalton.getInhOccursIndex(attribute);
+                Object o = node.contextInheritedLazy(index); 
+                attributeMap.put(attribute, o);
+            }else{ //Should be local
+                List<String> listLocals = getLocalAttrs(node);
+                Integer index = listLocals.indexOf(attribute);
+                Object o = node.localLazy(index);
+                attributeMap.put(attribute, o);
+            }
+        }
+        return attributeMap;
+    }
+
+    
+    public static Map<String, Lazy> allAttributesLazyMap(DecoratedNode node)
+    {
+        List<String> attributeList = allAttributesList(node);
+        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
+        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
+        Map<String, Lazy> attributeMap = new HashMap<>();
+
+        for(String attribute : attributeList)
+        {
+            if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
+                Integer index = nonterminalton.getSynOccursIndex(attribute);
+                Lazy synthAttribute = node.getNode().getSynthesized(index); //breaks for forwarded nodes
+                attributeMap.put(attribute, synthAttribute);
+            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+                Integer index = nonterminalton.getInhOccursIndex(attribute);
+                Lazy inheritedAttribute = node.getInheritedAttribute(index);
+                attributeMap.put(attribute, inheritedAttribute);
+            }else{ //Should be local
+                List<String> listLocals = getLocalAttrs(node);
+                Integer index = listLocals.indexOf(attribute);
+                Lazy localAttribute = node.getNode().getLocal(index);
+                attributeMap.put(attribute, localAttribute);
+            }
+        }
+        return attributeMap;
+    }
+
 
     public static Integer chooseFormList(Scanner inp, String[] list){
         for (int i = 0; i < list.length; i++){

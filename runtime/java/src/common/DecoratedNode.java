@@ -238,6 +238,11 @@ public class DecoratedNode implements Decorable, Typed {
 		return forwardParent;
 	}
 
+	//Getter added by Micahel
+	public Lazy getInheritedAttribute(int index) {
+		return inheritedAttributes[index];
+	}
+
 	/**
 	 * Decorate this (unique decorated) node with additional inherited attributes.
 	 * This has no effect if the node already has a forward parent.

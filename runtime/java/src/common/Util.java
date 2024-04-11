@@ -192,6 +192,24 @@ public final class Util {
 	public static void printStackCauses(Throwable e) {
 		freeThisToPrintErrors = null;
 
+		// // Get all environment variables
+        // Map<String, String> envVariables = System.getenv();
+
+        // // // Print all environment variables
+        // // for (Map.Entry<String, String> entry : envVariables.entrySet()) {
+        // //     String variableName = entry.getKey();
+        // //     String variableValue = entry.getValue();
+        // //     System.out.println(variableName + " = " + variableValue);
+        // // }
+		// String stackTraceString = envVariables.get("SILVERTRACE");
+        // System.out.println("Value of SILVERTRACE: " + stackTraceString);
+
+		// System.setProperty("SILVERTRACE", "1");
+
+		// stackTraceString = envVariables.get("SILVERTRACE");
+        // System.out.println("Value of SILVERTRACE: " + stackTraceString);
+
+
 		System.err.println("\nAn error occurred.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
