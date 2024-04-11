@@ -12,6 +12,8 @@ top::AGDcl ::= 'dispatch' id::Name '=' sig::ProductionSignature ';'
   sig.implementedSig = nothing();
   sig.env = newScopeEnv(sig.defs, top.env);
 
+  production namedSig :: NamedSignature = sig.namedSignature;
+
   top.errors <- 
     if length(getTypeDclAll(fName, top.env)) > 1 
     then [errFromOrigin(id, "Type '" ++ fName ++ "' is already bound.")]

@@ -275,10 +275,14 @@ top::AppExpr ::= e::Expr
     | _ -> false
     end;
   top.flowDefs <-
-    case top.appProd, e.flowVertexInfo of
-    | just(ns), just(v) when sigIsShared && !inputSigIsShared && isForwardParam ->
-      [sigShareSite(ns.fullName, sigName, top.frame.fullName, v)]
-    | _, _ -> []
+    case top.decSiteVertexInfo, top.appProd, e.flowVertexInfo of
+    | just(parent), just(ns), just(v) when sigIsShared && isForwardParam ->
+      refDecSiteEq(
+        top.frame.fullName, e.typerep.typeName, v,
+        subtermVertexType(parent, ns.fullName, sigName), true) ::
+      if inputSigIsShared then []
+      else [sigShareSite(ns.fullName, sigName, top.frame.fullName, v, parent)]
+    | _, _, _ -> []
     end;
 }
 

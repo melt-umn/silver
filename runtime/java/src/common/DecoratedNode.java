@@ -220,7 +220,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
-	 * Decorate this (unique decorated) node with additional inherited attributes.
+	 * Decorate this (decorated) node with additional inherited attributes.
 	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)

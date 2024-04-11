@@ -379,7 +379,7 @@ top::DefLHS ::= q::QName
   
   forwards to if null(q.lookupValue.dcls)
               then errorDefLHS(q)
-               else q.lookupValue.dcl.defLHSDispatcher(q);
+              else q.lookupValue.dcl.defLHSDispatcher(q);
 } action {
   if (contains(q.name, sigNames)) {
     insert semantic token IdSigName_t at q.nameLoc;

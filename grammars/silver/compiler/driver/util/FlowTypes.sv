@@ -19,9 +19,6 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   local allSharedRefs :: [(String, SharedRefSite)] = flatMap((.sharedRefs), allLatestGrammars);
   local allFlowEnv :: FlowEnv = flowEnv(allSpecDefs, allRefDefs, allSharedRefs, allFlowDefs);
   
-  -- Look up tree for production info
-  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
-  
   -- We need to know about all attributes and occurences on nonterminals.
   -- It's possible (likely) we could do better than using the overall env here.
   local allRealDefs :: [Def] = flatMap((.defs), allLatestGrammars);
@@ -34,7 +31,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   
   -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 
-    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv) ++
+    computeAllProductionGraphs(allProds, allFlowEnv, allRealEnv) ++
       -- Add in phantom graphs
       map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
   

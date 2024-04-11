@@ -47,34 +47,6 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 --------------------------------------------------------------------------------
 
 {--
- - Given a name of a child, return whether it has a decorated nonterminal
- - type (covered by the more specific checks on accesses from references)
- - decorated with the attr.
- - True if nonsensicle.
- -}
-function sigAttrViaReference
-Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Env
-{
-  local ty :: Type = lookupSignatureInputElem(sigName, ns).typerep;
-  return ty.isDecorated && contains(attrName, getMinRefSet(ty, e));
-}
-
-{--
- - Given a name of a local, return whether it has a decorated nonterminal
- - type (covered by the more specific checks on accesses from references)
- - decorated with the attr.
- - True if nonsensicle.
- -}
-function localAttrViaReference
-Boolean ::= fName::String  attrName::String  e::Env
-{
-  local d :: [ValueDclInfo] = getValueDcl(fName, e);
-  local ty :: Type = head(d).typeScheme.typerep;
-
-  return null(d) || ty.isDecorated && contains(attrName, getMinRefSet(ty, e));
-}
-
-{--
  - Used as a stop-gap measure to ensure equations exist.
  - Given a needed equation (represented by FlowVertex 'v'),
  - ensure such an equation exists, accounting for:
@@ -116,40 +88,15 @@ function checkEqDeps
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
-  -- Filter missing equations for RHS that are references or supplied through another decoration site.
   | rhsInhVertex(sigName, attrName) ->
-      if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-      || sigAttrViaReference(sigName, attrName, ns, realEnv)
-      || lookupSignatureInputElem(sigName, ns).elementShared &&
-        all(unzipWith(remoteProdHasInhEq(_, _, attrName, flowEnv, realEnv),
-          lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
-      || !null(lookupRefDecSite(prodName, rhsVertexType(sigName), flowEnv))
-      || case splitTransAttrInh(attrName) of
-         | just((transAttr, _)) ->
-           !null(lookupRefDecSite(prodName, transAttrVertexType(rhsVertexType(sigName), transAttr), flowEnv))
-         | nothing() -> false
-         end
-      then []
-      else [mwdaWrnAmbientOrigin(config, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
+      checkInhEq(prodName, rhsVertexType(sigName), attrName, config, flowEnv, realEnv)
   | rhsSynVertex(sigName, attrName) -> []
   -- A dependency on a LOCAL. Technically, local equations may not exist!
   -- But let's just assume they do, since `local name :: type = expr;` is the prefered syntax.
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
-  -- Ignore the FORWARD (a special case of LOCAL), which always has both SYN/INH.
-  -- And again ignore references and additional decoration sites.
   | localInhVertex(fName, attrName) -> 
-      if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-      || fName == "forward"
-      || localAttrViaReference(fName, attrName, realEnv)
-      || !null(lookupRefDecSite(prodName, localVertexType(fName), flowEnv))
-      || case splitTransAttrInh(attrName) of
-         | just((transAttr, _)) ->
-           !null(lookupRefDecSite(prodName, transAttrVertexType(localVertexType(fName), transAttr), flowEnv))
-         | nothing() -> isForwardProdAttr(fName, realEnv)  -- Inh on trans are not copied with forwarding
-         end
-      then []
-      else [mwdaWrnAmbientOrigin(config, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
+      checkInhEq(prodName, localVertexType(fName), attrName, config, flowEnv, realEnv)
   | localSynVertex(fName, attrName) -> []
   -- A dependency on a ANON. This do always exist (`decorate expr with..` always has expr.)
   | anonEqVertex(fName) -> []
@@ -168,18 +115,26 @@ function checkEqDeps
         else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
       end
   | anonSynVertex(fName, attrName) -> []
-  -- A dependency on a projected equation in another production.
-  -- Again, SYN are safe. We need to check only for INH.
-  | subtermInhVertex(parent, termProdName, sigName, attrName) ->
-      if remoteProdHasInhEq(termProdName, rhsVertexType(sigName), attrName, flowEnv, realEnv)
-      then []
-      else [mwdaWrnAmbientOrigin(config, s"Equation has transitive dependencies on a missing remote equation.\n\tRemote production: ${termProdName}\n\tChild: ${sigName}\n\tMissing inherited equations for: ${attrName}")]
+  -- It's only possible to depend on a subterm inh vertex through sharing,
+  -- and we always check for missing inh on the remote prod if it's needed there.
+  -- No need to also report the error here.
+  | subtermInhVertex(parent, termProdName, sigName, attrName) -> []
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
 }
 fun checkAllEqDeps
 [Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>] =
   flatMap(checkEqDeps(_, config, prodName, flowEnv, realEnv, anonResolve), v);
+
+function checkInhEq
+[Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env
+{
+  local decSites::[DecSite] = findDecSites(prodName, vt, [], flowEnv, realEnv);
+  return
+    if decSitesMissingInhEq(attrName, decSites, flowEnv)
+    then [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(decSites)}")]
+    else [];
+}
 
 {--
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
@@ -663,62 +618,16 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   top.errors <- 
     if null(e.errors) && top.config.warnMissingInh
     then
-      case e of
-      | childReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             null(lookupRefDecSite(top.frame.fullName, rhsVertexType(lq.lookupValue.fullName), top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
-          || lq.lookupValue.dcl.isShared
-          then
-            let inhs :: [String] =
-                filter(\ attr::String ->
-                  case splitTransAttrInh(attr) of
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
-                  | just((transAttr, _)) ->
-                    null(lookupRefDecSite(top.frame.fullName, transAttrVertexType(rhsVertexType(lq.lookupValue.fullName), transAttr), top.flowEnv))
-                  | _ -> true
-                  end,
-                  filter(
-                    isEquationMissing(
-                      lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                      _),
-                    set:toList(inhDeps)))
-             in if null(inhs) then []
-                else if lq.lookupValue.dcl.isShared
-                then
-                  flatMap(\ inh::String ->
-                    case sharingSitesLackingSigAttr(top.frame.fullName, lq.lookupValue.fullName, inh, top.flowEnv, top.env) of
-                    | [] -> []
-                    | sites -> [mwdaWrnFromOrigin(top,
-                      s"Access of syn attribute ${q.name} on ${e.unparse} requires missing inherited attribute ${inh} to be supplied in the following places:\n" ++
-                      implode("\n", map(\ s::(String, VertexType) -> s"  ${s.2.vertexPP} in production ${s.1}", sites)))]
-                    end, inhs)
-                else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+      case e.flowVertexInfo of
+      | just(vt) ->
+          let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
+            case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
+            | [] -> []
+            | inhs -> [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
             end
-          else []
-      | localReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             null(lookupRefDecSite(top.frame.fullName, localVertexType(lq.lookupValue.fullName), top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
-          then
-            let inhs :: [String] = 
-                filter(\ attr::String ->
-                  case splitTransAttrInh(attr) of
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
-                  | just((transAttr, _)) ->
-                    null(lookupRefDecSite(top.frame.fullName, transAttrVertexType(localVertexType(lq.lookupValue.fullName), transAttr), top.flowEnv))
-                  -- If the dep is for a normal inh attribute, ignore if the local is a forward production attribute
-                  | nothing() -> !lq.lookupValue.dcl.hasForward
-                  end,
-                  filter(
-                    isEquationMissing(
-                      lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                      _),
-                      set:toList(inhDeps)))
-             in if null(inhs) then []
-                else [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
-            end
-          else []
-      | _ -> []
-    end
+          end
+      | nothing() -> []
+      end
     else [];
 }
 
@@ -812,75 +721,18 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   top.errors <- 
     if null(e.errors) && top.config.warnMissingInh
     then
-      case e of
-      | childReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             null(lookupRefDecSite(top.frame.fullName, rhsVertexType(lq.lookupValue.fullName), top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
-          || lq.lookupValue.dcl.isShared
-          then
-            let inhs :: [String] =
-                filter(\ attr::String ->
-                  case splitTransAttrInh(attr) of
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
-                  | just((transAttr, _)) ->
-                    null(lookupRefDecSite(top.frame.fullName, transAttrVertexType(rhsVertexType(lq.lookupValue.fullName), transAttr), top.flowEnv))
-                  | _ -> true
-                  end,
-                  filter(
-                    isEquationMissing(
-                      lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                      _),
-                    set:toList(inhDeps)))
-             in if null(inhs) then []
-                else if lq.lookupValue.dcl.isShared
-                then
-                  flatMap(\ inh::String ->
-                    case sharingSitesLackingSigAttr(top.frame.fullName, lq.lookupValue.fullName, inh, top.flowEnv, top.env) of
-                    | [] -> []
-                    | sites -> [mwdaWrnFromOrigin(top,
-                      s"Access of trans attribute ${q.name} on ${e.unparse} requires missing inherited attribute ${inh} to be supplied in the following places:\n" ++
-                      implode("\n", map(\ s::(String, VertexType) -> s"  ${s.2.vertexPP} in production ${s.1}", sites)))]
-                    end, inhs)
-                else [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
+      case e.flowVertexInfo of
+      | just(vt) ->
+          let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
+            case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
+            | [] -> []
+            | inhs -> [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
             end
-          else []
-      | localReference(lq) ->
-          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env) &&
-             null(lookupRefDecSite(top.frame.fullName, localVertexType(lq.lookupValue.fullName), top.flowEnv))  -- Decoration site projection, covered by checkAllEqDeps
-          then
-            let inhs :: [String] = 
-                filter(\ attr::String ->
-                  case splitTransAttrInh(attr) of
-                  -- If the dep is for an inh on a trans attribute, check for a decoration site projection for the trans attribute
-                  | just((transAttr, _)) ->
-                    null(lookupRefDecSite(top.frame.fullName, transAttrVertexType(localVertexType(lq.lookupValue.fullName), transAttr), top.flowEnv))
-                  -- If the dep is for a normal inh attribute, ignore if the local is a forward production attribute
-                  | nothing() -> !lq.lookupValue.dcl.hasForward
-                  end,
-                  filter(
-                    isEquationMissing(
-                      lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                      _),
-                    set:toList(inhDeps)))
-             in if null(inhs) then []
-                else [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
-            end
-          else []
-      | _ -> []
-    end
+          end
+      | nothing() -> []
+      end
     else [];
 }
-
-{--
- - Given the name of a child shared in the production's signature,
- - return the list of all productions/places this child can be decorated before forwarding to this production,
- - where the needed inherited attribute is not supplied.
- -}
-fun sharingSitesLackingSigAttr
-[(String, VertexType)] ::= prodName::String sigName::String attrName::String flowEnv::FlowEnv realEnv::Env =
-  filter(
-    \ s::(String, VertexType) -> !vertexHasInhEq(s.1, s.2, attrName, flowEnv),
-    lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv));
 
 
 aspect production decorateExprWith
@@ -951,12 +803,15 @@ top::VarBinder ::= n::Name
   -- fName is our invented vertex name for the pattern variable
   local requiredInhs :: [String] = toAnonInhs(top.receivedDeps, fName);
 
+  local remoteDecSites :: [DecSite] =
+    findDecSites(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), [], top.flowEnv, top.env);
+
   -- Check for equation's existence:
   -- Prod: top.matchingAgainst.fromJust.fullName
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
   local missingInhs :: [String] =
-    filter(remoteProdMissingInhEq(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), _, top.flowEnv, top.env),
+    filter(decSitesMissingInhEq(_, remoteDecSites, top.flowEnv),
       removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs));
 
   top.errors <-
@@ -964,7 +819,7 @@ top::VarBinder ::= n::Name
     && isDecorable(top.bindingType, top.env)
     && top.matchingAgainst.isJust
     && !null(missingInhs)
-    then [mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations.\n\tRemote production: ${top.matchingAgainst.fromJust.fullName}\n\tChild: ${top.bindingName}\n\tMissing inherited equations for: ${implode(", ", missingInhs)}")]
+    then [mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", missingInhs)}. These attributes must be supplied to ${prettyDecSites(remoteDecSites)}\n")]
     else [];
 }
 

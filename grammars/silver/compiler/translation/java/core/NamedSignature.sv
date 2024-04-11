@@ -331,7 +331,7 @@ String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::Named
     end;
 }
 
--- Translation of accessing the a tree that is shared in a position corresponding to some flow vertex type.
+-- Translation of accessing a tree that is shared in a position corresponding to some flow vertex type.
 fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
   case v of
   | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
@@ -353,6 +353,7 @@ fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String 
   | forwardVertexType_real() -> s"context.forward()"
   | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
   | subtermVertexType(parent, prodName, sigName) ->
+    -- prodName is either a production or dispatch signature name
     s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
   end;
 
@@ -380,7 +381,6 @@ fun sharedRefTranslation String ::= env::Env frame::BlockContext v::VertexType =
     end
   | _ -> error("Sharing for invalid sort of tree " ++ v.vertexPP)
   end;
-  
 
 function makeAnnoAssign
 String ::= n::NamedSignatureElement
