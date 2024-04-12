@@ -208,7 +208,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =
-    case e, e.typerep of
+    case e, e.finalType of
     | productionReference(q), _ -> just(q.lookupValue.dcl.namedSignature)
     | _, dispatchType(ns) -> just(ns)
     | _, _ -> error("dispatchApplication: unexpected type")
@@ -216,11 +216,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   es.appIndexOffset = 0;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
-  es.alwaysDecorated =
-    case e of
-    | productionReference(q) -> top.alwaysDecorated
-    | _ -> false
-    end;
+  es.alwaysDecorated = top.alwaysDecorated;
 }
 
 aspect production annoExpr
