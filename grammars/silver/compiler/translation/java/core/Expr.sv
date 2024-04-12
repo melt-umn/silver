@@ -509,6 +509,10 @@ top::Expr ::= '@' e::Expr
       e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
+  -- TODO: There isn't really a good place to put this.
+  -- We don't have a QNameAttrOccur, so we need to re-do all the work of looking up the occurs dcl, etc.
+  -- Currently we aren't resolving contexts!  This uses attrGlobalOccursInitIndex,
+  -- which breaks if the occurs-on of the translation attr is defined as an occurs-on constraint.
   top.initTransDecSites <-
     case top.decSiteVertexInfo of
     | just(decSite) when top.alwaysDecorated ->
@@ -517,7 +521,7 @@ top::Expr ::= '@' e::Expr
         case lookup(sigName, zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)) of
         | just(ty) when getOccursDcl(transAttr, ty.typeName, top.env) matches occDcl :: _ ->
           s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
-          s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrOccursInitIndex}_dec_site] = " ++
+          s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
           s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
         | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
         end
@@ -525,7 +529,7 @@ top::Expr ::= '@' e::Expr
         case getValueDcl(fName, top.env) of
         | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, top.env) matches occDcl :: _ ->
           s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
-          s"\t\t${top.frame.className}.localInheritedAttributes[${dcl.attrOccursIndex}][${occDcl.attrOccursInitIndex}_dec_site] = " ++
+          s"\t\t${top.frame.className}.localInheritedAttributes[${dcl.attrOccursIndex}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
           s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
         | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
         end
