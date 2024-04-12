@@ -773,6 +773,26 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- Do nothing. Everything gets taken care of with anonResolve and checkEqDeps at the top-level of the equation
 }
 
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  -- Sharing a forward production attribute somewhere that isn't already being decorated as the forward
+  -- may cause hidden transitive dependency issues for attributes we don't know about, so we forbid this.
+  top.errors <- 
+    if top.config.warnMissingInh
+    then
+      case e.flowVertexInfo of
+      | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) ->
+        case top.decSiteVertexInfo of
+        | just(forwardVertexType_real()) -> []
+        | just(localVertexType(dSiteFName)) when isForwardProdAttr(dSiteFName, top.env) -> []
+        | _ -> [mwdaWrnFromOrigin(top, s"Forward production attribute ${fName} may only be shared in a forward decoration site")]
+        end
+      | _ -> []
+      end
+    else [];
+}
+
 {--
  - For pattern matching, we have an obligation to check:
  - 1. If we invented an anon vertex type for the scrutinee, then it's a sink, and
