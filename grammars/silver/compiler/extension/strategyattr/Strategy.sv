@@ -58,7 +58,9 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 abstract production strategyAttributionDcl implements AttributionDcl
 top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  propagate grammarName, env, flowEnv;
+  attl.grammarName = top.grammarName;
+  attl.env = top.env;
+  attl.flowEnv = top.flowEnv;
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -81,8 +83,14 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  local atOccursDcl::AGDcl =
-    defaultAttributionDcl(
+  forwards to
+    extraDefaultAttributionDcl(
+      foldr(appendAGDcl, emptyAGDcl(),
+        map(
+          \ n::String ->
+            attributionDcl(
+              'attribute', qName(n), attl, 'occurs', 'on', nt, nttl, ';'),
+          at.lookupAttribute.dcl.liftedStrategyNames)))(
       at,
       botlSome(
         bTypeList(
@@ -96,20 +104,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
             | botlNone() -> nominalTypeExpr(nt.qNameType)
             end),
           '>')),
-      nt, nttl);
-
-  forwards to
-    if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl
-    else
-      appendAGDcl(
-        @atOccursDcl,
-        foldr1(
-          appendAGDcl,
-          map(
-            \ n::String ->
-              attributionDcl(
-                'attribute', qName(n), attl, 'occurs', 'on', nt, nttl, ';'),
-            at.lookupAttribute.dcl.liftedStrategyNames)));
+      @nt, @nttl);
 }
 
 {--

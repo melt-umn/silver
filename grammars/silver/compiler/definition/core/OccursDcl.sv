@@ -201,3 +201,18 @@ top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' 
   forwards to attributionDcl('attribute', @at, @attl, $4, $5, @nt, @nttl, $8);
 }
 
+-- Utility productions for extensions to inject extra declarations besides the occurs-on.
+production extraDefaultAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs extraDcls::AGDcl
+{
+  forwards to
+    appendAGDcl(
+      directDefaultAttributionDcl(@at, @attl, @nt, @nttl),
+      @extraDcls);
+}
+production directDefaultAttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  at.env = top.env;
+  forwards to defaultAttributionDcl(at, @attl, @nt, @nttl);
+}
