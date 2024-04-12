@@ -9,7 +9,7 @@ inherited attribute monadicallyUsed::Boolean occurs on Expr;
 synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
 
 attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expectedMonad occurs on Expr;
-propagate expectedMonad on Expr;
+propagate @expectedMonad on Expr;
 
 
 type MonadInhs = {
@@ -480,18 +480,6 @@ top::Expr ::= e::Expr '.' 'forward'
   top.monadRewritten = forwardAccess(ne.monadRewritten, '.', 'forward');
 }
 
-aspect production access
-top::Expr ::= e::Expr '.' q::QNameAttrOccur
-{
-  propagate mDownSubst, mUpSubst, expectedMonad;
-}
-
-aspect production accessBouncer
-top::Expr ::= e::Expr @q::QNameAttrOccur target::Access
-{
-  propagate mDownSubst, mUpSubst, expectedMonad;
-}
-
 aspect production errorAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
@@ -554,7 +542,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                       then q.typerep
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
@@ -615,7 +603,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   {-
     Note that we don't treat annotations as having a plicitness (restricted,
@@ -673,7 +661,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -702,7 +690,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
 
   top.merrors := e.merrors;
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
 
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
@@ -792,7 +780,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -864,7 +852,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -897,7 +885,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  -- TODO: restricted translation attributes?
@@ -1003,7 +991,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
@@ -1024,7 +1012,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  -- TODO: restricted translation attributes?
@@ -1078,7 +1066,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  -- TODO: restricted translation attributes?
