@@ -8,12 +8,13 @@ grammar silver:compiler:definition:flow:ast;
  - forwardVertexType, anonVertexType(x)
  -}
 data nonterminal VertexType with
-  vertexName, vertexPP,
+  vertexName, vertexPP, isInhDefVertex,
   synVertex, inhVertex, fwdVertex, eqVertex;
 derive Eq, Ord on VertexType;
 
 synthesized attribute vertexName::String;
 synthesized attribute vertexPP::String;
+synthesized attribute isInhDefVertex::Boolean;
 
 {-- FlowVertex for a synthesized attribute for this FlowVertex -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
@@ -41,6 +42,7 @@ top::VertexType ::=
 {
   top.vertexName = "top";
   top.vertexPP = "left-hand side";
+  top.isInhDefVertex = false;
   top.synVertex = lhsSynVertex;
   top.inhVertex = lhsInhVertex;
   top.fwdVertex = forwardEqVertex_singleton;
@@ -55,6 +57,7 @@ top::VertexType ::= sigName::String
 {
   top.vertexName = sigName;
   top.vertexPP = "child " ++ sigName;
+  top.isInhDefVertex = true;
   top.synVertex = rhsSynVertex(sigName, _);
   top.inhVertex = rhsInhVertex(sigName, _);
   top.fwdVertex = rhsSynVertex(sigName, "forward");
@@ -69,6 +72,7 @@ top::VertexType ::= fName::String
 {
   top.vertexName = fName;
   top.vertexPP = "local " ++ fName;
+  top.isInhDefVertex = true;
   top.synVertex = localSynVertex(fName, _);
   top.inhVertex = localInhVertex(fName, _);
   top.fwdVertex = localSynVertex(fName, "forward");
@@ -83,6 +87,7 @@ top::VertexType ::= v::VertexType  transAttr::String
 {
   top.vertexName = s"${v.vertexName}.${transAttr}";
   top.vertexPP = s"translation attribute ${transAttr} of ${v.vertexPP}";
+  top.isInhDefVertex = v.isInhDefVertex;
   top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
   top.inhVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
   top.fwdVertex = v.synVertex(s"${transAttr}.forward");
@@ -97,6 +102,7 @@ top::VertexType ::=
 {
   top.vertexName = "forward";
   top.vertexPP = "forward";
+  top.isInhDefVertex = false;
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
   top.fwdVertex = forwardSynVertex("forward");
@@ -111,6 +117,7 @@ top::VertexType ::= x::String
 {
   top.vertexName = x;
   top.vertexPP = s"anonymous decoration site ${x}";
+  top.isInhDefVertex = true;
   top.synVertex = anonSynVertex(x, _);
   top.inhVertex = anonInhVertex(x, _);
   top.fwdVertex = anonSynVertex(x, "forward");
@@ -125,6 +132,7 @@ top::VertexType ::= parent::VertexType prodName::String sigName::String
 {
   top.vertexName = s"${parent.vertexName}[${prodName}:${sigName}]";
   top.vertexPP = top.vertexName;  -- Shouldn't appear in error messages?  Gets too long to spell out anyway.
+  top.isInhDefVertex = false;
   top.synVertex = subtermSynVertex(parent, prodName, sigName, _);
   top.inhVertex = subtermInhVertex(parent, prodName, sigName, _);
   top.fwdVertex = subtermSynVertex(parent, prodName, sigName, "forward");

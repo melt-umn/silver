@@ -63,12 +63,18 @@ top::DecSite ::= attrName::String d::DecSite
 fun foldAnyDecSite DecSite ::= ds::[DecSite] =
   case ds of
   | [d] -> d
-  | _ -> anyDecSite(flatMap(\ d -> case d of anyDecSite(ds1) -> ds1 | _ -> [d] end, ds))
+  | _ -> anyDecSite(flatMap(\ d ->
+      case d of
+      | anyDecSite(ds1) -> ds1
+      | allDecSite([]) -> []
+      | _ -> [d]
+      end, ds))
   end;
 
 fun foldAllDecSite DecSite ::= ds::[DecSite] =
   case ds of
   | [d] -> d
+  | _ when any(map(\ d -> case d of anyDecSite([]) -> true | _ -> false end, ds)) -> anyDecSite([])
   | _ -> allDecSite(flatMap(\ d -> case d of allDecSite(ds1) -> ds1 | _ -> [d] end, ds))
   end;
 
@@ -102,19 +108,36 @@ function findDecSites
     if contains((prodName, vt), seen)
     then []
     else
-      directDecSite(prodName, vt) ::
+      -- Direct inherited equation at a decoration site
+      (if vt.isInhDefVertex
+       then [directDecSite(prodName, vt)]
+       else []) ++
+      -- Via forwarding
       case vt of
       | forwardVertexType_real() -> [forwardDecSite()]
       | localVertexType("forward") -> [forwardDecSite()]  -- TODO: Not sure if this is actually possible?
       | localVertexType(fName) when isForwardProdAttr(fName, realEnv) -> [forwardDecSite()]
       | _ -> []
       end ++
+      -- Via direct sharing
       flatMap(recurse(prodName, _), lookupRefDecSite(prodName, vt, flowEnv)) ++
+      case vt of
+      | subtermVertexType(_, prodOrSig, sigName) ->
+        [foldAllDecSite(
+          map(foldAnyDecSite,
+            map(recurse(_, rhsVertexType(sigName)),
+              if !null(getValueDcl(prodOrSig, realEnv))
+              then [prodOrSig]
+              else getImplementingProds(prodOrSig, flowEnv, realEnv))))]
+      | _ -> []
+      end ++
+      -- Via signature/dispatch sharing
       case vt of
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         [foldAllDecSite(map(foldAnyDecSite, unzipWith(recurse, lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv))))]
       | _ -> []
       end ++
+      -- Via translation attributes
       filterMap(
         \ attrName ->
           case getAttrDcl(attrName, realEnv) of

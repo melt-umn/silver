@@ -238,9 +238,12 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
           inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
   -- Make sure we aren't introducing any hidden transitive dependencies.
+  -- TODO: Revisit these checks with dispatch sharing.
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv) of
+    case filter(
+        notSharedInputVertex(_, top.env),
+        lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.eqVertex ++
@@ -251,7 +254,9 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
-      case lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv) of
+      case filter(
+        notSharedInputVertex(_, top.env),
+        lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.eqVertex ++
@@ -299,6 +304,17 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     | _ -> []
     end;
 }
+
+fun notSharedInputVertex Boolean ::= v::VertexType env::Env =
+  case v of
+  | subtermVertexType(_, prodName, sigName) ->
+      case getTypeDcl(prodName, env), getValueDcl(prodName, env) of
+      | dcl :: _, _ -> !lookupSignatureInputElem(sigName, dcl.dispatchSignature).elementShared
+      | _, dcl :: _ -> !lookupSignatureInputElem(sigName, dcl.namedSignature).elementShared
+      | _, _ -> false
+      end
+  | _ -> true
+  end;
 
 ----- WARNING TODO BEGIN MASSIVE COPY & PASTE SESSION
 aspect production synBaseColAttributeDef
@@ -619,14 +635,19 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     if null(e.errors) && top.config.warnMissingInh
     then
       case e.flowVertexInfo of
-      | just(vt) ->
-          let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
-            case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
-            | [] -> []
-            | inhs -> [mwdaWrnFromOrigin(top, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
-            end
+      | just(vt) when
+          case vt of
+          | rhsVertexType(_) -> true
+          | localVertexType(_) -> true
+          | _ -> false
+          end ->
+        let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
+          case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
+          | [] -> []
+          | inhs -> [mwdaWrnFromOrigin(top, "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
           end
-      | nothing() -> []
+        end
+      | _ -> []
       end
     else [];
 }
@@ -722,14 +743,19 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     if null(e.errors) && top.config.warnMissingInh
     then
       case e.flowVertexInfo of
-      | just(vt) ->
-          let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
-            case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
-            | [] -> []
-            | inhs -> [mwdaWrnFromOrigin(top, "Access of trans attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
-            end
+      | just(vt) when
+          case vt of
+          | rhsVertexType(_) -> true
+          | localVertexType(_) -> true
+          | _ -> false
+          end ->
+        let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
+          case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
+          | [] -> []
+          | inhs -> [mwdaWrnFromOrigin(top, "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
           end
-      | nothing() -> []
+        end
+      | _ -> []
       end
     else [];
 }

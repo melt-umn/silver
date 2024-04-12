@@ -146,6 +146,19 @@ function getNonforwardingProds
   return map(extractProdName, searchEnvTree(nt, e.prodTree));
 }
 
+-- all (non-forwarding) productions implementing a dispatch signature
+fun getImplementingProds [String] ::= sig::String e::FlowEnv realEnv::Env =
+  case getTypeDcl(sig, realEnv) of
+  | sigDcl :: _ ->
+      filter(
+        \p::String -> case getValueDcl(p, realEnv) of
+        | dcl :: _ when dcl.implementedSignature matches just(ns) -> ns.fullName == sig
+        | _ -> false
+        end,
+        getNonforwardingProds(sigDcl.dispatchSignature.outputElement.typerep.typeName, e))
+  | _ -> error("Undefined dispatch sig " ++ sig)
+  end;
+
 -- Ext Syns subject to ft lower bound
 function getHostSynsFor
 [String] ::= nt::String  e::FlowEnv

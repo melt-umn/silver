@@ -419,7 +419,7 @@ top::DefLHS ::= @q::QName
   top.errors <-
     if existingProblems || top.found then []
     else [errFromOrigin(q, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
-                
+
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
