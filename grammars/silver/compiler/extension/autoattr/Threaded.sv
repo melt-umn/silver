@@ -107,7 +107,7 @@ top::ProductionStmt ::= includeShared::Boolean @inh::QName isCol::Boolean rev::B
       (.elementName),
       filter(
         \ ie::NamedSignatureElement ->
-          isDecorable(ie.typerep, top.env) &&
+          isDecorable(ie.elementDclType, top.env) &&
           !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
           !null(getOccursDcl(syn, ie.typerep.typeName, top.env)) &&
           (includeShared || !ie.elementShared),
@@ -138,7 +138,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName isCol::Boolean rev::B
       (.elementName),
       filter(
         \ ie::NamedSignatureElement ->
-          isDecorable(ie.typerep, top.env) &&
+          isDecorable(ie.elementDclType, top.env) &&
           !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
           !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
           (includeShared || !ie.elementShared),

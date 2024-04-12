@@ -285,7 +285,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     else [];
   top.errors <-
     if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
-    then [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+    then [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
   top.errors <-
     if top.config.warnMissingInh && !null(lhsInhExceedsRefDecSiteDeps)
@@ -378,7 +378,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     if top.config.warnMissingInh
     then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
-         else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+         else [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
 }
 aspect production inhAppendColAttributeDef
@@ -404,7 +404,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     if top.config.warnMissingInh
     then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
-         else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
+         else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds for " ++ dl.inhAttrName ++ " flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
 }
 ------ END AWFUL COPY & PASTE SESSION
@@ -644,7 +644,10 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
         let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
           case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
           | [] -> []
-          | inhs -> [mwdaWrnFromOrigin(top, "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
+          | inhs -> [mwdaWrnFromOrigin(top,
+              "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++
+              " requires missing inherited attribute(s) " ++ implode(", ", inhs) ++
+              " to be supplied to " ++ prettyDecSites(decSites))]
           end
         end
       | _ -> []
@@ -752,7 +755,10 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
         let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
           case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
           | [] -> []
-          | inhs -> [mwdaWrnFromOrigin(top, "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied to " ++ prettyDecSites(decSites))]
+          | inhs -> [mwdaWrnFromOrigin(top,
+              "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
+              " requires missing inherited attribute(s) " ++ implode(", ", inhs) ++
+              " to be supplied to " ++ prettyDecSites(decSites))]
           end
         end
       | _ -> []
