@@ -17,7 +17,7 @@ monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, at
 monoid attribute refDefs :: [(String, [String])];
 
 data nonterminal FlowEnv with
-  synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree,
+  synTree, inhTree, defTree, fwdTree, prodTree, implTree, fwdInhTree, refTree,
   sharedRefTree, refPossibleDecSiteTree, refDecSiteTree, sigShareTree,
   localInhTree, localTree, nonSuspectTree, hostSynTree, specTree,
   prodGraphTree;
@@ -27,7 +27,8 @@ synthesized attribute inhTree :: EnvTree<FlowDef>;
 synthesized attribute defTree :: EnvTree<FlowDef>;
 synthesized attribute fwdTree :: EnvTree<FlowDef>;
 synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
-synthesized attribute prodTree :: EnvTree<FlowDef>;
+synthesized attribute prodTree :: EnvTree<String>;
+synthesized attribute implTree :: EnvTree<String>;
 synthesized attribute refTree :: EnvTree<[String]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
@@ -52,6 +53,7 @@ top::FlowEnv ::=
   top.fwdTree = directBuildTree(d.fwdTreeContribs);
   top.fwdInhTree = directBuildTree(d.fwdInhTreeContribs);
   top.prodTree = directBuildTree(d.prodTreeContribs);
+  top.implTree = directBuildTree(d.implTreeContribs);
   top.refTree = directBuildTree(refContribs);
   top.sharedRefTree = directBuildTree(sharedRefContribs);
   top.refPossibleDecSiteTree = directBuildTree(d.refPossibleDecSiteContribs);
@@ -137,27 +139,12 @@ fun getNonSuspectAttrsForProd [String] ::= prod::String  e::FlowEnv =
   concat(searchEnvTree(prod, e.nonSuspectTree));
 
 -- all (non-forwarding) productions constructing a nonterminal
-function getNonforwardingProds
-[String] ::= nt::String  e::FlowEnv
-{
-  local extractProdName :: (String ::= FlowDef) =
-    \p::FlowDef -> case p of prodFlowDef(_, p) -> p | _ -> error("Searches only prod defs") end;
+fun getNonforwardingProds [String] ::= nt::String  e::FlowEnv =
+  searchEnvTree(nt, e.prodTree);
 
-  return map(extractProdName, searchEnvTree(nt, e.prodTree));
-}
-
--- all (non-forwarding) productions implementing a dispatch signature
-fun getImplementingProds [String] ::= sig::String e::FlowEnv realEnv::Env =
-  case getTypeDcl(sig, realEnv) of
-  | sigDcl :: _ ->
-      filter(
-        \p::String -> case getValueDcl(p, realEnv) of
-        | dcl :: _ when dcl.implementedSignature matches just(ns) -> ns.fullName == sig
-        | _ -> false
-        end,
-        getNonforwardingProds(sigDcl.dispatchSignature.outputElement.typerep.typeName, e))
-  | _ -> error("Undefined dispatch sig " ++ sig)
-  end;
+-- all host productions implementing a dispatch signature
+fun getImplementingProds [String] ::= dispatchSig::String e::FlowEnv =
+  searchEnvTree(dispatchSig, e.implTree);
 
 -- Ext Syns subject to ft lower bound
 function getHostSynsFor

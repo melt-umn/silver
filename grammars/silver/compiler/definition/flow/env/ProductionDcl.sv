@@ -32,6 +32,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
 
+  top.flowDefs <-
+    case d.implementsSig of
+    | just(dSig) when
+        isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) ->
+      [implFlowDef(dSig.fullName, fName)]
+    | _ -> []
+    end;
+
   top.flowDefs <- flatMap(
     \ ie::NamedSignatureElement -> occursContextDeps(namedSig, body.env, ie.typerep, rhsVertexType(ie.elementName)),
     namedSig.inputElements);

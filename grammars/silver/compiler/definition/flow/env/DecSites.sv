@@ -128,7 +128,7 @@ function findDecSites
             map(recurse(_, rhsVertexType(sigName)),
               if !null(getValueDcl(prodOrSig, realEnv))
               then [prodOrSig]
-              else getImplementingProds(prodOrSig, flowEnv, realEnv))))]
+              else getImplementingProds(prodOrSig, flowEnv))))]
       | _ -> []
       end ++
       -- Via signature/dispatch sharing

@@ -43,7 +43,10 @@ monoid attribute localTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (nonterminal) to find all non-forwarding production.
  - ONLY used to determine all productions that need an equation for a new attribute. -}
-monoid attribute prodTreeContribs :: [(String, FlowDef)];
+monoid attribute prodTreeContribs :: [(String, String)];
+
+{-- lookup (dispatch) to find all host implementation productions. -}
+monoid attribute implTreeContribs :: [(String, String)];
 
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
@@ -77,13 +80,13 @@ monoid attribute sigShareContribs :: [(String, String, VertexType)];
 
 attribute
   synTreeContribs, inhTreeContribs, defTreeContribs,
-  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs,
+  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
   prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
   refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
   occurs on FlowDefs, FlowDef;
 propagate
   synTreeContribs, inhTreeContribs, defTreeContribs,
-  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs,
+  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
   prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
   refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
   on FlowDefs;
@@ -111,6 +114,7 @@ top::FlowDef ::=
   top.fwdTreeContribs := [];
   top.fwdInhTreeContribs := [];
   top.prodTreeContribs := [];
+  top.implTreeContribs := [];
   top.localInhTreeContribs := [];
   top.localTreeContribs := [];
   top.hostSynTreeContribs := [];
@@ -132,7 +136,21 @@ top::FlowDef ::=
 abstract production prodFlowDef
 top::FlowDef ::= nt::String  prod::String
 {
-  top.prodTreeContribs := [(nt, top)];
+  top.prodTreeContribs := [(nt, prod)];
+  top.prodGraphContribs := [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+}
+
+{--
+ - Declaration of a host implementation production for a dispatch signature.
+ -
+ - @param dispatchSig  The full name of the dispatch signature that is implemented
+ - @param prod         The full name of the production
+ -}
+abstract production implFlowDef
+top::FlowDef ::= dispatchSig::String  prod::String
+{
+  top.implTreeContribs := [(dispatchSig, prod)];
   top.prodGraphContribs := [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
