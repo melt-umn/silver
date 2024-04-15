@@ -789,6 +789,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     else if top.frame.signature.outputElement.elementName == id.name
     then res
     else Silver_Expr {
+      -- TODO: Data NTs shouldn't be decorated.
       let $Name{id}::Decorated $TypeExpr{ty} = $name{top.frame.signature.outputElement.elementName}
       in $Expr{res}
       end

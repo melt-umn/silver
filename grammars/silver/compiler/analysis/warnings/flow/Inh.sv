@@ -129,11 +129,12 @@ fun checkAllEqDeps
 function checkInhEq
 [Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env
 {
-  local decSites::[DecSite] = findDecSites(prodName, vt, [], flowEnv, realEnv);
+  local decSites::DecSiteTree = findDecSites(prodName, vt, [], flowEnv, realEnv);
   return
-    if decSitesMissingInhEq(attrName, decSites, flowEnv)
-    then [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(decSites)}")]
-    else [];
+    case resolveDecSiteInhEq(attrName, decSites, flowEnv) of
+    | alwaysDec() -> []
+    | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
+    end;
 }
 
 {--
@@ -641,14 +642,18 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           | localVertexType(_) -> true
           | _ -> false
           end ->
-        let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
-          case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
-          | [] -> []
-          | inhs -> [mwdaWrnFromOrigin(top,
+        case
+          decSitesMissingInhEqs(
+            set:toList(inhDeps),
+            findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env),
+            top.flowEnv) of
+        | [] -> []
+        | missingEqs -> map(\ di::(DecSiteTree, [String]) ->
+            mwdaWrnFromOrigin(top,
               "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++
-              " requires missing inherited attribute(s) " ++ implode(", ", inhs) ++
-              " to be supplied to " ++ prettyDecSites(decSites))]
-          end
+              " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
+              " to be supplied to " ++ prettyDecSites(di.1)),
+            missingEqs)
         end
       | _ -> []
       end
@@ -752,14 +757,18 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           | localVertexType(_) -> true
           | _ -> false
           end ->
-        let decSites::[DecSite] = findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env) in
-          case filter(decSitesMissingInhEq(_, decSites, top.flowEnv), set:toList(inhDeps)) of
-          | [] -> []
-          | inhs -> [mwdaWrnFromOrigin(top,
+        case
+          decSitesMissingInhEqs(
+            set:toList(inhDeps),
+            findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env),
+            top.flowEnv) of
+        | [] -> []
+        | missingEqs -> map(\ di::(DecSiteTree, [String]) ->
+            mwdaWrnFromOrigin(top,
               "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
-              " requires missing inherited attribute(s) " ++ implode(", ", inhs) ++
-              " to be supplied to " ++ prettyDecSites(decSites))]
-          end
+              " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
+              " to be supplied to " ++ prettyDecSites(di.1)),
+            missingEqs)
         end
       | _ -> []
       end
@@ -855,23 +864,25 @@ top::VarBinder ::= n::Name
   -- fName is our invented vertex name for the pattern variable
   local requiredInhs :: [String] = toAnonInhs(top.receivedDeps, fName);
 
-  local remoteDecSites :: [DecSite] =
+  local remoteDecSites :: DecSiteTree =
     findDecSites(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), [], top.flowEnv, top.env);
 
   -- Check for equation's existence:
   -- Prod: top.matchingAgainst.fromJust.fullName
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
-  local missingInhs :: [String] =
-    filter(decSitesMissingInhEq(_, remoteDecSites, top.flowEnv),
-      removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs));
+  local missingInhEqs :: [(DecSiteTree, [String])] =
+    decSitesMissingInhEqs(
+      removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs),
+      remoteDecSites, top.flowEnv);
 
   top.errors <-
     if top.config.warnMissingInh
     && isDecorable(top.bindingType, top.env)
     && top.matchingAgainst.isJust
-    && !null(missingInhs)
-    then [mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", missingInhs)}. These attributes must be supplied to ${prettyDecSites(remoteDecSites)}\n")]
+    then map(\ eqs::(DecSiteTree, [String]) ->
+        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(eqs.1)}\n"),
+      missingInhEqs)
     else [];
 }
 
