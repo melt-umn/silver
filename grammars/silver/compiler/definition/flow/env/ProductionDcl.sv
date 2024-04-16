@@ -31,6 +31,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     if null(body.forwardExpr)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
+  
+  
 
   top.flowDefs <-
     case d.implementsSig of

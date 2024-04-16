@@ -115,10 +115,9 @@ function checkEqDeps
         else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
       end
   | anonSynVertex(fName, attrName) -> []
-  -- It's only possible to depend on a subterm inh vertex through sharing,
-  -- and we always check for missing inh on the remote prod if it's needed there.
-  -- No need to also report the error here.
-  | subtermInhVertex(parent, termProdName, sigName, attrName) -> []
+  -- A dependency on a projected equation in another production.
+  | subtermInhVertex(parent, termProdName, sigName, attrName) ->
+      checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, flowEnv, realEnv)
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
 }
