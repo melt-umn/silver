@@ -1,6 +1,9 @@
 //needed to run: ./silver-compile --force-origins --clean
-
 package common;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -666,6 +669,23 @@ public class Debug {
         System.out.print("\n");
     }
 
+
+    private void sendMessageToExtension(String message) {
+        String host = "127.0.0.1"; // Host of the VS Code extension server
+        int port = 19387; 
+    
+        try (Socket socket = new Socket(host, port);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+    
+            out.println(message);
+            System.out.println("Message sent to extension: " + message);
+    
+        } catch (IOException e) {
+            System.err.println("Couldn't connect to the extension server at " + host + ":" + port);
+            System.err.println(e.getMessage());
+        }
+    }
+    
     // makes html of the production containing the inputed attribute name
     // the specific attribute is highlighted
     public void printEquation(DecoratedNode node, String attriburteName)
@@ -682,6 +702,8 @@ public class Debug {
                 
                 equationHTML(file, line, endline);
                 writeTojson(file, line, endline);
+                // add a client server here, when it called send 1
+                sendMessageToExtension("1");
             }
         }
     }
