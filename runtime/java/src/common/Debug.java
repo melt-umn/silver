@@ -183,9 +183,7 @@ public class Debug {
                     }
                     break;
 
-                //TODO: Works but known bug view is weird a forward nodes 
-                //bug update: looks like the problem is with getSyhthized called in allAttributesObjectMap not sure how to fix
-                case "forwards": 
+                case "forwards": case "f":
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: forwards<>");
                     }else{
@@ -261,7 +259,7 @@ public class Debug {
                     }
                     break;
 
-                case "backtrack": 
+                case "backtrack": case "backwrads": case "b":
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: backtrack<>");
                     }else{
@@ -456,7 +454,7 @@ public class Debug {
                         System.out.println("invalid, correct usage: view <node #>");
                         break;
                     }
-                    //printAttrFromName(currentNode, attributeName);
+                    printAttrFromName(currentNode, attributeName);
                     attributeDataHTML(currentNode, attributeName);
                     break;
 
@@ -492,7 +490,7 @@ public class Debug {
                         break;
                     }
                     //printAttrFromName(currentNode, attributeName);
-                    algorithmicDebugg(currentNode, attributeName);
+                    algorithmicDebugg(currentNode, attributeName, inp);
                     break;
 
 
@@ -818,18 +816,14 @@ public class Debug {
     public void printAttrFromName(DecoratedNode node, String printAttribute){
         Map<String, Object> attributeMap = allAttributesThunkMap(node);
         @SuppressWarnings("unchecked")
-        //TODO: fix known bug can't access the same thunk twice
-        Thunk finalTunk = (Thunk<Object>) attributeMap.get(printAttribute);
-        System.out.println(Util.genericShow(finalTunk.eval()));
-        
-        //Map<String, Object> attributeMap = allAttributesObjectMap(node);
-        //System.out.println(Util.genericShow(attributeMap.get(printAttribute)));
+        Object finalThunk = attributeMap.get(printAttribute);
+        System.out.println(Util.genericShow(Util.demand(finalThunk)));
     }
 
-    //TODO: update by using the thunk map inplace of the object map
+    //Higlights the 
     public void attributeDataHTML(DecoratedNode node, String printAttribute){
-        //Map<String, Object> attributeMap = allAttributesThunkMap(node);
-        Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        Map<String, Object> attributeMap = allAttributesThunkMap(node);
+        //Map<String, Object> attributeMap = allAttributesObjectMap(node);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
             writer.write("<!DOCTYPE html>\n");
             writer.write("<html>\n");
@@ -839,11 +833,15 @@ public class Debug {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (key.equals(printAttribute)){
-                    writer.write("<span style=\"color: red;\"><strong>");
-                }
-                writer.write(key + ": " + Util.genericShow(value));
-                if (key.equals(printAttribute)){
-                    writer.write("</strong></span>");
+                    writer.write("<span style=\"color: red;\"><mark>");
+                    writer.write(key + ": " + Util.genericShow(Util.demand(value)));
+                    writer.write("</mark></span>");
+                }else{
+                    if(value instanceof Thunk){
+                        writer.write(key + ": THUNKING...");
+                    }else{
+                        writer.write(key + ": " + Util.genericShow(value));
+                    }
                 }
                 writer.newLine();
             }
@@ -857,55 +855,95 @@ public class Debug {
     }
 
     //List of all and only local attributes
-    public void algorithmicDebugg(DecoratedNode node, String attriburteName)
+    public void algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
     {
-        Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
-        if (lazyMap.containsKey(attriburteName)) {
-            Lazy attributeLazy = lazyMap.get(attriburteName);
-            NLocation loc = attributeLazy.getSourceLocation();
-            String qualifier = Integer.toHexString(System.identityHashCode(this));
-            if(loc != null) {
-                String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-                int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
-                int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+        // String equationString = "";
+        // Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
+        // if (lazyMap.containsKey(attriburteName)) {
+        //     Lazy attributeLazy = lazyMap.get(attriburteName);
+        //     NLocation loc = attributeLazy.getSourceLocation();
+        //     String qualifier = Integer.toHexString(System.identityHashCode(this));
+        //     if(loc != null) {
+        //         String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+        //         int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+        //         int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 
-                try {
-                    System.out.println("Equation: \n");
-                    printLines(filePath, startLine, endLine);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        //         System.out.println("Equation: \n");
+        //          try {
+        //             equationString = getLines(filePath, startLine, endLine);
+        //         } catch (IOException e) {
+        //             e.printStackTrace();
+        //         }
+        //     }
+        // }
 
-        System.out.println("Data: \n");
-        //TODO: fix when thunks work
-        Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        // System.out.println("Data: \n");
+        // //TODO: fix when thunks work
+        // Map<String, Object> attributeMap = allAttributesObjectMap(node);
 
-        //HACK: this entire prossess is based on string meddling
-        String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
-        int index1 = partentProduction.indexOf("::");
-        int index2 = attriburteName.indexOf(":");
-        String parentNameInEquation = partentProduction.substring(0, index1) + "." + attriburteName.substring(index2+1);
-        System.out.println(parentNameInEquation + ": " + Util.genericShow(attributeMap.get(attriburteName)));
+        // //HACK: this entire prossess is based on string meddling
+        // String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
+        // int index1 = partentProduction.indexOf("::");
+        // int index2 = attriburteName.indexOf(":");
+        // String parentNameInEquation = partentProduction.substring(0, index1) + "." + attriburteName.substring(index2+1);
+        // System.out.println(parentNameInEquation + ": " + Util.genericShow(attributeMap.get(attriburteName)));
 
-        String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
-        String[] listCurrentProduction = currentProduction.split("\\s+");
-        String[] childFullNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
-        String[] childFrontNames = new String[childFullNames.length];
-        for (int i = 0; i < childFullNames.length; i++) {
-            int index = childFullNames[i].indexOf("::");
-            childFrontNames[i] = childFullNames[i].substring(0, index) + ".";
-            System.out.println(childFrontNames[i]);
-        }
+        // String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
+        // String[] listCurrentProduction = currentProduction.split("\\s+");
+        // String[] childFullNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+        // String[] childFrontNames = new String[childFullNames.length];
+        // for (int i = 0; i < childFullNames.length; i++) {
+        //     int index = childFullNames[i].indexOf("::");
+        //     childFrontNames[i] = childFullNames[i].substring(0, index) + ".";
+        //     //System.out.println(childFrontNames[i]);
+        // }
 
+        // List<String> dependentAttributes = new ArrayList<>();
 
-        // int nextChild = chooseFormList(inp, childNames);
+        // String[] equationComponents = equationString.split("\\s+");
+        // for (String component : equationComponents) {
+        //     // Check if the word starts with any element from the array
+        //     for (String childFront : childFrontNames) {
+        //         if (component.startsWith(childFront)) {
+        //             dependentAttributes.add(component);
+        //             break;
+        //         }
+        //     }
+        // }
+        // for (String attribute : dependentAttributes) {
+        //     System.out.println(attribute);
+        // }
+
+        // String[] dependentAttributesArray = dependentAttributes.toArray(new String[0]);
+        // int inputInt = chooseFormList(inp, dependentAttributesArray);
+        // String chosenAttribute = dependentAttributesArray[inputInt];
+        // String[] chosenAttributeComponents = input.split("\\.");
+        // String nextChild;
+        // for (String fullName : childFullNames){
+        //     if (fullName.startsWith(chosenAttributeComponents[0] + "::")) {
+        //         nextChild = fullName;
+        //     }
+        // }
+
+        // //list should be list of 
+        // for (String element : list) {
+        //     // Split the element by ':' and get the suffix
+        //     String[] parts = element.split(":");
+        //     if (parts.length == 2 && parts[1].equals(desiredSuffix)) {
+        //         nextAttributeName = element;
+        //     }
+        // }
+
+        // //TODO: find childNode and nextAttributeName
+        // if(nextChild != -1){
+        //     algorithmicDebugg(childNode, nextAttributeName, Scanner inp)
+        // }
 
     }
 
     //helper foralgorithmicDebugg
-    public static void printLines(String filePath, int startLine, int endLine) throws IOException {
+    public static String getLines(String filePath, int startLine, int endLine) throws IOException {
+        String returnString = "";
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             int currentLine = 1;
@@ -918,12 +956,14 @@ public class Debug {
             // Print lines from startLine to endLine
             while (line != null && currentLine <= endLine) {
                 System.out.println(line);
+                returnString += line;
                 line = reader.readLine();
                 currentLine++;
             }
         }catch (IOException e) {
             e.printStackTrace();
         }
+        return returnString;
     }
 
     //List of all and only local attributes
@@ -968,7 +1008,7 @@ public class Debug {
         return attributeList;
     }
 
-    //TODO: We want change this to use the thunk version below.
+    //Deprecated: please use allAttributesThunkMap
     public static Map<String, Object> allAttributesObjectMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
@@ -1001,8 +1041,7 @@ public class Debug {
         return attributeMap;
     }
 
-    //TODO: replace all uses of allAttributesObjectMap with this once it works 
-    //known bug: only can use thunks once then breaks
+    //Creates a map of attribute names to there thunks that can be demanded to get the values of the attributes
     public static Map<String, Object> allAttributesThunkMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
@@ -1030,7 +1069,7 @@ public class Debug {
         return attributeMap;
     }
 
-    //Another helper
+    //maps attributes names to there lazy
     public static Map<String, Lazy> allAttributesLazyMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
