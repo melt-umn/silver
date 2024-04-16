@@ -56,7 +56,7 @@ top::RSExpr ::= e::RSExpr
   forwards to copy1(@e);
 }
 
-warnCode "missing remote equation" {
+warnCode "child e of production flow:copy1" {
 production proj2Missing
 top::RSExpr ::= e::RSExpr
 {
@@ -72,7 +72,7 @@ top::RSExpr ::= e::RSExpr
   forwards to copy12(@e);
 }
 
-warnCode "missing remote equation" {
+warnCode "Equation requires inherited attribute flow:env2 be supplied to child e of production flow:copy1" {
 production projNestedMissing
 top::RSExpr ::= e::RSExpr
 {

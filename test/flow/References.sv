@@ -24,7 +24,7 @@ Decorated Expr ::= x::Expr
   return x;
 }
 
-warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env1 but this equation appears to be missing." {
+warnCode "Equation requires inherited attribute flow:env1 be supplied to child x of production flow:getRefEnv1Missing" {
   function getRefEnv1Missing
   Decorated Expr with {env1} ::= x::Expr
   { return x; }
