@@ -424,8 +424,14 @@ fun addDefEqs
         end ->
       filterMap(
         \ attr::String ->
+          -- There is an override equation, so the attribute isn't supplied through sharing
           if vertexHasInhEq(prod, ref, attr, flowEnv)
-          then nothing()  -- There is an override equation, so the attribute isn't supplied through sharing
+          -- The sharing decoration site doesn't supply the attribute.
+          -- This will be a missing transitive dep error for ref, don't add the edge to avoid
+          -- an additional spurious error on decSite, which might be inaccurate if attr should
+          -- really have an equation on ref.
+          || resolveDecSiteInhEq(attr, findDecSites(prod, decSite, [], flowEnv, realEnv), flowEnv) != alwaysDec()
+          then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv))
    | _ -> []
