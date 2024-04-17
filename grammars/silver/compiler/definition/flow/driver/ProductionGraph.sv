@@ -430,7 +430,7 @@ fun addDefEqs
           -- This will be a missing transitive dep error for ref, don't add the edge to avoid
           -- an additional spurious error on decSite, which might be inaccurate if attr should
           -- really have an equation on ref.
-          || resolveDecSiteInhEq(attr, findDecSites(prod, decSite, [], flowEnv, realEnv), flowEnv) != alwaysDec()
+          || resolveInhEq(prod, decSite, attr, flowEnv, realEnv) != alwaysDec()
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv))

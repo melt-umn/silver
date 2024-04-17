@@ -94,7 +94,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = false;
 }
 
-warnCode "missing remote equation" {
+warnCode "child e of production flow:copy1" {
 production projNestedLocalsMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -131,7 +131,7 @@ production incrementalDec
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  local e1::Expr = @e;
+  local e1::RSExpr = @e;
   e1.env2 = top.env2;
 
   top.errors1 = e1.errors1;

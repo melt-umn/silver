@@ -76,6 +76,7 @@ monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 {-- lookup dec site to find places that a unique reference to this ref site are *unconditionally* decorated. -}
 monoid attribute refDecSiteContribs :: [(String, VertexType)];
 
+{-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}
 monoid attribute sigShareContribs :: [(String, String, VertexType)];
 
 attribute

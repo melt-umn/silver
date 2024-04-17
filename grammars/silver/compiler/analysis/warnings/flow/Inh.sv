@@ -125,16 +125,12 @@ fun checkAllEqDeps
 [Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>] =
   flatMap(checkEqDeps(_, config, prodName, flowEnv, realEnv, anonResolve), v);
 
-function checkInhEq
-[Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env
-{
-  local decSites::DecSiteTree = findDecSites(prodName, vt, [], flowEnv, realEnv);
-  return
-    case resolveDecSiteInhEq(attrName, decSites, flowEnv) of
-    | alwaysDec() -> []
-    | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
-    end;
-}
+fun checkInhEq
+[Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env =
+  case resolveInhEq(prodName, vt, attrName, flowEnv, realEnv) of
+  | alwaysDec() -> []
+  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
+  end;
 
 {--
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
@@ -641,11 +637,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           | localVertexType(_) -> true
           | _ -> false
           end ->
-        case
-          decSitesMissingInhEqs(
-            set:toList(inhDeps),
-            findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env),
-            top.flowEnv) of
+        case decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), top.flowEnv, top.env) of
         | [] -> []
         | missingEqs -> map(\ di::(DecSiteTree, [String]) ->
             mwdaWrnFromOrigin(top,
@@ -756,11 +748,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           | localVertexType(_) -> true
           | _ -> false
           end ->
-        case
-          decSitesMissingInhEqs(
-            set:toList(inhDeps),
-            findDecSites(top.frame.fullName, vt, [], top.flowEnv, top.env),
-            top.flowEnv) of
+        case decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), top.flowEnv, top.env) of
         | [] -> []
         | missingEqs -> map(\ di::(DecSiteTree, [String]) ->
             mwdaWrnFromOrigin(top,
@@ -863,17 +851,15 @@ top::VarBinder ::= n::Name
   -- fName is our invented vertex name for the pattern variable
   local requiredInhs :: [String] = toAnonInhs(top.receivedDeps, fName);
 
-  local remoteDecSites :: DecSiteTree =
-    findDecSites(top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName), [], top.flowEnv, top.env);
-
   -- Check for equation's existence:
   -- Prod: top.matchingAgainst.fromJust.fullName
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
   local missingInhEqs :: [(DecSiteTree, [String])] =
     decSitesMissingInhEqs(
+      top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName),
       removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs),
-      remoteDecSites, top.flowEnv);
+      top.flowEnv, top.env);
 
   top.errors <-
     if top.config.warnMissingInh
