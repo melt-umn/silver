@@ -130,6 +130,7 @@ instance Monoid DecSiteTree {
 {--
  - Generate a decision tree to determine all decoration sites where an inherited equation could be supplied
  - for it to be available on some vertex type.
+ - TODO should be cached in the flow environment.
  -
  - @param prodName The name of the production containing the vertex type.
  - @param vt The vertex type to find decoration sites for.
@@ -202,7 +203,7 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
           getHostSynsFor(ntName, flowEnv)));
 }
 
-strategy attribute reduceDecSite = outermost(  -- TODO: Is innermost more efficient here?
+strategy attribute reduceDecSite = innermost(  -- TODO: Avoid forcing the entire tree if the first dec site is supplied?
   rule on DecSiteTree of
   | altDec(alwaysDec(), d) -> alwaysDec()
   | altDec(d, alwaysDec()) -> alwaysDec()
