@@ -75,7 +75,7 @@ public class Debug {
 
         // Need to debug why first line causes NullPointerException before SimplifiedContextStack constructor called
         SimplifiedContextStack sStack = new SimplifiedContextStack(contextStack);
-        sStack.show();
+        sStack.generateHTMLFile();
 
         //Control loop
         loop: do { 
@@ -104,7 +104,7 @@ public class Debug {
                             }
                             // if we navigate up to a parent, push it on to the stack (?)
                             cStack.pop();
-                            sStack.show();
+                            sStack.generateHTMLFile();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
@@ -154,7 +154,7 @@ public class Debug {
                         }
                         // if we navigate down to a child, push it on to the stack
                         cStack.push(currentNode);
-                        sStack.show();
+                        sStack.generateHTMLFile();
                         // when we push, update and show the context
                         if(toggleCStackDisplay){
                             cStack.show();
@@ -178,7 +178,7 @@ public class Debug {
                             }
                             // remove from the stack
                             cStack.pop();
-                            sStack.show();
+                            sStack.generateHTMLFile();
                             if(toggleCStackDisplay){
                                 cStack.show();
                             }
@@ -202,7 +202,7 @@ public class Debug {
                             }
                             // if we navigate to a forward, push it on to the stack
                             cStack.push(currentNode);
-                            sStack.show();
+                            sStack.generateHTMLFile();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
@@ -278,7 +278,7 @@ public class Debug {
                             }
                             // if we navigate backwards, pop (?)
                             cStack.pop();
-                            sStack.show();
+                            sStack.generateHTMLFile();
                             // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
