@@ -876,91 +876,120 @@ public class Debug {
         }
     }
 
-    //List of all and only local attributes
-    public void algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
+    //HACK: this entire prossess is based on string meddling
+    public int algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
     {
-        // String equationString = "";
-        // Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
-        // if (lazyMap.containsKey(attriburteName)) {
-        //     Lazy attributeLazy = lazyMap.get(attriburteName);
-        //     NLocation loc = attributeLazy.getSourceLocation();
-        //     String qualifier = Integer.toHexString(System.identityHashCode(this));
-        //     if(loc != null) {
-        //         String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-        //         int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
-        //         int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+        //Gets the equation we are on
+        String equationString = "";
+        Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
+        if (lazyMap.containsKey(attriburteName)) {
+            Lazy attributeLazy = lazyMap.get(attriburteName);
+            NLocation loc = attributeLazy.getSourceLocation();
+            String qualifier = Integer.toHexString(System.identityHashCode(this));
+            if(loc != null) {
+                String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+                int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+                int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 
-        //         System.out.println("Equation: \n");
-        //          try {
-        //             equationString = getLines(filePath, startLine, endLine);
-        //         } catch (IOException e) {
-        //             e.printStackTrace();
-        //         }
-        //     }
-        // }
+                System.out.println("Equation:");
+                 try {
+                    equationString = getLines(filePath, startLine, endLine);
+                    System.out.println();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
-        // System.out.println("Data: \n");
-        // //TODO: fix when thunks work
-        // Map<String, Object> attributeMap = allAttributesObjectMap(node);
+        //Next we want to get the LHS of the equation
+        System.out.println("Data:");
+        Map<String, Object> attributeMap = allAttributesThunkMap(node);
 
-        // //HACK: this entire prossess is based on string meddling
-        // String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
-        // int index1 = partentProduction.indexOf("::");
-        // int index2 = attriburteName.indexOf(":");
-        // String parentNameInEquation = partentProduction.substring(0, index1) + "." + attriburteName.substring(index2+1);
-        // System.out.println(parentNameInEquation + ": " + Util.genericShow(attributeMap.get(attriburteName)));
+        String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
+        int index1 = partentProduction.indexOf("::");
+        int index2 = attriburteName.indexOf(":");
+        String parentNameInEquation = partentProduction.substring(0, index1) + "." + attriburteName.substring(index2+1);
+        System.out.println(parentNameInEquation + ": " + Util.genericShow(Util.demand(attributeMap.get(attriburteName))));
 
-        // String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
-        // String[] listCurrentProduction = currentProduction.split("\\s+");
-        // String[] childFullNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
-        // String[] childFrontNames = new String[childFullNames.length];
-        // for (int i = 0; i < childFullNames.length; i++) {
-        //     int index = childFullNames[i].indexOf("::");
-        //     childFrontNames[i] = childFullNames[i].substring(0, index) + ".";
-        //     //System.out.println(childFrontNames[i]);
-        // }
+        //This generates a list of all children of the production and splits them 
+        //into the attribute front name (ex. ds) and bakc name (ex. DeclList)
+        String currentProduction = node.undecorate().getProdleton().getTypeUnparse();
+        String[] listCurrentProduction = currentProduction.split("\\s+");
+        String[] childFullNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+        String[] childFrontNames = new String[childFullNames.length];
+        String[] childBackNames = new String[childFullNames.length];
+        for (int i = 0; i < childFullNames.length; i++) {
+            // System.out.println("childFullNames[i]: " + childFullNames[i]);
+            index1 = childFullNames[i].indexOf("::");
+            // System.out.println(childFullNames[i].substring(0, index1)+ ".");
+            childFrontNames[i] = childFullNames[i].substring(0, index1) + ".";
+            index2 = childFullNames[i].indexOf(":");
+            // System.out.println(childFullNames[i].substring(index2+2));
+            childBackNames[i] = childFullNames[i].substring(index2+2);
+        }
 
-        // List<String> dependentAttributes = new ArrayList<>();
-
-        // String[] equationComponents = equationString.split("\\s+");
-        // for (String component : equationComponents) {
-        //     // Check if the word starts with any element from the array
-        //     for (String childFront : childFrontNames) {
-        //         if (component.startsWith(childFront)) {
-        //             dependentAttributes.add(component);
-        //             break;
-        //         }
-        //     }
-        // }
+        //Here we are getting the RHS of the equation (all attributes / variables)
+        //These should fallow the form <childfrontname>.attribute (ex. ds.pp)
+        List<String> dependentAttributes = new ArrayList<>();
+        String[] equationComponents = equationString.split("\\s+");
+        for (String component : equationComponents) {
+            // Check if the word starts with any element from the array
+            for (String childFront : childFrontNames) {
+                if (component.startsWith(childFront)) {
+                    dependentAttributes.add(component);
+                    break;
+                }
+            }
+        }
         // for (String attribute : dependentAttributes) {
         //     System.out.println(attribute);
         // }
 
-        // String[] dependentAttributesArray = dependentAttributes.toArray(new String[0]);
-        // int inputInt = chooseFormList(inp, dependentAttributesArray);
-        // String chosenAttribute = dependentAttributesArray[inputInt];
-        // String[] chosenAttributeComponents = input.split("\\.");
-        // String nextChild;
-        // for (String fullName : childFullNames){
-        //     if (fullName.startsWith(chosenAttributeComponents[0] + "::")) {
-        //         nextChild = fullName;
-        //     }
-        // }
+        //Next the user will pick which of these variables they want to further investigate 
+        //We split this into 2 parts index 0 is the Front name (ex. ds) 
+        //the second is the attribute  (ex. pp)
+        System.out.println();
+        System.out.println("Pick the next node to investigate");
+        String[] dependentAttributesArray = dependentAttributes.toArray(new String[0]);
+        int inputInt = chooseFormList(inp, dependentAttributesArray);
+        if(inputInt == -1)
+            return -1;
+        String chosenAttribute = dependentAttributesArray[inputInt];
+        String[] chosenAttributeComponents = chosenAttribute.split("\\.");
 
-        // //list should be list of 
-        // for (String element : list) {
-        //     // Split the element by ':' and get the suffix
-        //     String[] parts = element.split(":");
-        //     if (parts.length == 2 && parts[1].equals(desiredSuffix)) {
-        //         nextAttributeName = element;
-        //     }
-        // }
+        //Baed on what the user chose we can solve for the child they want to travle to
+        //Becaues it will have the same Front name as the variable (ex. ds.pp -> ds::DeclList)
+        String nextChildName = "";
+        for (String fullName : childFullNames){
+            if (fullName.startsWith(chosenAttributeComponents[0] + "::")) {
+                nextChildName = fullName;
+            }
+        }
+        System.out.println(nextChildName);
 
-        // //TODO: find childNode and nextAttributeName
-        // if(nextChild != -1){
-        //     algorithmicDebugg(childNode, nextAttributeName, Scanner inp)
-        // }
+        //Now that we know the child we can travle their
+        Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
+        DecoratedNode nextNode = down(nextChildNum);
+        currentNode = nextNode;
 
+        //We also know what attribute they want to investigate
+        //it should have the same end as the chosen attribute
+        List<String> attributeList = allAttributesList(nextNode);
+        String nextAttributeName = "";
+        //list should be list of attributes
+        for (String element : attributeList) {
+            String[] parts = element.split(":");
+            if (parts.length == 2 && parts[1].equals(chosenAttributeComponents[1])) {
+                nextAttributeName = element;
+            }
+        }
+        System.out.println(nextAttributeName);
+
+        //TODO: find childNode and nextAttributeName
+        if(nextChildName != ""){
+            algorithmicDebugg(nextNode, nextAttributeName, inp);
+        }
+        return -1;
     }
 
     //helper foralgorithmicDebugg
@@ -977,7 +1006,7 @@ public class Debug {
 
             // Print lines from startLine to endLine
             while (line != null && currentLine <= endLine) {
-                System.out.println(line);
+                System.out.println(line); //Comment this out
                 returnString += line;
                 line = reader.readLine();
                 currentLine++;
