@@ -32,12 +32,35 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
   
-  
+  -- Does this production forward to an application of the same dispatch signature
+  -- with the same shared children?
+  production forwardsToImplementedSig :: Boolean = 
+    case d.implementsSig, body.forwardExpr of
+    | just(dSig), [dispatchApplication(e, es, emptyAnnoAppExprs())]
+        when e.typerep matches dispatchType(fwrdDSig) ->
+      dSig.fullName == fwrdDSig.fullName &&
+      all(zipWith(
+        \ ie::NamedSignatureElement e::Decorated Expr ->
+          !ie.elementShared ||
+          case e of
+          | childReference(q) ->
+            positionOf(q.lookupValue.fullName, namedSig.inputNames) ==
+            positionOf(ie.elementName, dSig.inputNames)
+          | _ -> false
+          end,
+        dSig.inputElements, es.exprs))
+    | _, _ -> false
+    end;
 
   top.flowDefs <-
     case d.implementsSig of
     | just(dSig) when
-        isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) ->
+        isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) &&
+        -- Productions that forward to the same dispatch signature with the same shared children
+        -- cannot affect inherited completeness.
+        -- This is a potential circularity, as the prod could in principle forward to itself,
+        -- but not something we want to forbid.
+        !forwardsToImplementedSig ->
       [implFlowDef(dSig.fullName, fName)]
     | _ -> []
     end;
