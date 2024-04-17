@@ -422,7 +422,8 @@ fun addDefEqs
         | localVertexType(fName) -> !isForwardProdAttr(fName, realEnv)
         | _ -> true
         end ->
-      let decSiteTree::DecSiteTree = findDecSites(prod, decSite, [], flowEnv, realEnv)
+      let decSiteTree::DecSiteTree =
+        findDecSites(prod, decSite, [(prod, ref)], flowEnv, realEnv)
       in filterMap(
         \ attr::String ->
           -- There is an override equation, so the attribute isn't supplied through sharing
