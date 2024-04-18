@@ -66,6 +66,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - @param prodNt  The nonterminal this production belongs to. (For functions, a dummy value is ok)
  - @param flowEnv  The local flow environment
  - @param realEnv  The local real environment
+ - @param anonResolve  A list of anonymous decoration sites
  - @returns  Errors for missing equations
  -}
 function checkEqDeps
@@ -283,20 +284,30 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
     then [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
+  local refDecSiteInhDepsLhsInhStr::String =
+    case set:toList(refDecSiteInhDepsLhsInh.fromJust) of
+    | [] -> "on no attributes"
+    | deps -> "only on " ++ implode(", ", deps)
+    end;
   top.errors <-
     if top.config.warnMissingInh && !null(lhsInhExceedsRefDecSiteDeps)
     then
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation may exceed a flow type with hidden transitive dependencies on ${implode(", ", lhsInhExceedsRefDecSiteDeps)}; " ++
-        s"${attr.attrDcl.fullName} on some reference to ${dl.defLHSVertex.vertexPP} may be expected to depend only on ${implode(", ", set:toList(refDecSiteInhDepsLhsInh.fromJust))}")]
+        s"${attr.attrDcl.fullName} on some reference to ${dl.defLHSVertex.vertexPP} may be expected to depend ${refDecSiteInhDepsLhsInhStr}")]
     else [];
+  local transBaseRefDecSiteInhDepsLhsInhStr::String =
+    case set:toList(transBaseRefDecSiteInhDepsLhsInh.fromJust) of
+    | [] -> "on no attributes"
+    | deps -> "only on " ++ implode(", ", deps)
+    end;
   top.errors <-
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr)
         when top.config.warnMissingInh && !null(lhsInhExceedsTransBaseRefDecSiteDeps) ->
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation may exceed a flow type with hidden transitive dependencies on ${implode(", ", lhsInhExceedsTransBaseRefDecSiteDeps)}; " ++
-        s"${transAttr}.${attr.attrDcl.fullName} on some reference to ${v.vertexPP} may be expected to depend only on ${implode(", ", set:toList(transBaseRefDecSiteInhDepsLhsInh.fromJust))}")]
+        s"${transAttr}.${attr.attrDcl.fullName} on some reference to ${v.vertexPP} may be expected to depend ${transBaseRefDecSiteInhDepsLhsInhStr}")]
     | _ -> []
     end;
 }

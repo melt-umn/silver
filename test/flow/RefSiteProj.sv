@@ -269,7 +269,7 @@ top::RSExpr ::= e::RSExpr
   forwards to implProdRef(e); 
 }
 
-warnCode "Access of syn attribute errors2 on e requires missing inherited attributes flow:env2 to be supplied" {
+warnCode "Access of synthesized attribute errors2 on e requires missing inherited attribute(s) flow:env2 to be supplied to child e of production flow:anonDecSuppliedMissing" {
 production anonDecSuppliedMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -316,7 +316,7 @@ top::RSExpr ::= e::RSExpr
   forwards to projChain(@e);
 }
 
-warnCode "missing remote equation" {
+warnCode "child e of production flow:copy1" {
 production projChain2Missing
 top::RSExpr ::= e::RSExpr
 {
