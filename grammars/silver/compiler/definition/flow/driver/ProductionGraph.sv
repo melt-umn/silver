@@ -433,6 +433,8 @@ fun addDefEqs
           -- an additional spurious error on decSite, which might be inaccurate if attr should
           -- really have an equation on ref.
           || isAlwaysDec &&
+            -- Optimization: check for a direct equation on the decSite before building the tree
+            !vertexHasInhEq(prod, decSite, attr, flowEnv) &&
             resolveDecSiteInhEq(attr, decSiteTree, flowEnv) != alwaysDec()
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
