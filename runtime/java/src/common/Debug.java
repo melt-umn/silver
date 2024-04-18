@@ -842,7 +842,7 @@ public class Debug {
         System.out.println(Util.genericShow(Util.demand(finalThunk)));
     }
 
-    //Higlights the 
+    //Higlights the data of the specified attribute
     public void attributeDataHTML(DecoratedNode node, String printAttribute){
         Map<String, Object> attributeMap = allAttributesThunkMap(node);
         //Map<String, Object> attributeMap = allAttributesObjectMap(node);
@@ -855,12 +855,13 @@ public class Debug {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (key.equals(printAttribute)){
-                    writer.write("<span style=\"color: red;\"><mark>");
+                    writer.write("<mark>");
                     writer.write(key + ": " + Util.genericShow(Util.demand(value)));
-                    writer.write("</mark></span>");
+                    writer.write("</mark>");
                 }else{
                     if(value instanceof Thunk){
                         writer.write(key + ": THUNKING...");
+                        //writer.write("<a href='#' onclick='replaceText(this)'>" + key + ": THUNKING..." + "</a>");
                     }else{
                         writer.write(key + ": " + Util.genericShow(value));
                     }
@@ -868,6 +869,7 @@ public class Debug {
                 writer.newLine();
             }
             writer.write("</pre>\n");
+            //writer.write("<script>\nfunction replaceText(link) {\n\tlink.innerText = link.innerText.replace('THUNKING', 'NO LONGER');\n}\n</script>\n");
             writer.write("</body>\n");
             writer.write("</html>\n");
 
@@ -877,6 +879,8 @@ public class Debug {
     }
 
     //HACK: this entire prossess is based on string meddling
+    //A better way to do this would be to have each attribute know what other attributes generate it
+    //This way we would not need to rely on specific string formatting
     public int algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
     {
         //Gets the equation we are on
@@ -948,10 +952,15 @@ public class Debug {
         //Next the user will pick which of these variables they want to further investigate 
         //We split this into 2 parts index 0 is the Front name (ex. ds) 
         //the second is the attribute  (ex. pp)
-        System.out.println();
-        System.out.println("Pick the next node to investigate");
         String[] dependentAttributesArray = dependentAttributes.toArray(new String[0]);
-        int inputInt = chooseFormList(inp, dependentAttributesArray);
+        int inputInt = -1;
+        if(dependentAttributesArray.length > 0){
+            System.out.println();
+            System.out.println("Pick the next node to investigate");
+            inputInt = chooseFormList(inp, dependentAttributesArray);
+        }else{
+            return 0;
+        }
         if(inputInt == -1)
             return -1;
         String chosenAttribute = dependentAttributesArray[inputInt];
@@ -985,7 +994,7 @@ public class Debug {
         }
         System.out.println(nextAttributeName);
 
-        //TODO: find childNode and nextAttributeName
+        //recursive time
         if(nextChildName != ""){
             algorithmicDebugg(nextNode, nextAttributeName, inp);
         }
