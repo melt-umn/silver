@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.io.IOException;
+import java.io.BufferedWriter;
 
 // Basically a decorator over a ContextStack to 
 // generate a simplified (one node per tree order) stack
@@ -21,13 +22,24 @@ public class SimplifiedContextStack {
         this.full_stack = full_stack;
         this.partition = new int[full_stack.get_height()];
         this.filename = "simpleDebugContext.txt";
+        this.filename_html = "simpleDebugContext.html";
     }
 
     public SimplifiedContextStack(ContextStack full_stack, String fn) {
         this.full_stack = full_stack;
         this.partition = new int[full_stack.get_height()];
         this.filename = fn;
+        this.filename_html = "simpleDebugContext.html";
     }
+
+    public SimplifiedContextStack(ContextStack full_stack, String fn, String fn_html) {
+        this.full_stack = full_stack;
+        this.partition = new int[full_stack.get_height()];
+        this.filename = fn;
+        this.filename_html = fn_html;
+    }
+
+
 
     public Stack<SimplifiedContextBox> getSimplifiedStack() {
         this.need_set_all_prods = true;
@@ -42,19 +54,41 @@ public class SimplifiedContextStack {
 
     public void show(){
         this.updateSimplifiedStack();
-        File file = new File(this.filename);
         String border = "*******************";
         
         try{
             FileWriter myWriter = new FileWriter(this.filename);
-            Iterator<SimplifiedContextBox> iterator = this.simple_stack.iterator();
-            while (iterator.hasNext()) {
-                SimplifiedContextBox sbox = iterator.next();
+            // Want to go backwards through stack. Render it from top down in the file
+            // java stack iterator doesn't support going backwards
+            for (int i = this.simple_stack.size() - 1; i >= 0; i--) {
+                SimplifiedContextBox sbox = this.simple_stack.get(i);
                 myWriter.write(border + "\n" + sbox.toString() + "\n" + border);
             }
             myWriter.close();
         }
         catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void generateHTMLFile() {
+        this.updateSimplifiedStack();
+    
+        try (FileWriter myWriter = new FileWriter(this.filename_html)) {
+            myWriter.write("<html><head><title>Simplified Context Stack</title></head><body>\n");
+    
+            // Iterate through the stack in reverse order
+            for (int i = this.simple_stack.size() - 1; i >= 0; i--) {
+                SimplifiedContextBox sbox = this.simple_stack.get(i);
+                
+                myWriter.write(sbox.getHTMLBox());
+    
+                // Add a border between SimplifiedContextBoxes
+                myWriter.write("<hr>");
+            }
+    
+            myWriter.write("</body></html>");
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -253,6 +287,8 @@ public class SimplifiedContextStack {
 
     private ContextStack full_stack;
     private String filename;
+    private String filename_html;
+
     private Stack<SimplifiedContextBox> simple_stack = 
         new Stack<SimplifiedContextBox>();
     
