@@ -423,7 +423,7 @@ fun addDefEqs
         | _ -> true
         end ->
       let decSiteTree::DecSiteTree =
-        findDecSites(prod, decSite, [(prod, ref)], flowEnv, realEnv)
+        findDecSites(prod, decSite, set:fromList([crossnames(prod, ref.vertexName)]), flowEnv, realEnv)
       in filterMap(
         \ attr::String ->
           -- There is an override equation, so the attribute isn't supplied through sharing
@@ -433,8 +433,6 @@ fun addDefEqs
           -- an additional spurious error on decSite, which might be inaccurate if attr should
           -- really have an equation on ref.
           || isAlwaysDec &&
-            -- Optimization: check for a direct equation on the decSite before building the tree
-            !vertexHasInhEq(prod, decSite, attr, flowEnv) &&
             resolveDecSiteInhEq(attr, decSiteTree, flowEnv) != alwaysDec()
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
