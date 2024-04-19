@@ -7,7 +7,7 @@ import java.io.IOException;
 // Context implementation.
 
 // Headers are either TRANSLATION (for contractum) or HIGHER-ORDER
-// Uses current label rules of is-contractum, is-redex, is-new, and is-attribute
+// Uses current label rules of is-contractum, is-redex, and is-attribute
 
 public class NodeContextMessage {
 
@@ -52,9 +52,6 @@ public class NodeContextMessage {
         if (this.is_contractum) {
             res += "*is-contractum of " + this.contractum_of + "\n";
         }
-        if (this.is_new) {
-            res += "*is-new\n";
-        }
         if (this.is_attribute_root) {
             res += "*is-attribute_root\n";
         }
@@ -86,7 +83,7 @@ public class NodeContextMessage {
         // Section 3. Determine file lines last
         //  because they depend on computing boolean attributes
         if ((this.translation_x > 0) || (this.higher_order_y > 0) ||
-            this.is_attribute_root || this.is_contractum || this.is_new) {
+            this.is_attribute_root || this.is_contractum) {
             this.pretty_print(node);
         }
         else {
@@ -121,7 +118,6 @@ public class NodeContextMessage {
         this.is_contractum = node.getIsContractum();
         // Will always work for forwarding. Only use this value if is_contractum
         this.contractum_of = this.num_index - 1;
-        this.is_new = node.getIsNew();
         this.is_attribute_root = node.getIsAttributeRoot();
         this.attribute_of = this.num_index - 1;
     }
@@ -241,7 +237,6 @@ public class NodeContextMessage {
     private boolean is_redex;
     private boolean is_contractum;
     private int contractum_of;
-    private boolean is_new;
     private boolean is_attribute_root;
     private int attribute_of;
 
@@ -255,10 +250,6 @@ public class NodeContextMessage {
 
     public int getContractumOf() {
         return contractum_of;
-    }
-
-    public boolean isNew() {
-        return is_new;
     }
 
     public boolean isAttributeRoot() {

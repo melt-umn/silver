@@ -30,9 +30,6 @@ public class Feature {
         else if (this.label.contains("attribute")) {
             this.sep = "of";
         }
-        else if (this.label.contains("new")) {
-            this.sep = "";
-        }
         else {
             this.sep = "INVALID LABEL";
         }

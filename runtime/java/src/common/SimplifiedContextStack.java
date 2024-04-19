@@ -181,12 +181,6 @@ public class SimplifiedContextStack {
                 Feature f = new Feature(nodeName, "contractum", targetName);
                 sbox.features.add(f);
             }
-            if (node.isNew()) {
-                String nodeName = productions[k].toString();
-                // No origin tracking to find prod name of origin
-                Feature f = new Feature(nodeName, "new");
-                sbox.features.add(f);
-            }
             if (node.isAttributeRoot()) {
                 String nodeName = productions[k].toString();
                 String targetName = "";

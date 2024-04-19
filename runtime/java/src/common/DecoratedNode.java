@@ -914,12 +914,8 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 
-		// **************************************************************
+	// **************************************************************
 	// Functions and attributes added for context message support
-	
-	// To add:
-	// setDebuggingIndex() 	DONE
-	// getDebuggingIndex() 	DONE
 	// getRedex() 			DONE
 	// getIsRedex() 		DONE
 	// getContractum() 		DONE
@@ -927,70 +923,49 @@ public class DecoratedNode implements Decorable, Typed {
 	// getFilename() 		DONE
 	// getStartCoordinates()DONE
 	// getEndCoordinates() 	DONE
-
-	// getOrigin() 			DONE
-	// getIsNew() 			MOSTLY-DONE (concrete syntax node hacks still)
-	
 	// getPrettyPrint()		DONE
-
 	// getIsAttribute() 	DONE
-
 	// getIsTranslation()   DONE
 	
-	private int debugging_index;
-	private boolean is_redex;
-	private boolean is_contractum;
-	private boolean is_attribute_root;
-	private boolean need_set_is_attribute_root = true;
+	private boolean isRedex;
+	private boolean isContractum;
+	private boolean isAttributeRoot;
+	private boolean needSetIsAttributeRoot = true;
 
-	private boolean need_compute_redex_contractum = true;
-
-	public void setDebuggingIndex(int i) {
-		this.debugging_index = i;
-	}
-	public int getDebuggingIndex() {
-		return this.debugging_index;
-	}
+	private boolean needComputeRedexContractum = true;
 
 	public boolean getIsRedex() {
-		if (this.need_compute_redex_contractum) {
-			this.compute_redex_contractum();
+		if (this.needComputeRedexContractum) {
+			this.computeRedexContractum();
 		}
-		return this.is_redex;
+		return this.isRedex;
 	}
 	public boolean getIsContractum() {
-		if (this.need_compute_redex_contractum) {
-			this.compute_redex_contractum();
+		if (this.needComputeRedexContractum) {
+			this.computeRedexContractum();
 		}
-		return this.is_contractum;
+		return this.isContractum;
 	}
 
-	private void compute_redex_contractum() {
-		if (!this.need_compute_redex_contractum) {
+	private void computeRedexContractum() {
+		if (!this.needComputeRedexContractum) {
 			return;
-		} 
-
-		// Consider as not mutually exclusive categories for now
-		// Something could forward to something that forwards again
-		// e.g. case -> ifthen -> ifthenelse
-
-		// This is a very basic implementation that only looks
-		// at forwards as the only way to have reduction semantics
+		}
 
 		if (this.self.hasForward()) {
-			this.is_redex = true;
+			this.isRedex = true;
 		}
 		else {
-			this.is_redex = false;
+			this.isRedex = false;
 		}
 		
 		if (this.forwardParent != null) {
-			this.is_contractum = true;
+			this.isContractum = true;
 		}
 		else {
-			this.is_contractum = false;
+			this.isContractum = false;
 		}
-		this.need_compute_redex_contractum = false;
+		this.needComputeRedexContractum = false;
 	}
 
 	public DecoratedNode getRedex() {
@@ -999,15 +974,11 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private DecoratedNode getRedexHelper(DecoratedNode dn) {
-		// For now assume abstract syntax tree root has null parent
-		// or just that dn.parent repeatedly will eventually find null 
-		
-		// parent of DecoratedNode root is TopNode. Might need that and not null
 		if (dn == null || dn.isRoot()) {
 			return null;
 		}
 		
-		if (dn.is_redex) {
+		if (dn.isRedex) {
 			return dn;
 		}
 		else {
@@ -1020,13 +991,11 @@ public class DecoratedNode implements Decorable, Typed {
 		return this.getContractumHelper(this); 
 	}
 	private DecoratedNode getContractumHelper(DecoratedNode dn) {
-		// For now assume abstract syntax tree root has null parent
-		// or just that dn.parent repeatedly will eventually find null 
 		if (dn == null || dn.isRoot()) {
 			return null;
 		}
 		
-		if (dn.is_contractum) {
+		if (dn.isContractum) {
 			return dn;
 		}
 		else {
@@ -1037,9 +1006,7 @@ public class DecoratedNode implements Decorable, Typed {
 	public String getFilename() { 
 				
 		boolean res = this.self instanceof silver.core.Alocation;
-		// System.out.println("IS ALOCATION? " + res);
 		res = this.self instanceof Tracked;
-		// System.out.println("IS TRACKED? " + res);
 
 		if(self == null) {
 			return "<top>";
@@ -1059,7 +1026,6 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	
 		return "<NO-FILE-FOUND>";
-
 	}
 
 	public FileCoordinate getStartCoordinates() {
@@ -1108,110 +1074,11 @@ public class DecoratedNode implements Decorable, Typed {
 		return new FileCoordinate(-1, -1);
 	}
 
-	// Wrapper around OriginsUtil.getOriginOrNull()
-	// for the sake of my naming convention
-	// Not yet used but probably need for reference attributes
-	public NOriginInfo getOrigin() {
-		return OriginsUtil.getOriginOrNull(this);
-		// return null;
-	}
-
-
-	// TODO: only check getIsNew on is-translation nodes (to avoid _c concrete syntax hack!)
-	// If not a contractum or redex, 
-	// if getOrigin(this) == getRedex(this)
-	// implies a node is "newly" created
-	// like const(0) from neg(x) -> sub(0, x)
-	// Also require it to be Is-TRANSLATION 
-	// (since only forwarding can do this anyway)
-	public boolean getIsNew() {
-		// Silver origin tracking does
-		// not return Nodes or Decorated nodes
-		// to do == comparison
-
-		// From Lucas on Slack
-		// "You just want to get the NOriginInfo, 
-		// check if the result is a PoriginOriginInfo 
-		// or PoriginAndRedexOriginInfo, if it is then
-		//  pull out the first child and do .getName() on that"
-
-		this.compute_redex_contractum();
-		if (this.getIsTranslation() < 1) {
-			// Cannot be a translation
-			return false;
-		}
-		
-		NOriginInfo oinfo = OriginsUtil.getOriginOrNull(this.self);
-		// System.out.println("NOriginInfo: " + oinfo);
-		if (oinfo == null) {
-			return false;
-		}
-		if (oinfo instanceof PoriginAndRedexOriginInfo || 
-			oinfo instanceof PoriginOriginInfo) {
-			
-			// System.out.println("IS PoriginAndRedexOriginInfo or PoriginOriginInfo");
-			// Might need check types here
-			// Should get only Nodes from here
-			Object origin = oinfo.getChild(0);
-
-			if (origin instanceof Node) {
-				// Use this name
-				// System.out.println("NAME: " + (((Node)origin).getName()));
-			}
-
-			// For regular (non-root) nonterminals, there appear to be 2 origins,
-			// the second of which is just true, so only use the first
-
-			// DecoratedNode dn = (DecoratedNode)origin;
-			// System.out.println("Origin: " + oinfo.getNumberOfChildren());
-			// for (int i = 0; i < oinfo.getNumberOfChildren(); i++) {
-			// 	System.out.println("Origin name: " + oinfo.getChild(i).toString());
-			// }
-
-			String full_prod_name = this.self.getName();
-			int lastIndex = full_prod_name.lastIndexOf(':');
-			String prod_name = full_prod_name.substring(lastIndex + 1);
-			// System.out.println("PROD NAME: " + prod_name);
-
-			// Will do a hacky version with origin.toString() for now
-			// since last part of production name will be in there between 
-			// P and @ if origin is another node of the same name. 
-			// Also, there will be a '_c@' if concrete syntax (so false if _c@ in)
-			String ostr = origin.toString();
-			// System.out.println("ORIGIN NAME: " + ostr);
-			// Origin in concrete syntax case
-
-
-			// // FIXME: Don't count on this!
-			if (ostr.contains("_c@")) {
-				// Never going to be new
-				// System.out.println("CONCRETE SYNTAX ORIGIN");
-				return false;
-			}
-			else if (ostr.contains("P" + prod_name + "@")) {
-				// System.out.println("ABSTRACT SYNTAX ORIGIN");
-				// Not new since same name
-				return false;
-			}
-			else {
-				// System.out.println("!!!!!!!!IS-NEW!!!!!!!!");
-				return true;
-			}
-			
-		}
-		else {
-			System.out.println("NO ORIGIN FOUND!!!");
-		}
-		return false;
-	}
 
 	// access pretty print attribute
 	// through this function (a synthesized attribute)
-	// "pp" seems to be standard pretty print name
+	// "pp" is the standard pretty print name
 	public String getPrettyPrint() {
-
-		// use genericShow(): it accesses pp if it exists
-		// return Util.genericShow(this).toString();
 
 		int num_attrs = this.self.getNumberOfSynAttrs();
 		for (int i = 0; i < num_attrs; i++) {
@@ -1219,9 +1086,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// Search until find name that is "pp"
 			String name = this.self.getNameOfSynAttr(i);
 			// Want last three characters to be ":pp"
-			if (name.substring(name.length() - 3).toLowerCase().equals(":pp") ||
-				name.substring(name.length() - 13).toLowerCase().equals(":pretty_print") || 
-				name.substring(name.length() - 12).toLowerCase().equals(":prettyprint")) {
+			if (name.substring(name.length() - 3).toLowerCase().equals(":pp")) {
 				Object pp = evalSyn(i);
 				return pp.toString();
 			}
@@ -1230,49 +1095,37 @@ public class DecoratedNode implements Decorable, Typed {
 		return Util.genericShow(this).toString();
 	}
 
-	// only set is_attribute_root once
+	// only set isAttributeRoot once
 	public boolean getIsAttributeRoot() {
-		if (this.need_set_is_attribute_root) {
+		if (this.needSetIsAttributeRoot) {
 			this.setIsAttributeRoot();
-			this.need_set_is_attribute_root = false;
+			this.needSetIsAttributeRoot = false;
 		}
-		return this.is_attribute_root;
+		return this.isAttributeRoot;
 	}
 
 	public boolean isRoot() {
-		// return this.getNode().getName().contains("root"); 
-		
-		// This is better solution
 		return 
 			this.parent == null || 
 			this.parent instanceof TopNode ||
 			this.parent.parent == null ||
 			this.parent.parent instanceof TopNode;
 	}
-
-	// public boolean isMain() {
-	// 	// return this.getNode().getName().contains("main"); 
-	// 	return this == null || this.parent == null || this.parent instanceof TopNode;
-	// }
 	
 	public void setIsAttributeRoot() {
 		
 		if (! (this == null || this.isRoot())) {
-			
-			// System.out.println("SET-IS-ATTR: " + this.toString());
-			Map<String, Object> map = Debug.allAttributesObjectMap(this.parent);
+			Map<String, Object> map = Debug.allAttributesThunkMap(this.parent);
 			Collection<Object> values = map.values();
 			for (Object obj: values) {
-				if (obj == this) {
-					this.is_attribute_root = true;
+				if (Util.demand(obj) == this) {
+					this.isAttributeRoot = true;
 					return;
 				}
 			}
 		}
-		
-		this.is_attribute_root = false;
+		this.isAttributeRoot = false;
 	}
-
 
 
 	public int getIsAttribute() {
@@ -1290,8 +1143,6 @@ public class DecoratedNode implements Decorable, Typed {
 
 	public int getIsTranslation() {
 		// See how many parents are contractums
-		// System.out.println("GET-IS-TRANSLATION node:" + this.toString());
-		// System.out.println("GET-IS-TRANSLATION has contractum:" + this.getIsContractum());
 		// Calling parent repeatedly will ignore forwarding nodes, so operate on 
 		// getIsContractum only as the case to determine whether forwarding occurs or not
 		if (this == null || this.isRoot()) {
