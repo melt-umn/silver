@@ -1,5 +1,15 @@
 package common;
 
+// Key intermediate structure of debugging contextualization.
+// We push/pop nodes while navigating in Debug.java into this stack.
+// A ContextStack is then a member of a SimplifiedContextStack, which
+// produces the actual contextualization.
+
+// ContextStack is fundementally a stack of NodeContextMessage objects.
+// Each of these objects represents a record of contextualization
+// information we store about a single visited node (only maintain
+// those on the path from root to the current node, like a DFS traversal).
+
 // Wrapped around built-in Java Stack class
 // No error handling in current version
 

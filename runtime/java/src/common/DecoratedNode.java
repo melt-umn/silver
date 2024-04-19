@@ -915,23 +915,40 @@ public class DecoratedNode implements Decorable, Typed {
 
 
 	// **************************************************************
-	// Functions and attributes added for context message support
-	// getRedex() 			DONE
-	// getIsRedex() 		DONE
-	// getContractum() 		DONE
-	// getIsContractum() 	DONE
-	// getFilename() 		DONE
-	// getStartCoordinates()DONE
-	// getEndCoordinates() 	DONE
-	// getPrettyPrint()		DONE
-	// getIsAttribute() 	DONE
-	// getIsTranslation()   DONE
+	// Below here are all functions and attributes added to Decorated Node 
+	// for debugging contextualization.
+
+	// TODO. Make into Utils file. Will have worse time complexity though.
 	
+	// Functions
+
+	// For labels in NodeContextMessageBox
+		// getRedex() 			
+		// getIsRedex() 		
+		// getContractum() 		
+		// getIsContractum() 	
+	
+	// For headers for NodeContextMessageBox
+		// getIsAttribute() 	
+		// getIsTranslation()   
+	
+	
+	// Getting concrete syntax from parsed file
+		// getFilename() 		
+		// getStartCoordinates()
+		// getEndCoordinates() 	
+	
+	// Concrete syntax alternative if node 
+	// was created by rewrite rule or higher-order attribute
+		// getPrettyPrint()		
+
+
 	private boolean isRedex;
 	private boolean isContractum;
 	private boolean isAttributeRoot;
 	private boolean needSetIsAttributeRoot = true;
 
+	// Compute only once redex/contractum property  
 	private boolean needComputeRedexContractum = true;
 
 	public boolean getIsRedex() {
@@ -947,6 +964,8 @@ public class DecoratedNode implements Decorable, Typed {
 		return this.isContractum;
 	}
 
+	// Locally determing if redex and/or contractum
+	// through forwarding as the rewrite rule method
 	private void computeRedexContractum() {
 		if (!this.needComputeRedexContractum) {
 			return;
@@ -968,11 +987,12 @@ public class DecoratedNode implements Decorable, Typed {
 		this.needComputeRedexContractum = false;
 	}
 
+	// Wrapper for recursive helper
+	// Returns the first redex parent encountered or null if none
 	public DecoratedNode getRedex() {
-		// Wrapper for recursive helper
 		return this.getRedexHelper(this); 
 	}
-	
+
 	private DecoratedNode getRedexHelper(DecoratedNode dn) {
 		if (dn == null || dn.isRoot()) {
 			return null;
@@ -986,6 +1006,8 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	} 
 
+	// Wrapper for recursive helper
+	// Returns the first contractum parent encountered or null if none
 	public DecoratedNode getContractum() {
 		// Wrapper for recursive helper
 		return this.getContractumHelper(this); 
@@ -1003,6 +1025,8 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	} 
 
+	// Get filename the associated with the concrete syntax location 
+	// origin tacking follows back from this node
 	public String getFilename() { 
 				
 		boolean res = this.self instanceof silver.core.Alocation;
@@ -1028,6 +1052,8 @@ public class DecoratedNode implements Decorable, Typed {
 		return "<NO-FILE-FOUND>";
 	}
 
+	// Get start coordinates for the file location associated with 
+	// the concrete syntax location origin tacking follows back from this node
 	public FileCoordinate getStartCoordinates() {
 		
 		if(self == null) {
@@ -1051,6 +1077,8 @@ public class DecoratedNode implements Decorable, Typed {
 		return new FileCoordinate(-1, -1);
 	}
 
+	// Get end coordinates for the file location associated with 
+	// the concrete syntax location origin tacking follows back from this node
 	public FileCoordinate getEndCoordinates() {
 		
 		if(self == null) {
@@ -1075,7 +1103,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 
-	// access pretty print attribute
+	// Access pretty print attribute
 	// through this function (a synthesized attribute)
 	// "pp" is the standard pretty print name
 	public String getPrettyPrint() {
@@ -1104,6 +1132,7 @@ public class DecoratedNode implements Decorable, Typed {
 		return this.isAttributeRoot;
 	}
 
+	// Catch program "root"
 	public boolean isRoot() {
 		return 
 			this.parent == null || 
@@ -1112,6 +1141,8 @@ public class DecoratedNode implements Decorable, Typed {
 			this.parent.parent instanceof TopNode;
 	}
 	
+	// Higher-order attribute roots are attributes of their parent nodes.
+	// Only do once.
 	public void setIsAttributeRoot() {
 		
 		if (! (this == null || this.isRoot())) {
@@ -1127,7 +1158,7 @@ public class DecoratedNode implements Decorable, Typed {
 		this.isAttributeRoot = false;
 	}
 
-
+	// Determine higher-order attribute nesting of this node. 
 	public int getIsAttribute() {
 		if (this == null || this.isRoot()) {
 			return 0;
@@ -1141,6 +1172,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 
+	// Determine how many forwarding edges were followed to get to this node.
 	public int getIsTranslation() {
 		// See how many parents are contractums
 		// Calling parent repeatedly will ignore forwarding nodes, so operate on 

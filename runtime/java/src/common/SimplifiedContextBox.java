@@ -3,6 +3,47 @@ package common;
 import java.util.ArrayList;
 import java.util.List;
 
+// The SimplifiedContextBox maintains all information needed for 
+// an individual element as part of simplified debugging contextualization.
+
+// They are the elements of a SimplifiedContextStack.
+
+// It fully represents a path that has no horizontal edges.
+    // (forwarding/translation
+    //  or higher-order attribute entry links)
+
+// The SimplifiedContextStack creates one of these boxes each time
+// it encounters a horizontal edge (plus the original started at 
+// the program root).
+
+// Tree Order represents how many horizontal edges 
+// have been navigated across.
+
+// Text Syntax represents the current path through concrete syntax.
+// text_syntax should store parsed concrete syntax when (x, y) from tree order
+// are both 0. Otherwise, it will be the pretty print representation. This is for 
+// the first production associated with a SimplifiedContextBox (widest-spanning)
+
+// syntax_to_highlight should be highlighted within text_syntax. It represents 
+// the deepest (least-spanning) navigated-to node within the path of productions 
+// such a box represents. 
+
+// TODO: some extra information while doing tree traversal 
+// will be needed to make highlighting unique
+// if there are mulitple instances of syntax_to_highlight within text_syntax.
+
+// Productions Visited. Just a list of production names this box's abstract 
+// syntax tree path represents. They should be added with increasing tree depth.
+
+// Interesting Features. Records which nodes are associated with horizontal edges
+// themselves. This info comes from NodeContextMessage objects stored in the 
+// basic ContextStack from which a SimplifiedContextStack is built from.
+
+// There are currently HTML and toString representations of an individual box.
+// When adding/generating HTML, the headers are added within SimplifiedContextStack. 
+
+
+
 public class SimplifiedContextBox {
 
     // 4 sections
@@ -42,7 +83,7 @@ public class SimplifiedContextBox {
         return this.text_syntax;
     }
 
-    public String getSyntaxToHighlightHTML() {
+    public String getsyntax_to_highlightHTML() {
         return this.syntax_to_highlight;
     }
 
@@ -79,7 +120,7 @@ public class SimplifiedContextBox {
         res += "<p>" + this.getAllSyntaxHTML() + "</p></div>";
 
         res += "<div><h2>TO HIGHLIGHT</h2>";
-        res += "<p>" + this.getSyntaxToHighlightHTML() + "</p></div>";
+        res += "<p>" + this.getsyntax_to_highlightHTML() + "</p></div>";
 
         // Section 3: Productions Visited
         res += "<div><h2>Productions Visited:</h2>";

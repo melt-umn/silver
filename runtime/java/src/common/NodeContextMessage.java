@@ -4,13 +4,41 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-// Context implementation.
+// Core of the debugging contextualization implementation.
+// A NodeContextMessage records all debugging contextualization
+// information we wish to keep about a navigated-to node.
 
-// Headers are either TRANSLATION (for contractum) or HIGHER-ORDER
-// Uses current label rules of is-contractum, is-redex, and is-attribute
+// A stack of these makes up a "full" or verbose ContextStack.
+// The ContextStack is then compressed to yield a better 
+// SimplifiedContextStack.
+
+// Section 1. (HEADERS). Headers are either TRANSLATION-X (for rewrite rules) or HIGHER-ORDER 
+// (for higher-order attributes). They represent the cumulative nesting of these constructs 
+// a current node has relative to the program root. Headers are dependent on a node's labels and
+// its ancestors' labels.
+
+// Section 2. (CONCRETE SYNTAX). Concrete syntax representation of the current node. 
+// Should hold parsed concrete syntax from the source file if headers are empty 
+// (no rewrite rules or higher-order attributes traversed yet), or the node's
+// pretty print attribute otherwise.
+
+// Section 3. (PRODUCTION). Store the production name (we currently keep 
+// file lines as well. But they are not needed for the current version of 
+// the SimplifiedContextStack). 
+
+// TODO. Perhaps show file lines in the SimplifiedContextStack as well, at least
+// for "Tree Order" 0 nodes.
+
+// SECTION 4. (labels). Labels represents whether the current node is involved with
+// horizontal edges. Current possible labels are is-contractuma and is-redex 
+// (for forwarding relationship) and is-attribute-root (for higher-order attribute subtree roots).
+// Labels are currently extracted from DecoratedNode itself. 
+
+// TODO. Add a new contextualization label/header framework for REFERENCE ATTRIBUTES.  
 
 public class NodeContextMessage {
 
+    // String representations for each section.
     public String GetSection0() {
         return Integer.toString(this.num_index);
     }
@@ -65,10 +93,7 @@ public class NodeContextMessage {
         // to make decrementing on pop() easy
         this.num_index = num_index;
 
-        // Section 0
-        // this.set_index();
-
-        // Try to do all this within java given a node n
+        // Necessary order.
     
         // Section 2
         this.prod_name = node.getNode().getName();
@@ -84,41 +109,38 @@ public class NodeContextMessage {
         //  because they depend on computing boolean attributes
         if ((this.translation_x > 0) || (this.higher_order_y > 0) ||
             this.is_attribute_root || this.is_contractum) {
+            // If headers are represent (non-"order" 0 node), its pretty print is used. 
             this.pretty_print(node);
         }
         else {
+            // Otherwise file times are used for the text/concrete syntax representation.
             this.pull_filelines();
         }
-
-        this.has_been_initialized = true;  
     }
 
     // Set translation_x and translation_x bools here
-    // Is there a way to know something is an attribute 
-    // just from its node values?
     private void initialize_headers(DecoratedNode node) {
 
         this.translation_x = node.getIsTranslation();
         this.higher_order_y = node.getIsAttribute();
     }
 
-    // Use file location method I wrote in DecoratedNode
+    // Use file location method written in DecoratedNode
     private void fill_in_rows_and_cols(DecoratedNode node){
         this.fc_start = node.getStartCoordinates();
         this.fc_end = node.getEndCoordinates();
         this.filename = node.getFilename();
     }
 
-    // Big reduction semantics logic goes here
-    // Simplified now by only allowing forwards
-    // to be only reduction semantic
+    // Labels currently only regard forwarding and higher-order attributes.
     private void set_labels(DecoratedNode node) {
        
         this.is_redex = node.getIsRedex();
         this.is_contractum = node.getIsContractum();
-        // Will always work for forwarding. Only use this value if is_contractum
-        this.contractum_of = this.num_index - 1;
         this.is_attribute_root = node.getIsAttributeRoot();
+
+        // Only relevant if these attributes are true
+        this.contractum_of = this.num_index - 1;
         this.attribute_of = this.num_index - 1;
     }
 
@@ -128,9 +150,8 @@ public class NodeContextMessage {
         this.text_repr = node.getPrettyPrint();
     }
 
-    // probably need some file I/O, but might find it
-    // in java runtime code. Basically extract file lines
-    // from row x col y to row x' to y'.
+    // Basically extract file lines from row x col y to 
+    // row x' to y' for the two FileCoordinates this class stores.
     private void pull_filelines() {
        
         // Currently not the most efficient but should get the job done for now
@@ -140,7 +161,7 @@ public class NodeContextMessage {
             int col = 1;
             String res = "";
             for (; row < this.fc_start.getRow(); row++) {
-                // System.out.println("skipping row: " + row);
+                // Skip these rows.
                 String line = br.readLine();
             }
             // Advance to starting char
@@ -149,8 +170,7 @@ public class NodeContextMessage {
                 // System.out.println("skipping col: " + col);
                 int c = br.read(); 
             }
-            // reset col to 0 for last read
-            // col = 1;
+
             // Now in correct row to start actually noting down file contents
 
             // Get whole lines here
@@ -179,17 +199,13 @@ public class NodeContextMessage {
 
     @Override
     public String toString() {
-        return this.GetSection0() + "\n" + this.GetSection1() + "\n" + this.GetSection2() + "\n" + this.GetSection3() + "\n" + this.GetSection4();
+        return this.GetSection0() + "\n" + 
+            this.GetSection1() + "\n" + 
+            this.GetSection2() + "\n" + 
+            this.GetSection3() + "\n" + 
+            this.GetSection4();
     }
 
-    // @Override
-    // protected void finalize() throws Throwable {
-    //     next_index--;
-    //     super.finalize();
-    // }
-
-    // Only perform attribute setting once
-    private boolean has_been_initialized = false; 
 
     // Section 0. Every context box will have a numeric index label
     private int num_index;

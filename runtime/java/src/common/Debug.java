@@ -59,8 +59,7 @@ public class Debug {
         }
 
         // creating a context stack when we run the debugger
-        // CMDContextVisualization cStack = new CMDContextVisualization("********************************");
-        // if we want a file visualization:
+        // Creates a "full" or verbose context stack.
         FileContextVisualization cStack = new FileContextVisualization("context.txt", "********************************");
         // if we want an HTML visualization:
         // HTMLContextVisualization cStack = new HTMLContextVisualization("********************************");
@@ -69,11 +68,13 @@ public class Debug {
             cStack.show();
         }
     
-        // Fine to call this
+        // We need the actual context stack to be used to make the SimplifiedContextStack sStack
         ContextStack contextStack = (ContextStack)cStack.getContextStack();
-        // System.out.println(cStack.getContextStack());
 
-        // Need to debug why first line causes NullPointerException before SimplifiedContextStack constructor called
+        // This is the actual contextualization.
+        // Nodes are added to or removed from cStack (pushed/popped). This updates the contextStack
+        // sStack maintains. Then, one just has to call sStack.generateHTMLFile() to render the contextualization 
+        // AFTER pushing/popping to/from cStack.
         SimplifiedContextStack sStack = new SimplifiedContextStack(contextStack);
         sStack.generateHTMLFile();
 
