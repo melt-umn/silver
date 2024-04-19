@@ -1,7 +1,6 @@
 grammar silver:compiler:definition:flow:env;
 
 import silver:util:treemap as map;
-import silver:util:treeset as set;
 
 {--
  - Generate a decision tree to determine all decoration sites where an inherited equation could be supplied
@@ -9,13 +8,13 @@ import silver:util:treeset as set;
  -
  - @param prodName The name of the production containing the vertex type.
  - @param vt The vertex type to find decoration sites for.
- - @param seen A set of (production name, vertex type) that have already been visited.
+ - @param seen A list of (production name, vertex type) pairs that have already been visited.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
  - @return A decision tree to determine if an inherited attributes has been supplied for vt.
  -}
 function findDecSites
-DecSiteTree ::= prodName::String vt::VertexType seen::set:Set<String> flowEnv::FlowEnv realEnv::Env
+DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flowEnv::FlowEnv realEnv::Env
 {
   local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
   local ns :: NamedSignature =
@@ -32,10 +31,10 @@ DecSiteTree ::= prodName::String vt::VertexType seen::set:Set<String> flowEnv::F
     end;
 
   local recurse::(DecSiteTree ::= String VertexType) =
-    findDecSites(_, _, set:add([crossnames(prodName, vt.vertexName)], seen), flowEnv, realEnv);
+    findDecSites(_, _, (prodName, vt) :: seen, flowEnv, realEnv);
 
   return
-    if set:contains(crossnames(prodName, vt.vertexName), seen)
+    if contains((prodName, vt), seen)
     then neverDec()
     else
       -- Direct inherited equation at a decoration site
@@ -162,13 +161,13 @@ DecSiteTree ::= attrName::String d::DecSiteTree flowEnv::FlowEnv
   -}
 fun resolveInhEq
 DecSiteTree ::= prodName::String vt::VertexType attrName::String flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, set:empty(), flowEnv, realEnv), flowEnv);
+  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, [], flowEnv, realEnv), flowEnv);
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs
 [(DecSiteTree, [String])] ::= prodName::String vt::VertexType attrNames::[String] flowEnv::FlowEnv realEnv::Env
 {
-  local d::DecSiteTree = findDecSites(prodName, vt, set:empty(), flowEnv, realEnv);
+  local d::DecSiteTree = findDecSites(prodName, vt, [], flowEnv, realEnv);
   local resolved::map:Map<DecSiteTree String> =
     map:add(map(\ a -> (resolveDecSiteInhEq(a, d, flowEnv), a), attrNames), map:empty());
   return flatMap(\ d -> 

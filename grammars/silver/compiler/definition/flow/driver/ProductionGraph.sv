@@ -423,7 +423,7 @@ fun addDefEqs
         | _ -> true
         end ->
       let decSiteTree::DecSiteTree =
-        findDecSites(prod, decSite, set:fromList([crossnames(prod, ref.vertexName)]), flowEnv, realEnv)
+        findDecSites(prod, decSite, [(prod, ref)], flowEnv, realEnv)
       in filterMap(
         \ attr::String ->
           -- There is an override equation, so the attribute isn't supplied through sharing
