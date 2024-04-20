@@ -104,9 +104,11 @@ fun computeAllProductionGraphs
 
 --------------------------------------------------------------------------------
 -- Below, we have various means of constructing a production graph.
--- Two types are used as part of inference:
+-- Three types are used as part of inference:
 --  1. `constructProductionGraph` builds a graph for a normal production.
 --  2. `constructPhantomProductionGraph` builds a "phantom graph" to guide inference.
+--  3. `constructDispatchGraph` builds a graph for a dispatch signature,
+--     to make projection stitch points work for them.
 --
 -- There are more types of "production" graphs, used NOT for inference, but
 -- for error checking behaviors:
@@ -362,6 +364,26 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
   return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
+function constructDispatchGraph
+ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
+{
+  local dispatch :: String = ns.fullName;
+  local nt :: NtName = ns.outputElement.typerep.typeName;
+  local implProds :: [String] = getImplementingProds(dispatch, flowEnv);
+
+  -- The graph has no normal edges, only projection stitch points!
+  local normalEdges :: [(FlowVertex, FlowVertex)] = [];
+
+  local stitchPoints :: [StitchPoint] =
+    flatMap(dispatchStitchPoints(ns, flowEnv, realEnv, _), implProds);
+
+  local flowTypeVertexes :: [FlowVertex] = [];  -- Doesn't (directly) affect flow types
+  local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
+
+  return productionGraph(dispatch, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+}
+
 fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
   (lhsSynVertex(at), forwardEqVertex());
 
@@ -491,31 +513,39 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
 fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecEq(prodName, parent, termProdName, sigName) ->
-      map(\ prodDcl::ValueDclInfo ->
-        projectionStitchPoint(
+    | subtermDecEq(prodName, parent, termProdName, nt, sigName) ->
+        [projectionStitchPoint(
           termProdName, subtermVertexType(parent, termProdName, sigName), parent, rhsVertexType(sigName),
-          getInhAndInhOnTransAttrsOn(
-            lookupSignatureInputElem(sigName, prodDcl.namedSignature).typerep.typeName,
-            realEnv)),
-        getValueDcl(termProdName, realEnv))
+          getInhAndInhOnTransAttrsOn(nt, realEnv))]
     | _ -> []
     end,
     defs);
 fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | sigShareSite(_, sigName, sourceProd, vt, parent) ->
-      map(\ prodDcl::ValueDclInfo ->
-        projectionStitchPoint(
+    | sigShareSite(_, nt, sigName, sourceProd, vt, parent) ->
+        [projectionStitchPoint(
           sourceProd, rhsVertexType(sigName), lhsVertexType, vt,
-          getInhAndInhOnTransAttrsOn(
-            lookupSignatureInputElem(sigName, prodDcl.namedSignature).typerep.typeName,
-            realEnv)),
-        getValueDcl(sourceProd, realEnv))
+          getInhAndInhOnTransAttrsOn(nt, realEnv))]
     | _ -> []
     end,
     defs);
+fun dispatchStitchPoints [StitchPoint] ::= dispatch::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prod::String =
+  case getValueDcl(prod, realEnv) of
+  | dcl :: _ ->
+    flatMap(\ ie::NamedSignatureElement ->
+      if ie.elementDclType.isNonterminal  -- Dispatch sigs can't have occurs-on constraints
+      then [projectionStitchPoint(
+        prod, rhsVertexType(ie.elementName), lhsVertexType,
+        rhsVertexType(
+          head(drop(positionOf(ie.elementName, dispatch.inputNames), dcl.namedSignature.inputNames))),
+        getInhAndInhOnTransAttrsOn(
+          lookupSignatureInputElem(ie.elementName, dispatch).typerep.typeName,
+          realEnv))]
+      else [],
+      dispatch.inputElements)
+  | _ -> []
+  end;
 
 ---- End helpers for figuring our stitch points --------------------------------
 

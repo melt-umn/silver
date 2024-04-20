@@ -436,7 +436,7 @@ data PatternVarProjection
  - @param sigName  the name of the child under which this term appears
  -}
 abstract production subtermDecEq
-top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::String
+top::FlowDef ::= prod::String  parent::VertexType  termProd::String  nt::String  sigName::String
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];
@@ -464,13 +464,14 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
  - A tree that is shared in the application of a production/dispatch signature
  -
  - @param prod       the full name of the production/dispatch signature
+ - @param nt         the full name of the nonterminal
  - @param sigName    the name of the shared child in prod
  - @param sourceProd the full name of the (dispatching) production that forwarded to prod
  - @param source     the vertex type of the shared tree supplied by sourceProd as the shared child
  - @param parent     the vertex type of where prod is decorated in sourceProd - should always be forward or a forward prod attr.
  -}
 abstract production sigShareSite
-top::FlowDef ::= prod::String sigName::String sourceProd::String source::VertexType parent::VertexType
+top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType parent::VertexType
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];

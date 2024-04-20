@@ -263,12 +263,11 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
           inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
   -- Make sure we aren't introducing any hidden transitive dependencies.
-  -- TODO: Revisit these checks with dispatch sharing.
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case filter(
-        notSharedInputVertex(_, top.env),
-        lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
+      notSharedInputVertex(_, top.env),
+      lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.eqVertex ++
@@ -290,6 +289,31 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       end
     | _ -> nothing()
     end;
+  
+  local ns :: NamedSignature =
+    case getValueDcl(top.frame.fullName, top.env) of
+    | dcl :: _ -> dcl.namedSignature
+    | _ -> error("didn't find a decl for prod " ++ top.frame.fullName)
+    end;
+  local implementedSig :: Maybe<NamedSignature> =
+    case getValueDcl(top.frame.fullName, top.env) of
+    | dcl :: _ -> dcl.implementedSignature
+    | _ -> nothing()
+    end;
+  local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local dispatchHostSigInhDepsLhsInh :: Maybe<set:Set<String>> =
+    case dl.defLHSVertex, implementedSig of
+    | rhsVertexType(sigName), just(sig)
+        when lookupSignatureInputElem(sigName, ns).elementShared ->
+      just(onlyLhsInh(expandGraph(
+        [rhsInhVertex(
+          head(drop(positionOf(sigName, ns.inputNames), sig.inputNames)),
+          attr.attrDcl.fullName)],
+        findProductionGraph(sig.fullName, myGraphs))))
+    | _, _ -> nothing()
+    end;
+
+  -- TODO: translation attributes on a dispatch signature
 
   -- problem = lhsinh deps - inh deps on dec site
   local lhsInhExceedsRefDecSiteDeps :: [String] =
@@ -300,6 +324,12 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   local lhsInhExceedsTransBaseRefDecSiteDeps :: [String] =
     case transBaseRefDecSiteInhDepsLhsInh of
+    | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
+    | _ -> []
+    end;
+
+  local lhsInhExceedsDispatchHostSigInhDeps :: [String] =
+    case dispatchHostSigInhDepsLhsInh of
     | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
     | _ -> []
     end;
@@ -336,6 +366,19 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation may exceed a flow type with hidden transitive dependencies on ${implode(", ", lhsInhExceedsTransBaseRefDecSiteDeps)}; " ++
         s"${transAttr}.${attr.attrDcl.fullName} on some reference to ${v.vertexPP} may be expected to depend ${transBaseRefDecSiteInhDepsLhsInhStr}")]
+    | _ -> []
+    end;
+  local dispatchHostSigInhDepsLhsInhStr::String =
+    case set:toList(dispatchHostSigInhDepsLhsInh.fromJust) of
+    | [] -> "on no attributes"
+    | deps -> "only on " ++ implode(", ", deps)
+    end;
+  top.errors <-
+    case implementedSig of
+    | just(sig) when top.config.warnMissingInh && !null(lhsInhExceedsDispatchHostSigInhDeps) ->
+      [mwdaWrnFromOrigin(top,
+        s"Inherited override equation exceeds the allowed dependencies for an extension implementation production, with dependencies on ${implode(", ", lhsInhExceedsDispatchHostSigInhDeps)}; " ++
+        s"${attr.attrDcl.fullName} on child ${head(drop(positionOf(dl.name, top.frame.signature.inputNames), sig.inputNames))} of signature ${sig.fullName} may be expected to depend ${dispatchHostSigInhDepsLhsInhStr}")]
     | _ -> []
     end;
 }

@@ -31,7 +31,7 @@ top::StitchPoint ::= nt::String  vertexType::VertexType
  - For example, if 'prod' has (rhs1, env) -> (lhs, env),
  - then here we would emit (patvar23, env) -> (e, env).
  -
- - @param prod  The production we're projecting
+ - @param prod  The production (or dispatch signature) we're projecting
  - @param sourceType  The "vertexType" of this stitchPoint
  - @param targetType  The "vertexType" of where this stitchPoint should proxy to
  - @param prodType  The "vertexType" in the other production to use

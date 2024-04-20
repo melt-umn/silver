@@ -134,7 +134,7 @@ top::RSExpr ::= e::RSExpr
   local e1::RSExpr = @e;
   e1.env2 = top.env2;
 
-  top.errors1 = e1.errors1;
+  top.errors1 = e.errors1;
   top.errors2 = e.errors2;
 }
 

@@ -26,14 +26,16 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   local allRealEnv :: Env = toEnv(allRealDefs, allRealOccursDefs);
   
   -- List of all productions
-  local allProds :: [ValueDclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
+  local allProds :: [ValueDclInfo] = allRealEnv.prodDclList;
   local allNts :: [String] = nub(map(getProdNt, allProds));
+  local allDispatchSigs :: [NamedSignature] = map((.dispatchSignature), allRealEnv.dispatchDclList);
   
   -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 
     computeAllProductionGraphs(allProds, allFlowEnv, allRealEnv) ++
-      -- Add in phantom graphs
-      map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
+      -- Add in phantom and dispatch graphs
+      map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts) ++
+      map(constructDispatchGraph(_, allFlowEnv, allRealEnv), allDispatchSigs);
   
   local initialFT :: EnvTree<FlowType> =
     computeInitialFlowTypes(allSpecDefs);
