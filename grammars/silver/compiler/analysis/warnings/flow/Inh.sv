@@ -60,17 +60,18 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - things we reference.
  -
  - @param v  A value we need an equation for.
+ - @param anonResolve  A list of anonymous decoration sites
  - @param config  Command-line arguments, that affect error reporting
- - @param l  Where to report an error, if it's missing
  - @param prodName  The full name of the production we're in
  - @param prodNt  The nonterminal this production belongs to. (For functions, a dummy value is ok)
  - @param flowEnv  The local flow environment
  - @param realEnv  The local real environment
- - @param anonResolve  A list of anonymous decoration sites
  - @returns  Errors for missing equations
  -}
 function checkEqDeps
-[Message] ::= v::FlowVertex  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>]
+[Message] ::=
+  v::FlowVertex  anonResolve::[(String, Location)]
+  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env
 {
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   
@@ -122,9 +123,6 @@ function checkEqDeps
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
 }
-fun checkAllEqDeps
-[Message] ::= v::[FlowVertex]  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env  anonResolve::[Pair<String  Location>] =
-  flatMap(checkEqDeps(_, config, prodName, flowEnv, realEnv, anonResolve), v);
 
 fun checkInhEq
 [Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env =
@@ -132,6 +130,36 @@ fun checkInhEq
   | alwaysDec() -> []
   | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
   end;
+
+function checkAllEqDeps
+[Message] ::=
+  vs::[FlowVertex]  flowDefs::[FlowDef]
+  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env
+{
+  -- If a shared tree is missing an inherited equation, then the equation is also
+  -- missing for the sharing decoration site vertex on which it depends.
+  -- We want to suppress reporting the error again on the decoration site vertex,
+  -- since that error wouldn't list the original vertex as a place where the
+  -- attribute could be supplied.
+  local alreadyReported::[FlowVertex] = do {
+    v :: FlowVertex <- vs;
+    refInh::(VertexType, String) <-
+      case v of
+      | rhsInhVertex(sigName, attrName) -> [(rhsVertexType(sigName), attrName)]
+      | localInhVertex(fName, attrName) -> [(localVertexType(fName), attrName)]
+      | anonInhVertex(fName, attrName) -> [(anonVertexType(fName), attrName)]
+      | _ -> []
+      end;
+    decSite::VertexType <- lookupRefDecSite(prodName, refInh.1, flowEnv);
+    if resolveInhEq(prodName, refInh.1, refInh.2, flowEnv, realEnv) == alwaysDec()
+      then []
+      else [decSite.inhVertex(refInh.2)];
+  };
+  local anonResolve::[(String, Location)] = collectAnonOrigin(flowDefs);
+  return flatMap(
+    checkEqDeps(_, anonResolve, config, prodName, flowEnv, realEnv),
+    removeAll(alreadyReported, vs));
+}
 
 {--
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
@@ -168,7 +196,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, fName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, fName, top.flowEnv, top.env)
     else [];
 }
 
@@ -179,7 +207,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, fName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, fName, top.flowEnv, top.env)
     else [];
 }
 
@@ -190,7 +218,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, id.lookupValue.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, id.lookupValue.fullName, top.flowEnv, top.env)
     else [];
 }
 
@@ -208,7 +236,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if dl.found && attr.found && top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrnFromOrigin(top, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -278,7 +306,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
     else [];
   top.errors <-
     if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
@@ -338,7 +366,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if dl.found && attr.found && top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrnFromOrigin(top, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -357,7 +385,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if dl.found && attr.found && top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrnFromOrigin(top, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -383,7 +411,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
@@ -409,7 +437,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds for " ++ dl.inhAttrName ++ " flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
@@ -430,7 +458,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
          if null(lhsInhExceedsFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -458,7 +486,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
          if null(lhsInhExceedsFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -473,7 +501,7 @@ top::ProductionStmt ::= @val::QName e::Expr
   -- check transitive deps only. No worries about flow types.
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
     else [];
 }
 
@@ -485,7 +513,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
     else [];
 }
 
@@ -497,7 +525,7 @@ top::ProductionStmt ::= 'attachNote' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, top.config, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
     else [];
 }
 

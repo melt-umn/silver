@@ -422,22 +422,13 @@ fun addDefEqs
         | localVertexType(fName) -> !isForwardProdAttr(fName, realEnv)
         | _ -> true
         end ->
-      let decSiteTree::DecSiteTree =
-        findDecSites(prod, decSite, [(prod, ref)], flowEnv, realEnv)
-      in filterMap(
+      filterMap(
         \ attr::String ->
-          -- There is an override equation, so the attribute isn't supplied through sharing
           if vertexHasInhEq(prod, ref, attr, flowEnv)
-          -- The sharing decoration site fails to supply the attribute.
-          -- This will be a missing transitive dep error for ref, don't add the edge to avoid
-          -- an additional spurious error on decSite, which might be inaccurate if attr should
-          -- really have an equation on ref.
-          || isAlwaysDec &&
-            resolveDecSiteInhEq(attr, decSiteTree, flowEnv) != alwaysDec()
+          -- There is an override equation, so the attribute isn't supplied through sharing
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv))
-      end
    | _ -> []
    end;
 
