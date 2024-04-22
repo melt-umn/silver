@@ -244,12 +244,14 @@ top::RSExpr ::= e::RSExpr
 
 dispatch UnaryOp = RSExpr ::= @e::RSExpr;
 
+warnCode "Duplicate equation for env2 on e in production flow:implProd" {
 production implProd implements UnaryOp
 top::RSExpr ::= @e::RSExpr
 {
   e.env2 = top.env2;
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
+}
 }
 
 production dispatchOverrideKnownProd

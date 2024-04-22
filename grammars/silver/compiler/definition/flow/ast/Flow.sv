@@ -69,11 +69,11 @@ monoid attribute hostSynTreeContribs :: [(String, FlowDef)];
 {-- A list of attributes for a production that are non-suspect -}
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
-{-- lookup dec site to find places that a unique reference to this ref site *might be* decorated.
+{-- lookup dec site to find places that a shared reference to this tree *might be* decorated.
  - This includes e.g. unique reference sites that appear in an if/else branch. -}
 monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 
-{-- lookup dec site to find places that a unique reference to this ref site are *unconditionally* decorated. -}
+{-- lookup dec site to find places that a shared reference to this tree are *unconditionally* decorated. -}
 monoid attribute refDecSiteContribs :: [(String, VertexType)];
 
 {-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}

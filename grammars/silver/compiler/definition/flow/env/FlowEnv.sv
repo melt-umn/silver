@@ -110,6 +110,19 @@ fun lookupRefDecSite [VertexType] ::= prod::String v::VertexType e::FlowEnv =
 fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
   searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
 
+fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv realEnv::Env =
+  -- places where this child was decorated in a production forwarding to this one
+  lookupSigShareSites(prod, sigName, e) ++
+  -- or in a dispatch signature that this production implements
+  case getValueDcl(prod, realEnv) of
+  | dcl :: _ when dcl.implementedSignature matches just(sig) ->
+    lookupSigShareSites(
+      sig.fullName,
+      head(drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames)),
+      e)
+  | _ -> []
+  end;
+
 -- inherited equation for some arbitrary vertex type
 fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
   case vt of
@@ -129,6 +142,29 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   -- anything in the prod flow graph.
   | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
   | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
+  end;
+
+-- used for duplicate equations checks
+fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
+  case vt of
+  | rhsVertexType(sigName) ->
+      length(lookupInh(prodName, sigName, attrName, flowEnv)) +
+      let sites :: [(String, VertexType)] =
+        lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)
+      in
+        if !null(sites) && all(unzipWith(vertexHasInhEq(_, _, attrName, flowEnv), sites))
+        then 1 else 0
+      end
+  | localVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+      length(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
+  | transAttrVertexType(localVertexType(fName), transAttr) ->
+      length(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
+  | transAttrVertexType(_, _) -> 0
+  | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | subtermVertexType(_, remoteProdName, sigName) -> 0
+  | lhsVertexType_real() -> length(lookupSyn(prodName, attrName, flowEnv))
+  | forwardVertexType_real() -> length(lookupFwdInh(prodName, attrName, flowEnv))
   end;
 
 -- default set of inherited attributes required/assumed to exist for references

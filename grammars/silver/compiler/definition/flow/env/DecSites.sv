@@ -56,17 +56,9 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         foldAllDecSite(unzipWith(recurse,
-          -- places where this child was decorated in a production forwarding to this one
-          lookupSigShareSites(prodName, sigName, flowEnv) ++
+          -- places where this child was decorated in a production forwarding to this one,
           -- or in a dispatch signature that this production implements
-          case getValueDcl(prodName, realEnv) of
-          | dcl :: _ when dcl.implementedSignature matches just(sig) ->
-            lookupSigShareSites(
-              sig.fullName,
-              head(drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames)),
-              flowEnv)
-          | _ -> []
-          end))
+          lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
       | _ -> neverDec()
       end ++
       -- Via direct sharing
