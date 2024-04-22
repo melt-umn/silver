@@ -224,16 +224,26 @@ public class DecoratedNode implements Decorable, Typed {
 				} else {
 					inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
 				}
-				for(int i = 0; i < inhs.length; i++) {
-					final int attribute = i;
-					if(inhs[attribute] != null && inheritedAttributes[attribute] == null) {
-						inheritedAttributes[attribute] = inhs[attribute].withContext(parent);
-					}
-				}
+				copyInhOverrides(parent, inheritedAttributes, inhs);
 			}
 			decorationSite = decSite != null? decSite.withContext(parent) : null;
 		}
 		return this;
+	}
+
+	private void copyInhOverrides(final DecoratedNode parent, final Lazy[] inhs, final Lazy[] newInhs) {
+		assert inhs.length == newInhs.length;
+		for(int i = 0; i < inhs.length; i++) {
+			if(newInhs[i] != null) {
+				Lazy newInh = newInhs[i].withContext(parent);
+				if(inhs[i] == null) {
+					inhs[i] = newInh;
+				} else if (inhs[i] instanceof TransInhs) {
+					assert newInhs[i] instanceof TransInhs;
+					copyInhOverrides(parent, ((TransInhs)inhs[i]).inhs, ((TransInhs)newInh).inhs);
+				}
+			}
+		}
 	}
 
 	/**
