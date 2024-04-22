@@ -1,3 +1,5 @@
+// Auto uptade view and eq as we move 
+
 //needed to run: ./silver-compile --force-origins --clean
 package common;
 
@@ -61,7 +63,7 @@ public class Debug {
         // creating a context stack when we run the debugger
         // CMDContextVisualization cStack = new CMDContextVisualization("********************************");
         // if we want a file visualization:
-        FileContextVisualization cStack = new FileContextVisualization("context.txt", "********************************");
+        this.cStack = new FileContextVisualization("context.txt", "********************************");
         // if we want an HTML visualization:
         // HTMLContextVisualization cStack = new HTMLContextVisualization("********************************");
         cStack.push(currentNode);
@@ -70,11 +72,11 @@ public class Debug {
         }
     
         // Fine to call this
-        ContextStack contextStack = (ContextStack)cStack.getContextStack();
+        this.contextStack = (ContextStack)cStack.getContextStack();
         // System.out.println(cStack.getContextStack());
 
         // Need to debug why first line causes NullPointerException before SimplifiedContextStack constructor called
-        SimplifiedContextStack sStack = new SimplifiedContextStack(contextStack);
+        this.sStack = new SimplifiedContextStack(contextStack);
         sStack.generateHTMLFile();
 
         //Control loop
@@ -91,14 +93,14 @@ public class Debug {
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: up<>");
                     }else{
+                        //TODO: lots of this logic already happens in up() we can get rid of it here
                         if (currentNode.getParent().getParent() instanceof TopNode || currentNode.getParent() == null){
                             System.out.println("Root Node has no parent");
                         }else if (currentNode.getParent() == null){
                             System.out.println("Null parent");
                         }else{
                             nodeStack.push(currentNode);
-                            currentNode = currentNode.getParent();
-                            //System.out.println("going to parent");
+                            currentNode = up();
                             if(toggleNameDisplay){
                                 printName(currentNode);
                             }
@@ -113,6 +115,7 @@ public class Debug {
                     }
                     break;
 
+                //Would be cool to call down on strings in addition to ints
                 case "down": case "d":  
                     int childNum = -1; 
                     if(currentNode.getNode().hasForward()){
@@ -147,6 +150,7 @@ public class Debug {
                         break;
                     } 
                     else{
+                        //TODO: This logic should move to the down function
                         nodeStack.push(currentNode);
                         currentNode = childNode;
                         if(toggleNameDisplay){
@@ -213,6 +217,9 @@ public class Debug {
 
                 
                 //TODO: known bug, don't know how to represent higher order nodes as decoratedNodes
+                //Known caues: its becaues the CStack suff is not being updated when we go down, 
+                //this logic needs to move to the down function! 
+                //probaly a general update of organizing what goes in fucntions is in order
                 case "into":
                     //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
                     String attributeNameinto = ""; 
@@ -590,6 +597,9 @@ public class Debug {
     private DecoratedNode root;
     private DecoratedNode currentNode;
     private Stack<DecoratedNode> nodeStack;
+    private FileContextVisualization cStack;
+    private ContextStack contextStack;
+    private SimplifiedContextStack sStack;
     HashMap<Integer, StringObjectPair> currentNodeSynthAttrs;
     HashMap<Integer, StringObjectPair> currentNodeInhAttrs;
     HashMap<Integer, StringObjectPair> currentNodeLocalAttrs;
@@ -608,6 +618,11 @@ public class Debug {
     {
         if (currentNode.getParent() != null)
         {
+            // printProduction(currentNode);
+            // System.out.println("No Null parent!");
+            // System.out.println(currentNode);
+            // System.out.println(currentNode.getParent());
+            printProduction(currentNode.getParent());
             currentNode = (DecoratedNode) currentNode.getParent();
             return currentNode;
         }
@@ -881,6 +896,7 @@ public class Debug {
     //HACK: this entire prossess is based on string meddling
     //A better way to do this would be to have each attribute know what other attributes generate it
     //This way we would not need to rely on specific string formatting
+    //Should probaly not be pushed to 
     public int algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
     {
         //Gets the equation we are on
@@ -978,8 +994,15 @@ public class Debug {
 
         //Now that we know the child we can travle their
         Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
+        //Wierd bug, we can't go up after goinf down in alogdebugg
         DecoratedNode nextNode = down(nextChildNum);
+        //TODO: This logic should move to the down function
         currentNode = nextNode;
+
+        // System.out.println();
+        // System.out.println("currentNode:");
+        // printProduction(currentNode);
+        // System.out.println();
 
         //We also know what attribute they want to investigate
         //it should have the same end as the chosen attribute
@@ -988,7 +1011,7 @@ public class Debug {
         //list should be list of attributes
         for (String element : attributeList) {
             String[] parts = element.split(":");
-            if (parts.length == 2 && parts[1].equals(chosenAttributeComponents[1])) {
+            if (parts.length == 2 && chosenAttributeComponents[1].startsWith(parts[1])) {
                 nextAttributeName = element;
             }
         }
