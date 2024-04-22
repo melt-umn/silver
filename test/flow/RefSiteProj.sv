@@ -151,7 +151,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production remoteExceedsOverride
 top::RSExpr ::= e::RSExpr
 {
@@ -179,7 +179,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production uselessOverrideWithinFT
 top::RSExpr ::= e::RSExpr
 {
@@ -192,7 +192,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production fwrdDecSiteExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -201,7 +201,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production projExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -211,7 +211,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production condDecExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -229,7 +229,7 @@ top::RSExpr ::= e::RSExpr
     if top.env1 == [] then copy12From2(@e) else base();
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production overrideNotInRefSet
 top::RSExpr ::= e::RSExpr
 {
@@ -290,7 +290,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = e.errors2;
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production anonDecOverrideExceedsFT
 top::RSExpr ::= e::RSExpr
 {
