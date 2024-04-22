@@ -927,6 +927,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// getIsRedex() 		
 		// getContractum() 		
 		// getIsContractum() 	
+		// getIsAttributeRoot()
 	
 	// For headers for NodeContextMessageBox
 		// getIsAttribute() 	
@@ -1108,8 +1109,8 @@ public class DecoratedNode implements Decorable, Typed {
 	// "pp" is the standard pretty print name
 	public String getPrettyPrint() {
 
-		int num_attrs = this.self.getNumberOfSynAttrs();
-		for (int i = 0; i < num_attrs; i++) {
+		int numAttrs = this.self.getNumberOfSynAttrs();
+		for (int i = 0; i < numAttrs; i++) {
 			
 			// Search until find name that is "pp"
 			String name = this.self.getNameOfSynAttr(i);
