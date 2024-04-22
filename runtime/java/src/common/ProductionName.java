@@ -1,5 +1,12 @@
 package common;
 
+// The Production name class is a helper class for debugging
+// contextualization. 
+
+// It simply associated an index with a production name, which i
+// is to be used when there are multiple productions with the same 
+// name encountered in a SimplifiedContextStack.
+
 public class ProductionName {
     public String name;
     public int  index;
@@ -12,7 +19,7 @@ public class ProductionName {
     // Default constructor
     public ProductionName() {
         this.name = "";
-        this.index = -1;
+        this.index = 0;
     }
 
     public String toString() {
