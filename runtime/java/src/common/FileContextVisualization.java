@@ -19,9 +19,6 @@ public class FileContextVisualization extends CMDContextVisualization {
     @Override
     public void show() {
         
-        File file = new File(this.filename);
-
-
         try{
             FileWriter myWriter = new FileWriter(this.filename);
             Iterator<NodeContextMessage> iterator = this.contextStack.iterator();
