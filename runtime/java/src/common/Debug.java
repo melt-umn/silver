@@ -1,3 +1,5 @@
+// Auto uptade view and eq as we move 
+
 //needed to run: ./silver-compile --force-origins --clean
 package common;
 
@@ -35,362 +37,237 @@ public class Debug {
     public static DecoratedNode runDebug(DecoratedNode tree)
     {
         Debug debug = new Debug();
+        //When Debugg is run runingDebug is called and does most the work
         debug.runingDebug(tree);
         return tree;
     }
 
     public void runingDebug(DecoratedNode tree) {
+        //IO variables
         Scanner inp = new Scanner(System.in);
-        System.out.println("Enter characters, and 'q' to quit.");
         String userInput; 
         String[] userInputList;
-        boolean toggleNameDisplay = false;
-        boolean toggleCStackDisplay = true;
-        boolean toggleHeadlessAttributes = false;
-        String[] toggleChoices = {"nameDisplay", "cStackDisplay", "fullAttributeNames"};
+
+        //Variables for termainal displays
+        this.toggleNameDisplay = false;
+        this.toggleCStackDisplay = true;
+        this.toggleHeadlessAttributes = false;
+        this.toggleChoices = new String[] {"nameDisplay", "cStackDisplay", "fullAttributeNames"};
+
+        //A few Place holder variable
         DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
+
+        //This stack is used for the undo command
         this.nodeStack = new Stack<DecoratedNode>();
 
-        if(toggleNameDisplay){
-            //printNames(currentNode);
-            printName(currentNode);
-        }
-
-        // creating a context stack when we run the debugger
-        // Creates a "full" or verbose context stack.
-        FileContextVisualization cStack = new FileContextVisualization("context.txt", "********************************");
-        // if we want an HTML visualization:
-        // HTMLContextVisualization cStack = new HTMLContextVisualization("********************************");
+        // These stacks are important for the file visualization
+        this.cStack = new FileContextVisualization("context.txt", "********************************");
         cStack.push(currentNode);
+        this.contextStack = (ContextStack)cStack.getContextStack();
+        this.sStack = new SimplifiedContextStack(contextStack);
+        sStack.generateHTMLFile();
+
+        //Start of display
+        System.out.println("Enter characters, and 'q' to quit.");
         if(toggleCStackDisplay){
             cStack.show();
         }
-    
-        // We need the actual context stack to be used to make the SimplifiedContextStack sStack
-        ContextStack contextStack = (ContextStack)cStack.getContextStack();
+        if(toggleNameDisplay){
+            printName(currentNode);
+        }
 
-        // This is the actual contextualization.
-        // Nodes are added to or removed from cStack (pushed/popped). This updates the contextStack
-        // sStack maintains. Then, one just has to call sStack.generateHTMLFile() to render the contextualization 
-        // AFTER pushing/popping to/from cStack.
-        SimplifiedContextStack sStack = new SimplifiedContextStack(contextStack);
-        sStack.generateHTMLFile();
-
-        //Control loop
+        //Main Control loop
         loop: do { 
+            //After each command is done the user is prompted again
             System.out.print(">DEBUGGER-PROMPT$");
             userInput = inp.nextLine();
             userInputList = userInput.split(" ");
 
-            //Each case has a set of conditionals to make everything is in order befor running
-            //in the final case they call a helper function that does most of the work
+            //The basic structure is we check if the user input matches any expected input
+            //If so we call the corresponding function where the work is done
+            //Most IO is done in this function and most logic is done in the auxiliary functions
             switch (userInputList[0]) {
 
+                //used for going to a parent of the current node
                 case "up": case "u": 
-                    if (userInputList.length != 1) {
-                        System.out.println("invalid, correct usage: up<>");
-                    }else{
-                        if (currentNode.getParent().getParent() instanceof TopNode || currentNode.getParent() == null){
-                            System.out.println("Root Node has no parent");
-                        }else if (currentNode.getParent() == null){
-                            System.out.println("Null parent");
-                        }else{
-                            nodeStack.push(currentNode);
-                            currentNode = currentNode.getParent();
-                            //System.out.println("going to parent");
-                            if(toggleNameDisplay){
-                                printName(currentNode);
-                            }
-                            // if we navigate up to a parent, push it on to the stack (?)
-                            cStack.pop();
-                            sStack.generateHTMLFile();
-                            // when we push, update and show the context
-                            if(toggleCStackDisplay){
-                                cStack.show();
-                            }
-                        }
-                    }
-                    break;
 
-                case "down": case "d":  
-                    int childNum = -1; 
-                    if(currentNode.getNode().hasForward()){
-                        System.out.println("can't go down on a forwarding node");
+                    //up should not have any arguments
+                    if (userInputList.length != 1) {
+                        System.out.println("invalid, correct usage: up");
                         break;
                     }
-                    else if (userInputList.length == 1) {
-                        System.out.println("Which child?");
+
+                    //If so we can go to that node
+                    if (up() == -1)
+                        break;
+
+                    //Update the json and html and terminal to the new node
+                    updateDisplay();
+                    break;
+
+                //Used to navigate to children
+                case "down": case "d":  
+                    String childName = "";
+
+                    //If the user does not provide a child we should list them out
+                    if (userInputList.length == 1) {
                         String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
                         String[] listCurrentProduction = currentProduction.split("\\s+");
                         String[] childNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
-                        childNum = chooseFormList(inp, childNames);
-                        if(childNum == -1){
-                            break;
-                        }
-                    }else if(userInputList.length == 2){
-                        try{
-                            childNum = Integer.parseInt(userInputList[1]);
-                        }catch (NumberFormatException e) {
-                            System.out.println("invalid, correct usage: down <node #>");
-                            break;
-                        }
-                    }else{
-                        System.out.println("invalid, correct usage: down <node #>");
-                        break;
+                        System.out.println("Which child?");
+                        displayArray(childNames);
+                        System.out.print(">DEBUGGER-PROMPT$");
+                        childName = inp.nextLine();
                     }
 
-                    childNode = down(childNum);
-
-                    if(childNode == null){
-                        System.out.println("invalid child number");
-                        break;
-                    } 
+                    //Otherwise they should have typed one in
+                    else if(userInputList.length == 2){
+                        childName = userInputList[1];
+                    }
+                    
+                    //We do not expect more than 2 arguments for down
                     else{
-                        nodeStack.push(currentNode);
-                        currentNode = childNode;
-                        if(toggleNameDisplay){
-                            printName(currentNode);
-                        }
-                        // if we navigate down to a child, push it on to the stack
-                        cStack.push(currentNode);
-                        sStack.generateHTMLFile();
-                        // when we push, update and show the context
-                        if(toggleCStackDisplay){
-                            cStack.show();
-                        }
+                        System.out.println("invalid, correct usage: down <node name>");
+                        break;
                     }
+
+                    //Now that we have the childname we can try to go to it
+                    try{
+                        if(down(childName) == -1)
+                            System.out.println("invalid child");
+                    }catch(NullPointerException e){
+                        System.out.println("Null pointer");
+                        break;
+                    }catch(IndexOutOfBoundsException e){
+                        System.out.println("Index out of bound");
+                        break;
+                    }    
+
+                    //Update the json and html and terminal to the new node
+                    updateDisplay();
                     break;
 
+                //used to go back to the last node traked on nodeStack
                 case "undo":
+                    //undo should not have any arguments
                     if (userInputList.length != 1) {
-                        System.out.println("invalid, correct usage: undo<>");
-                    }else{
-                        if(nodeStack.empty()){
-                            System.out.println("invalid no node to undo");
-                        } 
-                        else{
-                            DecoratedNode newNode = nodeStack.pop();
-                            currentNode = newNode;
-                            //System.out.println("undoing last movement");
-                            if(toggleNameDisplay){
-                                printName(currentNode);
-                            }
-                            // remove from the stack
-                            cStack.pop();
-                            sStack.generateHTMLFile();
-                            if(toggleCStackDisplay){
-                                cStack.show();
-                            }
-                        }
+                        System.out.println("invalid, correct usage: undo");
+                        break;
                     }
+
+                    if(undo() == -1)
+                        break;
+
+                    //Update the json and html and terminal to the new node
+                    updateDisplay();
                     break;
 
+                //used to access forward nodes
                 case "forwards": case "f":
+                    //forwards should not have any arguments
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: forwards<>");
-                    }else{
-                        childNode = forwards(currentNode);
-                        if(childNode == null){
-                            System.out.println("invalid no node to forward");
-                        }
-                        else{
-                            System.out.println("going forward");
-                            currentNode = childNode;
-                            if(toggleNameDisplay){
-                                printName(currentNode);
-                            }
-                            // if we navigate to a forward, push it on to the stack
-                            cStack.push(currentNode);
-                            sStack.generateHTMLFile();
-                            // when we push, update and show the context
-                            if(toggleCStackDisplay){
-                                cStack.show();
-                            }
-                        }
-                    }
-                    break;
-
-                
-                //TODO: known bug, don't know how to represent higher order nodes as decoratedNodes
-                case "into":
-                    //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
-                    String attributeNameinto = ""; 
-                    Integer attributeNuminto = 0;
-                    List<String> attributeListinto = allAttributesList(currentNode);
-                    if (userInputList.length == 1) {
-                        System.out.println("Which attribute?");
-                        String[] attriburteArrayinto =  attributeListinto.toArray(new String[attributeListinto.size()]);
-                        attributeNuminto = chooseFormList(inp, attriburteArrayinto);
-                        if(attributeNuminto == -1){
-                            break;
-                        }else if(attributeNuminto >= attributeListinto.size()){
-                            System.out.println("Invaild attribute number");
-                            break;
-                        }else{
-                            attributeNameinto = attributeListinto.get(attributeNuminto);
-                        }
-                    }else if(userInputList.length == 2){
-                            try{
-                            attributeNuminto = Integer.parseInt(userInputList[1]);
-                            attributeNameinto = attributeListinto.get(attributeNuminto);
-                        }catch (NumberFormatException e) {
-                            System.out.println("invalid, correct usage: view <node #>");
-                            break;
-                        }catch (IndexOutOfBoundsException e){
-                            System.out.println("Index out of bounds");
-                            break;
-                        }
-                    }else{
-                        System.out.println("invalid, correct usage: into <node #>");
                         break;
                     }
-                    childNode = into(currentNode, attributeNameinto);
-                    if(childNode == null){
-                        System.out.println("invalid input");
-                    }
-                    else{
-                        System.out.println("going into");
-                        currentNode = childNode;
-                        // if(toggleNameDisplay){
-                        //     printName(currentNode);
-                        // }
-                        // // if we navigate to a forward, push it on to the stack
-                        // cStack.push(currentNode);
-                        // // when we push, update and show the context
-                        // cStack.show();
-                    }
+
+                    //try to move forward
+                    if(forwards() == -1)
+                        break;
+
+                    //Update the json and html and terminal to the new node
+                    updateDisplay();
                     break;
 
-                case "backtrack": case "backwrads": case "b":
+                //used to access parents that forwarded to this node
+                case "backtrack": case "backwards": case "b":
+                    //backtrack should not have any arguments
                     if (userInputList.length != 1) {
                         System.out.println("invalid, correct usage: backtrack<>");
-                    }else{
-                        childNode = backtrack(currentNode);
-                        if(childNode == null){
-                            System.out.println("invalid no node to backtrack to");
-                        } 
-                        else{
-                            System.out.println("going backwrds");
-                            currentNode = childNode;
-                            if(toggleNameDisplay){
-                                printName(currentNode);
-                            }
-                            // if we navigate backwards, pop (?)
-                            cStack.pop();
-                            sStack.generateHTMLFile();
-                            // when we push, update and show the context
-                            if(toggleCStackDisplay){
-                                cStack.show();
-                            }
-                        }
-                    }
-                    break;
-
-                case "toggle":
-                    String toggelChoice = "";
-                    if (userInputList.length == 1) {
-                        toggelChoice = toggleChoices[chooseFormList(inp, toggleChoices)];
-                    }else if (userInputList.length == 2){
-                        toggelChoice = userInputList[1];
-                    } 
-                    if(toggelChoice.equals("nameDisplay")){
-                        if(toggleNameDisplay){
-                            System.out.println("Production Display off");
-                            toggleNameDisplay = false;
-                        }else{
-                            System.out.println("Production Display on");
-                            toggleNameDisplay = true;
-                        }
-                    }else if(toggelChoice.equals("fullAttributeNames")){
-                        if(toggleHeadlessAttributes){
-                           System.out.println("Headless Attributes off");
-                            toggleHeadlessAttributes = false;
-                        }else{
-                            System.out.println("Headless Attributes on");
-                            toggleHeadlessAttributes = true;
-                        }
-                    }else if(toggelChoice.equals("cStackDisplay")){
-                        if(toggleCStackDisplay){
-                            System.out.println("cStack Display off");
-                            toggleCStackDisplay = false;
-                        }else{
-                            System.out.println("cStack Display on");
-                            toggleCStackDisplay = true;
-                        }
-                    }else{
-                        System.out.println("legal toggles: nameDisplay, fullAttributeNames, cStackDisplay");
-                    }
-                    break;
-
-
-                //Display the production
-                case "prod": 
-                    if (userInputList.length != 1) {
-                        System.out.println("invalid, correct usage: prod<>");
-                    }else{
-                        printProduction(currentNode);
-                    }
-                    break;
-
-                case "name": 
-                    if (userInputList.length != 1) {
-                        System.out.println("invalid, correct usage: prod<>");
-                    }else{
-                        printName(currentNode);
-                    }
-                    break;
-
-                //Makes html of the production with the specific production highlighted
-                case "eq": 
-                    String attributeNameView = ""; 
-                    Integer attributeNumView = 0;
-                    List<String> attributeListView = allAttributesList(currentNode);
-                    if (userInputList.length == 1) {
-                        System.out.println("Which attribute?");
-                        String[] attriburteArrayView =  attributeListView.toArray(new String[attributeListView.size()]);
-                        attributeNumView = chooseFormList(inp, attriburteArrayView);
-                        if(attributeNumView == -1){
-                            break;
-                        }else if(attributeNumView >= attributeListView.size()){
-                            System.out.println("Invaild attribute number");
-                            break;
-                        }else{
-                            attributeNameView = attributeListView.get(attributeNumView);
-                        }
-                    }else if(userInputList.length == 2){
-                            try{
-                            attributeNumView = Integer.parseInt(userInputList[1]);
-                            attributeNameView = attributeListView.get(attributeNumView);
-                        }catch (NumberFormatException e) {
-                            System.out.println("invalid, correct usage: view <node #>");
-                            break;
-                        }catch (IndexOutOfBoundsException e){
-                            System.out.println("Index out of bounds");
-                            break;
-                        }
-                    }else{
-                        System.out.println("invalid, correct usage: into <node #>");
                         break;
                     }
 
-                    printEquation(currentNode, attributeNameView) ;
-                    attributeDataHTML(currentNode, "");
-                    // if(childNode == null){
-                    //     System.out.println("invalid input");
-                    // }
-                    // else{
-                    //     System.out.println("going into");
-                    //     currentNode = childNode;
-                    //     // if(toggleNameDisplay){
-                    //     //     printName(currentNode);
-                    //     // }
-                    //     // // if we navigate to a forward, push it on to the stack
-                    //     // cStack.push(currentNode);
-                    //     // // when we push, update and show the context
-                    //     // cStack.show();
-                    // }
+                    //try to move backwards
+                    if(backtrack() == -1)
+                        break;
+
+                    //Update the json and html and terminal to the new node
+                    updateDisplay();
+                    break;
+
+                //Used to specify what displays the user want to see
+                case "toggle":
+                    String toggleInput = "";
+
+                    //If the user does not provide a child we should list them out
+                    if (userInputList.length == 1) {
+                        System.out.println("Which toggle?");
+                        displayArray(toggleChoices);
+                        System.out.print(">DEBUGGER-PROMPT$");
+                        toggleInput = inp.nextLine();
+                    }
+                    
+                    //Otherwise they should have typed one in
+                    else if (userInputList.length == 2){
+                        toggleInput = userInputList[1];
+                    } 
+
+                    //We do not expect more than 2 arguments for toggle 
+                    else{
+                        System.out.println("invalid, correct usage: toggle <toggle name>");
+                        break;
+                    }
+
+                    //Activate the toggle
+                    toggle(toggleInput);
+                    break;
+
+                //used to display the production name on the terminal
+                case "name": 
+                    
+                    //name should not have any arguments
+                    if (userInputList.length != 1) {
+                        System.out.println("invalid, correct usage: name");
+                        break;
+                    }
+
+                    //Print the name
+                    printName(currentNode);
+                    break;
+
+                //used to jump to a specific equation
+                case "equation": case "eq": 
+                    String attributeNameInput = ""; 
+
+                    //If the user does not provide a attribute we should list them out
+                    if (userInputList.length == 1) {
+                        List<String> attributeListView = allAttributesList(currentNode);
+                        String[] attributeArrayView = attributeListView.toArray(new String[attributeListView.size()]);
+                        System.out.println("Which attribute?");
+                        displayArray(attributeArrayView);
+                        System.out.print(">DEBUGGER-PROMPT$");
+                        attributeNameInput = inp.nextLine();
+                    }
+                    
+                    //Otherwise they should have typed one in
+                    else if(userInputList.length == 2){
+                        attributeNameInput = userInputList[1];
+                    }
+
+                    //We do not expect more than 2 arguments for eq
+                    else{
+                        System.out.println("invalid, correct usage: eq <node name>");
+                        break;
+                    }
+
+                    try{
+                        if(equationHelper(attributeNameInput) == -1)
+                            System.out.println("invalid attribute");
+                    }catch (IndexOutOfBoundsException e){
+                        System.out.println("Index out of bounds");
+                        break;
+                    }
                     break;
 
                 //List synthesized attributes
@@ -513,6 +390,57 @@ public class Debug {
                     }
                     break;
 
+                //TODO: known bug, don't know how to represent higher order nodes as decoratedNodes
+                //TODO: Implemeting this funtion could be done in future work
+                // case "into":
+                //     //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
+                //     String attributeNameinto = ""; 
+                //     Integer attributeNuminto = 0;
+                //     List<String> attributeListinto = allAttributesList(currentNode);
+                //     if (userInputList.length == 1) {
+                //         System.out.println("Which attribute?");
+                //         String[] attriburteArrayinto =  attributeListinto.toArray(new String[attributeListinto.size()]);
+                //         attributeNuminto = chooseFormList(inp, attriburteArrayinto);
+                //         if(attributeNuminto == -1){
+                //             break;
+                //         }else if(attributeNuminto >= attributeListinto.size()){
+                //             System.out.println("Invaild attribute number");
+                //             break;
+                //         }else{
+                //             attributeNameinto = attributeListinto.get(attributeNuminto);
+                //         }
+                //     }else if(userInputList.length == 2){
+                //             try{
+                //             attributeNuminto = Integer.parseInt(userInputList[1]);
+                //             attributeNameinto = attributeListinto.get(attributeNuminto);
+                //         }catch (NumberFormatException e) {
+                //             System.out.println("invalid, correct usage: view <node #>");
+                //             break;
+                //         }catch (IndexOutOfBoundsException e){
+                //             System.out.println("Index out of bounds");
+                //             break;
+                //         }
+                //     }else{
+                //         System.out.println("invalid, correct usage: into <node #>");
+                //         break;
+                //     }
+                //     childNode = into(currentNode, attributeNameinto);
+                //     if(childNode == null){
+                //         System.out.println("invalid input");
+                //     }
+                //     else{
+                //         System.out.println("going into");
+                //         currentNode = childNode;
+                //         // if(toggleNameDisplay){
+                //         //     printName(currentNode);
+                //         // }
+                //         // // if we navigate to a forward, push it on to the stack
+                //         // cStack.push(currentNode);
+                //         // // when we push, update and show the context
+                //         // cStack.show();
+                //     }
+                //     break;
+
                 case "help": 
                     if (userInputList.length == 1) {
                         System.out.println("call help with one of these keywords to see its functionality:");
@@ -591,11 +519,18 @@ public class Debug {
     private DecoratedNode root;
     private DecoratedNode currentNode;
     private Stack<DecoratedNode> nodeStack;
+    private FileContextVisualization cStack;
+    private ContextStack contextStack;
+    private SimplifiedContextStack sStack;
     HashMap<Integer, StringObjectPair> currentNodeSynthAttrs;
     HashMap<Integer, StringObjectPair> currentNodeInhAttrs;
     HashMap<Integer, StringObjectPair> currentNodeLocalAttrs;
     private int currentLine;
     private int currentColumn;
+    private boolean toggleNameDisplay;
+    private boolean toggleCStackDisplay;
+    private boolean toggleHeadlessAttributes;
+    private String[] toggleChoices;
 
     public void setCurrentNode(DecoratedNode node)
     {
@@ -605,67 +540,285 @@ public class Debug {
         currentNode = node;
     }
 
-    public DecoratedNode up()
+    //Replaces currentNode with its parent
+    public Integer up()
     {
-        if (currentNode.getParent() != null)
-        {
-            currentNode = (DecoratedNode) currentNode.getParent();
-            return currentNode;
+
+        //Make sure there is a parent to go up to 
+        if (currentNode.isRoot()){
+            System.out.println("Root Node has no parent");
+            return -1;
         }
-        return null;
+
+        //NodeStack contains past nodes not current ones
+        nodeStack.push(currentNode);
+
+        //Updates curretnNode
+        currentNode = (DecoratedNode) currentNode.getParent();
+        
+        //Update the various other stacks
+        cStack.pop();
+        sStack.generateHTMLFile();
+        return 1;
     }
 
-    public DecoratedNode down(int child)
+    //HACK: This function currently get the file line by going through the first attribute
+    //This means it will not work if there is no attribute. For future work it would be nice  
+    //if nodes could access the file and have there own file line.
+    public void updateDisplay()
     {
-        String childProductions[] = currentNode.undecorate().getProdleton().getChildTypes();
+        //First we want to update the json to point at the top of the current production
         try{
-            if(childProductions[child].equals("null")){ 
-                return null;
+            List<String> attributeList = allAttributesList(currentNode);
+            Map<String, Lazy> lazyMap = allAttributesLazyMap(currentNode);
+            Lazy attributeLazy = lazyMap.get(attributeList.get(0));
+            //FIXME: Known bug breaks after we forward
+            NLocation loc = attributeLazy.getSourceLocation();
+            if(loc != null) {
+                String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+                int attributeLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+                int currentLineNumber = 1;
+                int productionLineNum = 0;
+                    
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))){
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        //HACK:Relies on the the fact that "::=" is only and always used in production declarations
+                        if (line.contains("::=")) {
+                            productionLineNum = currentLineNumber; 
+                        }
+                        if (currentLineNumber >= attributeLine) {
+                            break;
+                        }
+                        currentLineNumber++;
+                    }
+
+                    writeTojson(file, productionLineNum, productionLineNum);
+                    // add a client server here, when it called send 1
+                    sendMessageToExtension("1");
+                }catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }  
+        }
+        catch(NullPointerException e)
+        {
+            System.out.println("Failed to update json");
+        }
+        
+
+        //Next we want to update the html file with the attribute values
+        Map<String, Object> attributeMap = allAttributesThunkMap(currentNode);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
+            writer.write("<!DOCTYPE html>\n");
+            writer.write("<html>\n");
+            writer.write("<body>\n");
+            writer.write("<pre>\n");
+            for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if(value instanceof Thunk){
+                    writer.write(key + ": THUNKING...");
+                }else{
+                    writer.write(key + ": " + Util.genericShow(value));
+                }
+                writer.newLine();
             }
-            DecoratedNode childNode = currentNode.childDecorated(child);
-            return childNode;
-        }catch(NullPointerException e){
-            System.out.println("Null pointer");
-            return null;
-        }catch(IndexOutOfBoundsException e){
-            System.out.println("Index out of bound");
-            return null;
+            writer.write("</pre>\n");
+            writer.write("</body>\n");
+            writer.write("</html>\n");
+        }catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
+        }
+
+        //Finally Print all information the user wants
+        if(toggleNameDisplay){
+            printName(currentNode);
+        }
+        if(toggleCStackDisplay){
+            cStack.show();
         }
     }
 
-    public DecoratedNode forwards(DecoratedNode node)
+    //Given a child name (or prefix) updates the currentNode to that child
+    public Integer down(String childName)
     {
-        if (node.getNode().hasForward()){
-            currentNode = node.forward();
-            return currentNode;
+        //Find the index of the given childName
+        String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
+        String[] listCurrentProduction = currentProduction.split("\\s+");
+        String[] childNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+        int childNum = Arrays.binarySearch(childNames, childName);
+
+        //If the child was not found we check if the input was a prefix
+        if(childNum < 0){
+            childNum = prefixSearch(childNames, childName);
         }
-        return null;
+
+        //Try to return the child at the corresponding index
+        String childProductions[] = currentNode.undecorate().getProdleton().getChildTypes();
+        if(childProductions[childNum].equals("null")){ 
+            return -1;
+        }
+        nodeStack.push(currentNode);
+        currentNode = currentNode.childDecorated(childNum);
+
+        // if we navigate down to a child, push it on to the stacks
+        cStack.push(currentNode);
+        sStack.generateHTMLFile();
+        return 1;
     }
 
-    public DecoratedNode backtrack(DecoratedNode node)
+    //helper for finding a element with a specific prefix 
+    public Integer prefixSearch(String[] array, String prefix)
     {
-        currentNode = node.getForwardParent();
-        return currentNode;
+         for (int i = 0; i < array.length; i++) {
+            if (array[i].startsWith(prefix)) {
+                return i; 
+            }
+        }
+        return -1;
+    }
 
+    //will go back in the stack
+    public Integer undo(){
+        //Can't undo if no nodes have been visited 
+        if(nodeStack.empty()){
+            System.out.println("invalid no node to undo");
+            return -1;
+        } 
+
+        //Now we can undo by just calling on the stack we tracked for this purpose
+        DecoratedNode newNode = nodeStack.pop();
+        currentNode = newNode;
+        
+        //Update all stacks
+        cStack.pop();
+        sStack.generateHTMLFile();
+
+        return 1;
+    }
+
+    //updates the currentNode to its forward child
+    public Integer forwards()
+    {
+        if (currentNode.getNode().hasForward()){
+            nodeStack.push(currentNode);
+            currentNode = currentNode.forward();
+
+            // if we navigate to a forward, push it on to the stack
+            cStack.push(currentNode);
+            sStack.generateHTMLFile();
+            return 1;
+        }
+        System.out.println("invalid no node to forward");
+        return -1;
+    }
+
+    //updates the currentNode to its backwards parent
+    public Integer backtrack()
+    { 
+        DecoratedNode nextNode = currentNode.getForwardParent();
+        if(nextNode == null){
+            System.out.println("invalid no node to backtrack to");
+            return -1;
+        }
+        nodeStack.push(currentNode);
+        currentNode = nextNode;
+
+        // if we navigate backwards, pop (?)
+        cStack.pop();
+        sStack.generateHTMLFile();
+
+        return 1;
+    }
+
+    //Just an organizational function, turns toggles on/off
+    public Integer toggle(String toggleInput){
+        String toggleChoice = "";
+
+        //Given the toggleInput we can find the toggleChoice
+        if(Arrays.asList(toggleChoices).contains(toggleInput)){
+            toggleChoice = toggleInput;
+        }else{
+            int toggleNum = prefixSearch(toggleChoices, toggleInput);
+            if(toggleNum > -1){
+                toggleChoice = toggleChoices[toggleNum];
+            }else{
+                System.out.println("No such toggle");
+                return -1;
+            }
+        }
+
+        //finally we can update the corresponding toggle
+        if(toggleChoice.equals("nameDisplay")){
+            if(toggleNameDisplay){
+                System.out.println("Production Display off");
+                toggleNameDisplay = false;
+            }else{
+                System.out.println("Production Display on");
+                toggleNameDisplay = true;
+            }
+        }else if(toggleChoice.equals("fullAttributeNames")){
+            if(toggleHeadlessAttributes){
+                System.out.println("Headless Attributes off");
+                toggleHeadlessAttributes = false;
+            }else{
+                System.out.println("Headless Attributes on");
+                toggleHeadlessAttributes = true;
+            }
+        }else if(toggleChoice.equals("cStackDisplay")){
+            if(toggleCStackDisplay){
+                System.out.println("cStack Display off");
+                toggleCStackDisplay = false;
+            }else{
+                System.out.println("cStack Display on");
+                toggleCStackDisplay = true;
+            }
+        }else{
+            System.out.println("legal toggles: nameDisplay, fullAttributeNames, cStackDisplay");
+        }
+        return 1;
     }
     
-    //Most user frindly print
+    //User friendly print
     public void printName(DecoratedNode node)
     {
-        String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
-        System.out.println(partentProduction);
+        String parentProduction = node.undecorate().getProdleton().getTypeUnparse();
+        System.out.println(parentProduction);
     }
-    
-    //Gives production
-    public void printProduction(DecoratedNode node)
+
+    //calls 
+    public Integer equationHelper(String attributeName)
     {
-        String name = node.undecorate().getProdleton().getName();
-        String childProductions[] = node.undecorate().getProdleton().getChildTypes();
-        System.out.print(name + " ");
-        for (int i = 0; i < childProductions.length; i++){
-            System.out.print(childProductions[i] + " ");
+        //Find the index of the given childName
+        List<String> attributeList = allAttributesList(currentNode);
+        String[] attributeArray = attributeList.toArray(new String[attributeList.size()]);
+        int attributeNum = Arrays.binarySearch(attributeArray, attributeName);
+
+        //If the attribute was not found we check if the input was a prefix
+        if(attributeNum < 0){
+            attributeNum = prefixSearch(attributeArray, attributeName);
         }
-        System.out.print("\n");
+
+        //If the attribute was still not found we check if the input was a suffix
+        if(attributeNum < 0){
+            attributeNum = suffixSearch(attributeArray, ":" + attributeName);
+        }
+
+        //Try to display the attribute at the corresponding index
+        displayEquation(currentNode, attributeArray[attributeNum]) ;
+        attributeDataHTML(currentNode, "");
+        return 1;
+    }
+
+    //helper for finding a element with a specific suffix 
+    public static Integer suffixSearch(String[] array, String suffix) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].endsWith(suffix)) {
+                return i; 
+            }
+        }
+        return -1; 
     }
 
 
@@ -687,13 +840,12 @@ public class Debug {
     
     // makes html of the production containing the inputed attribute name
     // the specific attribute is highlighted
-    public void printEquation(DecoratedNode node, String attriburteName)
+    public void displayEquation(DecoratedNode node, String attriburteName)
     {
         Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
         if (lazyMap.containsKey(attriburteName)) {
             Lazy attributeLazy = lazyMap.get(attriburteName);
             NLocation loc = attributeLazy.getSourceLocation();
-            String qualifier = Integer.toHexString(System.identityHashCode(this));
             if(loc != null) {
                 String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
                 int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
@@ -713,7 +865,6 @@ public class Debug {
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.json"))) {
             String currentDirectory = System.getProperty("user.dir");
-            System.out.println(currentDirectory);
             int lastIndex = filename.lastIndexOf("/");
             String fileEnd = filename.substring(lastIndex + 1);
             writer.write("{\"file_path\": \"" + currentDirectory + "/" + fileEnd + "\", \"line_begin\": " + lineNumber + ", \"line_end\": " + endline+ "}");
@@ -724,7 +875,7 @@ public class Debug {
 
     
 
-    //Helper for printEquation
+    //Helper for displayEquation
     public static void equationHTML(String filename, int lineNumber, int endline) {
         //System.out.println("in print content");
         try (BufferedReader br1 = new BufferedReader(new FileReader(filename));
@@ -846,7 +997,6 @@ public class Debug {
     //Higlights the data of the specified attribute
     public void attributeDataHTML(DecoratedNode node, String printAttribute){
         Map<String, Object> attributeMap = allAttributesThunkMap(node);
-        //Map<String, Object> attributeMap = allAttributesObjectMap(node);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
             writer.write("<!DOCTYPE html>\n");
             writer.write("<html>\n");
@@ -862,7 +1012,6 @@ public class Debug {
                 }else{
                     if(value instanceof Thunk){
                         writer.write(key + ": THUNKING...");
-                        //writer.write("<a href='#' onclick='replaceText(this)'>" + key + ": THUNKING..." + "</a>");
                     }else{
                         writer.write(key + ": " + Util.genericShow(value));
                     }
@@ -870,7 +1019,6 @@ public class Debug {
                 writer.newLine();
             }
             writer.write("</pre>\n");
-            //writer.write("<script>\nfunction replaceText(link) {\n\tlink.innerText = link.innerText.replace('THUNKING', 'NO LONGER');\n}\n</script>\n");
             writer.write("</body>\n");
             writer.write("</html>\n");
 
@@ -882,6 +1030,7 @@ public class Debug {
     //HACK: this entire prossess is based on string meddling
     //A better way to do this would be to have each attribute know what other attributes generate it
     //This way we would not need to rely on specific string formatting
+    //Should probaly not be pushed to 
     public int algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
     {
         //Gets the equation we are on
@@ -890,7 +1039,6 @@ public class Debug {
         if (lazyMap.containsKey(attriburteName)) {
             Lazy attributeLazy = lazyMap.get(attriburteName);
             NLocation loc = attributeLazy.getSourceLocation();
-            String qualifier = Integer.toHexString(System.identityHashCode(this));
             if(loc != null) {
                 String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
                 int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
@@ -977,19 +1125,25 @@ public class Debug {
         }
         System.out.println(nextChildName);
 
-        //Now that we know the child we can travle their
-        Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
-        DecoratedNode nextNode = down(nextChildNum);
-        currentNode = nextNode;
+        //Now that we know the child we can travel their
+        // Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
+        //Wierd bug, we can't go up after going down in alogdebugg
+        if (down(nextChildName) == -1){
+            System.out.println("invalid child");
+        }
+
+        // System.out.println();
+        // System.out.println("currentNode:");
+        // System.out.println();
 
         //We also know what attribute they want to investigate
         //it should have the same end as the chosen attribute
-        List<String> attributeList = allAttributesList(nextNode);
+        List<String> attributeList = allAttributesList(currentNode);
         String nextAttributeName = "";
         //list should be list of attributes
         for (String element : attributeList) {
             String[] parts = element.split(":");
-            if (parts.length == 2 && parts[1].equals(chosenAttributeComponents[1])) {
+            if (parts.length == 2 && chosenAttributeComponents[1].startsWith(parts[1])) {
                 nextAttributeName = element;
             }
         }
@@ -997,7 +1151,7 @@ public class Debug {
 
         //recursive time
         if(nextChildName != ""){
-            algorithmicDebugg(nextNode, nextAttributeName, inp);
+            algorithmicDebugg(currentNode, nextAttributeName, inp);
         }
         return -1;
     }
@@ -1156,6 +1310,40 @@ public class Debug {
             }
         }
         return attributeMap;
+    }
+
+    //Should be in util?
+    public static void displayArray(String[] array){
+        for (String element : array){
+            System.out.println(element);
+        } 
+    }
+
+    //For letting users type tab to autofill with an element of the input list
+    public static String autofill(String[] options, Scanner inp){
+        while (true) {
+            String input = inp.nextLine();
+            if (input.isEmpty()) {
+                continue;
+            }
+            if (input.endsWith("\t")) { // Check if Tab key is pressed
+                String prefix = input.substring(0, input.lastIndexOf("\t"));
+                return autoComplete(prefix, options);
+            } else {
+                // Handle regular input
+                return input;
+            }
+        }
+    }
+
+    //helper for autofill
+    private static String autoComplete(String prefix, String[] options) {
+        for (String option : options) {
+            if (option.startsWith(prefix)) {
+                return option;
+            }
+        }
+        return "";
     }
 
     //Should be in util?
