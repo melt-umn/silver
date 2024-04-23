@@ -37,133 +37,124 @@ public class Debug {
     public static DecoratedNode runDebug(DecoratedNode tree)
     {
         Debug debug = new Debug();
+        //When Debugg is run runingDebug is called and does most the work
         debug.runingDebug(tree);
         return tree;
     }
 
     public void runingDebug(DecoratedNode tree) {
+        //IO variables
         Scanner inp = new Scanner(System.in);
-        System.out.println("Enter characters, and 'q' to quit.");
         String userInput; 
         String[] userInputList;
+
+        //Variables for termainal displays
         boolean toggleNameDisplay = false;
         boolean toggleCStackDisplay = true;
         boolean toggleHeadlessAttributes = false;
         String[] toggleChoices = {"nameDisplay", "cStackDisplay", "fullAttributeNames"};
+
+        //A few Place holder variable
         DecoratedNode childNode;
         this.root = tree;
         this.currentNode = tree;
+        //This stack is used for the undo command
         this.nodeStack = new Stack<DecoratedNode>();
 
-        if(toggleNameDisplay){
-            //printNames(currentNode);
-            printName(currentNode);
-        }
-
-        // creating a context stack when we run the debugger
-        // CMDContextVisualization cStack = new CMDContextVisualization("********************************");
-        // if we want a file visualization:
+        // These stacks are important for the file visualization
         this.cStack = new FileContextVisualization("context.txt", "********************************");
-        // if we want an HTML visualization:
-        // HTMLContextVisualization cStack = new HTMLContextVisualization("********************************");
         cStack.push(currentNode);
-        if(toggleCStackDisplay){
-            cStack.show();
-        }
-    
-        // Fine to call this
         this.contextStack = (ContextStack)cStack.getContextStack();
-        // System.out.println(cStack.getContextStack());
-
-        // Need to debug why first line causes NullPointerException before SimplifiedContextStack constructor called
         this.sStack = new SimplifiedContextStack(contextStack);
         sStack.generateHTMLFile();
 
-        //Control loop
+        //Start of display
+        System.out.println("Enter characters, and 'q' to quit.");
+        if(toggleCStackDisplay){
+            cStack.show();
+        }
+        if(toggleNameDisplay){
+            printName(currentNode);
+        }
+
+        //Main Control loop
         loop: do { 
+            //After each command is done the user is prompted again
             System.out.print(">DEBUGGER-PROMPT$");
             userInput = inp.nextLine();
             userInputList = userInput.split(" ");
 
-            //Each case has a set of conditionals to make everything is in order befor running
-            //in the final case they call a helper function that does most of the work
+            //The basic structure is we check if the user input matches any expected input
+            //If so we call the corresponding function where the work is done
+            //Most IO is done in this function and most logic is done in the auxiliary functions
             switch (userInputList[0]) {
 
+                //used for going to a parent of the current node
                 case "up": case "u": 
                     if (userInputList.length != 1) {
-                        System.out.println("invalid, correct usage: up<>");
+                        System.out.println("invalid, correct usage: up");
                     }else{
-                        //TODO: lots of this logic already happens in up() we can get rid of it here
-                        if (currentNode.getParent().getParent() instanceof TopNode || currentNode.getParent() == null){
+                        //Conditinal makes sure there is a parent to go up to 
+                        if (currentNode.isRoot()){
                             System.out.println("Root Node has no parent");
-                        }else if (currentNode.getParent() == null){
-                            System.out.println("Null parent");
                         }else{
-                            nodeStack.push(currentNode);
-                            currentNode = up();
+                            //If so we can go to that node
+                            up();
+                            //Print all information the user wants
                             if(toggleNameDisplay){
                                 printName(currentNode);
                             }
-                            // if we navigate up to a parent, push it on to the stack (?)
-                            cStack.pop();
-                            sStack.generateHTMLFile();
-                            // when we push, update and show the context
                             if(toggleCStackDisplay){
                                 cStack.show();
                             }
+
+                            //Update the json and html to the new node
+                            updateDisplay();
                         }
                     }
                     break;
 
-                //Would be cool to call down on strings in addition to ints
+                //Used to navigate to children
                 case "down": case "d":  
-                    int childNum = -1; 
-                    if(currentNode.getNode().hasForward()){
-                        System.out.println("can't go down on a forwarding node");
-                        break;
-                    }
-                    else if (userInputList.length == 1) {
-                        System.out.println("Which child?");
+                    String childName = "";
+
+                    //If the user does not provide a child we should list them out
+                    if (userInputList.length == 1) {
                         String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
                         String[] listCurrentProduction = currentProduction.split("\\s+");
                         String[] childNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
-                        childNum = chooseFormList(inp, childNames);
-                        if(childNum == -1){
-                            break;
-                        }
-                    }else if(userInputList.length == 2){
-                        try{
-                            childNum = Integer.parseInt(userInputList[1]);
-                        }catch (NumberFormatException e) {
-                            System.out.println("invalid, correct usage: down <node #>");
-                            break;
-                        }
+                        System.out.println("Which child?");
+                        displayArray(childNames);
+                        System.out.print(">DEBUGGER-PROMPT$");
+                        childName = inp.nextLine();
+                    }
+                    //Otherwise they should have typed one in
+                    else if(userInputList.length == 2){
+                        childName = userInputList[1];
                     }else{
                         System.out.println("invalid, correct usage: down <node #>");
                         break;
                     }
 
-                    childNode = down(childNum);
-
-                    if(childNode == null){
-                        System.out.println("invalid child number");
+                    try{
+                        if(down(childName) == -1){
+                            System.out.println("invalid child");
+                        }
+                    }catch(NullPointerException e){
+                        System.out.println("Null pointer");
                         break;
-                    } 
-                    else{
-                        //TODO: This logic should move to the down function
-                        nodeStack.push(currentNode);
-                        currentNode = childNode;
-                        if(toggleNameDisplay){
-                            printName(currentNode);
-                        }
-                        // if we navigate down to a child, push it on to the stack
-                        cStack.push(currentNode);
-                        sStack.generateHTMLFile();
-                        // when we push, update and show the context
-                        if(toggleCStackDisplay){
-                            cStack.show();
-                        }
+                    }catch(IndexOutOfBoundsException e){
+                        System.out.println("Index out of bound");
+                        break;
+                    }    
+                    if(toggleNameDisplay){
+                        printName(currentNode);
                     }
+                    // when we push, update and show the context
+                    if(toggleCStackDisplay){
+                        cStack.show();
+                    }
+                    updateDisplay();
                     break;
 
                 case "undo":
@@ -614,37 +605,117 @@ public class Debug {
         currentNode = node;
     }
 
-    public DecoratedNode up()
+    //Replaces currentNode with its parent
+    public void up()
     {
-        if (currentNode.getParent() != null)
-        {
-            // printProduction(currentNode);
-            // System.out.println("No Null parent!");
-            // System.out.println(currentNode);
-            // System.out.println(currentNode.getParent());
-            printProduction(currentNode.getParent());
-            currentNode = (DecoratedNode) currentNode.getParent();
-            return currentNode;
-        }
-        return null;
+        //NodeStack contains past nodes not current ones
+        nodeStack.push(currentNode);
+
+        //Updates curretnNode
+        currentNode = (DecoratedNode) currentNode.getParent();
+        
+        //Update the various other stacks
+        cStack.pop();
+        sStack.generateHTMLFile();
     }
 
-    public DecoratedNode down(int child)
+    //HACK: This function currently get the file line by going through the first attribute
+    //This means it will not work if there is no attribute. For future work it would be nice  
+    //if nodes could access the file and have there own file line.
+    public void updateDisplay()
     {
-        String childProductions[] = currentNode.undecorate().getProdleton().getChildTypes();
-        try{
-            if(childProductions[child].equals("null")){ 
-                return null;
+        //First we want to update the json to point at the top of the current production
+        List<String> attributeList = allAttributesList(currentNode);
+        Map<String, Lazy> lazyMap = allAttributesLazyMap(currentNode);
+        Lazy attributeLazy = lazyMap.get(attributeList.get(0));
+        NLocation loc = attributeLazy.getSourceLocation();
+        if(loc != null) {
+            String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+            int attributeLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+            int currentLineNumber = 1;
+            int productionLineNum = 0;
+                
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))){
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    //HACK:Relies on the the fact that "::=" is only and always used in production declarations
+                    if (line.contains("::=")) {
+                        productionLineNum = currentLineNumber; 
+                    }
+                    if (currentLineNumber >= attributeLine) {
+                        break;
+                    }
+                    currentLineNumber++;
+                }
+
+                writeTojson(file, productionLineNum, productionLineNum);
+                // add a client server here, when it called send 1
+                sendMessageToExtension("1");
+            }catch (IOException e) {
+                e.printStackTrace();
             }
-            DecoratedNode childNode = currentNode.childDecorated(child);
-            return childNode;
-        }catch(NullPointerException e){
-            System.out.println("Null pointer");
-            return null;
-        }catch(IndexOutOfBoundsException e){
-            System.out.println("Index out of bound");
-            return null;
         }
+
+        //Next we want to update the html file with the attribute values
+        Map<String, Object> attributeMap = allAttributesThunkMap(currentNode);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
+            writer.write("<!DOCTYPE html>\n");
+            writer.write("<html>\n");
+            writer.write("<body>\n");
+            writer.write("<pre>\n");
+            for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if(value instanceof Thunk){
+                    writer.write(key + ": THUNKING...");
+                }else{
+                    writer.write(key + ": " + Util.genericShow(value));
+                }
+                writer.newLine();
+            }
+            writer.write("</pre>\n");
+            writer.write("</body>\n");
+            writer.write("</html>\n");
+        }catch (IOException e) {
+            System.err.println("Error writing to file: " + e.getMessage());
+        }
+    }
+
+    //Given a child name (or prefix) updates the currentNode to that child
+    public Integer down(String childName)
+    {
+        //Find the index of the given childName
+        String currentProduction = currentNode.undecorate().getProdleton().getTypeUnparse();
+        String[] listCurrentProduction = currentProduction.split("\\s+");
+        String[] childNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
+        int childNum = Arrays.binarySearch(childNames, childName);
+
+        //If the child was not found we check if the input was a prefix
+        if(childNum < 0){
+            childNum = prefixSearch(childNames, childName);
+        }
+
+        //Try to return the child at the corresponding index
+        String childProductions[] = currentNode.undecorate().getProdleton().getChildTypes();
+        if(childProductions[childNum].equals("null")){ 
+            return -1;
+        }
+        nodeStack.push(currentNode);
+        currentNode = currentNode.childDecorated(childNum);
+        // if we navigate down to a child, push it on to the stack
+        cStack.push(currentNode);
+        sStack.generateHTMLFile();
+        return 1;
+    }
+
+    public Integer prefixSearch(String[] array, String prefix)
+    {
+         for (int i = 0; i < array.length; i++) {
+            if (array[i].startsWith(prefix)) {
+                return i; // Return the first element with the specified prefix
+            }
+        }
+        return -1;
     }
 
     public DecoratedNode forwards(DecoratedNode node)
@@ -707,7 +778,6 @@ public class Debug {
         if (lazyMap.containsKey(attriburteName)) {
             Lazy attributeLazy = lazyMap.get(attriburteName);
             NLocation loc = attributeLazy.getSourceLocation();
-            String qualifier = Integer.toHexString(System.identityHashCode(this));
             if(loc != null) {
                 String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
                 int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
@@ -727,7 +797,6 @@ public class Debug {
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.json"))) {
             String currentDirectory = System.getProperty("user.dir");
-            System.out.println(currentDirectory);
             int lastIndex = filename.lastIndexOf("/");
             String fileEnd = filename.substring(lastIndex + 1);
             writer.write("{\"file_path\": \"" + currentDirectory + "/" + fileEnd + "\", \"line_begin\": " + lineNumber + ", \"line_end\": " + endline+ "}");
@@ -860,7 +929,6 @@ public class Debug {
     //Higlights the data of the specified attribute
     public void attributeDataHTML(DecoratedNode node, String printAttribute){
         Map<String, Object> attributeMap = allAttributesThunkMap(node);
-        //Map<String, Object> attributeMap = allAttributesObjectMap(node);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
             writer.write("<!DOCTYPE html>\n");
             writer.write("<html>\n");
@@ -876,7 +944,6 @@ public class Debug {
                 }else{
                     if(value instanceof Thunk){
                         writer.write(key + ": THUNKING...");
-                        //writer.write("<a href='#' onclick='replaceText(this)'>" + key + ": THUNKING..." + "</a>");
                     }else{
                         writer.write(key + ": " + Util.genericShow(value));
                     }
@@ -884,7 +951,6 @@ public class Debug {
                 writer.newLine();
             }
             writer.write("</pre>\n");
-            //writer.write("<script>\nfunction replaceText(link) {\n\tlink.innerText = link.innerText.replace('THUNKING', 'NO LONGER');\n}\n</script>\n");
             writer.write("</body>\n");
             writer.write("</html>\n");
 
@@ -905,7 +971,6 @@ public class Debug {
         if (lazyMap.containsKey(attriburteName)) {
             Lazy attributeLazy = lazyMap.get(attriburteName);
             NLocation loc = attributeLazy.getSourceLocation();
-            String qualifier = Integer.toHexString(System.identityHashCode(this));
             if(loc != null) {
                 String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
                 int startLine = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
@@ -993,11 +1058,11 @@ public class Debug {
         System.out.println(nextChildName);
 
         //Now that we know the child we can travle their
-        Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
+        // Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
         //Wierd bug, we can't go up after goinf down in alogdebugg
-        DecoratedNode nextNode = down(nextChildNum);
-        //TODO: This logic should move to the down function
-        currentNode = nextNode;
+        if (down(nextChildName) == -1){
+            System.out.println("invalid child");
+        }
 
         // System.out.println();
         // System.out.println("currentNode:");
@@ -1006,7 +1071,7 @@ public class Debug {
 
         //We also know what attribute they want to investigate
         //it should have the same end as the chosen attribute
-        List<String> attributeList = allAttributesList(nextNode);
+        List<String> attributeList = allAttributesList(currentNode);
         String nextAttributeName = "";
         //list should be list of attributes
         for (String element : attributeList) {
@@ -1019,7 +1084,7 @@ public class Debug {
 
         //recursive time
         if(nextChildName != ""){
-            algorithmicDebugg(nextNode, nextAttributeName, inp);
+            algorithmicDebugg(currentNode, nextAttributeName, inp);
         }
         return -1;
     }
@@ -1178,6 +1243,40 @@ public class Debug {
             }
         }
         return attributeMap;
+    }
+
+    //Should be in util?
+    public static void displayArray(String[] array){
+        for (String element : array){
+            System.out.println(element);
+        } 
+    }
+
+    //For letting users type tab to autofill with an element of the input list
+    public static String autofill(String[] options, Scanner inp){
+        while (true) {
+            String input = inp.nextLine();
+            if (input.isEmpty()) {
+                continue;
+            }
+            if (input.endsWith("\t")) { // Check if Tab key is pressed
+                String prefix = input.substring(0, input.lastIndexOf("\t"));
+                return autoComplete(prefix, options);
+            } else {
+                // Handle regular input
+                return input;
+            }
+        }
+    }
+
+    //helper for autofill
+    private static String autoComplete(String prefix, String[] options) {
+        for (String option : options) {
+            if (option.startsWith(prefix)) {
+                return option;
+            }
+        }
+        return "";
     }
 
     //Should be in util?
