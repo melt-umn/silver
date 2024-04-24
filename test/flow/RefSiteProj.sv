@@ -258,7 +258,7 @@ production dispatchOverrideKnownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  e.env2 = top.env2;
+  e.env2 = top.env1 ++ top.env2;
   forwards to implProd(e); 
 }
 
@@ -266,7 +266,7 @@ production dispatchOverrideUnknownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  e.env2 = top.env2;
+  e.env2 = top.env1 ++ top.env2;
   local implProdRef::UnaryOp = implProd;
   forwards to implProdRef(e); 
 }

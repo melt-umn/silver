@@ -265,8 +265,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case filter(
-      notSharedInputVertex(_, top.env),
+    case filter(\ v::VertexType ->
+      resolvePossibleInhEq(top.frame.fullName, v, attr.attrDcl.fullName, top.flowEnv, top.env) == alwaysDec(),
       lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
@@ -278,13 +278,13 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
-      case filter(
-        notSharedInputVertex(_, top.env),
-        lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
+      case filter(\ v::VertexType ->
+        resolvePossibleInhEq(top.frame.fullName, v, dl.inhAttrName, top.flowEnv, top.env) == alwaysDec(),
+        lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.eqVertex ++
-          map(\ v::VertexType -> v.inhVertex(transAttr ++ "." ++ attr.attrDcl.fullName), vs),
+          map(\ v::VertexType -> v.inhVertex(dl.inhAttrName), vs),
           top.frame.flowGraph)))
       end
     | _ -> nothing()
@@ -360,7 +360,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
         s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsRefDecSiteDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(refDecSiteInhDepsLhsInh.fromJust)}")]
+        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(refDecSiteInhDepsLhsInh.fromJust)}" ++
+        s" (from ${implode(", ", map((.vertexPP), lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)))})")]
     else [];
   top.errors <-
     case dl.defLHSVertex of
@@ -369,7 +370,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation for ${transAttr}.${attr.attrDcl.fullName} on ${v.vertexPP} may exceed a flow type " ++
         s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsTransBaseRefDecSiteDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(transBaseRefDecSiteInhDepsLhsInh.fromJust)}")]
+        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(transBaseRefDecSiteInhDepsLhsInh.fromJust)}" ++
+        s" (from ${implode(", ", map((.vertexPP), lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)))})")]
     | _ -> []
     end;
   top.errors <-
@@ -378,7 +380,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
         s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsDispatchHostSigInhDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}")]
+        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
+        s" (from ${sig.fullName})")]
     | _ -> []
     end;
 }
@@ -389,7 +392,7 @@ fun depListStr String ::= deps::set:Set<String> =
   | deps -> "only on " ++ implode(", ", deps)
   end;
 
-fun notSharedInputVertex Boolean ::= v::VertexType env::Env =
+fun vertexHasPossibleInhEq Boolean ::= v::VertexType env::Env =
   case v of
   | subtermVertexType(_, prodName, sigName) ->
       case getTypeDcl(prodName, env), getValueDcl(prodName, env) of
@@ -464,6 +467,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
+  
+  -- TOOD: Hidden transitive deps check?
 }
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
@@ -490,6 +495,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds for " ++ dl.inhAttrName ++ " flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
+  
+  -- TOOD: Hidden transitive deps check?
 }
 ------ END AWFUL COPY & PASTE SESSION
 

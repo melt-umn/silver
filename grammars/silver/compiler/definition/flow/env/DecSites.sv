@@ -75,6 +75,8 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
           getHostSynsFor(ntName, flowEnv)));
 }
 
+-- Flatten a resolved decision tree, to determine the minimal places where an
+-- equation is needed.
 strategy attribute reduceDecSite = innermost(  -- TODO: Avoid forcing the entire tree if the first dec site is supplied?
   rule on DecSiteTree of
   | altDec(alwaysDec(), d) -> alwaysDec()
@@ -104,6 +106,9 @@ top::DecSiteTree ::= _ d::DecSiteTree
 }
 
 attribute flowEnv occurs on DecSiteTree;
+
+-- Resolve the decision tree for a particular attribute, replacing decoration
+-- sites known to be supplied with alwaysDec().
 strategy attribute resolveDecSite = allTopDown(
   rule on top::DecSiteTree of
   | directDec(prodName, vt)
@@ -122,7 +127,16 @@ strategy attribute resolveDecSite = allTopDown(
 ) <* reduceDecSite
 occurs on DecSiteTree;
 
-propagate flowEnv, reduceDecSite, resolveDecSite on DecSiteTree;
+-- If one is interested in whether an attribute might possibly be supplied
+-- rather than if it is always present, replace all instances of bothDec with altDec.
+strategy attribute asPossibleDec = allTopDown(
+  rule on DecSiteTree of
+  | bothDec(d1, d2) -> altDec(d1, d2)
+  end
+) occurs on DecSiteTree;
+
+propagate flowEnv, reduceDecSite, resolveDecSite, asPossibleDec
+  on DecSiteTree;
 
 {--
   - Determine if some decoration site has some inherited attribute supplied.
@@ -154,6 +168,20 @@ DecSiteTree ::= attrName::String d::DecSiteTree flowEnv::FlowEnv
 fun resolveInhEq
 DecSiteTree ::= prodName::String vt::VertexType attrName::String flowEnv::FlowEnv realEnv::Env =
   resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, [], flowEnv, realEnv), flowEnv);
+
+{--
+  - Determine if some flow vertex type in a production might have an inherited attribute supplied.
+  -
+  - @param prodName The name of the production containing the vertex.
+  - @param vt The vertex type to check.
+  - @param attrName The name of the inherited attribute.
+  - @param flowEnv The flow environment.
+  - @return alwaysDec(), if the attribute is ever present,
+  - or else the places where it could be supplied.
+  -}
+fun resolvePossibleInhEq
+DecSiteTree ::= prodName::String vt::VertexType attrName::String flowEnv::FlowEnv realEnv::Env =
+  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, [], flowEnv, realEnv).asPossibleDec, flowEnv);
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs

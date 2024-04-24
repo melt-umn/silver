@@ -232,7 +232,7 @@ aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
   production sigIndex::Integer = top.appExprIndex + top.appIndexOffset;
-  production sigName::String =
+  production sigName::String =  -- Name of the corresponding child of the production/dispatch being applied
     case top.appProd of
     | just(ns) when sigIndex < length(ns.inputNames) -> head(drop(sigIndex, ns.inputNames))
     | _ -> "err"
@@ -245,7 +245,10 @@ top::AppExpr ::= e::Expr
     end;
   e.decSiteVertexInfo =
     case top.decSiteVertexInfo, top.appProd of
-    | just(parent), just(ns) when isDecorable(e.finalType, top.env) ->
+    | just(parent), just(ns)
+        when isDecorable(
+          if sigIsShared then e.finalType.decoratedType else e.finalType,
+          top.env) ->
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
     end;
@@ -275,7 +278,7 @@ top::AppExpr ::= e::Expr
     | just(parent), just(ns), just(v) when sigIsShared && isForwardParam ->
       refDecSiteEq(
         top.frame.fullName, e.typerep.typeName, v,
-        subtermVertexType(parent, ns.fullName, sigName), true) ::
+        subtermVertexType(parent, ns.fullName, sigName), top.alwaysDecorated) ::
       if inputSigIsShared then []
       else [sigShareSite(ns.fullName, e.typerep.typeName, sigName, top.frame.fullName, v, parent)]
     | _, _, _ -> []

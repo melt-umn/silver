@@ -152,7 +152,7 @@ abstract production implFlowDef
 top::FlowDef ::= dispatchSig::String  prod::String
 {
   top.implTreeContribs := [(dispatchSig, prod)];
-  top.prodGraphContribs := [];
+  top.prodGraphContribs := [(dispatchSig, top)];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
 

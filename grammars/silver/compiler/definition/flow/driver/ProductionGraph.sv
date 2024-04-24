@@ -147,12 +147,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   -- The name of this production
   local prod :: String = dcl.fullName;
   -- The flow defs for this production
-  local defs :: [FlowDef] =
-    getGraphContribsFor(prod, flowEnv) ++
-    case dcl.implementedSignature of
-    | just(sig) -> getGraphContribsFor(sig.fullName, flowEnv)
-    | nothing() -> []
-    end;
+  local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- Just synthesized attributes.
@@ -194,7 +189,14 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     localStitchPoints(realEnv, nt, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(flowEnv, realEnv, defs) ++
-    sigSharingStitchPoints(flowEnv, realEnv, defs);
+    sigSharingStitchPoints(flowEnv, realEnv, defs) ++
+    case dcl.implementedSignature of
+    | just(sig) -> concat(zipWith(
+        implementedSigStitchPoints(realEnv, _, sig.fullName, _),
+        dcl.namedSignature.inputElements,
+        sig.inputElements))
+    | nothing() -> []
+    end;
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -369,13 +371,14 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 {
   local dispatch :: String = ns.fullName;
   local nt :: NtName = ns.outputElement.typerep.typeName;
-  local implProds :: [String] = getImplementingProds(dispatch, flowEnv);
+  local defs :: [FlowDef] = getGraphContribsFor(dispatch, flowEnv);
 
   -- The graph has no normal edges, only projection stitch points!
   local normalEdges :: [(FlowVertex, FlowVertex)] = [];
 
   local stitchPoints :: [StitchPoint] =
-    flatMap(dispatchStitchPoints(ns, flowEnv, realEnv, _), implProds);
+    sigSharingStitchPoints(flowEnv, realEnv, defs) ++  -- where this dispatch is applied
+    dispatchStitchPoints(flowEnv, realEnv, ns, defs);  -- impls of this dispatch
 
   local flowTypeVertexes :: [FlowVertex] = [];  -- Doesn't (directly) affect flow types
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
@@ -510,6 +513,7 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
         getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
       nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
+-- deps for subterm vertex of applied prod
 fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
@@ -520,6 +524,7 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env 
     | _ -> []
     end,
     defs);
+-- deps for prod/dispatch sig, from prods that forwarded to it
 fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
@@ -530,22 +535,33 @@ fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  def
     | _ -> []
     end,
     defs);
-fun dispatchStitchPoints [StitchPoint] ::= dispatch::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prod::String =
-  case getValueDcl(prod, realEnv) of
-  | dcl :: _ ->
-    flatMap(\ ie::NamedSignatureElement ->
-      if ie.elementDclType.isNonterminal  -- Dispatch sigs can't have occurs-on constraints
-      then [projectionStitchPoint(
-        prod, rhsVertexType(ie.elementName), lhsVertexType,
-        rhsVertexType(
-          head(drop(positionOf(ie.elementName, dispatch.inputNames), dcl.namedSignature.inputNames))),
-        getInhAndInhOnTransAttrsOn(
-          lookupSignatureInputElem(ie.elementName, dispatch).typerep.typeName,
-          realEnv))]
-      else [],
-      dispatch.inputElements)
-  | _ -> []
-  end;
+-- deps for child of prod, from dispatch sig that prod implements
+fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  ie::NamedSignatureElement  prod::String se::NamedSignatureElement =
+  if ie.typerep.isNonterminal
+  then [projectionStitchPoint(
+    prod, rhsVertexType(ie.elementName), lhsVertexType,
+    rhsVertexType(se.elementName),
+    getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
+  else [];
+-- deps for dispatch sig, from prods that implement it
+fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature  defs::[FlowDef] =
+  flatMap(\ d::FlowDef ->
+    case d of
+    | implFlowDef(_, prod) when getValueDcl(prod, realEnv) matches dcl :: _ ->
+      flatMap(\ ie::NamedSignatureElement ->
+        if ie.elementDclType.isNonterminal  -- Dispatch sigs can't have occurs-on constraints
+        then [projectionStitchPoint(
+          prod, rhsVertexType(ie.elementName), lhsVertexType,
+          rhsVertexType(
+            head(drop(positionOf(ie.elementName, dispatch.inputNames), dcl.namedSignature.inputNames))),
+          getInhAndInhOnTransAttrsOn(
+            lookupSignatureInputElem(ie.elementName, dispatch).typerep.typeName,
+            realEnv))]
+        else [],
+        dispatch.inputElements)
+    | _ -> []
+    end,
+    defs);
 
 ---- End helpers for figuring our stitch points --------------------------------
 
