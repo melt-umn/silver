@@ -1,0 +1,61 @@
+{
+  "name": "agnosis",
+  "displayName": "model_1",
+  "description": "a vscode extension for silver debugger",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agnosis.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "agnosis.launchSilver",
+        "title": "Launch Silver"
+      },
+      {
+        "command": "agnosis.RunSilver",
+        "title": "RunSilver"
+      },
+      {
+        "command": "agnosis.RunCompile",
+        "title": "RunCompile"
+      },
+      {
+        "command": "agnosis.HighlightSilver",
+        "title": "HighlightSilver"
+      },
+      {
+        "command": "agnosis.showAttributeValuesHtml",
+        "title": "showAttributeValuesHtml"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.87.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3",
+    "@vscode/test-cli": "^0.0.6",
+    "@vscode/test-electron": "^2.3.9"
+  }
+}
