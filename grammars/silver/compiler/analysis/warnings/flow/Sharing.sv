@@ -22,7 +22,22 @@ Either<String  Decorated CmdArgs> ::= args::[String]
       flagParser=flag(warnSharingFlag))];
 }
 
+aspect production decorationSiteExpr
+top::Expr ::=  '@' e::Expr
+{
+  -- Check that we are exported by the decoration site.
+  top.errors <-
+    case e.flowVertexInfo of
+    | just(v) when
+        top.config.warnSharing &&
+        !isExportedBy(top.grammarName, vertexGrammars(v, top.frame, top.env), top.compiledGrammars) ->
+      [mwdaWrnFromOrigin(top, s"Orphaned sharing of ${v.vertexPP} in production ${top.frame.fullName}.")]
+    | _ -> []
+    end;
+}
+
 -- TODO: Handle dependencies for inh overrides on forward/forward prod attrs
+-- TODO: I forgot what the above TODO was about
 aspect production productionReference
 top::Expr ::= @q::QName
 {
@@ -55,10 +70,36 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
+  -- Check that we are exported by the decoration site.
   top.errors <-
     case e.flowVertexInfo of
-    | nothing() when top.config.warnSharing && sigIsShared ->
-      [mwdaWrnFromOrigin(e, "Shared tree must correspond to a known decoration site")]
+    | just(v) when
+        top.config.warnSharing &&
+        sigIsShared && isForwardParam &&
+        !isExportedBy(top.grammarName, vertexGrammars(v, top.frame, top.env), top.compiledGrammars) ->
+      [mwdaWrnFromOrigin(top, s"Orphaned sharing of ${v.vertexPP} in production ${top.frame.fullName}.")]
     | _ -> []
     end;
 }
+
+-- Grammars that can validly share a vertex
+fun vertexGrammars [String] ::= v::VertexType frame::BlockContext env::Env =
+  case v of
+  | rhsVertexType(_) -> [frame.sourceGrammar]
+  | localVertexType(fName) when getValueDcl(fName, env) matches valDcl :: _ -> [valDcl.sourceGrammar]
+  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
+    frame.sourceGrammar ::
+    case lookup(sigName, zip(frame.signature.inputNames, frame.signature.inputTypes)) of
+    | just(t) when getOccursDcl(transAttr, t.typeName, env) matches dcl :: _ ->
+      [dcl.sourceGrammar]
+    | _ -> []
+    end
+  | transAttrVertexType(localVertexType(fName), transAttr) ->
+    implode(":", init(explode(":", fName))) ::
+    case getValueDcl(fName, env) of
+    | valDcl :: _ when getOccursDcl(transAttr, valDcl.typeScheme.monoType.typeName, env) matches dcl :: _ ->
+      [dcl.sourceGrammar]
+    | _ -> []
+    end
+  | _ -> []
+  end;

@@ -5,17 +5,45 @@ synthesized attribute errors2::Boolean;
 
 nonterminal UDExpr with env1, env2, errors1, errors2;
 
-production overloadThing
+production directOverloadThing
 top::UDExpr ::= e::UDExpr
 {
   e.env1 = top.env1;
-  e.env2 = [];
-  forwards to dispatchThing(e);
+  top.errors2 = e.errors2;
+  forwards to shareThing(e);
 }
 
-production dispatchThing
+production indirectOverloadThing
+top::UDExpr ::= e::UDExpr
+{
+  e.env1 = top.env1;
+  top.errors2 = e.errors2;
+  local prod::DispatchOp = if e.errors1 then dispatchThing1 else dispatchThing2;
+  forwards to prod(e);
+}
+
+production shareThing
 top::UDExpr ::= @e::UDExpr
 {
+  e.env2 = top.env2;
+  top.errors1 = e.errors1;
+  top.errors2 = !null(e.env1);
+}
+
+dispatch DispatchOp = UDExpr ::= @e1::UDExpr;
+
+production dispatchThing1 implements DispatchOp
+top::UDExpr ::= @e::UDExpr
+{
+  e.env2 = top.env2;
+  top.errors1 = e.errors1;
+  top.errors2 = !null(e.env1);
+}
+
+production dispatchThing2 implements DispatchOp
+top::UDExpr ::= @e::UDExpr
+{
+  e.env2 = top.env1;
   top.errors1 = e.errors1;
   top.errors2 = !null(e.env1);
 }
@@ -26,12 +54,12 @@ top::UDExpr ::= e::UDExpr
 {
   local otherRef::UDExpr = @e;
   e.env1 = top.env1;
-  forwards to dispatchThing(e);
+  forwards to shareThing(e);
 }
 }
 
-wrongFlowCode "Tree e in production flow:dispatchThing is shared in multiple places" {
-aspect production dispatchThing
+wrongFlowCode "Tree e in production flow:shareThing2 is shared in multiple places" {
+production shareThing2
 top::UDExpr ::= @e::UDExpr
 {
   local otherRef::UDExpr = @e;
@@ -39,19 +67,11 @@ top::UDExpr ::= @e::UDExpr
 }
 }
 
-warnCode "Duplicate equation for env2 on e in production flow:alreadyDec" {
-production alreadyDec
-top::UDExpr ::= @e::UDExpr
-{
-  e.env2 = [];
-}
-}
-
-wrongFlowCode "Unique reference to flow:uniqueReturn:e taken outside of a unique context. The return of flow:uniqueReturn is not a unique context as this function has no unique parameters." {
-function uniqueReturn
+warnCode "Production shareThing has shared children in its signature, and can only be applied in the root position of a forward or forward production attribute equation" {
+function dispatchFunction
 UDExpr ::= e::UDExpr
 {
   e.env1 = [];
-  return dispatchThing(e);
+  return shareThing(e);
 }
 }
