@@ -48,7 +48,7 @@ public class Debug {
         String userInput; 
         String[] userInputList;
 
-        //Variables for termainal displays
+        //Variables for terminal displays
         this.toggleNameDisplay = false;
         this.toggleCStackDisplay = true;
         this.toggleHeadlessAttributes = false;
@@ -133,7 +133,7 @@ public class Debug {
                         break;
                     }
 
-                    //Now that we have the childname we can try to go to it
+                    //Now that we have the child name we can try to go to it
                     try{
                         if(down(childName) == -1)
                             System.out.println("invalid child");
@@ -149,7 +149,8 @@ public class Debug {
                     updateDisplay();
                     break;
 
-                //used to go back to the last node traked on nodeStack
+                //used to go back to the last node tracked on nodeStack
+                //FIXME: has some unexpected errors with forwarding nodes
                 case "undo":
                     //undo should not have any arguments
                     if (userInputList.length != 1) {
@@ -270,179 +271,129 @@ public class Debug {
                     }
                     break;
 
-                //List synthesized attributes
-                case "listSynth": 
-                    if (userInputList.length != 1 && userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: listSynth<node?>");
-                    }else{
-                        if(listSynth(currentNode) == 0){
-                            System.out.println("no synthesized attributes");
-                        }
+                //used to list all attributes on the terminal
+                case "update": case "l":
+                    //update should not have any arguments
+                    if (userInputList.length != 1) {
+                        System.out.println("invalid, correct usage: list");
+                        break;
                     }
-                    break;
-                
-                //List inherited attributes
-                case "listInher": 
-                    if (userInputList.length != 1 && userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: listInher <node?>");
-                    }else{
-                        if(listInher(currentNode) == 0){
-                            System.out.println("no inherited attributes");
-                        }
-                    }
+
+                    //Do the update
+                    updateDisplay();
                     break;
 
-                //list all attributes
-                case "list": case "l":
-                    if (userInputList.length != 1 && userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: list<node?>");
-                    }else{
-                        printAttributes(currentNode, toggleHeadlessAttributes);
-                    }
-                    break;
-
-                //Show the values of a specific attribute
-                //Clear the prefix that is identical
-                //Print names of children not just types -- HARD!
+                //used to evaluate specific attributes
                 case "view": case "v": 
+                    String attributeInput = ""; 
+
+                    //If the user does not provide a child we should list them out
+                    if (userInputList.length == 1) {
+                        List<String> attributeList = allAttributesList(currentNode);
+                        String[] attributeArray =  attributeList.toArray(new String[attributeList.size()]);
+                        System.out.println("Which attribute?");
+                        displayArray(attributeArray);
+                        System.out.print(">DEBUGGER-PROMPT$");
+                        attributeInput = inp.nextLine();
+                    }
+
+                    //Otherwise they should have typed one in
+                    else if(userInputList.length == 2){
+                        attributeInput = userInputList[1];
+                    }
+                    
+                    //We do not expect more than 2 arguments for down
+                    else{
+                        System.out.println("invalid, correct usage: view <attribute name>");
+                        break;
+                    }
+
+                    //Now that we have the attribute name we can try to go to it
+                    if (attributeDataHTML(currentNode, attributeInput) == -1){
+                        System.out.println("invalid input");
+                    }
+                    break;
+
+                //Proof of concept function starts a algorithmic debugging session with a given attribute
+                case "algoDebug": case "a": 
                     String attributeName = ""; 
-                    Integer attributeNum = 0;
-                    List<String> attributeList = allAttributesList(currentNode);
+
+                    //If the user does not provide a attribute we should list them out
                     if (userInputList.length == 1) {
+                        List<String> attributeList = allAttributesList(currentNode);
+                        String[] attributeArray =  attributeList.toArray(new String[attributeList.size()]);
                         System.out.println("Which attribute?");
-                        String[] attriburteArray =  attributeList.toArray(new String[attributeList.size()]);
-                        attributeNum = chooseFormList(inp, attriburteArray);
-                        if(attributeNum == -1){
-                            break;
-                        }else if(attributeNum >= attributeList.size()){
-                            System.out.println("Invaild attribute number");
-                            break;
-                        }else{
-                            attributeName = attributeList.get(attributeNum);
-                        }
-                    }else if(userInputList.length == 2){
-                        try{
-                            attributeNum = Integer.parseInt(userInputList[1]);
-                            attributeName = attributeList.get(attributeNum);
-                        }catch (NumberFormatException e) {
-                            System.out.println("invalid, correct usage: view <node #>");
-                            break;
-                        }catch (IndexOutOfBoundsException e){
-                            System.out.println("Index out of bounds");
-                            break;
-                        }
-                    }else{
+                        displayArray(attributeArray);
+                        System.out.print(">DEBUGGER-PROMPT$");
+                        attributeName = inp.nextLine();
+                    }
+                    
+                    
+                    //Otherwise they should have typed one in
+                    else if(userInputList.length == 2){
+                        attributeName = userInputList[1];
+                    }
+                    
+                    //We do not expect more than 2 arguments for down
+                    else{
                         System.out.println("invalid, correct usage: view <node #>");
                         break;
                     }
-                    printAttrFromName(currentNode, attributeName);
-                    attributeDataHTML(currentNode, attributeName);
-                    break;
 
-                case "algoDebugg": case "a": 
-                    attributeName = ""; 
-                    attributeNum = 0;
-                    attributeList = allAttributesList(currentNode);
-                    if (userInputList.length == 1) {
-                        System.out.println("Which attribute?");
-                        String[] attriburteArray =  attributeList.toArray(new String[attributeList.size()]);
-                        attributeNum = chooseFormList(inp, attriburteArray);
-                        if(attributeNum == -1){
-                            break;
-                        }else if(attributeNum >= attributeList.size()){
-                            System.out.println("Invaild attribute number");
-                            break;
-                        }else{
-                            attributeName = attributeList.get(attributeNum);
-                        }
-                    }else if(userInputList.length == 2){
-                        try{
-                            attributeNum = Integer.parseInt(userInputList[1]);
-                            attributeName = attributeList.get(attributeNum);
-                        }catch (NumberFormatException e) {
-                            System.out.println("invalid, correct usage: view <node #>");
-                            break;
-                        }catch (IndexOutOfBoundsException e){
-                            System.out.println("Index out of bounds");
-                            break;
-                        }
-                    }else{
-                        System.out.println("invalid, correct usage: view <node #>");
-                        break;
-                    }
-                    //printAttrFromName(currentNode, attributeName);
-                    algorithmicDebugg(currentNode, attributeName, inp);
-                    break;
-
-
-                case "local":
-                    if (userInputList.length != 1 && userInputList.length != 2) {
-                        System.out.println("invalid, correct usage: local <node?>");
-                    }else{
-                        List<String> listLocals = getLocalAttrs(currentNode);
-                        if(listLocals.size() == 0){
-                            System.out.println("no inherited attributes");
-                        }else{
-                            for (String localAttribute : listLocals){
-                                System.out.println("Attribute = " + localAttribute);
-                            }
-                        }
-                    }
+                    algorithmicDebug(currentNode, attributeName, inp);
                     break;
 
                 //TODO: known bug, don't know how to represent higher order nodes as decoratedNodes
-                //TODO: Implemeting this funtion could be done in future work
+                //TODO: Implementing this function could be done in future work
                 // case "into":
-                //     //A bit reptative right now but when I get a idea on how to list only the higer order nodes It will be better
-                //     String attributeNameinto = ""; 
-                //     Integer attributeNuminto = 0;
-                //     List<String> attributeListinto = allAttributesList(currentNode);
+                //     String attributeNameInto = "";
+
+                //     //If the user does not provide a child we should list them out
                 //     if (userInputList.length == 1) {
+                //         List<String> attributeListInto = allAttributesList(currentNode);
+                //         String[] attributeArrayInto =  attributeNameInto.toArray(new String[attributeListinto.size()]);
                 //         System.out.println("Which attribute?");
-                //         String[] attriburteArrayinto =  attributeListinto.toArray(new String[attributeListinto.size()]);
-                //         attributeNuminto = chooseFormList(inp, attriburteArrayinto);
-                //         if(attributeNuminto == -1){
-                //             break;
-                //         }else if(attributeNuminto >= attributeListinto.size()){
-                //             System.out.println("Invaild attribute number");
-                //             break;
-                //         }else{
-                //             attributeNameinto = attributeListinto.get(attributeNuminto);
-                //         }
-                //     }else if(userInputList.length == 2){
-                //             try{
-                //             attributeNuminto = Integer.parseInt(userInputList[1]);
-                //             attributeNameinto = attributeListinto.get(attributeNuminto);
-                //         }catch (NumberFormatException e) {
-                //             System.out.println("invalid, correct usage: view <node #>");
-                //             break;
-                //         }catch (IndexOutOfBoundsException e){
-                //             System.out.println("Index out of bounds");
-                //             break;
-                //         }
-                //     }else{
-                //         System.out.println("invalid, correct usage: into <node #>");
+                //         displayArray(attributeArrayInto);
+                //         System.out.print(">DEBUGGER-PROMPT$");
+                //         childName = inp.nextLine();
+                //     }
+
+                //     //Otherwise they should have typed one in
+                //     else if(userInputList.length == 2){
+                //         childName = userInputList[1];
+                //     }
+                    
+                //     //We do not expect more than 2 arguments for into
+                //     else{
+                //         System.out.println("invalid, correct usage: down <node name>");
                 //         break;
                 //     }
-                //     childNode = into(currentNode, attributeNameinto);
+
+                //     if (into(currentNode, attributeNameInto) == -1){
+                //         System.out.println("invalid input");
+                //         break;
+                //     }
                 //     if(childNode == null){
                 //         System.out.println("invalid input");
                 //     }
                 //     else{
                 //         System.out.println("going into");
                 //         currentNode = childNode;
-                //         // if(toggleNameDisplay){
-                //         //     printName(currentNode);
-                //         // }
-                //         // // if we navigate to a forward, push it on to the stack
-                //         // cStack.push(currentNode);
-                //         // // when we push, update and show the context
-                //         // cStack.show();
+                //         if(toggleNameDisplay){
+                //             printName(currentNode);
+                //         }
+                //         // if we navigate to a forward, push it on to the stack
+                //         cStack.push(currentNode);
+                //         // when we push, update and show the context
+                //         cStack.show();
                 //     }
                 //     break;
 
+                //Display legal operations
                 case "help": 
-                    if (userInputList.length == 1) {
+
+                    //If called alone give operation names
+                    if (userInputList.length != 2) {
                         System.out.println("call help with one of these keywords to see its functionality:");
                         System.out.println("toggle <feature>");
                         System.out.println("up");
@@ -452,13 +403,12 @@ public class Debug {
                         System.out.println("backtrack");
                         System.out.println("prod");
                         System.out.println("eq");
-                        System.out.println("listSynth");
-                        System.out.println("listInher");
-                        System.out.println("local");
-                        System.out.println("list");
-                        System.out.println("into");
+                        System.out.println("update");
                         System.out.println("exit");
-                    }else if(userInputList.length == 2){
+                    }
+                    
+                    //More detailed information about specific calls
+                    else if(userInputList.length == 2){
                         if(userInputList[1].equals("up")){
                             System.out.println("The current node changes to its the parent");
                         }else if(userInputList[1].equals("down")){
@@ -479,11 +429,7 @@ public class Debug {
                             System.out.println("prints the production of the current node");
                         }else if(userInputList[1].equals("eq")){
                             System.out.println("prints the equation of the current node");
-                        }else if(userInputList[1].equals("listSynth")){
-                            System.out.println("prints the Synthisized attributes of the current node");
-                        }else if(userInputList[1].equals("listInher")){
-                            System.out.println("prints the inherited attributes of the current node");
-                        }else if(userInputList[1].equals("list")){
+                        }else if(userInputList[1].equals("update")){
                             System.out.println("prints the attributes of the current node");
                         }else if(userInputList[1].equals("local")){
                             System.out.println("prints the local attributes of the current node");
@@ -498,47 +444,35 @@ public class Debug {
                         }else{
                             System.out.println("try just calling help");
                         }
-                    }else{
-                        System.out.println("try just calling help");
-
                     }
                     break;
 
                 //Many ways to leave
-                case "exit": 
-                case "q": 
-                case "quit": 
+                case "exit": case "q": case "quit": 
                     System.out.println("debugger out");
                     break loop;
+
+                //If the user call anything illegal
                 default: 
                     System.out.println("invalid input call help for legal inputs");
                     break;
             }
         } while(true); 
     }
+
+    //variable declarations
     private DecoratedNode root;
     private DecoratedNode currentNode;
     private Stack<DecoratedNode> nodeStack;
     private FileContextVisualization cStack;
     private ContextStack contextStack;
     private SimplifiedContextStack sStack;
-    HashMap<Integer, StringObjectPair> currentNodeSynthAttrs;
-    HashMap<Integer, StringObjectPair> currentNodeInhAttrs;
-    HashMap<Integer, StringObjectPair> currentNodeLocalAttrs;
     private int currentLine;
     private int currentColumn;
     private boolean toggleNameDisplay;
     private boolean toggleCStackDisplay;
     private boolean toggleHeadlessAttributes;
     private String[] toggleChoices;
-
-    public void setCurrentNode(DecoratedNode node)
-    {
-        currentNodeSynthAttrs = null;
-        currentNodeInhAttrs = null;
-        currentNodeLocalAttrs = null;
-        currentNode = node;
-    }
 
     //Replaces currentNode with its parent
     public Integer up()
@@ -553,7 +487,7 @@ public class Debug {
         //NodeStack contains past nodes not current ones
         nodeStack.push(currentNode);
 
-        //Updates curretnNode
+        //Updates currentNode
         currentNode = (DecoratedNode) currentNode.getParent();
         
         //Update the various other stacks
@@ -593,7 +527,7 @@ public class Debug {
                         currentLineNumber++;
                     }
 
-                    writeTojson(file, productionLineNum, productionLineNum);
+                    writeToJson(file, productionLineNum, productionLineNum);
                     // add a client server here, when it called send 1
                     sendMessageToExtension("1");
                 }catch (IOException e) {
@@ -701,7 +635,7 @@ public class Debug {
     //updates the currentNode to its forward child
     public Integer forwards()
     {
-        if (currentNode.getNode().hasForward()){
+        if (isContractum(currentNode)){
             nodeStack.push(currentNode);
             currentNode = currentNode.forward();
 
@@ -787,26 +721,19 @@ public class Debug {
         System.out.println(parentProduction);
     }
 
-    //calls 
-    public Integer equationHelper(String attributeName)
+    //Finds the corresponding equation updates the display 
+    public Integer equationHelper(String attributeInput)
     {
-        //Find the index of the given childName
+        //Gets the attribute name from a user input 
         List<String> attributeList = allAttributesList(currentNode);
         String[] attributeArray = attributeList.toArray(new String[attributeList.size()]);
-        int attributeNum = Arrays.binarySearch(attributeArray, attributeName);
-
-        //If the attribute was not found we check if the input was a prefix
-        if(attributeNum < 0){
-            attributeNum = prefixSearch(attributeArray, attributeName);
-        }
-
-        //If the attribute was still not found we check if the input was a suffix
-        if(attributeNum < 0){
-            attributeNum = suffixSearch(attributeArray, ":" + attributeName);
+        String attributeName = inputArrayFinder(attributeArray, attributeInput);
+        if(attributeName.equals("")){
+            return -1;
         }
 
         //Try to display the attribute at the corresponding index
-        displayEquation(currentNode, attributeArray[attributeNum]) ;
+        displayEquation(currentNode, attributeName) ;
         attributeDataHTML(currentNode, "");
         return 1;
     }
@@ -821,7 +748,7 @@ public class Debug {
         return -1; 
     }
 
-
+    //Helper for communicating with VS Code extension server
     private void sendMessageToExtension(String message) {
         String host = "127.0.0.1"; // Host of the VS Code extension server
         int port = 19387; 
@@ -838,30 +765,28 @@ public class Debug {
         }
     }
     
-    // makes html of the production containing the inputed attribute name
-    // the specific attribute is highlighted
-    public void displayEquation(DecoratedNode node, String attriburteName)
+    // Popup the file and line where the attribute is defined
+    public void displayEquation(DecoratedNode node, String attributeName)
     {
         Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
-        if (lazyMap.containsKey(attriburteName)) {
-            Lazy attributeLazy = lazyMap.get(attriburteName);
+        if (lazyMap.containsKey(attributeName)) {
+            Lazy attributeLazy = lazyMap.get(attributeName);
             NLocation loc = attributeLazy.getSourceLocation();
             if(loc != null) {
+                //Get the data from the NLocation
                 String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
                 int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
                 int endline = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
                 
-                equationHTML(file, line, endline);
-                writeTojson(file, line, endline);
-                // add a client server here, when it called send 1
+                //write this data to a Json and tell the server to refresh
+                writeToJson(file, line, endline);
                 sendMessageToExtension("1");
             }
         }
     }
 
-    // makes html of the production containing the inputed attribute name
-    // the specific attribute is highlighted
-    public void writeTojson(String filename, int lineNumber, int endline)
+    // Helper for displayEquation
+    public void writeToJson(String filename, int lineNumber, int endline)
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(".debugger_communicator.json"))) {
             String currentDirectory = System.getProperty("user.dir");
@@ -870,106 +795,6 @@ public class Debug {
             writer.write("{\"file_path\": \"" + currentDirectory + "/" + fileEnd + "\", \"line_begin\": " + lineNumber + ", \"line_end\": " + endline+ "}");
         }catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    
-
-    //Helper for displayEquation
-    public static void equationHTML(String filename, int lineNumber, int endline) {
-        //System.out.println("in print content");
-        try (BufferedReader br1 = new BufferedReader(new FileReader(filename));
-            BufferedWriter writer = new BufferedWriter(new FileWriter("current_production.html"))) {
-            writer.write("<!DOCTYPE html>\n");
-            writer.write("<html>\n");
-            writer.write("<body>\n");
-            String line;
-            int currentLineNumber = 1;
-            int productionLineNum = 0;
-            while ((line = br1.readLine()) != null) {
-                //HACK:Relies on the the fact that "::=" is only and always used in production declarations
-                if (line.contains("::=")) {
-                    productionLineNum = currentLineNumber; 
-                }
-                if (currentLineNumber >= lineNumber ) {
-                    break;
-                }
-                currentLineNumber++;
-            }
-            currentLineNumber = 1;
-            br1.close();
-            BufferedReader br2 = new BufferedReader(new FileReader(filename));
-            writer.write("<pre>\n");
-            while ((line = br2.readLine()) != null) {
-                if(currentLineNumber == lineNumber){
-                    writer.write("<span style=\"color: red;\"><strong>");
-                }
-                if (currentLineNumber >= productionLineNum) {
-                    writer.write(line);
-                    if(currentLineNumber == endline){
-                        writer.write("</strong></span>");
-                        writer.newLine();
-                    }
-                    writer.newLine();
-                }
-                //HACK:Relies on the the fact that the line "}" is only and always used in production ends
-                if (currentLineNumber >= productionLineNum && line.trim().equals("}")) {
-                    break; 
-                }
-                currentLineNumber++;
-            }
-            writer.write("</pre>\n");
-            writer.write("</body>\n");
-            writer.write("</html>\n");
-        }catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    //Old function not sure if we still want it
-    public int listSynth(DecoratedNode node)
-    {
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        Set<String> synAttrSet = nonterminalton.getAllSynth();
-        int numAttr = 0;
-
-        for (String synAttr : synAttrSet)
-        {
-            System.out.println("Attribute = " + synAttr);
-            numAttr++;
-        }
-        return numAttr;
-    }
-
-    //Old function not sure if we still want it
-    public int listInher(DecoratedNode node)
-    {
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        Set<String> inhAttrSet = nonterminalton.getAllInh();
-        int numAttr = 0;
-
-        for (String inhAttr : inhAttrSet)
-        {
-            System.out.println("Attribute = " + inhAttr);
-            numAttr++;
-        }
-        return numAttr;
-    }   
-
-    //Prints all attributes using allAttributesList
-    public void printAttributes(DecoratedNode node, boolean toggleHeadlessAttributes){
-        List<String> attributeList = allAttributesList(node);
-        if(toggleHeadlessAttributes){
-            attributeList = removeHeaders(allAttributesList(node));
-        }
-        int i = 0;
-
-        for (String attribute : attributeList)
-        {
-            System.out.println(Integer.toString(i) + ": " + attribute);
-            i++;
         }
     }
 
@@ -987,15 +812,16 @@ public class Debug {
         return headlessList;
     }
 
-    public void printAttrFromName(DecoratedNode node, String printAttribute){
-        Map<String, Object> attributeMap = allAttributesThunkMap(node);
-        @SuppressWarnings("unchecked")
-        Object finalThunk = attributeMap.get(printAttribute);
-        System.out.println(Util.genericShow(Util.demand(finalThunk)));
-    }
+    //Highlights the data of the specified attribute
+    public Integer attributeDataHTML(DecoratedNode node, String attributeName){
+        //Gets the attribute name from a user input 
+        List<String> attributeList = allAttributesList(currentNode);
+        String[] attributeArray = attributeList.toArray(new String[attributeList.size()]);
+        String highlightAttribute = inputArrayFinder(attributeArray, attributeName);
+        if(attributeName.equals("")){
+            return -1;
+        }
 
-    //Higlights the data of the specified attribute
-    public void attributeDataHTML(DecoratedNode node, String printAttribute){
         Map<String, Object> attributeMap = allAttributesThunkMap(node);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("attribute_values.html"))) {
             writer.write("<!DOCTYPE html>\n");
@@ -1005,7 +831,7 @@ public class Debug {
             for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
-                if (key.equals(printAttribute)){
+                if (key.equals(highlightAttribute)){
                     writer.write("<mark>");
                     writer.write(key + ": " + Util.genericShow(Util.demand(value)));
                     writer.write("</mark>");
@@ -1025,19 +851,52 @@ public class Debug {
         }catch (IOException e) {
             System.err.println("Error writing to file: " + e.getMessage());
         }
+        return 0;
     }
 
-    //HACK: this entire prossess is based on string meddling
+    //Given a user input search an array for something that looks close enough 
+    //should be in util?
+    public String inputArrayFinder(String[] array, String input){
+        int index = Arrays.binarySearch(array, input);
+        String returnString = "";
+
+        //If the string was not found we check if the input was a prefix
+        if(index < 0){
+            index = prefixSearch(array, input);
+        }
+
+        //If the string was still not found we check if the input was a suffix
+        if(index < 0){
+            index = suffixSearch(array, ":" + input);
+        }
+
+        //The string is not in the array
+        if(index < 0){
+            return "";
+        }
+
+        return array[index];
+    }
+
+    //HACK: this entire process is based on string meddling
     //A better way to do this would be to have each attribute know what other attributes generate it
     //This way we would not need to rely on specific string formatting
-    //Should probaly not be pushed to 
-    public int algorithmicDebugg(DecoratedNode node, String attriburteName, Scanner inp)
+    public int algorithmicDebug(DecoratedNode node, String attributeInput, Scanner inp)
     {
-        //Gets the equation we are on
+        //Gets the attribute name from a user input 
+        List<String> attributeList = allAttributesList(currentNode);
+        String[] attributeArray = attributeList.toArray(new String[attributeList.size()]);
+        String attributeName = inputArrayFinder(attributeArray, attributeInput);
+        if(attributeName.equals("")){
+            System.out.print("invalid input");
+            return -1;
+        }
+
+        //Print out the equation for the given attribute 
         String equationString = "";
         Map<String, Lazy> lazyMap = allAttributesLazyMap(node);
-        if (lazyMap.containsKey(attriburteName)) {
-            Lazy attributeLazy = lazyMap.get(attriburteName);
+        if (lazyMap.containsKey(attributeName)) {
+            Lazy attributeLazy = lazyMap.get(attributeName);
             NLocation loc = attributeLazy.getSourceLocation();
             if(loc != null) {
                 String filePath = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
@@ -1045,7 +904,7 @@ public class Debug {
                 int endLine = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 
                 System.out.println("Equation:");
-                 try {
+                try {
                     equationString = getLines(filePath, startLine, endLine);
                     System.out.println();
                 } catch (IOException e) {
@@ -1057,27 +916,23 @@ public class Debug {
         //Next we want to get the LHS of the equation
         System.out.println("Data:");
         Map<String, Object> attributeMap = allAttributesThunkMap(node);
-
         String partentProduction = node.undecorate().getProdleton().getTypeUnparse();
         int index1 = partentProduction.indexOf("::");
-        int index2 = attriburteName.indexOf(":");
-        String parentNameInEquation = partentProduction.substring(0, index1) + "." + attriburteName.substring(index2+1);
-        System.out.println(parentNameInEquation + ": " + Util.genericShow(Util.demand(attributeMap.get(attriburteName))));
+        int index2 = attributeName.indexOf(":");
+        String parentNameInEquation = partentProduction.substring(0, index1) + "." + attributeName.substring(index2+1);
+        System.out.println(parentNameInEquation + ": " + Util.genericShow(Util.demand(attributeMap.get(attributeName))));
 
         //This generates a list of all children of the production and splits them 
-        //into the attribute front name (ex. ds) and bakc name (ex. DeclList)
+        //into the attribute front name (ex. l) and back name (ex. value)
         String currentProduction = node.undecorate().getProdleton().getTypeUnparse();
         String[] listCurrentProduction = currentProduction.split("\\s+");
         String[] childFullNames = Arrays.copyOfRange(listCurrentProduction, 2, listCurrentProduction.length);
         String[] childFrontNames = new String[childFullNames.length];
         String[] childBackNames = new String[childFullNames.length];
         for (int i = 0; i < childFullNames.length; i++) {
-            // System.out.println("childFullNames[i]: " + childFullNames[i]);
             index1 = childFullNames[i].indexOf("::");
-            // System.out.println(childFullNames[i].substring(0, index1)+ ".");
             childFrontNames[i] = childFullNames[i].substring(0, index1) + ".";
             index2 = childFullNames[i].indexOf(":");
-            // System.out.println(childFullNames[i].substring(index2+2));
             childBackNames[i] = childFullNames[i].substring(index2+2);
         }
 
@@ -1094,29 +949,51 @@ public class Debug {
                 }
             }
         }
-        // for (String attribute : dependentAttributes) {
-        //     System.out.println(attribute);
-        // }
+
+        //For each of these relevant component we want to print to data at that component
+        for (String attribute : dependentAttributes) { 
+            String[] attributeComponents = attribute.split("\\.");
+            String childName = "";
+            for (int i = 0; i < childFullNames.length; i++){
+                if (childFullNames[i].startsWith(attributeComponents[0] + "::")) {
+                    DecoratedNode childNode = currentNode.childDecorated(i);
+                    Map<String, Object> childMap = allAttributesThunkMap(childNode);
+                    for (Map.Entry<String, Object> entry : childMap.entrySet()) {
+                        String key = entry.getKey();
+                        Object value = entry.getValue();
+                        if (key.endsWith(":" + attributeComponents[1])){
+                            System.out.println(attribute + ": " + Util.genericShow(Util.demand(value)));
+                        }
+                    }
+                }
+            }
+        }
 
         //Next the user will pick which of these variables they want to further investigate 
         //We split this into 2 parts index 0 is the Front name (ex. ds) 
         //the second is the attribute  (ex. pp)
         String[] dependentAttributesArray = dependentAttributes.toArray(new String[0]);
         int inputInt = -1;
+        String chosenAttributeInput = "";
         if(dependentAttributesArray.length > 0){
             System.out.println();
             System.out.println("Pick the next node to investigate");
-            inputInt = chooseFormList(inp, dependentAttributesArray);
+            displayArray(dependentAttributesArray);
+            System.out.print(">DEBUGGER-PROMPT$");
+            chosenAttributeInput = inp.nextLine();
         }else{
             return 0;
         }
-        if(inputInt == -1)
+
+        String chosenAttribute = inputArrayFinder(dependentAttributesArray, chosenAttributeInput);
+        if(chosenAttribute.equals("")){
+            System.out.print("invalid input");
             return -1;
-        String chosenAttribute = dependentAttributesArray[inputInt];
+        }
         String[] chosenAttributeComponents = chosenAttribute.split("\\.");
 
-        //Baed on what the user chose we can solve for the child they want to travle to
-        //Becaues it will have the same Front name as the variable (ex. ds.pp -> ds::DeclList)
+        //Based on what the user chose we can solve for the child they want to travel to
+        //Because it will have the same Front name as the variable (ex. ds.pp -> ds::DeclList)
         String nextChildName = "";
         for (String fullName : childFullNames){
             if (fullName.startsWith(chosenAttributeComponents[0] + "::")) {
@@ -1126,21 +1003,14 @@ public class Debug {
         System.out.println(nextChildName);
 
         //Now that we know the child we can travel their
-        // Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
-        //Wierd bug, we can't go up after going down in alogdebugg
+        //Integer nextChildNum = Arrays.binarySearch(childFullNames, nextChildName);
         if (down(nextChildName) == -1){
             System.out.println("invalid child");
         }
 
-        // System.out.println();
-        // System.out.println("currentNode:");
-        // System.out.println();
-
         //We also know what attribute they want to investigate
         //it should have the same end as the chosen attribute
-        List<String> attributeList = allAttributesList(currentNode);
         String nextAttributeName = "";
-        //list should be list of attributes
         for (String element : attributeList) {
             String[] parts = element.split(":");
             if (parts.length == 2 && chosenAttributeComponents[1].startsWith(parts[1])) {
@@ -1151,12 +1021,12 @@ public class Debug {
 
         //recursive time
         if(nextChildName != ""){
-            algorithmicDebugg(currentNode, nextAttributeName, inp);
+            algorithmicDebug(currentNode, nextAttributeName, inp);
         }
         return -1;
     }
 
-    //helper foralgorithmicDebugg
+    //helper for algorithmicDebugg
     public static String getLines(String filePath, int startLine, int endLine) throws IOException {
         String returnString = "";
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -1198,18 +1068,22 @@ public class Debug {
 
     //TODO: Add access to higher order attriburte
     //Translation attribute or Decorated, locals only locals should all be decorated
-    public DecoratedNode into(DecoratedNode node, String attriburteName){
-        Map<String, Object> attributeMap = allAttributesObjectMap(node);
-        if (attributeMap.containsKey(attriburteName)) {
-            System.out.println("In into function");
-            Object attributeObject = attributeMap.get(attriburteName);
-            return (DecoratedNode) attributeObject; //Does not work class translator.Pprogram cannot be cast to class common.DecoratedNode
-        }
-        return null;
-    }
+    // public Integer into(DecoratedNode node, String attributeInput){
+    //     String attributeName = inputArrayFinder(attributeArray, attributeInput);
+    //     if(attributeName.equals("")){
+    //         return -1;
+    //     }
+
+    //     Map<String, Object> attributeMap = allAttributesThunkMap(node); // will have to eval the thunk
+    //     if (attributeMap.containsKey(attributeName)) {
+    //         Object attributeObject = attributeMap.get(attributeName);
+    //         currentNode = (DecoratedNode) attributeObject.demand(); //Does not work class translator.Pprogram cannot be cast to class common.DecoratedNode
+    //     }
+    //     return 0;
+    // }
     
 
-    //Helper for printing Attributes
+    //Creates a list of all Attributes
     public static List<String> allAttributesList(DecoratedNode node)
     {
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
@@ -1223,58 +1097,35 @@ public class Debug {
         return attributeList;
     }
 
-    //Deprecated: please use allAttributesThunkMap
-    public static Map<String, Object> allAttributesObjectMap(DecoratedNode node)
-    {
-        List<String> attributeList = allAttributesList(node);
-        RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
-        RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
-        Map<String, Object> attributeMap = new HashMap<>();
-
-        for(String attribute : attributeList)
-        {
-            if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
-                //System.out.println("Synthisized!!! \"" + attribute + "\"");
-                Integer index = nonterminalton.getSynOccursIndex(attribute);
-                Lazy synthAttribute = node.getNode().getSynthesized(index); //breaks for forwarded nodes
-                Object o = synthAttribute.eval(node); //.sythisized() found in Decorated node add thunks (.sythisizedlazy() then eval )
-                attributeMap.put(attribute, o);
-            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
-                //System.out.println("Inherited!!!");
-                Integer index = nonterminalton.getInhOccursIndex(attribute);
-                Object o = node.evalInhSomehowButPublic(index);
-                attributeMap.put(attribute, o);
-            }else{ //Should be local
-                //System.out.println("local!!!");
-                List<String> listLocals = getLocalAttrs(node);
-                Integer index = listLocals.indexOf(attribute);
-                Lazy localAttribute = node.getNode().getLocal(index);
-                Object o = localAttribute.eval(node);
-                attributeMap.put(attribute, o);
-            }
-        }
-        return attributeMap;
-    }
-
     //Creates a map of attribute names to there thunks that can be demanded to get the values of the attributes
     public static Map<String, Object> allAttributesThunkMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
+
+        //Thunks are found in a nodes Nonterminalton
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         Map<String, Object> attributeMap = new HashMap<>();
 
+        //Find the corresponding thunk for each attribute
         for(String attribute : attributeList)
         {
+            //Synthesized attributes
             if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
                 Integer index = nonterminalton.getSynOccursIndex(attribute);
                 Object o = node.contextSynthesizedLazy(index); 
                 attributeMap.put(attribute, o);
-            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+            }
+            
+            //Inherited attributes
+            else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
                 Integer index = nonterminalton.getInhOccursIndex(attribute);
                 Object o = node.contextInheritedLazy(index); 
                 attributeMap.put(attribute, o);
-            }else{ //Should be local
+            }
+            
+            //Local attributes
+            else{
                 List<String> listLocals = getLocalAttrs(node);
                 Integer index = listLocals.indexOf(attribute);
                 Object o = node.localLazy(index);
@@ -1288,21 +1139,31 @@ public class Debug {
     public static Map<String, Lazy> allAttributesLazyMap(DecoratedNode node)
     {
         List<String> attributeList = allAttributesList(node);
+
+        //Lazy are found in a nodes Nonterminalton
         RTTIManager.Prodleton<?> prodleton = node.getNode().getProdleton();
         RTTIManager.Nonterminalton<?> nonterminalton = prodleton.getNonterminalton();
         Map<String, Lazy> attributeMap = new HashMap<>();
 
+        //Find the corresponding Lazy for each attribute
         for(String attribute : attributeList)
         {
+            //Synthesized attributes
             if(nonterminalton.getSynOccursIndices().keySet().contains(attribute)){
                 Integer index = nonterminalton.getSynOccursIndex(attribute);
                 Lazy synthAttribute = node.getNode().getSynthesized(index); //breaks for forwarded nodes
                 attributeMap.put(attribute, synthAttribute);
-            }else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
+            }
+            
+            //Inherited attributes
+            else if(nonterminalton.getInhOccursIndices().keySet().contains(attribute)){
                 Integer index = nonterminalton.getInhOccursIndex(attribute);
                 Lazy inheritedAttribute = node.getInheritedAttribute(index);
                 attributeMap.put(attribute, inheritedAttribute);
-            }else{ //Should be local
+            }
+            
+            //Local attributes
+            else{
                 List<String> listLocals = getLocalAttrs(node);
                 Integer index = listLocals.indexOf(attribute);
                 Lazy localAttribute = node.getNode().getLocal(index);
@@ -1312,88 +1173,17 @@ public class Debug {
         return attributeMap;
     }
 
+    //Prints a array to the terminal
     //Should be in util?
     public static void displayArray(String[] array){
         for (String element : array){
             System.out.println(element);
         } 
     }
-
-    //For letting users type tab to autofill with an element of the input list
-    public static String autofill(String[] options, Scanner inp){
-        while (true) {
-            String input = inp.nextLine();
-            if (input.isEmpty()) {
-                continue;
-            }
-            if (input.endsWith("\t")) { // Check if Tab key is pressed
-                String prefix = input.substring(0, input.lastIndexOf("\t"));
-                return autoComplete(prefix, options);
-            } else {
-                // Handle regular input
-                return input;
-            }
-        }
-    }
-
-    //helper for autofill
-    private static String autoComplete(String prefix, String[] options) {
-        for (String option : options) {
-            if (option.startsWith(prefix)) {
-                return option;
-            }
-        }
-        return "";
-    }
-
-    //Should be in util?
-    public static Integer chooseFormList(Scanner inp, String[] list){
-        for (int i = 0; i < list.length; i++){
-            System.out.println(Integer.toString(i) + ": " + list[i]);
-        } 
-
-        boolean continueLoop = true;
-        int returnInt = -1;
-        String stopper = "";
-        while(continueLoop){
-            System.out.print(">DEBUGGER-PROMPT$");
-            if (inp.hasNextInt()) {
-                returnInt = inp.nextInt();
-                inp.nextLine();
-                continueLoop = false;
-            }else{
-                stopper = inp.nextLine();
-                if (stopper.equals("q")){
-                    continueLoop = false;
-                }else{
-                    System.out.println("Please choose an integer or q to exit");
-                }
-            }
-        }
-        return returnInt;
-
-    }
      
+    //Returns true if the given node has a forward child
     public boolean isContractum(DecoratedNode node)
     {
         return node.getNode().hasForward();
-    }
-
-    public static class StringObjectPair {
-        private String stringValue;
-        private Object objectValue;
-
-        public StringObjectPair(String stringValue, Object objectValue) {
-            this.stringValue = stringValue;
-            this.objectValue = objectValue;
-        }
-
-        public String getString() {
-            return stringValue;
-        }
-
-        public Object getObject() {
-            return objectValue;
-        }
     }
 }
