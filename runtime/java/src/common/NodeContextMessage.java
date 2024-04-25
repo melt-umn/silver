@@ -26,133 +26,142 @@ import java.io.IOException;
 // file lines as well. But they are not needed for the current version of 
 // the SimplifiedContextStack). 
 
-// TODO. Perhaps show file lines in the SimplifiedContextStack as well, at least
-// for "Tree Order" 0 nodes.
 
 // SECTION 4. (labels). Labels represents whether the current node is involved with
 // horizontal edges. Current possible labels are is-contractuma and is-redex 
 // (for forwarding relationship) and is-attribute-root (for higher-order attribute subtree roots).
 // Labels are currently extracted from DecoratedNode itself. 
 
+// If showing intermediate full stack representation (ContextStack), then use GetSection_().
+// If accessing stored information for a 
+
 // TODO. Add a new contextualization label/header framework for REFERENCE ATTRIBUTES.  
+
+// TODO. Simplify this class. Remove all GetSection_() methods and just use a stack of 
+// NodeContextMessages as a store of information to make SimplifiedContextBoxes
+//  directly in SimplifiedContextStack
+
 
 public class NodeContextMessage {
 
     // String representations for each section.
     public String GetSection0() {
-        return Integer.toString(this.num_index);
+        return Integer.toString(this.numIndex);
     }
 
     public String GetSection1() {
         String res = "";
-        boolean first_set = false;
-        if (this.translation_x > 0) {
-            res += "TRANSLATION-" + this.translation_x;
-            first_set = true;
+        boolean firstSet = false;
+        if (this.translationX > 0) {
+            res += "TRANSLATION-" + this.translationX;
+            firstSet = true;
         }
-        if (this.higher_order_y > 0) {
-            if (first_set) {
+        if (this.higherOrderY > 0) {
+            if (firstSet) {
                 res += " & ";
             }
-            res += "HIGHER-ORDER-" + this.higher_order_y;
+            res += "HIGHER-ORDER-" + this.higherOrderY;
         }
         return res;
     }
 
     public String GetSection2() {
-        return this.text_repr;
+        return this.textRepr;
     }
 
     public String GetSection3() {
-        String res = "prod: " + this.prod_name + "\n" + 
-            this.filename + " lines: " + this.fc_start.getRow() + 
-            ":" + this.fc_start.getCol() + " -> " + this.fc_end.getRow() + 
-            ":" + this.fc_end.getCol(); 
+        
+        String res = "prod: " + this.prodName + "\n" + 
+            this.filename + " lines: " + this.fcStart.getRow() + 
+            ":" + this.fcStart.getCol() + " -> " + this.fcEnd.getRow() + 
+            ":" + this.fcEnd.getCol(); 
         return res;
     }
 
     // Not mutually exclusive labels
     public String GetSection4() {
+        
         String res = "";
-        if (this.is_redex) {
+        if (this.isRedex) {
             res += "*is-redex\n";
         }
-        if (this.is_contractum) {
-            res += "*is-contractum of " + this.contractum_of + "\n";
+        if (this.isContractum) {
+            res += "*is-contractum of " + this.contractumOf + "\n";
         }
-        if (this.is_attribute_root) {
+        if (this.isAttributeRoot) {
             res += "*is-attribute_root\n";
         }
         return res;
     }
 
     // Constructor for NodeContextMessage
-    public NodeContextMessage(DecoratedNode node, int num_index) {
+    public NodeContextMessage(DecoratedNode node, int numIndex) {
         
         // Set the current index. Keep track of it in the stack
         // to make decrementing on pop() easy
-        this.num_index = num_index;
+        this.numIndex = numIndex;
 
         // Necessary order.
     
         // Section 2
-        this.prod_name = node.getNode().getName();
-        this.fill_in_rows_and_cols(node);
+        this.prodName = node.getNode().getName();
+        this.fillInRowsAndCols(node);
 
         // Section 4
-        this.set_labels(node);
+        this.setLabels(node);
         
         // Section 1--headers depend on label attributes
-        this.initialize_headers(node);
+        this.initializeHeaders(node);
 
         // Section 3. Determine file lines last
         //  because they depend on computing boolean attributes
-        if ((this.translation_x > 0) || (this.higher_order_y > 0) ||
-            this.is_attribute_root || this.is_contractum) {
+        if ((this.translationX > 0) || (this.higherOrderY > 0) ||
+            this.isAttributeRoot || this.isContractum) {
             // If headers are represent (non-"order" 0 node), its pretty print is used. 
-            this.pretty_print(node);
+            this.prettyPrint(node);
         }
         else {
             // Otherwise file times are used for the text/concrete syntax representation.
-            this.pull_filelines();
+            this.pullFilelines();
         }
     }
 
-    // Set translation_x and translation_x bools here
-    private void initialize_headers(DecoratedNode node) {
+    // Set translationX and higherOrderY bools here
+    private void initializeHeaders(DecoratedNode node) {
 
-        this.translation_x = node.getIsTranslation();
-        this.higher_order_y = node.getIsAttribute();
+        this.translationX = node.getIsTranslation();
+        this.higherOrderY = node.getIsAttribute();
     }
 
     // Use file location method written in DecoratedNode
-    private void fill_in_rows_and_cols(DecoratedNode node){
-        this.fc_start = node.getStartCoordinates();
-        this.fc_end = node.getEndCoordinates();
+    private void fillInRowsAndCols(DecoratedNode node){
+        
+        this.fcStart = node.getStartCoordinates();
+        this.fcEnd = node.getEndCoordinates();
         this.filename = node.getFilename();
     }
 
     // Labels currently only regard forwarding and higher-order attributes.
-    private void set_labels(DecoratedNode node) {
+    private void setLabels(DecoratedNode node) {
        
-        this.is_redex = node.getIsRedex();
-        this.is_contractum = node.getIsContractum();
-        this.is_attribute_root = node.getIsAttributeRoot();
+        this.isRedex = node.getIsRedex();
+        this.isContractum = node.getIsContractum();
+        this.isAttributeRoot = node.getIsAttributeRoot();
 
         // Only relevant if these attributes are true
-        this.contractum_of = this.num_index - 1;
-        this.attribute_of = this.num_index - 1;
+        this.contractumOf = this.numIndex - 1;
+        this.attributeOf = this.numIndex - 1;
     }
 
     // access pp attribute if present  
-    private void pretty_print(DecoratedNode node) {
+    private void prettyPrint(DecoratedNode node) {
         
-        this.text_repr = node.getPrettyPrint();
+        this.textRepr = node.getPrettyPrint();
     }
 
     // Basically extract file lines from row x col y to 
     // row x' to y' for the two FileCoordinates this class stores.
-    private void pull_filelines() {
+    private void pullFilelines() {
        
         // Currently not the most efficient but should get the job done for now
        try (BufferedReader br = new BufferedReader(new FileReader(this.filename))) {
@@ -160,12 +169,12 @@ public class NodeContextMessage {
             int row = 1;
             int col = 1;
             String res = "";
-            for (; row < this.fc_start.getRow(); row++) {
+            for (; row < this.fcStart.getRow(); row++) {
                 // Skip these rows.
                 String line = br.readLine();
             }
             // Advance to starting char
-            for (; col < this.fc_start.getCol(); col++) {
+            for (; col < this.fcStart.getCol(); col++) {
                 //Single char read
                 // System.out.println("skipping col: " + col);
                 int c = br.read(); 
@@ -174,13 +183,13 @@ public class NodeContextMessage {
             // Now in correct row to start actually noting down file contents
 
             // Get whole lines here
-            for (; row < this.fc_end.getRow(); row++) {
+            for (; row < this.fcEnd.getRow(); row++) {
                 // System.out.println("reading row: " + row);
                 res += br.readLine();
                 res += '\n'; // Since not added with readLine()
             }
             // Now row = row.end
-            for (; col <= this.fc_end.getCol(); col++) {
+            for (; col <= this.fcEnd.getCol(); col++) {
                 // System.out.println("reading col: " + col);
                 char c = (char)br.read();
                 res += Character.toString(c);
@@ -188,8 +197,8 @@ public class NodeContextMessage {
             // Done. Can close file now
             br.close();
 
-            // Just set filebytes (text_repr) to res
-            this.text_repr = res;
+            // Just set filebytes (textRepr) to res
+            this.textRepr = res;
         } 
         catch (IOException e) {
             System.out.println("ERROR READING FROM FILE " + this.filename);
@@ -208,31 +217,31 @@ public class NodeContextMessage {
 
 
     // Section 0. Every context box will have a numeric index label
-    private int num_index;
-    // private static int next_index = 0;
+    private int numIndex;
 
     // Section 1. Header will contain TRANSLATION and/or HIGHER-ORDER 
     public int getTranslationX() {
-        return this.translation_x;
+        return this.translationX;
     }
+    private int translationX;
+
     public int getHigherOrderY() {
-        return this.higher_order_y;
+        return this.higherOrderY;
     }
-    private int translation_x;
-    private int higher_order_y;
+    private int higherOrderY;
     
     // Section 2. Actual text representation 
     // (either copied from file or prity print (pp) represenation)
     public String getTextRepr() {
-        return this.text_repr;
+        return this.textRepr;
     }
-    private String text_repr;
+    private String textRepr;
     
     // Section 3. Production name and file lines
     public String getProdName() {
-        return this.prod_name;
+        return this.prodName;
     }
-    private String prod_name;
+    private String prodName;
     
     public String getFilenmae() {
         return this.filename;
@@ -240,39 +249,40 @@ public class NodeContextMessage {
     private String filename;
 
     public FileCoordinate getFileCoordianteStart() {
-        return this.fc_start;
+        return this.fcStart;
     }
-    private FileCoordinate fc_start;
+    private FileCoordinate fcStart;
     
     public FileCoordinate getFileCoordianteEnd() {
-        return this.fc_end;
+        return this.fcEnd;
     }
-    private FileCoordinate fc_end;
+    private FileCoordinate fcEnd;
+
 
     // Section 4. Labels and associated info
-    private boolean is_redex;
-    private boolean is_contractum;
-    private int contractum_of;
-    private boolean is_attribute_root;
-    private int attribute_of;
-
     public boolean isRedex() {
-        return is_redex;
+        return isRedex;
     }
+    private boolean isRedex;
 
     public boolean isContractum() {
-        return is_contractum;
+        return isContractum;
     }
+    private boolean isContractum;
 
     public int getContractumOf() {
-        return contractum_of;
+        return contractumOf;
     }
-
+    private int contractumOf;
+    
     public boolean isAttributeRoot() {
-        return is_attribute_root;
+        return isAttributeRoot;
     }
+    private boolean isAttributeRoot;
 
     public int getAttributeOf() {
-        return attribute_of;
+        return attributeOf;
     }
+    private int attributeOf;
+
 }

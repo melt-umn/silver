@@ -21,14 +21,16 @@ import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
 public class ContextStack {
 
     public void push(DecoratedNode n) {
+        
         this.height++;
-        NodeContextMessage ncm = new NodeContextMessage(n, this.next_index++);
+        NodeContextMessage ncm = new NodeContextMessage(n, this.nextIndex++);
         this.stack.push(ncm);
     }
 
     public NodeContextMessage pop() {
+        
         this.height--;
-        this.next_index--;
+        this.nextIndex--;
         return this.stack.pop();
     }    
 
@@ -36,7 +38,7 @@ public class ContextStack {
         return this.stack.peek();
     }
 
-    public int get_height() {
+    public int getHeight() {
         return this.height;
     }
 
@@ -45,6 +47,7 @@ public class ContextStack {
     }
 
     public NodeContextMessage get(int stackIndex) {
+        
         // Index 0 is the bottom of the stack
         if (stackIndex >= 0 && stackIndex < this.stack.size()) {
             return this.stack.get(stackIndex);
@@ -56,5 +59,5 @@ public class ContextStack {
     private Stack<NodeContextMessage> stack = new Stack<NodeContextMessage>();
     private int height = 0;
     // Used for indices
-    private int next_index = 1;
+    private int nextIndex = 1;
 }

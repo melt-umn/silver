@@ -19,13 +19,13 @@ import java.io.BufferedWriter;
 //  over a ContextStack to generate a simplified (one node per tree order/
 // horizontal-edge encountered) stack.
 
-// Its ContextStack member full_stack is dynamically updated while debugging occurs.
+// Its ContextStack member fullStack is dynamically updated while debugging occurs.
 // Then, extracting a contextualization from a SimplifiedContextStack requires
 // calling updateSimplifiedStack() to create an updated SimplifiedContextStack 
-// (of SimplifiedConextBox objects) based on the current  state of the ContextStack full_stack. 
+// (of SimplifiedConextBox objects) based on the current  state of the ContextStack fullStack. 
 
-// TODO. Move full_stack updating directly into here, 
-// i.e., push/pop nodes into the simplifiedStack directly. 
+// TODO. Move fullStack updating directly into here, 
+// i.e., push/pop nodes into the simplified stack directly. 
 
 // TODO. Find better than O(n^2) time complexity for production name assignment. 
 
@@ -34,36 +34,39 @@ import java.io.BufferedWriter;
 
 public class SimplifiedContextStack {
 
-    public SimplifiedContextStack(ContextStack full_stack) {
-        this.full_stack = full_stack;
-        this.partition = new int[full_stack.get_height()];
+    public SimplifiedContextStack(ContextStack fullStack) {
+        this.fullStack = fullStack;
+        this.partition = new int[fullStack.getHeight()];
         this.filename = "simpleDebugContext.txt";
-        this.filename_html = "simpleDebugContext.html";
+        this.filenameHTML = "simpleDebugContext.html";
     }
 
-    public SimplifiedContextStack(ContextStack full_stack, String fn) {
-        this.full_stack = full_stack;
-        this.partition = new int[full_stack.get_height()];
+    public SimplifiedContextStack(ContextStack fullStack, String fn) {
+        this.fullStack = fullStack;
+        this.partition = new int[fullStack.getHeight()];
         this.filename = fn;
-        this.filename_html = "simpleDebugContext.html";
+        this.filenameHTML = "simpleDebugContext.html";
     }
 
-    public SimplifiedContextStack(ContextStack full_stack, String fn, String fn_html) {
-        this.full_stack = full_stack;
-        this.partition = new int[full_stack.get_height()];
+    public SimplifiedContextStack(ContextStack fullStack, String fn, String fnHTML) {
+        this.fullStack = fullStack;
+        this.partition = new int[fullStack.getHeight()];
         this.filename = fn;
-        this.filename_html = fn_html;
+        this.filenameHTML = fnHTML;
     }
 
+    
     // KEY function called immediately when generateHTMLFile() or show() are called.
-    // Updates this.simple_stack based on any changes to this.full_stack
+    // Updates this.simpleStack based on any changes to this.fullStack
     private void updateSimplifiedStack() {
-        this.need_set_all_prods = true;
+        this.needSetAllProds = true;
         this.makeSimplifiedStack();
     }
 
+
     // Create a basic text representation
     public void show(){
+        
         this.updateSimplifiedStack();
         String border = "*******************";
         
@@ -71,8 +74,8 @@ public class SimplifiedContextStack {
             FileWriter myWriter = new FileWriter(this.filename);
             // Want to go backwards through stack. Render it from top down in the file
             // java stack iterator doesn't support going backwards
-            for (int i = this.simple_stack.size() - 1; i >= 0; i--) {
-                SimplifiedContextBox sbox = this.simple_stack.get(i);
+            for (int i = this.simpleStack.size() - 1; i >= 0; i--) {
+                SimplifiedContextBox sbox = this.simpleStack.get(i);
                 myWriter.write(border + "\n" + sbox.toString() + "\n" + border);
             }
             myWriter.close();
@@ -82,17 +85,19 @@ public class SimplifiedContextStack {
         }
     }
 
+
     // Main function with extract a contextualization out. Must push to/pop to the separate ContextStack
     // that was used to create 
     public void generateHTMLFile() {
+        
         this.updateSimplifiedStack();
     
-        try (FileWriter myWriter = new FileWriter(this.filename_html)) {
+        try (FileWriter myWriter = new FileWriter(this.filenameHTML)) {
             myWriter.write("<html><head><title>Simplified Context Stack</title></head><body>\n");
     
             // Iterate through the stack in reverse order
-            for (int i = this.simple_stack.size() - 1; i >= 0; i--) {
-                SimplifiedContextBox sbox = this.simple_stack.get(i);
+            for (int i = this.simpleStack.size() - 1; i >= 0; i--) {
+                SimplifiedContextBox sbox = this.simpleStack.get(i);
                 
                 myWriter.write(sbox.getHTMLBox());
     
@@ -110,25 +115,25 @@ public class SimplifiedContextStack {
     private void makeSimplifiedStack() {
         
         // Clear previous simplified stack to get a brand new one
-        this.simple_stack = new Stack<SimplifiedContextBox>();
+        this.simpleStack = new Stack<SimplifiedContextBox>();
         
         this.fillInPartition();
         
         // Now make one box per partition
-        int prev_partition_index = 0; 
+        int prevPartitionIndex = 0; 
         int start = 0;
         int end = -1;
 
         // System.out.println(this.partition[0]);
         for (int i = 0; i < this.partition.length; i++) {
             
-            if (this.partition[i] > prev_partition_index) {
+            if (this.partition[i] > prevPartitionIndex) {
                 // Make box on existing start and end
                 SimplifiedContextBox sbox = this.makeSimplifiedBox(start, end);
-                this.simple_stack.push(sbox);
+                this.simpleStack.push(sbox);
                 start = i;
                 end = start;
-                prev_partition_index++;
+                prevPartitionIndex++;
             }
             else {
                 end++;
@@ -136,7 +141,7 @@ public class SimplifiedContextStack {
         }
         // Last one
         SimplifiedContextBox sbox = this.makeSimplifiedBox(start, end);
-        this.simple_stack.push(sbox);
+        this.simpleStack.push(sbox);
     }
 
 
@@ -153,20 +158,20 @@ public class SimplifiedContextStack {
         // 4 sections to fill in 
         SimplifiedContextBox sbox = new SimplifiedContextBox();
 
-        NodeContextMessage first = this.full_stack.get(i);
-        NodeContextMessage last = this.full_stack.get(j);
+        NodeContextMessage first = this.fullStack.get(i);
+        NodeContextMessage last = this.fullStack.get(j);
         
         // 1. Tree Order Trivial
-        sbox.translation_x = first.getTranslationX();
-        sbox.higher_order_y = first.getHigherOrderY();
+        sbox.translationX = first.getTranslationX();
+        sbox.higherOrderY = first.getHigherOrderY();
 
         // 2. Text Syntax (highlight later when rendering)
-        sbox.text_syntax = first.getTextRepr();
-        sbox.syntax_to_highlight = last.getTextRepr();
+        sbox.textSyntax = first.getTextRepr();
+        sbox.syntaxToHighlight = last.getTextRepr();
 
         // 3. Need some counting logic to keep track of unique indices
         this.SetAllProds();
-        sbox.prods_visited = Arrays.copyOfRange(this.productions, i, j + 1);
+        sbox.prodsVisited = Arrays.copyOfRange(this.productions, i, j + 1);
 
         // Make features list now (list, not array, since unknown length)
         sbox.features = new ArrayList<Feature>();
@@ -175,12 +180,13 @@ public class SimplifiedContextStack {
         return sbox;
     }
 
-    // Helper to iterate through a sequence of NodeContextMessages within this.full_stack,
+
+    // Helper to iterate through a sequence of NodeContextMessages within this.fullStack,
     // extract their labels, and create a Feature list.
     private void fillInFeaturesList(SimplifiedContextBox sbox, int i, int j) {
         
         for (int k = i; k <= j; k++) {
-            NodeContextMessage node = this.full_stack.get(k);
+            NodeContextMessage node = this.fullStack.get(k);
 
             if (node.isRedex()) {
                 String nodeName = productions[k].toString();
@@ -216,18 +222,18 @@ public class SimplifiedContextStack {
     // new indices. 
     private void SetAllProds() {
         
-        if (! this.need_set_all_prods) {
+        if (! this.needSetAllProds) {
             return;
         }
         // Only do this once 
         // Not worried about multiple instances of SimplifiedContextStack;
         // rather, don't want to do this for every SimplifiedContextBox created
 
-        ProductionName all_prods[] = new ProductionName[this.full_stack.get_height()];
+        ProductionName allProds[] = new ProductionName[this.fullStack.getHeight()];
 
-        for (int index = 0; index < this.full_stack.get_height(); index++) {
-            ProductionName pn = new ProductionName(this.full_stack.get(index).getProdName(), -1);
-            all_prods[index] = pn;
+        for (int index = 0; index < this.fullStack.getHeight(); index++) {
+            ProductionName pn = new ProductionName(this.fullStack.get(index).getProdName(), -1);
+            allProds[index] = pn;
         }
 
 
@@ -237,87 +243,89 @@ public class SimplifiedContextStack {
         // Unique prod names get the 0 index (not to be displayed)
         // Non-unique prod names are numbered from 1..n, so need extra
         // scan afterwards to separate unique 1 -> 0 from actual 1 
-        for (int prod_index = 0; prod_index < all_prods.length; prod_index++) {
+        for (int prodIndex = 0; prodIndex < allProds.length; prodIndex++) {
             
-            int seq_num = 1;
-            String name = all_prods[prod_index].name;
+            int seqNum = 1;
+            String name = allProds[prodIndex].name;
             
-            for (int visit_index = 0; visit_index < prod_index; visit_index++) {
-                String cur_name = all_prods[visit_index].name;
-                if (cur_name.compareTo(name) == 0) {
-                    seq_num++;
+            for (int visitIndex = 0; visitIndex < prodIndex; visitIndex++) {
+                String curName = allProds[visitIndex].name;
+                if (curName.compareTo(name) == 0) {
+                    seqNum++;
                 }
             }
-            all_prods[prod_index].index = seq_num;
+            allProds[prodIndex].index = seqNum;
         }
 
         // All prod indices >= 1. Find if need to differentiate 1 into 0 now
         // if truly unique and not start of 1..n sequence of indices
-        for (int prod_index = 0; prod_index < all_prods.length; prod_index++) {
+        for (int prodIndex = 0; prodIndex < allProds.length; prodIndex++) {
             
-            if (all_prods[prod_index].index == 1) {
-                boolean is_unique = true;
-                for (int k = 0; k < all_prods.length; k++) {
-                    if (k != prod_index && 
-                        (all_prods[k].name.compareTo(all_prods[prod_index].name) == 0)) {
-                            is_unique = false;
+            if (allProds[prodIndex].index == 1) {
+                boolean isUnique = true;
+                for (int k = 0; k < allProds.length; k++) {
+                    if (k != prodIndex && 
+                        (allProds[k].name.compareTo(allProds[prodIndex].name) == 0)) {
+                            isUnique = false;
                             break;
                         }
                 }
-                if (is_unique) {
-                    all_prods[prod_index].index = 0;
+                if (isUnique) {
+                    allProds[prodIndex].index = 0;
                 }
             }
         }
 
-        this.productions = all_prods;
-        this.need_set_all_prods = false;
+        this.productions = allProds;
+        this.needSetAllProds = false;
 
         return;
     }
 
-    // Determine partition of this.full_stack based on different headers.
+
+    // Determine partition of this.fullStack based on different headers.
     // All nodes of the same header go into one partition element.
     // Denote the partition by different sequential indices in the this.partition array.
     private void fillInPartition() {
 
-        this.partition = new int[full_stack.get_height()];
+        this.partition = new int[fullStack.getHeight()];
 
-        int previous_x = 0;
-        int previous_y = 0;
-        int partition_index = 0;
-        for (int i = 0; i < this.full_stack.get_height(); i++) {
-            NodeContextMessage node = this.full_stack.get(i);
-            int cur_x = node.getTranslationX();
-            int cur_y = node.getHigherOrderY();
-            if (cur_x == previous_x && cur_y == previous_y) {
+        int previousX = 0;
+        int previousY = 0;
+        int partitionIndex = 0;
+        for (int i = 0; i < this.fullStack.getHeight(); i++) {
+            NodeContextMessage node = this.fullStack.get(i);
+            int curX = node.getTranslationX();
+            int curY = node.getHigherOrderY();
+            if (curX == previousX && curY == previousY) {
                 // Within same set of partition
-                this.partition[i] = partition_index;
+                this.partition[i] = partitionIndex;
             }
             else {
-                previous_x = cur_x;
-                previous_y = cur_y;
+                previousX = curX;
+                previousY = curY;
                 // Increment partition index
-                partition_index++;
-                this.partition[i] = partition_index;
+                partitionIndex++;
+                this.partition[i] = partitionIndex;
             }
         }
     }
 
+
     // The "full"/verbose stack holding the complete path of navigated-to nodes
     // from root to the current node in a stack (basically maintain DFS traversal).
-    // Currently, nodes must be pushed/popped separately to full_stack first.
-    // TODO. Merge full_stack navigation into this stack.
-    private ContextStack full_stack;
+    // Currently, nodes must be pushed/popped separately to fullStack first.
+    // TODO. Merge fullStack navigation into this stack.
+    private ContextStack fullStack;
 
     private String filename;
-    private String filename_html;
+    private String filenameHTML;
 
-    // Actual contextualization comes from file rendering of the simple_stack.
-    private Stack<SimplifiedContextBox> simple_stack = 
+    // Actual contextualization comes from file rendering of the simpleStack.
+    private Stack<SimplifiedContextBox> simpleStack = 
         new Stack<SimplifiedContextBox>();
     
-    private boolean need_set_all_prods = true;
+    private boolean needSetAllProds = true;
     private ProductionName productions[];
 
     // Put 0 for each respective element in the first 
