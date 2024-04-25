@@ -13,7 +13,7 @@ concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
   top.unparse = "\timplicit " ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -52,7 +52,7 @@ concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\timplicit" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -92,7 +92,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 {
   e.downSubst = top.downSubst;
   top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -131,7 +131,7 @@ concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
