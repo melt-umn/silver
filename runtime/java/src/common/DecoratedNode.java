@@ -279,6 +279,19 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
+	 * Accessor function to access the tree that forwarded to this one.
+	 * This is currently only used in undecorating productions with shared children.
+	 * 
+	 * @return The parent of this DecoratedNode.
+	 */
+	public final DecoratedNode getForwardParent() {
+		if (forwardParent == null) {
+			throw new SilverInternalError("Attempted to access forwardParent of " + getDebugID() + ", which is not a forward tree.");
+		}
+		return forwardParent;
+	}
+
+	/**
 	 * Returns the child of this DecoratedNode, decorating it if needed.
 	 * 
 	 * This may be useful for debugging/reflection but is not used in the translation;

@@ -185,7 +185,9 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 ${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if !null(decorableChildren)
+    	${if any(map((.elementShared), namedSig.inputElements))
+          then "return context.getForwardParent().undecorate();"
+          else if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
             -- An implicitly undecorated production node has the same origin as the original node.
             -- This will be overidden by duplicate when calling new().
