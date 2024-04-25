@@ -27,6 +27,8 @@ top::UDExpr ::= @e::UDExpr
   top.errors2 = e.errors2;
 }
 
+-- These work, but have flow errors since we don't do reverse sharing through locals:
+
 production udOp2
 top::UDExpr ::= e::UDExpr
 {
