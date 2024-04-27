@@ -94,11 +94,11 @@ fun vertexGrammars [String] ::= v::VertexType frame::BlockContext env::Env =
       [dcl.sourceGrammar]
     | _ -> []
     end
-  | transAttrVertexType(localVertexType(fName), transAttr) ->
-    implode(":", init(explode(":", fName))) ::
-    case getValueDcl(fName, env) of
-    | valDcl :: _ when getOccursDcl(transAttr, valDcl.typeScheme.monoType.typeName, env) matches dcl :: _ ->
-      [dcl.sourceGrammar]
+  | transAttrVertexType(localVertexType(fName), transAttr)
+      when getValueDcl(fName, env) matches valDcl :: _ ->
+    valDcl.sourceGrammar ::
+    case getOccursDcl(transAttr, valDcl.typeScheme.monoType.typeName, env) of
+    | dcl :: _ -> [dcl.sourceGrammar]
     | _ -> []
     end
   | _ -> []
