@@ -70,7 +70,7 @@ monoid attribute hostSynTreeContribs :: [(String, FlowDef)];
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
 {-- lookup dec site to find places that a shared reference to this tree *might be* decorated.
- - This includes e.g. unique reference sites that appear in an if/else branch. -}
+ - This includes e.g. sharing sites that appear in an if/else branch. -}
 monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 
 {-- lookup dec site to find places that a shared reference to this tree are *unconditionally* decorated. -}
@@ -449,7 +449,7 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  nt::String 
  - @param nt        the full name of the nonterminal
  - @param ref       the vertex type of the shared tree
  - @param decSite   the vertex type that is supplying the attributes
- - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
+ - @param alwaysDec is this decoration unconditional (as opposed to e.g. sharing in an if/else branch)
  -}
 abstract production refDecSiteEq
 top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType  alwaysDec::Boolean

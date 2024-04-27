@@ -551,7 +551,7 @@ aspect production fullList
 top::Expr ::= '[' es::Exprs ']'
 {
   -- TODO: Consider refactoring listtrans on Exprs to decorate the expressions here
-  -- before forwarding via unique references.
+  -- before forwarding via translation attributes.
   local decEs::Exprs = es;
   decEs.downSubst = top.downSubst;
   decEs.finalSubst = top.finalSubst;
