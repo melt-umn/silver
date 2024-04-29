@@ -285,7 +285,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     then []
     else if length(t.inputTypes) > es.appExprSize
     then [errFromOrigin(top, "Too few arguments provided to function '" ++ e.unparse ++ "'")]
-    else if length(t.inputTypes) < es.appExprSize
+    else if length(t.inputTypes) < es.appExprSize && case t.outputType of dispatchType(_) -> false | _ -> true end
     then [errFromOrigin(top, "Too many arguments provided to function '" ++ e.unparse ++ "'")]
     else [];
 
@@ -335,10 +335,15 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
 
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
   forwards to
     (if es.isPartial || anns.isPartial
      then partialApplication
-     else functionInvocation)(e, es, anns);
+     else
+       case t.outputType of
+       | dispatchType(_) when es.appExprSize > length(t.inputTypes) -> curriedDispatchApplication
+       | _ -> functionInvocation
+       end)(e, es, anns);
 }
 
 abstract production functionInvocation implements Application
@@ -362,6 +367,27 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     appTypes(
       functionType(length(es.missingTypereps) + length(anns.partialAnnoTypereps), map(fst, anns.missingAnnotations)),
       es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
+}
+
+abstract production curriedDispatchApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
+  local extraArgs::[Expr] = drop(es.appExprSize - length(t.inputTypes), es.rawExprs);
+  local dispatchArgs::[Expr] = take(es.appExprSize - length(t.inputTypes), es.rawExprs);
+
+  forwards to application(
+    application(
+      @e, '(',
+      foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+        map(presentAppExpr, extraArgs)),
+      ',', emptyAnnoAppExprs(), ')'),
+    '(',
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, dispatchArgs)),
+    ',', @anns, ')');
 }
 
 abstract production dispatchApplication implements Application

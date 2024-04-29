@@ -48,6 +48,21 @@ top::UDExpr ::= @e::UDExpr
   top.errors2 = !null(e.env1);
 }
 
+production dispatchThing3 implements DispatchOp
+top::UDExpr ::= @e::UDExpr i::Integer b::Boolean
+{
+  top.errors1 = b;
+  top.errors2 = i > 0;
+}
+
+global dt3::DispatchOp = dispatchThing3(3, false);
+
+production dispatchThing4 implements DispatchOp
+top::UDExpr ::= @e::UDExpr
+{
+  forwards to dispatchThing3(e, 42, true);
+}
+
 wrongFlowCode "Tree e in production flow:overloadThing2 is shared in multiple places" {
 production overloadThing2
 top::UDExpr ::= e::UDExpr

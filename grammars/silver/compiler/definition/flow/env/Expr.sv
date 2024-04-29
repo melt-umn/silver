@@ -203,6 +203,19 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   es.alwaysDecorated = false;
 }
 
+aspect production curriedDispatchApplication
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  es.appProd =
+    case e of
+    | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
+    | _ -> nothing()
+    end;
+  es.appIndexOffset = 0;
+  es.decSiteVertexInfo = top.decSiteVertexInfo;
+  es.alwaysDecorated = top.alwaysDecorated;
+}
+
 aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
