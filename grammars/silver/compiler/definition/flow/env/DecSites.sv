@@ -42,6 +42,8 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
        then directDec(prodName, vt)
        else neverDec()) ++
       case vt of
+      -- Via flow type
+      | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
       -- Via forwarding
       | forwardVertexType_real() -> forwardDec()
       | localVertexType("forward") -> forwardDec()  -- TODO: Not sure if this is actually possible?
@@ -66,14 +68,15 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
       end ++
       -- Via direct sharing
       foldAnyDecSite(map(recurse(prodName, _), lookupRefDecSite(prodName, vt, flowEnv))) ++
-      -- Via translation attributes
+      -- Via translation attribute sharing
       foldAnyDecSite(
-        filterMap(
+        flatMap(
           \ attrName ->
             case getAttrDcl(attrName, realEnv) of
             | dcl :: _ when dcl.isTranslation ->
-              just(transAttrDec(attrName, recurse(prodName, transAttrVertexType(vt, attrName))))
-            | _ -> nothing()
+              map(\ transDecSite -> transAttrDec(attrName, recurse(prodName, transDecSite)),
+                lookupRefDecSite(prodName, transAttrVertexType(vt, attrName), flowEnv))
+            | _ -> []
             end,
           getHostSynsFor(ntName, flowEnv)));
 }
