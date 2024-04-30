@@ -45,7 +45,10 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
       -- Via forwarding
       | forwardVertexType_real() -> forwardDec()
       | localVertexType("forward") -> forwardDec()  -- TODO: Not sure if this is actually possible?
-      | localVertexType(fName) when isForwardProdAttr(fName, realEnv) -> forwardDec()
+      | localVertexType(fName) when
+          isForwardProdAttr(fName,
+            newScopeEnv(flatMap((.prodDefs), getProdAttrs(prodName, realEnv)), emptyEnv())) ->
+        forwardDec()
       -- Via projected remote equation
       | subtermVertexType(_, prodOrSig, sigName) ->
         foldAllDecSite(

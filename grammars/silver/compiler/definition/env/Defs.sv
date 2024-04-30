@@ -1,6 +1,8 @@
 grammar silver:compiler:definition:env;
 
-nonterminal Defs with defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, dispatchDclList, filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
+nonterminal Defs with
+  defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, dispatchDclList,
+  filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem<TypeDclInfo>];

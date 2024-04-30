@@ -357,6 +357,9 @@ Maybe<[String]> ::= t::Type e::Env
     end;
 }
 
+-- Check if a production attribute is a forward production attribute.
+-- Note this expects the local env for the production!
+-- If looking up in another prod, need to get the prod attr defs for the prod.
 fun isForwardProdAttr Boolean ::= a::String  e::Env =
   case getValueDclAll(a, e) of
   | d :: _ -> d.hasForward
