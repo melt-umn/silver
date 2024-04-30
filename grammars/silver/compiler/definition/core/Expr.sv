@@ -369,6 +369,10 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
       es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
 }
 
+-- Dispatch productions with extra arguments are partially curried,
+-- e.g. lexicalLocalReference has type (Reference ::= Maybe<VertexType> [FlowVertex]).
+-- This exists to permit all arguments to be supplied directly,
+-- e.g. lexicalLocalReference(q, fi, fd) instead of lexicalLocalReference(fi, fd)(q).
 abstract production curriedDispatchApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
