@@ -704,6 +704,6 @@ String ::= e::Decorated Expr
     | r :: _ -> r.grammarSource
     | [] -> ""
     end ++ loc.filename;
-  local sourceLocationTrans::String = s"new silver.core.Ploc(\"${fileName}\", ${toString(loc.line)}, ${toString(loc.column)}, ${toString(loc.endLine)}, ${toString(loc.endColumn)}, ${toString(loc.index)}, ${toString(loc.endIndex)})";
+  local sourceLocationTrans::String = s"new silver.core.Ploc(new common.StringCatter(\"${fileName}\"), ${toString(loc.line)}, ${toString(loc.column)}, ${toString(loc.endLine)}, ${toString(loc.endColumn)}, ${toString(loc.index)}, ${toString(loc.endIndex)})";
   return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } public final silver.core.NLocation getSourceLocation() { return ${sourceLocationTrans}; } }";
 }
