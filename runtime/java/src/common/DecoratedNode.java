@@ -595,7 +595,7 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		}
 		Lazy decSite = inheritedAttributes == null? null : inheritedAttributes[decSiteAttribute];
-		if(decSite == null && forwardParent != null && isProdForward) {
+		if(decSite == null && forwardParent != null && isProdForward && forwardParent.synthesizedValues[attribute] == null) {
 			decSite = (context) -> forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
 		}
 		return d.decorate(parent, inhs, decSite);

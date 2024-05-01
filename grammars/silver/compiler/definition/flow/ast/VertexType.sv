@@ -102,7 +102,7 @@ top::VertexType ::=
 {
   top.vertexName = "forward";
   top.vertexPP = "forward";
-  top.isInhDefVertex = false;
+  top.isInhDefVertex = true;
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
   top.fwdVertex = forwardSynVertex("forward");

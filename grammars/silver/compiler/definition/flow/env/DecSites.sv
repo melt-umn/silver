@@ -43,14 +43,15 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
        else neverDec()) ++
       case vt of
       -- Via flow type
+      | lhsVertexType_real() -> alwaysDec()  -- Shouldn't actually be consulted
       | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
       -- Via forwarding
-      | forwardVertexType_real() -> forwardDec()
-      | localVertexType("forward") -> forwardDec()  -- TODO: Not sure if this is actually possible?
+      | forwardVertexType_real() -> forwardDec(prodName, nothing())
+      | localVertexType("forward") -> forwardDec(prodName, nothing())
       | localVertexType(fName) when
           isForwardProdAttr(fName,
             newScopeEnv(flatMap((.prodDefs), getProdAttrs(prodName, realEnv)), emptyEnv())) ->
-        forwardDec()
+        forwardDec(prodName, just(fName))
       -- Via projected remote equation
       | subtermVertexType(_, prodOrSig, sigName) ->
         foldAllDecSite(
@@ -118,12 +119,21 @@ attribute flowEnv occurs on DecSiteTree;
 strategy attribute resolveDecSite = allTopDown(
   rule on top::DecSiteTree of
   | directDec(prodName, vt)
-      when vertexHasInhEq(prodName, vt, top.attrToResolve, top.flowEnv) ->
-    alwaysDec()
-  | forwardDec() ->
-    if splitTransAttrInh(top.attrToResolve).isJust
-    then neverDec()
-    else alwaysDec()
+        when vertexHasInhEq(prodName, vt, top.attrToResolve, top.flowEnv) ->
+      alwaysDec()
+  | forwardDec(_, just(_)) ->
+      if splitTransAttrInh(top.attrToResolve).isJust
+      then neverDec()
+      else alwaysDec()
+  | forwardDec(prodName, nothing()) ->
+      case splitTransAttrInh(top.attrToResolve) of
+      | just((transAttr, inhAttr))
+            when !null(lookupSyn(prodName, transAttr, top.flowEnv)) ->
+          -- transAttr has an override equation, so trans.inh supplied on lhs
+          -- isn't supplied to trans on forward:
+          neverDec()
+      | _ -> alwaysDec()
+      end
   | transAttrDec(attrName, d) when
       case splitTransAttrInh(top.attrToResolve) of
       | just((transAttr, inhAttr)) -> transAttr != attrName
