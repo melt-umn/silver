@@ -560,10 +560,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return The decorated value of the translation attribute.
 	 */
 	private final DecoratedNode evalTrans(final int attribute, final int inhsAttribute, final int decSiteAttribute) {
-		if(forwardParent != null && isProdForward) {
-			return forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
-		}
-
 		Lazy l = self.getSynthesized(attribute);
 		Decorable d;
 		if(l != null) {
@@ -574,7 +570,7 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		} else if(self.hasForward()) {
 			try {
-				d = forward().evalTrans(attribute, inhsAttribute, decSiteAttribute);
+				d = forward().translation(attribute, inhsAttribute, decSiteAttribute);
 			} catch(Throwable t) {
 				throw new TraceException("While evaling trans '" + self.getNameOfSynAttr(attribute) + "' via forward in " + getDebugID(), t);
 			}
@@ -599,6 +595,9 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		}
 		Lazy decSite = inheritedAttributes == null? null : inheritedAttributes[decSiteAttribute];
+		if(decSite == null && forwardParent != null && isProdForward) {
+			decSite = (context) -> forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
+		}
 		return d.decorate(parent, inhs, decSite);
 	}
 
