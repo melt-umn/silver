@@ -189,7 +189,7 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 ${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if !null(body.undecorateExpr)
+        ${if !null(body.undecorateExpr)
           then s"return (common.Node)${head(body.undecorateExpr).translation};"
           else if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
