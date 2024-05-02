@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let run_traslator = vscode.commands.registerCommand('agnosis.RunSilver', () => {
 		vscode.window.showInformationMessage('Running Translator...');
-		terminal.sendText(`./silver-compile --force-origins --clean`);
+		// terminal.sendText(`./silver-compile --force-origins --clean`);
 		// get current open tab file name
 		let working_file = vscode.window.activeTextEditor?.document.fileName || '';
 		let working_file_split = working_file.split('/');
@@ -121,39 +121,73 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	
 
-    let currentPanel: vscode.WebviewPanel | undefined = undefined;
 
-    const showAttributeValuesHtml = vscode.commands.registerCommand('agnosis.showAttributeValuesHtml', () => {
-        if (!currentPanel) {
-            currentPanel = vscode.window.createWebviewPanel(
-                'attributeValues',
-                'Attribute Values',
-                vscode.ViewColumn.One,
-                { enableScripts: true }
-            );
-
-            currentPanel.onDidDispose(() => {
-                currentPanel = undefined;
-            });
-        }
-
-        const updateWebviewContent = () => {
-            const filePath = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
-            const htmlPath = path.join(filePath, 'attribute_values.html');
-            const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-            if (currentPanel) {
-                currentPanel.webview.html = htmlContent;
-            }
-        };
-
-        updateWebviewContent();
-
-        const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.workspaceFolders![0], 'attribute_values.html'));
-        watcher.onDidChange(updateWebviewContent);
-        watcher.onDidDelete(updateWebviewContent);
-        watcher.onDidCreate(updateWebviewContent);
-
-    });
+	let attributeValuesPanel: vscode.WebviewPanel | undefined = undefined;
+	let simpleDebugContextPanel: vscode.WebviewPanel | undefined = undefined;
+	
+	const showAttributeValuesHtml = vscode.commands.registerCommand('agnosis.showAttributeValuesHtml', () => {
+		if (!attributeValuesPanel) {
+			attributeValuesPanel = vscode.window.createWebviewPanel(
+				'attributeValues',
+				'Attribute Values',
+				vscode.ViewColumn.One,
+				{ enableScripts: true }
+			);
+	
+			attributeValuesPanel.onDidDispose(() => {
+				attributeValuesPanel = undefined;
+			});
+		}
+	
+		const updateAttributeValues = () => {
+			const filePath: string = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
+			const htmlPath: string = path.join(filePath, 'attribute_values.html');
+			const htmlContent: string = fs.readFileSync(htmlPath, 'utf8');
+			if (attributeValuesPanel) {
+				attributeValuesPanel.webview.html = htmlContent;
+			}
+		};
+	
+		updateAttributeValues();
+	
+		const attributeWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.workspaceFolders![0], 'attribute_values.html'));
+		attributeWatcher.onDidChange(updateAttributeValues);
+		attributeWatcher.onDidDelete(updateAttributeValues);
+		attributeWatcher.onDidCreate(updateAttributeValues);
+	});
+	
+	const showSimpleDebugContext = vscode.commands.registerCommand('agnosis.showSimpleDebugContext', () => {
+		if (!simpleDebugContextPanel) {
+			simpleDebugContextPanel = vscode.window.createWebviewPanel(
+				'simpleDebugContext',
+				'Simple Debug Context',
+				vscode.ViewColumn.Two, // Optionally, place this in another column
+				{ enableScripts: true }
+			);
+	
+			simpleDebugContextPanel.onDidDispose(() => {
+				simpleDebugContextPanel = undefined;
+			});
+		}
+	
+		const updateSimpleDebugContext = () => {
+			const filePath: string = vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri.fsPath : '';
+			const htmlPath: string = path.join(filePath, 'simpleDebugContext.html');
+			const htmlContent: string = fs.readFileSync(htmlPath, 'utf8');
+			if (simpleDebugContextPanel) {
+				simpleDebugContextPanel.webview.html = htmlContent;
+			}
+		};
+	
+		updateSimpleDebugContext();
+	
+		const simpleDebugWatcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.workspaceFolders![0], 'simpleDebugContext.html'));
+		simpleDebugWatcher.onDidChange(updateSimpleDebugContext);
+		simpleDebugWatcher.onDidDelete(updateSimpleDebugContext);
+		simpleDebugWatcher.onDidCreate(updateSimpleDebugContext);
+	});
+	
+	
 
 	
 	const server = net.createServer(socket => {
@@ -161,6 +195,9 @@ export function activate(context: vscode.ExtensionContext) {
 			let message = data.toString().trim();
 			if (message === '1') {
 				vscode.commands.executeCommand('agnosis.HighlightSilver');
+				// run showAttributeValuesHtml
+				vscode.commands.executeCommand('agnosis.showAttributeValuesHtml');
+				vscode.commands.executeCommand('agnosis.showSimpleDebugContext');
 			}
 		});
 	});
@@ -172,6 +209,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     context.subscriptions.push(showAttributeValuesHtml);
+	context.subscriptions.push(showSimpleDebugContext);
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(launchSilver_dispoable);
 	context.subscriptions.push(run_traslator);

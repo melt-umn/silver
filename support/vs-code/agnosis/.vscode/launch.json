@@ -11,7 +11,7 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--folder-uri=file:///home/linglong/College/example_expr_translator/translator"
+				"--folder-uri=file:///home/tardis/Documents/example_expr_translator-main/translator"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
