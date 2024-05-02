@@ -181,6 +181,9 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.originLoc = location;
 
+  -- If there is a *syntactic* newline, then force anything enclosing this to not be boxed.
+  top.indents <- if indexOf("\n", lexeme) != -1 then [-1] else [];
+
   top.unparseWithLayout = blobPP(top.indent, lexeme);
 
   -- Map of terminal names to default layout after the terminal
