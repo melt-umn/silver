@@ -474,12 +474,21 @@ public class Debug {
     private boolean toggleHeadlessAttributes;
     private String[] toggleChoices;
 
+    private boolean isRoot(DecoratedNode dn) {
+		return 
+            dn.getParent() == null || 
+            dn.getParent() instanceof TopNode ||
+            dn.getParent().getParent() == null ||
+            dn.getParent().getParent() instanceof TopNode;
+	}
+
     //Replaces currentNode with its parent
     public Integer up()
     {
+        
 
         //Make sure there is a parent to go up to 
-        if (currentNode.isRoot()){
+        if (this.isRoot(currentNode)){
             System.out.println("Root Node has no parent");
             return -1;
         }

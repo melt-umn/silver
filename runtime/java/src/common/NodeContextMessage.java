@@ -3,6 +3,11 @@ package common;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
+import silver.core.NLocation;
+import silver.core.NMaybe;
 
 // Core of the debugging contextualization implementation.
 // A NodeContextMessage records all debugging contextualization
@@ -129,24 +134,24 @@ public class NodeContextMessage {
     // Set translationX and higherOrderY bools here
     private void initializeHeaders(DecoratedNode node) {
 
-        this.translationX = node.getIsTranslation();
-        this.higherOrderY = node.getIsAttribute();
+        this.translationX = getIsTranslation(node);
+        this.higherOrderY = getIsAttribute(node);
     }
 
     // Use file location method written in DecoratedNode
     private void fillInRowsAndCols(DecoratedNode node){
         
-        this.fcStart = node.getStartCoordinates();
-        this.fcEnd = node.getEndCoordinates();
-        this.filename = node.getFilename();
+        this.fcStart = getStartCoordinates(node);
+        this.fcEnd = getEndCoordinates(node);
+        this.filename = getFilename(node);
     }
 
     // Labels currently only regard forwarding and higher-order attributes.
     private void setLabels(DecoratedNode node) {
        
-        this.isRedex = node.getIsRedex();
-        this.isContractum = node.getIsContractum();
-        this.isAttributeRoot = node.getIsAttributeRoot();
+        this.isRedex = getIsRedex(node);
+        this.isContractum = getIsContractum(node);
+        this.isAttributeRoot = getIsAttributeRoot(node);
 
         // Only relevant if these attributes are true
         this.contractumOf = this.numIndex - 1;
@@ -156,7 +161,7 @@ public class NodeContextMessage {
     // access pp attribute if present  
     private void prettyPrint(DecoratedNode node) {
         
-        this.textRepr = node.getPrettyPrint();
+        this.textRepr = getPrettyPrint(node);
     }
 
     // Basically extract file lines from row x col y to 
@@ -214,6 +219,212 @@ public class NodeContextMessage {
             this.GetSection3() + "\n" + 
             this.GetSection4();
     }
+
+
+    // Helper functions to extract info from DecoratedNode
+    public boolean getIsRedex(DecoratedNode dn) {
+		if (dn.getNode() == null) {
+            return false;
+        }
+        else if (dn.getNode().hasForward()) {
+            return true;
+        }
+        return false;
+	}
+
+    public boolean getIsContractum(DecoratedNode dn) {
+		if (dn.getNode() == null) {
+            return false;
+        }
+        else if (dn.getForwardParent() != null) {
+            return true;
+        }
+        return false;
+	}
+
+    public DecoratedNode getRedex(DecoratedNode dn) {
+		return this.getRedexHelper(dn); 
+	}
+
+	private DecoratedNode getRedexHelper(DecoratedNode dn) {
+		if (dn == null || isRoot(dn)) {
+			return null;
+		}
+		
+		if (getIsRedex(dn)) {
+			return dn;
+		}
+		else {
+			return getRedexHelper(dn.getParent());
+		}
+	} 
+
+    public DecoratedNode getContractum(DecoratedNode dn) {
+		return this.getContractumHelper(dn); 
+	}
+
+	private DecoratedNode getContractumHelper(DecoratedNode dn) {
+		if (dn == null || isRoot(dn)) {
+			return null;
+		}
+		
+		if (getIsContractum(dn)) {
+			return dn;
+		}
+		else {
+			return getContractumHelper(dn.getParent());
+		}
+	} 
+
+    // Get filename the associated with the concrete syntax location 
+	// origin tacking follows back from this node
+	public String getFilename(DecoratedNode dn) { 
+				
+		// boolean res = dn.getNode() instanceof silver.core.Alocation;
+		// res = dn.getNode() instanceof Tracked;
+
+		if(dn.getNode() == null) {
+			return "<top>";
+		}
+		NLocation loc = null;
+		if(dn.getNode() instanceof silver.core.Alocation) {
+			loc = ((silver.core.Alocation)dn.getNode()).getAnno_silver_core_location();
+		} else if(dn.getNode() instanceof Tracked) {
+			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, dn.getNode());
+			if(maybeLoc instanceof silver.core.Pjust) {
+				loc = (silver.core.NLocation)maybeLoc.getChild(0);
+			}
+		}
+		if(loc != null) {
+			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+			return file;
+		}
+	
+		return "<NO-FILE-FOUND>";
+	}
+
+    // Get start coordinates for the file location associated with 
+	// the concrete syntax location origin tacking follows back from this node
+	public FileCoordinate getStartCoordinates(DecoratedNode dn) {
+		
+		if(dn.getNode() == null) {
+			return new FileCoordinate(-2, -2);
+		}
+		NLocation loc = null;
+		if(dn.getNode() instanceof silver.core.Alocation) {
+			loc = ((silver.core.Alocation)dn.getNode()).getAnno_silver_core_location();
+		} else if(dn.getNode() instanceof Tracked) {
+			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, dn.getNode());
+			if(maybeLoc instanceof silver.core.Pjust) {
+				loc = (silver.core.NLocation)maybeLoc.getChild(0);
+			}
+		}
+		if(loc != null) {
+			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+			return new FileCoordinate(line, col);
+		}
+		
+		return new FileCoordinate(-1, -1);
+	}
+
+    // Get end coordinates for the file location associated with 
+	// the concrete syntax location origin tacking follows back from this node
+	public FileCoordinate getEndCoordinates(DecoratedNode dn) {
+		
+		if(dn.getNode() == null) {
+			return new FileCoordinate(-2, -2);
+		}
+		NLocation loc = null;
+		if(dn.getNode() instanceof silver.core.Alocation) {
+			loc = ((silver.core.Alocation)dn.getNode()).getAnno_silver_core_location();
+		} else if(dn.getNode() instanceof Tracked) {
+			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, dn.getNode());
+			if(maybeLoc instanceof silver.core.Pjust) {
+				loc = (silver.core.NLocation)maybeLoc.getChild(0);
+			}
+		}
+		if(loc != null) {
+			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
+			return new FileCoordinate(line, col);
+		}
+		
+		return new FileCoordinate(-1, -1);
+	}
+
+    // Access pretty print attribute
+	// through this function (a synthesized attribute)
+	// "pp" is the standard pretty print name
+	public String getPrettyPrint(DecoratedNode dn) {
+
+		int numAttrs = dn.getNode().getNumberOfSynAttrs();
+		for (int i = 0; i < numAttrs; i++) {
+			
+			// Search until find name that is "pp"
+			String name = dn.getNode().getNameOfSynAttr(i);
+			// Want last three characters to be ":pp"
+			if (name.substring(name.length() - 3).toLowerCase().equals(":pp")) {
+				Object pp = dn.synthesized(i);
+				return pp.toString();
+			}
+		}
+		System.err.println("No pretty print (pp) attribute defined--using genericShow() instead");
+		return Util.genericShow(this).toString();
+	}
+
+    // Catch program "root"
+	public boolean isRoot(DecoratedNode dn) {
+		return 
+            dn.getParent() == null || 
+            dn.getParent() instanceof TopNode ||
+            dn.getParent().getParent() == null ||
+            dn.getParent().getParent() instanceof TopNode;
+	}
+
+    // only set isAttributeRoot once
+	public boolean getIsAttributeRoot(DecoratedNode dn) {
+		if (! (dn == null || isRoot(dn))) {
+			Map<String, Object> map = Debug.allAttributesThunkMap(dn.getParent());
+			Collection<Object> values = map.values();
+			for (Object obj: values) {
+				if (Util.demand(obj) == dn) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+    // Determine higher-order attribute nesting of this node. 
+	public int getIsAttribute(DecoratedNode dn) {
+		if (dn == null || isRoot(dn)) {
+			return 0;
+		}
+		else {
+			if (getIsAttributeRoot(dn)) {
+				return 1 + getIsAttribute(dn.getParent());
+			}
+			return getIsAttribute(dn.getParent());	
+		}
+	}
+
+    // Determine how many forwarding edges were followed to get to this node.
+	public int getIsTranslation(DecoratedNode dn) {
+		// See how many parents are contractums
+		// Calling parent repeatedly will ignore forwarding nodes, so operate on 
+		// getIsContractum only as the case to determine whether forwarding occurs or not
+		if (dn == null || isRoot(dn)) {
+			return 0;
+		}
+		else if (getIsContractum(dn)) {
+			return 1 + getIsTranslation(dn.getParent());
+		}
+		else {
+			return getIsTranslation(dn.getParent());
+		}
+	}
+
 
 
     // Section 0. Every context box will have a numeric index label

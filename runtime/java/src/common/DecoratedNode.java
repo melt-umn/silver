@@ -944,250 +944,250 @@ public class DecoratedNode implements Decorable, Typed {
 		// getPrettyPrint()		
 
 
-	private boolean isRedex;
-	private boolean isContractum;
-	private boolean isAttributeRoot;
-	private boolean needSetIsAttributeRoot = true;
+	// private boolean isRedex;
+	// private boolean isContractum;
+	// private boolean isAttributeRoot;
+	// private boolean needSetIsAttributeRoot = true;
 
-	// Compute only once redex/contractum property  
-	private boolean needComputeRedexContractum = true;
+	// // Compute only once redex/contractum property  
+	// private boolean needComputeRedexContractum = true;
 
-	public boolean getIsRedex() {
-		if (this.needComputeRedexContractum) {
-			this.computeRedexContractum();
-		}
-		return this.isRedex;
-	}
-	public boolean getIsContractum() {
-		if (this.needComputeRedexContractum) {
-			this.computeRedexContractum();
-		}
-		return this.isContractum;
-	}
+	// public boolean getIsRedex() {
+	// 	if (this.needComputeRedexContractum) {
+	// 		this.computeRedexContractum();
+	// 	}
+	// 	return this.isRedex;
+	// }
+	// public boolean getIsContractum() {
+	// 	if (this.needComputeRedexContractum) {
+	// 		this.computeRedexContractum();
+	// 	}
+	// 	return this.isContractum;
+	// }
 
-	// Locally determing if redex and/or contractum
-	// through forwarding as the rewrite rule method
-	private void computeRedexContractum() {
-		if (!this.needComputeRedexContractum) {
-			return;
-		}
+	// // Locally determing if redex and/or contractum
+	// // through forwarding as the rewrite rule method
+	// private void computeRedexContractum() {
+	// 	if (!this.needComputeRedexContractum) {
+	// 		return;
+	// 	}
 
-		if (this.self.hasForward()) {
-			this.isRedex = true;
-		}
-		else {
-			this.isRedex = false;
-		}
+	// 	if (this.self.hasForward()) {
+	// 		this.isRedex = true;
+	// 	}
+	// 	else {
+	// 		this.isRedex = false;
+	// 	}
 		
-		if (this.forwardParent != null) {
-			this.isContractum = true;
-		}
-		else {
-			this.isContractum = false;
-		}
-		this.needComputeRedexContractum = false;
-	}
+	// 	if (this.forwardParent != null) {
+	// 		this.isContractum = true;
+	// 	}
+	// 	else {
+	// 		this.isContractum = false;
+	// 	}
+	// 	this.needComputeRedexContractum = false;
+	// }
 
-	// Wrapper for recursive helper
-	// Returns the first redex parent encountered or null if none
-	public DecoratedNode getRedex() {
-		return this.getRedexHelper(this); 
-	}
+	// // Wrapper for recursive helper
+	// // Returns the first redex parent encountered or null if none
+	// public DecoratedNode getRedex() {
+	// 	return this.getRedexHelper(this); 
+	// }
 
-	private DecoratedNode getRedexHelper(DecoratedNode dn) {
-		if (dn == null || dn.isRoot()) {
-			return null;
-		}
+	// private DecoratedNode getRedexHelper(DecoratedNode dn) {
+	// 	if (dn == null || dn.isRoot()) {
+	// 		return null;
+	// 	}
 		
-		if (dn.isRedex) {
-			return dn;
-		}
-		else {
-			return getRedexHelper(dn.parent);
-		}
-	} 
+	// 	if (dn.isRedex) {
+	// 		return dn;
+	// 	}
+	// 	else {
+	// 		return getRedexHelper(dn.parent);
+	// 	}
+	// } 
 
-	// Wrapper for recursive helper
-	// Returns the first contractum parent encountered or null if none
-	public DecoratedNode getContractum() {
-		// Wrapper for recursive helper
-		return this.getContractumHelper(this); 
-	}
-	private DecoratedNode getContractumHelper(DecoratedNode dn) {
-		if (dn == null || dn.isRoot()) {
-			return null;
-		}
+	// // Wrapper for recursive helper
+	// // Returns the first contractum parent encountered or null if none
+	// public DecoratedNode getContractum() {
+	// 	// Wrapper for recursive helper
+	// 	return this.getContractumHelper(this); 
+	// }
+	// private DecoratedNode getContractumHelper(DecoratedNode dn) {
+	// 	if (dn == null || dn.isRoot()) {
+	// 		return null;
+	// 	}
 		
-		if (dn.isContractum) {
-			return dn;
-		}
-		else {
-			return getContractumHelper(dn.parent);
-		}
-	} 
+	// 	if (dn.isContractum) {
+	// 		return dn;
+	// 	}
+	// 	else {
+	// 		return getContractumHelper(dn.parent);
+	// 	}
+	// } 
 
-	// Get filename the associated with the concrete syntax location 
-	// origin tacking follows back from this node
-	public String getFilename() { 
+	// // Get filename the associated with the concrete syntax location 
+	// // origin tacking follows back from this node
+	// public String getFilename() { 
 				
-		boolean res = this.self instanceof silver.core.Alocation;
-		res = this.self instanceof Tracked;
+	// 	boolean res = this.self instanceof silver.core.Alocation;
+	// 	res = this.self instanceof Tracked;
 
-		if(self == null) {
-			return "<top>";
-		}
-		NLocation loc = null;
-		if(self instanceof silver.core.Alocation) {
-			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
-		} else if(self instanceof Tracked) {
-			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
-			if(maybeLoc instanceof silver.core.Pjust) {
-				loc = (silver.core.NLocation)maybeLoc.getChild(0);
-			}
-		}
-		if(loc != null) {
-			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-			return file;
-		}
+	// 	if(self == null) {
+	// 		return "<top>";
+	// 	}
+	// 	NLocation loc = null;
+	// 	if(self instanceof silver.core.Alocation) {
+	// 		loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+	// 	} else if(self instanceof Tracked) {
+	// 		NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+	// 		if(maybeLoc instanceof silver.core.Pjust) {
+	// 			loc = (silver.core.NLocation)maybeLoc.getChild(0);
+	// 		}
+	// 	}
+	// 	if(loc != null) {
+	// 		String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+	// 		return file;
+	// 	}
 	
-		return "<NO-FILE-FOUND>";
-	}
+	// 	return "<NO-FILE-FOUND>";
+	// }
 
-	// Get start coordinates for the file location associated with 
-	// the concrete syntax location origin tacking follows back from this node
-	public FileCoordinate getStartCoordinates() {
+	// // Get start coordinates for the file location associated with 
+	// // the concrete syntax location origin tacking follows back from this node
+	// public FileCoordinate getStartCoordinates() {
 		
-		if(self == null) {
-			return new FileCoordinate(-2, -2);
-		}
-		NLocation loc = null;
-		if(self instanceof silver.core.Alocation) {
-			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
-		} else if(self instanceof Tracked) {
-			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
-			if(maybeLoc instanceof silver.core.Pjust) {
-				loc = (silver.core.NLocation)maybeLoc.getChild(0);
-			}
-		}
-		if(loc != null) {
-			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
-			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
-			return new FileCoordinate(line, col);
-		}
+	// 	if(self == null) {
+	// 		return new FileCoordinate(-2, -2);
+	// 	}
+	// 	NLocation loc = null;
+	// 	if(self instanceof silver.core.Alocation) {
+	// 		loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+	// 	} else if(self instanceof Tracked) {
+	// 		NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+	// 		if(maybeLoc instanceof silver.core.Pjust) {
+	// 			loc = (silver.core.NLocation)maybeLoc.getChild(0);
+	// 		}
+	// 	}
+	// 	if(loc != null) {
+	// 		int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+	// 		int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+	// 		return new FileCoordinate(line, col);
+	// 	}
 		
-		return new FileCoordinate(-1, -1);
-	}
+	// 	return new FileCoordinate(-1, -1);
+	// }
 
-	// Get end coordinates for the file location associated with 
-	// the concrete syntax location origin tacking follows back from this node
-	public FileCoordinate getEndCoordinates() {
+	// // Get end coordinates for the file location associated with 
+	// // the concrete syntax location origin tacking follows back from this node
+	// public FileCoordinate getEndCoordinates() {
 		
-		if(self == null) {
-			return new FileCoordinate(-2, -2);
-		}
-		NLocation loc = null;
-		if(self instanceof silver.core.Alocation) {
-			loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
-		} else if(self instanceof Tracked) {
-			NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
-			if(maybeLoc instanceof silver.core.Pjust) {
-				loc = (silver.core.NLocation)maybeLoc.getChild(0);
-			}
-		}
-		if(loc != null) {
-			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
-			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
-			return new FileCoordinate(line, col);
-		}
+	// 	if(self == null) {
+	// 		return new FileCoordinate(-2, -2);
+	// 	}
+	// 	NLocation loc = null;
+	// 	if(self instanceof silver.core.Alocation) {
+	// 		loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+	// 	} else if(self instanceof Tracked) {
+	// 		NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+	// 		if(maybeLoc instanceof silver.core.Pjust) {
+	// 			loc = (silver.core.NLocation)maybeLoc.getChild(0);
+	// 		}
+	// 	}
+	// 	if(loc != null) {
+	// 		int line = (Integer)loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+	// 		int col = (Integer)loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
+	// 		return new FileCoordinate(line, col);
+	// 	}
 		
-		return new FileCoordinate(-1, -1);
-	}
+	// 	return new FileCoordinate(-1, -1);
+	// }
 
 
-	// Access pretty print attribute
-	// through this function (a synthesized attribute)
-	// "pp" is the standard pretty print name
-	public String getPrettyPrint() {
+	// // Access pretty print attribute
+	// // through this function (a synthesized attribute)
+	// // "pp" is the standard pretty print name
+	// public String getPrettyPrint() {
 
-		int numAttrs = this.self.getNumberOfSynAttrs();
-		for (int i = 0; i < numAttrs; i++) {
+	// 	// int numAttrs = this.self.getNumberOfSynAttrs();
+	// 	// for (int i = 0; i < numAttrs; i++) {
 			
-			// Search until find name that is "pp"
-			String name = this.self.getNameOfSynAttr(i);
-			// Want last three characters to be ":pp"
-			if (name.substring(name.length() - 3).toLowerCase().equals(":pp")) {
-				Object pp = evalSyn(i);
-				return pp.toString();
-			}
-		}
-		System.err.println("No pretty print (pp) attribute defined--using genericShow() instead");
-		return Util.genericShow(this).toString();
-	}
+	// 	// 	// Search until find name that is "pp"
+	// 	// 	String name = this.self.getNameOfSynAttr(i);
+	// 	// 	// Want last three characters to be ":pp"
+	// 	// 	if (name.substring(name.length() - 3).toLowerCase().equals(":pp")) {
+	// 	// 		Object pp = evalSyn(i);
+	// 	// 		return pp.toString();
+	// 	// 	}
+	// 	// }
+	// 	// System.err.println("No pretty print (pp) attribute defined--using genericShow() instead");
+	// 	return Util.genericShow(this).toString();
+	// }
 
-	// only set isAttributeRoot once
-	public boolean getIsAttributeRoot() {
-		if (this.needSetIsAttributeRoot) {
-			this.setIsAttributeRoot();
-			this.needSetIsAttributeRoot = false;
-		}
-		return this.isAttributeRoot;
-	}
+	// // only set isAttributeRoot once
+	// public boolean getIsAttributeRoot() {
+	// 	if (this.needSetIsAttributeRoot) {
+	// 		this.setIsAttributeRoot();
+	// 		this.needSetIsAttributeRoot = false;
+	// 	}
+	// 	return this.isAttributeRoot;
+	// }
 
-	// Catch program "root"
-	public boolean isRoot() {
-		return 
-			this.parent == null || 
-			this.parent instanceof TopNode ||
-			this.parent.parent == null ||
-			this.parent.parent instanceof TopNode;
-	}
+	// // Catch program "root"
+	// public boolean isRoot() {
+	// 	return 
+	// 		this.parent == null || 
+	// 		this.parent instanceof TopNode ||
+	// 		this.parent.parent == null ||
+	// 		this.parent.parent instanceof TopNode;
+	// }
 	
-	// Higher-order attribute roots are attributes of their parent nodes.
-	// Only do once.
-	public void setIsAttributeRoot() {
+	// // Higher-order attribute roots are attributes of their parent nodes.
+	// // Only do once.
+	// public void setIsAttributeRoot() {
 		
-		if (! (this == null || this.isRoot())) {
-			Map<String, Object> map = Debug.allAttributesThunkMap(this.parent);
-			Collection<Object> values = map.values();
-			for (Object obj: values) {
-				if (Util.demand(obj) == this) {
-					this.isAttributeRoot = true;
-					return;
-				}
-			}
-		}
-		this.isAttributeRoot = false;
-	}
+	// 	if (! (this == null || this.isRoot())) {
+	// 		Map<String, Object> map = Debug.allAttributesThunkMap(this.parent);
+	// 		Collection<Object> values = map.values();
+	// 		for (Object obj: values) {
+	// 			if (Util.demand(obj) == this) {
+	// 				this.isAttributeRoot = true;
+	// 				return;
+	// 			}
+	// 		}
+	// 	}
+	// 	this.isAttributeRoot = false;
+	// }
 
-	// Determine higher-order attribute nesting of this node. 
-	public int getIsAttribute() {
-		if (this == null || this.isRoot()) {
-			return 0;
-		}
-		else {
-			if (this.getIsAttributeRoot()) {
-				return 1 + this.parent.getIsAttribute();
-			}
-			return this.parent.getIsAttribute();	
-		}
-	}
+	// // Determine higher-order attribute nesting of this node. 
+	// public int getIsAttribute() {
+	// 	if (this == null || this.isRoot()) {
+	// 		return 0;
+	// 	}
+	// 	else {
+	// 		if (this.getIsAttributeRoot()) {
+	// 			return 1 + this.parent.getIsAttribute();
+	// 		}
+	// 		return this.parent.getIsAttribute();	
+	// 	}
+	// }
 	
 
-	// Determine how many forwarding edges were followed to get to this node.
-	public int getIsTranslation() {
-		// See how many parents are contractums
-		// Calling parent repeatedly will ignore forwarding nodes, so operate on 
-		// getIsContractum only as the case to determine whether forwarding occurs or not
-		if (this == null || this.isRoot()) {
-			return 0;
-		}
-		else if (this.getIsContractum()) {
-			return 1 + this.parent.getIsTranslation();
-		}
-		else {
-			return this.parent.getIsTranslation();
-		}
-	}
+	// // Determine how many forwarding edges were followed to get to this node.
+	// public int getIsTranslation() {
+	// 	// See how many parents are contractums
+	// 	// Calling parent repeatedly will ignore forwarding nodes, so operate on 
+	// 	// getIsContractum only as the case to determine whether forwarding occurs or not
+	// 	if (this == null || this.isRoot()) {
+	// 		return 0;
+	// 	}
+	// 	else if (this.getIsContractum()) {
+	// 		return 1 + this.parent.getIsTranslation();
+	// 	}
+	// 	else {
+	// 		return this.parent.getIsTranslation();
+	// 	}
+	// }
 }
 
 
