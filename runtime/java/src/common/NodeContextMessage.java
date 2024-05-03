@@ -161,7 +161,7 @@ public class NodeContextMessage {
     // access pp attribute if present  
     private void prettyPrint(DecoratedNode node) {
         
-        this.textRepr = getPrettyPrint(node);
+        this.textRepr = Util.getPrettyPrint(node);
     }
 
     // Basically extract file lines from row x col y to 
@@ -352,27 +352,6 @@ public class NodeContextMessage {
 		
 		return new FileCoordinate(-1, -1);
 	}
-
-    // Access pretty print attribute
-	// through this function (a synthesized attribute)
-	// "pp" is the standard pretty print name
-	public String getPrettyPrint(DecoratedNode dn) {
-
-		int numAttrs = dn.getNode().getNumberOfSynAttrs();
-		for (int i = 0; i < numAttrs; i++) {
-			
-			// Search until find name that is "pp"
-			String name = dn.getNode().getNameOfSynAttr(i);
-			// Want last three characters to be ":pp"
-			if (name.substring(name.length() - 3).toLowerCase().equals(":pp")) {
-				Object pp = dn.synthesized(i);
-				return pp.toString();
-			}
-		}
-		System.err.println("No pretty print (pp) attribute defined--using genericShow() instead");
-		return Util.genericShow(this).toString();
-	}
-
     // Catch program "root"
 	public boolean isRoot(DecoratedNode dn) {
 		return 
