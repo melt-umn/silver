@@ -116,7 +116,7 @@ function hackTransformLocals
 {
   return
     case d of
-    | valueDef(item) when item.dcl matches localDcl(fn,ty,false,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
+    | valueDef(item) when item.dcl matches localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
     | _ -> [] -- TODO: possibly error??
     end;
 }

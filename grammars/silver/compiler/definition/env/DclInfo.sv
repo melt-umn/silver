@@ -32,6 +32,7 @@ synthesized attribute definedMembers :: [String];
 synthesized attribute namedSignature :: NamedSignature;
 synthesized attribute implementedSignature :: Maybe<NamedSignature>;
 synthesized attribute isShared :: Boolean;
+synthesized attribute isNondec :: Boolean;
 synthesized attribute hasForward :: Boolean;
 
 -- occurs
@@ -53,7 +54,7 @@ inherited attribute givenSubstitution :: Substitution;
 
 closed nonterminal ValueDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, namedSignature, implementedSignature, isShared, hasForward, substitutedDclInfo, givenSubstitution;
+  typeScheme, namedSignature, implementedSignature, isShared, isNondec, hasForward, substitutedDclInfo, givenSubstitution;
 propagate isEqual on ValueDclInfo excluding globalValueDcl, classMemberDcl;
 
 aspect default production
@@ -63,6 +64,7 @@ top::ValueDclInfo ::=
   top.namedSignature = bogusNamedSignature();
   top.implementedSignature = nothing();
   top.isShared = false;
+  top.isNondec = false;
   top.hasForward = false;
   
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
@@ -87,14 +89,33 @@ top::ValueDclInfo ::= fn::String ty::Type
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::ValueDclInfo ::= fn::String ty::Type isForward::Boolean
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
   
   top.typeScheme = monoType(ty);
   
-  top.hasForward = isForward;
-  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), isForward, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+}
+abstract production nondecLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = monoType(ty);
+  
+  top.isNondec = true;
+  top.substitutedDclInfo = nondecLocalDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+}
+abstract production forwardLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = monoType(ty);
+  
+  top.hasForward = true;
+  top.substitutedDclInfo = forwardLocalDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
 top::ValueDclInfo ::= ty::Type

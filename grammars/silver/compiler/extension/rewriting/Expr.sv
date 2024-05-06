@@ -102,6 +102,12 @@ top::Expr ::= @q::QName
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
+aspect production nondecLocalReference
+top::Expr ::= @q::QName
+{
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
+}
+
 aspect production forwardReference
 top::Expr ::= @q::QName
 {

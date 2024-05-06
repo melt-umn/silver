@@ -40,6 +40,56 @@ top::ProductionStmt ::= pk::'production' ak::'attribute'
       valueEq(qNameId(a), eq, v, sm));
 }
 
+concrete production shortNondecDecl
+top::ProductionStmt ::= nk::'nondecorated' a::Name ht::'::' te::TypeExpr 
+                        eq::'=' v::Expr sm::';'
+{
+  forwards to
+    productionStmtAppend(
+      nondecLocalAttributeDcl(nk, 'local', 'attribute', a, ht, te, sm),
+      valueEq(qNameId(a), eq, v, sm));
+}
+
+concrete production shortNondecLocalDecl
+top::ProductionStmt ::= nk::'nondecorated' lk::'local' a::Name ht::'::' te::TypeExpr 
+                        eq::'=' v::Expr sm::';'
+{
+  forwards to
+    productionStmtAppend(
+      nondecLocalAttributeDcl(nk, lk, 'attribute', a, ht, te, sm),
+      valueEq(qNameId(a), eq, v, sm));
+}
+
+concrete production shortNondecLocalDeclwKwds
+top::ProductionStmt ::= nk::'nondecorated' lk::'local' ak::'attribute' a::Name ht::'::' te::TypeExpr 
+                        eq::'=' v::Expr sm::';'
+{
+  forwards to
+    productionStmtAppend(
+      nondecLocalAttributeDcl(nk, lk, ak, a, ht, te, sm),
+      valueEq(qNameId(a), eq, v, sm));
+}
+
+concrete production shortNondecProductionDecl
+top::ProductionStmt ::= nd::'nondecorated' pk::'production' a::Name ht::'::' te::TypeExpr 
+                        eq::'=' v::Expr sm::';'
+{
+  forwards to
+    productionStmtAppend(
+      nondecProductionAttributeDcl(nd, pk, 'attribute', a, ht, te, sm),
+      valueEq(qNameId(a), eq, v, sm));
+}
+
+concrete production shortNondecProductionDeclwKwds
+top::ProductionStmt ::= nd::'nondecorated' pk::'production' ak::'attribute' a::Name ht::'::' te::TypeExpr 
+                        eq::'=' v::Expr sm::';'
+{
+  forwards to
+    productionStmtAppend(
+      nondecProductionAttributeDcl(nd, pk, ak, a, ht, te, sm),
+      valueEq(qNameId(a), eq, v, sm));
+}
+
 concrete production shortForwardProductionDecl
 top::ProductionStmt ::= fk::'forward' a::Name
                         eq::'=' v::Expr sm::';'

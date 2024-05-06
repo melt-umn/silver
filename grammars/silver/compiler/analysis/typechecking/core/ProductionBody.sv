@@ -163,6 +163,18 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
   top.errors <- te.errorsKindStar;
 }
 
+aspect production nondecLocalAttributeDcl
+top::ProductionStmt ::= 'nondecorated' 'local' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.errors <- te.errorsKindStar;
+}
+
+aspect production nondecProductionAttributeDcl
+top::ProductionStmt ::= 'nondecorated' 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.errors <- te.errorsKindStar;
+}
+
 aspect production localValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {

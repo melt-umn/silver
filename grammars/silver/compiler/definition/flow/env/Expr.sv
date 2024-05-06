@@ -58,8 +58,7 @@ attribute flowVertexInfo occurs on Expr;
 
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
-    childReference, lhsReference, localReference, forwardReference, forwardAccess,
-    synDecoratedAccessHandler, inhDecoratedAccessHandler, transDecoratedAccessHandler,
+    forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler, transDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
@@ -82,7 +81,7 @@ top::Expr ::= @q::QName
   -- isDecorable on that indeed tells us whether it's something autodecorated.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
-  top.flowDeps :=
+  top.flowDeps <-
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
     then map(rhsVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
     else [];
@@ -96,7 +95,7 @@ top::Expr ::= @q::QName
 {
   -- Always a decorable type, so just check how it's being used:
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps :=
+  top.flowDeps <-
     if top.finalType.isDecorated
     then map(lhsVertexType.inhVertex, fromMaybe([], refSet))
     else [];
@@ -111,7 +110,7 @@ top::Expr ::= @q::QName
   -- Again, q give the actual type written.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
-  top.flowDeps := [localEqVertex(q.lookupValue.fullName)] ++
+  top.flowDeps <- localEqVertex(q.lookupValue.fullName) ::
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
     then map(localVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
     else [];
@@ -120,12 +119,19 @@ top::Expr ::= @q::QName
     then just(localVertexType(q.lookupValue.fullName))
     else nothing();
 }
+aspect production nondecLocalReference
+top::Expr ::= @q::QName
+{
+  -- Never decorated - just the equation vertex.
+  top.flowDeps <- [localEqVertex(q.lookupValue.fullName)];
+  top.flowVertexInfo = nothing();
+}
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
   -- Again, always a decorable type.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps := [forwardEqVertex()]++
+  top.flowDeps <- forwardEqVertex() ::
     if top.finalType.isDecorated
     then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
     else [];

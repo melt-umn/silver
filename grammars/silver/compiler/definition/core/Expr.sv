@@ -140,9 +140,19 @@ top::Expr ::= @q::QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
-                else q.lookupValue.typeScheme.monoType;
+  top.typerep =
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
+    then q.lookupValue.typeScheme.asNtOrDecType
+    else q.lookupValue.typeScheme.monoType;
+}
+
+abstract production nondecLocalReference implements Reference
+top::Expr ::= @q::QName
+{
+  top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
+  
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 abstract production forwardReference implements Reference

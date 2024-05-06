@@ -61,7 +61,23 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 aspect production localDcl
-top::ValueDclInfo ::= fn::String ty::Type _
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.refDispatcher = localReference;
+  top.defDispatcher = localValueDef;
+  top.defLHSDispatcher = localDefLHS;
+  top.transDefLHSDispatcher = localTransAttrDefLHS;
+}
+aspect production nondecLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.refDispatcher = nondecLocalReference;
+  top.defDispatcher = localValueDef;
+  top.defLHSDispatcher = errorDefLHS;
+  top.transDefLHSDispatcher = errorTransAttrDefLHS;
+}
+aspect production forwardLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.refDispatcher = localReference;
   top.defDispatcher = localValueDef;
