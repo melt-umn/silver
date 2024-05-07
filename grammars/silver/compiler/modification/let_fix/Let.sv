@@ -63,6 +63,10 @@ tracked nonterminal AssignExpr with config, grammarName, env, compiledGrammars,
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
                             downSubst, finalSubst, frame, originRules;
 
+flowtype AssignExpr =
+  decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, bodyDecSites},
+  upSubst {decorate}, defs {decorate};
+
 propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
 abstract production appendAssignExpr

@@ -188,6 +188,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   e.downSubst = top.downSubst;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.isRoot = true;
 
@@ -213,6 +214,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   e.downSubst = top.downSubst;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.isRoot = true;
 
@@ -243,6 +245,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.isRoot = true;
 
@@ -273,6 +276,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.isRoot = true;
 

@@ -56,6 +56,14 @@ top::RSExpr ::= e::RSExpr
   forwards to copy1(@e);
 }
 
+production fork
+top::RSExpr ::= e1::RSExpr e2::RSExpr
+{
+  propagate env1, env2;
+  top.errors1 = e1.errors1 || e2.errors1;
+  top.errors2 = e1.errors2 || e2.errors2;
+}
+
 warnCode "child e of production flow:copy1" {
 production proj2Missing
 top::RSExpr ::= e::RSExpr
@@ -335,4 +343,81 @@ top::RSExpr ::= e::RSExpr
   forward fwrd = copy12(@e);
 
   forwards to if e.errors1 then base() else @fwrd;
+}
+
+production shareLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::Decorated RSExpr with {} = e
+    in copy12(@e1)
+    end;
+}
+
+production shareInLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in copy12(e1)
+    end;
+}
+
+wrongFlowCode "Cannot share a tree here" {
+production shareInLetBindingNotDecSite
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if hackUnparse(e1) == "" then new(e) else base()
+    end;
+}
+}
+
+production condShareInLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if null(top.env1) then copy12(e1) else base()
+    end;
+}
+
+warnCode "Equation requires inherited attribute flow:env1 be supplied to child e of production flow:condShareInLetBindingDep" {
+production condShareInLetBindingDep
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if null(top.env1) then copy12(e1) else base()
+    end;
+}
+}
+
+wrongFlowCode "Cannot share a tree here" {
+production shareInUnusedLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if null(top.env1) then new(e) else base()
+    end;
+}
+}
+
+-- Not an ideal error message (the issue is the duplicate use of e1), but good enough.
+wrongFlowCode "Cannot share a tree here" {
+production duplicateShareLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in fork(e1, e1)
+    end;
+}
 }

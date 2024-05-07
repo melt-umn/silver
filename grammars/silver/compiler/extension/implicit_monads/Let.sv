@@ -19,6 +19,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
+  ne.decSiteVertexInfo = top.decSiteVertexInfo;
   ne.alwaysDecorated = top.alwaysDecorated;
   ne.isRoot = top.isRoot;
 

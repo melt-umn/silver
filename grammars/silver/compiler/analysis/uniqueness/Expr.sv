@@ -15,6 +15,12 @@ top::Expr ::=  '@' e::Expr
       ))]
     | nothing() -> []
     end;
+  
+  top.errors <-
+    case top.decSiteVertexInfo of
+    | just(_) -> []
+    | nothing() -> [errFromOrigin(top, s"Cannot share a tree here; can only share in known positions of local, forward, and translation attribute equations.")]
+    end;
 
   top.errors <-
     case e.flowVertexInfo of
