@@ -52,15 +52,26 @@ inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
  -}
 inherited attribute alwaysDecorated :: Boolean;
 
+{--
+ - Mappings of lexical local (let/pattern var) bindings referenced in this expression,
+ - to their decoration site vertices and whether they are always decorated.
+ -}
+monoid attribute lexicalLocalDecSites :: [(String, Maybe<VertexType>)];
+monoid attribute lexicalLocalAlwaysDecorated :: [(String, Boolean)];
+
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints
-attribute flowDeps, flowDefs, flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+attribute flowDeps, flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
+  occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 attribute flowVertexInfo occurs on Expr;
+
+flowtype flowVertexInfo {forward} on Expr;
 
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
     forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler, transDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
-propagate flowDefs, flowEnv on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+propagate flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
+  on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 attribute decSiteVertexInfo, alwaysDecorated occurs on Expr, AppExprs, AppExpr;
 propagate decSiteVertexInfo, alwaysDecorated on AppExprs;
@@ -218,6 +229,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     | _ -> nothing()
     end;
   es.appIndexOffset = 0;
+  e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
 }
@@ -318,6 +330,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   propagate flowEnv;
   e.alwaysDecorated = false;
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production accessBouncer
@@ -325,6 +338,7 @@ top::Expr ::= e::Expr  @q::QNameAttrOccur target::Access
 {
   propagate flowEnv;
   e.alwaysDecorated = false;
+  e.decSiteVertexInfo = nothing();
 }
 
 aspect production forwardAccess
@@ -340,16 +354,6 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 
-aspect production errorAccessHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production terminalAccessHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
-}
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
@@ -360,7 +364,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | nothing() -> e.flowDeps
     end;
-  e.decSiteVertexInfo = nothing();
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
@@ -370,7 +373,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | nothing() -> e.flowDeps
     end;
-  e.decSiteVertexInfo = nothing();
 }
 aspect production transDecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
@@ -383,34 +385,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
       if top.finalType.isDecorated then map(vertex.inhVertex, fromMaybe([], refSet)) else []
     | nothing() -> e.flowDeps
     end;
-  e.decSiteVertexInfo = nothing();
-}
-aspect production annoAccessHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production synDataAccessHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  -- No flow vertex, since there are never any inh deps
-
-  e.decSiteVertexInfo = nothing();
-}
-aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
-}
-aspect production unknownDclAccessHandler
-top::Expr ::= @e::Expr @q::QNameAttrOccur
-{
-  e.decSiteVertexInfo = nothing();
 }
 
 aspect production decorateExprWith
@@ -527,11 +501,17 @@ top::Expr ::= params::LambdaRHS e::Expr
 attribute flowDefs, flowEnv occurs on AssignExpr;
 propagate flowDefs, flowEnv on AssignExpr;
 
+inherited attribute bodyDecSites :: [(String, Maybe<VertexType>)] occurs on AssignExpr;
+inherited attribute bodyAlwaysDecorated :: [(String, Boolean)] occurs on AssignExpr;
+propagate bodyDecSites, bodyAlwaysDecorated on AssignExpr;
+
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
   top.flowDeps := e.flowDeps;
   top.flowVertexInfo = e.flowVertexInfo;
+  la.bodyDecSites = e.lexicalLocalDecSites;
+  la.bodyAlwaysDecorated = e.lexicalLocalAlwaysDecorated;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   e.alwaysDecorated = top.alwaysDecorated;
 }
@@ -539,8 +519,12 @@ top::Expr ::= la::AssignExpr  e::Expr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+  e.decSiteVertexInfo =
+    case nub(lookupAll(fName, top.bodyDecSites)) of
+    | [v] -> v
+    | _ -> nothing()
+    end;
+  e.alwaysDecorated = lookupAll(fName, top.bodyAlwaysDecorated) == [true];
 }
 
 aspect production lexicalLocalReference
@@ -565,6 +549,9 @@ top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
     | nothing() -> fd -- we're actually being used as a ref-set-taking decorated var
     end;
   top.flowVertexInfo = fi;
+
+  top.lexicalLocalDecSites <- [(q.lookupValue.fullName, top.decSiteVertexInfo)];
+  top.lexicalLocalAlwaysDecorated <- [(q.lookupValue.fullName, top.alwaysDecorated)];
 }
 
 

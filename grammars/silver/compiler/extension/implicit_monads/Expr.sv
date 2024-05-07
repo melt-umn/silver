@@ -13,12 +13,12 @@ propagate @expectedMonad on Expr;
 
 
 type MonadInhs = {
-  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot,
+  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, isRoot,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 };
 
 flowtype merrors {
-  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot,
+  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, isRoot,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 } on Expr;
 
@@ -481,6 +481,7 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.config = top.config;
   res_e.env = top.env;
   res_e.flowEnv = top.flowEnv;
+  res_e.decSiteVertexInfo = nothing();
   res_e.alwaysDecorated = false;
   res_e.isRoot = false;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
@@ -1491,6 +1492,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                      then e1.mtyperep
                      else top.expectedMonad;
   
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
   e1.alwaysDecorated = false;
   e2.alwaysDecorated = false;
   e1.isRoot = false;
