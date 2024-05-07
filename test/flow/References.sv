@@ -98,3 +98,22 @@ Decorated RExpr<{env1}> with {env1} ::=
 warnCode "Duplicate equation for env1" {
   global decDuplicate::Decorated Expr with {env1, env2} = decorate zero() with {env1 = []; env2 = []; env1 = ["a"];};
 }
+
+wrongFlowCode "Cannot share a tree here" {
+function shareRet
+Expr ::=
+{
+  local x::Expr = zero();
+  return @x;
+}
+}
+
+wrongFlowCode "Cannot share a tree here" {
+function shareNondec
+Boolean ::=
+{
+  local x::Expr = zero();
+  nondecorated y :: Expr = @x;
+  return true;
+}
+}
