@@ -11,7 +11,7 @@ import silver.core.NMaybe;
 
 // Core of the debugging contextualization implementation.
 // A NodeContextMessage records all debugging contextualization
-// information we wish to keep about a navigated-to node.
+// information we wish to keep about a navigated-to DecoratedNode node.
 
 // A stack of these makes up a "full" or verbose ContextStack.
 // The ContextStack is then compressed to yield a better 
@@ -31,14 +31,18 @@ import silver.core.NMaybe;
 // file lines as well. But they are not needed for the current version of 
 // the SimplifiedContextStack). 
 
-
 // SECTION 4. (labels). Labels represents whether the current node is involved with
 // horizontal edges. Current possible labels are is-contractuma and is-redex 
 // (for forwarding relationship) and is-attribute-root (for higher-order attribute subtree roots).
 // Labels are currently extracted from DecoratedNode itself. 
 
 // If showing intermediate full stack representation (ContextStack), then use GetSection_().
-// If accessing stored information for a 
+// where _ is 1, 2, 3, or 4.
+// If accessing stored information to generate a SimplifiedContextBox, 
+// use header/label getters directly, e.g. getIsRedex() or getProdName().
+// All label/header contextualization fields are set by the constuctor calling 
+// the necessary info section-generating functions; 
+// the DecoratedNode to contextualize is passed directly in the constructor.
 
 // TODO. Add a new contextualization label/header framework for REFERENCE ATTRIBUTES.  
 
