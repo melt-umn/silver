@@ -29,14 +29,8 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
-function shortFunDef
-Def ::= sg::String sl::Location ns::NamedSignature
-{
-  return valueDef(defaultEnvItem(shortFunDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun shortFunDef Def ::= sg::String sl::Location ns::NamedSignature =
+  valueDef(defaultEnvItem(shortFunDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
 
-function shortFunParamDef
-Def ::= sg::String sl::Location fn::String ty::Type
-{
-  return valueDef(defaultEnvItem(shortFunParamDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun shortFunParamDef Def ::= sg::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(shortFunParamDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
