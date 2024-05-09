@@ -286,35 +286,28 @@ top::Document ::=
 
 --------------------------------------------------------------------------------
 
-function prune
-Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::dq:Deque<Pair<Integer [Boolean]>>
-{
-  return if dq:isEmpty(q) then (q, [])
-         else let h::Pair<Integer [Boolean]> = dq:head(q)
-               in if p <= h.fst then (q, [])
-                  else let recur::Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> = prune(p, dq:tail(q))
-                        in (recur.fst, false :: (h.snd ++ recur.snd))
-                       end
-              end;
-}
+fun prune
+Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::dq:Deque<Pair<Integer [Boolean]>> =
+  if dq:isEmpty(q) then (q, [])
+  else let h::Pair<Integer [Boolean]> = dq:head(q)
+        in if p <= h.fst then (q, [])
+           else let recur::Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> = prune(p, dq:tail(q))
+                 in (recur.fst, false :: (h.snd ++ recur.snd))
+                end
+       end;
 
-function enter
-dq:Deque<Pair<Integer [Boolean]>> ::= p::Integer q::dq:Deque<Pair<Integer [Boolean]>>
-{
-  return dq:snoc(q, (p, []));
-}
+fun enter dq:Deque<Pair<Integer [Boolean]>> ::= p::Integer q::dq:Deque<Pair<Integer [Boolean]>> =
+  dq:snoc(q, (p, []));
 
-function leave
-Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::dq:Deque<Pair<Integer [Boolean]>>
-{
-  return if dq:isEmpty(q) then (q, [])
-         else let h1::Pair<Integer [Boolean]> = dq:last(q),
-                  t1::dq:Deque<Pair<Integer [Boolean]>> = dq:init(q)
-               in if dq:isEmpty(t1) then (t1, true :: h1.snd)
-                  else let h2::Pair<Integer [Boolean]> = dq:last(t1),
-                           t2::dq:Deque<Pair<Integer [Boolean]>> = dq:init(t1)
-                        in (dq:snoc(t2, (h2.fst, h2.snd ++ [p <= h1.fst] ++ h1.snd)), [])
-                       end
-              end;
-}
+fun leave
+Pair<dq:Deque<Pair<Integer [Boolean]>> [Boolean]> ::= p::Integer q::dq:Deque<Pair<Integer [Boolean]>> =
+  if dq:isEmpty(q) then (q, [])
+  else let h1::Pair<Integer [Boolean]> = dq:last(q),
+           t1::dq:Deque<Pair<Integer [Boolean]>> = dq:init(q)
+        in if dq:isEmpty(t1) then (t1, true :: h1.snd)
+           else let h2::Pair<Integer [Boolean]> = dq:last(t1),
+                    t2::dq:Deque<Pair<Integer [Boolean]>> = dq:init(t1)
+                 in (dq:snoc(t2, (h2.fst, h2.snd ++ [p <= h1.fst] ++ h1.snd)), [])
+                end
+       end;
 

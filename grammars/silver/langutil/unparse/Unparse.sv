@@ -38,10 +38,10 @@ Document ::= origText::String  tree::a
   local postLayout::String = substring(parseTree.originLoc.endIndex, length(origText), origText);
 
   return
-    layoutPP(0, preLayout) ++
+    blobPP(0, preLayout) ++
     maybeNest(parseTree.indent,
       ast.unparseWithLayout ++
-      layoutPP(parseTree.indent, postLayout));
+      blobPP(parseTree.indent, postLayout));
 }
 
 @{--
@@ -181,7 +181,10 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.originLoc = location;
 
-  top.unparseWithLayout = ppImplode(realLine(), map(text, explode("\n", lexeme)));
+  -- If there is a *syntactic* newline, then force anything enclosing this to not be boxed.
+  top.indents <- if indexOf("\n", lexeme) != -1 then [-1] else [];
+
+  top.unparseWithLayout = blobPP(top.indent, lexeme);
 
   -- Map of terminal names to default layout after the terminal
   production attribute termPreLayout::[(String, Document)] with ++;
@@ -201,7 +204,7 @@ top::ASTs ::= h::AST t::ASTs
   top.origLayoutPP =
     case t of
     | consAST(h2, _) ->
-        layoutPP(h2.indent,
+        blobPP(h2.indent,
           substring(h.originLoc.endIndex, h2.originLoc.index, top.origText))
     | nilAST() -> pp""
     end;
@@ -282,9 +285,9 @@ top::ASTs ::=
 -- Count the number of spaces at the start of a line
 fun countIndent  Integer ::= s::String = length(takeWhile(eq(" ", _), explode("", s)));
 
-fun layoutPP  Document ::= indent::Integer layoutStr::String =
+fun blobPP  Document ::= indent::Integer str::String =
   concat(
-    case explode("\n", layoutStr) of
+    case explode("\n", str) of
     | [] -> []
     | pre :: lines -> text(pre) ::
         map(\ l::String ->
