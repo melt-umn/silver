@@ -32,22 +32,7 @@ top::Context ::= cls::String t::Type
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
-  production substT::Type = performSubstitution(t, top.downSubst);
-  top.upSubst =
-    case substT of
-    -- Only refine to the *undecorated* type based on instances, since if left
-    -- unrefined the type will be treated as decorated, anyway (and leaving it
-    -- unrefined will result in less confusing behavior.)
-    -- If there is an instance for the undecorated type, and all instances for
-    -- the decorated type are typeError instances (or there are none),
-    -- then specialize to the undecorated type, since the decorated type will
-    -- always give a type error.
-    | ntOrDecType(nt, _, _) when
-        !null(getInstanceDcl(cls, nt, top.env)) &&
-        all(map((.isTypeError), getInstanceDcl(cls, substT.defaultSpecialization, top.env))) ->
-      composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
-    | _ -> top.downSubst
-    end;
+  top.upSubst = top.downSubst;
 }
 
 aspect production inhOccursContext

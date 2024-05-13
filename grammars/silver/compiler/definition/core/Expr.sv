@@ -120,7 +120,7 @@ top::Expr ::= @q::QName
   top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
+                then q.lookupValue.typeScheme.asDecoratedType
                 else q.lookupValue.typeScheme.monoType;
 }
 
@@ -131,7 +131,7 @@ top::Expr ::= @q::QName
   top.freeVars <- ts:fromList([q.name]);
   
   -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 abstract production localReference implements Reference
@@ -142,7 +142,7 @@ top::Expr ::= @q::QName
   
   top.typerep =
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-    then q.lookupValue.typeScheme.asNtOrDecType
+    then q.lookupValue.typeScheme.asDecoratedType
     else q.lookupValue.typeScheme.monoType;
 }
 
@@ -162,7 +162,7 @@ top::Expr ::= @q::QName
   top.freeVars <- ts:fromList([q.name]);
   
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -592,7 +592,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 }
 
 abstract production annoAccessHandler implements Access
@@ -619,7 +619,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 
   top.errors <- [errFromOrigin(top, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
@@ -629,7 +629,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 
   top.errors <- [errFromOrigin(top, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }

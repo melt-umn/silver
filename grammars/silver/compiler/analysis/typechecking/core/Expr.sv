@@ -67,9 +67,8 @@ top::Expr ::= @q::QName
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- If e's contexts include unrefined ntOrDecTypes at this point (arising from
-  -- es' types, presumably), then refine these ntOrDecTypes types using e's
-  -- contexts in the environment.
+  -- Currently, this just refines unspecialized inh sets to the specified flow type in syn occurs-on constraints.
+  -- TODO: Is this really needed?  Removing this would simplify and speed things up a bit.
   production infContexts::Contexts = foldContexts(e.contexts);
   infContexts.env = top.env;
   infContexts.flowEnv = top.flowEnv;
@@ -87,8 +86,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 aspect production undecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
-  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  -- TODO: remove?
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = checkNonterminal(top.env, true, e.typerep);
 
@@ -125,8 +123,7 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production decoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
-  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  -- TODO: remove?
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = checkDecorated(e.typerep);
 

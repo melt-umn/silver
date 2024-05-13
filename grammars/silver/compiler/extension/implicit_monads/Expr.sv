@@ -63,7 +63,7 @@ top::Expr ::= @q::QName
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   top.mtyperep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-                 then q.lookupValue.typeScheme.asNtOrDecType
+                 then q.lookupValue.typeScheme.asDecoratedType
                  else q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q))]
@@ -76,7 +76,7 @@ top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
-  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.mtyperep = q.lookupValue.typeScheme.asDecoratedType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q))]
                      else [];
@@ -89,7 +89,7 @@ top::Expr ::= @q::QName
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   top.mtyperep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-                 then q.lookupValue.typeScheme.asNtOrDecType
+                 then q.lookupValue.typeScheme.asDecoratedType
                  else q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q))]
@@ -115,7 +115,7 @@ top::Expr ::= @q::QName
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.mtyperep = q.lookupValue.typeScheme.asDecoratedType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q))]
                      else [];

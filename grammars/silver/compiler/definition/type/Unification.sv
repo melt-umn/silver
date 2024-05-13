@@ -114,7 +114,6 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
           then emptySubst()
           else error("kind mismatch during unification for " ++ prettyType(new(top)) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
-    | ntOrDecType(_, _, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
@@ -148,35 +147,6 @@ top::Type ::= te::Type i::Type
   top.unify = 
     case top.unifyWith of
     | decoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
-    | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
-    | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
-    end;
-}
-
-aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
-{
-  -- If we're being asked to unify, then we know hidden is still a type variable,
-  -- since we shouldn't be unifying with anything but fully-substituted types.
-  -- And we kill off this type once hidden is specialized.
-  top.unify =
-    case top.unifyWith.baseType of
-    | ntOrDecType(ont1, oi, ohidden1) ->
-        -- Ensure compatibility between nonterminal types and inh sets, then merge our specializations
-        unifyAllShortCircuit([ont1, oi,   ohidden1],
-                             [nt,   inhs, hidden])
-    | decoratedType(ote, oi) ->
-        -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
-        unifyAllShortCircuit([ote, oi, top.unifyWith],
-                             [nt,  inhs, hidden])
-    | nonterminalType(_, _, _, _) ->
-        -- Ensure compatibility between nonterminal types, then specialize ourselves
-        unifyAllShortCircuit([top.unifyWith, top.unifyWith],
-                             [nt,            hidden])
-    | skolemType(_) ->
-        -- Ensure compatibility between skolem types (referring to an unknown nonterminal), then specialize ourselves
-        unifyAllShortCircuit([top.unifyWith, top.unifyWith],
-                             [nt,            hidden])
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
