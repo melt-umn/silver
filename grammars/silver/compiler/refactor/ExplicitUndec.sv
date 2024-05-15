@@ -20,7 +20,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [ flagSpec(name="--refactor-explicit-undec", paramString=nothing(),
-               help="Change ",
+               help="Change (former) instances of implicit undecoration to use tree sharing or explicit new() calls",
                flagParser=flag(refactorExplicitUndecFlag))
            ];
 }
