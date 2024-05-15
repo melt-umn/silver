@@ -41,6 +41,20 @@ top::Expr ::= @q::QName
     else fail();
 }
 
+aspect production lhsReference
+top::Expr ::= @q::QName
+{
+  top.transforms <-
+    if top.config.refactorExplicitUndec
+    && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.expectedUndecorated
+    then
+      rule on Expr of
+      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
+        Silver_Expr { new($QName{q1}) }
+      end
+    else fail();
+}
+
 aspect production localReference
 top::Expr ::= @q::QName
 {
