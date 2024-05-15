@@ -39,9 +39,6 @@ synthesized attribute decoratedType :: Type;
 -- Freshens a nonterminal PolyType into a decorated nonterminal Type
 synthesized attribute asDecoratedType :: Type;
 
--- The decorated type that this type forwards to, if it is an ntOrDecType
-synthesized attribute defaultSpecialization :: Type;
-
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
@@ -102,7 +99,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     top.compareTo.typerep == performRenaming(ty, eqSub);
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asDecoratedType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asDecoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 
@@ -127,7 +124,6 @@ top::Type ::=
   
   top.decoratedType = errorType();
   top.asDecoratedType = errorType();
-  top.defaultSpecialization = top;
   
   top.unifyInstanceNonterminal = errorSubst("not nt");
   top.unifyInstanceDecorated = errorSubst("not dec");
