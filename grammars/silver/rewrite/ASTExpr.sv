@@ -244,7 +244,7 @@ top::ASTExpr ::= c::ASTExpr t::ASTExpr e::ASTExpr
   top.pp = pp"(if ${c.pp} then ${t.pp} else ${e.pp})";
   top.value =
     case c.value of
-    | booleanAST(true) -> c.value
+    | booleanAST(true) -> t.value
     | booleanAST(false) -> e.value
     | _ -> error("Invalid values")
     end;
