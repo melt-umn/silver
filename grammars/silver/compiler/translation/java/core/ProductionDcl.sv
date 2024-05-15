@@ -185,7 +185,7 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 ${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if any(map((.elementShared), namedSig.inputElements))
+        ${if any(map((.elementShared), namedSig.inputElements))
           then "return context.getForwardParent().undecorate();"
           else if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
