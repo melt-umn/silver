@@ -125,12 +125,12 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
 
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
-  production attrTy::Type =
+  nondecorated production attrTy::Type =
     if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
+  nondecorated local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 }
 
@@ -175,12 +175,12 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
 
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
-  production attrTy::Type =
+  nondecorated production attrTy::Type =
     if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
+  nondecorated local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 
   top.lexicalTyVarKinds <-
@@ -226,12 +226,12 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
-  production attrTy::Type =
+  nondecorated production attrTy::Type =
     if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
+  nondecorated local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 }
 
@@ -244,7 +244,7 @@ top::Constraint ::= 'runtimeTypeable' t::TypeExpr
   top.errors <- t.errorsTyVars;
   top.errors <- t.errorsKindStar;
 
-  local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep);
+  nondecorated local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep);
   top.defs <- [tcInstDef(instDcl)];
 }
 
@@ -263,7 +263,7 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
-  local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep);
+  nondecorated local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep);
   top.defs <-
     case top.constraintPos of
     | classPos(_, _) -> []

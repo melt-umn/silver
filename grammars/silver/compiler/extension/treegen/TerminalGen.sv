@@ -18,7 +18,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
   top.unparse = s"genArbTerminal(${te.unparse}, _)";
   propagate grammarName, env, flowEnv, freeVars;
   
-  local regex::Regex =
+  nondecorated local regex::Regex =
     case getTypeDcl(te.typerep.typeName, top.env) of
     | termDcl(_, r, _, _) :: _ -> r
     | _ -> empty()
@@ -34,7 +34,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
     then errorExpr([errFromOrigin(top, "Generation of arbitrary terminal values requires import of silver:regex")])
     else Silver_Expr {
       let genLexeme::RandomGen<String> =
-        decorate $Expr{translate(reflect(new(regex)))} with {
+        decorate $Expr{translate(reflect(regex))} with {
           starProb = $Expr{floatConst(terminal(Float_t, toString(genRepeatProb)))};
           altCountIn = 0;
         }.genArbMatch

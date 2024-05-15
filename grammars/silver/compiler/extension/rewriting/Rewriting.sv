@@ -68,9 +68,9 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 
   propagate downSubst, upSubst, finalSubst, freeVars;
   
-  local transform::Strategy =
+  nondecorated local transform::Strategy =
     traversal(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
-  local fwrd::Expr = translate(reflect(new(transform)));
+  nondecorated local fwrd::Expr = translate(reflect(transform));
   
   forwards to if !null(localErrors) then errorExpr(localErrors) else fwrd;
 }
@@ -95,8 +95,8 @@ top::Expr ::= 'traverse' '(' h::AppExpr '::' t::AppExpr ')'
 {
   top.unparse = s"traverse (${h.unparse} :: ${t.unparse})";
   
-  local transform::Strategy = consListCongruence(h.traverseTransform, t.traverseTransform);
-  forwards to translate(reflect(new(transform)));
+  nondecorated local transform::Strategy = consListCongruence(h.traverseTransform, t.traverseTransform);
+  forwards to translate(reflect(transform));
 }
 concrete production traverseConsListFirstMissing
 top::Expr ::= 'traverse' '(' h::'_' '::' t::AppExpr ')'
@@ -114,8 +114,8 @@ top::Expr ::= 'traverse' '[' ']'
 {
   top.unparse = s"traverse []";
   
-  local transform::Strategy = nilListCongruence();
-  forwards to translate(reflect(new(transform)));
+  nondecorated local transform::Strategy = nilListCongruence();
+  forwards to translate(reflect(transform));
 }
 
 concrete production traverseList
@@ -123,8 +123,8 @@ top::Expr ::= 'traverse' '[' es::AppExprs ']'
 {
   top.unparse = s"traverse [${es.unparse}]";
   
-  local transform::Strategy = foldr(consListCongruence, nilListCongruence(), es.traverseTransform);
-  forwards to translate(reflect(new(transform)));
+  nondecorated local transform::Strategy = foldr(consListCongruence, nilListCongruence(), es.traverseTransform);
+  forwards to translate(reflect(transform));
 }
 
 -- Compute our own errors on AnnoAppExprs, since we want to ignore missing annotations (like in patterns)
@@ -246,11 +246,11 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 
   thread downSubst, upSubst on top, checkExpr, forward;
   
-  local finalRuleType::Type =
+  nondecorated local finalRuleType::Type =
     freshenType(
       performSubstitution(ty.typerep, checkExpr.upSubst),
       ty.typerep.freeVariables);
-  local transform::Strategy =
+  nondecorated local transform::Strategy =
     if ml.isPolymorphic
     then requireType(antiquoteASTExpr(
       Silver_Expr {
@@ -259,7 +259,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
       })) <* ml.transform
     else ml.transform;
   
-  local fwrd::Expr = translate(reflect(new(transform)));
+  local fwrd::Expr = translate(reflect(transform));
   
   --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, transform.pp) ++ "\n\n\n", unsafeIO()));
   forwards to fwrd;

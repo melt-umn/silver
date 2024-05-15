@@ -96,7 +96,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   
   -- Apply the nonterminal type to the type variables.
   -- NOT .monoType so we do something sensible if someone does "occurs on TypeAlias<a>" or something.
-  production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
+  nondecorated production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
   
   -- This renames the vars from the environment
   -- at's env types -> type params containing local skolem vars  (vars -> types)
@@ -106,7 +106,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   local rewrite_to :: Substitution = zipVarsIntoSubstitution(nttl.freeVariables, tyVars);
   
   -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
-  production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
+  nondecorated production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
   production occursCheck :: [OccursDclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
