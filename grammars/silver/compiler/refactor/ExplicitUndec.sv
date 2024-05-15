@@ -33,7 +33,7 @@ top::Expr ::= @q::QName
     && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.expectedUndecorated
     then
       rule on Expr of
-      | baseExpr(q1) when q1.name == q.name && q1.nameLoc == q.nameLoc ->
+      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
         if top.decSiteVertexInfo.isJust
         then Silver_Expr { @$QName{q1} }
         else Silver_Expr { new($QName{q1}) }
@@ -46,10 +46,10 @@ top::Expr ::= @q::QName
 {
   top.transforms <-
     if top.config.refactorExplicitUndec
-    && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && !top.finalType.isDecorated
+    && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.expectedUndecorated
     then
       rule on Expr of
-      | baseExpr(q1) when q1.name == q.name && q1.nameLoc == q.nameLoc ->
+      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
         if top.decSiteVertexInfo.isJust
         then Silver_Expr { @$QName{q1} }
         else Silver_Expr { new($QName{q1}) }
@@ -70,31 +70,31 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
 aspect production shortFunctionDcl
 top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 {
-  e.expectedUndecorated = !namedSig.outputElement.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(namedSig.outputElement.typerep);
 }
 
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
-  e.expectedUndecorated = !ty.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(ty.typerep);
 }
 
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
-  e.expectedUndecorated = !id.lookupValue.typeScheme.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(id.lookupValue.typeScheme.typerep);
 }
 
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  e.expectedUndecorated = !top.frame.signature.outputElement.typerep.isDecorated;
+  e.expectedUndecorated = true;
 }
 
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
-  e.expectedUndecorated = !lhs.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(lhs.typerep);
 }
 
 aspect production attachNoteStmt
@@ -106,67 +106,67 @@ top::ProductionStmt ::= 'attachNote' e::Expr ';'
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
-  e.expectedUndecorated = !top.frame.signature.outputElement.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(top.frame.signature.outputElement.typerep);
 }
 
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  e.expectedUndecorated = !attr.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(attr.typerep);
 }
 
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  e.expectedUndecorated = !attr.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(attr.typerep);
 }
 
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  e.expectedUndecorated = !attr.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(attr.typerep);
 }
 
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  e.expectedUndecorated = !attr.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(attr.typerep);
 }
 
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  e.expectedUndecorated = !attr.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(attr.typerep);
 }
 
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  e.expectedUndecorated = !attr.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(attr.typerep);
 }
 
 aspect production errorValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
-  e.expectedUndecorated = !val.lookupValue.typeScheme.monoType.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(val.lookupValue.typeScheme.monoType);
 }
 
 aspect production localValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
-  e.expectedUndecorated = !val.lookupValue.typeScheme.monoType.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(val.lookupValue.typeScheme.monoType);
 }
 
 aspect production parserAttributeValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
-  e.expectedUndecorated = !val.lookupValue.typeScheme.monoType.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(val.lookupValue.typeScheme.monoType);
 }
 
 aspect production termAttrValueValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
-  e.expectedUndecorated = !val.lookupValue.typeScheme.monoType.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(val.lookupValue.typeScheme.monoType);
 }
 
 aspect production pluckDef
@@ -208,7 +208,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  e.expectedUndecorated = !top.appExprTyperep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(top.appExprTyperep);
 }
 
 aspect production noteAttachment
@@ -293,7 +293,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 {
-  e1.expectedUndecorated = !lhs.typerep.isDecorated;
+  e1.expectedUndecorated = typeIsUndecorated(lhs.typerep);
 }
 
 aspect production decorationSiteExpr
@@ -332,13 +332,13 @@ top::Expr ::= la::AssignExpr  e::Expr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  e.expectedUndecorated = !t.typerep.isDecorated;
+  e.expectedUndecorated = typeIsUndecorated(t.typerep);
 }
 
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  e.expectedUndecorated = e.finalType.isData;
+  e.expectedUndecorated = false;
   pr.expectedUndecorated = top.expectedUndecorated;
   f.expectedUndecorated = top.expectedUndecorated;
 }
@@ -348,3 +348,10 @@ top::NameOrBOperator ::= e::Expr
 {
   e.expectedUndecorated = false;
 }
+
+fun typeIsUndecorated Boolean ::= t::Type =
+  case t of
+  | decoratedType(_, _) -> false
+  | varType(_) -> false
+  | _ -> true
+  end;
