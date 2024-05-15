@@ -75,31 +75,19 @@ top::Expr ::= @q::QName _ _
 aspect production childReference
 top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production lhsReference
 top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production localReference
 top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production nondecLocalReference
@@ -111,11 +99,7 @@ top::Expr ::= @q::QName
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{q})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{q}) });
 }
 
 aspect production errorApplication

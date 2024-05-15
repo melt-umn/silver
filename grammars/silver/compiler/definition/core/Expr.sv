@@ -130,7 +130,7 @@ top::Expr ::= @q::QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS is *always* a decorable (nonterminal) type.
+  -- An LHS is *always* a decorated (nonterminal) type.
   top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
@@ -161,7 +161,7 @@ top::Expr ::= @q::QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
+  -- An LHS (and thus, forward) is *always* a decorated (nonterminal) type.
   top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 

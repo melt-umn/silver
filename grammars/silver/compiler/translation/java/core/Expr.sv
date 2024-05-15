@@ -73,11 +73,6 @@ top::Expr ::= @q::QName
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env) then
       -- Reference to a primitive (not decorated or undecorated):
       s"context.<${top.finalType.transType}>childAsIs(${childIDref})"
-    else if !top.finalType.isDecorated then
-      -- Undecorated reference to a nonterminal:
-      -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
-      -- this is a potential source of minor inefficiency for functions that do not decorate.
-      s"((${top.finalType.transType})context.childDecorated(${childIDref}).undecorate())"
     else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
@@ -88,8 +83,6 @@ top::Expr ::= @q::QName
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.childAsIsLazy(${childIDref})"
-    else if !top.finalType.isDecorated
-    then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
     else s"context.childDecoratedLazy(${childIDref})";
 }
 
@@ -99,18 +92,13 @@ top::Expr ::= @q::QName
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.<${top.finalType.transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !top.finalType.isDecorated
-    then s"((${top.finalType.transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
-    else
-      s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
+    else s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
   -- reminder: look at comments for childReference
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !top.finalType.isDecorated
-    then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
 }
 
