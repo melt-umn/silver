@@ -278,7 +278,9 @@ top::AppExpr ::= e::Expr
     case top.decSiteVertexInfo, top.appProd of
     | just(parent), just(ns)
         when isDecorable(
-          if sigIsShared then e.finalType.decoratedType else e.finalType,
+          if sigIsShared
+          then top.appExprTyperep.decoratedType
+          else top.appExprTyperep,
           top.env) ->
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
