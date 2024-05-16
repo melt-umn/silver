@@ -72,7 +72,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
   top.errors <- undecidableInstanceErrors;
 
-  local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep);
+  nondecorated local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
   top.occursDefs <- transitiveSuperOccursDefs(top.env, t.typerep, [], instDcl);

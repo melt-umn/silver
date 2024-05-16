@@ -127,7 +127,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
   -- cmdArgs _could_ be top.config, if the driver were to decorate DriverAction
   -- with config. However, the driver doesn't, and it seems like it'd be a pain
   -- to make it do so.
-  local buildGrammar::IO<Integer> =
+  nondecorated local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
       if cmdArgs.noJavaGeneration then do {
         -- Skip translating to Java.

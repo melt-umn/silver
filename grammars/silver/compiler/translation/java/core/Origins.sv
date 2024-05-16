@@ -58,7 +58,7 @@ global newConstructionOriginUsingCtxRef :: String =
 function makeNewConstructionOrigin
 [String] ::= top::Decorated Expr  inInteresting::Boolean  --need .frame anno
 {
-  local ty :: Type = top.finalType.outputType;
+  nondecorated local ty::Type = top.finalType.outputType;
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
   return if typeWantsTracking(ty, top.config, top.env)

@@ -185,15 +185,15 @@ fun buildLambda Expr ::= n::String ty::Type body::Expr =
 function buildMultiLambda
 Expr ::= names::[Pair<String Type>] body::Expr
 {
-  local sig::LambdaRHS =
-        foldr(\ pr::Pair<String Type> p::LambdaRHS ->
-                case pr of
-                | (n, ty) ->
-                  lambdaRHSCons(lambdaRHSElemIdTy(name(n), '::',
-                                       typerepTypeExpr(ty)),
-                                    p)
-                end,
-              lambdaRHSNil(), names);
+  nondecorated local sig::LambdaRHS =
+    foldr(\ pr::Pair<String Type> p::LambdaRHS ->
+            case pr of
+            | (n, ty) ->
+              lambdaRHSCons(lambdaRHSElemIdTy(name(n), '::',
+                                   typerepTypeExpr(ty)),
+                                p)
+            end,
+          lambdaRHSNil(), names);
   return lambdap(sig, body);
 }
 

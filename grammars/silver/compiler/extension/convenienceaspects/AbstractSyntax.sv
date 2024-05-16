@@ -102,7 +102,7 @@ function collectMatchRulesfromMRuleList
 function makeGeneratedNamesFromMatchRule
 [Name] ::= mr::MatchRule
 {
-  local patList::PatternList =
+  nondecorated local patList::PatternList =
     case mr of
     | matchRule_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_) -> pl
     | matchRuleWhen_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_) -> pl
@@ -127,7 +127,7 @@ function makeGeneratedNamesFromMatchRule
 function makeWildcardsFromMatchRule
 PatternList ::= mr::MatchRule
 {
-  local patList::PatternList =
+  nondecorated local patList::PatternList =
     case mr of
     | matchRule_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_) -> pl
     | matchRuleWhen_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_) -> pl
@@ -505,7 +505,7 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
 
   local combinedAspectProds::[AGDcl] = map(fst(_),groupExtractResults);
 
-  local combinedAspectDcls::AGDcls = foldr(
+  nondecorated local combinedAspectDcls::AGDcls = foldr(
    consAGDcls(_,_),
    nilAGDcls(),
    combinedAspectProds);

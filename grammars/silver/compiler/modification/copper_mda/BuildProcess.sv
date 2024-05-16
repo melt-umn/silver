@@ -27,7 +27,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
   local parserName :: String = makeParserName(spec.fullName);
   local dumpFile :: String = outDir ++ parserName ++ ".copperdump";
 
-  local buildGrammar::IO<Integer> =
+  nondecorated local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
       mkdir(outDir);
       eprintln("Running MDA for " ++ spec.fullName ++ ".");

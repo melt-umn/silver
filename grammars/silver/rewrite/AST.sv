@@ -84,8 +84,8 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production listAST
 top::AST ::= vals::ASTs
 {
-  local h::AST = case vals of consAST(h, _) -> h | _ -> error("not consAST") end;
-  local t::AST = case vals of consAST(_, t) -> listAST(t) | _ -> error("not consAST") end;
+  nondecorated local h::AST = case vals of consAST(h, _) -> h | _ -> error("not consAST") end;
+  nondecorated local t::AST = case vals of consAST(_, t) -> listAST(t) | _ -> error("not consAST") end;
   top.allResult =
     case vals of
     | consAST(_, _) ->

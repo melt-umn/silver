@@ -128,15 +128,15 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
 
   -- TODO: BUG: FIXME: these names should be mangled. I ran into 't' being shadowed in a test I wrote!
-  local tref :: Name = name("t");
-  local testNameref :: Name = name(testName);
-  local valueref :: Name = name("value");
-  local expectedref :: Name = name("expected");
-  local msgref :: Name = name("msg");
-  local passref :: Name = name("pass");
+  nondecorated local tref::Name = name("t");
+  nondecorated local testNameref::Name = name(testName);
+  nondecorated local valueref::Name = name("value");
+  nondecorated local expectedref::Name = name("expected");
+  nondecorated local msgref::Name = name("msg");
+  nondecorated local passref::Name = name("pass");
   
   -- TODO: Rewrite as Silver_AGDcl { ... }
-  local absProdCS :: AGDcl =
+  local absProdCS::AGDcl =
     productionDcl('abstract', 'production', testNameref,
       productionImplementsNone(),
       productionSignature(
@@ -170,7 +170,7 @@ ag::AGDcl ::= kwd::'equalityTest'
    cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 4 );
 -}
 
-  local aspProdCS :: AGDcl =
+  local aspProdCS::AGDcl =
     aspectProductionDcl('aspect', 'production', qNameId(testSuite),
       aspectProductionSignature(
         aspectProductionLHSId(tref),

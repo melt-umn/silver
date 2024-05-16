@@ -18,7 +18,7 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
 {
   top.unparse = "makeTestSuite " ++ nme.lexeme ++ ";\n";
 
-  local sig :: ProductionSignature =
+  nondecorated local sig::ProductionSignature =
     productionSignature(
       nilConstraint(), '=>',
       productionLHS(name("t"), '::',

@@ -55,7 +55,7 @@ top::AGDcl ::= attrs::AttrNameList nt::QName ps::ProdNameList
     filter(
       \ d::ValueDclInfo -> !d.hasForward && !contains(d.fullName, ps.names),
       getKnownProds(nt.lookupType.fullName, top.env));
-  local dcl::AGDcl =
+  nondecorated local dcl::AGDcl =
     foldr(
       appendAGDcl, emptyAGDcl(),
       map(propagateAspectDcl(_, attrs), includedProds));

@@ -525,7 +525,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  local elemType :: Type = freshType();
+  nondecorated local elemType::Type = freshType();
   
   errCheck1 = check(listType(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror

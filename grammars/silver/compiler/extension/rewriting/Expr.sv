@@ -178,7 +178,7 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
@@ -257,7 +257,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
@@ -317,7 +317,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
@@ -339,7 +339,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
@@ -361,7 +361,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
@@ -383,7 +383,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))

@@ -89,8 +89,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
 function makeArg
 Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
 {
-  local at::QName = qName(input.elementName);
-  at.env = env;
+  nondecorated local at::QName = qName(input.elementName);
   
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =

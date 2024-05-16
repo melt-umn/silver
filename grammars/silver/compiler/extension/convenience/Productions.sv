@@ -53,7 +53,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
 {
   top.unparse = "| " ++ rhs.unparse ++ mods.unparse ++ body.unparse; -- TODO missing some here...
   -- Either we have a name, or we generate an appropriate one.
-  local nme :: Name =
+  nondecorated local nme::Name =
     case optn of
     | noOptionalName() ->
         name(

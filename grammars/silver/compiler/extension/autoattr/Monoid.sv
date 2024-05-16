@@ -129,7 +129,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
         (isDecorable(input.elementDclType, top.env) || input.elementDclType.isNonterminal) &&
         !null(getOccursDcl(attrFullName, input.elementDclType.typeName, top.env)),
       top.frame.signature.inputElements);
-  local res :: Expr = 
+  nondecorated local res::Expr =
     if null(inputsWithAttr)
     then attr.lookupAttribute.dcl.emptyVal
     else

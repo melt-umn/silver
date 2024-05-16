@@ -33,7 +33,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   e.outerAttr = a.name;
   e.isOutermost = true;
   
-  local fwrd::AGDcl =
+  nondecorated local fwrd::AGDcl =
     foldr(
       appendAGDcl,
       defsAGDcl(
@@ -153,7 +153,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
     then []
     else forward.errors;
   
-  local fwrd::ProductionStmt =
+  nondecorated local fwrd::ProductionStmt =
     foldr(
       productionStmtAppend(_, _),
       attributeDef(

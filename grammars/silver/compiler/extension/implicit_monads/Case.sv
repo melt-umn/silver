@@ -36,33 +36,34 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
           ml.matchRuleList);
 
   local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
-  local basicFailure::Expr = mkStrFunctionInvocation("silver:core:error",
-                               [stringConst(terminal(String_t, 
-                                  "\"Error: pattern match failed at " ++ top.grammarName ++
-                                  " " ++ loc.unparse ++ "\\n\""))]);
+  nondecorated local basicFailure::Expr =
+    mkStrFunctionInvocation("silver:core:error",
+      [stringConst(terminal(String_t, 
+         "\"Error: pattern match failed at " ++ top.grammarName ++
+         " " ++ loc.unparse ++ "\\n\""))]);
   {-
     Inserting fails breaks down if the current monad's fail is
     expecting something other than a string, integer, float, or list,
     as we don't really have ways to come up with basic fail arguments
     for anything more complex.
   -}
-  local failure::Expr =
-        if isMonadFail(top.expectedMonad, top.env)
-        then monadFail()
-        else basicFailure;
+  nondecorated local failure::Expr =
+    if isMonadFail(top.expectedMonad, top.env)
+    then monadFail()
+    else basicFailure;
   {-
     This sets up the actual output type.  If there's a monad, the
     return type given to the case expression is M(freshtype); if not,
     the return type is just a fresh type.
   -}
-  local outty::Type =
-        if monadInExprs
-        then monadOfType(top.expectedMonad, freshType())
-        else if monadInClauses
-             then monadOfType(top.expectedMonad, freshType())
-             else if isMonadFail(top.expectedMonad, top.env)
-                  then monadOfType(top.expectedMonad, freshType())
-                  else freshType(); --absolutely nothing is a monad
+  nondecorated local outty::Type =
+    if monadInExprs
+    then monadOfType(top.expectedMonad, freshType())
+    else if monadInClauses
+         then monadOfType(top.expectedMonad, freshType())
+         else if isMonadFail(top.expectedMonad, top.env)
+              then monadOfType(top.expectedMonad, freshType())
+              else freshType(); --absolutely nothing is a monad
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::([(Type, Expr, String)], [Expr]);
   monadStuff = monadicMatchTypesNames(redeces.monadDecExprs, ml.patternTypeList, [], top.env,
@@ -272,9 +273,9 @@ function monadCompilePatternGroups
 Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
          retType::Type env::Env
 {
-  local compileRest::Expr =
-        monadCompilePatternGroups(matchEs, tail(ruleGroups), finalFail,
-                                  retType, env);
+  nondecorated local compileRest::Expr =
+    monadCompilePatternGroups(matchEs, tail(ruleGroups), finalFail,
+                              retType, env);
 
   local firstGroup::[AbstractMatchRule] =
         case ruleGroups of
@@ -284,12 +285,12 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
         | hd::tl -> hd
         end;
   local firstPatt::Decorated Pattern = head(firstGroup).headPattern;
-  local firstMatchExpr::Expr =
-        case matchEs of
-        | [] ->
-          error("Shouldn't call monadCompilePatternGroups with empty match expressions")
-        | e::tl -> e
-        end;
+  nondecorated local firstMatchExpr::Expr =
+    case matchEs of
+    | [] ->
+      error("Shouldn't call monadCompilePatternGroups with empty match expressions")
+    | e::tl -> e
+    end;
 
   --Modifying the order of rules in the same group (from ruleGroups) is fine,
   --since we either have only the same constructor for a forwarding production
@@ -299,19 +300,19 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
           map(monadAllConCaseTransform(head(matchEs), tail(matchEs),
                                        compileRest, retType, _, env),
               constructorGroups);
-  local currentConCase::Expr =
-        matchPrimitive(firstMatchExpr, typerepTypeExpr(retType),
-               foldPrimPatterns(mappedPatterns),
-               compileRest);
+  nondecorated local currentConCase::Expr =
+    matchPrimitive(firstMatchExpr, typerepTypeExpr(retType),
+           foldPrimPatterns(mappedPatterns),
+           compileRest);
 
   -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
   -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
   -- So don't try that!
   local boundVarRules::[AbstractMatchRule] =
         map(bindHeadPattern(firstMatchExpr, freshType(), _), firstGroup);
-  local currentVarCase::Expr =
-        monadCompileCaseExpr(tail(matchEs), boundVarRules,
-           compileRest, retType, env);
+  nondecorated local currentVarCase::Expr =
+    monadCompileCaseExpr(tail(matchEs), boundVarRules,
+       compileRest, retType, env);
 
   return
      case ruleGroups of
@@ -332,11 +333,11 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
 {
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
-  local subcase :: Expr =
-        monadCompileCaseExpr(
-          map(exprFromName, names) ++ annoAccesses ++ restExprs,
-          map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-          failCase, retType, env);
+  nondecorated local subcase::Expr =
+    monadCompileCaseExpr(
+      map(exprFromName, names) ++ annoAccesses ++ restExprs,
+      map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
+      failCase, retType, env);
 
   local annos :: [String] =
     nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
@@ -377,8 +378,8 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                             top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
                             top.expectedMonad, false);
 
-  local mplus::Expr = monadPlus();
-  local mzero::Expr = monadZero();
+  nondecorated local mplus::Expr = monadPlus();
+  nondecorated local mzero::Expr = monadZero();
 
   local isMonadPlus_instance::Boolean = isMonadPlus(top.expectedMonad, top.env);
   local notMonadPlus::String =
@@ -435,17 +436,18 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
               end,
             appliedCaseExprs);
   --Mplus the rewritten-and-applied case expressions together
-  local mplused::Expr = foldl(\rest::Expr current::Expr -> 
-                               Silver_Expr{
-                                 $Expr{mplus}($Expr{rest}, $Expr{current})
-                               },
-                              head(typecheckedCaseExprs), tail(typecheckedCaseExprs));
+  nondecorated local mplused::Expr =
+    foldl(\rest::Expr current::Expr -> 
+           Silver_Expr{
+             $Expr{mplus}($Expr{rest}, $Expr{current})
+           },
+          head(typecheckedCaseExprs), tail(typecheckedCaseExprs));
   --Use bind and lambdas to change the names of everything being matched on to only evaluate it once
-  local applied::Expr =
-        mcaseBindsApps(es.rawExprs, newNames, mplused,
-                       top.env, ml.mUpSubst, top.frame, top.grammarName,
-                       top.compiledGrammars, top.config, top.flowEnv,
-                       top.expectedMonad, top.isRoot);
+  nondecorated local applied::Expr =
+    mcaseBindsApps(es.rawExprs, newNames, mplused,
+                   top.env, ml.mUpSubst, top.frame, top.grammarName,
+                   top.compiledGrammars, top.config, top.flowEnv,
+                   top.expectedMonad, top.isRoot);
 
   top.monadRewritten = applied;
   top.mUpSubst = ml.mUpSubst;
@@ -468,9 +470,9 @@ Expr ::= exprs::[Expr] names::[String] base::Expr
          gn::String cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs
          fe::FlowEnv em::Type iR::Boolean
 {
-  local subcall::Expr =
-        mcaseBindsApps(tail(exprs), tail(names), base,
-                       env, sub, f, gn, cg, c, fe, em, iR);
+  nondecorated local subcall::Expr =
+    mcaseBindsApps(tail(exprs), tail(names), base,
+                   env, sub, f, gn, cg, c, fe, em, iR);
   return
      if null(exprs)
      then base

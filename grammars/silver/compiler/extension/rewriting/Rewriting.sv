@@ -259,7 +259,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
       })) <* ml.transform
     else ml.transform;
   
-  local fwrd::Expr = translate(reflect(transform));
+  nondecorated local fwrd::Expr = translate(reflect(transform));
   
   --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, transform.pp) ++ "\n\n\n", unsafeIO()));
   forwards to fwrd;

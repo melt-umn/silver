@@ -25,7 +25,8 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([restrictedInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([restrictedInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -55,7 +56,8 @@ top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([restrictedSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([restrictedSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -89,7 +91,8 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([implicitInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([implicitInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -121,7 +124,8 @@ top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([implicitSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([implicitSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }

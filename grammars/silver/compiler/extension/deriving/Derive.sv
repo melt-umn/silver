@@ -80,7 +80,7 @@ top::AGDcl ::= @nt::QName
   top.moduleNames := [];
 
   local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
-  local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
+  nondecorated local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
   
   local includedProds::[ValueDclInfo] =
     filter(
@@ -193,7 +193,7 @@ top::AGDcl ::= @nt::QName
   top.moduleNames := [];
 
   local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
-  local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
+  nondecorated local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
   
   local includedProds::[ValueDclInfo] =
     filter(

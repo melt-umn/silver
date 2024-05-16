@@ -164,10 +164,10 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
         map(\ x::String -> baseExpr(qName(x)), names);
   local compiledCase::Expr =
         compileCaseExpr(nameExprs, ml, failExpr, retType, top.env);
-  local fwdResult::Expr =
-        foldr(\ p::(String, Expr) rest::Expr ->
-                makeLet(p.1, freshType(), p.2, rest),
-              compiledCase, zip(names, es));
+  nondecorated local fwdResult::Expr =
+    foldr(\ p::(String, Expr) rest::Expr ->
+            makeLet(p.1, freshType(), p.2, rest),
+          compiledCase, zip(names, es));
   forwards to fwdResult;
 }
 
@@ -334,9 +334,9 @@ function compilePatternGroups
 Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
          retType::Type env::Env
 {
-  local compileRest::Expr =
-        compilePatternGroups(matchEs, tail(ruleGroups), finalFail,
-                             retType, env);
+  nondecorated local compileRest::Expr =
+    compilePatternGroups(matchEs, tail(ruleGroups), finalFail,
+                         retType, env);
 
   local firstGroup::[AbstractMatchRule] =
         case ruleGroups of
@@ -347,12 +347,12 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
         end;
   local firstPatt::Decorated Pattern = head(firstGroup).headPattern;
   local failName::String = "__match_fail_" ++ toString(genInt());
-  local firstMatchExpr::Expr =
-        case matchEs of
-        | [] ->
-          error("Shouldn't call compilePatternGroups with empty match expressions")
-        | e::tl -> e
-        end;
+  nondecorated local firstMatchExpr::Expr =
+    case matchEs of
+    | [] ->
+      error("Shouldn't call compilePatternGroups with empty match expressions")
+    | e::tl -> e
+    end;
 
   --Modifying the order of rules in the same group (from ruleGroups) is fine,
   --since we either have only the same constructor for a forwarding production
@@ -363,26 +363,26 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
                                   baseExpr(qName(failName)),
                                   retType, _, env),
               constructorGroups);
-  local currentConCase::Expr =
-        matchPrimitive(firstMatchExpr, typerepTypeExpr(retType),
-               foldPrimPatterns(mappedPatterns),
-               baseExpr(qName(failName)));
+  nondecorated local currentConCase::Expr =
+    matchPrimitive(firstMatchExpr, typerepTypeExpr(retType),
+           foldPrimPatterns(mappedPatterns),
+           baseExpr(qName(failName)));
 
   -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
   -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
   -- So don't try that!
   local boundVarRules::[AbstractMatchRule] =
         map(bindHeadPattern(firstMatchExpr, freshType(), _), firstGroup);
-  local currentVarCase::Expr =
-        compileCaseExpr(tail(matchEs), boundVarRules,
-           baseExpr(qName(failName)),
-           retType, env);
+  nondecorated local currentVarCase::Expr =
+    compileCaseExpr(tail(matchEs), boundVarRules,
+       baseExpr(qName(failName)),
+       retType, env);
 
-  local bindFailName::Expr =
-        makeLet(failName, retType, compileRest,
-                if firstPatt.patternIsVariable
-                then currentVarCase
-                else currentConCase);
+  nondecorated local bindFailName::Expr =
+    makeLet(failName, retType, compileRest,
+            if firstPatt.patternIsVariable
+            then currentVarCase
+            else currentConCase);
 
   return
      case ruleGroups of
@@ -410,11 +410,11 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr] failCase::Expr
 {
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
-  local subcase::Expr =
-        compileCaseExpr(
-           map(exprFromName, names) ++ annoAccesses ++ restExprs,
-           map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-           failCase, retType, env);
+  nondecorated local subcase::Expr =
+    compileCaseExpr(
+       map(exprFromName, names) ++ annoAccesses ++ restExprs,
+       map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
+       failCase, retType, env);
 
   local annos :: [String] =
         nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
@@ -991,8 +991,8 @@ Maybe<Pattern> ::= givenPatts::[Decorated Pattern] requiredProds::[String] env::
 
   firstProdQName.env = env;
   local firstProdNumArgs::Integer = firstProdQName.lookupValue.typeScheme.typerep.arity;
-  local wildcards::PatternList =
-        buildPatternList(repeat(wildcPattern('_'), firstProdNumArgs), bogusLoc());
+  nondecorated local wildcards::PatternList =
+    buildPatternList(repeat(wildcPattern('_'), firstProdNumArgs), bogusLoc());
 
   return
      case requiredProds of

@@ -91,7 +91,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- our DclInfo in `defs` because we expect variables in the env to have
   -- explicit types. We can't use `finalSubst` here because that requires
   -- having completed type inference which requires `defs` which we're defining.
-  local semiTy :: Type = performSubstitution(t.typerep, top.upSubst);
+  nondecorated local semiTy::Type = performSubstitution(t.typerep, top.upSubst);
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 
   -- Using finalTy here, so our defs requires we have downSubst...

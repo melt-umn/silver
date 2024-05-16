@@ -159,7 +159,7 @@ top::DoBody ::= b::DoBinding rest::DoBody
     else rest.recBody);
 
   local recVarName::String = s"_rec_items_${toString(genInt())}";
-  local recVarType::TypeExpr =
+  nondecorated local recVarType::TypeExpr =
     foldr1(
       \ t1::TypeExpr t2::TypeExpr ->
         Silver_TypeExpr { silver:core:Pair<$TypeExpr{t1} $TypeExpr{t2}> },

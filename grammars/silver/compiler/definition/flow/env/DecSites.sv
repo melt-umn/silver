@@ -203,7 +203,7 @@ DecSiteTree ::= prodName::String vt::VertexType attrName::String flowEnv::FlowEn
 function decSitesMissingInhEqs
 [(DecSiteTree, [String])] ::= prodName::String vt::VertexType attrNames::[String] flowEnv::FlowEnv realEnv::Env
 {
-  local d::DecSiteTree = findDecSites(prodName, vt, [], flowEnv, realEnv);
+  nondecorated local d::DecSiteTree = findDecSites(prodName, vt, [], flowEnv, realEnv);
   local resolved::map:Map<DecSiteTree String> =
     map:add(map(\ a -> (resolveDecSiteInhEq(a, d, flowEnv), a), attrNames), map:empty());
   return flatMap(\ d -> 

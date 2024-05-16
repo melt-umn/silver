@@ -228,7 +228,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   -- be exported by the syn occurence anyway.
   -- TODO - future optimization potential: this is where common sub-trees shared between
   -- the incoming tree and the result of s1 get re-decorated.
-  local allInhs::ExprInhs =
+  nondecorated local allInhs::ExprInhs =
     foldr(
       exprInhsCons(_, _),
       exprInhsEmpty(),
@@ -266,7 +266,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
       }
     end;
-  local totalTrans::Expr =
+  nondecorated local totalTrans::Expr =
     Silver_Expr {
       decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
     };
@@ -653,7 +653,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
      else [(h.genName, h)]) ++
     t.liftedStrategies;
   
-  local hType::Type = head(top.givenInputElements).typerep;
+  nondecorated local hType::Type = head(top.givenInputElements).typerep;
   local attr::String = fromMaybe(h.genName, h.attrRefName);
   local attrMatch::Boolean = attrMatchesFrame(top.env, attr, hType);
   top.attrRefNames =
@@ -777,7 +777,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     else [];
   top.errors <- ty.errorsKindStar;
   
-  local res::Expr =
+  nondecorated local res::Expr =
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation, false,
@@ -875,7 +875,7 @@ top::StrategyExpr ::= id::QName
   top.isFail = false;
   top.isTotalNoEnv = fromMaybe(false, lookup(id.name, top.recVarTotalNoEnvEnv));
   
-  local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
+  nondecorated local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
   forwards to
     if lookup(id.name, top.recVarNameEnv).isJust
     then recVarRef(id, genName=top.genName)

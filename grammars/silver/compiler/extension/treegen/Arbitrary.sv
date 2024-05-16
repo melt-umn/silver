@@ -205,7 +205,7 @@ ProductionStmt ::= env::Env  specEnv::Env  nt::String
   local num_lowest_arity :: Integer = length(takeWhile2(prodDclInfoNumChildEq, prods));
   local num_nonzero_arity :: Integer = length(filter(prodDclInfoNumChildNonzero, prods));
   
-  local result::Expr =
+  nondecorated local result::Expr =
     if null(prods)
     -- TODO: This could be a compile-time error, in theory
     then Silver_Expr { error($Expr{stringConst(terminal(String_t, "\"no generatable productions for nonterminal " ++ nt ++ "\""))}) }
@@ -234,7 +234,7 @@ ProductionStmt ::= env::Env  specEnv::Env  nt::String
 function genTermLocalDecl
 ProductionStmt ::= env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
 {
-  local te::TypeExpr = nominalTypeExpr(qName(t).qNameType);
+  nondecorated local te::TypeExpr = nominalTypeExpr(qName(t).qNameType);
 
   -- Filter out cantidate lexemes by checking if they match dominating terminal regexes.
   -- TODO: This a approach is somewhat somewhat inefficient, and fails with
@@ -251,7 +251,7 @@ ProductionStmt ::= env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorate
   -- Also note that this does not consider disambiguation functions, and may
   -- generate trees that could have arisen from different ambigous parses of the
   -- same source.
-  local termDominated::Expr =
+  nondecorated local termDominated::Expr =
     foldr(
       or(_, '||', _),
       falseConst('false'),
@@ -298,12 +298,12 @@ Expr ::= env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
       Silver_Expr { $name{prod.fullName} },
       map(\ i::Integer -> Silver_Expr { $name{"a" ++ toString(i)} }, range(0, length(prodType.inputTypes))),
       map(\ a::String -> (a, Silver_Expr { $name{a} }), map(fst, prodType.namedTypes)));
-  local lambdaChain::Expr =
+  nondecorated local lambdaChain::Expr =
     foldr(
       \ arg::(String, Type) res::Expr ->
         Silver_Expr { \ $name{arg.1}::$TypeExpr{typerepTypeExpr(arg.2)} -> $Expr{res} },
       genRes, args);
-  local genProd::Expr =
+  nondecorated local genProd::Expr =
     if null(argGenExprs)
     then Silver_Expr { silver:core:pure($Expr{genRes}) }
     else foldl(

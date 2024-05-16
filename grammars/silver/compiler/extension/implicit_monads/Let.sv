@@ -36,8 +36,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.monadicallyUsed = false;
   top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
-  local mreturn::Expr = monadReturn();
-  local mbind::Expr = monadBind();
+  nondecorated local mreturn::Expr = monadReturn();
+  nondecorated local mbind::Expr = monadBind();
 
   {-
     Our rewriting here binds in anything after the let to keep names from
@@ -56,15 +56,15 @@ top::Expr ::= la::AssignExpr  e::Expr
   local inside::Expr = if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
                        then ne.monadRewritten
                        else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
-  local boundIn::Expr =
-         foldr(\x::Pair<Name TypeExpr> y::Expr ->
-                 buildApplication(mbind,
-                     [baseExpr(qName(x.fst.name)),
-                      buildLambda(x.fst.name,
-                                  decorate x.snd with
-                                     {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
-                                  y)]),
-               inside, la.bindInList);
+  nondecorated local boundIn::Expr =
+    foldr(\x::Pair<Name TypeExpr> y::Expr ->
+            buildApplication(mbind,
+                [baseExpr(qName(x.fst.name)),
+                 buildLambda(x.fst.name,
+                             decorate x.snd with
+                                {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
+                             y)]),
+          inside, la.bindInList);
 }
 
 
