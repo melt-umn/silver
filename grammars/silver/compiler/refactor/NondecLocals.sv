@@ -58,14 +58,14 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 
 monoid attribute decoratedLocalRefs::set:Set<String> occurs on
   ProductionStmts, ProductionStmt,
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AnnoExpr, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
 propagate decoratedLocalRefs on
   ProductionStmts, ProductionStmt,
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern
-  excluding functionApplication;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AnnoExpr, AppExpr, AssignExpr, PrimPatterns, PrimPattern
+  excluding functionInvocation;
 
 aspect decoratedLocalRefs on top::Expr using := of
-| functionApplication(e, es, anns) ->
+| functionInvocation(e, es, anns) ->
     case e, es of
     | functionReference(q), oneAppExprs(presentAppExpr(localReference(_)))
         when q.lookupValue.fullName == "silver:core:new" -> mempty
@@ -79,10 +79,10 @@ end;
 
 inherited attribute allDecoratedLocalRefs::set:Set<String> occurs on
   ProductionStmts, ProductionStmt,
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AnnoExpr, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
 propagate allDecoratedLocalRefs on
   ProductionStmts, ProductionStmt,
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AnnoExpr, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
 
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
