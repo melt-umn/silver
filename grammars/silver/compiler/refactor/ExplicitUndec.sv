@@ -71,6 +71,20 @@ top::Expr ::= @q::QName
     else fail();
 }
 
+aspect production lexicalLocalReference
+top::Expr ::= @q::QName _ _
+{
+  top.transforms <-
+    if top.config.refactorExplicitUndec
+    && q.lookupValue.typeScheme.monoType.isDecorated && top.expectedUndecorated
+    then
+      rule on Expr of
+      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
+        Silver_Expr { new($QName{q1}) }
+      end
+    else fail();
+}
+
 
 inherited attribute expectedUndecorated :: Boolean occurs on Expr, Exprs, PrimPatterns, PrimPattern;
 propagate expectedUndecorated on Exprs, PrimPatterns, PrimPattern;
