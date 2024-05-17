@@ -138,7 +138,7 @@ top::AGDcl ::= 'unrestricted' 'inherited' 'attribute' a::Name tl::BracketedOptTy
 {
   top.unparse = "unrestricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', te, ';');
+  forwards to attributeDclInh('inherited', 'attribute', @a, @tl, '::', @te, ';');
 }
 
 
@@ -147,6 +147,6 @@ top::AGDcl ::= 'unrestricted' 'synthesized' 'attribute' a::Name tl::BracketedOpt
 {
   top.unparse = "unrestricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', te, ';');
+  forwards to attributeDclSyn('synthesized', 'attribute', @a, @tl, '::', @te, ';');
 }
 

@@ -41,7 +41,7 @@ top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
     then [errFromOrigin(top, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
-  forwards to makeAppendAGDclOfAGDcls(ags);
+  forwards to makeAppendAGDclOfAGDcls(new(ags));
   -- Forward to the decls so that we can use the stuff declared with warnings in other tests
 }
 
@@ -71,7 +71,7 @@ top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
     then [errFromOrigin(top, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
     else [];
 
-  forwards to makeAppendAGDclOfAGDcls(ags);
+  forwards to makeAppendAGDclOfAGDcls(new(ags));
   -- Forward to the decls so that we can use the stuff declared without warnings in other tests
 }
 

@@ -51,13 +51,13 @@ tracked nonterminal ConvAspectLHS with aspectName, aspectType, unparse;
 concrete productions top::ConvAspectLHS
 | name::Name '::' ty::TypeExpr
 {
-  top.aspectType = ty;
-  top.aspectName = name;
+  top.aspectType = new(ty);
+  top.aspectName = new(name);
   top.unparse = name.unparse ++ "::" ++ ty.unparse;
 }
 | ty::TypeExpr
 {
-  top.aspectType = ty;
+  top.aspectType = new(ty);
   top.aspectName = name("__generatedTop_" ++ toString(genInt()));
   top.unparse = ty.unparse;
 }
@@ -75,5 +75,5 @@ concrete productions top::ConvAspectLHS
 concrete production convenienceAspects_c
 top::AGDcl ::= 'aspect' attr::QNameAttrOccur 'on' aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind 'of' Opt_Vbar_t ml::MRuleList 'end' ';'
 {
-  forwards to convenienceAspects(attr, aspectLHS, eqKind, ml);
+  forwards to convenienceAspects(@attr, aspectLHS, @eqKind, @ml);
 }

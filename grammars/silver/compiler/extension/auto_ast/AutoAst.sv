@@ -37,7 +37,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   
   thread downSubst, upSubst on top, errCheck1, forward;
 
-  errCheck1 = check(vty, inferredType);
+  errCheck1 = check(new(vty), inferredType);
   top.errors <-
     if !errCheck1.typeerror then []
     else [errFromOrigin(v, "Signature yields ast type " ++ errCheck1.rightpp ++ ", but the supplied ast constructor has type " ++ errCheck1.leftpp)];
@@ -58,7 +58,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       astQName,
       '=',
       mkFullFunctionInvocation(
-        baseExpr(v),
+        baseExpr(new(v)),
         map(accessAst, elems),
         if hasLoc then
          [("location", 

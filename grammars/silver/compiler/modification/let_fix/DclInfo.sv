@@ -13,7 +13,7 @@ top::ValueDclInfo ::= fn::String ty::Type fi::Maybe<VertexType> fd::[FlowVertex]
     | _ -> false
     end;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
 
   top.refDispatcher = lexicalLocalReference(fi, fd);
   top.defDispatcher = errorValueDef; -- should be impossible (never in scope at production level?)

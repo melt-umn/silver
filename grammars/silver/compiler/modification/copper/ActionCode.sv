@@ -37,7 +37,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- note that we're not merging the typing contexts between action blocks and productions
   -- this seems reasonable since inference should never have effects across this border...
 
-  forwards to concreteProductionDcl($1, $2, id, ns, pm, body);
+  forwards to concreteProductionDcl($1, $2, @id, @ns, @pm, @body);
 } action {
   insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
@@ -116,7 +116,7 @@ function hackTransformLocals
 {
   return
     case d of
-    | valueDef(item) when item.dcl matches localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
+    | valueDef(item) when item.dcl matches localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,new(ty))]
     | _ -> [] -- TODO: possibly error??
     end;
 }

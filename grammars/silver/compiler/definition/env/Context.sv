@@ -54,9 +54,9 @@ top::Context ::= cls::String t::Type
   top.contextSuperDefs = \ d::InstDclInfo g::String l::Location ->
     [tcInstDef(instSuperDcl(cls, d, sourceGrammar=g, sourceLocation=l))];
   top.contextMemberDefs = \ tvs::[TyVar] g::String l::Location ->
-    [tcInstDef(instConstraintDcl(cls, t, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+    [tcInstDef(instConstraintDcl(cls, new(t), tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
-    [tcInstDef(sigConstraintDcl(cls, t, ns, sourceGrammar=g, sourceLocation=l))];
+    [tcInstDef(sigConstraintDcl(cls, new(t), ns, sourceGrammar=g, sourceLocation=l))];
   top.contextSuperOccursDefs = \ _ _ _ -> [];
   top.contextMemberOccursDefs = \ _ _ _ -> [];
   top.contextSigOccursDefs = \ _ _ _ -> [];
@@ -68,7 +68,7 @@ top::Context ::= cls::String t::Type
   -- the instance.  Probably unavoidable?
   local matching::[InstDclInfo] =
     filter(
-      \ d::InstDclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+      \ d::InstDclInfo -> !unifyDirectional(d.typeScheme.typerep, new(t)).failure && !d.typeScheme.typerep.isError,
       searchEnvTree(cls, top.env.instTree));
   top.resolved =
     removeAllBy(
@@ -77,7 +77,7 @@ top::Context ::= cls::String t::Type
 
   production resolvedDcl::InstDclInfo = head(top.resolved);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
-  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, t);
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, new(t));
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
@@ -94,18 +94,18 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   top.contextMemberDefs = \ _ _ _ -> [];
   top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
-    [occursSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+    [occursSuperDcl(attr, new(atty), d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
-    [occursInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+    [occursInstConstraintDcl(attr, new(ntty), new(atty), tvs, sourceGrammar=g, sourceLocation=l)];
   top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
-    [occursSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+    [occursSigConstraintDcl(attr, new(ntty), new(atty), ns, sourceGrammar=g, sourceLocation=l)];
   top.contextClassName = nothing();
   
   top.resolvedOccurs = getOccursDcl(attr, ntty.typeName, top.env);
   production resolvedDcl::OccursDclInfo = head(top.resolvedOccurs);
-  resolvedDcl.givenNonterminalType = ntty;
+  resolvedDcl.givenNonterminalType = new(ntty);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
-  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, new(atty));
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
@@ -122,18 +122,18 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.contextMemberDefs = \ _ _ _ -> [];
   top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
-    [occursSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+    [occursSuperDcl(attr, new(atty), d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
-    [occursInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+    [occursInstConstraintDcl(attr, new(ntty), new(atty), tvs, sourceGrammar=g, sourceLocation=l)];
   top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
-    [occursSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+    [occursSigConstraintDcl(attr, new(ntty), new(atty), ns, sourceGrammar=g, sourceLocation=l)];
   top.contextClassName = nothing();
 
   top.resolvedOccurs = getOccursDcl(attr, ntty.typeName, top.env);
   production resolvedDcl::OccursDclInfo = head(top.resolvedOccurs);
-  resolvedDcl.givenNonterminalType = ntty;
+  resolvedDcl.givenNonterminalType = new(ntty);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
-  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, new(atty));
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
@@ -150,18 +150,18 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   top.contextMemberDefs = \ _ _ _ -> [];
   top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
-    [annoSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+    [annoSuperDcl(attr, new(atty), d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
-    [annoInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+    [annoInstConstraintDcl(attr, new(ntty), new(atty), tvs, sourceGrammar=g, sourceLocation=l)];
   top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
-    [annoSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+    [annoSigConstraintDcl(attr, new(ntty), new(atty), ns, sourceGrammar=g, sourceLocation=l)];
   top.contextClassName = nothing();
   
   top.resolvedOccurs = getOccursDcl(attr, ntty.typeName, top.env);
   production resolvedDcl::OccursDclInfo = head(top.resolvedOccurs);
-  resolvedDcl.givenNonterminalType = ntty;
+  resolvedDcl.givenNonterminalType = new(ntty);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
-  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, new(atty));
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
@@ -177,9 +177,9 @@ top::Context ::= t::Type
   top.contextSuperDefs = \ d::InstDclInfo g::String l::Location ->
     [tcInstDef(typeableSuperDcl(d, sourceGrammar=g, sourceLocation=l))];
   top.contextMemberDefs = \ tvs::[TyVar] g::String l::Location ->
-    [tcInstDef(typeableInstConstraintDcl(t, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+    [tcInstDef(typeableInstConstraintDcl(new(t), tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
-    [tcInstDef(typeableSigConstraintDcl(t, ns, sourceGrammar=g, sourceLocation=l))];
+    [tcInstDef(typeableSigConstraintDcl(new(t), ns, sourceGrammar=g, sourceLocation=l))];
   top.contextSuperOccursDefs = \ _ _ _ -> [];
   top.contextMemberOccursDefs = \ _ _ _ -> [];
   top.contextSigOccursDefs = \ _ _ _ -> [];
@@ -187,7 +187,7 @@ top::Context ::= t::Type
 
   top.resolved =
     filter(
-      \ d::InstDclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+      \ d::InstDclInfo -> !unifyDirectional(d.typeScheme.typerep, new(t)).failure && !d.typeScheme.typerep.isError,
       searchEnvTree("typeable", top.env.instTree));
 
   production resolvedDcl::InstDclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
@@ -214,9 +214,9 @@ top::Context ::= i1::Type i2::Type
 {
   top.contextSuperDefs = error("subset can't appear as superclass");
   top.contextMemberDefs = \ tvs::[TyVar] g::String l::Location ->
-    [tcInstDef(inhSubsetInstConstraintDcl(i1, i2, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+    [tcInstDef(inhSubsetInstConstraintDcl(new(i1), new(i2), tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
-    [tcInstDef(inhSubsetSigConstraintDcl(i1, i2, ns, sourceGrammar=g, sourceLocation=l))];
+    [tcInstDef(inhSubsetSigConstraintDcl(new(i1), new(i2), ns, sourceGrammar=g, sourceLocation=l))];
   top.contextSuperOccursDefs = \ _ _ _ -> [];
   top.contextMemberOccursDefs = \ _ _ _ -> [];
   top.contextSigOccursDefs = \ _ _ _ -> [];
@@ -225,8 +225,8 @@ top::Context ::= i1::Type i2::Type
   top.resolved =
     filter(
       \ d::InstDclInfo ->
-        !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
-        !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
+        !unifyDirectional(d.typeScheme.monoType, new(i1)).failure && !d.typeScheme.monoType.isError &&
+        !unifyDirectional(d.typerep2, new(i2)).failure && !d.typerep2.isError,
       searchEnvTree("subset", top.env.instTree));
 }
 
@@ -253,9 +253,11 @@ Boolean ::= a::Type b::Type
     | varType(_), varType(_) -> false
     | _, varType(_) -> true
     | appType(c1, a1), appType(c2, a2) ->
-      (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
+      (isMoreSpecific(new(c1), new(c2)) || isMoreSpecific(new(a1), new(a2))) &&
+      !(isMoreSpecific(new(c2), new(c1)) || isMoreSpecific(new(a2), new(a1)))
     | decoratedType(t1, i1), decoratedType(t2, i2) ->
-      (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
+      (isMoreSpecific(new(t1), new(t2)) || isMoreSpecific(new(i1), new(i2))) &&
+      !(isMoreSpecific(new(t2), new(t1)) || isMoreSpecific(new(i2), new(i1)))
     | _, _ -> false
     end;
 }

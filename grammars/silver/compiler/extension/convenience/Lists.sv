@@ -8,8 +8,8 @@ concrete production qNameWithTL
 top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
 {
   top.unparse = qn.unparse ++ tl.unparse;
-  top.qnwtQN = qn;
-  top.qnwtTL = tl;
+  top.qnwtQN = new(qn);
+  top.qnwtTL = new(tl);
 }
 
 {- QNames2 is needed because we would otherwise have a syntactic ambiguity with
@@ -58,14 +58,11 @@ fun makeOccursDcls AGDcl ::= ats::[QNameWithTL] nts::[QNameWithTL] =
 	then emptyAGDcl()
 	else appendAGDcl(makeOccursDclsHelp(head(ats), nts), makeOccursDcls(tail(ats), nts));
 
-function makeOccursDclsHelp
-AGDcl ::= at::QNameWithTL nts::[QNameWithTL]
-{
-  return if null(nts) 
-	 then emptyAGDcl()
-	 else appendAGDcl(attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';'),
-		 makeOccursDclsHelp(at, tail(nts)));
-}
+fun makeOccursDclsHelp AGDcl ::= at::QNameWithTL nts::[QNameWithTL] =
+  if null(nts) 
+  then emptyAGDcl()
+  else appendAGDcl(attributionDcl('attribute', at.qnwtQN, at.qnwtTL, 'occurs', 'on', head(nts).qnwtQN, head(nts).qnwtTL, ';'),
+		makeOccursDclsHelp(at, tail(nts)));
 
 
 

@@ -35,13 +35,13 @@ top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataCo
     case t of
     | consDataConstructor(h1, _, t1) ->
       consDataConstructor(
-        h, '|',
-        consDataConstructor(documentedConstructor(comment, h1), '|', t1))
+        @h, '|',
+        consDataConstructor(documentedConstructor(comment, new(h1)), '|', new(t1)))
     | oneDataConstructor(h1) ->
       consDataConstructor(
-        h, '|',
-        oneDataConstructor(documentedConstructor(comment, h1)))
-    | nilDataConstructor() -> consDataConstructor(h, '|', t)
+        @h, '|',
+        oneDataConstructor(documentedConstructor(comment, new(h1))))
+    | nilDataConstructor() -> consDataConstructor(@h, '|', @t)
     end;
 }
 
@@ -72,7 +72,7 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding constructor, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
-  forwards to item;
+  forwards to @item;
 }
 
 aspect production dataConstructor

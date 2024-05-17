@@ -152,7 +152,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
   
-  forwards to productionSignature(nilConstraint(), '=>', lhs, $2, rhs);
+  forwards to productionSignature(nilConstraint(), '=>', @lhs, $2, @rhs);
 } action {
   sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }

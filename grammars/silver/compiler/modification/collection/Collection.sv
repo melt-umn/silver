@@ -22,7 +22,7 @@ top::NameOrBOperator ::= e::Expr
 {
   top.unparse = e.unparse;
 
-  top.operation = functionOperation(e, e.translation, false);
+  top.operation = functionOperation(new(e), e.translation, false);
 
   top.errors := e.errors;
   
@@ -218,7 +218,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   q.operatorForType = te.typerep;
   top.errors <- q.errors;
  
-  forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
+  forwards to productionAttributeDcl($1, $2, @a, $4, @te, $8);
 }
 
 --- The use semantics ----------------------------------------------------------
@@ -395,8 +395,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e)
-    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e);
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, @e)
+    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, @e);
 }
 
 concrete production attrContainsBase
@@ -414,8 +414,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e)
-    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e);
+    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, @e)
+    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, @e);
 }
 
 concrete production valContainsAppend
@@ -431,8 +431,8 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   
   forwards to
     if null(val.lookupValue.dcls)
-    then errorValueDef(val, e)
-    else val.lookupValue.dcl.appendDefDispatcher(val, e);
+    then errorValueDef(val, @e)
+    else val.lookupValue.dcl.appendDefDispatcher(val, @e);
 }
 
 concrete production valContainsBase
@@ -448,7 +448,7 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   
   forwards to
     if null(val.lookupValue.dcls)
-    then errorValueDef(val, e)
-    else val.lookupValue.dcl.baseDefDispatcher(val, e);
+    then errorValueDef(val, @e)
+    else val.lookupValue.dcl.baseDefDispatcher(val, @e);
 }
 

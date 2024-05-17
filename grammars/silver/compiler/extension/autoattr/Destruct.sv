@@ -40,7 +40,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  tl)
+                  new(tl))
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
@@ -55,7 +55,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  tl)
+                  new(tl))
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
@@ -63,7 +63,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
             '>'))
       | _ -> attl
       end,
-      nt, nttl);
+      @nt, @nttl);
 }
 
 {--

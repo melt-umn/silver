@@ -274,7 +274,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 
   forwards to productionStmtAppend(
     forwardsTo($1, $2, $3, $8),
-    forwardingWith('forwarding', $4, $5, inh, $7, $8));
+    forwardingWith('forwarding', $4, $5, @inh, $7, $8));
 }
 
 concrete production forwardingWith
@@ -343,8 +343,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
     if !dl.found || !attr.found || !null(problems)
-    then errorAttributeDef(problems, dl, attr, e)
-    else attr.attrDcl.attrDefDispatcher(dl, attr, e);
+    then errorAttributeDef(problems, dl, attr, @e)
+    else attr.attrDcl.attrDefDispatcher(dl, attr, @e);
 }
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
@@ -404,10 +404,10 @@ top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QName
     attributeDef(
       transAttrDefLHS(
         case dl of
-        | concreteDefLHS(q) -> q
+        | concreteDefLHS(q) -> new(q)
         | _ -> error("Unexpected concrete DefLHS")
-        end, transAttr),
-      $4, attr, $6, e, $8);
+        end, @transAttr),
+      $4, @attr, $6, @e, $8);
 }
 
 concrete production concreteDefLHS
@@ -605,8 +605,8 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.defs := [];
   
   forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, e)
-              else val.lookupValue.dcl.defDispatcher(val, e);
+              then errorValueDef(val, @e)
+              else val.lookupValue.dcl.defDispatcher(val, @e);
 }
 
 dispatch ValueDef = ProductionStmt ::= @val::QName e::Expr;

@@ -15,7 +15,7 @@ top::ValueDclInfo ::= fn::String ty::Type id::Integer paramIndex::Integer
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
 
   top.lambdaParamIndex = paramIndex;
   top.lambdaId = id;

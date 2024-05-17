@@ -246,7 +246,7 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
 {
-  local ne::Expr = e;
+  local ne::Expr = new(e);
   ne.env = e.env;
   ne.frame = top.frame;
   ne.compiledGrammars = top.compiledGrammars;
@@ -279,9 +279,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.mtyperep = e.mtyperep;
   top.patternType = prod_type.outputType;
 
-  top.returnify = prodPatternNormal(qn, ns,
-                                    Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
-  top.monadRewritten = prodPatternNormal(qn, ns, e.monadRewritten);
+  top.returnify = prodPatternNormal(qn, new(ns),
+                                    Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
+  top.monadRewritten = prodPatternNormal(qn, new(ns), e.monadRewritten);
 }
 
 aspect production prodPatternGadt
@@ -296,9 +296,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.mtyperep = e.mtyperep;
   top.patternType = prod_type.outputType;
 
-  top.returnify = prodPatternGadt(qn, ns,
-                                  Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
-  top.monadRewritten = prodPatternGadt(qn, ns, e.monadRewritten);
+  top.returnify = prodPatternGadt(qn, new(ns),
+                                  Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
+  top.monadRewritten = prodPatternGadt(qn, new(ns), e.monadRewritten);
 }
 
 
@@ -316,7 +316,7 @@ top::PrimPattern ::= i::Int_t arr::Arrow_kwd e::Expr
   top.patternType = intType();
 
   top.returnify = integerPattern(i, terminal(Arrow_kwd, "->"),
-                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+                                 Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
   top.monadRewritten = integerPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production floatPattern
@@ -332,7 +332,7 @@ top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
   top.patternType = floatType();
 
   top.returnify = floatPattern(f, terminal(Arrow_kwd, "->"),
-                               Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+                               Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
   top.monadRewritten = floatPattern(f, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production stringPattern
@@ -348,7 +348,7 @@ top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
   top.patternType = stringType();
 
   top.returnify = stringPattern(i, terminal(Arrow_kwd, "->"),
-                                Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+                                Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
   top.monadRewritten = stringPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production booleanPattern
@@ -364,7 +364,7 @@ top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
   top.patternType = stringType();
 
   top.returnify = booleanPattern(i, terminal(Arrow_kwd, "->"),
-                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+                                 Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
   top.monadRewritten = booleanPattern(i, terminal(Arrow_kwd, "->"), e.monadRewritten);
 }
 aspect production nilPattern
@@ -380,7 +380,7 @@ top::PrimPattern ::= e::Expr
   nondecorated local attribute thisListType::Type = listType(freshType());
   top.patternType = thisListType;
 
-  top.returnify = nilPattern(Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
+  top.returnify = nilPattern(Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
   top.monadRewritten = nilPattern(e.monadRewritten);
 }
 aspect production conslstPattern
@@ -396,8 +396,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   nondecorated local elemType::Type = freshType();
   top.patternType = listType(elemType);
 
-  top.returnify = conslstPattern(h, t, Silver_Expr { $Expr{top.returnFun}($Expr{e}) });
-  top.monadRewritten = conslstPattern(h, t, e.monadRewritten);
+  top.returnify = conslstPattern(new(h), new(t), Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
+  top.monadRewritten = conslstPattern(new(h), new(t), e.monadRewritten);
 }
 
 

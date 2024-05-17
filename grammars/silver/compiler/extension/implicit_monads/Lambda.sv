@@ -11,7 +11,7 @@ top::Expr ::= params::LambdaRHS e::Expr
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
-  top.monadRewritten = lambdap(params, e.monadRewritten);
+  top.monadRewritten = lambdap(new(params), e.monadRewritten);
 }
 
 

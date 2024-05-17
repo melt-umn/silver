@@ -90,7 +90,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
   ag.errors := if null(localErrors) then forward.errors else localErrors;
 
-  forwards to appendAGDcl(absProdCS, aspProdCS);
+  forwards to appendAGDcl(@absProdCS, @aspProdCS);
 
 {-
   local absProdCS :: AGDcl = asAGDcl (
@@ -145,10 +145,10 @@ ag::AGDcl ::= kwd::'equalityTest'
           nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test")))),
         '::=', productionRHSNil()),
       productionBody('{', foldl(productionStmtsSnoc(_, _), productionStmtsNil(), [
-        localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';'),
-        valueEq(qNameId(valueref), '=', value, ';'),
-        localAttributeDcl('local', 'attribute', expectedref, '::', valueType, ';'),
-        valueEq(qNameId(expectedref), '=', expected, ';'),
+        localAttributeDcl('local', 'attribute', valueref, '::', new(valueType), ';'),
+        valueEq(qNameId(valueref), '=', new(value), ';'),
+        localAttributeDcl('local', 'attribute', expectedref, '::', new(valueType), ';'),
+        valueEq(qNameId(expectedref), '=', new(expected), ';'),
         attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
           foldStringExprs([
             strCnst("Test at " ++ getParsedOriginLocationOrFallback(ag).unparse ++ " failed.\nChecking that expression\n   " ++
@@ -171,7 +171,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 -}
 
   local aspProdCS::AGDcl =
-    aspectProductionDcl('aspect', 'production', qNameId(testSuite),
+    aspectProductionDcl('aspect', 'production', qNameId(@testSuite),
       aspectProductionSignature(
         aspectProductionLHSId(tref),
           '::=', aspectRHSElemNil()),

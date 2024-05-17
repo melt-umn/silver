@@ -23,7 +23,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   -- TODO: We want to define our own defs here but can't forward to defsAGDcl because collections define different translation.
   -- Not sure about the best way to refactor this.
   top.defs :=
-    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))];
+    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, new(e), q.operation, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))];
 
   top.errors <- e.errors;
   
@@ -58,7 +58,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   
   forwards to
     collectionAttributeDclSyn(
-      'synthesized', 'attribute', a, tl, '::', te, 'with', q, ';');
+      'synthesized', 'attribute', @a, @tl, '::', @te, 'with', @q, ';');
 }
 
 concrete production tcMonoidAttributeDcl
@@ -67,7 +67,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
   forwards to
     monoidAttributeDcl(
-      $1, $2, a, tl, $5, te, 'with',
+      $1, $2, @a, @tl, $5, @te, 'with',
       baseExpr(qName("silver:core:mempty")), ',',
       exprOperator(baseExpr(qName("silver:core:append"))), $7);
 }
@@ -77,7 +77,7 @@ synthesized attribute appendProd :: (Expr ::= Expr Expr) occurs on Operation;
 aspect production functionOperation
 top::Operation ::= e::Expr _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr -> mkFunctionInvocation(e, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr -> mkFunctionInvocation(new(e), [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 

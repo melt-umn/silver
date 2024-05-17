@@ -7,7 +7,7 @@ top::AGDcl ::= 'partial' 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';
 {
   top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
   e.givenGenName = a.name;
-  forwards to strategyAttributeDcl(false, a, [], [], e.ast);
+  forwards to strategyAttributeDcl(false, @a, [], [], e.ast);
 }
 
 concrete production totalStrategyAttributeDcl
@@ -15,7 +15,7 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';'
 {
   top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
   e.givenGenName = a.name;
-  forwards to strategyAttributeDcl(true, a, [], [], e.ast);
+  forwards to strategyAttributeDcl(true, @a, [], [], e.ast);
 }
 
 closed tracked nonterminal StrategyExpr_c with givenGenName, unparse, ast<StrategyExpr>;
@@ -73,18 +73,18 @@ concrete productions top::StrategyExpr_c
 | 'rec' n::Name Arrow_t s::StrategyExpr_c
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
-  top.ast = recComb(n, s.ast, genName=top.givenGenName);
+  top.ast = recComb(new(n), s.ast, genName=top.givenGenName);
   s.givenGenName = top.givenGenName;
 }
 | 'rule' 'on' id::Name '::' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ id.unparse ++ "::" ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(id, ty, ml, genName=top.givenGenName);
+  top.ast = rewriteRule(new(id), new(ty), new(ml), genName=top.givenGenName);
 }
 | 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(name("top"), ty, ml, genName=top.givenGenName);
+  top.ast = rewriteRule(name("top"), new(ty), new(ml), genName=top.givenGenName);
 }
 | id::StrategyQName
 {

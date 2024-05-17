@@ -82,7 +82,7 @@ top::Expr ::= '(' e::Expr ')'
 {
   top.unparse = "(" ++ e.unparse ++ ")";
   
-  forwards to e;
+  forwards to @e;
 }
 
 concrete production baseExpr
@@ -444,7 +444,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
-  q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
+  q.attrFor = if eTy.isDecorated then eTy.decoratedType else new(eTy);
   
   -- Note: we're first consulting the TYPE of the LHS.
   forwards to eTy.accessHandler(e, q);
@@ -657,13 +657,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
-  production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
+  production ntType::Type = if eType.isDecorated then eType.decoratedType else @eType;
 
   -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
-  top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
+  top.typerep = decoratedType(new(ntType), inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
-  inh.decoratingnt = ntType;
+  inh.decoratingnt = new(ntType);
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 
@@ -932,7 +932,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
         silver:core:getParsedOriginLocation(silver:core:ambientOrigin()))
     };
 
-  forwards to terminalConstructor($1, $2, t, $4, e, ',', locExpr, $6);
+  forwards to terminalConstructor($1, $2, @t, $4, @e, ',', locExpr, $6);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.

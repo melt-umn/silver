@@ -13,7 +13,7 @@ abstract production warnMissingInhFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnMissingInh = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -684,7 +684,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], new(i), top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -795,7 +795,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], new(i), top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -910,14 +910,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(scrutineeType, top.env), set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinRefSet(new(scrutineeType), top.env), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
     && top.config.warnMissingInh
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
+    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(new(scrutineeType)) ++ " has transitive dependencies on " ++ implode(", ", diff))]
     else [];
 
 }
@@ -940,7 +940,7 @@ top::VarBinder ::= n::Name
     if top.config.warnMissingInh
     && isDecorable(top.bindingType, top.env)
     then if refSet.isJust then []
-         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(new(finalTy))}, as the reference set is not bounded.")]
     else [];
 
   -- fName is our invented vertex name for the pattern variable
@@ -976,10 +976,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 
   -- The logic here mirrors the reference case in synDecoratedAccessHandler
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
-    inhDepsForSynOnType(attr, ntty, myFlow, top.frame.signature, top.env);
+    inhDepsForSynOnType(attr, new(ntty), myFlow, top.frame.signature, top.env);
   local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
 
-  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], inhs, top.env);
+  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], new(inhs), top.env);
   local diff :: [String] = set:toList(set:removeAll(acceptable.1, inhDeps));
 
   top.contextErrors <-
@@ -993,10 +993,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
         then if deps.1.isJust then []  -- We have a bound on the inh deps, and they are all present
         -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
         else if null(acceptable.2)
-        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
-        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
+        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(new(top))} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
+        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(new(top))} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
       -- We didn't find the inh deps
-      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
+      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(new(top))} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
    else [];
 }
 

@@ -20,7 +20,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
   
   nondecorated local regex::Regex =
     case getTypeDcl(te.typerep.typeName, top.env) of
-    | termDcl(_, r, _, _) :: _ -> r
+    | termDcl(_, r, _, _) :: _ -> new(r)
     | _ -> empty()
     end;
   local genRepeatProb::Float =
@@ -38,7 +38,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
           starProb = $Expr{floatConst(terminal(Float_t, toString(genRepeatProb)))};
           altCountIn = 0;
         }.genArbMatch
-      in \ loc::silver:core:Location -> silver:core:map(\ lexeme::String -> terminal($TypeExpr{te}, lexeme, loc), genLexeme)
+      in \ loc::silver:core:Location -> silver:core:map(\ lexeme::String -> terminal($TypeExpr{@te}, lexeme, loc), genLexeme)
       end
     };
 }
@@ -47,8 +47,5 @@ concrete production genArbTerminalExpr
 top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' loc::Expr ')'
 {
   top.unparse = s"genArbTerminal(${te.unparse}, ${loc.unparse})";
-  forwards to
-    mkFunctionInvocation(
-      genArbTerminalNoLocExpr('genArbTerminal', '(', te, ',', '_', ')'),
-      [loc]);
+  forwards to Silver_Expr { genArbTerminal($TypeExpr{@te}, _)($Expr{@loc}) };
 }

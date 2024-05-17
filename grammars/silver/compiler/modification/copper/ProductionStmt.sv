@@ -229,7 +229,7 @@ concrete production ifStmt
 top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
 {
   top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse;
-  forwards to ifElseStmt($1, $2, condition, $4, th, 'else', blockStmt('{', productionStmtsNil(), '}'));
+  forwards to ifElseStmt($1, $2, @condition, $4, @th, 'else', blockStmt('{', productionStmtsNil(), '}'));
 }
 
 

@@ -101,13 +101,13 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 concrete production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(), ')');
+  forwards to prodAppPattern_named(@prod, '(', @ps, ',', namedPatternList_nil(), ')');
 }
 
 concrete production propAppPattern_onlyNamed
 top::Pattern ::= prod::QName '(' nps::NamedPatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', patternList_nil(), ',', nps, ')');
+  forwards to prodAppPattern_named(@prod, '(', patternList_nil(), ',', @nps, ')');
 }
 
 {--
@@ -204,7 +204,7 @@ concrete production nestedPatterns
 top::Pattern ::= '(' p::Pattern ')'
 {
   top.unparse = s"(${p.unparse})";
-  forwards to p;
+  forwards to @p;
 }
 
 --------------------------------------------------------------------------------
@@ -326,12 +326,12 @@ aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.asListPattern = 
-    consListPattern(p, '::', nilListPattern('[', ']'));
+    consListPattern(new(p), '::', nilListPattern('[', ']'));
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.asListPattern = consListPattern(p, '::', ps1.asListPattern);
+  top.asListPattern = consListPattern(new(p), '::', ps1.asListPattern);
 }
 aspect production patternList_nil
 top::PatternList ::=

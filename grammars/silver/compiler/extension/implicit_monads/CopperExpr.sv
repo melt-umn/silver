@@ -12,9 +12,9 @@ top::Expr ::= @q::QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(q)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(q);
+  top.monadRewritten = baseExpr(new(q));
 }
 
 aspect production pluckTerminalReference
@@ -24,9 +24,9 @@ top::Expr ::= @q::QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = terminalIdType();
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(q)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(q);
+  top.monadRewritten = baseExpr(new(q));
 }
 
 aspect production terminalIdReference
@@ -36,9 +36,9 @@ top::Expr ::= @q::QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = terminalIdType();
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(q)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(q);
+  top.monadRewritten = baseExpr(new(q));
 }
 
 aspect production parserAttributeReference
@@ -48,9 +48,9 @@ top::Expr ::= @q::QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(q)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(q);
+  top.monadRewritten = baseExpr(new(q));
 }
 
 aspect production termAttrValueReference
@@ -60,7 +60,7 @@ top::Expr ::= @q::QName
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(q)]
+                     then [baseExpr(new(q))]
                      else [];
-  top.monadRewritten = baseExpr(q);
+  top.monadRewritten = baseExpr(new(q));
 }

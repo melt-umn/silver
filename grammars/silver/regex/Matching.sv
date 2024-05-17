@@ -86,7 +86,7 @@ top::Regex ::= r1::Regex r2::Regex
   top.nullable = r1.nullable && r2.nullable;
   top.deriv =
     alt(
-      seq(r1.deriv, r2),
+      seq(r1.deriv, new(r2)),
       if r1.nullable then r2.deriv else empty());
   r1.wrt = top.wrt;
   r2.wrt = top.wrt;
@@ -105,7 +105,7 @@ aspect production star
 top::Regex ::= r::Regex
 {
   top.nullable = true;
-  top.deriv = seq(r.deriv, top);
+  top.deriv = seq(r.deriv, new(top));
   r.wrt = top.wrt;
 }
 

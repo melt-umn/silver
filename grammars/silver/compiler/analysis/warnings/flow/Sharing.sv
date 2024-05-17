@@ -11,7 +11,7 @@ abstract production warnSharingFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnSharing = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]

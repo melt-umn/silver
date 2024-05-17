@@ -44,7 +44,7 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
-  top.qNameType = qNameTypeCons(id, ':', qn.qNameType);
+  top.qNameType = qNameTypeCons(new(id), ':', qn.qNameType);
   top.nameLoc = qn.nameLoc;
   
   top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name);
@@ -238,7 +238,7 @@ top::QNameAttrOccur ::= at::QName
   requiredContexts.env = top.env;
   
   top.typerep = if top.found then determineAttributeType(head(dcls), top.attrFor) else errorType();
-  top.dcl = resolvedDcl;
+  top.dcl = new(resolvedDcl);
   top.attrDcl = if top.found then head(attrs) else
     -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
     if at.lookupAttribute.found then at.lookupAttribute.dcl else

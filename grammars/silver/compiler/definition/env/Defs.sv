@@ -42,8 +42,8 @@ top::Defs ::=
   top.prodDclList = [];
   top.dispatchDclList = [];
   
-  top.filterOnly = top;
-  top.filterHiding = top;
+  top.filterOnly = new(top);
+  top.filterHiding = new(top);
 }
 
 abstract production consDefs 
@@ -61,8 +61,8 @@ top::Defs ::= e1::Def e2::Defs
   top.prodDclList = e1.prodDclList ++ e2.prodDclList;
   top.dispatchDclList = e1.dispatchDclList ++ e2.dispatchDclList;
 
-  top.filterOnly = if e1.filterIncludeOnly then consDefs(e1, e2.filterOnly) else e2.filterOnly;
-  top.filterHiding = if e1.filterIncludeHiding then consDefs(e1, e2.filterHiding) else e2.filterHiding;
+  top.filterOnly = if e1.filterIncludeOnly then consDefs(new(e1), e2.filterOnly) else e2.filterOnly;
+  top.filterHiding = if e1.filterIncludeHiding then consDefs(new(e1), e2.filterHiding) else e2.filterHiding;
 }
 
 --------------------------------------------------------------------------------

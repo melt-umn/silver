@@ -152,8 +152,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.cstNormalize :=
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
-       else [ syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds),
-                exportedProds, exportedLayoutTerms, modifiers,
+       else [ syntaxNonterminal(new(t), foldr(consSyntax, nilSyntax(), myProds),
+                exportedProds, exportedLayoutTerms, new(modifiers),
                 location=top.location, sourceGrammar=top.sourceGrammar)
             ]
     end;
@@ -197,7 +197,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.dominatingTerminalContribs :=
     map(pair(fst=n, snd=_), flatMap((.memberTerminals), modifiers.submits_)) ++
     map(pair(fst=_, snd=top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
-  top.terminalRegex = regex;
+  top.terminalRegex = new(regex);
 
   -- left(terminal name) or right(string prefix)
   production pfx::[String] = searchEnvTree(n, top.prefixesForTerminals);
@@ -208,13 +208,13 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.cstNormalize :=
     case modifiers.prefixSeperatorToApply of
     | just(sep) ->
-        [ syntaxTerminal(n, seq(regex, regexLiteral(sep)), modifiers,
+        [ syntaxTerminal(n, seq(new(regex), regexLiteral(sep)), new(modifiers),
             location=top.location, sourceGrammar=top.sourceGrammar)
         ]
     | nothing() -> [top]
     end;
 
-  local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
+  local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(new(regex))), modifiers.prettyName);
   top.prettyNamesAccum := [(prettyName, n)];
   local disambiguatedPrettyName :: String =
     case length(tm:lookup(prettyName, top.prettyNames)) of

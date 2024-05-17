@@ -17,7 +17,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
   
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
@@ -73,7 +73,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
   
   top.refDispatcher = termAttrValueReference;
   top.defDispatcher = termAttrValueValueDef;
@@ -90,7 +90,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
   
   top.refDispatcher = actionChildReference;
   top.defDispatcher = errorValueDef;
@@ -107,7 +107,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
   
   -- TODO: use specialized ones that give better errors messages!
   top.refDispatcher = parserAttributeReference;

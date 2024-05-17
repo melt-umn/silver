@@ -78,7 +78,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
     zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
   top.isEqual =
     top.compareTo.contexts == [] &&
-    top.compareTo.typerep == performRenaming(ty, eqSub);
+    top.compareTo.typerep == performRenaming(new(ty), eqSub);
 }
 
 aspect production constraintType
@@ -96,7 +96,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
   top.isEqual =
     top.compareTo.contexts == map(performContextRenaming(_, eqSub), contexts) &&
-    top.compareTo.typerep == performRenaming(ty, eqSub);
+    top.compareTo.typerep == performRenaming(new(ty), eqSub);
 }
 
 attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asDecoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
@@ -110,7 +110,7 @@ top::Type ::=
   top.outputType = errorType();
   top.namedTypes = [];
   top.arity = 0;
-  top.baseType = top;
+  top.baseType = new(top);
   top.argTypes = [];
   top.inhSetMembers = [];
   
@@ -142,7 +142,7 @@ top::Type ::= tv::TyVar
   top.freeSkolemVars <- [tv];
 
   -- Skolems with occurs-on contexts act like nonterminals, so use that behavior in unification
-  top.asDecoratedType = decoratedType(top, freshInhSet());
+  top.asDecoratedType = decoratedType(new(top), freshInhSet());
   top.unifyInstanceNonterminal = emptySubst();
   top.unifyInstanceDecorable = emptySubst();
 }
@@ -155,7 +155,7 @@ top::Type ::= c::Type a::Type
   top.isNonterminal = c.isNonterminal;
   top.isData = c.isData;
   top.isTracked = c.isTracked;
-  top.asDecoratedType = decoratedType(top, freshInhSet());  -- c.baseType should be a nonterminal or skolem
+  top.asDecoratedType = decoratedType(new(top), freshInhSet());  -- c.baseType should be a nonterminal or skolem
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
   top.unifyInstanceDecorable = c.unifyInstanceDecorable;
   top.arity = c.arity;
@@ -207,7 +207,7 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
   top.isNonterminal = true;
   top.isData = data;
   top.isTracked = tracked;
-  top.asDecoratedType = if data then top else decoratedType(top, freshInhSet());
+  top.asDecoratedType = if data then new(top) else decoratedType(new(top), freshInhSet());
   top.unifyInstanceNonterminal = emptySubst();
   top.unifyInstanceDecorable = if data then errorSubst("data") else emptySubst();
 }
@@ -228,7 +228,7 @@ aspect production decoratedType
 top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
-  top.decoratedType = te;
+  top.decoratedType = new(te);
   top.inhSetMembers = i.inhSetMembers;
   top.unifyInstanceDecorated = emptySubst();
 }

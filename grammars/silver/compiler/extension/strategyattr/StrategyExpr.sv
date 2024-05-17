@@ -32,6 +32,7 @@ monoid attribute totalRefs::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute containsTraversal::Boolean with false, ||;
 
+-- TODO: Merge these into a translation attribute
 synthesized attribute partialTranslation::Expr; -- Maybe<a> on a
 synthesized attribute totalTranslation::Expr; -- a on a, can raise a runtime error if demanded on partial strategy expression
 
@@ -696,7 +697,7 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
 
   -- Decorate s assuming that the bound strategy is total, in order to check for totality.
   -- See Fig 4 of the strategy attributes paper (https://www-users.cse.umn.edu/~evw/pubs/kramer20sle/kramer20sle.pdf)
-  local s2::StrategyExpr = s;
+  local s2::StrategyExpr = new(s);
   s2.recVarTotalEnv = (n.name, true) :: s.recVarTotalEnv;
   s2.recVarTotalNoEnvEnv = (n.name, true) :: s.recVarTotalNoEnvEnv;
   s2.env = s.env;
@@ -742,7 +743,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [hackLHSExprType(ty.typerep.asDecoratedType)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
-      decorate ml with {
+      decorate @ml with {
         env = top.env;
         config = top.config;
         matchRulePatternSize = 1;
@@ -790,7 +791,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     then res
     else Silver_Expr {
       -- TODO: Data NTs shouldn't be decorated.
-      let $Name{id}::Decorated $TypeExpr{ty} = $name{top.frame.signature.outputElement.elementName}
+      let $Name{new(id)}::Decorated $TypeExpr{new(ty)} = $name{top.frame.signature.outputElement.elementName}
       in $Expr{res}
       end
     };
@@ -800,7 +801,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
 abstract production hackLHSExprType
 top::Expr ::= t::Type
 {
-  top.typerep = t;
+  top.typerep = new(t);
   top.flowVertexInfo = just(lhsVertexType);
   forwards to errorExpr([]);
 }
@@ -830,7 +831,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{e}) });
+      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{new(e)}) });
 }
 
 aspect production matchRuleWhen_c
@@ -838,7 +839,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just((cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) });
+      pt.patternList, just((cond, nothing())), Silver_Expr { silver:core:just($Expr{new(e)}) });
 }
 
 aspect production matchRuleWhenMatches_c
@@ -846,7 +847,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   top.translation =
     matchRule(
-      pt.patternList, just((cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) });
+      pt.patternList, just((cond, just(p))), Silver_Expr { silver:core:just($Expr{new(e)}) });
 }
 
 aspect default production
@@ -882,8 +883,8 @@ top::StrategyExpr ::= id::QName
     else if !null(id.lookupAttribute.errors)
     then errorRef(id.lookupAttribute.errors, id, genName=top.genName)
     else if attrIsTotal(top.env, id.name)
-    then totalRef(qNameAttrOccur(id), genName=top.genName)
-    else partialRef(qNameAttrOccur(id), genName=top.genName);
+    then totalRef(qNameAttrOccur(@id), genName=top.genName)
+    else partialRef(qNameAttrOccur(@id), genName=top.genName);
 }
 abstract production errorRef
 top::StrategyExpr ::= msg::[Message] id::Decorated QName
@@ -948,7 +949,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   top.partialTranslation =
     if attr.matchesFrame
-    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr} }
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{new(attr)} }
     else Silver_Expr { silver:core:nothing() };
 }
 abstract production totalRef
@@ -982,7 +983,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
-  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr} };
+  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{new(attr)} };
 }
 
 -- The result of performing an inlining optimization
@@ -1010,7 +1011,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.matchesFrame := top.found &&
     case top.typerep of
-    | appType(nonterminalType("silver:core:Maybe", _, _, _), t) -> !unify(top.attrFor, t).failure
+    | appType(nonterminalType("silver:core:Maybe", _, _, _), t) -> !unify(top.attrFor, new(t)).failure
     | t -> !unify(top.attrFor, t).failure
     end;
 }

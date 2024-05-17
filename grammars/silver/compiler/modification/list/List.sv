@@ -22,7 +22,7 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
   forwards to
     appTypeExpr(
       listCtrTypeExpr('[', ']'),
-      bTypeList('<', typeListSingle(te), '>'));
+      bTypeList('<', typeListSingle(@te), '>'));
 }
 
 concrete production listCtrTypeExpr
@@ -74,6 +74,7 @@ top::Expr ::= '[' es::Exprs ']'
   forwards to es.listtrans;
 }
 
+-- TODO: This should probably be a translation attribute (and define a specialized Exprs here)
 synthesized attribute listtrans :: Expr occurs on Exprs;
 
 aspect production exprsEmpty
@@ -85,11 +86,11 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = consListOp(e, '::', emptyList('[',']'));
+  top.listtrans = consListOp(new(e), '::', emptyList('[',']'));
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = consListOp(e1, '::', e2.listtrans);
+  top.listtrans = consListOp(new(e1), '::', e2.listtrans);
 }

@@ -9,7 +9,7 @@ top::AGDcl ::= 'derive' tcs::NameList 'on' nts::NameList ';'
 {
   top.unparse = s"derive ${tcs.unparse} on ${nts.unparse};";
   
-  forwards to deriveTCsOnNTListDcl(tcs, nts);
+  forwards to deriveTCsOnNTListDcl(@tcs, @nts);
 }
 
 production deriveTCsOnNTListDcl
@@ -19,11 +19,11 @@ top::AGDcl ::= tcs::NameList nts::NameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> deriveTCsOnOneNTDcl(tcs, n)
+    | nameListOne(n) -> deriveTCsOnOneNTDcl(@tcs, new(n))
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        deriveTCsOnOneNTDcl(tcs, n),
-        deriveTCsOnNTListDcl(tcs, rest))
+        deriveTCsOnOneNTDcl(@tcs, new(n)),
+        deriveTCsOnNTListDcl(new(tcs), new(rest)))
     end;
 }
 
@@ -34,11 +34,11 @@ top::AGDcl ::= tcs::NameList nt::QName
   
   forwards to
     case tcs of
-    | nameListOne(tc) -> deriveDcl(tc, nt)
+    | nameListOne(tc) -> deriveDcl(new(tc), @nt)
     | nameListCons(tc, _, rest) ->
       appendAGDcl(
-        deriveDcl(tc, nt),
-        deriveTCsOnOneNTDcl(rest, nt))
+        deriveDcl(new(tc), @nt),
+        deriveTCsOnOneNTDcl(new(rest), new(nt)))
     end;
 }
 

@@ -8,7 +8,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.merrors := la.merrors ++ ne.merrors;
 
   --We needed to provide our own environment.
-  local ne::Expr = e;
+  local ne::Expr = new(e);
   ne.config = top.config;
   ne.grammarName = top.grammarName;
   ne.compiledGrammars = top.compiledGrammars;
@@ -124,9 +124,9 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
-                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
+                     then assignExpr(new(id), '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
                                      '=', e.monadRewritten)
-                     else assignExpr(id, '::', t, '=', e.monadRewritten);
+                     else assignExpr(new(id), '::', new(t), '=', e.monadRewritten);
 }
 
 

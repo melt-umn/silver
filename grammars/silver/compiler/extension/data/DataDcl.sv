@@ -5,12 +5,12 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
 {
   top.unparse = s"data ${id.unparse}${tl.unparse} = ${ctors.unparse};";
   ctors.ntName = id.name;
-  ctors.ntTypeArgs = tl;
+  ctors.ntTypeArgs = new(tl);
   forwards to appendAGDcl(
     nonterminalDcl(
       dataNTQualifier($1, nilNTQualifier()),
-      'nonterminal', id, tl, nonterminalModifiersNone(), ';'),
-    ctors.ctorDcls);
+      'nonterminal', @id, @tl, nonterminalModifiersNone(), ';'),
+    @ctors.ctorDcls);
 }
 
 concrete production dataDclWith
@@ -18,15 +18,15 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
 {
   top.unparse = s"data ${id.unparse}${tl.unparse} = ${ctors.unparse};";
   ctors.ntName = id.name;
-  ctors.ntTypeArgs = tl;
+  ctors.ntTypeArgs = new(tl);
   forwards to appendAGDcl(
     nonterminalWithDcl(
       dataNTQualifier($1, nilNTQualifier()),
-      'nonterminal', id, tl, nonterminalModifiersNone(), 'with', attrs, ';'),
-    ctors.ctorDcls);
+      'nonterminal', @id, @tl, nonterminalModifiersNone(), 'with', @attrs, ';'),
+    @ctors.ctorDcls);
 }
 
-synthesized attribute ctorDcls::AGDcl;
+translation attribute ctorDcls::AGDcl;
 inherited attribute ntName::String;
 inherited attribute ntTypeArgs::BracketedOptTypeExprs;
 
@@ -39,14 +39,14 @@ concrete production consDataConstructor
 top::DataConstructors ::= h::DataConstructor '|' t::DataConstructors
 {
   top.unparse = s"${h.unparse} | ${t.unparse}";
-  top.ctorDcls = appendAGDcl(h.ctorDcls, t.ctorDcls);
+  top.ctorDcls = appendAGDcl(@h.ctorDcls, @t.ctorDcls);
 }
 
 concrete production oneDataConstructor
 top::DataConstructors ::= h::DataConstructor
 {
   top.unparse = s"${h.unparse}";
-  top.ctorDcls = h.ctorDcls;
+  top.ctorDcls = @h.ctorDcls;
 }
 
 concrete production nilDataConstructor
@@ -70,11 +70,11 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
   nondecorated local ntType::TypeExpr =
     case top.ntTypeArgs of
     | botlNone() -> ntBaseType
-    | botlSome(btl) -> appTypeExpr(ntBaseType, btl)
+    | botlSome(btl) -> appTypeExpr(ntBaseType, new(btl))
     end;
   top.ctorDcls = Silver_AGDcl {
-    abstract production $Name{id}
-    top::$TypeExpr{ntType} ::= $ProductionRHS{rhs}
+    abstract production $Name{@id}
+    top::$TypeExpr{ntType} ::= $ProductionRHS{@rhs}
     {}
   };
 }

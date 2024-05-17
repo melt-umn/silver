@@ -81,7 +81,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
                     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];
 
-    forwards to dcl;
+    forwards to @dcl;
 }
 
 @{-

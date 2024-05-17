@@ -71,7 +71,7 @@ aspect production negChars
 top::Regex ::= r::Regex
 {
   -- Generate any ASCII char that doesn't match r
-  production validAsciiChars::[String] = filter(\ c::String -> !(c =~ r), asciiChars);
+  production validAsciiChars::[String] = filter(\ c::String -> !(c =~ new(r)), asciiChars);
   top.genArbMatch = head(drop(randomRange(0, length(validAsciiChars) - 1), validAsciiChars));
   top.altCount = top.altCountIn + length(validAsciiChars);
   r.altCountIn = 0;

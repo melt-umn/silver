@@ -46,7 +46,7 @@ top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
-  forwards to matchPrimitive(e, t, pr, f);
+  forwards to matchPrimitive(@e, @t, @pr, @f);
 }
 abstract production matchPrimitive
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
@@ -65,7 +65,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
       if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
       then decorateExprWithEmpty('decorate', @e, 'with', '{', '}')
       else @e,
-      t, pr, f);
+      @t, @pr, @f);
 }
 
 {--
@@ -105,7 +105,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   errCheck2.downSubst = f.upSubst;
   top.upSubst = errCheck2.upSubst;
   
-  pr.scrutineeType = scrutineeType;
+  pr.scrutineeType = new(scrutineeType);
   pr.returnType = t.typerep;
 
   e.isRoot = false;
@@ -116,7 +116,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of (x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
-  local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst);
+  local scrutineeFinalType :: Type = performSubstitution(new(scrutineeType), top.finalSubst);
   local scrutineeTransType :: String = scrutineeFinalType.transType;
   
   top.translation = 
@@ -194,8 +194,8 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   -- the code. After it works, perhaps these can be merged into one non-forwarding
   -- production, once the code is understood fully.
   forwards to if isGadt
-              then prodPatternGadt(qn, ns, e)
-              else prodPatternNormal(qn, ns, e);
+              then prodPatternGadt(qn, @ns, @e)
+              else prodPatternNormal(qn, @ns, @e);
 }
 abstract production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
@@ -254,7 +254,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
-  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
+  errCheck1 = check(@expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [errFromOrigin(top, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -341,7 +341,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
+  errCheck1 = check(@expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [errFromOrigin(top, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -359,7 +359,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.finalSubst = top.finalSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, expectedScrutineeType));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, new(expectedScrutineeType)));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....

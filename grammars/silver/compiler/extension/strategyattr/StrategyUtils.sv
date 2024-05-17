@@ -28,7 +28,7 @@ top::StrategyExpr ::= s::StrategyExpr
 {
   forwards to
     Silver_StrategyExpr (top.genName) {
-      $StrategyExpr{s} <+ id
+      $StrategyExpr{@s} <+ id
     };
 }
 
@@ -38,7 +38,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_repeat_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> try($StrategyExpr{s} <* $strategyQName{recVarName})
+      rec $name{recVarName} -> try($StrategyExpr{@s} <* $strategyQName{recVarName})
     };
 }
 
@@ -48,7 +48,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_reduce_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      repeat(rec $name{recVarName} -> some($strategyQName{recVarName}) <+ $StrategyExpr{s})
+      repeat(rec $name{recVarName} -> some($strategyQName{recVarName}) <+ $StrategyExpr{@s})
     };
 }
 
@@ -58,7 +58,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_bottomUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> all($strategyQName{recVarName}) <* $StrategyExpr{s}
+      rec $name{recVarName} -> all($strategyQName{recVarName}) <* $StrategyExpr{@s}
     };
 }
 
@@ -68,7 +68,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_topDown_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s} <* all($strategyQName{recVarName})
+      rec $name{recVarName} -> $StrategyExpr{@s} <* all($strategyQName{recVarName})
     };
 }
 
@@ -78,7 +78,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   local recVarName::String = top.genName ++ "_downUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s1} <* all($strategyQName{recVarName}) <* $StrategyExpr{s2}
+      rec $name{recVarName} -> $StrategyExpr{@s1} <* all($strategyQName{recVarName}) <* $StrategyExpr{@s2}
     };
 }
 
@@ -88,7 +88,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_allBottomUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> all($strategyQName{recVarName}) <+ $StrategyExpr{s}
+      rec $name{recVarName} -> all($strategyQName{recVarName}) <+ $StrategyExpr{@s}
     };
 }
 
@@ -98,7 +98,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_allTopDown_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s} <+ all($strategyQName{recVarName})
+      rec $name{recVarName} -> $StrategyExpr{@s} <+ all($strategyQName{recVarName})
     };
 }
 
@@ -108,7 +108,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   local recVarName::String = top.genName ++ "_allDownUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s1} <+ all($strategyQName{recVarName}) <+ $StrategyExpr{s2}
+      rec $name{recVarName} -> $StrategyExpr{@s1} <+ all($strategyQName{recVarName}) <+ $StrategyExpr{@s2}
     };
 }
 
@@ -118,7 +118,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_someBottomUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> some($strategyQName{recVarName}) <+ $StrategyExpr{s}
+      rec $name{recVarName} -> some($strategyQName{recVarName}) <+ $StrategyExpr{@s}
     };
 }
 
@@ -128,7 +128,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_someTopDown_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s} <+ some($strategyQName{recVarName})
+      rec $name{recVarName} -> $StrategyExpr{@s} <+ some($strategyQName{recVarName})
     };
 }
 
@@ -138,7 +138,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   local recVarName::String = top.genName ++ "_someDownUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s1} <+ some($strategyQName{recVarName}) <+ $StrategyExpr{s2}
+      rec $name{recVarName} -> $StrategyExpr{@s1} <+ some($strategyQName{recVarName}) <+ $StrategyExpr{@s2}
     };
 }
 
@@ -148,7 +148,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_onceBottomUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> one($strategyQName{recVarName}) <+ $StrategyExpr{s}
+      rec $name{recVarName} -> one($strategyQName{recVarName}) <+ $StrategyExpr{@s}
     };
 }
 
@@ -158,7 +158,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_onceTopDown_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s} <+ one($strategyQName{recVarName})
+      rec $name{recVarName} -> $StrategyExpr{@s} <+ one($strategyQName{recVarName})
     };
 }
 
@@ -168,7 +168,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   local recVarName::String = top.genName ++ "_onceDownUp_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> $StrategyExpr{s1} <+ one($strategyQName{recVarName}) <+ $StrategyExpr{s2}
+      rec $name{recVarName} -> $StrategyExpr{@s1} <+ one($strategyQName{recVarName}) <+ $StrategyExpr{@s2}
     };
 }
 
@@ -178,7 +178,7 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = top.genName ++ "_innermost_rec";
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> bottomUp(try($StrategyExpr{s} <* $strategyQName{recVarName}))
+      rec $name{recVarName} -> bottomUp(try($StrategyExpr{@s} <* $strategyQName{recVarName}))
     };
 }
 
@@ -187,6 +187,6 @@ top::StrategyExpr ::= s::StrategyExpr
 {
   forwards to
     Silver_StrategyExpr (top.genName) {
-      repeat(onceTopDown($StrategyExpr{s}))
+      repeat(onceTopDown($StrategyExpr{@s}))
     };
 }

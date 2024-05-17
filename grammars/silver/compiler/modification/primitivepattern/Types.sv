@@ -25,6 +25,8 @@ Pair<[Context] Type> ::= te::PolyType
   return (map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
+-- TODO: The below should all go away with an equality type constraint.
+
 {--
  - (This is used for *gadt* productions.)
  - wat? why? well, one skolem constant is as good as another, and we're here INTRODUCING
@@ -111,10 +113,10 @@ top::Type ::= c::Type a::Type
   top.refine =
     case top.refineWith of
     | appType(c1, a1) ->
-      let refineC :: Substitution = refine(c, c1)
-      in composeSubst(refineC, refine(performSubstitution(a, refineC), performSubstitution(a1, refineC)))
+      let refineC :: Substitution = refine(new(c), new(c1))
+      in composeSubst(refineC, refine(performSubstitution(new(a), refineC), performSubstitution(new(a1), refineC)))
       end
-    | _ -> errorSubst("Tried to refine " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
+    | _ -> errorSubst("Tried to refine " ++ prettyType(new(top)) ++ " with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -180,7 +182,7 @@ top::Type ::= inhs::[String]
   top.refine =
     case top.refineWith of
     | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
-    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
+    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(new(top)) ++ " with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -215,7 +217,7 @@ top::Type ::= te::Type i::Type
 {
   top.refine = 
     case top.refineWith of
-    | decoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
+    | decoratedType(oi, ote) -> composeSubst(refine(new(te), new(ote)), refine(new(i), new(oi)))
     | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
     end;
 }
@@ -295,11 +297,11 @@ Substitution ::= te1::Type te2::Type
 {
   local attribute leftward :: Substitution;
   leftward = te1.refine;
-  te1.refineWith = te2;
+  te1.refineWith = new(te2);
   
   local attribute rightward :: Substitution;
   rightward = te2.refine;
-  te2.refineWith = te1;
+  te2.refineWith = new(te1);
   
   return if null(leftward.substErrors)
          then leftward   -- arbitrary choice if both work, but if they are confluent, it's okay
@@ -345,42 +347,42 @@ aspect production instContext
 top::Context ::= cls::String t::Type
 {
   top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [tcInstDef(instPatternConstraintDcl(cls, t, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
+    [tcInstDef(instPatternConstraintDcl(cls, new(t), oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
 }
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
   top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
+    [occursPatternConstraintDcl(attr, new(ntty), new(atty), oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
 aspect production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
   top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
+    [occursPatternConstraintDcl(attr, new(ntty), new(atty), oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
 aspect production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
   top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [annoPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
+    [annoPatternConstraintDcl(attr, new(ntty), new(atty), oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
 aspect production typeableContext
 top::Context ::= t::Type
 {
   top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [tcInstDef(typeablePatternConstraintDcl(t, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
+    [tcInstDef(typeablePatternConstraintDcl(new(t), oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
 }
 
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [tcInstDef(inhSubsetPatternConstraintDcl(i1, i2, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
+    [tcInstDef(inhSubsetPatternConstraintDcl(new(i1), new(i2), oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
 }
 
 abstract production instPatternConstraintDcl
@@ -388,7 +390,7 @@ top::InstDclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTra
 {
   top.fullName = fntc;
   propagate compareTo, isEqual;
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
 
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
@@ -400,7 +402,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.fullName = ntty.typeName;
   propagate compareTo, isEqual;
   top.attrOccurring = fnat;
-  top.typeScheme = monoType(atty);
+  top.typeScheme = monoType(new(atty));
   
   oc.boundVariables = tvs;
   top.attrOccursIndex = s"${scrutineeTrans}.${oc.transContextMemberName}";
@@ -416,7 +418,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.fullName = ntty.typeName;
   propagate compareTo, isEqual;
   top.attrOccurring = fnat;
-  top.typeScheme = monoType(atty);
+  top.typeScheme = monoType(new(atty));
   top.isAnnotation = true;
   
   oc.boundVariables = tvs;
@@ -430,7 +432,7 @@ top::InstDclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = "typeable";
   propagate compareTo, isEqual;
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(new(ty));
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
@@ -441,8 +443,8 @@ top::InstDclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::
 {
   top.fullName = "subset";
   propagate compareTo, isEqual;
-  top.typeScheme = monoType(i1);
-  top.typerep2 = i2;
+  top.typeScheme = monoType(new(i1));
+  top.typerep2 = new(i2);
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";

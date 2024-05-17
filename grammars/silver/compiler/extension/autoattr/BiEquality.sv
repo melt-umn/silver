@@ -42,7 +42,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
     defaultAttributionDcl(
       at,
       if length(attl.types) > 0
-      then attl
+      then @attl
       else
         botlSome(
           bTypeList(
@@ -52,11 +52,11 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  tl)
+                  new(tl))
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end),
             '>')),
-      nt, nttl);
+      @nt, @nttl);
 }
 
 abstract production propagateBiequalitySynPartial implements Propagate

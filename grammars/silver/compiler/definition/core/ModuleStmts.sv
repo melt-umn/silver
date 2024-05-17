@@ -52,19 +52,19 @@ top::Module ::= need::[String]
   defs.filterItems = onlyFilter;
 
   local defs_after_only :: Defs =
-    if null(onlyFilter) then defs else defs.filterOnly;
+    if null(onlyFilter) then new(defs) else defs.filterOnly;
   defs_after_only.filterItems = hidingFilter;
 
   local defs_after_hiding :: Defs =
-    if null(hidingFilter) then defs_after_only else defs_after_only.filterHiding;
+    if null(hidingFilter) then new(defs_after_only) else defs_after_only.filterHiding;
   defs_after_hiding.withRenames = withRenames;
 
   local defs_after_renames :: Defs =
-    if null(withRenames) then defs_after_hiding else defs_after_hiding.renamed;
+    if null(withRenames) then new(defs_after_hiding) else defs_after_hiding.renamed;
   defs_after_renames.pfx = asPrepend ++ ":";
 
   local defs_after_prepend :: Defs =
-    if asPrepend == "" then defs_after_renames else defs_after_renames.prepended;
+    if asPrepend == "" then new(defs_after_renames) else defs_after_renames.prepended;
 
   top.defs := defs_after_prepend.defs;
   top.occursDefs := med.occursDefs;

@@ -26,7 +26,7 @@ propagate givenStrategy on AST, ASTs, NamedASTs, NamedAST;
 aspect default production
 top::AST ::=
 {
-  top.allResult = just(top);
+  top.allResult = just(new(top));
   top.someResult = nothing();
   top.oneResult = nothing();
   top.traversalResult = nothing();
@@ -48,17 +48,17 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     | just(childrenResult), just(annotationsResult) ->
       just(nonterminalAST(prodName, childrenResult, annotationsResult))
     | just(childrenResult), nothing() ->
-      just(nonterminalAST(prodName, childrenResult, annotations))
+      just(nonterminalAST(prodName, childrenResult, new(annotations)))
     | nothing(), just(annotationsResult) ->
-      just(nonterminalAST(prodName, children, annotationsResult))
+      just(nonterminalAST(prodName, new(children), annotationsResult))
     | nothing(), nothing() -> nothing()
     end;
   top.oneResult =
     case children.oneResult, annotations.oneResult of
     | just(childrenResult), _ ->
-      just(nonterminalAST(prodName, childrenResult, annotations))
+      just(nonterminalAST(prodName, childrenResult, new(annotations)))
     | nothing(), just(annotationsResult) ->
-      just(nonterminalAST(prodName, children, annotationsResult))
+      just(nonterminalAST(prodName, new(children), annotationsResult))
     | nothing(), nothing() -> nothing()
     end;
   children.childStrategies = top.childStrategies;
@@ -84,8 +84,8 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production listAST
 top::AST ::= vals::ASTs
 {
-  nondecorated local h::AST = case vals of consAST(h, _) -> h | _ -> error("not consAST") end;
-  nondecorated local t::AST = case vals of consAST(_, t) -> listAST(t) | _ -> error("not consAST") end;
+  nondecorated local h::AST = case vals of consAST(h, _) -> new(h) | _ -> error("not consAST") end;
+  nondecorated local t::AST = case vals of consAST(_, t) -> listAST(new(t)) | _ -> error("not consAST") end;
   top.allResult =
     case vals of
     | consAST(_, _) ->
@@ -94,20 +94,20 @@ top::AST ::= vals::ASTs
         tResult::AST <- decorate top.givenStrategy with { term = t; }.result;
         return
           case tResult of
-          | listAST(a) -> listAST(consAST(hResult, a))
+          | listAST(a) -> listAST(consAST(hResult, new(a)))
           | _ -> error("Rewrite type error")
           end;
       }
-    | nilAST() -> just(top)
+    | nilAST() -> just(new(top))
     end;
   top.someResult =
     case vals of
     | consAST(_, _) ->
       case decorate top.givenStrategy with { term = h; }.result,
            decorate top.givenStrategy with { term = t; }.result of
-      | just(hResult), just(listAST(tResult)) -> just(listAST(consAST(hResult, tResult)))
-      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t | _ -> error("not consAST") end)))
-      | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
+      | just(hResult), just(listAST(tResult)) -> just(listAST(consAST(hResult, new(tResult))))
+      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> new(t) | _ -> error("not consAST") end)))
+      | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, new(tResult))))
       | _, _ -> nothing()
       end
     | nilAST() -> nothing()
@@ -117,8 +117,8 @@ top::AST ::= vals::ASTs
     | consAST(_, _) ->
       case decorate top.givenStrategy with { term = h; }.result,
            decorate top.givenStrategy with { term = t; }.result of
-      | just(hResult), _ -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t | _ -> error("not consAST") end)))
-      | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
+      | just(hResult), _ -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> new(t) | _ -> error("not consAST") end)))
+      | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, new(tResult))))
       | nothing(), _ -> nothing()
       end
     | nilAST() -> nothing()
@@ -132,7 +132,7 @@ top::AST ::= vals::ASTs
         tResult::AST <- decorate top.tailStrategy with { term = t; }.result;
         return
           case tResult of
-          | listAST(a) -> listAST(consAST(hResult, a))
+          | listAST(a) -> listAST(consAST(hResult, new(a)))
           | _ -> error("Rewrite type error")
           end;
       }
@@ -141,7 +141,7 @@ top::AST ::= vals::ASTs
   top.nilListCongruenceResult =
     case vals of
     | consAST(_, _) -> nothing()
-    | nilAST() -> just(top)
+    | nilAST() -> just(new(top))
     end;
 }
 
@@ -155,26 +155,26 @@ top::ASTs ::= h::AST t::ASTs
 {
   top.allResult =
     do {
-      hResult::AST <- decorate top.givenStrategy with { term = h; }.result;
+      hResult::AST <- decorate top.givenStrategy with { term = new(h); }.result;
       tResult::ASTs <- t.allResult;
       return consAST(hResult, tResult);
     };
   top.someResult =
-    case decorate top.givenStrategy with { term = h; }.result, t.someResult of
+    case decorate top.givenStrategy with { term = new(h); }.result, t.someResult of
     | just(hResult), just(tResult) -> just(consAST(hResult, tResult))
-    | just(hResult), nothing() -> just(consAST(hResult, t))
-    | nothing(), just(tResult) -> just(consAST(h, tResult))
+    | just(hResult), nothing() -> just(consAST(hResult, new(t)))
+    | nothing(), just(tResult) -> just(consAST(new(h), tResult))
     | nothing(), nothing() -> nothing()
     end;
   top.oneResult =
-    case decorate top.givenStrategy with { term = h; }.result, t.oneResult of
-    | just(hResult), _ -> just(consAST(hResult, t))
-    | nothing(), just(tResult) -> just(consAST(h, tResult))
+    case decorate top.givenStrategy with { term = new(h); }.result, t.oneResult of
+    | just(hResult), _ -> just(consAST(hResult, new(t)))
+    | nothing(), just(tResult) -> just(consAST(new(h), tResult))
     | nothing(), nothing() -> nothing()
     end;
   top.traversalResult =
     do {
-      hResult::AST <- decorate head(top.childStrategies) with { term = h; }.result;
+      hResult::AST <- decorate head(top.childStrategies) with { term = new(h); }.result;
       tResult::ASTs <- t.traversalResult;
       return consAST(hResult, tResult);
     };
@@ -184,10 +184,10 @@ top::ASTs ::= h::AST t::ASTs
 aspect production nilAST
 top::ASTs ::=
 {
-  top.allResult = just(top);
+  top.allResult = just(new(top));
   top.someResult = nothing();
   top.oneResult = nothing();
-  top.traversalResult = just(top);
+  top.traversalResult = just(new(top));
 }
 
 synthesized attribute bindings::[Pair<String AST>] occurs on NamedASTs;
@@ -210,14 +210,14 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
   top.someResult =
     case h.someResult, t.someResult of
     | just(hResult), just(tResult) -> just(consNamedAST(hResult, tResult))
-    | just(hResult), nothing() -> just(consNamedAST(hResult, t))
-    | nothing(), just(tResult) -> just(consNamedAST(h, tResult))
+    | just(hResult), nothing() -> just(consNamedAST(hResult, new(t)))
+    | nothing(), just(tResult) -> just(consNamedAST(new(h), tResult))
     | nothing(), nothing() -> nothing()
     end;
   top.oneResult =
     case h.oneResult, t.oneResult of
-    | just(hResult), _ -> just(consNamedAST(hResult, t))
-    | nothing(), just(tResult) -> just(consNamedAST(h, tResult))
+    | just(hResult), _ -> just(consNamedAST(hResult, new(t)))
+    | nothing(), just(tResult) -> just(consNamedAST(new(h), tResult))
     | nothing(), nothing() -> nothing()
     end;
   propagate annotationStrategies;
@@ -233,10 +233,10 @@ aspect production nilNamedAST
 top::NamedASTs ::=
 {
   top.bindings = [];
-  top.allResult = just(top);
+  top.allResult = just(new(top));
   top.someResult = nothing();
   top.oneResult = nothing();
-  top.traversalResult = just(top);
+  top.traversalResult = just(new(top));
 }
 
 synthesized attribute binding::Pair<String AST> occurs on NamedAST;
@@ -252,7 +252,7 @@ top::NamedAST ::= n::String v::AST
   top.binding = (n, v);
   top.allResult =
     do {
-      vResult::AST <- decorate top.givenStrategy with { term = v; }.result;
+      vResult::AST <- decorate top.givenStrategy with { term = new(v); }.result;
       return namedAST(n, vResult);
     };
   -- Exactly one rewritable child

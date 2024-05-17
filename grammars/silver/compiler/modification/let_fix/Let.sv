@@ -14,24 +14,24 @@ top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
 
-  forwards to letp(la.letAssignExprs, e);
+  forwards to letp(@la.letAssignExprs, @e);
 }
 
 tracked nonterminal LetAssigns with unparse, letAssignExprs;
 
-synthesized attribute letAssignExprs :: AssignExpr;
+translation attribute letAssignExprs :: AssignExpr;
 
 concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
   top.unparse = ae.unparse ++ ", " ++ list.unparse;
-  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs);
+  top.letAssignExprs = appendAssignExpr(@ae, @list.letAssignExprs);
 }
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
 {
   top.unparse = ae.unparse;
-  top.letAssignExprs = ae;
+  top.letAssignExprs = @ae;
 }
 
 --------------------------------------------------------------------------------

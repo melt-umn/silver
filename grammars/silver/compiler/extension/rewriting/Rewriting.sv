@@ -77,17 +77,17 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 concrete production traverseProdAnno
 top::Expr ::= 'traverse' n::QName '(' anns::AnnoAppExprs ')'
 {
-  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(), ',', anns, $5);
+  forwards to traverseProdExprAnno($1, @n, $3, emptyAppExprs(), ',', @anns, $5);
 }
 concrete production traverseProdExpr
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ')'
 {
-  forwards to traverseProdExprAnno($1, n, $3, es, ',', emptyAnnoAppExprs(), $5);
+  forwards to traverseProdExprAnno($1, @n, $3, @es, ',', emptyAnnoAppExprs(), $5);
 }
 concrete production traverseProdEmpty
 top::Expr ::= 'traverse' n::QName '(' ')'
 {
-  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(), ',', emptyAnnoAppExprs(), $4);
+  forwards to traverseProdExprAnno($1, @n, $3, emptyAppExprs(), ',', emptyAnnoAppExprs(), $4);
 }
 
 abstract production traverseConsList
@@ -101,12 +101,12 @@ top::Expr ::= 'traverse' '(' h::AppExpr '::' t::AppExpr ')'
 concrete production traverseConsListFirstMissing
 top::Expr ::= 'traverse' '(' h::'_' '::' t::AppExpr ')'
 {
-  forwards to traverseConsList($1, $2, missingAppExpr(h), $4, t, $6);
+  forwards to traverseConsList($1, $2, missingAppExpr(h), $4, @t, $6);
 }
 concrete production traverseConsListFirstPresent
 top::Expr ::= 'traverse' '(' h::Expr '::' t::AppExpr ')'
 {
-  forwards to traverseConsList($1, $2, presentAppExpr(h), $4, t, $6);
+  forwards to traverseConsList($1, $2, presentAppExpr(@h), $4, @t, $6);
 }
 
 concrete production traverseNilList
@@ -143,7 +143,7 @@ top::AppExpr ::= '_'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  top.traverseTransform = antiquoteStrategy(e);
+  top.traverseTransform = antiquoteStrategy(new(e));
 }
 
 aspect production snocAppExprs
@@ -269,7 +269,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 abstract production hackExprType
 top::Expr ::= t::Type
 {
-  top.typerep = t;
+  top.typerep = new(t);
   forwards to errorExpr([]);
 }
 

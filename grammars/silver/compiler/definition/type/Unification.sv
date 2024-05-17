@@ -146,7 +146,7 @@ top::Type ::= te::Type i::Type
 {
   top.unify = 
     case top.unifyWith of
-    | decoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
+    | decoratedType(ote, oi) -> composeSubst(unify(new(te), new(ote)), unify(new(i), new(oi)))
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
