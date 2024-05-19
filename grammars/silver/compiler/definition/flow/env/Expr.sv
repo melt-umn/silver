@@ -605,15 +605,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   f.alwaysDecorated = false;
 }
 
-aspect production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+aspect production prodPattern
+top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' _ e::Expr
 {
-  top.flowDefs <-
-    [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
-}
-aspect production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
-{
+  propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType;
   top.flowDefs <-
     [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
 }

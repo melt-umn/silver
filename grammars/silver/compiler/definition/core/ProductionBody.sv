@@ -604,9 +604,10 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, @e)
-              else val.lookupValue.dcl.defDispatcher(val, @e);
+  forwards to
+    (if null(val.lookupValue.dcls)
+     then errorValueDef
+     else val.lookupValue.dcl.defDispatcher)(val, @e);
 }
 
 dispatch ValueDef = ProductionStmt ::= @val::QName e::Expr;

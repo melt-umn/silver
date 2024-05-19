@@ -87,7 +87,7 @@ top::Expr ::= @q::QName _ _
 
 
 inherited attribute expectedUndecorated :: Boolean occurs on Expr, Exprs, PrimPatterns, PrimPattern;
-propagate expectedUndecorated on Exprs, PrimPatterns, PrimPattern;
+propagate @expectedUndecorated on Exprs, PrimPatterns, PrimPattern;
 
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'

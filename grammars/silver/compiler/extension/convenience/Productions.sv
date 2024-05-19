@@ -10,9 +10,9 @@ top::AGDcl ::= 'production' id::Name d::ProductionImplements ns::ProductionSigna
 }
 
 -- "concrete productions" syntax
-tracked nonterminal ProductionDclStmts with unparse, proddcls, lhsdcl, grammarName;
-tracked nonterminal ProductionDclStmt with unparse, proddcls, lhsdcl, grammarName;
-propagate lhsdcl, grammarName on ProductionDclStmts, ProductionDclStmt;
+tracked nonterminal ProductionDclStmts with unparse, proddcls, lhsdcl;
+tracked nonterminal ProductionDclStmt with unparse, proddcls, lhsdcl;
+propagate lhsdcl on ProductionDclStmts, ProductionDclStmt;
 
 translation attribute proddcls :: AGDcl;
 inherited attribute lhsdcl :: ProductionLHS;
@@ -58,7 +58,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
     | noOptionalName() ->
         name(
           "p_"
-           ++ substitute(":", "_", top.grammarName)
+           ++ substitute(":", "_", top.proddcls.grammarName)
            ++ "_" ++ substitute(".", "_", v.location.filename)
            ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column))
     | anOptionalName(_, n, _) -> new(n)

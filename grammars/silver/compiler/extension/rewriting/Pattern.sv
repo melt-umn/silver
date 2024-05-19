@@ -347,14 +347,14 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 }
 
 aspect production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.decRuleExprs = e.decRuleExprs;
   e.boundVars = top.boundVars ++ ns.varBindings;
 }
 
 aspect production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.decRuleExprs = e.decRuleExprs;
   e.boundVars = top.boundVars ++ ns.varBindings;

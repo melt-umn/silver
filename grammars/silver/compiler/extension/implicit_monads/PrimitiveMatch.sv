@@ -246,59 +246,42 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
 {
-  local ne::Expr = new(e);
-  ne.env = e.env;
-  ne.frame = top.frame;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.config = top.config;
-  ne.flowEnv = top.flowEnv;
-  ne.decSiteVertexInfo = nothing();
-  ne.alwaysDecorated = false;
-  ne.isRoot = false;
-
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.mDownSubst;
-  ne.mDownSubst = top.mDownSubst;
-  top.mUpSubst = ne.mUpSubst;
-
-  ne.expectedMonad = top.expectedMonad;
-
-  ne.monadicallyUsed = false;
-  top.monadicNames = ne.monadicNames;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
 }
 aspect production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.merrors := e.merrors;
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
 
-  e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
   top.mtyperep = e.mtyperep;
   top.patternType = prod_type.outputType;
 
-  top.returnify = prodPatternNormal(qn, new(ns),
-                                    Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
-  top.monadRewritten = prodPatternNormal(qn, new(ns), e.monadRewritten);
+  top.returnify = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+    Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
+  top.monadRewritten = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+    e.monadRewritten);
 }
 
 aspect production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.merrors := e.merrors;
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
 
-  e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
   top.mtyperep = e.mtyperep;
   top.patternType = prod_type.outputType;
 
-  top.returnify = prodPatternGadt(qn, new(ns),
-                                  Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
-  top.monadRewritten = prodPatternGadt(qn, new(ns), e.monadRewritten);
+  top.returnify = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+    Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
+  top.monadRewritten = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+    e.monadRewritten);
 }
 
 

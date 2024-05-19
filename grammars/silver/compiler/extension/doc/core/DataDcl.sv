@@ -48,7 +48,7 @@ top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataCo
 concrete production documentedConstructor
 top::DataConstructor ::= comment::DocComment_t item::DataConstructor
 {
-  local parsed::DclComment = parseComment(top.config, comment);
+  local parsed::DclComment = parseComment(top.ctorDcls.config, comment);
 
   parsed.paramNames = nothing();
   parsed.isForWhat = "abstract production";
@@ -65,7 +65,7 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
                 else [attachNote logicalLocationFromOrigin(item) on
-                        dclCommentItem(top.docForName, forward.docUnparse, forward.grammarName, parsed)
+                        dclCommentItem(top.docForName, forward.docUnparse, top.ctorDcls.grammarName, parsed)
                       end];
   top.docErrors <-
     if isDoubleComment
@@ -81,6 +81,6 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
   top.docForName = id.name;
   top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ top.ntName ++ top.ntTypeArgs.unparse ++ " ::= " ++ rhs.unparse ++ "`)";
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.grammarName)];
+  top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.ctorDcls.grammarName)];
   top.upDocConfig := [];
 }

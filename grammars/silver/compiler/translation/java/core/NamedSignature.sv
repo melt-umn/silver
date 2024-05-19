@@ -253,7 +253,7 @@ s"""private Object child_${n};
   }
 """;
 
-  local ntType::Type = if ty.isDecorated then ty.decoratedType else @ty;
+  local ntType::Type = if ty.isDecorated then ty.decoratedType else new(ty);
   ntType.boundVariables = ty.boundVariables;
 
   top.childTypeVarElem =

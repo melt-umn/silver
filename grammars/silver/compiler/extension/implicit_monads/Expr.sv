@@ -289,7 +289,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  forward t = application(@e, '(', @es, ',', @anns, ')');
+  forward t = application(new(e), '(', new(es), ',', new(anns), ')');
 
   top.merrors := t.merrors;
   top.mUpSubst = t.mUpSubst;
@@ -302,7 +302,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  forward t = application(@e, '(', @es, ',', @anns, ')');
+  forward t = application(new(e), '(', new(es), ',', new(anns), ')');
 
   top.merrors := t.merrors;
   top.mUpSubst = t.mUpSubst;
@@ -1491,16 +1491,14 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
   e2.monadicallyUsed = false;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
-  e1.expectedMonad = top.expectedMonad;
+  {- TODO: Is this equation still needed with sharing?  It is now a flow error:
   e2.expectedMonad = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                      then e1.mtyperep
                      else top.expectedMonad;
+  -}
   
-  e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = nothing();
-  e1.alwaysDecorated = false;
   e2.alwaysDecorated = false;
-  e1.isRoot = false;
   e2.isRoot = false;
 
   forwards to ifThenElse('if', @e1, 'then', @e2, 'else', monadFail());

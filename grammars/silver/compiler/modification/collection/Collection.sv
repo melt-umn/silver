@@ -159,9 +159,9 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  q.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
-  q.env = top.env;
   
   top.defs := [synColDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep, q.operation)];
   
@@ -186,9 +186,9 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  q.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
-  q.env = top.env;
 
   top.defs := [inhColDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep, q.operation)];
   

@@ -172,7 +172,8 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
-  propagate frame, env, compiledGrammars, grammarName;
+  propagate config, frame, grammarName, compiledGrammars, originRules;
+  qn.env = top.env;
 
   top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
 
@@ -193,12 +194,13 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   -- around is very different, and I don't want to confuse myself while I'm writing
   -- the code. After it works, perhaps these can be merged into one non-forwarding
   -- production, once the code is understood fully.
-  forwards to if isGadt
-              then prodPatternGadt(qn, @ns, @e)
-              else prodPatternNormal(qn, @ns, @e);
+  forwards to (if isGadt then prodPatternGadt else prodPatternNormal)(qn, ns, e);
 }
-abstract production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+
+dispatch ProdPattern = PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr;
+
+abstract production prodPatternNormal implements ProdPattern
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
@@ -254,7 +256,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
-  errCheck1 = check(@expectedScrutineeType, top.scrutineeType);
+  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [errFromOrigin(top, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -266,7 +268,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
-  propagate finalSubst;
+  propagate @finalSubst;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -287,8 +289,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
-abstract production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+abstract production prodPatternGadt implements ProdPattern
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
@@ -341,7 +343,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(@expectedScrutineeType, top.scrutineeType);
+  errCheck1 = check(expectedScrutineeType, top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [errFromOrigin(top, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -359,7 +361,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.finalSubst = top.finalSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, new(expectedScrutineeType)));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, expectedScrutineeType));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....

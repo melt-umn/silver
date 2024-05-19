@@ -930,7 +930,7 @@ fun toAnonInhs [String] ::= vs::[FlowVertex]  vertex::String =
     end, vs);
 
 inherited attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
-propagate receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
+propagate @receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
 
 aspect production varVarBinder
 top::VarBinder ::= n::Name

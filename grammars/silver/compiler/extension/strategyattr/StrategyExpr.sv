@@ -743,7 +743,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [hackLHSExprType(ty.typerep.asDecoratedType)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
-      decorate @ml with {
+      decorate new(ml) with {
         env = top.env;
         config = top.config;
         matchRulePatternSize = 1;

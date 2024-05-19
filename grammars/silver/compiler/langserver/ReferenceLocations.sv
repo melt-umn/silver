@@ -85,7 +85,7 @@ end;
 aspect production propagateOnNTListDcl
 top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
 {
-  propagate grammarName, env, flowEnv;
+  propagate env, flowEnv;
 }
 
 aspect production tcMonoidAttributeDcl
