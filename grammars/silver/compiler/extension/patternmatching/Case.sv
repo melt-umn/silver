@@ -1057,7 +1057,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 
   pt.patternVarEnv = [];
 
-  top.matchRuleList = [matchRule(pt.patternList, just((cond, nothing())), new(e))];
+  top.matchRuleList = [matchRule(pt.patternList, just((new(cond), nothing())), new(e))];
 }
 
 concrete production matchRuleWhenMatches_c
@@ -1076,7 +1076,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e
   pt.patternVarEnv = [];
   p.patternVarEnv = pt.patternVars;
 
-  top.matchRuleList = [matchRule(pt.patternList, just((cond, just(p))), new(e))];
+  top.matchRuleList = [matchRule(pt.patternList, just((new(cond), just(new(p)))), new(e))];
 }
 
 abstract production matchRule
@@ -1228,7 +1228,7 @@ AbstractMatchRule ::= headExpr::Expr  headType::Type  absRule::AbstractMatchRule
         makeLet(pvn, new(headType), new(headExpr), new(e)))
     | nothing() -> matchRule(restPat, cond, new(e))
     end
-  | r -> r -- Don't crash when we see a rule with too few patterns (should be an error)
+  | r -> new(r) -- Don't crash when we see a rule with too few patterns (should be an error)
   end;
 }
 
@@ -1241,7 +1241,7 @@ AbstractMatchRule ::= absRule::AbstractMatchRule
   return case absRule of
   | matchRule(headPat :: restPat, cond, e) ->
     matchRule(restPat, cond, new(e))
-  | r -> r -- Don't crash when we see a rule with too few patterns (should be an error)
+  | r -> new(r) -- Don't crash when we see a rule with too few patterns (should be an error)
   end;
 }
 

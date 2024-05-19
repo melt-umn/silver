@@ -26,14 +26,14 @@ concrete production qNames2Two
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNameWithTL
 {
   top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
-  top.qnames = [id1, id2];
+  top.qnames = [new(id1), new(id2)];
 }
 
 concrete production qNames2Cons
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNames2
 {
   top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
-  top.qnames = [id1] ++ id2.qnames;
+  top.qnames = new(id1) :: id2.qnames;
 }
 
 
@@ -41,14 +41,14 @@ concrete production qNamesSingle
 top::QNames ::= id::QNameWithTL
 {
   top.unparse = id.unparse;
-  top.qnames = [id];
+  top.qnames = [new(id)];
 }
 
 concrete production qNamesCons
 top::QNames ::= id1::QNameWithTL ',' id2::QNames
 {
   top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
-  top.qnames = [id1] ++ id2.qnames;
+  top.qnames = new(id1) :: id2.qnames;
 }
 
 --------------------------------------------------------------------------------

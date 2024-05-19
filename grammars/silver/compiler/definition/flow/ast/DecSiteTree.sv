@@ -14,8 +14,8 @@ synthesized attribute decSiteReqs::[DecSiteTree];
 aspect default production
 top::DecSiteTree ::=
 {
-  top.decSiteAlts = [top];
-  top.decSiteReqs = [top];
+  top.decSiteAlts = [new(top)];
+  top.decSiteReqs = [new(top)];
 }
 
 {--

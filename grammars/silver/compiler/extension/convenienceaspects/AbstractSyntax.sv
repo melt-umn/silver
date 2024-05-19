@@ -24,9 +24,9 @@ fun makePatternListFromListofPatterns PatternList ::= l::[Pattern] =
 -}
 fun collectPatternsFromPatternList [Pattern] ::= l::PatternList accum::[Pattern] =
   case l of
-  | patternList_one(p) -> p::accum
-  | patternList_snoc(ps,_,p) -> collectPatternsFromPatternList(new(ps), p::accum)
-  | patternList_more(p,_,ps) -> [p] ++ collectPatternsFromPatternList(new(ps), accum)
+  | patternList_one(p) -> new(p)::accum
+  | patternList_snoc(ps,_,p) -> collectPatternsFromPatternList(new(ps), new(p)::accum)
+  | patternList_more(p,_,ps) -> new(p) :: collectPatternsFromPatternList(new(ps), accum)
   | patternList_nil() -> accum
   end;
 
@@ -81,14 +81,11 @@ fun makeMRuleListFromListMatchRules MRuleList ::= l::[MatchRule] =
   - @param accum An accumulated list of MatchRule's
   - @return A regular list of MatchRule's
 -}
-function collectMatchRulesfromMRuleList
-[MatchRule] ::= l::MRuleList accum::[MatchRule]
-{
-  return case l of
-  | mRuleList_one(m) -> m::accum
-  | mRuleList_cons(h,_,t) -> collectMatchRulesfromMRuleList(new(t),(h :: accum))
+fun collectMatchRulesfromMRuleList [MatchRule] ::= l::MRuleList accum::[MatchRule] =
+  case l of
+  | mRuleList_one(m) -> new(m)::accum
+  | mRuleList_cons(h,_,t) -> collectMatchRulesfromMRuleList(new(t),(new(h) :: accum))
   end;
-}
 
 @{-
   - This function goes into a production pattern (if it is one), extracts out the sub pattern for that production, and generates names for each element of that sub pattern.

@@ -1836,8 +1836,8 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
   top.realTypes = e.realTypes;
   --can be at most one entry
   top.monadAnns = case e.monadTypesLocations of
-                  | [(ty, _)] -> [(ty, qn, true)]
-                  | _ -> [(e.appExprTyperep, qn, false)]
+                  | [(ty, _)] -> [(ty, new(qn), true)]
+                  | _ -> [(e.appExprTyperep, new(qn), false)]
                   end;
   top.monadicNames = e.monadicNames;
 

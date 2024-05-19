@@ -61,7 +61,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               typeListSingle(
                 typerepTypeExpr(i))),
             '>'))
-      | _ -> attl
+      | _ -> @attl
       end,
       @nt, @nttl);
 }

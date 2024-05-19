@@ -24,7 +24,7 @@ concrete production multipleAttributionDclsManySingle
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 {
   top.unparse = "attribute " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(a.qnames, [nts]);
+  forwards to makeOccursDcls(a.qnames, [new(nts)]);
 }
 
 -- Multiple annotation occurs on statements
@@ -44,7 +44,7 @@ concrete production multipleAnnotationDclsManySingle
 top::AGDcl ::= 'annotation' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 {
   top.unparse = "annotation " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(a.qnames, [nts]);
+  forwards to makeOccursDcls(a.qnames, [new(nts)]);
 }
 
 

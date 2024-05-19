@@ -35,17 +35,17 @@ ei::EnvItem<a> ::= newname::String di::a
   ei.dcl = new(di);
   ei.envContribs =
     if newname != di.fullName
-    then [(newname, di), (di.fullName, di)]
-    else [(newname, di)];
+    then [(newname, new(di)), (di.fullName, new(di))]
+    else [(newname, new(di))];
 
   ei.filterIncludeOnly := contains(newname, ei.filterItems);
   ei.filterIncludeHiding := !contains(newname, ei.filterItems);
   ei.renamed =
     case lookup(newname, ei.withRenames) of
     | nothing() -> new(ei)
-    | just(result) -> renamedEnvItem(result, di)
+    | just(result) -> renamedEnvItem(result, new(di))
     end;
-  ei.prepended = renamedEnvItem(ei.pfx ++ newname, di);
+  ei.prepended = renamedEnvItem(ei.pfx ++ newname, new(di));
 
   propagate compareTo, isEqual;
 }
@@ -62,7 +62,7 @@ ei::EnvItem<a> ::= di::a
 {
   ei.itemName = di.fullName;
   ei.dcl = new(di);
-  ei.envContribs = [(di.fullName, di)];
+  ei.envContribs = [(di.fullName, new(di))];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Always imported & not renamed
   propagate compareTo, isEqual;
@@ -79,7 +79,7 @@ ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
   ei.dcl = new(di);
-  ei.envContribs = [(newname, di)];
+  ei.envContribs = [(newname, new(di))];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Should never be imported
   propagate compareTo, isEqual;
@@ -94,7 +94,7 @@ attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo} occurs on a =>
 EnvItem<a> ::= di::a
 {
-  return renamedEnvItem(fullNameToShort(di.fullName), di);
+  return renamedEnvItem(fullNameToShort(di.fullName), new(di));
 }
 fun fullNameToShort String ::= s::String = substring(lastIndexOf(":", s) + 1, length(s), s);
 

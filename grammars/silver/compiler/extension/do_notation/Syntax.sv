@@ -218,7 +218,7 @@ top::DoBody ::= 'return' e::Expr ';'
   top.appBindings = [];
   top.appExprs = [];
   top.appResult = new(e);
-  top.transform = mkStrFunctionInvocation("silver:core:pure", [e]);
+  top.transform = mkStrFunctionInvocation("silver:core:pure", [new(e)]);
   top.recBindings = [];
   top.recBody = top.recRes;
   top.mdoTransform = new(top);
@@ -231,17 +231,17 @@ top::DoBinding ::= n::Name DoDoubleColon_t t::TypeExpr '<-' e::Expr ';'
   top.boundVars <- ts:fromList([n.name]);
   top.isApplicative = true;
   top.appBindings = [lambdaRHSElemIdTy(new(n), terminal(ColonColon_t, "::"), new(t))];
-  top.appExprs = [e];
+  top.appExprs = [new(e)];
 
-  local cont :: Expr =
+  nondecorated local cont :: Expr =
     lambdap(
       lambdaRHSCons(
-        lambdaRHSElemIdTy(@n, terminal(ColonColon_t, "::"), @t),
+        lambdaRHSElemIdTy(new(n), terminal(ColonColon_t, "::"), new(t)),
         lambdaRHSNil()),
       top.transformIn);
-  top.transform = mkStrFunctionInvocation("silver:core:bind", [e, cont]);
+  top.transform = mkStrFunctionInvocation("silver:core:bind", [new(e), cont]);
 
-  top.recBindings = [(n.name, t)];
+  top.recBindings = [(n.name, new(t))];
 }
 
 concrete production exprDoBinding
@@ -251,8 +251,8 @@ top::DoBinding ::= e::Expr ';'
   top.isApplicative = true;
   top.appBindings =
     [lambdaRHSElemTy('_', terminal(ColonColon_t, "::"), typerepTypeExpr(freshType()))];
-  top.appExprs = [e];
-  top.transform = mkStrFunctionInvocation("silver:core:applySecond", [e, top.transformIn]);
+  top.appExprs = [new(e)];
+  top.transform = mkStrFunctionInvocation("silver:core:applySecond", [new(e), top.transformIn]);
 
   top.recBindings = [];
 }
@@ -271,5 +271,5 @@ top::DoBinding ::= 'let' n::Name '::' t::TypeExpr '=' e::Expr ';'
       assignExpr(new(n), terminal(ColonColon_t, "::"), new(t), '=', new(e)),
       top.transformIn);
 
-  top.recBindings = [(n.name, t)];
+  top.recBindings = [(n.name, new(t))];
 }

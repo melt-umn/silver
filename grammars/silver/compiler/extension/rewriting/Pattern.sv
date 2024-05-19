@@ -139,7 +139,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", new(cond)), just(p))),
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", new(cond)), just(new(p)))),
       hackWrapKey(toString(top.ruleIndex), new(e)))];
 }
 

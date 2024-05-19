@@ -49,7 +49,7 @@ top::Defs ::=
 abstract production consDefs 
 top::Defs ::= e1::Def e2::Defs
 {
-  top.defs := e1 :: e2.defs;
+  top.defs := new(e1) :: e2.defs;
 
   top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
@@ -90,47 +90,47 @@ top::Def ::=
 abstract production typeDef
 top::Def ::= d::EnvItem<TypeDclInfo>
 {
-  top.typeList = [d];
+  top.typeList = [new(d)];
 }
 abstract production dispatchDclDef
 top::Def ::= d::EnvItem<TypeDclInfo>
 {
-  top.typeList = [d];
+  top.typeList = [new(d)];
   -- unlike normal typeDef, also affect dispatch lookups:
   top.dispatchDclList = [d.dcl];
 }
 abstract production valueDef
 top::Def ::= d::EnvItem<ValueDclInfo>
 {
-  top.valueList = [d];
+  top.valueList = [new(d)];
 }
 abstract production typeValueDef
 top::Def ::= td::EnvItem<TypeDclInfo> vd::EnvItem<ValueDclInfo> 
 {
-  top.typeList = [td];
-  top.valueList = [vd];
+  top.typeList = [new(td)];
+  top.valueList = [new(vd)];
 }
 abstract production attrDef
 top::Def ::= d::EnvItem<AttributeDclInfo>
 {
-  top.attrList = [d];
+  top.attrList = [new(d)];
 }
 abstract production prodDclDef
 top::Def ::= d::EnvItem<ValueDclInfo>
 {
-  top.valueList = [d];
+  top.valueList = [new(d)];
   -- unlike normal valueDef, also affect production lookups:
   top.prodDclList = [d.dcl];
 }
 abstract production paDef
 top::Def ::= d::ProductionAttrDclInfo
 {
-  top.prodOccursList = [d];
+  top.prodOccursList = [new(d)];
 }
 abstract production tcInstDef
 top::Def ::= d::InstDclInfo
 {
-  top.instList = [d];
+  top.instList = [new(d)];
 }
 
 fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean =

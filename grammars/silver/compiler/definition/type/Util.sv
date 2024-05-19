@@ -60,7 +60,7 @@ top::PolyType ::= ty::Type
   top.isEqual =
     top.compareTo.boundVars == [] &&
     top.compareTo.contexts == [] &&
-    top.compareTo.typerep == ty;
+    top.compareTo.typerep == new(ty);
 }
 
 aspect production polyType

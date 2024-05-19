@@ -275,22 +275,19 @@ top::Type ::=
  - @param scrutineeType  The decorated type of the value being examined. Should not be a type variable!
  - @param constructorType  The decorated type of the production's product (i.e. the type it constructs)
  -}
-function produceRefinement
-Substitution ::= scrutineeType::Type  constructorType::Type
-{
+fun produceRefinement Substitution ::= scrutineeType::Type  constructorType::Type =
   -- only do refinement if they're the same type constructor.
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
-  return case scrutineeType, constructorType of
-         | decoratedType(t1, i1), decoratedType(t2, i2) ->
-           case t1.baseType, t2.baseType of
-           | nonterminalType(n1, _, _, _), nonterminalType(n2, _, _, _) when n1 == n2 ->
-             refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
-           | _, _ -> emptySubst()
-           end
-         | _, _ -> emptySubst()
-         end;
-}
+  case scrutineeType, constructorType of
+  | decoratedType(t1, i1), decoratedType(t2, i2) ->
+    case t1.baseType, t2.baseType of
+    | nonterminalType(n1, _, _, _), nonterminalType(n2, _, _, _) when n1 == n2 ->
+      refineAll(new(i1) :: t1.argTypes, new(i2) :: t2.argTypes)
+    | _, _ -> emptySubst()
+    end
+  | _, _ -> emptySubst()
+  end;
 
 function refine
 Substitution ::= te1::Type te2::Type

@@ -211,7 +211,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
         [ syntaxTerminal(n, seq(new(regex), regexLiteral(sep)), new(modifiers),
             location=top.location, sourceGrammar=top.sourceGrammar)
         ]
-    | nothing() -> [top]
+    | nothing() -> [new(top)]
     end;
 
   local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(new(regex))), modifiers.prettyName);
@@ -268,7 +268,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
-  top.cstProds := [(ns.outputElement.typerep.typeName, top)];
+  top.cstProds := [(ns.outputElement.typerep.typeName, new(top))];
   top.cstNormalize := [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
@@ -374,7 +374,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.domContribs = modifiers.dominates_;
   top.subContribs = modifiers.submits_;
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
   top.superClassContribs := modifiers.superClassContribs;
   top.disambiguationClasses := modifiers.disambiguationClasses;
 
@@ -408,7 +408,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));
@@ -436,7 +436,7 @@ top::SyntaxDcl ::= n::String acode::String
     if !null(searchEnvTree(n, top.cstEnv)) then []
     else ["Parser attribute " ++ n ++ " was referenced but this grammar was not included in this parser."];
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
 
   top.parserAttributeAspectContribs := [(n, acode)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
@@ -465,7 +465,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
             "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
     zip(terms, trefs));
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [new(top)];
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));

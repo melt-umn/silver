@@ -156,7 +156,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if !cmdArgs.doClean && dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
+      let dumpMatched::Either<String Boolean> = map(eq(new(specCstAst), _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
         eprintln("Parser " ++ spec.fullName ++ " is up to date.");
         return 0;

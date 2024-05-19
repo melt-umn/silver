@@ -53,9 +53,10 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.monadRewritten =
      letp(la.fixedAssigns,
           boundIn);
-  local inside::Expr = if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
-                       then ne.monadRewritten
-                       else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
+  nondecorated local inside::Expr =
+    if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
+    then ne.monadRewritten
+    else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
   nondecorated local boundIn::Expr =
     foldr(\x::Pair<Name TypeExpr> y::Expr ->
             buildApplication(mbind,
@@ -119,7 +120,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                e.flowVertexInfo, e.flowDeps)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
-                   then [(id, t)]
+                   then [(new(id), new(t))]
                    else [];
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))

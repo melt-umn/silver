@@ -31,7 +31,7 @@ Note that this will have fresh type variables filled in if the attribute has typ
 E.g. with `synthesized attribute bar<a>::[a];`, `attrType` for `(.bar)` will always be
 `listType(freshType())`.
 ```silver
-  local attrType::Type =
+  nondecorated local attrType::Type =
     case q of
     | qNameAttrOccur(at) when at.lookupAttribute.dcls matches [dcl] -> dcl.typeScheme.typerep
     | _ -> freshType()
@@ -53,9 +53,9 @@ No direct type inference happens here.
 
 Determine the actual final input and output types that were computed elsewhere during type inference.
 ```silver
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local inputTy::Type = head(finalTy.inputTypes);
-  local outputTy::Type = finalTy.outputType;
+  nondecorated local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  nondecorated local inputTy::Type = head(finalTy.inputTypes);
+  nondecorated local outputTy::Type = finalTy.outputType;
 
   q.attrFor = inputTy;
 ```
@@ -90,6 +90,6 @@ The forward is just equivalent to `\ x::inputTy -> x.attr`
       lambdaRHSCons(
         lambdaRHSElemIdTy(name("x"), '::', typerepTypeExpr(inputTy)),
         lambdaRHSNil()),
-      access(baseExpr(qName("x")), '.', q));
+      access(baseExpr(qName("x")), '.', new(q)));
 }
 ```

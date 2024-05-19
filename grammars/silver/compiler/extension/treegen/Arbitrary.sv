@@ -292,7 +292,7 @@ Expr ::= env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
     prodType.namedTypes;
   local argGenExprs::[Expr] =
     map(genForType(env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));
-  local genRes::Expr =
+  nondecorated local genRes::Expr =
     mkFullFunctionInvocation(
       Silver_Expr { $name{prod.fullName} },
       map(\ i::Integer -> Silver_Expr { $name{"a" ++ toString(i)} }, range(0, length(prodType.inputTypes))),
@@ -304,7 +304,7 @@ Expr ::= env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
       genRes, args);
   nondecorated local genProd::Expr =
     if null(argGenExprs)
-    then Silver_Expr { silver:core:pure($Expr{new(genRes)}) }
+    then Silver_Expr { silver:core:pure($Expr{genRes}) }
     else foldl(
       \ e1::Expr e2::Expr -> Silver_Expr { silver:core:ap($Expr{e1}, $Expr{e2}) },
       Silver_Expr { silver:core:map($Expr{lambdaChain}, $Expr{head(argGenExprs)}) },

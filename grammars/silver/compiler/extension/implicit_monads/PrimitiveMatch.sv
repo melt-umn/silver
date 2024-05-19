@@ -261,9 +261,9 @@ top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
   top.mtyperep = e.mtyperep;
   top.patternType = prod_type.outputType;
 
-  top.returnify = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+  top.returnify = prodPattern(new(qn), '(', new(ns), ')', terminal(Arrow_kwd, "->"),
     Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
-  top.monadRewritten = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+  top.monadRewritten = prodPattern(new(qn), '(', new(ns), ')', terminal(Arrow_kwd, "->"),
     e.monadRewritten);
 }
 
@@ -278,9 +278,9 @@ top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
   top.mtyperep = e.mtyperep;
   top.patternType = prod_type.outputType;
 
-  top.returnify = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+  top.returnify = prodPattern(new(qn), '(', new(ns), ')', terminal(Arrow_kwd, "->"),
     Silver_Expr { $Expr{top.returnFun}($Expr{new(e)}) });
-  top.monadRewritten = prodPattern(qn, '(', new(ns), ')', terminal(Arrow_kwd, "->"),
+  top.monadRewritten = prodPattern(new(qn), '(', new(ns), ')', terminal(Arrow_kwd, "->"),
     e.monadRewritten);
 }
 

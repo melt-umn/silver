@@ -54,7 +54,7 @@ MaybeT<IO RootSpec> ::=
         -- The old interface file contents, used to tell if we need to transitively re-translate
         let oldInterface::Maybe<InterfaceItems> =
           case findInterface of
-          | just(interfaceRootSpec(i, _)) -> just(i)
+          | just(interfaceRootSpec(i, _)) -> just(new(i))
           | _ -> nothing()
           end;
         return if null(gramCompile.2)

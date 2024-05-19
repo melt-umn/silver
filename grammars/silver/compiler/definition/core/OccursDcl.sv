@@ -175,7 +175,7 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  -- Note: we are supplying env to attl, nt, nttl here (and then re-decorating them after dispatching.)
+  -- Note: we are supplying (the wrong) env to attl, nt, nttl here (and then re-decorating them after dispatching.)
   -- This is needed to permit computing flow defs on this production.
   propagate env;
   
@@ -192,7 +192,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   forwards to
     if !at.lookupAttribute.found
     then errorAttributionDcl(at.lookupAttribute.errors, at, @attl, @nt, @nttl)
-    else at.lookupAttribute.dcl.attributionDispatcher(at, @attl, @nt, @nttl);
+    else at.lookupAttribute.dcl.attributionDispatcher(at, new(attl), new(nt), new(nttl));
 }
 
 concrete production annotateDcl

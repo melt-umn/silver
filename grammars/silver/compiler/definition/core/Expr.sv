@@ -952,7 +952,7 @@ top::Exprs ::= e::Expr
   top.unparse = e.unparse;
 
   top.exprs := [e];
-  top.rawExprs := [e];
+  top.rawExprs := [new(e)];
 
   e.isRoot = false;
 }
@@ -962,7 +962,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.unparse = e1.unparse ++ ", " ++ e2.unparse;
 
   top.exprs := [e1] ++ e2.exprs;
-  top.rawExprs := [e1] ++ e2.rawExprs;
+  top.rawExprs := [new(e1)] ++ e2.rawExprs;
 
   e1.isRoot = false;
 }
@@ -1031,7 +1031,7 @@ top::AppExpr ::= e::Expr
   top.isPartial = false;
   top.missingTypereps = [];
   
-  top.rawExprs := [e];
+  top.rawExprs := [new(e)];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
 

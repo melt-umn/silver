@@ -64,7 +64,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
                 a,
                 consAST(
                   terminalAST(_, _, _),
-                  nilAST())))) -> a
+                  nilAST())))) -> new(a)
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
@@ -88,7 +88,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         | consAST(
             nonterminalAST(p, consAST(a, _), _),
             consAST(rest, nilAST())) ->
-          just((p, a, rest))
+          just((p, new(a), rest))
         | _ -> nothing()
         end;
       -- (nonterminal short name, cons production name, nil production name, append production name)
@@ -141,7 +141,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       let wrapped::AST = 
         case children of
         | consAST(a, nilAST()) -> new(a)
-        | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> a
+        | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> new(a)
         | consAST(
             terminalAST(_, _, _),
             consAST(
@@ -150,7 +150,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
                 a,
                 consAST(
                   terminalAST(_, _, _),
-                  nilAST())))) -> a
+                  nilAST())))) -> new(a)
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in

@@ -163,7 +163,7 @@ abstract production classMemberDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] ty::Type
 {
   top.fullName = fn;
-  top.typeScheme = constraintType(bound, clsHead :: contexts, new(ty));
+  top.typeScheme = constraintType(bound, new(clsHead) :: contexts, new(ty));
 
   top.isEqual =
     case top.compareTo of

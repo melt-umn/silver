@@ -267,16 +267,18 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
                 else [];
 }
 
+-- TODO: deprecate this syntax
 concrete production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
 
   forwards to productionStmtAppend(
-    forwardsTo($1, $2, $3, $8),
+    forwardsTo($1, $2, @e, $8),
     forwardingWith('forwarding', $4, $5, @inh, $7, $8));
 }
 
+-- TODO: deprecate this syntax
 concrete production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {

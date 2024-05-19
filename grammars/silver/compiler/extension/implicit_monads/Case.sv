@@ -224,7 +224,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type env::En
   --   forwarding constructor, and variables based on first pattern
   local groups::[[AbstractMatchRule]] = splitPatternGroups(ml, env);
 
-  local compiledGroups::Expr =
+  nondecorated local compiledGroups::Expr =
         monadCompilePatternGroups(es, groups, new(failExpr), new(retType), env);
 
   --Check if there is any match rule with empty patterns
@@ -236,7 +236,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type env::En
                   end, ml));
 
   --Assume all the rules are devoid of patterns
-  local finalStep::Expr =
+  nondecorated local finalStep::Expr =
         foldr(\ mrule::AbstractMatchRule rest::Expr ->
                 case mrule of
                 | matchRule(_, nothing(), e) -> new(e)
@@ -252,7 +252,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type env::En
                      end
                   }
                 end,
-              failExpr, ml);
+              new(failExpr), ml);
 
   return
      case ml of

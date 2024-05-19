@@ -248,7 +248,7 @@ top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
-  production expectedScrutineeType :: Type =
+  nondecorated production expectedScrutineeType :: Type =
     if prod_type.outputType.isData
     then prod_type.outputType
     else decoratedType(prod_type.outputType, freshInhSet());
@@ -335,7 +335,7 @@ top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
-  production expectedScrutineeType :: Type =
+  nondecorated production expectedScrutineeType :: Type =
     if prod_type.outputType.isData
     then prod_type.outputType
     else decoratedType(prod_type.outputType, freshInhSet());

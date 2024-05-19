@@ -132,11 +132,11 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
   top.contextSigElem = s"final int ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}";
   top.contextRefElem = makeConstraintDictName(attr, new(ntty), top.boundVariables);
-  top.contextInhOccurs <- [(ntty, attr)];
+  top.contextInhOccurs <- [(new(ntty), attr)];
   top.inhOccursIndexDecls <-
     s"\tpublic static final int ${makeIdName(attr)}__ON__${ntty.transTypeName} = count_inh__ON__${ntty.transTypeName}++;\n";
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, new(ntty), top.typeChildrenIn) of
     | just(child) -> s"""
 			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
 			if (${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt == null) {
@@ -154,7 +154,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.contextSigElem = s"final int ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}";
   top.contextRefElem = makeConstraintDictName(attr, new(ntty), top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, new(ntty), top.typeChildrenIn) of
     | just(child) -> s"""
 			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
 			if (${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt == null) {
@@ -172,7 +172,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}";
   top.contextRefElem = makeConstraintDictName(attr, new(ntty), top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, new(ntty), top.typeChildrenIn) of
     | just(child) -> s"""
 			if (!${child} instanceof makeAnnoName(${attr})) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " does not have annotation ${attr}.");
@@ -257,18 +257,18 @@ s"""private Object child_${n};
   ntType.boundVariables = ty.boundVariables;
 
   top.childTypeVarElem =
-    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, new(ty), top.sigInhOccurs).isJust
     then s"type_${ntType.transTypeName}"
     else "-1";
   
   top.childStaticElem =
-    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, new(ty), top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
     else if ty.isNonterminal && !ty.isData
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
-  top.typeChildren := [(ty, top.childRefElem)];
+  top.typeChildren := [(new(ty), top.childRefElem)];
   
   -- annos are full names:
   

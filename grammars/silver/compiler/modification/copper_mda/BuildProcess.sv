@@ -50,7 +50,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
+      let dumpMatched::Either<String Boolean> = map(eq(new(specCstAst), _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) then do {
         eprintln("MDA test " ++ spec.fullName ++ " is up to date.");
         return 0;

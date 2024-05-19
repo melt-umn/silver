@@ -112,7 +112,7 @@ synthesized attribute elementDclTypes::[Type];
 abstract production consNamedSignatureElement
 top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElements
 {
-  top.elements = h :: t.elements;
+  top.elements = new(h) :: t.elements;
   top.elementNames = h.elementName :: t.elementNames;
   top.elementShortNames = h.elementShortName :: t.elementShortNames;
   top.elementTypes = h.typerep :: t.elementTypes;

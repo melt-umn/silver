@@ -323,7 +323,7 @@ top::ConstraintPosition ::= instHead::Context tvs::[TyVar]
   top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
-  top.instanceHead = just(instHead);
+  top.instanceHead = just(new(instHead));
 }
 abstract production classPos
 top::ConstraintPosition ::= className::String tvs::[TyVar]

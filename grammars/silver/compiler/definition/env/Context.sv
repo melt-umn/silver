@@ -15,7 +15,7 @@ propagate boundVariables on Contexts;
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 {
-  top.contexts = h :: t.contexts;
+  top.contexts = new(h) :: t.contexts;
   top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables);
 }
 abstract production nilContext
