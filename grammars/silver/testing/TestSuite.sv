@@ -1,6 +1,6 @@
 grammar silver:testing ;
 
-nonterminal Test 
+closed nonterminal Test 
   with msg, pass, ioIn, ioOut ;
 
 nonterminal TestSuite 
@@ -15,10 +15,9 @@ synthesized attribute numFailed :: Integer ;
 synthesized attribute ioOut :: IOToken ;
 inherited attribute ioIn :: IOToken ;
 
-abstract production defTest
+aspect default production
 t::Test ::=
-{ t.pass = false ;
-  t.msg = "" ;
+{
   t.ioOut = t.ioIn ;
 }
 
@@ -107,19 +106,3 @@ Boolean ::= f::(Boolean ::=)  times::Integer
   return if times <= 0 then true else
     f() && repeatTestTimes(f, times - 1);
 }
-
--- The expected and result values in equalityTest are bound as locals,
--- causing them to be implicitly decorated if they are nonterminals.
--- This exists as a workaround to ensure they are displayed properly as undecorated terms.
-class ShowTestValue a {
-  showTestValue :: (String ::= a);
-}
-
-instance ShowTestValue a {
-  showTestValue = genericShow;
-}
-
-instance ShowTestValue a => ShowTestValue Decorated a with i {
-  showTestValue = \ x::Decorated a with i -> showTestValue(new(x));
-}
-

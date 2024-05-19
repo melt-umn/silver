@@ -9,6 +9,7 @@ import silver:compiler:definition:flow:env;
 import silver:compiler:analysis:typechecking:core;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
+import silver:compiler:metatranslation only makeName;
 
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph; -- for the "oh no again!" hack below
 import silver:compiler:driver:util only RootSpec; -- ditto
@@ -25,7 +26,6 @@ ag::AGDcl ::= kwd::'equalityTest'
 {
   ag.unparse = "equalityTest (" ++ value.unparse ++ "," ++ expected.unparse ++ ",\n" ++ 
           "              " ++ valueType.unparse ++ ", " ++ testSuite.unparse ++ ");\n";
-  propagate grammarName, compiledGrammars, config, env, flowEnv;
 
   local attribute errCheck1 :: TypeCheck; 
   local attribute errCheck2 :: TypeCheck; 
@@ -56,11 +56,8 @@ ag::AGDcl ::= kwd::'equalityTest'
   eqCtx.compiledGrammars = ag.compiledGrammars;
   localErrors <- eqCtx.contextErrors;
 
-  value.downSubst = emptySubst();
-  thread downSubst, upSubst on value, expected, errCheck1, errCheck2, errCheck3;
+  thread downSubst, upSubst on expected, errCheck1, errCheck2, errCheck3;
   
-  value.finalSubst = errCheck3.upSubst;
-  expected.finalSubst = errCheck3.upSubst;
   errCheck1.finalSubst = errCheck3.upSubst;
   errCheck2.finalSubst = errCheck3.upSubst;
   errCheck3.finalSubst = errCheck3.upSubst;
@@ -71,18 +68,6 @@ ag::AGDcl ::= kwd::'equalityTest'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).productionFlowGraphs;
 
-  value.frame = bogusContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
-  expected.frame = bogusContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
-  
-  value.isRoot = true;
-  expected.isRoot = true;
-  value.originRules = [];
-  expected.originRules = [];
-  value.decSiteVertexInfo = nothing();
-  expected.decSiteVertexInfo = nothing();
-  value.alwaysDecorated = false;
-  expected.alwaysDecorated = false;
-
 {- Causes some circularities with the environment. TODO
   forwards to if !errCheck1.typeerror && !errCheck2.typeerror && !errCheck3.typeerror
               then appendAGDcl(absProdCS, aspProdCS)
@@ -92,101 +77,36 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   forwards to appendAGDcl(@absProdCS, @aspProdCS);
 
-{-
-  local absProdCS :: AGDcl = asAGDcl (
-   "abstract production " ++ testName ++ "\n" ++
-   "t::Test ::= \n" ++
-   "{ \n" ++
-   "  local attribute value :: %%%Type valueType;  \n" ++
-   "  value =  %%%Expr value; \n" ++
-   "  local attribute expected :: %%%Type valueType;  \n" ++
-   "  expected = %%%Expr expected; \n"  ++
-   "  t.msg = \"Test at " ++ ag.location.unparse ++ " failed. \\n\" ++ \n" ++ 
-   "          \"Checking that expression \\n\" ++ \n" ++
-   "          \"   " ++ stringifyString(value.unparse) ++ "\" ++ \n" ++
-   "          \"\\nshould be same as expression \\n\" ++ \n" ++
-   "          \"   " ++ stringifyString(expected.unparse) ++ "\\n\" ++ \n" ++
-   "          \"Actual value: \\n   \" ++ \n" ++
-   "          %%%Expr toStringValueExpr ++ \"\\n\" ++ \n" ++
-   "          \"Expected value: \\n   \" ++ \n" ++
-   "          %%%Expr toStringExpectedExpr ++ \"\\n\" ++ \n" ++
-   "         \"\";\n" ++
-   "  t.pass = %%%Expr equalityTestCode; \n" ++ 
-   "  forwards to defTest(); \n" ++
-   "}" ,
-   cons_CS_env("value", wrapExpr(value), 
-   cons_CS_env("expected", wrapExpr(expected), 
-   cons_CS_env("valueType", wrapType(valueType), 
-   cons_CS_env("testSuite", wrapName(testSuite),
-   cons_CS_env("toStringValueExpr", 
-     wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,toStringValueExpr)),
-   cons_CS_env("toStringExpectedExpr",
-     wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,toStringExpectedExpr)),
-   cons_CS_env("equalityTestCode",
-     wrapExpr( fromMaybe(error("TypeNotSupportedInternalError") ,equalityTestExpr)) ,
-   empty_CS_env()))))))) , 3 );
--}
-
   -- TODO: BUG: FIXME: these names should be mangled. I ran into 't' being shadowed in a test I wrote!
   nondecorated local tref::Name = name("t");
-  nondecorated local testNameref::Name = name(testName);
   nondecorated local valueref::Name = name("value");
   nondecorated local expectedref::Name = name("expected");
-  nondecorated local msgref::Name = name("msg");
-  nondecorated local passref::Name = name("pass");
   
-  -- TODO: Rewrite as Silver_AGDcl { ... }
-  local absProdCS::AGDcl =
-    productionDcl('abstract', 'production', testNameref,
-      productionImplementsNone(),
-      productionSignature(
-        nilConstraint(), '=>',
-        productionLHS(tref, '::',
-          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test")))),
-        '::=', productionRHSNil()),
-      productionBody('{', foldl(productionStmtsSnoc(_, _), productionStmtsNil(), [
-        localAttributeDcl('local', 'attribute', valueref, '::', new(valueType), ';'),
-        valueEq(qNameId(valueref), '=', new(value), ';'),
-        localAttributeDcl('local', 'attribute', expectedref, '::', new(valueType), ';'),
-        valueEq(qNameId(expectedref), '=', new(expected), ';'),
-        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(msgref)), '=',
-          foldStringExprs([
-            strCnst("Test at " ++ getParsedOriginLocationOrFallback(ag).unparse ++ " failed.\nChecking that expression\n   " ++
-              value.unparse ++ "\nshould be same as expression\n   " ++
-              expected.unparse ++ "\nActual value:\n   "),
-            Silver_Expr { silver:testing:showTestValue(value) },
-            strCnst("\nExpected value: \n   "),
-            Silver_Expr { silver:testing:showTestValue(expected) },
-            strCnst("\n")]), ';'),
-        attributeDef(concreteDefLHS(qNameId(tref)), '.', qNameAttrOccur(qNameId(passref)), '=',
-           Silver_Expr { value == expected }, ';'),
-        forwardsTo('forwards', 'to', mkStrFunctionInvocation("defTest", []), ';')]), '}'));
+  local absProdCS::AGDcl = Silver_AGDcl {
+    abstract production $name{testName}
+    $Name{tref}::Test ::=
+    {
+      nondecorated local attribute $Name{valueref} :: $TypeExpr{@valueType};
+      $Name{valueref} = $Expr{@value};
+      nondecorated local attribute $Name{expectedref} :: $TypeExpr{new(valueType)};
+      $Name{valueref} = $Expr{@expected};
+      $Name{tref}.msg =
+        "Test at " ++ getParsedOriginLocationOrFallback(ag).unparse ++ " failed.\n" ++
+        "Checking that expression\n   " ++ $Expr{makeStringConst(value.unparse)} ++ "\n" ++
+        "should be same as expression\n   " ++ $Expr{makeStringConst(expected.unparse)} ++ "\n" ++
+        "Actual value:\n   " ++ silver:langutil:pp:show(80, $Name{valueref}) ++ "\n" ++
+        "Expected value: \n   " ++ silver:langutil:pp:show(80, $Name{expectedref}) ++ "\n";
+      $Name{tref}.pass = $Name{valueref} == $Name{expectedref};
+    }
+  };
 
-{-
-  local aspProdCS :: AGDcl = asAGDcl (
-   "aspect production %%%Name testSuite \n" ++
-   "t ::=  \n" ++
-   "{ testsToPerform <- [ " ++ testName ++ "() ]; } " ,
-   cons_CS_env("testSuite", wrapName(testSuite), empty_CS_env()) , 4 );
--}
-
-  local aspProdCS::AGDcl =
-    aspectProductionDcl('aspect', 'production', qNameId(@testSuite),
-      aspectProductionSignature(
-        aspectProductionLHSId(tref),
-          '::=', aspectRHSElemNil()),
-      productionBody('{',
-        productionStmtsSnoc(
-          productionStmtsNil(),
-          valContainsAppend(
-            qName("testsToPerform"),
-            '<-',
-            fullList('[',
-              exprsSingle(
-                applicationEmpty(
-                  baseExpr(qNameId(testNameref)), '(', ')')),
-              ']'),
-            ';')), '}'));
+  local aspProdCS::AGDcl = Silver_AGDcl {
+    aspect production testSuite
+    $Name{tref} ::= 
+    {
+      testsToPerform <- [ $name{testName}() ];
+    }
+  };
 
   local testName :: String = "generatedTest" ++ "_" ++ 
                             substitute(":","_",ag.grammarName) ++ "_" ++ 
@@ -194,4 +114,7 @@ ag::AGDcl ::= kwd::'equalityTest'
                             toString(kwd.line) ++ "_" ++ 
                             toString(kwd.column);
 }
+
+fun makeStringConst Expr ::= s::String =
+  stringConst(terminal(String_t, "\"" ++ escapeString(s) ++ "\"", getParsedOriginLocationOrFallback(ambientOrigin())));
 
