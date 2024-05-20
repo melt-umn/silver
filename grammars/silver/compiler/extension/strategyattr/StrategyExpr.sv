@@ -43,16 +43,16 @@ partial strategy attribute genericStep =
   rule on top::StrategyExpr of
   | sequence(fail(), _) -> fail(genName=top.genName)
   | sequence(_, fail()) -> fail(genName=top.genName)
-  | sequence(id(), s) -> s
-  | sequence(s, id()) -> s
-  | choice(fail(), s) -> s
-  | choice(s, fail()) -> s
-  | choice(s, _) when s.isTotal -> s
+  | sequence(id(), s) -> new(s)
+  | sequence(s, id()) -> new(s)
+  | choice(fail(), s) -> new(s)
+  | choice(s, fail()) -> new(s)
+  | choice(s, _) when s.isTotal -> new(s)
   | allTraversal(id()) -> id(genName=top.genName)
   | someTraversal(fail()) -> fail(genName=top.genName)
   | oneTraversal(fail()) -> fail(genName=top.genName)
   | prodTraversal(_, ss) when ss.containsFail -> fail(genName=top.genName)
-  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> s
+  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> new(s)
   | inlined(_, fail()) -> fail(genName=top.genName)
   end;
 -- Nonterminal-dependent, production-independent optimizations
@@ -69,7 +69,7 @@ partial strategy attribute ntStep =
   | partialRef(n) when !n.matchesFrame -> fail(genName=top.genName)
   | inlined(n, _) when !n.matchesFrame -> fail(genName=top.genName)
   | inlined(n, id()) when n.matchesFrame -> id(genName=top.genName)
-  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(n2, genName=top.genName)
+  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(new(n2), genName=top.genName)
   end;
 -- Production-dependent optimizations
 partial strategy attribute prodStep =
@@ -84,8 +84,8 @@ partial strategy attribute prodStep =
 partial strategy attribute elimInfeasibleMRules =
   onceBottomUp(
     rule on top::MRuleList of
-    | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
-    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h)
+    | mRuleList_cons(h, _, t) when !h.matchesFrame -> new(t)
+    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(new(h))
     end);
 attribute elimInfeasibleMRules occurs on MRuleList;
 

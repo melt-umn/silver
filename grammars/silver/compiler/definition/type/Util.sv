@@ -151,7 +151,7 @@ aspect production appType
 top::Type ::= c::Type a::Type
 {
   top.baseType = c.baseType;
-  top.argTypes = c.argTypes ++ [a];
+  top.argTypes = c.argTypes ++ [new(a)];
   top.isNonterminal = c.isNonterminal;
   top.isData = c.isData;
   top.isTracked = c.isTracked;

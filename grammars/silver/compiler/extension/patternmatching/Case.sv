@@ -162,7 +162,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
         map(\ x::Expr -> "__match_expr_" ++ toString(genInt()), es);
   local nameExprs::[Expr] =
         map(\ x::String -> baseExpr(qName(x)), names);
-  local compiledCase::Expr =
+  nondecorated local compiledCase::Expr =
         compileCaseExpr(nameExprs, ml, new(failExpr), new(retType), top.env);
   nondecorated local fwdResult::Expr =
     foldr(\ p::(String, Expr) rest::Expr ->
@@ -288,7 +288,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   --   forwarding constructor, and variables based on first pattern
   local groups::[[AbstractMatchRule]] = splitPatternGroups(ml, env);
 
-  local compiledGroups::Expr =
+  nondecorated local compiledGroups::Expr =
         compilePatternGroups(es, groups, new(failExpr), new(retType), env);
 
   --Check if there is any match rule with empty patterns
@@ -300,7 +300,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
                   end, ml));
 
   --Assume all the rules are devoid of patterns
-  local finalStep::Expr =
+  nondecorated local finalStep::Expr =
         foldr(\ mrule::AbstractMatchRule rest::Expr ->
                 case mrule of
                 | matchRule(_, nothing(), e) -> new(e)
@@ -316,7 +316,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
                      end
                   }
                 end,
-              failExpr, ml);
+              new(failExpr), ml);
 
   return
      case ml of

@@ -189,7 +189,7 @@ top::Context ::= t::Type
   top.contextSigElem = s"final ${top.transType} ${makeTypeableName(new(t), top.boundVariables)}";
   top.contextRefElem = makeTypeableName(new(t), top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, t, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, new(t), top.typeChildrenIn) of
     | just(child) -> s"\t\t\tfinal ${top.transType} ${makeTypeableName(new(t), top.boundVariables)} = common.Reflection.getType(${child});\n"
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -373,7 +373,7 @@ function makeInhOccursContextAccess
 String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhArray::String t::Type
 {
   t.boundVariables = bv;
-  local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
+  local inhs::[String] = lookupAllBy(typeNameEq, new(t), sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
 			${if null(inhs) then "return null;" else
 s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, new(t), bv), inhs))} + 1];
