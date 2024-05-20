@@ -194,7 +194,10 @@ top::StrategyExpr ::=
   top.isId = true;
   top.isTotal = true;
   top.isTotalNoEnv = true;
-  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName} };
+  top.totalTranslation =
+    if top.frame.signature.outputElement.typerep.isData
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName} }
+    else Silver_Expr { silver:core:new($name{top.frame.signature.outputElement.elementName}) };
 }
 
 abstract production fail
@@ -318,11 +321,11 @@ top::StrategyExpr ::= s::StrategyExpr
   s.isOutermost = false;
   
   local sBaseName::String = last(explode(":", sName));
-  -- (child name, attr occurs on child)
-  local childAccesses::[Pair<String Boolean>] =
+  -- (child name, child decorable, attr occurs on child)
+  local childAccesses::[(String, Boolean, Boolean)] =
     map(
       \ e::NamedSignatureElement ->
-        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.partialTranslation =
     if sTotal
@@ -336,15 +339,15 @@ top::StrategyExpr ::= s::StrategyExpr
          Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
-          \ a::Pair<String Boolean> ->
-            if a.snd then [Silver_Expr { $name{a.fst}.$name{sName} }] else [],
+          \ a::(String, Boolean, Boolean) ->
+            if a.3 then [Silver_Expr { $name{a.1}.$name{sName} }] else [],
           childAccesses),
         [matchRule(
            flatMap(
-             \ a::Pair<String Boolean> ->
-               if a.snd
+             \ a::(String, Boolean, Boolean) ->
+               if a.3
                then
-                 [decorate Silver_Pattern { silver:core:just($name{a.fst ++ "_" ++ sBaseName}) }
+                 [decorate Silver_Pattern { silver:core:just($name{a.1 ++ "_" ++ sBaseName}) }
                   with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                else [],
              childAccesses),
@@ -355,10 +358,12 @@ top::StrategyExpr ::= s::StrategyExpr
                  mkFullFunctionInvocation(
                    baseExpr(qName(top.frame.fullName)),
                    map(
-                     \ a::Pair<String Boolean> ->
-                       if a.snd
-                       then Silver_Expr { $name{a.fst ++ "_" ++ sBaseName} }
-                       else Silver_Expr { $name{a.fst} },
+                     \ a::(String, Boolean, Boolean) ->
+                       if a.3
+                       then Silver_Expr { $name{a.1 ++ "_" ++ sBaseName} }
+                       else if a.2
+                       then Silver_Expr { silver:core:new($name{a.1}) }
+                       else Silver_Expr { $name{a.1} },
                      childAccesses),
                    map(
                      makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -375,10 +380,12 @@ top::StrategyExpr ::= s::StrategyExpr
        mkFullFunctionInvocation(
          baseExpr(qName(top.frame.fullName)),
          map(
-           \ a::Pair<String Boolean> ->
-             if a.snd
-             then Silver_Expr { $name{a.fst}.$name{sName} }
-             else Silver_Expr { $name{a.fst} },
+           \ a::(String, Boolean, Boolean) ->
+             if a.3
+             then Silver_Expr { $name{a.1}.$name{sName} }
+             else if a.2
+             then Silver_Expr { silver:core:new($name{a.1}) }
+             else Silver_Expr { $name{a.1} },
            childAccesses),
          map(
            makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -402,13 +409,13 @@ top::StrategyExpr ::= s::StrategyExpr
 
   s.isOutermost = false;
   
-  -- (child name, attr occurs on child)
-  local childAccesses::[Pair<String Boolean>] =
+  -- (child name, child decorable, attr occurs on child)
+  local childAccesses::[(String, Boolean, Boolean)] =
     map(
       \ e::NamedSignatureElement ->
-        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
-  local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
+  local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
   top.partialTranslation =
     if sTotal
     then
@@ -435,10 +442,16 @@ top::StrategyExpr ::= s::StrategyExpr
               mkFullFunctionInvocation(
                 baseExpr(qName(top.frame.fullName)),
                 map(
-                  \ a::Pair<String Boolean> ->
-                    if a.snd
-                    then Silver_Expr { silver:core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
-                    else Silver_Expr { $name{a.fst} },
+                  \ a::(String, Boolean, Boolean) ->
+                    let defaultRes::Expr =
+                      if a.2
+                      then Silver_Expr { silver:core:new($name{a.1}) }
+                      else Silver_Expr { $name{a.1} }
+                    in
+                      if a.3
+                      then Silver_Expr { silver:core:fromMaybe($Expr{defaultRes}, $name{a.1}.$name{sName}) }
+                      else defaultRes
+                    end,
                   childAccesses),
                 map(
                   makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -453,10 +466,12 @@ top::StrategyExpr ::= s::StrategyExpr
        mkFullFunctionInvocation(
          baseExpr(qName(top.frame.fullName)),
          map(
-           \ a::Pair<String Boolean> ->
-             if a.snd
-             then Silver_Expr { $name{a.fst}.$name{sName} }
-             else Silver_Expr { $name{a.fst} },
+           \ a::(String, Boolean, Boolean) ->
+             if a.3
+             then Silver_Expr { $name{a.1}.$name{sName} }
+             else if a.2
+             then Silver_Expr { silver:core:new($name{a.1}) }
+             else Silver_Expr { $name{a.1} },
            childAccesses),
          map(
            makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -481,13 +496,13 @@ top::StrategyExpr ::= s::StrategyExpr
   s.isOutermost = false;
   
   local sBaseName::String = last(explode(":", sName));
-  -- (child name, attr occurs on child)
-  local childAccesses::[Pair<String Boolean>] =
+  -- (child name, child decorable, attr occurs on child)
+  local childAccesses::[(String, Boolean, Boolean)] =
     map(
       \ e::NamedSignatureElement ->
-        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
-  local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
+  local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
   top.partialTranslation =
     if sTotal
     then
@@ -527,11 +542,17 @@ top::StrategyExpr ::= s::StrategyExpr
                       mkFullFunctionInvocation(
                         baseExpr(qName(top.frame.fullName)),
                         map(
-                          \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                          \ a::(String, Boolean, Boolean) ->
+                            if a.2
+                            then Silver_Expr { silver:core:new($name{a.1}) }
+                            else Silver_Expr { $name{a.1} },
                           take(childIndex, childAccesses)) ++
                         Silver_Expr { $name{childI ++ "_" ++ sBaseName} } ::
                         map(
-                          \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                          \ a::(String, Boolean, Boolean) ->
+                            if a.2
+                            then Silver_Expr { silver:core:new($name{a.1}) }
+                            else Silver_Expr { $name{a.1} },
                           drop(childIndex + 1, childAccesses)),
                         map(
                           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -550,10 +571,12 @@ top::StrategyExpr ::= s::StrategyExpr
       mkFullFunctionInvocation(
         baseExpr(qName(top.frame.fullName)),
         map(
-          \ a::Pair<String Boolean> ->
-            if a.fst == head(matchingChildren)
-            then Silver_Expr { $name{a.fst}.$name{sName} }
-            else Silver_Expr { $name{a.fst} },
+          \ a::(String, Boolean, Boolean) ->
+            if a.1 == head(matchingChildren)
+            then Silver_Expr { $name{a.1}.$name{sName} }
+            else if a.2
+            then Silver_Expr { silver:core:new($name{a.1}) }
+            else Silver_Expr { $name{a.1} },
           childAccesses),
         map(
           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -584,9 +607,11 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   
   top.containsTraversal <- true;
   
-  -- (child name, if attr occurs on child then just(attr name) else nothing())
-  local childAccesses::[Pair<String Maybe<String>>] =
-    zip(top.frame.signature.inputNames, s.attrRefNames);
+  -- (child name, child decorable, if attr occurs on child then just(attr name) else nothing())
+  local childAccesses::[(String, Boolean, Maybe<String>)] = zip3(
+    top.frame.signature.inputNames,
+    map(isDecorable(_, top.env), top.frame.signature.inputTypes),
+    s.attrRefNames);
   top.partialTranslation = -- This is never total
     if prod.lookupValue.fullName == top.frame.fullName
     then
@@ -599,18 +624,18 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
          Could also be implemented using the Applicative instance for Maybe.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
-          \ a::Pair<String Maybe<String>> ->
-            case a.snd of
-            | just(attr) when !attrIsTotal(top.env, attr) -> [Silver_Expr { $name{a.fst}.$name{attr} }]
+          \ a::(String, Boolean, Maybe<String>) ->
+            case a.3 of
+            | just(attr) when !attrIsTotal(top.env, attr) -> [Silver_Expr { $name{a.1}.$name{attr} }]
             | _ -> []
             end,
           childAccesses),
         [matchRule(
            flatMap(
-             \ a::Pair<String Maybe<String>> ->
-               case a.snd of
+             \ a::(String, Boolean, Maybe<String>) ->
+               case a.3 of
                | just(attr) when !attrIsTotal(top.env, attr)  ->
-                 [decorate Silver_Pattern { silver:core:just($name{a.fst ++ "_" ++ last(explode(":", attr))}) }
+                 [decorate Silver_Pattern { silver:core:just($name{a.1 ++ "_" ++ last(explode(":", attr))}) }
                   with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                | _ -> []
                end,
@@ -622,11 +647,14 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                  mkFullFunctionInvocation(
                    baseExpr(qName(top.frame.fullName)),
                    map(
-                     \ a::Pair<String Maybe<String>> ->
-                       case a.snd of
-                       | just(attr) when attrIsTotal(top.env, attr) -> Silver_Expr { $name{a.fst}.$name{attr} }
-                       | just(attr) -> Silver_Expr { $name{a.fst ++ "_" ++ last(explode(":", attr))} }
-                       | nothing() -> Silver_Expr { $name{a.fst} }
+                     \ a::(String, Boolean, Maybe<String>) ->
+                       case a.3 of
+                       | just(attr) when attrIsTotal(top.env, attr) -> Silver_Expr { $name{a.1}.$name{attr} }
+                       | just(attr) -> Silver_Expr { $name{a.1 ++ "_" ++ last(explode(":", attr))} }
+                       | nothing() ->
+                          if a.2
+                          then Silver_Expr { silver:core:new($name{a.1}) }
+                          else Silver_Expr { $name{a.1} }
                        end,
                      childAccesses),
                    map(
@@ -789,9 +817,15 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     then Silver_Expr { silver:core:nothing() }
     else if top.frame.signature.outputElement.elementName == id.name
     then res
+    else if top.frame.signature.outputElement.typerep.isData
+    then Silver_Expr {
+      let $Name{new(id)}::$TypeExpr{new(ty)} = $name{top.frame.signature.outputElement.elementName}
+      in $Expr{res}
+      end
+    }
     else Silver_Expr {
-      -- TODO: Data NTs shouldn't be decorated.
-      let $Name{new(id)}::Decorated $TypeExpr{new(ty)} = $name{top.frame.signature.outputElement.elementName}
+      let $Name{new(id)}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
+        $name{top.frame.signature.outputElement.elementName}
       in $Expr{res}
       end
     };

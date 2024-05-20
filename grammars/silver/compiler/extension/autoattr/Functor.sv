@@ -89,20 +89,18 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
 function makeArg
 Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
 {
-  nondecorated local at::QName = qName(input.elementName);
-  
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
-  local validTypeHead :: Boolean = 
-    isDecorable(input.typerep, env) || input.typerep.isNonterminal;
+  local inputDecorable :: Boolean = isDecorable(input.typerep, env);
+  local validTypeHead :: Boolean = inputDecorable || input.typerep.isNonterminal;
   
   return
     if validTypeHead && attrOccursOnHead
-    then access(
-           baseExpr(at), '.',
-           qNameAttrOccur(new(attrName)))
-    else baseExpr(at);
+    then Silver_Expr { $name{input.elementName}.$QName{new(attrName)} }
+    else if inputDecorable
+    then Silver_Expr { silver:core:new($name{input.elementName}) }
+    else Silver_Expr { $name{input.elementName} };
 }
 
 {--

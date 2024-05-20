@@ -85,9 +85,15 @@ top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String sy
               trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$qName{syn} },
+                  if !null(getOccursDcl(syn, ie.typerep.typeName, top.env))
+                  then Silver_Expr { $name{ie.elementName}.$name{syn} }
+                  else if isDecorable(ie.typerep, top.env)
+                  then Silver_Expr {
+                    silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))
+                  }
+                  else Silver_Expr {
+                    silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"})
+                  },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;

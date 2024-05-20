@@ -79,9 +79,15 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String keySyn::S
                   Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
                 map(
                   \ ie::NamedSignatureElement ->
-                    if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
-                    then Silver_Expr { silver:core:compare($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                    else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
+                    if !null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
+                    then Silver_Expr { $name{ie.elementName}.$QName{new(syn)} }
+                    else if isDecorable(ie.typerep, top.env)
+                    then Silver_Expr {
+                      silver:core:compare(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))
+                    }
+                    else Silver_Expr {
+                      silver:core:compare($name{ie.elementName}, $name{ie.elementName ++ "2"})
+                    },
                   top.frame.signature.inputElements))}
         | _ -> silver:core:compare($name{topName}.$name{keySyn}, $name{topName}.$name{inh}.$name{keySyn})
         end;
