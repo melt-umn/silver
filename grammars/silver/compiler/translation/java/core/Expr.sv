@@ -114,6 +114,16 @@ top::Expr ::= @q::QName
     else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
 }
 
+aspect production nondecLocalReference
+top::Expr ::= @q::QName
+{
+  top.translation = s"context.<${top.finalType.transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})";
+
+  top.lazyTranslation =
+    if !top.frame.lazyApplication then top.translation
+    else s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})";
+}
+
 aspect production lhsReference
 top::Expr ::= @q::QName
 {

@@ -137,8 +137,12 @@ fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean 
   valueDef(defaultEnvItem(childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
 fun lhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
   valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-fun localDef Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean =
-  valueDef(defaultEnvItem(localDcl(fn,ty,isForward,sourceGrammar=sg,sourceLocation=sl)));
+fun localDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun nondecLocalDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(nondecLocalDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun forwardLocalDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(forwardLocalDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun prodDef Def ::= sg::String  sl::Location  ns::NamedSignature  dispatch::Maybe<NamedSignature>  hasForward::Boolean =
   prodDclDef(defaultEnvItem(prodDcl(ns,dispatch,hasForward,sourceGrammar=sg,sourceLocation=sl)));
 fun funDef Def ::= sg::String  sl::Location  ns::NamedSignature =

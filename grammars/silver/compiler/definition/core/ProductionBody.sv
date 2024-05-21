@@ -160,7 +160,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   production attribute fName :: String;
   fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", a.nameLoc.filename)))}:${toString(a.nameLoc.line)}:${toString(a.nameLoc.column)}:${a.name}";
 
-  top.defs := [localDef(top.grammarName, a.nameLoc, fName, te.typerep, false)];
+  top.defs := [localDef(top.grammarName, a.nameLoc, fName, te.typerep)];
 
   top.errors <-
         if length(getValueDclInScope(a.name, top.env)) > 1 
@@ -180,7 +180,47 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
 
-  top.productionAttributes := [localDef(top.grammarName, a.nameLoc, fName, te.typerep, false)];
+  top.productionAttributes := [localDef(top.grammarName, a.nameLoc, fName, te.typerep)];
+
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1 
+        then [errFromOrigin(a, "Value '" ++ fName ++ "' is already bound.")]
+        else [];
+
+  top.errors <- if !top.frame.permitProductionAttributes
+                then [errFromOrigin(top, "Production attributes are not valid in this context.")]
+                else [];
+}
+
+concrete production nondecLocalAttributeDcl
+top::ProductionStmt ::= 'nondecorated' 'local' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.unparse = "\tnondec local attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
+
+  production attribute fName :: String;
+  fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", a.nameLoc.filename)))}:${toString(a.nameLoc.line)}:${toString(a.nameLoc.column)}:${a.name}";
+
+  top.defs := [nondecLocalDef(top.grammarName, a.nameLoc, fName, te.typerep)];
+
+  top.errors <-
+        if length(getValueDclInScope(a.name, top.env)) > 1 
+        then [errFromOrigin(a, "Value '" ++ a.name ++ "' is already bound.")]
+        else [];
+
+  top.errors <- if !top.frame.permitLocalAttributes
+                then [errFromOrigin(top, "Local attributes are not valid in this context.")]
+                else [];
+}
+
+concrete production nondecProductionAttributeDcl
+top::ProductionStmt ::= 'nondecorated' 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.unparse = "\tnondec production attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
+
+  production attribute fName :: String;
+  fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
+
+  top.productionAttributes := [nondecLocalDef(top.grammarName, a.nameLoc, fName, te.typerep)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1 
@@ -200,7 +240,7 @@ top::ProductionStmt ::= 'forward' 'production' 'attribute' a::Name ';'
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
 
-  top.productionAttributes := [localDef(top.grammarName, a.nameLoc, fName, top.frame.signature.outputElement.typerep, true)];
+  top.productionAttributes := [forwardLocalDef(top.grammarName, a.nameLoc, fName, top.frame.signature.outputElement.typerep)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1 

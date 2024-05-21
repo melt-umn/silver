@@ -102,7 +102,25 @@ top::ValueDclInfo ::=
 }
 
 aspect production localDcl
-top::ValueDclInfo ::= fn::String ty::Type _
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  local attribute li :: Integer;
+  li = lastIndexOf(":local:", fn);
+  top.attrOccursIndexName = makeIdName(substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));
+  top.attrOccursInitIndex = top.attrOccursIndex;
+  top.attrOccursIndex = makeName(top.sourceGrammar) ++ ".Init." ++ top.attrOccursIndexName;
+}
+aspect production nondecLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  local attribute li :: Integer;
+  li = lastIndexOf(":local:", fn);
+  top.attrOccursIndexName = makeIdName(substring(li+7, length(fn), fn) ++ "__ON__" ++ substring(0,li,fn));
+  top.attrOccursInitIndex = top.attrOccursIndex;
+  top.attrOccursIndex = makeName(top.sourceGrammar) ++ ".Init." ++ top.attrOccursIndexName;
+}
+aspect production forwardLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
 {
   local attribute li :: Integer;
   li = lastIndexOf(":local:", fn);

@@ -50,6 +50,7 @@ terminal Implements_kwd  'implements'   lexer classes {KEYWORD,RESERVED};
 terminal Inherited_kwd   'inherited'    lexer classes {KEYWORD,RESERVED};
 terminal Instance_kwd    'instance'     lexer classes {KEYWORD};
 terminal Local_kwd       'local'        lexer classes {KEYWORD,RESERVED};
+terminal Nondec_kwd      'nondecorated' lexer classes {KEYWORD,RESERVED};
 terminal NonTerminal_kwd 'nonterminal'  lexer classes {KEYWORD,RESERVED};
 terminal Occurs_kwd      'occurs'       lexer classes {KEYWORD,RESERVED};
 terminal On_kwd          'on'           lexer classes {KEYWORD,RESERVED};

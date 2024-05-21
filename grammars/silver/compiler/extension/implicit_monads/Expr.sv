@@ -97,6 +97,18 @@ top::Expr ::= @q::QName
   top.monadRewritten = baseExpr(new(q));
 }
 
+aspect production nondecLocalReference
+top::Expr ::= @q::QName
+{
+  top.merrors := [];
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.monoType;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q))]
+                     else [];
+  top.monadRewritten = baseExpr(new(q));
+}
+
 aspect production forwardReference
 top::Expr ::= @q::QName
 {

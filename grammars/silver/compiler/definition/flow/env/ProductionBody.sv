@@ -204,7 +204,8 @@ top::ProductionStmt ::= @val::QName e::Expr
     if e.alwaysDecorated
     then just(localVertexType(val.lookupValue.fullName))
     else nothing();
-  e.alwaysDecorated = isDecorable(e.finalType, top.env);
+  e.alwaysDecorated =
+    isDecorable(e.finalType, top.env) && val.lookupValue.found && !val.lookupValue.dcl.isNondec;
 }
 
 -- FROM COLLECTIONS TODO
