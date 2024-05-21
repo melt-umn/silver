@@ -25,7 +25,9 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  propagate grammarName, env, flowEnv;
+  attl.env = nttl.envBindingTyVars;
+  attl.flowEnv = top.flowEnv;
+  attl.grammarName = top.grammarName;
   
   forwards to
     defaultAttributionDcl(

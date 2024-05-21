@@ -30,35 +30,6 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
        attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
-abstract production biequalityInhAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
-{
-  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  top.moduleNames := [];
-
-  propagate grammarName, env, flowEnv;
-  
-  forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then @attl
-      else
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  new(tl))
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end),
-            '>')),
-      @nt, @nttl);
-}
-
 abstract production propagateBiequalitySynPartial implements Propagate
 top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String syn::String
 {
