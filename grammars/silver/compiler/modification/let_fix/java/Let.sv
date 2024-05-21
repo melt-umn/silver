@@ -57,7 +57,7 @@ fun makeSpecialLocalBinding String ::= fn::String  et::String  ty::String =
   s"final common.Thunk<${ty}> ${makeLocalValueName(fn)} = ${wrapThunkText(et, ty)};\n";
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  _ _ _
+top::Expr ::= @q::QName  _ _
 {
   -- To account for a magic case where we generate a let expression with a type
   -- that is, for example, a ntOrDecType or something,

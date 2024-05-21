@@ -264,7 +264,7 @@ s"""private Object child_${n};
   top.childStaticElem =
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
-    else if ty.isNonterminal && !ty.isData || ty.isUniqueDecorated && ntType.isNonterminal
+    else if ty.isNonterminal && !ty.isData
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
@@ -325,11 +325,13 @@ function makeChildDecSiteAccessCase
 String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
-    case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
-    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
-    | _, _ -> ""
+    case lookupRefDecSite(prodName, rhsVertexType(n.elementName), flowEnv) of
+    | [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
+    | _ -> ""
     end;
 }
+
+-- Translation of accessing a tree that is shared in a position corresponding to some flow vertex type.
 fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
   case v of
   | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
@@ -351,6 +353,7 @@ fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String 
   | forwardVertexType_real() -> s"context.forward()"
   | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
   | subtermVertexType(parent, prodName, sigName) ->
+    -- prodName is either a production or dispatch signature name
     s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
   end;
 

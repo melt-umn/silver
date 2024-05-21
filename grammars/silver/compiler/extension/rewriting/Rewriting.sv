@@ -46,12 +46,15 @@ concrete production traverseProdExprAnno
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
-  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, flowEnv;
   
   local numChildren::Integer = n.lookupValue.typeScheme.arity;
   local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);
   es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false, false), numChildren);
   es.appExprApplied = n.unparse;
+  es.decSiteVertexInfo = nothing();
+  es.appProd = nothing();
+  es.appIndexOffset = 0;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
     map(pair(fst=_, snd=nonterminalType("silver:rewrite:Strategy", [], false, false)), annotations);
@@ -224,7 +227,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.alwaysDecorated = false;
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.isRoot = false;
-  checkExpr.originRules = top.originRules;
+  checkExpr.originRules = [];
   
   ml.env = top.env;
   ml.matchRulePatternSize = 1;

@@ -53,7 +53,6 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 
   e.frame = globalExprContext(fName, nilContext(), te.typerep, myFlowGraph, sourceGrammar=top.grammarName);
   e.isRoot = false;
-  e.originRules = [];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   
@@ -115,11 +114,10 @@ top::Operation ::=
  - Propagate a monoid attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateMonoid
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateMonoid implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
@@ -152,4 +150,12 @@ top::ProductionStmt ::= attr::Decorated! QName
       '.',
       qNameAttrOccur(new(attr)),
       ':=', res, ';');
+}
+
+abstract production monoidErrorRegularAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
+  forwards to errorAttributeDef(
+    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")],
+    dl, attr, @e);
 }

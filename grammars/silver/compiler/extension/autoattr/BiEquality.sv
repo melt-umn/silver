@@ -30,10 +30,9 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
        attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
-abstract production biequalityInhAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production biequalityInhAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -60,10 +59,9 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
       nt, nttl);
 }
 
-abstract production propagateBiequalitySynPartial
-top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
+abstract production propagateBiequalitySynPartial implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String syn::String
 {
-  undecorates to propagateOneAttr(synPartial);
   top.unparse = s"propagate ${synPartial.unparse};";
   
   forwards to
@@ -96,10 +94,9 @@ top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
     };
 }
 
-abstract production propagateBiequalitySyn
-top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
+abstract production propagateBiequalitySyn implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String synPartial::String
 {
-  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   forwards to

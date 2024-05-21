@@ -48,7 +48,7 @@ top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
   
   top.errors <-
     case top.implementedSig of
-    | just(e) when e.elementShared != ms.elementShared ->
+    | just(e) when e.elementShared != ms.isShared ->
       [errFromOrigin(top, s"Child ${id.name} does not match the sharedness from the implemented dispatch signature.")]
     | _ -> []
     end;

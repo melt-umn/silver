@@ -19,10 +19,9 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
       [attrDef(defaultEnvItem(functorDcl(fName, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
 }
 
-abstract production functorAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production functorAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -53,11 +52,10 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
  - Propagate a functor attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateFunctor
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateFunctor implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}{attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
@@ -98,7 +96,7 @@ Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
   local validTypeHead :: Boolean = 
-    (isDecorable(input.typerep, env) || input.typerep.isNonterminal) && !input.typerep.isUniqueDecorated;
+    isDecorable(input.typerep, env) || input.typerep.isNonterminal;
   
   return
     if validTypeHead && attrOccursOnHead

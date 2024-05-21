@@ -90,7 +90,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
     flowEnv(
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
-      flatMap((.uniqueRefs), rootSpecs),
+      flatMap((.sharedRefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
   production newInterface::InterfaceItems = packInterfaceItems(top);

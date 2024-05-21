@@ -19,7 +19,7 @@ Boolean ::= x::a y::a
   return x.isEqual;
 }
 
-warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env1 but this equation appears to be missing." {
+warnCode "Equation requires inherited attribute flow:env1 be supplied to child x of production flow:isEqualBad" {
 function isEqualBad
 attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo, env1} occurs on a =>
@@ -105,7 +105,7 @@ top::Expr ::= x::a
   top.value = x.value;
 }
 
-warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env2 but this equation appears to be missing." {
+warnCode "Access of synthesized attribute value on x requires missing inherited attribute(s) flow:env2 to be supplied to child x of production flow:valueThing1Bad" {
 production valueThing1Bad
 attribute env1 occurs on a,
 attribute value {env1, env2} occurs on a =>
@@ -128,7 +128,7 @@ top::Expr ::= x::a
   top.value = x.value;
 }
 
-warnCode "Access of syn attribute value on x requires missing inherited attributes flow:env2 to be supplied" {
+warnCode "Access of synthesized attribute value on x requires missing inherited attribute(s) flow:env2 to be supplied to child x of production flow:valueThing2Bad" {
 production valueThing2Bad
 attribute env1 occurs on a,
 attribute env2 occurs on a,

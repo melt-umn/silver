@@ -302,7 +302,7 @@ top::AspectRHSElem ::= shared::Boolean id::Name t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t, shared)];
 
-  top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), shared, id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [errFromOrigin(id, "Value '" ++ id.name ++ "' is already bound.")]

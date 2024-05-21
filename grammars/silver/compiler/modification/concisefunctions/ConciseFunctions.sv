@@ -54,6 +54,9 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
   e.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
   e.originRules = [];
   e.isRoot = true;
+} action {
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
+  sigNames = [];
 }
 
 monoid attribute shortFunctionDefs::[Def] occurs on FunctionSignature, ProductionRHS, ProductionRHSElem;
@@ -80,10 +83,9 @@ aspect shortFunctionDefs on top::ProductionRHSElem using := of
 | productionRHSElemType(_, _) -> []
 end;
 
-abstract production shortFunParamReference
-top::Expr ::= q::Decorated! QName
+abstract production shortFunParamReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
 
   propagate errors;

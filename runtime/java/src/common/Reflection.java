@@ -459,7 +459,7 @@ public final class Reflection {
 
 			return new Pright(arr.toByteArray());
 		} catch (NativeSerializationException e) {
-			return new Pleft(new StringCatter("Native serialize failed: " + e.toString()));
+			return new Pleft(new StringCatter("Native serialize failed: " + e.getMessage()));
 		} catch (Exception e) {
 			String m = "Native serialize failed: Unknown error: " + e.toString();
 			System.err.println(m);
@@ -596,7 +596,7 @@ public final class Reflection {
 
 			return new Pright(v);
 		} catch (NativeSerializationException e) {
-			return new Pleft(new StringCatter("Native deserialize failed: " + e.toString()));
+			return new Pleft(new StringCatter("Native deserialize failed: " + e.getMessage()));
 		} catch (IOException e) {
 			String m = "Native deserialize failed: Unknown Error: " + e.toString();
 			System.err.println(m);

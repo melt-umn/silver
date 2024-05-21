@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:autoattr;
 
-synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated! QName) occurs on AttributeDclInfo;
+synthesized attribute propagateDispatcher :: Propagate occurs on AttributeDclInfo;
 
 synthesized attribute emptyVal::Expr occurs on AttributeDclInfo;
 
@@ -28,7 +28,7 @@ top::AttributeDclInfo ::= fn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = functorAttributionDcl;
@@ -53,11 +53,9 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
   top.operation = append;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
-  top.attrDefDispatcher = 
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-      errorAttributeDef([errFromOrigin(ambientOrigin(), attr.name ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
+  top.attrDefDispatcher = monoidErrorRegularAttributeDef;
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
   top.attrAppendDefDispatcher = synAppendColAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
@@ -93,11 +91,11 @@ top::AttributeDclInfo ::= inh::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateEquality(inh, _);
+  top.propagateDispatcher = propagateEquality(inh);
 }
 
 abstract production orderingKeyDcl
@@ -110,7 +108,7 @@ top::AttributeDclInfo ::= syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
@@ -127,11 +125,11 @@ top::AttributeDclInfo ::= inh::String keySyn::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateOrdering(inh, keySyn, _);
+  top.propagateDispatcher = propagateOrdering(inh, keySyn);
 }
 
 abstract production biequalityPartialDcl
@@ -144,11 +142,11 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateBiequalitySynPartial(inh, _, syn);
+  top.propagateDispatcher = propagateBiequalitySynPartial(inh, syn);
 }
 
 abstract production biequalityDcl
@@ -161,11 +159,11 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateBiequalitySyn(inh, synPartial, _);
+  top.propagateDispatcher = propagateBiequalitySyn(inh, synPartial);
 }
 
 abstract production threadedInhDcl
@@ -190,18 +188,18 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
   top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
   top.attrDefDispatcher =
     if o.isJust
-    then collectionAttrDefError
-    else inheritedAttributeDef(_, _, _); -- Allow normal inh equations
+    then collectionErrorRegularAttributeDef
+    else inheritedAttributeDef; -- Allow normal inh equations
   top.attrBaseDefDispatcher = 
     if o.isJust
-    then inhBaseColAttributeDef(_, _, _) -- Allow normal inh base equations
-    else nonCollectionAttrBaseDefError;
+    then inhBaseColAttributeDef -- Allow normal inh base equations
+    else nonCollectionErrorBaseAttributeDef;
   top.attrAppendDefDispatcher = 
     if o.isJust
-    then inhAppendColAttributeDef(_, _, _)  -- Allow normal inh append equations
-    else nonCollectionAttrAppendDefError;
+    then inhAppendColAttributeDef  -- Allow normal inh append equations
+    else nonCollectionErrorAppendAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateThreadedInh(o.isJust, rev, _, syn);
+  top.propagateDispatcher = propagateThreadedInh(o.isJust, rev, syn);
 }
 
 abstract production threadedSynDcl
@@ -222,20 +220,20 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
   top.operation = o.fromJust;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher =
     if o.isJust
-    then collectionAttrDefError
-    else synthesizedAttributeDef(_, _, _); -- Allow normal syn equations
+    then collectionErrorRegularAttributeDef
+    else synthesizedAttributeDef; -- Allow normal syn equations
   top.attrBaseDefDispatcher = 
     if o.isJust
-    then synBaseColAttributeDef(_, _, _) -- Allow normal syn base equations
-    else nonCollectionAttrBaseDefError;
+    then synBaseColAttributeDef -- Allow normal syn base equations
+    else nonCollectionErrorBaseAttributeDef;
   top.attrAppendDefDispatcher = 
     if o.isJust
-    then synAppendColAttributeDef(_, _, _)  -- Allow normal syn append equations
-    else nonCollectionAttrAppendDefError;
+    then synAppendColAttributeDef  -- Allow normal syn append equations
+    else nonCollectionErrorAppendAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
-  top.propagateDispatcher = propagateThreadedSyn(o.isJust, rev, inh, _);
+  top.propagateDispatcher = propagateThreadedSyn(o.isJust, rev, inh);
 }

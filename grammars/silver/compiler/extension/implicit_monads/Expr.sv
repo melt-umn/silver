@@ -9,13 +9,18 @@ inherited attribute monadicallyUsed::Boolean occurs on Expr;
 synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
 
 attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expectedMonad occurs on Expr;
-propagate expectedMonad on Expr;
+propagate @expectedMonad on Expr;
 
 
 type MonadInhs = {
-  downSubst, finalSubst, frame, grammarName, alwaysDecorated, isRoot, originRules,
+  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, isRoot,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 };
+
+flowtype merrors {
+  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, isRoot,
+  compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
+} on Expr;
 
 
 --list of the attributes accessed in an explicit expression not allowed there
@@ -43,7 +48,7 @@ top::Expr ::= e::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated! QName
+top::Expr ::= msg::[Message]  @q::QName
 {
   top.merrors := msg;
   propagate mDownSubst, mUpSubst;
@@ -53,7 +58,7 @@ top::Expr ::= msg::[Message]  q::Decorated! QName
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -67,7 +72,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -79,7 +84,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -93,7 +98,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -106,7 +111,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -118,7 +123,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -130,7 +135,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -142,7 +147,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -174,7 +179,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   ne.downSubst = top.downSubst;
   ne.alwaysDecorated = false;
   ne.decSiteVertexInfo = nothing();
-  ne.originRules = top.originRules;
   ne.isRoot = false;
   local nes::AppExprs = new(es);
   nes.mDownSubst = ne.mUpSubst;
@@ -189,7 +193,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.alwaysDecorated = false;
   nes.decSiteVertexInfo = nothing();
   nes.appProd = nothing();
-  nes.originRules = top.originRules;
+  nes.appIndexOffset = 0;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
@@ -203,7 +207,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nanns.frame = top.frame;
   nanns.finalSubst = top.finalSubst;
   nanns.downSubst = top.downSubst;
-  nanns.originRules = top.originRules;
   nanns.appExprApplied = ne.unparse;
   nanns.remainingFuncAnnotations = anns.remainingFuncAnnotations;
   nanns.funcAnnotations = anns.funcAnnotations;
@@ -272,7 +275,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   forward t = application(e, '(', es, ',', anns, ')');
 
@@ -285,7 +288,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   forward t = application(e, '(', es, ',', anns, ')');
 
@@ -397,7 +400,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs annargs::AnnoAppEx
 
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.merrors := error("merrors not defined on partial applications");
   top.mUpSubst = error("mUpSubst not defined on partial applications");
@@ -409,7 +412,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.merrors := [];
 
@@ -451,8 +454,8 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.config = top.config;
   ne.env = top.env;
   ne.flowEnv = top.flowEnv;
+  ne.decSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
-  ne.originRules = top.originRules;
   ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
 
@@ -466,9 +469,9 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.config = top.config;
   res_e.env = top.env;
   res_e.flowEnv = top.flowEnv;
+  res_e.decSiteVertexInfo = nothing();
   res_e.alwaysDecorated = false;
   res_e.isRoot = false;
-  res_e.originRules = top.originRules;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
 
   top.merrors := ne.errors;
@@ -479,14 +482,13 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -541,6 +543,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                       then q.typerep
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
+  propagate @mDownSubst, @mUpSubst;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
@@ -554,9 +557,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -602,7 +604,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   {-
     Note that we don't treat annotations as having a plicitness (restricted,
@@ -613,9 +615,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -661,7 +662,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -686,12 +687,11 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
 
   top.merrors := e.merrors;
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
 
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
@@ -734,9 +734,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -782,7 +781,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -807,9 +806,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
@@ -855,7 +853,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
@@ -881,14 +879,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
 -- TODO: restricted translation attributes?
 aspect production transDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  -- TODO: restricted translation attributes?
@@ -936,10 +934,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-
   top.monadicNames = [];
 
    --Why do we rewrite here, in an error production?  We can get here from the basic access
@@ -996,7 +992,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
-  top.mUpSubst = top.mDownSubst;
+  propagate @mDownSubst, @mUpSubst;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
@@ -1010,14 +1006,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  -- TODO: restricted translation attributes?
@@ -1064,14 +1060,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
 -- TODO: restricted translation attributes?
 aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [access(e, '.', q)] ++ e.monadicNames
                      else e.monadicNames;
 
-  propagate mDownSubst, mUpSubst;
+  propagate @mDownSubst, @mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  -- TODO: restricted translation attributes?
@@ -1232,10 +1228,10 @@ top::Expr ::= '@' e::Expr
   e.mDownSubst = top.mDownSubst;
   errCheck1.downSubst = e.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
-  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  errCheck1 = check(e.typerep, decoratedType(freshType(), inhSetType([])));
   top.merrors <-
        if errCheck1.typeerror
-       then [errFromOrigin(top, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Operand to @ must be a reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -1441,7 +1437,7 @@ concrete production ifThen
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything else to do
 {
   top.unparse = "if " ++ e1.unparse  ++ " then " ++ e2.unparse ++ " end";
-  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, finalSubst;
 
   top.merrors <-
       if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
@@ -1484,6 +1480,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                      then e1.mtyperep
                      else top.expectedMonad;
   
+  e1.decSiteVertexInfo = nothing();
+  e2.decSiteVertexInfo = nothing();
   e1.alwaysDecorated = false;
   e2.alwaysDecorated = false;
   e1.isRoot = false;
@@ -1899,7 +1897,7 @@ top::Expr ::= 'disambiguationFailure'
 
 
 aspect production lexerClassReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.typerep;

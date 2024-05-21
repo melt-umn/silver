@@ -9,14 +9,11 @@ FlowType ::= prod::String  e::EnvTree<FlowType>
   
   return if null(lookup) then g:empty() else head(lookup);
 }
-function findProductionGraph
-ProductionGraph ::= n::String  l::EnvTree<ProductionGraph>
-{
-  local lookup :: [ProductionGraph] = searchEnvTree(n, l);
-  
-  -- TODO: so apparently this should never fail?
-  return head(lookup);
-}
+fun findProductionGraph ProductionGraph ::= n::String l::EnvTree<ProductionGraph> =
+  case searchEnvTree(n, l) of
+  | g :: _ -> g
+  | _ -> error("Failed to find graph for " ++ n)
+  end;
 
 -- These two functions are used by Inh.sv:
 function expandGraph
@@ -64,9 +61,9 @@ fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
   | _ -> false
   end;
 
-fun createFlowGraph g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>] = g:add(l, g:empty());
+fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] = g:add(l, g:empty());
 
-fun extendFlowGraph g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]  g::g:Graph<FlowVertex> =
+fun extendFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)]  g::g:Graph<FlowVertex> =
   g:add(l, g);
 
 fun transitiveClose
@@ -75,6 +72,6 @@ g:Graph<FlowVertex> ::=
 
 fun repairClosure
 g:Graph<FlowVertex> ::=
-  newEdges::[Pair<FlowVertex FlowVertex>]
+  newEdges::[(FlowVertex, FlowVertex)]
   graph::g:Graph<FlowVertex> = g:repairClosure(newEdges, graph);
 

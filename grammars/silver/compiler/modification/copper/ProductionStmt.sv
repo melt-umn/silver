@@ -86,10 +86,9 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   -- TODO see ugly hack in ActionCode.sv
 }
 
-abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production parserAttributeValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
@@ -234,10 +233,9 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
 }
 
 
-abstract production parserAttributeDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production parserAttributeDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -254,10 +252,15 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production parserAttributeTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to valueEq(val, '=', e, ';');
+  forwards to parserAttributeDefLHS(q);
+}
+
+abstract production termAttrValueValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
+{
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 

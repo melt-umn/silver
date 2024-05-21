@@ -63,6 +63,10 @@ tracked nonterminal AssignExpr with config, grammarName, env, compiledGrammars,
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
                             downSubst, finalSubst, frame, originRules;
 
+flowtype AssignExpr =
+  decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, bodyDecSites},
+  upSubst {decorate}, defs {decorate};
+
 propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
 abstract production appendAssignExpr
@@ -95,7 +99,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -119,10 +123,9 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   e.isRoot = false;
 }
 
-abstract production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+abstract production lexicalLocalReference implements Reference
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);
@@ -146,7 +149,6 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
     case q.lookupValue.typeScheme.monoType of
     | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
     | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;
 

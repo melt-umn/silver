@@ -73,7 +73,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
       $ProductionStmt{
         foldr(
           productionStmtAppend(_, _),
-          errorProductionStmt([]), -- TODO: No nullProductionStmt?
+          emptyProductionStmt(),
           map(genNtLocalDecl(forward.env, specEnv, _), map((.fullName), syntax.allNonterminals)) ++
           map(genTermLocalDecl(forward.env, specEnv, syntax.dominatingTerminals, _), map((.fullName), syntax.allTerminals)))}
       return $Expr{genForType(forward.env, specEnv, Silver_Expr { 0 }, t.typerep)};

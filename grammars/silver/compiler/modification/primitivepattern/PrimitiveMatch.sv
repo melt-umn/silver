@@ -54,6 +54,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
   propagate config, grammarName, env, freeVars, frame, compiledGrammars, finalSubst, originRules, flowEnv;
+  e.decSiteVertexInfo = nothing();
   e.isRoot = false;
 
   e.downSubst = top.downSubst;
@@ -227,7 +228,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
   -- This is where the type variables become unified.
 
-  ns.bindingTypes = prod_type.inputTypes;
+  ns.bindingTypes = zipWith(
+    \ ie::NamedSignatureElement t::Type -> if ie.elementShared then t.decoratedType else t,
+    sig.inputElements, prod_type.inputTypes);
   ns.bindingIndex = 0;
   ns.bindingNames = if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.inputNames;
   ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
@@ -312,7 +315,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   production prod_contexts :: [Context] = prod_contexts_type.fst;
   production prod_type :: Type = prod_contexts_type.snd;
   
-  ns.bindingTypes = prod_type.inputTypes;
+  ns.bindingTypes = zipWith(
+    \ ie::NamedSignatureElement t::Type -> if ie.elementShared then t.decoratedType else t,
+    sig.inputElements, prod_type.inputTypes);
   ns.bindingIndex = 0;
   ns.bindingNames = if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.inputNames;
   ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
@@ -537,8 +542,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), [], []),
-     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [], [])];
+    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), []),
+     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   e.isRoot = false;

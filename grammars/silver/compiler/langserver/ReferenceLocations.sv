@@ -13,7 +13,7 @@ attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS,
   ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem,
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
-  PrimPatterns, PrimPattern, ProdNameList;
+  PrimPatterns, PrimPattern, AttrNameList, ProdNameList;
 
 propagate valueRefLocs, typeRefLocs, attributeRefLocs on
   RootSpec, Grammar, Root, NameList, AGDcls, AGDcl,
@@ -24,7 +24,7 @@ propagate valueRefLocs, typeRefLocs, attributeRefLocs on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS,
   ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem,
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
-  PrimPatterns, PrimPattern, ProdNameList;
+  PrimPatterns, PrimPattern, AttrNameList, ProdNameList;
 
 aspect valueRefLocs on NameList using <- of
 | nameListCons(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
@@ -83,7 +83,7 @@ aspect attributeRefLocs on AGDcl using := of
 end;
 
 aspect production propagateOnNTListDcl
-top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
+top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
 {
   propagate grammarName, env, flowEnv;
 }
@@ -107,15 +107,15 @@ aspect valueRefLocs on top::ProductionStmt using <- of
 end;
 
 aspect valueRefLocs on ProductionStmt using := of
-| propagateOneAttr(_) -> []
+| propagateOneAttr(_, _) -> []
 end;
 
 aspect attributeRefLocs on ProductionStmt using := of
-| propagateOneAttr(at) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
+| propagateOneAttr(_, at) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect typeRefLocs on ProductionStmt using := of
-| propagateOneAttr(_) -> []
+| propagateOneAttr(_, _) -> []
 end;
 
 aspect valueRefLocs on DefLHS using <- of
@@ -152,6 +152,11 @@ end;
 aspect valueRefLocs on PrimPattern using <- of
 | prodPatternNormal(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 | prodPatternGadt(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+end;
+
+aspect attributeRefLocs on AttrNameList using <- of
+| attrNameListCons(_, q, _, _) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
+| attrNameListOne(_, q) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
 end;
 
 aspect valueRefLocs on ProdNameList using <- of

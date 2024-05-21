@@ -1,6 +1,8 @@
 grammar silver:compiler:definition:env;
 
-nonterminal Defs with defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
+nonterminal Defs with
+  defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, dispatchDclList,
+  filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem<TypeDclInfo>];
@@ -15,6 +17,7 @@ synthesized attribute prodOccursList :: [ProductionAttrDclInfo];
 
 -- Extra space for production list
 synthesized attribute prodDclList :: [ValueDclInfo];
+synthesized attribute dispatchDclList :: [TypeDclInfo];
 
 -- Transformations on lists of Def
 -- This is to support computing the defs introduced by qualified imports
@@ -37,6 +40,7 @@ top::Defs ::=
   top.prodOccursList = [];
   
   top.prodDclList = [];
+  top.dispatchDclList = [];
   
   top.filterOnly = top;
   top.filterHiding = top;
@@ -55,6 +59,7 @@ top::Defs ::= e1::Def e2::Defs
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   
   top.prodDclList = e1.prodDclList ++ e2.prodDclList;
+  top.dispatchDclList = e1.dispatchDclList ++ e2.dispatchDclList;
 
   top.filterOnly = if e1.filterIncludeOnly then consDefs(e1, e2.filterOnly) else e2.filterOnly;
   top.filterHiding = if e1.filterIncludeHiding then consDefs(e1, e2.filterHiding) else e2.filterHiding;
@@ -63,7 +68,7 @@ top::Defs ::= e1::Def e2::Defs
 --------------------------------------------------------------------------------
 
 closed nonterminal Def with
-  typeList, valueList, attrList, instList, prodOccursList, prodDclList,
+  typeList, valueList, attrList, instList, prodOccursList, prodDclList, dispatchDclList,
   filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended,
   compareTo, isEqual;
 
@@ -80,11 +85,19 @@ top::Def ::=
   top.prodOccursList = [];
   
   top.prodDclList = [];
+  top.dispatchDclList = [];
 }
 abstract production typeDef
 top::Def ::= d::EnvItem<TypeDclInfo>
 {
   top.typeList = [d];
+}
+abstract production dispatchDclDef
+top::Def ::= d::EnvItem<TypeDclInfo>
+{
+  top.typeList = [d];
+  -- unlike normal typeDef, also affect dispatch lookups:
+  top.dispatchDclList = [d.dcl];
 }
 abstract production valueDef
 top::Def ::= d::EnvItem<ValueDclInfo>
@@ -120,8 +133,8 @@ top::Def ::= d::InstDclInfo
   top.instList = [d];
 }
 
-fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
-  valueDef(defaultEnvItem(childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean =
+  valueDef(defaultEnvItem(childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
 fun lhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
   valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun localDef Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean =
@@ -152,7 +165,7 @@ fun typeAliasDef
 Def ::= sg::String sl::Location fn::String mentionedAliases::[String] bound::[TyVar] ty::Type =
   typeDef(defaultEnvItem(typeAliasDcl(fn,mentionedAliases,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun dispatchDef Def ::= sg::String  sl::Location  sig::NamedSignature =
-  typeDef(defaultEnvItem(dispatchDcl(sig,sourceGrammar=sg,sourceLocation=sl)));
+  dispatchDclDef(defaultEnvItem(dispatchDcl(sig,sourceGrammar=sg,sourceLocation=sl)));
 fun synDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
   attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun inhDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
@@ -166,8 +179,8 @@ fun forwardDef Def ::= sg::String  sl::Location  ty::Type =
 -- These aliased functions are used for aspects.
 fun aliasedLhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String =
   valueDef(onlyRenamedEnvItem(alias, lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-fun aliasedChildDef Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String =
-  valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun aliasedChildDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean  alias::String =
+  valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
 fun annoDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
   attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 fun classDef

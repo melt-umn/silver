@@ -216,12 +216,6 @@ top::Type ::= t::Type i::Type
   top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= t::Type i::Type
-{
-  top.typepp = s"Decorated! ${t.typepp} with ${i.typepp}";
-}
-
 aspect production ntOrDecType
 top::Type ::= nt::Type inhs::Type hidden::Type
 {

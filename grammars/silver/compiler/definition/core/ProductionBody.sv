@@ -2,21 +2,22 @@ grammar silver:compiler:definition:core;
 
 tracked nonterminal ProductionBody with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, undecorateExpr;
+  productionAttributes, forwardExpr, returnExpr;
 tracked nonterminal ProductionStmts with 
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, originRules;
 tracked nonterminal ProductionStmt with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, originRules;
 
-flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
+flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody;
-flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, originRules}
+flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionStmts;
-flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst, originRules}
+flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst}
   on ProductionStmt;
-flowtype forward {decorate} on ProductionBody, ProductionStmts, ProductionStmt;
+flowtype decorate {forward} on ProductionBody;
+flowtype decorate {forward, originRules} on ProductionStmts, ProductionStmt;
 
 tracked nonterminal DefLHS with 
   config, grammarName, env, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
@@ -42,12 +43,11 @@ inherited attribute frame :: BlockContext;
  -}
 monoid attribute productionAttributes :: [Def];
 {--
- - The forward, return and undecorate expressions for production/function bodies.
+ - The forward and return expressions for production/function bodies.
  - These are lists since we check for duplicates at the top level
  -}
 monoid attribute forwardExpr :: [Decorated Expr];
 monoid attribute returnExpr :: [Decorated Expr];
-monoid attribute undecorateExpr :: [Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.
@@ -60,7 +60,7 @@ synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStm
 
 propagate config, grammarName, env, errors, frame, compiledGrammars on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
-propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr on ProductionBody, ProductionStmts;
+propagate defs, productionAttributes, forwardExpr, returnExpr on ProductionBody, ProductionStmts;
 propagate originRules on ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding attachNoteStmt;
 
@@ -97,7 +97,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
-  propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr;
+  propagate defs, productionAttributes, forwardExpr, returnExpr;
 }
 
 abstract production errorProductionStmt
@@ -105,6 +105,12 @@ top::ProductionStmt ::= e::[Message]
 {
   top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   top.errors <- e;
+}
+
+abstract production emptyProductionStmt
+top::ProductionStmt ::= 
+{
+  top.unparse = "";
 }
 
 --------------------------------------------------------------------------------
@@ -117,7 +123,6 @@ top::ProductionStmt ::=
   top.productionAttributes := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
   
   top.defs := [];
 
@@ -277,21 +282,6 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   q.attrFor = top.frame.signature.outputElement.typerep;
 }
 
-concrete production undecoratesTo
-top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
-{
-  top.unparse = "\tundecorates to " ++ e.unparse;
-
-  e.isRoot = true;
-  
-  top.undecorateExpr := [e];
-
-  top.errors <-
-    if !top.frame.permitForward  -- Permitted in the same place as forwards to
-    then [errFromOrigin(top, "Undecorates is not permitted in this context. (Only permitted in non-aspect productions.)")]
-    else [];
-}
-
 concrete production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
@@ -305,10 +295,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
   
-  local problems :: [Message] =
-    if attr.found && attr.attrDcl.isAnnotation
-    then [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
-    else dl.errors ++ attr.errors;
+  local problems :: [Message] = dl.errors ++ attr.errors;
 
   forwards to
     -- oddly enough we may have no errors and need to forward to error production:
@@ -323,20 +310,28 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
 abstract production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to errorProductionStmt(msg);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, config, env, frame, compiledGrammars, originRules;
+  propagate grammarName, config, env, frame, compiledGrammars;
   e.isRoot = true;
 
   forwards to errorProductionStmt(msg ++ e.errors);
 }
 
-abstract production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
+
+abstract production annoErrorAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
+  forwards to errorAttributeDef(
+    [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")],
+    dl, attr, @e);
+}
+
+abstract production synthesizedAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -349,10 +344,9 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     end;
 }
 
-abstract production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+abstract production inheritedAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -385,17 +379,18 @@ top::DefLHS ::= q::QName
   
   forwards to if null(q.lookupValue.dcls)
               then errorDefLHS(q)
-               else q.lookupValue.dcl.defLHSDispatcher(q);
+              else q.lookupValue.dcl.defLHSDispatcher(q);
 } action {
   if (contains(q.name, sigNames)) {
     insert semantic token IdSigName_t at q.nameLoc;
   }
 }
 
-abstract production errorDefLHS
-top::DefLHS ::= q::Decorated! QName
+dispatch BaseDefLHS = DefLHS ::= @q::QName;
+
+abstract production errorDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -412,10 +407,9 @@ top::DefLHS ::= 'forward'
   forwards to concreteDefLHS(qName("forward"));
 }
 
-abstract production childDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production childDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -425,14 +419,13 @@ top::DefLHS ::= q::Decorated! QName
   top.errors <-
     if existingProblems || top.found then []
     else [errFromOrigin(q, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
-                
+
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production lhsDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production lhsDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
@@ -446,10 +439,9 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production localDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production localDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -463,10 +455,9 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production forwardDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production forwardDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isInherited;
@@ -496,10 +487,11 @@ top::DefLHS ::= q::QName attr::QNameAttrOccur
               else q.lookupValue.dcl.transDefLHSDispatcher(q, attr);
 }
 
-abstract production errorTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+dispatch TransAttrDefLHS = DefLHS ::= @q::QName @attr::QNameAttrOccur;
+
+abstract production errorTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = false;
@@ -510,10 +502,9 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   top.typerep = attr.typerep;
 }
 
-abstract production childTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+abstract production childTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -528,17 +519,16 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
-    if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
+    if attr.found && !ty.isNonterminal
     then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(new(ty))} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
 }
 
-abstract production localTransAttrDefLHS
-top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
+abstract production localTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to transAttrDefLHS(q, attr);
   top.name = q.name;
   top.unparse = s"${q.unparse}.${attr.unparse}";
   top.found = !existingProblems && attr.attrDcl.isSynthesized && top.defLHSattr.attrDcl.isInherited;
@@ -553,7 +543,7 @@ top::DefLHS ::= q::Decorated! QName  attr::Decorated! QNameAttrOccur
   
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
-    if attr.found && !ty.isNonterminal && !ty.isUniqueDecorated
+    if attr.found && !ty.isNonterminal
     then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(new(ty))} are not supported")]
     else [];
 
@@ -579,10 +569,11 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
               else val.lookupValue.dcl.defDispatcher(val, e);
 }
 
-abstract production errorValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+dispatch ValueDef = ProductionStmt ::= @val::QName e::Expr;
+
+abstract production errorValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
@@ -592,10 +583,9 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
     else [errFromOrigin(val, val.name ++ " cannot be assigned to.")];
 }
 
-abstract production localValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production localValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here

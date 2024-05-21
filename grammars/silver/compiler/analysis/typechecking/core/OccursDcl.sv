@@ -1,7 +1,7 @@
 grammar silver:compiler:analysis:typechecking:core;
 
 aspect production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   local checkNT::TypeCheck = checkNonterminal(top.env, false, protoatty);
   checkNT.downSubst = emptySubst();

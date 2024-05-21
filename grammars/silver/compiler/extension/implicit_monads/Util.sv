@@ -77,7 +77,7 @@ fun monadsMatch Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substi
   We also need to use this because we occasionally need to use new to
   drop the decoration from the type of things we're passing into
   binds.-}
-fun acceptableMonadFunction Boolean ::= f::Decorated Expr =
+fun acceptableMonadFunction Boolean ::= f::Decorated Expr with {forward} =
   case f of
   | functionReference(qNameId(name)) ->
     name.name == "silver:core:alt"

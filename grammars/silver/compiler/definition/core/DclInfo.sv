@@ -5,47 +5,47 @@ import silver:compiler:modification:copper only terminalIdReference;
 {--
  - The production a variable reference should forward to for this type of value
  -}
-synthesized attribute refDispatcher :: (Expr ::= Decorated! QName) occurs on ValueDclInfo;
+synthesized attribute refDispatcher :: Reference occurs on ValueDclInfo;
 {--
  - The production an "assignment" should forward to for this type of value
  -}
-synthesized attribute defDispatcher :: (ProductionStmt ::= Decorated! QName  Expr) occurs on ValueDclInfo;
+synthesized attribute defDispatcher :: ValueDef occurs on ValueDclInfo;
 {--
  - The production an "equation" left hand side should forward to for this type of value (i.e. the 'x' in 'x.a = e')
  -}
-synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated! QName) occurs on ValueDclInfo;
+synthesized attribute defLHSDispatcher :: BaseDefLHS occurs on ValueDclInfo;
 {--
  - The production a translation attribute left hand side should forward to, for this type of value (i.e. the 'x.a' in 'x.a.b = e')
  -}
-synthesized attribute transDefLHSDispatcher :: (DefLHS ::= Decorated! QName  Decorated!  QNameAttrOccur) occurs on ValueDclInfo;
+synthesized attribute transDefLHSDispatcher :: TransAttrDefLHS occurs on ValueDclInfo;
 
 {--
  - The handler for 'x.a' for 'a', given that 'x' is DECORATED.
  - @see decoratedAccessHandler production for where this is used
  -}
-synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) occurs on AttributeDclInfo;
+synthesized attribute decoratedAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is UNdecorated.
  - @see undecoratedAccessHandler production for where this is used
  -}
-synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) occurs on AttributeDclInfo;
+synthesized attribute undecoratedAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is data.
  - @see dataAccessHandler production for where this is used
  -}
-synthesized attribute dataAccessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) occurs on AttributeDclInfo;
+synthesized attribute dataAccessHandler :: Access occurs on AttributeDclInfo;
 {--
  - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
-synthesized attribute attrDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) occurs on AttributeDclInfo;
+synthesized attribute attrDefDispatcher :: AttributeDef occurs on AttributeDclInfo;
 {--
  - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh attrs.)
  -}
-synthesized attribute attributionDispatcher :: (AGDcl ::= Decorated! QName  BracketedOptTypeExprs  QName  BracketedOptTypeExprs) occurs on AttributeDclInfo;
+synthesized attribute attributionDispatcher :: AttributionDcl occurs on AttributeDclInfo;
 
 -- -- non-interface values
 aspect production childDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type _
 {
   top.refDispatcher = childReference;
   top.defDispatcher = errorValueDef; -- TODO: we should be smarted about error messages, and mention its a child
@@ -129,7 +129,7 @@ aspect production synDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
@@ -155,11 +155,9 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 aspect production annoDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler, _, _);
+  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler);
   top.undecoratedAccessHandler = annoAccessHandler;
   top.dataAccessHandler = annoAccessHandler;
-  top.attrDefDispatcher =
-    \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-      errorAttributeDef([errFromOrigin(ambientOrigin(), "Annotations are not defined as equations within productions")], dl, attr, e);
+  top.attrDefDispatcher = annoErrorAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
 }

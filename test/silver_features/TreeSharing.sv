@@ -20,13 +20,14 @@ top::UDExpr ::= e::UDExpr
 }
 
 production udOp1Impl
-top::UDExpr ::= e::Decorated! UDExpr with {env1}
+top::UDExpr ::= @e::UDExpr
 {
-  undecorates to udOp1(e);
   e.env2 = top.env2;
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
 }
+
+-- These work, but have flow errors since we don't do reverse sharing through locals:
 
 production udOp2
 top::UDExpr ::= e::UDExpr
@@ -36,10 +37,9 @@ top::UDExpr ::= e::UDExpr
 }
 
 production udOp2Impl
-top::UDExpr ::= e::Decorated! UDExpr with {env1}
+top::UDExpr ::= @e::UDExpr
 {
-  undecorates to udOp2(e);
-  local e2::Decorated! UDExpr with {env1} = e;
+  local e2::UDExpr = @e;
   e2.env2 = top.env2;
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
@@ -54,32 +54,29 @@ top::UDExpr ::= e::UDExpr
 }
 
 production udOp3Impl
-top::UDExpr ::= e::Decorated! UDExpr with {env1}
+top::UDExpr ::= @e::UDExpr
 {
-  undecorates to udOp3(e);
-  local e2::Decorated UDExpr = decorate withEnv1(e) with {env2 = top.env2;};
+  --local e2::Decorated UDExpr = decorate @e with {env2 = top.env2;};  -- TODO
+  local e1::UDExpr = @e;
+  e1.env2 = top.env2;
+  local e2::UDExpr = @e1;
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
 }
-
-function withEnv1
-Decorated! UDExpr with {env1} ::= x::Decorated! UDExpr with {env1}
-{ return x; }
 
 production udOp4
 top::UDExpr ::= e::UDExpr
 {
   e.env1 = top.env1;
-  local e2::Decorated! UDExpr with {env1} = e;
+  local e2::UDExpr = @e;
   e2.env2 = top.env2;
   forwards to udOp4Impl(e2);
 }
 
 production udOp4Impl
-top::UDExpr ::= e::Decorated! UDExpr
+top::UDExpr ::= @e::UDExpr
 {
-  undecorates to udOp4(e);
-  local e2::Decorated! UDExpr = e;
+  local e2::UDExpr = @e;
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
 }
@@ -91,7 +88,3 @@ equalityTest(decorate udTerm with { env1 = ["foo"]; env2 = []; }.errors1, false,
 equalityTest(decorate udTerm with { env1 = ["foo"]; env2 = []; }.errors2, true, Boolean, silver_tests);
 equalityTest(decorate udTerm with { env1 = []; env2 = ["foo"]; }.errors1, true, Boolean, silver_tests);
 equalityTest(decorate udTerm with { env1 = []; env2 = ["foo"]; }.errors2, true, Boolean, silver_tests);
-
-wrongCode "Cannot specialize" {
-  global uniqueRefId::(Decorated! UDExpr ::= Decorated! UDExpr) = id;
-}

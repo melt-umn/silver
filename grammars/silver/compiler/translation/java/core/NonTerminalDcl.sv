@@ -106,8 +106,8 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs) {
-			return ref.decorate(parent, inhs);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy decSite) {
+			return ref.decorate(parent, inhs, decSite);
 		}
 
 		@Override

@@ -96,11 +96,10 @@ concrete productions top::Direction
   { top.unparse = "right to left";
     top.reversed = true; }
 
-abstract production propagateThreadedInh
-top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::String
+abstract production propagateThreadedInh implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @inh::QName isCol::Boolean rev::Boolean syn::String
 {
-  undecorates to propagateOneAttr(inh);
-  top.unparse = s"propagate ${inh.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${inh.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
   local occursChildren::[String] =
@@ -108,15 +107,10 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
       (.elementName),
       filter(
         \ ie::NamedSignatureElement ->
-          isDecorable(ie.typerep, top.env) &&
-          -- Only propagate for unique decorated children that don't have the inh attribute
-          -- TODO: Handle dispatch signatures
-          case getMaxRefSet(ie.typerep, top.env) of
-          | just(inhs) -> !contains(inh.lookupAttribute.fullName, inhs)
-          | nothing() -> false
-          end &&
+          isDecorable(ie.elementDclType, top.env) &&
           !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
-          !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
+          !null(getOccursDcl(syn, ie.typerep.typeName, top.env)) &&
+          (includeShared || !ie.elementShared),
         if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
         then init(top.frame.signature.inputElements)
         else top.frame.signature.inputElements));
@@ -133,11 +127,10 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::Decorated! QName syn::S
         else [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]));
 }
 
-abstract production propagateThreadedSyn
-top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! QName
+abstract production propagateThreadedSyn implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @syn::QName isCol::Boolean rev::Boolean inh::String
 {
-  undecorates to propagateOneAttr(syn);
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
   local occursChildren::[String] =
@@ -145,15 +138,10 @@ top::ProductionStmt ::= isCol::Boolean rev::Boolean inh::String syn::Decorated! 
       (.elementName),
       filter(
         \ ie::NamedSignatureElement ->
-          isDecorable(ie.typerep, top.env) &&
-          -- Only propagate for unique decorated children that don't have the inh attribute
-          -- TODO: Handle dispatch signatures
-          case getMaxRefSet(ie.typerep, top.env) of
-          | just(inhs) -> !contains(inh, inhs)
-          | nothing() -> false
-          end &&
+          isDecorable(ie.elementDclType, top.env) &&
           !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
-          !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
+          !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
+          (includeShared || !ie.elementShared),
         top.frame.signature.inputElements));
   forwards to
     threadSynDcl(
@@ -197,7 +185,7 @@ top::ProductionStmt ::= isCol::Boolean inh::String syn::String children::[Name]
   forwards to
     foldr(
       productionStmtAppend(_, _),
-      errorProductionStmt([]), -- No emptyProductionStmt?
+      emptyProductionStmt(),
       zipWith(
         \ c1::Name c2::Name ->
           if c1.name != lhsName
@@ -208,7 +196,7 @@ top::ProductionStmt ::= isCol::Boolean inh::String syn::String children::[Name]
               access(
                 baseExpr(qNameId(c2)), '.',
                 qNameAttrOccur(qName(if c2.name == lhsName then inh else syn))))
-          else errorProductionStmt([]),
+          else emptyProductionStmt(),
         tail(children), children));
 }
 
@@ -225,7 +213,7 @@ top::ProductionStmt ::= isCol::Boolean inh::String syn::String children::[Name]
   forwards to
     foldr(
       productionStmtAppend(_, _),
-      errorProductionStmt([]), -- No emptyProductionStmt?
+      emptyProductionStmt(),
       zipWith(
         \ c1::Name c2::Name ->
           if c1.name == lhsName
@@ -236,7 +224,7 @@ top::ProductionStmt ::= isCol::Boolean inh::String syn::String children::[Name]
               access(
                 baseExpr(qNameId(c2)), '.',
                 qNameAttrOccur(qName(if c2.name == lhsName then inh else syn))))
-          else errorProductionStmt([]),
+          else emptyProductionStmt(),
         tail(children), children));
 }
 

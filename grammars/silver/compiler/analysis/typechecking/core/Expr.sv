@@ -4,6 +4,8 @@ import silver:compiler:definition:flow:env;
 
 attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
+flowtype Expr = upSubst {forward}, finalType {forward};
+
 propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
    excluding
@@ -22,7 +24,7 @@ top::Expr ::=
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
@@ -31,7 +33,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
@@ -40,7 +42,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
@@ -49,7 +51,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   instHead.contextLoc = q.nameLoc;
   instHead.contextSource = "the use of " ++ q.name;
@@ -83,7 +85,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -101,7 +103,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= e::Expr @q::QNameAttrOccur target::Access
 {
   propagate upSubst, downSubst, finalSubst;
 }
@@ -121,7 +123,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -221,10 +223,10 @@ top::Expr ::= '@' e::Expr
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
-  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  errCheck1 = check(e.typerep, decoratedType(freshType(), inhSetType([])));
   top.errors <-
        if errCheck1.typeerror
-       then [errFromOrigin(top, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Operand to @ must be a reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 

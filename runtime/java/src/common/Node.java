@@ -28,18 +28,17 @@ public abstract class Node implements Decorable, Typed {
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param decSite An accessor for where this DecoratedNode will be supplied with additional inherited attributes.
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
 	public DecoratedNode decorate(
-		final DecoratedNode parent, final Lazy[] inhs) {
+		final DecoratedNode parent, final Lazy[] inhs, final Lazy decSite) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, null, false);
+				                 this, parent, inhs, null, false, decSite);
 	}
 
 	/**
@@ -48,8 +47,6 @@ public abstract class Node implements Decorable, Typed {
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
 	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
 	 *   We will pass inherited attribute access requests to this node.
@@ -64,7 +61,7 @@ public abstract class Node implements Decorable, Typed {
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, fwdParent, isProdForward);
+                                 this, parent, inhs, fwdParent, isProdForward, null);
 	}
 
 	private Node undecoratedValue = null;

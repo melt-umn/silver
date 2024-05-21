@@ -2,7 +2,6 @@ grammar silver:compiler:translation:java:core;
 
 
 import silver:compiler:driver only noOrigins;
-import silver:compiler:definition:flow:ast;
 
 {--
  - A translation string that will be a thunk instead of the raw value.
@@ -58,14 +57,14 @@ top::Expr ::= msg::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated! QName
+top::Expr ::= msg::[Message]  @q::QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local childIDref :: String =
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
@@ -79,10 +78,6 @@ top::Expr ::= q::Decorated! QName
       -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
       -- this is a potential source of minor inefficiency for functions that do not decorate.
       s"((${top.finalType.transType})context.childDecorated(${childIDref}).undecorate())"
-    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
-      -- Unique reference to a child that is a remote decoration site:
-      -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      s"context.createDecoratedChild(${childIDref})"
     else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
@@ -95,22 +90,17 @@ top::Expr ::= q::Decorated! QName
     then s"context.childAsIsLazy(${childIDref})"
     else if !top.finalType.isDecorated
     then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
-    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
-      wrapThunk(top.translation, true)
-    else
-      s"context.childDecoratedLazy(${childIDref})";
+    else s"context.childDecoratedLazy(${childIDref})";
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.<${top.finalType.transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
     else if !top.finalType.isDecorated
     then s"((${top.finalType.transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
-    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
-      s"context.evalLocalDecorated(${q.lookupValue.dcl.attrOccursIndex})"
     else
       s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
   -- reminder: look at comments for childReference
@@ -121,14 +111,11 @@ top::Expr ::= q::Decorated! QName
     then s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})"
     else if !top.finalType.isDecorated
     then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
-    else if top.finalType.isUniqueDecorated && top.alwaysDecorated then
-      wrapThunk(top.translation, true)
-    else
-      s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
+    else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation =
     if top.finalType.isDecorated
@@ -139,7 +126,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation =
     if top.finalType.isDecorated
@@ -151,7 +138,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local factory::String =
     if null(typeScheme.contexts)
@@ -185,7 +172,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
@@ -211,7 +198,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local transContextMember::String =
     s"${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)})";
@@ -227,7 +214,7 @@ top::Expr ::= q::Decorated! QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   local directThunk :: String =
     s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.global_${fullNameToShort(q.lookupValue.fullName)}" ++
@@ -241,19 +228,19 @@ top::Expr ::= q::Decorated! QName
     else s"${directThunk}.eval()";
 }
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
   top.lazyTranslation = e.invokeLazyTranslation;
 
-  e.invokeIsUnique = !null(top.uniqueRefs);
+  e.invokeIsUnique = !null(top.sharedRefs);
   e.invokeArgs = es;
   e.invokeNamedArgs = annos;
   e.sameProdAsProductionDefinedOn =
@@ -274,7 +261,7 @@ fun namedargsTranslationNOReorder String ::= e::Decorated AnnoAppExprs =
   else s"new Object[]{${implode(", ", map((.lazyTranslation), e.exprs))}}";
 
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   local step1 :: String = e.translation;
   -- Note: we check for nullity of the index lists instead of use
@@ -303,7 +290,7 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
 }
 
 aspect production dispatchApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @annos::AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
   top.lazyTranslation = e.invokeLazyTranslation;
@@ -319,28 +306,28 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoA
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
@@ -354,7 +341,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.<${top.finalType.transType}>synthesized(${q.attrOccursIndex})");
 
@@ -373,7 +360,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.<${top.finalType.transType}>inherited(${q.attrOccursIndex})");
 
@@ -385,49 +372,22 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production transDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- TODO: Origin tracking?
     top.translation =
     if !top.finalType.isDecorated then
       s"((${top.finalType.transType})${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site).undecorate())"
-    else if top.finalType.isUniqueDecorated && top.alwaysDecorated &&
-        case e of
-        | childReference(cqn) -> true
-        | localReference(lqn) -> true
-        | _ -> false
-        end then
-      -- Unique reference to a translation attribute on a child or local that is a remote decoration site:
-      -- Note that this is not cached; uniqueness guarantees that it should only be demanded once.
-      s"${e.translation}.evalTrans(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs)"
     else
-      -- Normal decorated reference:
-      -- This may create the child, or demand it via the remote decoration site if the child has one.
+      -- This may create the tree, or demand it via the remote decoration site if it has one.
       s"${e.translation}.translation(${q.attrOccursIndex}, ${q.attrOccursIndex}_inhs, ${q.attrOccursIndex}_dec_site)";
 
   -- TODO: Specialized thunks for accesses on child/local, for efficency
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-
-  top.initTransDecSites <-
-    case top.decSiteVertexInfo of
-    | just(decSite) when top.finalType.isUniqueDecorated && top.alwaysDecorated ->
-      case e of
-      | childReference(cqn) ->
-	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
-        s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${cqn.lookupValue.fullName}][${q.attrOccursInitIndex}_dec_site] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
-      | localReference(lqn) ->
-	      s"\t\t// Decoration site for ${q.unparse}: ${decSite.vertexName}\n" ++
-        s"\t\t${top.frame.className}.localInheritedAttributes[${lqn.lookupValue.dcl.attrOccursIndex}][${q.attrOccursInitIndex}_dec_site] = " ++
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
-      | _ -> ""
-      end
-    | _ -> ""
-    end;
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   local accessor :: String =
     if q.name == "lexeme" || q.name == "location"
@@ -446,7 +406,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   local accessTrans::String = s"((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}()";
   -- Note that the transType is specific to the nonterminal we're accessing from.
@@ -459,7 +419,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.<${top.finalType.transType}>synthesized(${q.attrOccursIndex})");
   
@@ -470,9 +430,15 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
+  local decSite::String =
+    case top.decSiteVertexInfo of
+    | just(decSite) when top.alwaysDecorated ->
+        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)}"
+    | _ -> "(common.Lazy)null"
+    end;
   top.translation = s"((common.Decorable)${e.translation})" ++ 
     case inh of
-    | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
+    | exprInhsEmpty() -> s".decorate(context, (common.Lazy[])null, ${decSite})"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
       -- When the user forgets to provide inherited attributes
       -- (especially important because we're implicitly inserted when accessing attributes
@@ -485,7 +451,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
-      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
+      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}), " ++
+      s"${decSite})"
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -533,14 +500,43 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
 }
 
 
-
 aspect production decorationSiteExpr
 top::Expr ::= '@' e::Expr
 {
   top.translation =
     s"new ${top.finalType.transType}.DecorationSiteWrapper(${
-      if top.finalType.isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${e.translation})";
+      if top.finalType.isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${
+      e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+
+  -- TODO: There isn't really a good place to put this.
+  -- We don't have a QNameAttrOccur, so we need to re-do all the work of looking up the occurs dcl, etc.
+  -- Currently we aren't resolving contexts!  This uses attrGlobalOccursInitIndex,
+  -- which breaks if the occurs-on of the translation attr is defined as an occurs-on constraint.
+  top.initTransDecSites <-
+    case top.decSiteVertexInfo of
+    | just(decSite) when top.alwaysDecorated ->
+      case e.flowVertexInfo of
+      | just(transAttrVertexType(rhsVertexType(sigName), transAttr)) ->
+        case lookup(sigName, zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)) of
+        | just(ty) when getOccursDcl(transAttr, ty.typeName, top.env) matches occDcl :: _ ->
+          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
+          s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
+          s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
+        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
+        end
+      | just(transAttrVertexType(localVertexType(fName), transAttr)) ->
+        case getValueDcl(fName, top.env) of
+        | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, top.env) matches occDcl :: _ ->
+          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
+          s"\t\t${top.frame.className}.localInheritedAttributes[${dcl.attrOccursIndex}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
+          s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
+        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
+        end
+      | _ -> ""
+      end
+    | _ -> ""
+    end;
 }
 
 aspect production trueConst

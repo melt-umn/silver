@@ -1,10 +1,10 @@
 grammar silver:compiler:definition:core;
 
 -- LHS type gives this to 'application' for "foo(...)" calls.
-synthesized attribute applicationDispatcher :: (Expr ::= Decorated! Expr  Decorated! AppExprs  Decorated! AnnoAppExprs);
+synthesized attribute applicationDispatcher :: Application;
 -- LHS type gives this to 'access' for "foo.some" accesses.
 -- (See DclInfo for the next step)
-synthesized attribute accessHandler :: (Expr ::= Decorated! Expr  Decorated! QNameAttrOccur);
+synthesized attribute accessHandler :: Access;
 
 attribute applicationDispatcher, accessHandler occurs on Type;
 
@@ -31,10 +31,7 @@ top::Type ::= _
 aspect production nonterminalType
 top::Type ::= fn::String _ data::Boolean _
 {
-  top.accessHandler =
-    if data
-    then dataAccessHandler(_, _)
-    else undecoratedAccessHandler(_, _);
+  top.accessHandler = if data then dataAccessHandler else undecoratedAccessHandler;
 }
 
 aspect production terminalType
@@ -44,12 +41,6 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type _
-{
-  top.accessHandler = decoratedAccessHandler;
-}
-
-aspect production uniqueDecoratedType
 top::Type ::= te::Type _
 {
   top.accessHandler = decoratedAccessHandler;

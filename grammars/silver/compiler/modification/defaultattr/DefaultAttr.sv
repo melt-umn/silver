@@ -99,10 +99,9 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
-abstract production defaultLhsDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production defaultLhsDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;

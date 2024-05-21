@@ -2,7 +2,7 @@ grammar silver:compiler:definition:flow:driver;
 
 data nonterminal StitchPoint with stitchEdges;
 
-synthesized attribute stitchEdges :: ([Pair<FlowVertex FlowVertex>] ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
+synthesized attribute stitchEdges :: ([(FlowVertex, FlowVertex)] ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
 
 {--
  - Introduces internal edges corresponding to the flow type of 'nt'
@@ -31,7 +31,7 @@ top::StitchPoint ::= nt::String  vertexType::VertexType
  - For example, if 'prod' has (rhs1, env) -> (lhs, env),
  - then here we would emit (patvar23, env) -> (e, env).
  -
- - @param prod  The production we're projecting
+ - @param prod  The production (or dispatch signature) we're projecting
  - @param sourceType  The "vertexType" of this stitchPoint
  - @param targetType  The "vertexType" of where this stitchPoint should proxy to
  - @param prodType  The "vertexType" in the other production to use
@@ -61,7 +61,7 @@ top::StitchPoint ::=
  - @return edges from 'sourceType.inhVertex(attr)' to 'targetType.inhVertex(??)'
  -}
 fun projectAttribute
-[Pair<FlowVertex FlowVertex>] ::=
+[(FlowVertex, FlowVertex)] ::=
   attr::String
   sourceType::VertexType
   targetType::VertexType
@@ -78,10 +78,10 @@ fun projectAttribute
 
 -- Useful for mapping
 fun stitchEdgesFor
-[Pair<FlowVertex FlowVertex>] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph> =
+[(FlowVertex, FlowVertex)] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph> =
   sp.stitchEdges(ntEnv, prodEnv);
 
-fun edgeIsNew Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex> =
+fun edgeIsNew Boolean ::= edge::(FlowVertex, FlowVertex)  e::g:Graph<FlowVertex> =
   !g:contains(edge, e);
 
 {--
@@ -91,7 +91,7 @@ fun edgeIsNew Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVert
  - @param vt  The vertex type we're creating edges within
  - @param edge  pair of syn/fwd and inh. The edge.
  -}
-fun flowTypeEdge Pair<FlowVertex FlowVertex> ::= vt::VertexType  edge::Pair<String String> =
+fun flowTypeEdge (FlowVertex, FlowVertex) ::= vt::VertexType  edge::Pair<String String> =
   if edge.fst == "forward" then
     (vt.fwdVertex, vt.inhVertex(edge.snd))
   else

@@ -1,9 +1,10 @@
 grammar silver:compiler:definition:core;
 
-abstract production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
-{
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';'); 
+dispatch AttributionDcl = AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs;
+
+abstract production defaultAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{ 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
@@ -137,9 +138,8 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
 }
 
 abstract production errorAttributionDcl
-top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= msg::[Message] @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to errorAGDcl(msg); 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.occursDefs := [];
   top.errors <- msg;
@@ -175,6 +175,8 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  -- Note: we are supplying env to attl, nt, nttl here (and then re-decorating them after dispatching.)
+  -- This is needed to permit computing flow defs on this production.
   propagate env;
   
   -- Workaround for circular dependency due to dispatching on env:
@@ -196,6 +198,21 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
 concrete production annotateDcl
 top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8);
+  forwards to attributionDcl('attribute', @at, @attl, $4, $5, @nt, @nttl, $8);
 }
 
+-- Utility productions for extensions to inject extra declarations besides the occurs-on.
+production extraDefaultAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs extraDcls::AGDcl
+{
+  forwards to
+    appendAGDcl(
+      directDefaultAttributionDcl(@at, @attl, @nt, @nttl),
+      @extraDcls);
+}
+production directDefaultAttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  at.env = top.env;
+  forwards to defaultAttributionDcl(at, @attl, @nt, @nttl);
+}

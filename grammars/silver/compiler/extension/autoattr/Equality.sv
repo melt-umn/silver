@@ -27,11 +27,10 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
  - Propagate a equality synthesized attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateEquality
-top::ProductionStmt ::= inh::String syn::Decorated! QName
+abstract production propagateEquality implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String
 {
-  undecorates to propagateOneAttr(syn);
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
   
   forwards to
     Silver_ProductionStmt {

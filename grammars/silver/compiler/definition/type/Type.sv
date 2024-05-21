@@ -255,20 +255,6 @@ top::Type ::= te::Type i::Type
 }
 
 {--
- - A *unique decorated* nonterminal type.
- - Represents a reference with some exact set of provided inherited attributes,
- - may be decorated with additional attributes.
- - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
- - @param i  MUST have kind InhSet
- -}
-abstract production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  top.kindrep = starKind();
-  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
-}
-
-{--
  - An intermediate type. This *should* never appear as the type of a symbol,
  - etc. Rather, this is a helper type only used within expressions.
  -

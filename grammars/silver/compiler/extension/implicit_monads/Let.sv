@@ -19,8 +19,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
+  ne.decSiteVertexInfo = top.decSiteVertexInfo;
   ne.alwaysDecorated = top.alwaysDecorated;
-  ne.originRules = top.originRules;
   ne.isRoot = top.isRoot;
 
   la.mDownSubst = top.mDownSubst;
@@ -116,7 +116,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.mdefs = [lexicalLocalDef(top.grammarName, id.nameLoc, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
-                               e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
+                               e.flowVertexInfo, e.flowDeps)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                    then [(id, t)]
@@ -133,7 +133,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  _ _ _
+top::Expr ::= @q::QName  _ _
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

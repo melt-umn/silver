@@ -8,7 +8,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from synDcl
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attributionDispatcher = defaultAttributionDcl;
 
@@ -52,7 +52,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from synDcl
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attributionDispatcher = defaultAttributionDcl;
 

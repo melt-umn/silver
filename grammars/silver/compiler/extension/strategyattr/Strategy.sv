@@ -55,11 +55,12 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   forwards to fwrd;
 }
 
-abstract production strategyAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production strategyAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
-  propagate grammarName, env, flowEnv;
+  attl.grammarName = top.grammarName;
+  attl.env = top.env;
+  attl.flowEnv = top.flowEnv;
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -82,8 +83,14 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  local atOccursDcl::AGDcl =
-    defaultAttributionDcl(
+  forwards to
+    extraDefaultAttributionDcl(
+      foldr(appendAGDcl, emptyAGDcl(),
+        map(
+          \ n::String ->
+            attributionDcl(
+              'attribute', qName(n), attl, 'occurs', 'on', nt, nttl, ';'),
+          at.lookupAttribute.dcl.liftedStrategyNames)))(
       at,
       botlSome(
         bTypeList(
@@ -97,31 +104,17 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
             | botlNone() -> nominalTypeExpr(nt.qNameType)
             end),
           '>')),
-      nt, nttl);
-
-  forwards to
-    if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl
-    else
-      appendAGDcl(
-        @atOccursDcl,
-        foldr1(
-          appendAGDcl,
-          map(
-            \ n::String ->
-              attributionDcl(
-                'attribute', qName(n), attl, 'occurs', 'on', nt, nttl, ';'),
-            at.lookupAttribute.dcl.liftedStrategyNames)));
+      @nt, @nttl);
 }
 
 {--
  - Propagate a strategy attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateStrategy
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateStrategy implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse}";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;
   production e::StrategyExpr = attr.lookupAttribute.dcl.strategyExpr;
@@ -171,7 +164,7 @@ top::ProductionStmt ::= attr::Decorated! QName
         if isTotal then e2.totalTranslation else e2.partialTranslation,
         ';'),
       map(
-        \ n::String -> propagateOneAttr(qName(n)),
+        \ n::String -> propagateOneAttr(if includeShared then elemShared('@') else elemNotShared(), qName(n)),
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
   -- Uncomment for debugging

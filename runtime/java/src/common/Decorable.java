@@ -14,9 +14,10 @@ public interface Decorable {
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from inh attribute indexes to Lazys that define them.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param decSite An accessor for where this DecoratedNode will be supplied with additional inherited attributes.
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs);
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy decSite);
 
 	/**
 	 * Decorate this node with a forward parent.
@@ -42,6 +43,6 @@ public interface Decorable {
 	 * @return  A node decorated with no inherited attributes, without a parent.
 	 */
 	public default DecoratedNode decorate() {
-		return decorate(TopNode.singleton, null);
+		return decorate(TopNode.singleton, null, null);
 	}
 }

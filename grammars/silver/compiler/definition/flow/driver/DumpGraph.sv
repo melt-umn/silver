@@ -111,7 +111,7 @@ fun generateDotGraph String ::= specs::[ProductionGraph] =
   end;
 
 -- "production/flowvertex" -> "production/flowvertex"
-fun makeDotArrow String ::= p::String e::Pair<FlowVertex FlowVertex> style::String =
+fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String =
   "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\"" ++ style ++ ";\n";
 
 

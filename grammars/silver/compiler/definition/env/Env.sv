@@ -13,7 +13,9 @@ grammar silver:compiler:definition:env;
 
 -- getProdAttrs [DclInfo] ::= prod::String e::Env
 
-data nonterminal Env with typeTree, valueTree, attrTree, instTree, prodOccursTree, occursTree, prodsForNtTree;
+data nonterminal Env with
+  typeTree, valueTree, attrTree, instTree, prodOccursTree, occursTree, prodsForNtTree,
+  prodDclList, dispatchDclList;
 
 synthesized attribute typeTree      :: [EnvTree<TypeDclInfo>]; -- Expr is type tau
 synthesized attribute valueTree     :: [EnvTree<ValueDclInfo>]; -- x has type tau
@@ -41,6 +43,9 @@ top::Env ::=
   top.occursTree = emptyEnvTree();
   
   top.prodsForNtTree = [emptyEnvTree()];
+
+  top.prodDclList = [];
+  top.dispatchDclList = [];
 }
 
 fun toEnv Env ::= d::[Def] od::[OccursDclInfo] = occursEnv(od, newScopeEnv(d, emptyEnv()));
@@ -68,6 +73,9 @@ top::Env ::= e1::Env  e2::Env
   top.occursTree = appendEnvTree(e1.occursTree, e2.occursTree);
 
   top.prodsForNtTree = e1.prodsForNtTree ++ e2.prodsForNtTree;
+
+  top.prodDclList = e1.prodDclList ++ e2.prodDclList;
+  top.dispatchDclList = e1.dispatchDclList ++ e2.dispatchDclList;
 }
 
 {--
@@ -88,6 +96,9 @@ top::Env ::= ds::[Def]  e::Env
   top.prodsForNtTree =
     directBuildTree(map(\ di::ValueDclInfo -> (di.namedSignature.outputElement.typerep.typeName, di), d.prodDclList)) ::
     e.prodsForNtTree;
+
+  top.prodDclList = d.prodDclList ++ e.prodDclList;
+  top.dispatchDclList = d.dispatchDclList ++ e.dispatchDclList;
 }
 
 {--
@@ -106,6 +117,9 @@ top::Env ::= d::[OccursDclInfo]  e::Env
   top.occursTree = consEnvTree(mapFullnameDcls(d), e.occursTree);
   
   top.prodsForNtTree = e.prodsForNtTree;
+
+  top.prodDclList = e.prodDclList;
+  top.dispatchDclList = e.dispatchDclList;
 }
 
 ----------------------------------------------------------------------------------------------------
@@ -176,7 +190,6 @@ Boolean ::= t::Type e::Env
     case t of
     | skolemType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))
     | varType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))  -- Can happen when pattern matching on a prod with occurs contexts
-    | uniqueDecoratedType(nt, _) -> isDecorable(nt, e)
     | _ -> t.isNonterminal && !t.isData
     end;
 }
@@ -306,7 +319,6 @@ function getMinRefSet
   return
     case t of
     | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
-    | uniqueDecoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
     | _ -> []
     end;
 }
@@ -341,7 +353,15 @@ Maybe<[String]> ::= t::Type e::Env
   return
     case t of
     | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
-    | uniqueDecoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
     | _ -> just([])
     end;
 }
+
+-- Check if a production attribute is a forward production attribute.
+-- Note this expects the local env for the production!
+-- If looking up in another prod, need to get the prod attr defs for the prod.
+fun isForwardProdAttr Boolean ::= a::String  e::Env =
+  case getValueDclAll(a, e) of
+  | d :: _ -> d.hasForward
+  | _ -> false
+  end;

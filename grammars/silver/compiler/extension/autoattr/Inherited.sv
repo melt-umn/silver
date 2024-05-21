@@ -1,30 +1,23 @@
 grammar silver:compiler:extension:autoattr;
 
-abstract production propagateInh
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateInh implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse};";
   
   local attrFullName::String = attr.lookupAttribute.dcl.fullName;
   local inputsWithAttr::[NamedSignatureElement] =
     filter(
       \ input::NamedSignatureElement ->
-        ((isDecorable(input.typerep, top.env) &&
-          -- Only propagate for unique decorated children that don't have the attribute
-          case getMaxRefSet(input.typerep, top.env) of
-          | just(inhs) -> !contains(attrFullName, inhs)
-          | nothing() -> false
-          end) ||
-         -- TODO: Check that the attribute is not already defined.
-         -- This may require consulting the flowEnv, but shouldn't require inferring flow types.
-         input.elementShared) &&
-        !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
+        isDecorable(input.elementDclType, top.env) &&
+        !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)) &&
+        (includeShared || !input.elementShared),
       top.frame.signature.inputElements);
+
   forwards to
     foldr(
       productionStmtAppend(_, _),
-      errorProductionStmt([]), -- No emptyProductionStmt?
+      emptyProductionStmt(),
       map(
         \ ie::NamedSignatureElement ->
           attributeDef(

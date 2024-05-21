@@ -71,10 +71,11 @@ top::AGDcl ::= tc::QName nt::QName
     end;
 }
 
-production deriveEqDcl
-top::AGDcl ::= nt::Decorated! QName
+dispatch Derive = AGDcl ::= @nt::QName;
+
+production deriveEqDcl implements Derive
+top::AGDcl ::= @nt::QName
 {
-  undecorates to deriveDcl(qName("silver:core:Eq"), nt);
   top.unparse = s"derive silver:core:Eq on ${nt.unparse};";
   top.moduleNames := [];
 
@@ -185,10 +186,9 @@ top::AGDcl ::= nt::Decorated! QName
   };
 }
 
-production deriveOrdDcl
-top::AGDcl ::= nt::Decorated! QName
+production deriveOrdDcl implements Derive
+top::AGDcl ::= @nt::QName
 {
-  undecorates to deriveDcl(qName("silver:core:Ord"), nt);
   top.unparse = s"derive silver:core:Ord on ${nt.unparse};";
   top.moduleNames := [];
 
