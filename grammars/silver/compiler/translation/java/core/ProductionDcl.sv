@@ -378,7 +378,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
         }
         return new ${className}(
             ${implode(", ",
-                "oi" ::
+                "oi" :: "isUnique" ::
                 namedSig.contextRefElems ++
                 map(dupChild, namedSig.inputElements) ++
                 map(copyAnno, namedSig.namedInputElements))});
@@ -388,7 +388,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     public ${fnnt} updateOriginInfo(silver.core.NOriginInfo oi) {
         return new ${className}(
             ${implode(", ",
-                "oi" ::
+                "oi" :: "isUnique" ::
                 namedSig.contextRefElems ++
                 map(copyChild, namedSig.inputElements) ++
                 map(copyAnno, namedSig.namedInputElements))});
