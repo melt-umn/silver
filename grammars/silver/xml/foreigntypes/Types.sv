@@ -20,11 +20,8 @@ ParseResult<XML_Document> ::= filename::String
 }
 
 -- NATIVE AST response. This is just a helper for 
-function nodeListXPathQueryN
-XMLNodeList ::= query::String doc::XML_Document
-{
-  return xmlNodeListF2N(nodeListXPathQueryF(query, doc));
-}
+fun nodeListXPathQueryN XMLNodeList ::= query::String doc::XML_Document =
+  xmlNodeListF2N(nodeListXPathQueryF(query, doc));
 
 -- FOREIGN DOM response
 function nodeListXPathQueryF
@@ -140,8 +137,5 @@ String ::= doc::XML_Document
   "java" : return "common.rawlib.RawXML.documentF2String((org.w3c.dom.Document)%doc%)";
 }
 
-function xmlDocumentN2String
-String ::= doc::XMLDocument
-{
-  return xmlDocumentF2String(xmlDocumentN2F(doc));
-}
+fun xmlDocumentN2String String ::= doc::XMLDocument =
+  xmlDocumentF2String(xmlDocumentN2F(doc));

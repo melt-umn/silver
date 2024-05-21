@@ -242,7 +242,7 @@ top::ASTs ::= h::AST t::ASTs
     fromMaybe(0,
       alt(map((.origNest), top.parseTree),
         lookup(t.childIndex, top.childIndent)));
-  local thisLayout::Document =
+  nondecorated local thisLayout::Document =
     fromMaybe(pp"",
       alt(map((.origLayoutPP), top.parseTree),
         alt(lookup(top.childIndex, top.childLayout),

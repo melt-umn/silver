@@ -11,13 +11,13 @@ strategy attribute simpl =
     rule on Regex of
     | seq(empty(), r) -> empty()
     | seq(r, empty()) -> empty()
-    | seq(epsilon(), r) -> r
-    | seq(r, epsilon()) -> r
-    | alt(empty(), r) -> r
-    | alt(r, empty()) -> r
-    | alt(epsilon(), r) when r.nullable -> r
-    | alt(r, epsilon()) when r.nullable -> r
-    | alt(r1, r2) when r1 == r2 -> r1
+    | seq(epsilon(), r) -> new(r)
+    | seq(r, epsilon()) -> new(r)
+    | alt(empty(), r) -> new(r)
+    | alt(r, empty()) -> new(r)
+    | alt(epsilon(), r) when r.nullable -> new(r)
+    | alt(r, epsilon()) when r.nullable -> new(r)
+    | alt(r1, r2) when new(r1) == new(r2) -> new(r1)
     | star(empty()) -> epsilon()
     | star(epsilon()) -> epsilon()
     end)

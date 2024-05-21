@@ -249,7 +249,7 @@ attribute traversalResult<NamedAST> occurs on NamedAST;
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
-  top.binding = (n, v);
+  top.binding = (n, new(v));
   top.allResult =
     do {
       vResult::AST <- decorate top.givenStrategy with { term = new(v); }.result;
@@ -267,6 +267,6 @@ top::NamedAST ::= n::String v::AST
       foldl(
         \ ma::Maybe<AST> s::Strategy ->
           bind(ma, \ a::AST -> decorate s with { term = a; }.result),
-        just(v),
+        just(new(v)),
         lookupAll(n, top.annotationStrategies)));
 }
