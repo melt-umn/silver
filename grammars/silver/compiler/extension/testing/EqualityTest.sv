@@ -138,6 +138,7 @@ ag::AGDcl ::= kwd::'equalityTest'
   -- TODO: Rewrite as Silver_AGDcl { ... }
   local absProdCS :: AGDcl =
     productionDcl('abstract', 'production', testNameref,
+      productionImplementsNone(),
       productionSignature(
         nilConstraint(), '=>',
         productionLHS(tref, '::',

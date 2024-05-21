@@ -3,6 +3,8 @@ grammar silver:compiler:definition:type;
 option silver:compiler:modification:ffi; -- foreign types
 option silver:compiler:modification:list; -- list type
 
+imports silver:compiler:definition:env only NamedSignature, fullName, outputElement;
+
 synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
@@ -332,6 +334,13 @@ abstract production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
   top.kindrep = constructorKind(params + length(namedParams) + 1);
+  top.freeVariables = [];
+}
+
+abstract production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 

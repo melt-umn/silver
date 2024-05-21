@@ -60,3 +60,10 @@ top::Type ::= _ _
 {
   top.applicationDispatcher = functionApplication;
 }
+
+aspect production dispatchType
+top::Type ::= _
+{
+  top.applicationDispatcher = dispatchApplication;
+}
+

@@ -240,6 +240,19 @@ top::Type ::= params::Integer namedParams::[String]
     end;
 }
 
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.refine = 
+    case top.refineWith of
+    | dispatchType(ons) ->
+        if ns.fullName == ons.fullName
+        then emptySubst()
+        else errorSubst("Tried to refine conflicting dispatch types " ++ ns.fullName ++ " and " ++ ons.fullName)
+    | _ -> errorSubst("Tried to refine dispatch type " ++ ns.fullName ++ " with " ++ prettyType(top.refineWith))
+    end;
+}
+
 aspect production foreignType
 top::Type ::= fn::String  transType::String  params::[Type]
 {

@@ -276,6 +276,14 @@ top::Type ::= params::Integer namedParams::[String]
   top.isApplicable = true;
 }
 
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.isApplicable = true;
+  top.inputTypes = ns.inputTypes;
+  top.outputType = ns.outputElement.typerep;
+}
+
 -- Strict type equality, assuming all type vars are skolemized
 instance Eq Type {
   eq = \ t1::Type t2::Type -> !unifyDirectional(t1, t2).failure;

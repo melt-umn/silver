@@ -20,6 +20,7 @@ synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
 synthesized attribute isClosed :: Boolean;
+synthesized attribute dispatchSignature :: NamedSignature;
 
 -- instances
 inherited attribute givenInstanceType :: Type;
@@ -102,12 +103,24 @@ top::ValueDclInfo ::= ty::Type
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::ValueDclInfo ::= ns::NamedSignature hasForward::Boolean
+top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForward::Boolean
 {
   top.fullName = ns.fullName;
   
   top.namedSignature = ns;
-  top.typeScheme = ns.typeScheme;
+  top.typeScheme =
+    case dispatch of
+    | nothing() -> ns.typeScheme
+    | just(dSig) ->
+      if length(ns.inputElements) == length(dSig.inputElements)
+      then monoType(dispatchType(dSig))
+      else (if null(ns.contexts) then polyType else constraintType(_, ns.contexts, _))(
+        ns.freeVariables,
+        appTypes(
+          functionType(length(ns.inputElements) - length(dSig.inputElements), []),
+          drop(length(dSig.inputElements), ns.inputTypes) ++
+        [dispatchType(dSig)]))
+    end;
   top.hasForward = hasForward;
 }
 abstract production funDcl
@@ -153,7 +166,8 @@ top::ValueDclInfo ::= fn::String
 
 closed nonterminal TypeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts, isClosed;
+  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases,
+  isClass, classMembers, givenInstanceType, superContexts, isClosed, dispatchSignature;
 propagate isEqual, compareTo on TypeDclInfo excluding typeAliasDcl, clsDcl;
 
 aspect default production
@@ -167,6 +181,7 @@ top::TypeDclInfo ::=
   top.classMembers = [];
   top.superContexts = [];
   top.isClosed = false;
+  top.dispatchSignature = bogusNamedSignature();
 }
 
 abstract production ntDcl
@@ -236,6 +251,15 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);
   top.superContexts = map(performContextRenaming(_, tvSubst), supers);
   top.classMembers = members;
+}
+abstract production dispatchDcl
+top::TypeDclInfo ::= ns::NamedSignature
+{
+  top.fullName = ns.fullName;
+
+  top.typeScheme = monoType(dispatchType(ns));
+  top.dispatchSignature = ns;
+  top.isType = true;
 }
 
 closed nonterminal AttributeDclInfo with

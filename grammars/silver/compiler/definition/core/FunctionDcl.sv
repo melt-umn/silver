@@ -54,6 +54,7 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
   cl.env = top.env;
   lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
+  rhs.implementedSig = nothing();
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
@@ -67,6 +68,11 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
       lhs.outputElement,
       -- For the moment, functions do not have named parameters (hence, nilNamedSignatureElement)
       nilNamedSignatureElement());
+  
+  top.errors <-
+    if any(map((.elementShared), rhs.inputElements))
+    then [errFromOrigin(rhs, "Sharing in function parameters is not permitted.")]
+    else [];
 } action {
   sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
@@ -90,7 +96,7 @@ top::FunctionLHS ::= t::TypeExpr
   production attribute fName :: String;
   fName = "__func__lhs";
 
-  top.outputElement = namedSignatureElement(fName, t.typerep);
+  top.outputElement = namedSignatureElement(fName, t.typerep, false);
 
   -- TODO: think about this. lhs doesn't really have an fName.
   top.defs := [lhsDef(top.grammarName, getParsedOriginLocationOrFallback(t), fName, t.typerep)];

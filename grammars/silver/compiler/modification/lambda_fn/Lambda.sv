@@ -129,7 +129,7 @@ top::LambdaRHSElem ::= id::Name '::' t::TypeExpr
                                     top.givenLambdaId, top.givenLambdaParamIndex)];
   top.lambdaBoundVars := [id.name];
 
-  top.inputElements = [namedSignatureElement(id.name, t.typerep)];
+  top.inputElements = [namedSignatureElement(id.name, t.typerep, false)];
   
   top.unparse = id.unparse ++ "::" ++ t.unparse;
 }

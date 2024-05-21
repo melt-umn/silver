@@ -1,19 +1,24 @@
 grammar silver:compiler:definition:core;
 
-tracked nonterminal ProductionSignature with config, grammarName, env, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
-tracked nonterminal ProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement;
-tracked nonterminal ProductionRHS with config, grammarName, env, unparse, errors, defs, inputElements, elementCount;
-tracked nonterminal ProductionRHSElem with config, grammarName, env, unparse, errors, defs, inputElements, deterministicCount;
+tracked nonterminal ProductionImplements with config, grammarName, env, unparse, errors, implementsSig;
+tracked nonterminal ProductionSignature with config, grammarName, env, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName, implementedSig<NamedSignature>;
+tracked nonterminal ProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement, implementedSig<NamedSignatureElement>;
+tracked nonterminal ProductionRHS with config, grammarName, env, unparse, errors, defs, inputElements, elementCount, implementedSig<NamedSignatureElements>;
+tracked nonterminal ProductionRHSElem with config, grammarName, env, unparse, errors, defs, inputElements, deterministicCount, implementedSig<NamedSignatureElement>;
 
 flowtype forward {env, signatureName} on ProductionSignature;
 flowtype forward {env} on ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
-flowtype decorate {forward, grammarName, flowEnv} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+flowtype decorate {forward, grammarName, flowEnv, implementedSig} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 propagate config, grammarName, errors on
-  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+  ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+propagate env on ProductionImplements;
 propagate env, defs on ProductionRHS;
+
+synthesized attribute implementsSig::Maybe<NamedSignature>;
+inherited attribute implementedSig<a>::Maybe<a>;
 
 {--
  - Used to help give names to children, when names are omitted.
@@ -38,14 +43,14 @@ synthesized attribute constraintDefs::[Def];
 parser attribute sigNames::[String] action { sigNames = []; };
 
 concrete production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
-  top.unparse = "abstract production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
+  top.unparse = "abstract production " ++ id.unparse ++ " " ++ d.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs := prodDef(top.grammarName, id.nameLoc, namedSig, length(body.forwardExpr) > 0) ::
+  top.defs := prodDef(top.grammarName, id.nameLoc, namedSig, d.implementsSig, length(body.forwardExpr) > 0) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.nameLoc, namedSig, body.productionAttributes)];
 
@@ -53,7 +58,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local sameNTProds::[ValueDclInfo] = filter(
     \ v::ValueDclInfo ->
       case v of
-      | prodDcl(ns, _) -> ns.outputElement.typerep == namedSig.outputElement.typerep
+      | prodDcl(ns, _, _) -> ns.outputElement.typerep == namedSig.outputElement.typerep
       | _ -> false
       end,
     getValueDclAll(id.name, top.env));
@@ -81,8 +86,11 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
+  d.env = top.env;
+
   ns.signatureName = fName;
   ns.env = newScopeEnv(sigDefs, top.env);
+  ns.implementedSig = d.implementsSig;
 
   local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
@@ -94,6 +102,33 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   sigNames = [];
 }
 
+concrete production productionImplementsSome
+top::ProductionImplements ::= 'implements' id::QName
+{
+  top.unparse = "implements " ++ id.unparse;
+  top.implementsSig =
+    if id.lookupType.found
+    then just(id.lookupType.dcl.dispatchSignature)
+    else nothing();
+
+  top.errors <- id.lookupType.errors;
+  top.errors <- if !id.lookupType.found then [] else
+    case id.lookupType.dcl of
+    | dispatchDcl(_) -> []
+    | _ -> [errFromOrigin(id, "Type '" ++ id.unparse ++ "' is not a dispatch signature type.")]
+    end;
+} action {
+  insert semantic token IdType_t at id.nameLoc;
+  sigNames = [];
+}
+
+concrete production productionImplementsNone
+top::ProductionImplements ::=
+{
+  top.unparse = "";
+  top.implementsSig = nothing();
+}
+
 concrete production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
@@ -103,6 +138,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   cl.constraintPos = signaturePos(top.namedSignature, sourceGrammar=top.grammarName);
   lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
+  lhs.implementedSig = map((.outputElement), top.implementedSig);
+  rhs.implementedSig = map(compose(foldNamedSignatureElements, (.inputElements)), top.implementedSig);
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
@@ -134,7 +171,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
   top.unparse = id.unparse ++ "::" ++ t.unparse;
   propagate env;
 
-  top.outputElement = namedSignatureElement(id.name, t.typerep);
+  top.outputElement = namedSignatureElement(id.name, t.typerep, false);
 
   top.defs := [lhsDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 
@@ -144,6 +181,14 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
     else [];
 } action {
   insert semantic token IdSigNameDcl_t at id.nameLoc;
+}
+
+concrete production productionLHSType
+top::ProductionLHS ::= t::TypeExpr
+{
+  top.unparse = t.unparse;
+
+  forwards to productionLHS(name("_G_lhs"), '::', @t);
 }
 
 concrete production productionRHSNil
@@ -163,15 +208,20 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.inputElements = h.inputElements ++ t.inputElements;
   top.elementCount = 1 + t.elementCount;
   h.deterministicCount = t.elementCount;
+
+  h.implementedSig =
+    case top.implementedSig of just(consNamedSignatureElement(h, _)) -> just(h) | _ -> nothing() end;
+  t.implementedSig =
+    case top.implementedSig of just(consNamedSignatureElement(_, t)) -> just(t) | _ -> nothing() end;
 }
 
 concrete production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
-  top.unparse = id.unparse ++ "::" ++ t.unparse;
+  top.unparse = ms.unparse ++ id.unparse ++ "::" ++ t.unparse;
   propagate env;
 
-  top.inputElements = [namedSignatureElement(id.name, t.typerep)];
+  top.inputElements = [namedSignatureElement(id.name, t.typerep, ms.elementShared)];
 
   top.defs := [childDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 
@@ -184,10 +234,20 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 }
 
 concrete production productionRHSElemType
-top::ProductionRHSElem ::= t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared t::TypeExpr
 {
-  top.unparse = t.unparse;
+  top.unparse = ms.unparse ++ t.unparse;
 
-  forwards to productionRHSElem(name("_G_" ++ toString(top.deterministicCount)), '::', t);
+  forwards to productionRHSElem(@ms, name("_G_" ++ toString(top.deterministicCount)), '::', @t);
 }
+
+tracked nonterminal MaybeShared with unparse, elementShared;
+
+concrete production elemShared
+top::MaybeShared ::= '@'
+{ top.unparse = "@"; top.elementShared = true; }
+
+concrete production elemNotShared
+top::MaybeShared ::=
+{ top.unparse = "";  top.elementShared = false; }
 

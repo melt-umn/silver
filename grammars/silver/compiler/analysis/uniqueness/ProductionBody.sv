@@ -4,7 +4,7 @@ attribute uniqueRefs occurs on ProductionBody, ProductionStmts, ProductionStmt;
 propagate uniqueRefs on ProductionBody, ProductionStmts, ProductionStmt;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   top.errors <-
     if any(map((.isUniqueDecorated), namedSig.inputTypes)) && null(body.undecorateExpr)

@@ -76,8 +76,8 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 }
 
 aspect shortFunctionDefs on top::ProductionRHSElem using := of
-| productionRHSElem(id, _, t) -> [shortFunParamDef(top.grammarName, id.nameLoc, id.name, t.typerep)]
-| productionRHSElemType(_) -> []
+| productionRHSElem(_, id, _, t) -> [shortFunParamDef(top.grammarName, id.nameLoc, id.name, t.typerep)]
+| productionRHSElemType(_, _) -> []
 end;
 
 abstract production shortFunParamReference

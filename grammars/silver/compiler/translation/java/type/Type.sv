@@ -1,6 +1,7 @@
 grammar silver:compiler:translation:java:type;
 
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core;
 
 -- The Java type corresponding to the Silver Type
@@ -195,4 +196,13 @@ top::Type ::= params::Integer namedParams::[String]
   top.transTypeRep =
     s"new common.FunctionTypeRep(${toString(params)}, new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", namedParams))}})";
   top.transTypeName = "Fn_" ++ toString(params) ++ "_" ++ implode("_", namedParams);
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.transType = s"common.NodeFactory<${ns.outputElement.typerep.transType}>";
+  top.transClassType = "common.NodeFactory";
+  top.transTypeRep = s"new common.BaseTypeRep(\"${ns.fullName}\")";
+  top.transTypeName = substitute(":", "_", ns.fullName);
 }

@@ -72,7 +72,7 @@ top::ValueDclInfo ::= fn::String ty::Type _
 
 -- -- interface values
 aspect production prodDcl
-top::ValueDclInfo ::= ns::NamedSignature hasForward::Boolean
+top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForward::Boolean
 {
   top.refDispatcher = productionReference;
    -- Note that we still need production references, even though bug #16 removes the production type.

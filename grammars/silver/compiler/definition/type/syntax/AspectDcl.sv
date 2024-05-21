@@ -59,6 +59,12 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
   propagate lexicalTypeVariables, lexicalTyVarKinds;
 }
 
+aspect production aspectRHSElemSharedTyped
+top::AspectRHSElem ::= '@' id::Name '::' t::TypeExpr
+{
+  propagate lexicalTypeVariables, lexicalTyVarKinds;
+}
+
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {

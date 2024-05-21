@@ -61,15 +61,15 @@ top::EasyTerminalRef ::= t::Terminal_t
   top.typerep = if null(top.dcls) then errorType() else head(top.dcls).typeScheme.monoType;
 }
 
-
+-- sharing doesn't make sense here, but we need MaybeShared here to avoid shift/reduce:
 concrete production productionRhsElemEasyReg
-top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' reg::EasyTerminalRef
 {
-  top.unparse = id.unparse ++ "::" ++ reg.unparse;
+  top.unparse = ms.unparse ++ id.unparse ++ "::" ++ reg.unparse;
   propagate env;
   top.errors <- reg.errors;
 
-  forwards to productionRHSElem(id, $2, typerepTypeExpr(reg.typerep));
+  forwards to productionRHSElem(@ms, id, $3, typerepTypeExpr(reg.typerep));
 }
 
 concrete production productionRhsElemTypeEasyReg
@@ -79,7 +79,7 @@ top::ProductionRHSElem ::= reg::EasyTerminalRef
   propagate env;
   top.errors <- reg.errors;
 
-  forwards to productionRHSElemType(typerepTypeExpr(reg.typerep));
+  forwards to productionRHSElemType(elemNotShared(), typerepTypeExpr(reg.typerep));
 }
 
 concrete production aspectRHSElemEasyReg

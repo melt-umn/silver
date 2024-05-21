@@ -25,6 +25,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
   ns.signatureName = fName;
+  ns.implementedSig = nothing();
   ns.env = newScopeEnv(ns.defs, top.env);
   pm.productionSig = ns.namedSignature;
   pm.env = newScopeEnv(ns.actionDefs, top.env);
@@ -148,7 +149,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.actionDefs = [actionChildDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 }
