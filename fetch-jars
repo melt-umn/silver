@@ -57,13 +57,13 @@ if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/nul
   done
 fi
 
-if [[ -z $rev ]]; then
-  echo "Failed to find jars for the specified revision or any of its ancestors."
-  exit 1
-fi
-
 # Figure out how to obtain the jars from the revision we chose.
 if [[ $* == *--local* ]]; then
+  if [[ -z $rev ]]; then
+    echo "Failed to find local jars for the specified revision."
+    exit 1
+  fi
+
   echo "Fetching local jars..."
   LOCAL_STORE="JARS-BAK/$rev"
   REMOTE_STORE=
