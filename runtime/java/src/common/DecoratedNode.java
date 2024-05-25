@@ -232,8 +232,10 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	private void copyInhOverrides(final DecoratedNode parent, final Lazy[] inhs, final Lazy[] newInhs) {
-		assert inhs.length == newInhs.length;
-		for(int i = 0; i < inhs.length; i++) {
+		// Arrays can differ in length if a tree is shared in a polymorphic decoration site.
+		// The new inh array should never be larger than the original one.
+		assert inhs.length >= newInhs.length;
+		for(int i = 0; i < newInhs.length; i++) {
 			if(newInhs[i] != null) {
 				Lazy newInh = newInhs[i].withContext(parent);
 				if(inhs[i] == null) {
