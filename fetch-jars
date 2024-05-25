@@ -2,10 +2,11 @@
 
 set -eu
 
-# Usage: ./fetch-jars [rev-name] [--unstable] [--copper]
+# Usage: ./fetch-jars [rev-name] [--unstable] [--local] [--copper]
 # If a revision is not specified, the script fetches the latest jars from the current branch,
 # falling back to develop.
 # If --unstable is specified, always fetch from commit artifacts on foundry.
+# If --local is specified, only fetch jars from the local cache.
 # If --copper is specified, only fetch the Copper jars.
 
 # Parse command line argumants.
@@ -20,11 +21,9 @@ done
 
 COMMIT_ARTIFACTS="https://foundry.remexre.xyz/commit-artifacts/"
 
-[[ $* == *--local* ]]
-LOCAL_JARS=$?
-
+args=$*
 function has_jars {
-  if [[ $LOCAL_JARS -eq 0 ]]; then
+  if [[ $args == *--local* ]]; then
     [[ -d "JARS-BAK/$1" ]]
   else
     wget --spider -q "$COMMIT_ARTIFACTS/$1"
