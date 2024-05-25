@@ -20,8 +20,15 @@ done
 
 COMMIT_ARTIFACTS="https://foundry.remexre.xyz/commit-artifacts/"
 
+[[ $* == *--local* ]]
+LOCAL_JARS=$?
+
 function has_jars {
-  wget --spider -q "$COMMIT_ARTIFACTS/$1"
+  if [[ $LOCAL_JARS -eq 0 ]]; then
+    [[ -d "JARS-BAK/$1" ]]
+  else
+    wget --spider -q "$COMMIT_ARTIFACTS/$1"
+  fi
 }
 
 rev=""
@@ -34,7 +41,7 @@ fi
 # Get the hash of the latest commit on develop.
 # This always gives the latest commit regardless of if the repo is up to date,
 # and works in a Jenkins checkout.
-DEVELOP=$(git ls-remote https://github.com/melt-umn/silver develop | cut -f1)
+DEVELOP=$(git ls-remote https://github.com/melt-umn/silver develop | cut -f1 | head -n1)
 
 # Look for jars in the current commit and its parents.
 # First, check that we are inside a git repo.
@@ -51,8 +58,18 @@ if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/nul
   done
 fi
 
+if [[ -z $rev ]]; then
+  echo "Failed to find jars for the specified revision or any of its ancestors."
+  exit 1
+fi
+
 # Figure out how to obtain the jars from the revision we chose.
-if [[ $* != *--unstable* && (-z $rev || $rev == "$DEVELOP") ]]; then
+if [[ $* == *--local* ]]; then
+  echo "Fetching local jars..."
+  LOCAL_STORE="JARS-BAK/$rev"
+  REMOTE_STORE=
+  JARS_BAK=
+elif [[ $* != *--unstable* && $* != *--local* && (-z $rev || $rev == "$DEVELOP") ]]; then
   echo "Fetching latest stable jars..."
   LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
   REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
