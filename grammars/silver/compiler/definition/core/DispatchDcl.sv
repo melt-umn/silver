@@ -23,4 +23,6 @@ top::AGDcl ::= 'dispatch' id::Name '=' sig::ProductionSignature ';'
     if isLower(substring(0,1,id.name))
     then [errFromOrigin(id, "Types must be capitalized. Invalid dispatch name " ++ id.name)]
     else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }

@@ -53,7 +53,9 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     -- atty should never have free type variables if ntty does not, except in case of errors elsewhere.
     else {-if !null(atty.freeFlexibleVars)
     then error(s"got atty with free vars")
-    else-} if null(top.resolvedOccurs)
+    else-} if ntty.isDecorated
+    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(new(top))}; an undecorated type is expected here (arising from ${top.contextSource})")]
+    else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(new(top))} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
