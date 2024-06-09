@@ -26,8 +26,8 @@ terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
 terminal Matches_kwd 'matches' lexer classes {KEYWORD};
 
 -- MR | ...
-tracked nonterminal MRuleList with config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
-propagate config, frame, env, errors, freeVars, matchRulePatternSize on MRuleList;
+tracked nonterminal MRuleList with config, grammarName, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
+propagate config, grammarName, frame, env, errors, freeVars, matchRulePatternSize on MRuleList;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -35,7 +35,7 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 inherited attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-tracked nonterminal MatchRule with config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
+tracked nonterminal MatchRule with config, grammarName, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
 tracked nonterminal AbstractMatchRule with unparse, frame, freeVars, headPattern, isVarMatchRule, expandHeadPattern, hasCondition;
 
 -- The head pattern of a match rule
@@ -50,8 +50,8 @@ synthesized attribute hasCondition::Boolean;
 synthesized attribute count::Integer;
 
 -- P , ...
-tracked nonterminal PatternList with config, unparse, count, patternList, env, frame, errors, patternVars, patternVarEnv;
-propagate config, frame, env, errors on PatternList;
+tracked nonterminal PatternList with config, grammarName, unparse, count, patternList, env, frame, errors, patternVars, patternVarEnv;
+propagate config, grammarName, frame, env, errors on PatternList;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -74,7 +74,7 @@ concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
-  propagate config, frame, env, freeVars;
+  propagate config, grammarName, frame, env, freeVars;
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -634,6 +634,7 @@ fun generateWildcards [Pattern] ::= n::Integer = repeat(wildcPattern('_'), n);
 -}
 fun decoratePattList [Decorated Pattern] ::= lst::[Pattern] =
   map(\ p::Pattern -> decorate p with {
+      grammarName = error("not needed");
       config = error("not needed");
       frame = error("not needed");
       env = error("not needed");
@@ -1028,7 +1029,7 @@ concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.unparse = pt.unparse ++ " -> " ++ e.unparse;
-  propagate frame, config, env;
+  propagate grammarName, frame, config, env;
 
   top.errors := pt.errors; -- e.errors is examined later, after transformation.
   top.freeVars := ts:removeAll(pt.patternVars, e.freeVars);
@@ -1046,7 +1047,7 @@ concrete production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 {
   top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " -> " ++ e.unparse;
-  propagate frame, config, env;
+  propagate grammarName, frame, config, env;
 
   top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
   top.freeVars := ts:removeAll(pt.patternVars, cond.freeVars ++ e.freeVars);
@@ -1064,7 +1065,7 @@ concrete production matchRuleWhenMatches_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e::Expr
 {
   top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " matches " ++ p.unparse ++ " -> " ++ e.unparse;
-  propagate frame, config, env;
+  propagate grammarName, frame, config, env;
 
   top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
   top.freeVars := ts:removeAll(pt.patternVars, cond.freeVars ++ ts:removeAll(p.patternVars, e.freeVars));
@@ -1113,7 +1114,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern]
           \ n::String ->
             fromMaybe(
               decorate wildcPattern('_')
-                with { frame = head(pl).frame; config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
+                with { grammarName = error("not needed"); frame = head(pl).frame; config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
               lookup(n, head(pl).patternNamedSubPatternList)),
           named) ++
         tail(pl),

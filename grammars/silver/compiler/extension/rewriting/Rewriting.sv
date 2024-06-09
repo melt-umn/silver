@@ -208,34 +208,13 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
       addNewLexicalTyVars(top.grammarName, [], freeTyVars)
     end, top.env);
 
-  -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
-  -- so we need to decorate one of those here.
-  local checkExpr::Expr =
-    caseExpr(
-      [hackExprType(ty.typerep)],
-      ml.wrappedMatchRuleList, false,
-      errorExpr([]),
-      ty.typerep);
-  checkExpr.env = top.env;
-  checkExpr.flowEnv = top.flowEnv;
-  checkExpr.finalSubst = checkExpr.upSubst; -- Not top.finalSubst to avoid circularity
-  checkExpr.grammarName = top.grammarName;
-  checkExpr.frame = top.frame;
-  checkExpr.config = top.config;
-  checkExpr.compiledGrammars = top.compiledGrammars;
-  checkExpr.boundVars = [];
-  checkExpr.alwaysDecorated = false;
-  checkExpr.decSiteVertexInfo = nothing();
-  checkExpr.isRoot = false;
-  checkExpr.originRules = [];
-  
   ml.env = top.env;
   ml.matchRulePatternSize = 1;
-  ml.ruleIndex = 0;
-  ml.decRuleExprsIn = checkExpr.decRuleExprs;
+  ml.ruleCompiledGrammars = top.compiledGrammars;
+  ml.ruleFlowEnv = top.flowEnv;
   
   local localErrors::[Message] =
-    ty.errors ++ ml.errors ++ checkExpr.errors ++
+    ty.errors ++ ml.errors ++ ml.ruleErrors ++
     ty.errorsKindStar ++
     if null(getTypeDcl("silver:rewrite:Strategy", top.env))
     then [errFromOrigin(top, "Term rewriting requires import of silver:rewrite")]
@@ -243,19 +222,17 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   -- Can't use an error production here, unfortunately, due to circular dependency issues.
   top.errors := if !null(localErrors) then localErrors else forward.errors;
-
-  thread downSubst, upSubst on top, checkExpr, forward;
   
-  nondecorated local finalRuleType::Type =
+  ml.scrutineeType =
     freshenType(
-      performSubstitution(ty.typerep, checkExpr.upSubst),
+      ty.typerep,  -- TODO: Should this be substituted?
       ty.typerep.freeVariables);
   nondecorated local transform::Strategy =
-    if ml.isPolymorphic
+    if ml.hasUnconstrainedPoly
     then requireType(antiquoteASTExpr(
       Silver_Expr {
         silver:rewrite:anyASTExpr(
-          \ _::$TypeExpr{typerepTypeExpr(finalRuleType)} -> unit())
+          \ _::$TypeExpr{typerepTypeExpr(ml.scrutineeType)} -> unit())
       })) <* ml.transform
     else ml.transform;
   

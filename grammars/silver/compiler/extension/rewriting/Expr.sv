@@ -1,14 +1,11 @@
 grammar silver:compiler:extension:rewriting;
 
--- Environment mapping variables that were defined on the rule LHS to Booleans indicating whether
--- the variable was explicitly (i.e. not implicitly) decorated in the pattern.
-inherited attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
-propagate @boundVars on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
+-- Environment containing just the 
+inherited attribute ruleEnv::Env occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
+propagate @ruleEnv on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
   excluding letp, prodPatternNormal, prodPatternGadt;
 
 attribute transform<ASTExpr> occurs on Expr;
-
-synthesized attribute decRuleExprs::[(String, Decorated Expr with {decorate, decSiteVertexInfo, boundVars})] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
 
 aspect default production
 top::Expr ::=
@@ -22,53 +19,17 @@ top::Expr ::=
         in rewrite_rule_anyAST_val__
         end)
     });
-  top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
 aspect production lexicalLocalReference
 top::Expr ::= @q::QName _ _
 {
-  -- In regular pattern matching nonterminal values are always effectively decorated, but we are
-  -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
-  -- referenced as decorated we must seperately handle the cases of when it was already decorated
-  -- or was decorated implicitly (in which case we need to explicitly decorate it here.)  The same
-  -- problem exists when dealing with implicit undecoration.
   top.transform =
-    case lookup(q.name, top.boundVars) of
-    | just(bindingIsDecorated) ->
-      -- The variable is bound in the rule
-      if top.finalType.isDecorated && !bindingIsDecorated
-      then
-        -- We want the decorated version, but the bound value is undecorated
-        applyASTExpr(
-          antiquoteASTExpr(
-            Silver_Expr {
-              silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(top.finalType.decoratedType)} ->
-                  $Expr{
-                    decorateExprWithEmpty(
-                      'decorate', Silver_Expr { e }, 'with', '{', '}')})
-            }),
-          consASTExpr(varASTExpr(q.name), nilASTExpr()),
-          nilNamedASTExpr())
-      else if isDecorable(top.finalType, top.env) && bindingIsDecorated
-      -- We want the undecorated version, but the bound value is decorated
-      then
-        applyASTExpr(
-          antiquoteASTExpr(
-            Silver_Expr {
-              silver:rewrite:anyASTExpr(silver:core:new)
-            }),
-          consASTExpr(varASTExpr(q.name), nilASTExpr()),
-          nilNamedASTExpr())
-      -- Both (or neither) the bound value/desired type is a decorated nonterminal - just return the value
-      else varASTExpr(q.name)
-    | nothing() ->
-      -- The variable is bound in an enclosing let/match
-      -- Explicitly undecorate the variable, if appropriate for the final expected type
-      if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($QName{new(q)})) })
-      else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) })
+    case getValueDcl(q.name, top.ruleEnv) of
+    -- The variable is bound in the rule pattern or a let expression in the RHS
+    | [_] -> varASTExpr(q.name)
+    -- The variable is bound in an enclosing let/match
+    | _ -> antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) })
     end;
 }
 
@@ -265,7 +226,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     end;
   top.transform =
     case e of
-    -- Special cases to avoid introducing a reference and causing flow errors.
+    -- Special case to avoid taking a reference and causing flow errors.
     | decorateExprWith(_, eUndec, _, _, inh, _) ->
       applyASTExpr(
         antiquoteASTExpr(
@@ -286,19 +247,6 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
                   })})
           }),
         consASTExpr(eUndec.transform, inh.transform),
-        nilNamedASTExpr())
-    | lexicalLocalReference(qn, _, _) when
-        case lookup(qn.name, top.boundVars) of
-        | just(bindingIsDecorated) -> !bindingIsDecorated
-        | nothing() -> false
-        end -> 
-      applyASTExpr(
-        antiquoteASTExpr(
-          Silver_Expr {
-            silver:rewrite:anyASTExpr(
-              \ e::$TypeExpr{typerepTypeExpr(e.finalType.decoratedType)} -> e.$qName{q.name})
-          }),
-        consASTExpr(varASTExpr(qn.name), nilASTExpr()),
         nilNamedASTExpr())
     | _ ->
       applyASTExpr(
@@ -513,7 +461,6 @@ aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.transform = ifThenElseASTExpr(e1.transform, e2.transform, e3.transform);
-  top.decRuleExprs = e1.decRuleExprs ++ e2.decRuleExprs ++ e3.decRuleExprs;
 }
 
 -- Extensions
@@ -551,7 +498,7 @@ top::Expr ::= '[' es::Exprs ']'
   decEs.grammarName = top.grammarName;
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
-  decEs.boundVars = top.boundVars;
+  decEs.ruleEnv = top.ruleEnv;
 
   top.transform = listASTExpr(decEs.transform);
 }
@@ -571,7 +518,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
   decEs.grammarName = top.grammarName;
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
-  decEs.boundVars = top.boundVars;
+  decEs.ruleEnv = top.ruleEnv;
   
   top.transform =
     applyASTExpr(
@@ -594,21 +541,17 @@ aspect production letp
 top::Expr ::= la::AssignExpr e::Expr
 {
   top.transform = letASTExpr(la.transform, e.transform);
-  top.decRuleExprs = la.decRuleExprs ++ e.decRuleExprs;
   
-  la.boundVars = top.boundVars;
-  e.boundVars = top.boundVars ++ la.varBindings;
+  la.ruleEnv = top.ruleEnv;
+  e.ruleEnv = newScopeEnv(la.defs, top.ruleEnv);
 }
 
 attribute transform<NamedASTExprs> occurs on AssignExpr;
-attribute varBindings occurs on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.transform = appendNamedASTExprs(a1.transform, a2.transform);
-  top.varBindings = a1.varBindings ++ a2.varBindings;
-  top.decRuleExprs = a1.decRuleExprs ++ a2.decRuleExprs;
 }
 
 aspect production assignExpr
@@ -616,23 +559,6 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.transform =
     consNamedASTExpr(namedASTExpr(id.name, e.transform), nilNamedASTExpr());
-  
-  -- If this is a generated pattern variable binding, figure out whether the corresponding
-  -- primitive pattern variable was implictly decorated.
-  local isDecorated::Boolean =
-    case e of
-    | lexicalLocalReference(qn, _, _) ->
-      fromMaybe(e.finalType.isDecorated, lookup(qn.name, top.boundVars))
-    | _ -> e.finalType.isDecorated
-    end;
-  top.varBindings = [(id.name, isDecorated)];
-  top.decRuleExprs = e.decRuleExprs;
-}
-
-aspect production matchPrimitiveReal
-top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
-{
-  top.decRuleExprs = e.decRuleExprs ++ pr.decRuleExprs ++ f.decRuleExprs;
 }
 
 -- TODO: Support for lambdas capturing rule LHS variables

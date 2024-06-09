@@ -348,7 +348,7 @@ top::StrategyExpr ::= s::StrategyExpr
                if a.3
                then
                  [decorate Silver_Pattern { silver:core:just($name{a.1 ++ "_" ++ sBaseName}) }
-                  with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+                  with { grammarName = top.grammarName; config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                else [],
              childAccesses),
            nothing(),
@@ -531,7 +531,7 @@ top::StrategyExpr ::= s::StrategyExpr
             in 
               matchRule(
                 map(
-                  \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
+                  \ p::Pattern -> decorate p with { grammarName = top.grammarName; config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
                   repeat(wildcPattern('_'), i) ++
                   Silver_Pattern { silver:core:just($name{childI ++ "_" ++ sBaseName}) } ::
                   repeat(wildcPattern('_'), length(matchingChildren) - (i + 1))),
@@ -636,7 +636,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                case a.3 of
                | just(attr) when !attrIsTotal(top.env, attr)  ->
                  [decorate Silver_Pattern { silver:core:just($name{a.1 ++ "_" ++ last(explode(":", attr))}) }
-                  with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+                  with { grammarName = top.grammarName; config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                | _ -> []
                end,
              childAccesses),
@@ -774,6 +774,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       decorate new(ml) with {
         env = top.env;
         config = top.config;
+        grammarName = top.grammarName; 
         matchRulePatternSize = 1;
         frame = error("not needed");
       }.matchRuleList, false,

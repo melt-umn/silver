@@ -70,7 +70,7 @@ Strategy ::= n::String e::Expr
 {
   return bottomUp(try(
     rule on Expr of
-    | var(n1) when n == n1 -> e
+    | var(n1) when n == n1 -> new(e)
     end));
 }
 

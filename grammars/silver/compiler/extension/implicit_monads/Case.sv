@@ -367,7 +367,7 @@ concrete production mcaseExpr_c
 top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "case_any " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
-  propagate config, frame, env;
+  propagate config, grammarName, frame, env;
 
   top.merrors := [];
   top.merrors <- if isMonadPlus_instance then [] else [errFromOrigin(top, notMonadPlus)];

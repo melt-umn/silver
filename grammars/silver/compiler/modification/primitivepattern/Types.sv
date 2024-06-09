@@ -25,8 +25,6 @@ Pair<[Context] Type> ::= te::PolyType
   return (map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
--- TODO: The below should all go away with an equality type constraint.
-
 {--
  - (This is used for *gadt* productions.)
  - wat? why? well, one skolem constant is as good as another, and we're here INTRODUCING
