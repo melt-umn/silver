@@ -115,7 +115,11 @@ top::Expr ::= @q::QName
 aspect production lhsReference
 top::Expr ::= @q::QName
 {
-  top.translation = "context";
+  top.translation =
+    if top.finalType.isDecorated
+    then "context"
+    -- This can happen if the LHS is a data NT, which is always undecorated.
+    else s"((${top.finalType.transType})context.undecorate())";
 
   top.lazyTranslation = top.translation;
 }
@@ -123,7 +127,7 @@ top::Expr ::= @q::QName
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
-  top.translation = s"((${top.finalType.transType})context.forward().undecorate())";
+  top.translation = "context.forward()";
 
   -- this might evaluate the forward equation, so suspend it as a thunk
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
