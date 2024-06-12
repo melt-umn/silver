@@ -130,7 +130,7 @@ top::Expr ::= @q::QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS is *always* a decorated (nonterminal) type.
+  -- An (non-data) LHS is *always* a decorated (nonterminal) type.
   top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
@@ -619,7 +619,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asDecoratedType;
+  top.typerep = q.typerep;
 
   top.errors <- [errFromOrigin(top, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
 }

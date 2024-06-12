@@ -5,6 +5,8 @@ import silver:compiler:driver:util;
 inherited attribute scrutineeType::Type occurs on MRuleList, MatchRule;
 propagate scrutineeType on MRuleList;
 
+-- Note that the second type checking pass to specialize type variables is
+-- omitted here, for the moment.
 threaded attribute pDownSubst, pUpSubst::Substitution occurs on
   PatternList, Pattern, NamedPatternList, NamedPattern;
 inherited attribute pFinalSubst::Substitution occurs on

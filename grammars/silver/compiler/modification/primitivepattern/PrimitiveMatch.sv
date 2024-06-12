@@ -26,20 +26,23 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 tracked nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
   unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, downSubst2, upSubst2, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
 tracked nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, downSubst2, upSubst2, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
 
 inherited attribute scrutineeType :: Type;
 inherited attribute returnType :: Type;
 
-propagate config, grammarName, compiledGrammars, frame, errors, scrutineeType, returnType, initTransDecSites, originRules
+propagate
+  config, grammarName, compiledGrammars, frame, errors, downSubst2, upSubst2,
+  scrutineeType, returnType, initTransDecSites, originRules
   on PrimPatterns, PrimPattern;
-propagate env, finalSubst, freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
+propagate env, finalSubst, freeVars
+  on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -104,6 +107,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   f.downSubst = pr.upSubst;
   errCheck2.downSubst = f.upSubst;
   top.upSubst = errCheck2.upSubst;
+  propagate downSubst2, upSubst2;
   
   pr.scrutineeType = new(scrutineeType);
   pr.returnType = t.typerep;

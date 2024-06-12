@@ -40,9 +40,9 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
-
-  errCheck1.finalSubst = errCheck1.upSubst;
-  e.finalSubst = errCheck1.upSubst;
+  e.downSubst2 = errCheck1.upSubst;
+  e.finalSubst = e.upSubst2;
+  errCheck1.finalSubst = e.finalSubst;
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

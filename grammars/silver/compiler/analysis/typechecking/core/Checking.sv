@@ -74,3 +74,10 @@ top::TypeCheck ::= e::Env l::Type
   top.rightpp = "a decorable type";
 }
 
+-- Specialize the reference set to the empty set, if it is unspecialized.
+-- This introduces substitutions during the second pass, but doesn't produce any type errors.
+fun specializeRefSet Substitution ::= s::Substitution t::Type =
+  case performSubstitution(t, s) of
+  | decoratedType(_, varType(i)) -> composeSubst(s, subst(i, inhSetType([])))
+  | _ -> s
+  end;

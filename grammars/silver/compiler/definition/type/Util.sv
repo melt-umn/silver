@@ -99,7 +99,12 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     top.compareTo.typerep == performRenaming(new(ty), eqSub);
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asDecoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
+attribute
+  isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes,
+  isDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable,
+  decoratedType, asDecoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars,
+  unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable
+  occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 

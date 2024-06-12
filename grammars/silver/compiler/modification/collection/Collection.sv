@@ -31,8 +31,9 @@ top::NameOrBOperator ::= e::Expr
   
   e.downSubst = emptySubst();
   checkOperationType.downSubst = e.upSubst;
-  checkOperationType.finalSubst = checkOperationType.upSubst;
-  e.finalSubst = checkOperationType.finalSubst;
+  e.downSubst2 = checkOperationType.upSubst;
+  e.finalSubst = e.upSubst2;
+  checkOperationType.finalSubst = e.finalSubst;
   
   top.errors <-
     if !checkOperationType.typeerror then []
@@ -295,7 +296,7 @@ abstract production synBaseColAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -315,7 +316,7 @@ abstract production synAppendColAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -338,7 +339,7 @@ abstract production inhBaseColAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -358,7 +359,7 @@ abstract production inhAppendColAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 

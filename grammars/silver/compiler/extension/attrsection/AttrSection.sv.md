@@ -49,6 +49,7 @@ the actual input and output types elsewhere in type inference.
 No direct type inference happens here.
 ```silver
   top.upSubst = top.downSubst;
+  top.upSubst2 = top.downSubst2;
 ```
 
 Determine the actual final input and output types that were computed elsewhere during type inference.

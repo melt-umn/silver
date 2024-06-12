@@ -49,7 +49,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   
   top.typerep = e.typerep;
 
-  propagate downSubst, upSubst, finalSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2, finalSubst;
   
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
@@ -61,13 +61,14 @@ monoid attribute boundNames::[String];
 
 tracked nonterminal AssignExpr with config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
-                            downSubst, finalSubst, frame, originRules;
+                            downSubst, upSubst2, downSubst2, finalSubst, frame, originRules;
 
 flowtype AssignExpr =
   decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, bodyDecSites},
   upSubst {decorate}, defs {decorate};
 
-propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
+propagate config, grammarName, compiledGrammars, frame, env, errors, defs, downSubst2, upSubst2, finalSubst, originRules
+  on AssignExpr;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -132,6 +133,6 @@ top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2;
 }
 

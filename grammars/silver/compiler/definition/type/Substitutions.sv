@@ -47,9 +47,9 @@ fun composeSubst Substitution ::= s1::Substitution s2::Substitution =
 
 fun ignoreFailure Substitution ::= s::Substitution =
   case s of
-| goodSubst(_) -> s
-| badSubst(sl,_) -> goodSubst(sl)
-end;
+  | goodSubst(_) -> s
+  | badSubst(sl,_) -> goodSubst(sl)
+  end;
 
 --------------------------------------------------------------------------------
 
