@@ -271,7 +271,7 @@ top::AppExpr ::= e::Expr
   top.flowDefs <-
     case e.decSiteVertexInfo of
     | just(subtermVertexType(parent, prodName, sigName)) ->
-      [subtermDecEq(top.frame.fullName, parent, prodName, e.typerep.typeName, sigName)]
+      [subtermDecEq(top.frame.fullName, parent, prodName, e.finalType.typeName, sigName)]
     | _ -> []
     end;
   e.decSiteVertexInfo =
@@ -310,10 +310,10 @@ top::AppExpr ::= e::Expr
     case top.decSiteVertexInfo, top.appProd, e.flowVertexInfo of
     | just(parent), just(ns), just(v) when sigIsShared && isForwardParam ->
       refDecSiteEq(
-        top.frame.fullName, e.typerep.typeName, v,
+        top.frame.fullName, e.finalType.typeName, v,
         subtermVertexType(parent, ns.fullName, sigName), top.alwaysDecorated) ::
       if inputSigIsShared then []
-      else [sigShareSite(ns.fullName, e.typerep.typeName, sigName, top.frame.fullName, v, parent)]
+      else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v, parent)]
     | _, _, _ -> []
     end;
 }
