@@ -91,17 +91,17 @@ ag::AGDcl ::= kwd::'equalityTest'
       nondecorated local attribute $Name{expectedref} :: $TypeExpr{new(valueType)};
       $Name{valueref} = $Expr{@expected};
       $Name{tref}.msg =
-        "Test at " ++ getParsedOriginLocationOrFallback(ag).unparse ++ " failed.\n" ++
+        "Test at " ++ $Expr{makeStringConst(getParsedOriginLocationOrFallback(ag).unparse)} ++ " failed.\n" ++
         "Checking that expression\n   " ++ $Expr{makeStringConst(value.unparse)} ++ "\n" ++
         "should be same as expression\n   " ++ $Expr{makeStringConst(expected.unparse)} ++ "\n" ++
-        "Actual value:\n   " ++ silver:langutil:pp:show(80, $Name{valueref}) ++ "\n" ++
-        "Expected value: \n   " ++ silver:langutil:pp:show(80, $Name{expectedref}) ++ "\n";
+        "Actual value:\n   " ++ silver:core:genericShow($Name{valueref}) ++ "\n" ++
+        "Expected value: \n   " ++ silver:core:genericShow($Name{expectedref}) ++ "\n";
       $Name{tref}.pass = $Name{valueref} == $Name{expectedref};
     }
   };
 
   local aspProdCS::AGDcl = Silver_AGDcl {
-    aspect production testSuite
+    aspect production $Name{@testSuite}
     $Name{tref} ::= 
     {
       testsToPerform <- [ $name{testName}() ];
