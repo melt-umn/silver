@@ -380,7 +380,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
         s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsDispatchHostSigInhDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
+        s"in a production that dispatched to this one, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
         s" (from ${sig.fullName})")]
     | _ -> []
     end;
