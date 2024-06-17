@@ -157,7 +157,7 @@ fun makeLetExprForTopRenaming Expr ::= newName::Name aspectLHS::Decorated ConvAs
     assignExpr(
       newName,
       '::',
-      aspectLHS.aspectType,
+      refTypeExpr('Decorated', aspectLHS.aspectType, 'with', typerepTypeExpr(inhSetType([]))),
       '=',
       baseExpr(qNameId(aspectLHS.aspectName))),
     e);
