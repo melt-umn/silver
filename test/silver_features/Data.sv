@@ -40,7 +40,7 @@ function dItems
   return
     case x of
     | aFD(i, y) -> i :: dItems(y)
-    | bFD(bBD(j, x, y, dId=i)) -> i :: j :: dItems(x)
+    | bFD(bBD(j, x, y, dId=i)) -> i :: j :: dItems(new(x))
     | cFD(r) -> r.dItems
     end;
 }

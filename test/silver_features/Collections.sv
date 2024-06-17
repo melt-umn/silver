@@ -41,7 +41,7 @@ abstract production colFwdNode
 top::ColNT ::= c::ColNT
 {
   top.colSyn <- " q ";
-  forwards to colNode(c,c);
+  forwards to colNode(new(c),new(c));
 }
 
 equalityTest ( colFwdNode(colLeaf()).colSyn, "( a  c )( d  e ) b  q ", String, silver_tests ) ;

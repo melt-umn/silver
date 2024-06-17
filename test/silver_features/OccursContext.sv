@@ -25,8 +25,8 @@ function eqB
 attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  production z::a = x;
-  production w::a = z;
+  production z::a = new(x);
+  production w::a = new(z);
   w.compareTo = y;
   return w.isEqual;
 }

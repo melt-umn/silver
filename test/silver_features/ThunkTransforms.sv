@@ -28,7 +28,7 @@ ADecoratedValue ::= ac::ADecoratedValue
              -- now we must actually create the undecorate transform. Note this means we have to
              -- need a THUNK that evaluates to the undecorated form of dec. So, we
              -- get that by calling the bouncer with dec (can't just use dec directly!!)
-             | _ -> bouncerDecProd(dec) end end;
+             | _ -> bouncerDecProd(new(dec)) end end;
 
 -- The bug we're testing for was one where transformUndecorate blew up when used on
 -- an already evaluated thunk.
