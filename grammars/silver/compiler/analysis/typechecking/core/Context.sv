@@ -76,6 +76,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
       ntty.freeFlexibleVars ++ inhs.freeFlexibleVars)
     -- Give a more helpful error message when there are flexible type vars in inhs but not in ntty,
     -- when we might be able to resolve the ambiguity via flow types.
+    -- TODO: This no longer seems to be possible, since we are implicitly specializing ref sets.  Confirm this.
     else if !null(inhs.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(

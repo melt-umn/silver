@@ -26,10 +26,10 @@ function beta
 LCE ::= e::LCE
 {
   return case e of 
-           lcUnit() -> e
-         | lcAbs(v, e1) -> e
+           lcUnit() -> new(e)
+         | lcAbs(v, e1) -> new(e)
          | lcApp(lcAbs(v, e1), e2) -> betaContrived(e1)  -- subst is easy when you don't have variables!! hahaha!
-         | lcApp(e1, e2) -> beta(lcApp(beta(e1), e2))
+         | lcApp(e1, e2) -> beta(lcApp(beta(new(e1)), new(e2)))
          end;
 }
 function betaContrived
