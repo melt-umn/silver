@@ -101,9 +101,7 @@ equalityTest ( concat(["12", "34"]), "1234", String, core_tests ) ;
 equalityTest ( concat([]), "", String, core_tests ) ;
 
 -- flatMap
-function dupItemString
-String ::= i::Integer
-{ return toString(i) ++ toString(i); }
+fun dupItemString String ::= i::Integer = toString(i) ++ toString(i);
 
 equalityTest ( flatMap(dupItemString, [1, 2]), "1122", String, core_tests ) ;
 

@@ -1,8 +1,6 @@
 
 
-function succ
-Integer ::= i::Integer
-{ return i + 1; }
+fun succ Integer ::= i::Integer = i + 1;
 
 -- map tests
 equalityTest ( map(succ, [1,2,3,4]), [2,3,4,5],
@@ -10,9 +8,7 @@ equalityTest ( map(succ, [1,2,3,4]), [2,3,4,5],
 equalityTest ( map(succ, []), [],
                [Integer], core_tests ) ;
 
-function sub
-Integer ::= x::Integer y::Integer
-{ return x - y ; }
+fun sub Integer ::= x::Integer y::Integer = x - y;
 
 -- fold tests
 equalityTest ( foldl(sub, 1, [3]), -2,
@@ -30,9 +26,7 @@ equalityTest ( foldr1(sub,[10,4,2]), 8,
 equalityTest ( foldl1(sub,[10,4,2]), 4, 
                Integer, core_tests ) ;
 
-function even
-Boolean ::= i::Integer
-{ return case i of 0 -> true | 1 -> false | _ -> even(i-2) end; }
+fun even Boolean ::= i::Integer = case i of 0 -> true | 1 -> false | _ -> even(i-2) end;
 
 -- filter tests
 equalityTest ( filter(even, [1,2,3,4]), [2,4],
@@ -100,9 +94,7 @@ equalityTest ( concat([[1, 2], [3, 4]]), [1,2,3,4], [Integer], core_tests ) ;
 equalityTest ( concat([]), [], [Integer], core_tests ) ;
 
 -- flatMap
-function dupItem
-[Integer] ::= i::Integer
-{ return [i, i]; }
+fun dupItem [Integer] ::= i::Integer = [i, i];
 
 equalityTest ( flatMap(dupItem, [1, 2]), [1,1,2,2], [Integer], core_tests ) ;
 
@@ -117,8 +109,8 @@ equalityTest ( take(2, [5,3,1,4,7]), [5,3], [Integer], core_tests ) ;
 equalityTest ( take(44, [5,3,1,4,7]), [5,3,1,4,7], [Integer], core_tests ) ;
 
 
-function equals1  Boolean ::= x::Integer { return x==1;}
-function notEquals1  Boolean ::= x::Integer { return x!=1;}
+fun equals1 Boolean ::= x::Integer = x==1;
+fun notEquals1 Boolean ::= x::Integer = x!=1;
 
 -- takeWhile
 equalityTest ( takeWhile (equals1, [2,3,1,3,5]), [],

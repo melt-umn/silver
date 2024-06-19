@@ -30,21 +30,15 @@ t::TestSuite ::= ts::[Test]
 { forwards to testsAsNT ( ts ) ;  }
 
 
-function testsAsNT 
-TestSuite ::= ts::[Test]
-{
- return if   null (ts)
-        then testNone()
-        else testCons( head(ts), testsAsNT(tail(ts)) ) ;
-}
+fun testsAsNT TestSuite ::= ts::[Test] =
+  if   null (ts)
+  then testNone()
+  else testCons( head(ts), testsAsNT(tail(ts)) );
 
-function consolidateTestSuite
-TestSuite ::= ts::[TestSuite]
-{
- return if   null (ts)
-        then testSuiteNone()
-        else testSuiteSeq ( head(ts), consolidateTestSuite(tail(ts)) ) ;
-}
+fun consolidateTestSuite TestSuite ::= ts::[TestSuite] =
+  if   null (ts)
+  then testSuiteNone()
+  else testSuiteSeq ( head(ts), consolidateTestSuite(tail(ts)) );
 
 abstract production testNone
 ts::TestSuite ::=
@@ -100,9 +94,6 @@ ts::TestSuite ::= ts1::TestSuite ts2::TestSuite
 }
 
 
-function repeatTestTimes
-Boolean ::= f::(Boolean ::=)  times::Integer
-{
-  return if times <= 0 then true else
+fun repeatTestTimes Boolean ::= f::(Boolean ::=)  times::Integer =
+  if times <= 0 then true else
     f() && repeatTestTimes(f, times - 1);
-}
