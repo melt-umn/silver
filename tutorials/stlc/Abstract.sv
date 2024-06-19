@@ -40,8 +40,8 @@ top::Root ::= e::Expression
   top.nextStep = e.nextStep;
 
   top.singleSteps = case e.nextStep of
-                    | just(x) -> e::root(x).singleSteps
-                    | nothing() -> [e]
+                    | just(x) -> new(e)::root(x).singleSteps
+                    | nothing() -> [new(e)]
                     end;
 }
 
@@ -68,7 +68,7 @@ top::Expression ::= name::String
 
   top.substed = if top.substV == name
                 then top.substE
-                else top;
+                else new(top);
 
   implicit top.nextStep = ;
 
@@ -79,8 +79,8 @@ top::Expression ::= name::String
 abstract production abs
 top::Expression ::= name::String ty::Type body::Expression
 {
-  body.gamma = [(name, ty)] ++ top.gamma;
-  top.type = arrow(ty, body.type);
+  body.gamma = [(name, new(ty))] ++ top.gamma;
+  top.type = arrow(new(ty), body.type);
   top.errors = case top.type, body.type of
                | left(s), right(_) -> [s] ++ body.errors
                | _, _ -> body.errors
@@ -91,8 +91,8 @@ top::Expression ::= name::String ty::Type body::Expression
   body.substV = top.substV;
   body.substE = top.substE;
   top.substed = if top.substV == name
-                then top
-                else abs(name, ty, body.substed);
+                then new(top)
+                else abs(name, new(ty), body.substed);
 
   implicit top.nextStep = ;
 
@@ -106,7 +106,7 @@ top::Expression ::= t1::Expression t2::Expression
   t1.gamma = top.gamma;
   t2.gamma = top.gamma;
   top.type = case t1.type of
-             | arrow(ty1, ty2) when tyEq(ty1, t2.type) -> ty2
+             | arrow(ty1, ty2) when tyEq(new(ty1), t2.type) -> new(ty2)
              | arrow(_, _) -> left("Application type mismatch")
              | _ -> left("Non-function applied")
              end;
@@ -125,9 +125,9 @@ top::Expression ::= t1::Expression t2::Expression
 
   top.nextStep = case t1, t2 of
                  | abs(n, t, b), v when v.isvalue ->
-                   decorate b with {substV=n; substE=v;}.substed
-                 | v1, _ when !v1.isvalue -> app(t1.nextStep, t2)
-                 | _, _ -> app(t1, t2.nextStep)
+                   decorate new(b) with {substV=n; substE=new(v);}.substed
+                 | v1, _ when !v1.isvalue -> app(t1.nextStep, new(t2))
+                 | _, _ -> app(new(t1), t2.nextStep)
                  end;
 
   top.pp = "(" ++ t1.pp ++ ") (" ++ t2.pp ++ ")";
@@ -158,8 +158,8 @@ top::Expression ::= t1::Expression t2::Expression
 
   top.nextStep = case t1, t2 of
                  | tru_a(), _ -> tru_a()
-                 | fals_a(), _ -> t2
-                 | _, _ -> or(t1.nextStep, t2)
+                 | fals_a(), _ -> new(t2)
+                 | _, _ -> or(t1.nextStep, new(t2))
                  end;
 
   top.pp = "(" ++ t1.pp ++ ") || (" ++ t2.pp ++ ")";
@@ -189,9 +189,9 @@ top::Expression ::= t1::Expression t2::Expression
   top.substed = and(t1.substed, t2.substed);
 
   top.nextStep = case t1, t2 of
-                 | tru_a(), _ -> t2
+                 | tru_a(), _ -> new(t2)
                  | fals_a(), _ -> fals_a()
-                 | _, _ -> and(t1.nextStep, t2)
+                 | _, _ -> and(t1.nextStep, new(t2))
                  end;
 
   top.pp = "(" ++ t1.pp ++ ") && (" ++ t2.pp ++ ")";
@@ -206,7 +206,7 @@ top::Expression ::=
 
   top.isvalue = true;
 
-  top.substed = top;
+  top.substed = new(top);
 
   implicit top.nextStep = ;
 
@@ -222,7 +222,7 @@ top::Expression ::=
 
   top.isvalue = true;
 
-  top.substed = top;
+  top.substed = new(top);
 
   implicit top.nextStep = ;
 
@@ -284,7 +284,7 @@ Boolean ::= t1::Type t2::Type
   return case t1, t2 of
          | bool(), bool() -> true
          | arrow(t11, t12), arrow(t21, t22) ->
-           tyEq(t11, t21) && tyEq(t12, t22)
+           tyEq(new(t11), new(t21)) && tyEq(new(t12), new(t22))
          | _, _ -> false
          end;
 }
