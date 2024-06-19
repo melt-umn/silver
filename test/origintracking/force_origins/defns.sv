@@ -19,7 +19,7 @@ abstract production z
 top::Nat ::=
 {
   top.val = 0;
-  top.plusOne = s(top);
+  top.plusOne = s(new(top));
   top.minusOne = error("minusOne of z()");
 }
 

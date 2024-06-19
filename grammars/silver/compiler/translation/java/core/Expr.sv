@@ -501,8 +501,9 @@ top::Expr ::= '@' e::Expr
 {
   top.translation =
     s"new ${top.finalType.transType}.DecorationSiteWrapper(${
-      if top.finalType.isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${
-      e.translation})";
+      if typeWantsTracking(top.finalType, top.config, top.env)
+      then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), "
+      else ""}${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
   -- TODO: There isn't really a good place to put this.
