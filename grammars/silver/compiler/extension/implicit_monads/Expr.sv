@@ -300,27 +300,23 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  forward t = application(new(e), '(', new(es), ',', new(anns), ')');
+  top.merrors := forwardParent.merrors;
+  top.mUpSubst = forwardParent.mUpSubst;
+  top.mtyperep = forwardParent.mtyperep;
+  top.monadRewritten = forwardParent.monadRewritten;
 
-  top.merrors := t.merrors;
-  top.mUpSubst = t.mUpSubst;
-  top.mtyperep = t.mtyperep;
-  top.monadRewritten = t.monadRewritten;
-
-  top.monadicNames = t.monadicNames;
+  top.monadicNames = forwardParent.monadicNames;
 }
 
 aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  forward t = application(new(e), '(', new(es), ',', new(anns), ')');
+  top.merrors := forwardParent.merrors;
+  top.mUpSubst = forwardParent.mUpSubst;
+  top.mtyperep = forwardParent.mtyperep;
+  top.monadRewritten = forwardParent.monadRewritten;
 
-  top.merrors := t.merrors;
-  top.mUpSubst = t.mUpSubst;
-  top.mtyperep = t.mtyperep;
-  top.monadRewritten = t.monadRewritten;
-
-  top.monadicNames = t.monadicNames;
+  top.monadicNames = forwardParent.monadicNames;
 }
 
 --build the lambda to apply to all the original arguments plus the function
