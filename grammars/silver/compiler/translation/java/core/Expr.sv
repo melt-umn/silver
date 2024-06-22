@@ -133,6 +133,13 @@ top::Expr ::= @q::QName
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
+aspect production forwardParentReference
+top::Expr ::= 'forwardParent'
+{
+  top.translation = "context.getForwardParent()";
+  top.lazyTranslation = top.translation;  -- Must have already been evaluated
+}
+
 aspect production productionReference
 top::Expr ::= @q::QName
 {

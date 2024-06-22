@@ -129,3 +129,6 @@ fun forwardEqVertex FlowVertex ::= = localEqVertex("forward");
 -- An attribute on the forward node for this production
 fun forwardSynVertex FlowVertex ::= attrName::String = localSynVertex("forward", attrName);
 fun forwardInhVertex FlowVertex ::= attrName::String = localInhVertex("forward", attrName);
+
+-- An attribute on the production that forwarded to this one
+fun forwardParentSynVertex FlowVertex ::= attrName::String = localSynVertex("forwardParent", attrName);

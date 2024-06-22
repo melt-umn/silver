@@ -266,6 +266,18 @@ top::Expr ::= q::'forward'
   forwards to baseExpr(qName("forward"));
 }
 
+concrete production forwardParentReference
+top::Expr ::= 'forwardParent'
+{
+  top.unparse = "forwardParent";
+
+  top.typerep = top.frame.signature.outputElement.typerep.asDecoratedType;
+  top.errors <-
+    if !any(map((.elementShared), top.frame.signature.inputElements))
+    then [errFromOrigin(top, "This production has no shared children and is not known to be the target of forwarding.")]
+    else [];
+}
+
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {

@@ -170,6 +170,17 @@ top::Expr ::= @q::QName
   top.monadRewritten = baseExpr(new(q));
 }
 
+aspect production forwardParentReference
+top::Expr ::= 'forwardParent'
+{
+  top.merrors := [];
+  propagate mDownSubst, mUpSubst;
+  -- An LHS (and thus, forward parent) is *always* a decorable (nonterminal) type.
+  top.mtyperep = top.typerep;
+  top.monadicNames = [];
+  top.monadRewritten = new(top);
+}
+
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {

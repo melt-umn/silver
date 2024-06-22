@@ -141,6 +141,7 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   -- but here we are remotely looking for equations that might not be the direct dependency of
   -- anything in the prod flow graph.
   | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+  | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwared to us.
   | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
   end;
 
@@ -164,6 +165,7 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
   | subtermVertexType(_, remoteProdName, sigName) -> 0
   | lhsVertexType_real() -> length(lookupSyn(prodName, attrName, flowEnv))
+  | forwardParentVertexType() -> 0
   | forwardVertexType_real() -> length(lookupFwdInh(prodName, attrName, flowEnv))
   end;
 
