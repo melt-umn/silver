@@ -93,7 +93,8 @@ production udOp5Impl
 top::UDExpr ::= @e::UDExpr
 {
   e.env2 = forwardParent.env2;
-  top.errors2 = forwardParent.errors1 || e.errors2;
+  top.errors1 = forwardParent.errors1;
+  top.errors2 = e.errors2;
 }
 
 global udTerm::UDExpr = udOp1(udOp2(udOp3(udOp4(udOp5(udVar("foo"))))));
