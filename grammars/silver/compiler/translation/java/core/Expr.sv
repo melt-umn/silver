@@ -556,30 +556,40 @@ top::Expr ::= 'false'
   top.translation = "false";
   top.lazyTranslation = top.translation;
 }
-{- TODO: We should re-enable the specialized translations here for primitive types,
- - but that requires some attributes on the operands that we can't supply here.
- - See https://github.com/melt-umn/silver/issues/812
+
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
-  top.translation = s"(${e1.translation} && ${e2.translation})";
+  top.translation =
+    case top.finalType of
+    | boolType() -> s"(${e1.translation} && ${e2.translation})"
+    | _ -> forward.translation
+    end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
-  top.translation = s"(${e1.translation} || ${e2.translation})";
+  top.translation =
+    case top.finalType of
+    | boolType() -> s"(${e1.translation} || ${e2.translation})"
+    | _ -> forward.translation
+    end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production notOp
 top::Expr ::= '!' e::Expr
 {
-  top.translation = s"(!${e.translation})";
+  top.translation =
+    case top.finalType of
+    | boolType() -> s"(!${e.translation})"
+    | _ -> forward.translation
+    end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
--}
+
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -612,44 +622,68 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;
 }
-{-
+
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  top.translation = s"(${e1.translation} + ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} + ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  top.translation = s"(${e1.translation} - ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} - ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  top.translation = s"(${e1.translation} * ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} * ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production divide
 top::Expr ::= e1::Expr _ e2::Expr
 {
-  top.translation = s"(${e1.translation} / ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} / ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
-  top.translation = s"(${e1.translation} % ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} % ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
-  top.translation = s"(-${e.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(-${e.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
--}
+fun isNumeric Boolean ::= t::Type =
+  case t of
+  | intType() -> true
+  | floatType() -> true
+  | _ -> false
+  end;
+
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
