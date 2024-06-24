@@ -557,6 +557,7 @@ top::Expr ::= 'false'
   top.lazyTranslation = top.translation;
 }
 
+-- Optimization: override operator translation for primitive types to avoid function call overhead
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
@@ -585,6 +586,81 @@ top::Expr ::= '!' e::Expr
   top.translation =
     case top.finalType of
     | boolType() -> s"(!${e.translation})"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
+aspect production gtOp
+top::Expr ::= e1::Expr '>' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"(${e1.translation} > ${e2.translation})"
+    | floatType() -> s"(${e1.translation} > ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) > 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production ltOp
+top::Expr ::= e1::Expr '<' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"(${e1.translation} < ${e2.translation})"
+    | floatType() -> s"(${e1.translation} < ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) < 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production gteOp
+top::Expr ::= e1::Expr '>=' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"(${e1.translation} >= ${e2.translation})"
+    | floatType() -> s"(${e1.translation} >= ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) >= 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production lteOp
+top::Expr ::= e1::Expr '<=' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"(${e1.translation} <= ${e2.translation})"
+    | floatType() -> s"(${e1.translation} <= ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) <= 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production eqOp
+top::Expr ::= e1::Expr '==' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | boolType() -> s"(${e1.translation} == ${e2.translation})"
+    | intType() -> s"(${e1.translation} == ${e2.translation})"
+    | floatType() -> s"(${e1.translation} == ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().equals(${e2.translation}.toString())"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production neqOp
+top::Expr ::= e1::Expr '!=' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | boolType() -> s"(${e1.translation} != ${e2.translation})"
+    | intType() -> s"(${e1.translation} != ${e2.translation})"
+    | floatType() -> s"(${e1.translation} != ${e2.translation})"
+    | stringType() -> s"!(${e1.translation}).toString().equals(${e2.translation}.toString())"
     | _ -> forward.translation
     end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
