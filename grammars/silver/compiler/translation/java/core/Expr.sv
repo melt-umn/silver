@@ -596,8 +596,8 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.translation =
     case e1.finalType of
-    | intType() -> s"(${e1.translation} > ${e2.translation})"
-    | floatType() -> s"(${e1.translation} > ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} > ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} > ${e2.translation})"
     | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) > 0"
     | _ -> forward.translation
     end;
@@ -608,8 +608,8 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.translation =
     case e1.finalType of
-    | intType() -> s"(${e1.translation} < ${e2.translation})"
-    | floatType() -> s"(${e1.translation} < ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} < ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} < ${e2.translation})"
     | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) < 0"
     | _ -> forward.translation
     end;
@@ -620,8 +620,8 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.translation =
     case e1.finalType of
-    | intType() -> s"(${e1.translation} >= ${e2.translation})"
-    | floatType() -> s"(${e1.translation} >= ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} >= ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} >= ${e2.translation})"
     | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) >= 0"
     | _ -> forward.translation
     end;
@@ -632,8 +632,8 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.translation =
     case e1.finalType of
-    | intType() -> s"(${e1.translation} <= ${e2.translation})"
-    | floatType() -> s"(${e1.translation} <= ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} <= ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} <= ${e2.translation})"
     | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) <= 0"
     | _ -> forward.translation
     end;
@@ -644,9 +644,9 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.translation =
     case e1.finalType of
-    | boolType() -> s"(${e1.translation} == ${e2.translation})"
-    | intType() -> s"(${e1.translation} == ${e2.translation})"
-    | floatType() -> s"(${e1.translation} == ${e2.translation})"
+    | boolType() -> s"((boolean)${e1.translation} == ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} == ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} == ${e2.translation})"
     | stringType() -> s"(${e1.translation}).toString().equals(${e2.translation}.toString())"
     | _ -> forward.translation
     end;
@@ -657,9 +657,9 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.translation =
     case e1.finalType of
-    | boolType() -> s"(${e1.translation} != ${e2.translation})"
-    | intType() -> s"(${e1.translation} != ${e2.translation})"
-    | floatType() -> s"(${e1.translation} != ${e2.translation})"
+    | boolType() -> s"((boolean)${e1.translation} != ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} != ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} != ${e2.translation})"
     | stringType() -> s"!(${e1.translation}).toString().equals(${e2.translation}.toString())"
     | _ -> forward.translation
     end;
