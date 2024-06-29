@@ -80,7 +80,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
           then if attr.found
                then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
                     --if not found, let the normal dispatcher handle it
-               else attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+               else attributeDef(^dl, '.', ^attr, '=', @e, ';')
           else errorAttributeDef(merrors, dl, attr, @e);
 }
 
@@ -120,7 +120,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
           then if attr.found
                then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
                     --if not found, let the normal dispatcher handle it
-               else attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+               else attributeDef(^dl, '.', ^attr, '=', @e, ';')
           else errorAttributeDef(merrors, dl, attr, @e);
 }
 
@@ -158,10 +158,10 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
                | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
                | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
                | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
-               | _ -> attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+               | _ -> attributeDef(^dl, '.', ^attr, '=', @e, ';')
                end
           --if not found, let the normal dispatcher handle it
-          else attributeDef(new(dl), '.', new(attr), '=', @e, ';');
+          else attributeDef(^dl, '.', ^attr, '=', @e, ';');
 }
 
 

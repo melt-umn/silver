@@ -317,7 +317,7 @@ top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t
     top.body = "@config " ++ param.lexeme ++ " = " ++ genericShow(value); --not emitted
     top.otherBlocks = [];
     top.paramBlocks = [];
-    top.configArgs = [(param.lexeme, new(value))];
+    top.configArgs = [(param.lexeme, ^value)];
 }
 
 concrete production configBlockImplicitTrue

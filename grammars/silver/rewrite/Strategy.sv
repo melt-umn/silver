@@ -60,7 +60,7 @@ top::Strategy ::= s::Strategy
 {
   top.pp = pp"all(${s.pp})";
   local term::AST = top.term;
-  term.givenStrategy = new(s);
+  term.givenStrategy = ^s;
   top.result = term.allResult;
 }
 
@@ -69,7 +69,7 @@ top::Strategy ::= s::Strategy
 {
   top.pp = pp"some(${s.pp})";
   local term::AST = top.term;
-  term.givenStrategy = new(s);
+  term.givenStrategy = ^s;
   top.result = term.someResult;
 }
 
@@ -78,7 +78,7 @@ top::Strategy ::= s::Strategy
 {
   top.pp = pp"one(${s.pp})";
   local term::AST = top.term;
-  term.givenStrategy = new(s);
+  term.givenStrategy = ^s;
   top.result = term.oneResult;
 }
 
@@ -102,8 +102,8 @@ top::Strategy ::= h::Strategy t::Strategy
 {
   top.pp = pp"traverse (${h.pp} :: ${t.pp})";
   local term::AST = top.term;
-  term.headStrategy = new(h);
-  term.tailStrategy = new(t);
+  term.headStrategy = ^h;
+  term.tailStrategy = ^t;
   top.result = term.consListCongruenceResult;
 }
 
@@ -169,7 +169,7 @@ abstract production rec
 top::Strategy ::= ctr::(Strategy ::= Strategy)
 {
   top.pp = pp"rec(${text(nativeToString(ctr))}})";
-  forwards to ctr(new(top));
+  forwards to ctr(^top);
 }
 
 abstract production try
@@ -183,105 +183,105 @@ abstract production repeat
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"repeat(${s})";
-  forwards to try(@s <* repeat(new(s)));
+  forwards to try(@s <* repeat(^s));
 }
 
 abstract production reduce
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"reduce(${s})";
-  forwards to repeat(rec(\ x::Strategy -> some(x) <+ new(s)));
+  forwards to repeat(rec(\ x::Strategy -> some(x) <+ ^s));
 }
 
 abstract production bottomUp
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"bottomUp(${s})";
-  forwards to all(bottomUp(@s)) <* new(s);
+  forwards to all(bottomUp(@s)) <* ^s;
 }
 
 abstract production topDown
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"topDown(${s})";
-  forwards to @s <* all(topDown(new(s)));
+  forwards to @s <* all(topDown(^s));
 }
 
 abstract production downUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"downUp(${s1}, ${s2})";
-  forwards to @s1 <* all(downUp(new(s1), @s2)) <* new(s2);
+  forwards to @s1 <* all(downUp(^s1, @s2)) <* ^s2;
 }
 
 abstract production allBottomUp
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"allBottomUp(${s})";
-  forwards to all(allBottomUp(@s)) <+ new(s);
+  forwards to all(allBottomUp(@s)) <+ ^s;
 }
 
 abstract production allTopDown
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"allTopDown(${s})";
-  forwards to @s <+ all(allTopDown(new(s)));
+  forwards to @s <+ all(allTopDown(^s));
 }
 
 abstract production allDownUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"allDownUp(${s1}, ${s2})";
-  forwards to @s1 <+ all(allDownUp(new(s1), @s2)) <+ new(s2);
+  forwards to @s1 <+ all(allDownUp(^s1, @s2)) <+ ^s2;
 }
 
 abstract production someBottomUp
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"someBottomUp(${s})";
-  forwards to some(someBottomUp(@s)) <+ new(s);
+  forwards to some(someBottomUp(@s)) <+ ^s;
 }
 
 abstract production someTopDown
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"someTopDown(${s})";
-  forwards to @s <+ some(someTopDown(new(s)));
+  forwards to @s <+ some(someTopDown(^s));
 }
 
 abstract production someDownUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"someDownUp(${s1}, ${s2})";
-  forwards to @s1 <+ some(someDownUp(new(s1), @s2)) <+ new(s2);
+  forwards to @s1 <+ some(someDownUp(^s1, @s2)) <+ ^s2;
 }
 
 abstract production onceBottomUp
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"onceBottomUp(${s})";
-  forwards to one(onceBottomUp(@s)) <+ new(s);
+  forwards to one(onceBottomUp(@s)) <+ ^s;
 }
 
 abstract production onceTopDown
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"onceTopDown(${s})";
-  forwards to @s <+ one(onceTopDown(new(s)));
+  forwards to @s <+ one(onceTopDown(^s));
 }
 
 abstract production onceDownUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
   top.pp = pp"onceDownUp(${s1}, ${s2})";
-  forwards to @s1 <+ one(onceDownUp(new(s1), @s2)) <+ new(s2);
+  forwards to @s1 <+ one(onceDownUp(^s1, @s2)) <+ ^s2;
 }
 
 abstract production innermost
 top::Strategy ::= s::Strategy
 {
   top.pp = pp"innermost(${s})";
-  forwards to bottomUp(try(@s <* innermost(new(s))));
+  forwards to bottomUp(try(@s <* innermost(^s)));
 }
 
 abstract production outermost

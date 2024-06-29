@@ -89,7 +89,7 @@ abstract production regExpr
 top::RegExpr ::= r::abs:Regex
 {
   top.unparse = "/" ++ show(80, r.pp) ++ "/";
-  top.terminalRegExprSpec = new(r);
+  top.terminalRegExprSpec = ^r;
   top.easyName = nothing();
 }
 

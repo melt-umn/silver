@@ -43,16 +43,16 @@ partial strategy attribute genericStep =
   rule on top::StrategyExpr of
   | sequence(fail(), _) -> fail(genName=top.genName)
   | sequence(_, fail()) -> fail(genName=top.genName)
-  | sequence(id(), s) -> new(s)
-  | sequence(s, id()) -> new(s)
-  | choice(fail(), s) -> new(s)
-  | choice(s, fail()) -> new(s)
-  | choice(s, _) when s.isTotal -> new(s)
+  | sequence(id(), s) -> ^s
+  | sequence(s, id()) -> ^s
+  | choice(fail(), s) -> ^s
+  | choice(s, fail()) -> ^s
+  | choice(s, _) when s.isTotal -> ^s
   | allTraversal(id()) -> id(genName=top.genName)
   | someTraversal(fail()) -> fail(genName=top.genName)
   | oneTraversal(fail()) -> fail(genName=top.genName)
   | prodTraversal(_, ss) when ss.containsFail -> fail(genName=top.genName)
-  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> new(s)
+  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> ^s
   | inlined(_, fail()) -> fail(genName=top.genName)
   end;
 -- Nonterminal-dependent, production-independent optimizations
@@ -69,7 +69,7 @@ partial strategy attribute ntStep =
   | partialRef(n) when !n.matchesFrame -> fail(genName=top.genName)
   | inlined(n, _) when !n.matchesFrame -> fail(genName=top.genName)
   | inlined(n, id()) when n.matchesFrame -> id(genName=top.genName)
-  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(new(n2), genName=top.genName)
+  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(^n2, genName=top.genName)
   end;
 -- Production-dependent optimizations
 partial strategy attribute prodStep =
@@ -84,8 +84,8 @@ partial strategy attribute prodStep =
 partial strategy attribute elimInfeasibleMRules =
   onceBottomUp(
     rule on top::MRuleList of
-    | mRuleList_cons(h, _, t) when !h.matchesFrame -> new(t)
-    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(new(h))
+    | mRuleList_cons(h, _, t) when !h.matchesFrame -> ^t
+    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(^h)
     end);
 attribute elimInfeasibleMRules occurs on MRuleList;
 
@@ -725,7 +725,7 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
 
   -- Decorate s assuming that the bound strategy is total, in order to check for totality.
   -- See Fig 4 of the strategy attributes paper (https://www-users.cse.umn.edu/~evw/pubs/kramer20sle/kramer20sle.pdf)
-  local s2::StrategyExpr = new(s);
+  local s2::StrategyExpr = ^s;
   s2.recVarTotalEnv = (n.name, true) :: s.recVarTotalEnv;
   s2.recVarTotalNoEnvEnv = (n.name, true) :: s.recVarTotalNoEnvEnv;
   s2.env = s.env;
@@ -771,7 +771,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [hackLHSExprType(ty.typerep.asDecoratedType)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
-      decorate new(ml) with {
+      decorate ^ml with {
         env = top.env;
         config = top.config;
         grammarName = top.grammarName; 
@@ -821,12 +821,12 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     then res
     else if top.frame.signature.outputElement.typerep.isData
     then Silver_Expr {
-      let $Name{new(id)}::$TypeExpr{new(ty)} = $name{top.frame.signature.outputElement.elementName}
+      let $Name{^id}::$TypeExpr{^ty} = $name{top.frame.signature.outputElement.elementName}
       in $Expr{res}
       end
     }
     else Silver_Expr {
-      let $Name{new(id)}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
+      let $Name{^id}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
         $name{top.frame.signature.outputElement.elementName}
       in $Expr{res}
       end
@@ -837,7 +837,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
 abstract production hackLHSExprType
 top::Expr ::= t::Type
 {
-  top.typerep = new(t);
+  top.typerep = ^t;
   top.flowVertexInfo = just(lhsVertexType);
   forwards to errorExpr([]);
 }
@@ -867,7 +867,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{new(e)}) });
+      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{^e}) });
 }
 
 aspect production matchRuleWhen_c
@@ -875,7 +875,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just((new(cond), nothing())), Silver_Expr { silver:core:just($Expr{new(e)}) });
+      pt.patternList, just((^cond, nothing())), Silver_Expr { silver:core:just($Expr{^e}) });
 }
 
 aspect production matchRuleWhenMatches_c
@@ -883,7 +883,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   top.translation =
     matchRule(
-      pt.patternList, just((new(cond), just(new(p)))), Silver_Expr { silver:core:just($Expr{new(e)}) });
+      pt.patternList, just((^cond, just(^p))), Silver_Expr { silver:core:just($Expr{^e}) });
 }
 
 aspect default production
@@ -985,7 +985,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   top.partialTranslation =
     if attr.matchesFrame
-    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{new(attr)} }
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr} }
     else Silver_Expr { silver:core:nothing() };
 }
 abstract production totalRef
@@ -1019,7 +1019,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
-  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{new(attr)} };
+  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr} };
 }
 
 -- The result of performing an inlining optimization
@@ -1047,7 +1047,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.matchesFrame := top.found &&
     case top.typerep of
-    | appType(nonterminalType("silver:core:Maybe", _, _, _), t) -> !unify(top.attrFor, new(t)).failure
+    | appType(nonterminalType("silver:core:Maybe", _, _, _), t) -> !unify(top.attrFor, ^t).failure
     | t -> !unify(top.attrFor, t).failure
     end;
 }

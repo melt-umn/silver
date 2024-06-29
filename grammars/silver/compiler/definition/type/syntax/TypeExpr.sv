@@ -103,9 +103,9 @@ top::TypeExpr ::= e::[Message]
 abstract production typerepTypeExpr
 top::TypeExpr ::= t::Type
 {
-  top.unparse = prettyType(new(t));
+  top.unparse = prettyType(^t);
 
-  top.typerep = new(t);
+  top.typerep = ^t;
 
   top.errorsTyVars :=
     case t of
@@ -165,7 +165,7 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 
   -- When we are in a refTypeExpr where we know the nonterminal type,
   -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  production ntInhs::FlowSpecInhs = new(inhs);
+  production ntInhs::FlowSpecInhs = ^inhs;
   ntInhs.config = top.config;
   ntInhs.grammarName = top.grammarName;
   ntInhs.env = top.env;

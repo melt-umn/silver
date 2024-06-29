@@ -8,7 +8,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.merrors := la.merrors ++ ne.merrors;
 
   --We needed to provide our own environment.
-  local ne::Expr = new(e);
+  local ne::Expr = ^e;
   ne.config = top.config;
   ne.grammarName = top.grammarName;
   ne.compiledGrammars = top.compiledGrammars;
@@ -120,14 +120,14 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                e.flowVertexInfo, e.flowDeps)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
-                   then [(new(id), new(t))]
+                   then [(^id, ^t)]
                    else [];
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
-                     then assignExpr(new(id), '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
+                     then assignExpr(^id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
                                      '=', e.monadRewritten)
-                     else assignExpr(new(id), '::', new(t), '=', e.monadRewritten);
+                     else assignExpr(^id, '::', ^t, '=', e.monadRewritten);
 }
 
 
@@ -140,7 +140,7 @@ top::Expr ::= @q::QName  _ _
   propagate mDownSubst, mUpSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q))]
+                     then [baseExpr(^q)]
                      else [];
-  top.monadRewritten = baseExpr(new(q));
+  top.monadRewritten = baseExpr(^q);
 }

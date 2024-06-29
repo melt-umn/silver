@@ -5,7 +5,7 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
 {
   top.unparse = s"data ${id.unparse}${tl.unparse} = ${ctors.unparse};";
   ctors.ntName = id.name;
-  ctors.ntTypeArgs = new(tl);
+  ctors.ntTypeArgs = ^tl;
   forwards to appendAGDcl(
     nonterminalDcl(
       dataNTQualifier($1, nilNTQualifier()),
@@ -18,7 +18,7 @@ top::AGDcl ::= 'data' id::Name tl::BracketedOptTypeExprs '=' ctors::DataConstruc
 {
   top.unparse = s"data ${id.unparse}${tl.unparse} = ${ctors.unparse};";
   ctors.ntName = id.name;
-  ctors.ntTypeArgs = new(tl);
+  ctors.ntTypeArgs = ^tl;
   forwards to appendAGDcl(
     nonterminalWithDcl(
       dataNTQualifier($1, nilNTQualifier()),
@@ -69,7 +69,7 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
   nondecorated local ntType::TypeExpr =
     case top.ntTypeArgs of
     | botlNone() -> ntBaseType
-    | botlSome(btl) -> appTypeExpr(ntBaseType, new(btl))
+    | botlSome(btl) -> appTypeExpr(ntBaseType, ^btl)
     end;
   top.ctorDcls = Silver_AGDcl {
     abstract production $Name{@id}

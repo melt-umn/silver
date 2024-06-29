@@ -91,7 +91,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(new(ty));
+  top.typeScheme = monoType(^ty);
   
   top.refDispatcher = lhsReference;
   top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message

@@ -109,7 +109,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.upSubst = errCheck2.upSubst;
   propagate downSubst2, upSubst2;
   
-  pr.scrutineeType = new(scrutineeType);
+  pr.scrutineeType = ^scrutineeType;
   pr.returnType = t.typerep;
 
   e.isRoot = false;
@@ -120,7 +120,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of (x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
-  local scrutineeFinalType :: Type = performSubstitution(new(scrutineeType), top.finalSubst);
+  local scrutineeFinalType :: Type = performSubstitution(^scrutineeType, top.finalSubst);
   local scrutineeTransType :: String = scrutineeFinalType.transType;
   
   top.translation = 

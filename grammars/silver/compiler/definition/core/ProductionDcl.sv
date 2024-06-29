@@ -205,9 +205,9 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   h.deterministicCount = t.elementCount;
 
   h.implementedSig =
-    case top.implementedSig of just(consNamedSignatureElement(h, _)) -> just(new(h)) | _ -> nothing() end;
+    case top.implementedSig of just(consNamedSignatureElement(h, _)) -> just(^h) | _ -> nothing() end;
   t.implementedSig =
-    case top.implementedSig of just(consNamedSignatureElement(_, t)) -> just(new(t)) | _ -> nothing() end;
+    case top.implementedSig of just(consNamedSignatureElement(_, t)) -> just(^t) | _ -> nothing() end;
 }
 
 concrete production productionRHSElem

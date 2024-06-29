@@ -105,11 +105,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else new(top);
+    else ^top;
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else new(top);
+    else ^top;
 }
 
 aspect production skolemType
@@ -139,11 +139,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else new(top);
+    else ^top;
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else new(top);
+    else ^top;
 }
 
 --------------------------------------------------------------------------------

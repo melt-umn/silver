@@ -456,7 +456,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
-  q.attrFor = if eTy.isDecorated then eTy.decoratedType else new(eTy);
+  q.attrFor = if eTy.isDecorated then eTy.decoratedType else ^eTy;
   
   -- Note: we're first consulting the TYPE of the LHS.
   forwards to eTy.accessHandler(e, q);
@@ -672,10 +672,10 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   production ntType::Type = if eType.isDecorated then eType.decoratedType else @eType;
 
   -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
-  top.typerep = decoratedType(new(ntType), inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
+  top.typerep = decoratedType(^ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
-  inh.decoratingnt = new(ntType);
+  inh.decoratingnt = ^ntType;
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 
@@ -972,7 +972,7 @@ top::Exprs ::= e::Expr
   top.unparse = e.unparse;
 
   top.exprs := [e];
-  top.rawExprs := [new(e)];
+  top.rawExprs := [^e];
 
   e.isRoot = false;
 }
@@ -982,7 +982,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.unparse = e1.unparse ++ ", " ++ e2.unparse;
 
   top.exprs := [e1] ++ e2.exprs;
-  top.rawExprs := [new(e1)] ++ e2.rawExprs;
+  top.rawExprs := [^e1] ++ e2.rawExprs;
 
   e1.isRoot = false;
 }
@@ -1051,7 +1051,7 @@ top::AppExpr ::= e::Expr
   top.isPartial = false;
   top.missingTypereps = [];
   
-  top.rawExprs := [new(e)];
+  top.rawExprs := [^e];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
 

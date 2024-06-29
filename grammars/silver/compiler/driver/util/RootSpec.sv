@@ -171,8 +171,8 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::String
 
   top.jarName := nothing();
   top.serInterface =
-    case nativeSerialize(new(i)) of
-    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(new(i)).pp) ++ "\n" ++ msg)
+    case nativeSerialize(^i) of
+    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(^i).pp) ++ "\n" ++ msg)
     | right(ser) -> ser
     end;
 }

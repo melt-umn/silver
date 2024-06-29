@@ -22,7 +22,7 @@ top::NameOrBOperator ::= e::Expr
 {
   top.unparse = e.unparse;
 
-  top.operation = functionOperation(new(e), e.translation, false);
+  top.operation = functionOperation(^e, e.translation, false);
 
   top.errors := e.errors;
   

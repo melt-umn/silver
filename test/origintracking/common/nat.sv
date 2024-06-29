@@ -7,7 +7,7 @@ abstract production z
 top::Nat ::=
 {
   top.val = 0;
-  top.plusOne = s(new(top));
+  top.plusOne = s(^top);
   top.minusOne = error("minusOne of z()");
 }
 
@@ -16,5 +16,5 @@ top::Nat ::= a::Nat
 {
   top.val = a.val + 1;
   top.plusOne = s(a.plusOne);
-  top.minusOne = new(a);
+  top.minusOne = ^a;
 }

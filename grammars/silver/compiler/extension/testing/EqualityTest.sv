@@ -88,7 +88,7 @@ ag::AGDcl ::= kwd::'equalityTest'
     {
       nondecorated local attribute $Name{valueref} :: $TypeExpr{@valueType};
       $Name{valueref} = $Expr{@value};
-      nondecorated local attribute $Name{expectedref} :: $TypeExpr{new(valueType)};
+      nondecorated local attribute $Name{expectedref} :: $TypeExpr{^valueType};
       $Name{expectedref} = $Expr{@expected};
       $Name{tref}.msg =
         "Test at " ++ $Expr{makeStringConst(getParsedOriginLocationOrFallback(ag).unparse)} ++ " failed.\n" ++

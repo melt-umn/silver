@@ -199,6 +199,6 @@ top::SingleLineTemplateStringBodyItem ::= nw::NonWater
 aspect production nonwater
 top::NonWater ::= '${' e::Expr '}'
 {
-  top.stringTemplate = [new(e)];
-  top.ppTemplate = antiquoteDoc(mkStrFunctionInvocation("silver:langutil:pp:pp", [new(e)]));
+  top.stringTemplate = [^e];
+  top.ppTemplate = antiquoteDoc(mkStrFunctionInvocation("silver:langutil:pp:pp", [^e]));
 }

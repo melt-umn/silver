@@ -19,11 +19,11 @@ top::AGDcl ::= tcs::NameList nts::NameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> deriveTCsOnOneNTDcl(@tcs, new(n))
+    | nameListOne(n) -> deriveTCsOnOneNTDcl(@tcs, ^n)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        deriveTCsOnOneNTDcl(@tcs, new(n)),
-        deriveTCsOnNTListDcl(new(tcs), new(rest)))
+        deriveTCsOnOneNTDcl(@tcs, ^n),
+        deriveTCsOnNTListDcl(^tcs, ^rest))
     end;
 }
 
@@ -34,11 +34,11 @@ top::AGDcl ::= tcs::NameList nt::QName
   
   forwards to
     case tcs of
-    | nameListOne(tc) -> deriveDcl(new(tc), @nt)
+    | nameListOne(tc) -> deriveDcl(^tc, @nt)
     | nameListCons(tc, _, rest) ->
       appendAGDcl(
-        deriveDcl(new(tc), @nt),
-        deriveTCsOnOneNTDcl(new(rest), new(nt)))
+        deriveDcl(^tc, @nt),
+        deriveTCsOnOneNTDcl(^rest, ^nt))
     end;
 }
 

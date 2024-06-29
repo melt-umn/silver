@@ -34,7 +34,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName, true, "", false, parserName ++ ".html", false);
       when_(ret == 0,
-        case nativeSerialize(new(specCstAst)) of
+        case nativeSerialize(^specCstAst) of
         | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper_mda modification: " ++ e)
         | right(dump) -> writeBinaryFile(dumpFile, dump)
         end);
@@ -50,7 +50,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      let dumpMatched::Either<String Boolean> = map(eq(new(specCstAst), _), nativeDeserialize(dumpFileContents));
+      let dumpMatched::Either<String Boolean> = map(eq(^specCstAst, _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) then do {
         eprintln("MDA test " ++ spec.fullName ++ " is up to date.");
         return 0;

@@ -91,6 +91,6 @@ The forward is just equivalent to `\ x::inputTy -> x.attr`
       lambdaRHSCons(
         lambdaRHSElemIdTy(name("x"), '::', typerepTypeExpr(inputTy)),
         lambdaRHSNil()),
-      access(baseExpr(qName("x")), '.', new(q)));
+      access(baseExpr(qName("x")), '.', ^q));
 }
 ```

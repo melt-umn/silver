@@ -15,7 +15,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = true;
   top.isInherited = false;
@@ -36,7 +36,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = false;
   top.isInherited = true;
@@ -59,7 +59,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = true;
   top.isInherited = false;
@@ -80,7 +80,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = false;
   top.isInherited = true;

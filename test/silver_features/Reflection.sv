@@ -174,7 +174,7 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT 
 function reifySkolem
 runtimeTypeable a => Either<String a> ::= x::AST
 {
-  return reify(new(x));
+  return reify(^x);
 }
 
 wrongCode "runtimeTypeable" {

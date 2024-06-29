@@ -51,13 +51,13 @@ tracked nonterminal ConvAspectLHS with aspectName, aspectType, unparse;
 concrete productions top::ConvAspectLHS
 | name::Name '::' ty::TypeExpr
 {
-  top.aspectType = new(ty);
-  top.aspectName = new(name);
+  top.aspectType = ^ty;
+  top.aspectName = ^name;
   top.unparse = name.unparse ++ "::" ++ ty.unparse;
 }
 | ty::TypeExpr
 {
-  top.aspectType = new(ty);
+  top.aspectType = ^ty;
   top.aspectName = name("__generatedTop_" ++ toString(genInt()));
   top.unparse = ty.unparse;
 }

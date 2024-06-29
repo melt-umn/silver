@@ -9,11 +9,11 @@ top::ValueDclInfo ::= fn::String ty::Type fi::Maybe<VertexType> fd::[FlowVertex]
   top.isEqual =
     -- Should never show up in an interface file anyway...
     case top.compareTo of
-    | lexicalLocalDcl(fn2, ty2, _, _) -> fn == fn2 && new(ty) == new(ty2)
+    | lexicalLocalDcl(fn2, ty2, _, _) -> fn == fn2 && ^ty == ^ty2
     | _ -> false
     end;
 
-  top.typeScheme = monoType(new(ty));
+  top.typeScheme = monoType(^ty);
 
   top.refDispatcher = lexicalLocalReference(fi, fd);
   top.defDispatcher = errorValueDef; -- should be impossible (never in scope at production level?)

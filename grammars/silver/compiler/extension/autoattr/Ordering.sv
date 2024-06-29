@@ -41,7 +41,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName
 
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^syn} =
         $Expr{stringConst(terminal(String_t, s"\"${top.frame.fullName}\""))};
     };
 }
@@ -57,7 +57,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String keySyn::S
   local topName::String = top.frame.signature.outputElement.elementName;
   forwards to
     Silver_ProductionStmt {
-      $name{topName}.$QName{new(syn)} =
+      $name{topName}.$QName{^syn} =
         case $name{topName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
@@ -80,7 +80,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String keySyn::S
                 map(
                   \ ie::NamedSignatureElement ->
                     if !null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
-                    then Silver_Expr { $name{ie.elementName}.$QName{new(syn)} }
+                    then Silver_Expr { $name{ie.elementName}.$QName{^syn} }
                     else if isDecorable(ie.typerep, top.env)
                     then Silver_Expr {
                       silver:core:compare(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))

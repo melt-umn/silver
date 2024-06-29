@@ -40,10 +40,10 @@ top::Type ::= c::Type a::Type
   top.unify = 
     case top.unifyWith of
     | appType(c1, a1) ->
-      let unifyC :: Substitution = unify(new(c), new(c1))
-      in composeSubst(unifyC, unify(performSubstitution(new(a), unifyC), performSubstitution(new(a1), unifyC)))
+      let unifyC :: Substitution = unify(^c, ^c1)
+      in composeSubst(unifyC, unify(performSubstitution(^a, unifyC), performSubstitution(^a1, unifyC)))
       end
-    | _ -> errorSubst("Tried to unify application of " ++ prettyType(new(c)) ++ " with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify application of " ++ prettyType(^c) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -112,7 +112,7 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
         if fn == ofn --&& data == odata && tracked == otracked  -- Mismatched data/tractness can happen when comparing interface files
         then if ks == oks
           then emptySubst()
-          else error("kind mismatch during unification for " ++ prettyType(new(top)) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
+          else error("kind mismatch during unification for " ++ prettyType(^top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;
@@ -137,7 +137,7 @@ top::Type ::= inhs::[String]
   top.unify =
     case top.unifyWith of
     | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
-    | _ -> errorSubst("Tried to unify inh set type " ++ prettyType(new(top)) ++ " with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify inh set type " ++ prettyType(^top) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -146,7 +146,7 @@ top::Type ::= te::Type i::Type
 {
   top.unify = 
     case top.unifyWith of
-    | decoratedType(ote, oi) -> composeSubst(unify(new(te), new(ote)), unify(new(i), new(oi)))
+    | decoratedType(ote, oi) -> composeSubst(unify(^te, ^ote), unify(^i, ^oi))
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
@@ -157,7 +157,7 @@ top::Type ::= params::Integer namedParams::[String]
   top.unify = 
     case top.unifyWith of
     | functionType(op, onp) when params == op && namedParams == onp -> emptySubst()
-    | _ -> errorSubst("Tried to unify conflicting function types " ++ prettyType(new(top)) ++ " and " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify conflicting function types " ++ prettyType(^top) ++ " and " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -177,10 +177,10 @@ function unify
 Substitution ::= te1::Type te2::Type
 {
   local leftward :: Substitution = te1.unify;
-  te1.unifyWith = new(te2);
+  te1.unifyWith = ^te2;
   
   local rightward :: Substitution = te2.unify;
-  te2.unifyWith = new(te1);
+  te2.unifyWith = ^te1;
   
   return if null(leftward.substErrors)
          then leftward   -- arbitrary choice if both work, but if they are confluent, it's okay

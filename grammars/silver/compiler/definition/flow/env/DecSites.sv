@@ -88,16 +88,16 @@ strategy attribute reduceDecSite = innermost(  -- TODO: Avoid forcing the entire
   rule on DecSiteTree of
   | altDec(alwaysDec(), d) -> alwaysDec()
   | altDec(d, alwaysDec()) -> alwaysDec()
-  | altDec(neverDec(), d) -> new(d)
-  | altDec(d, neverDec()) -> new(d)
-  | bothDec(alwaysDec(), d) -> new(d)
-  | bothDec(d, alwaysDec()) -> new(d)
+  | altDec(neverDec(), d) -> ^d
+  | altDec(d, neverDec()) -> ^d
+  | bothDec(alwaysDec(), d) -> ^d
+  | bothDec(d, alwaysDec()) -> ^d
   | bothDec(neverDec(), _) -> neverDec()
   | bothDec(_, neverDec()) -> neverDec()
-  | altDec(altDec(d1, d2), d3) -> altDec(new(d1), altDec(new(d2), new(d3)))
-  | bothDec(bothDec(d1, d2), d3) -> bothDec(new(d1), bothDec(new(d2), new(d3)))
-  | altDec(d1, d2) when contains(new(d1), d2.decSiteAlts) -> new(d2)
-  | bothDec(d1, d2) when contains(new(d1), d2.decSiteReqs) -> new(d2)
+  | altDec(altDec(d1, d2), d3) -> altDec(^d1, altDec(^d2, ^d3))
+  | bothDec(bothDec(d1, d2), d3) -> bothDec(^d1, bothDec(^d2, ^d3))
+  | altDec(d1, d2) when contains(^d1, d2.decSiteAlts) -> ^d2
+  | bothDec(d1, d2) when contains(^d1, d2.decSiteReqs) -> ^d2
   | transAttrDec(attrName, neverDec()) -> neverDec()
   -- This is assuming the we have already resolved for some inh-on-a-trans-attr that matches attrName.
   | transAttrDec(attrName, alwaysDec()) -> alwaysDec()
@@ -147,7 +147,7 @@ occurs on DecSiteTree;
 -- rather than if it is always present, replace all instances of bothDec with altDec.
 strategy attribute asPossibleDec = allTopDown(
   rule on DecSiteTree of
-  | bothDec(d1, d2) -> altDec(new(d1), new(d2))
+  | bothDec(d1, d2) -> altDec(^d1, ^d2)
   end
 ) occurs on DecSiteTree;
 

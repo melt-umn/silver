@@ -20,7 +20,7 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
   
   nondecorated local regex::Regex =
     case getTypeDcl(te.typerep.typeName, top.env) of
-    | termDcl(_, r, _, _) :: _ -> new(r)
+    | termDcl(_, r, _, _) :: _ -> ^r
     | _ -> empty()
     end;
   local genRepeatProb::Float =

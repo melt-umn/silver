@@ -27,8 +27,8 @@ abstract production lxrClsDef
 top::Def ::= d::EnvItem<ValueDclInfo>
 {
   propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended, compareTo, isEqual;
-  top.lexerClassList = [new(d)];
-  top.valueList = [new(d)];
+  top.lexerClassList = [^d];
+  top.valueList = [^d];
 }
 
 fun parserAttrDef Def ::= sg::String sl::Location fn::String ty::Type =

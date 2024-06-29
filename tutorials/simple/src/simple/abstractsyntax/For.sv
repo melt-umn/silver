@@ -15,8 +15,8 @@ s::Stmt ::= i::Name lower::Expr upper::Expr body::Stmt
      -}
      seq(
        assignment(@i, @lower),
-       while(lteOp(varRef(new(i)), @upper),
+       while(lteOp(varRef(^i), @upper),
          block(
            seq(@body, 
-             assignment(new(i), addOp(varRef(new(i)), intLit(1)))))));
+             assignment(^i, addOp(varRef(^i), intLit(1)))))));
 }

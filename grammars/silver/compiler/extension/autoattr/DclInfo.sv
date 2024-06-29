@@ -47,10 +47,10 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
     | _ -> false
     end;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
   top.isSynthesized = true;
-  top.emptyVal = new(empty);
-  top.operation = new(append);
+  top.emptyVal = ^empty;
+  top.operation = ^append;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
@@ -178,7 +178,7 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
     | _ -> false
     end;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
   top.isInherited = true;
   top.isCollection = o.isJust;
   top.operation = o.fromJust;
@@ -214,7 +214,7 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type o::May
     | _ -> false
     end;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
   top.isSynthesized = true;
   top.isCollection = o.isJust;
   top.operation = o.fromJust;

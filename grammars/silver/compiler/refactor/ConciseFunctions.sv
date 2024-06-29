@@ -33,7 +33,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
       rule on AGDcl of
       | a when getParsedOriginLocation(a) == getParsedOriginLocation(top) ->
         Silver_AGDcl {
-          fun $Name{new(id)} $FunctionSignature{new(ns)} = $Expr{new(e)};
+          fun $Name{^id} $FunctionSignature{^ns} = $Expr{^e};
         }
       end
     | _ -> fail()

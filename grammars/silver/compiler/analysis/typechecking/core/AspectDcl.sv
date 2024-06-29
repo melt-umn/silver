@@ -68,7 +68,7 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   thread downSubst, upSubst on top, errCheck1, top;
   
-  errCheck1 = check(rType, new(t));
+  errCheck1 = check(rType, ^t);
   top.errors <-
         if errCheck1.typeerror
         then [errFromOrigin(top, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
@@ -94,7 +94,7 @@ top::AspectRHSElem ::= shared::Boolean id::Name t::Type
 
   thread downSubst, upSubst on top, errCheck1, top;
   
-  errCheck1 = check(rType, new(t));
+  errCheck1 = check(rType, ^t);
   top.errors <-
         if errCheck1.typeerror
         then [errFromOrigin(top, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]

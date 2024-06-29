@@ -127,6 +127,6 @@ top::NamedAST ::= n::String v::AST
 
 fun appendASTs ASTs ::= a::ASTs b::ASTs =
   case a of
-  | consAST(h, t) -> consAST(new(h), appendASTs(new(t), b))
+  | consAST(h, t) -> consAST(^h, appendASTs(^t, b))
   | nilAST() -> b
   end;

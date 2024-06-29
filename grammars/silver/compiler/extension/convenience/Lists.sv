@@ -8,8 +8,8 @@ concrete production qNameWithTL
 top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
 {
   top.unparse = qn.unparse ++ tl.unparse;
-  top.qnwtQN = new(qn);
-  top.qnwtTL = new(tl);
+  top.qnwtQN = ^qn;
+  top.qnwtTL = ^tl;
 }
 
 {- QNames2 is needed because we would otherwise have a syntactic ambiguity with
@@ -26,14 +26,14 @@ concrete production qNames2Two
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNameWithTL
 {
   top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
-  top.qnames = [new(id1), new(id2)];
+  top.qnames = [^id1, ^id2];
 }
 
 concrete production qNames2Cons
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNames2
 {
   top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
-  top.qnames = new(id1) :: id2.qnames;
+  top.qnames = ^id1 :: id2.qnames;
 }
 
 
@@ -41,14 +41,14 @@ concrete production qNamesSingle
 top::QNames ::= id::QNameWithTL
 {
   top.unparse = id.unparse;
-  top.qnames = [new(id)];
+  top.qnames = [^id];
 }
 
 concrete production qNamesCons
 top::QNames ::= id1::QNameWithTL ',' id2::QNames
 {
   top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
-  top.qnames = new(id1) :: id2.qnames;
+  top.qnames = ^id1 :: id2.qnames;
 }
 
 --------------------------------------------------------------------------------

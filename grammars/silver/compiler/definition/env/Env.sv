@@ -272,14 +272,14 @@ function annotationsForNonterminal
   local annos :: [OccursDclInfo] =
     filter((.isAnnotation), getAttrOccursOn(nt.typeName, env));
   
-  return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(new(nt), _), annos));
+  return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(^nt, _), annos));
 }
 -- only used by the above
 function annoInstanceToNamed
 NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
 {
   -- Used to compute the local typerep for this nonterminal
-  anno.givenNonterminalType = new(nt);
+  anno.givenNonterminalType = ^nt;
   
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep, false);
 }
@@ -318,7 +318,7 @@ function getMinRefSet
 {
   return
     case t of
-    | decoratedType(_, i) -> getMinInhSetMembers([], new(i), e).fst
+    | decoratedType(_, i) -> getMinInhSetMembers([], ^i, e).fst
     | _ -> []
     end;
 }
@@ -352,7 +352,7 @@ Maybe<[String]> ::= t::Type e::Env
 {
   return
     case t of
-    | decoratedType(_, i) -> getMaxInhSetMembers([], new(i), e).fst
+    | decoratedType(_, i) -> getMaxInhSetMembers([], ^i, e).fst
     | _ -> just([])
     end;
 }

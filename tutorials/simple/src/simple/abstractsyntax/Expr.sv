@@ -156,7 +156,7 @@ abstract production lteOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} <= ${r})";
-  forwards to or( ltOp(@l,@r), eqOp(new(l),new(r)) );
+  forwards to or( ltOp(@l,@r), eqOp(^l,^r) );
 }
 abstract production gtOp
 e::Expr ::= l::Expr r::Expr 

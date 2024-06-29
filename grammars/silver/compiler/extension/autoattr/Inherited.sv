@@ -22,11 +22,11 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
         \ ie::NamedSignatureElement ->
           attributeDef(
             concreteDefLHS(qName(ie.elementName)), '.',
-            qNameAttrOccur(new(attr)),
+            qNameAttrOccur(^attr),
             '=',
             access(
               baseExpr(qName(top.frame.signature.outputElement.elementName)), '.',
-              qNameAttrOccur(new(attr))),
+              qNameAttrOccur(^attr)),
             ';'),
         inputsWithAttr));
 }

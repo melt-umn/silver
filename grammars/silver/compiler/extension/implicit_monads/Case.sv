@@ -68,7 +68,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local attribute monadStuff::([(Type, Expr, String)], [Expr]);
   monadStuff = monadicMatchTypesNames(redeces.monadDecExprs, ml.patternTypeList, [], top.env,
                                       ml.mUpSubst, top.expectedMonad, 1);
-  local attribute redeces::Exprs = new(es);
+  local attribute redeces::Exprs = ^es;
   redeces.mDownSubst = ml.mUpSubst;
   redeces.downSubst = ml.mUpSubst;
   redeces.finalSubst = ml.mUpSubst;
@@ -162,7 +162,7 @@ function monadicMatchTypesNames
 {
   local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
-            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, ntail, env, sub, new(em), index + 1)
+            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, ntail, env, sub, ^em, index + 1)
             | [], [] -> error("Should not access subcall in monadicMatchTypesNames with empty lists")
             | _, _ -> error("Both lists in monadicMatchTypesNames must be the same length")
             end;
@@ -176,10 +176,10 @@ function monadicMatchTypesNames
          | decE::etl, t::ttl ->
            let ety::Type = decE.mtyperep
            in
-             if isMonad(ety, env) && fst(monadsMatch(ety, new(em), sub))
+             if isMonad(ety, env) && fst(monadsMatch(ety, ^em, sub))
              then ((ety, decE.monadRewritten, newName) :: subcall.1,
                    baseExpr(qName(newName)) :: subcall.2)
-             else (subcall.1, new(decE)::subcall.2)
+             else (subcall.1, ^decE::subcall.2)
            end
          end;
 }
@@ -191,7 +191,7 @@ function monadicMatchTypesNames
   fails.-}
 aspect production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type {
-  forward monadLocal = monadCompileCaseExpr(es, ml, new(failExpr), new(retType), top.env);
+  forward monadLocal = monadCompileCaseExpr(es, ml, ^failExpr, ^retType, top.env);
 
   top.monadRewritten = monadLocal.monadRewritten;
 
@@ -225,7 +225,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type env::En
   local groups::[[AbstractMatchRule]] = splitPatternGroups(ml, env);
 
   nondecorated local compiledGroups::Expr =
-        monadCompilePatternGroups(es, groups, new(failExpr), new(retType), env);
+        monadCompilePatternGroups(es, groups, ^failExpr, ^retType, env);
 
   --Check if there is any match rule with empty patterns
   local anyEmptyRules::Boolean =
@@ -239,24 +239,24 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type env::En
   nondecorated local finalStep::Expr =
         foldr(\ mrule::AbstractMatchRule rest::Expr ->
                 case mrule of
-                | matchRule(_, nothing(), e) -> new(e)
+                | matchRule(_, nothing(), e) -> ^e
                 --cond is a Boolean
                 | matchRule(_, just((cond, nothing())), e) ->
-                  ifThenElse('if', cond, 'then', new(e), 'else', rest)
+                  ifThenElse('if', cond, 'then', ^e, 'else', rest)
                 --cond is the expression for another match
                 | matchRule(_, just((cond, just(patt))), e) ->
                   Silver_Expr {
                      case $Expr{cond} of
-                     | $Pattern{patt} -> $Expr{new(e)}
-                     | _ -> $Expr{new(failExpr)}
+                     | $Pattern{patt} -> $Expr{^e}
+                     | _ -> $Expr{^failExpr}
                      end
                   }
                 end,
-              new(failExpr), ml);
+              ^failExpr, ml);
 
   return
      case ml of
-     | [] -> new(failExpr)
+     | [] -> ^failExpr
      | _ -> if anyEmptyRules then finalStep else compiledGroups
      end;
 }
@@ -274,8 +274,8 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
          retType::Type env::Env
 {
   nondecorated local compileRest::Expr =
-    monadCompilePatternGroups(matchEs, tail(ruleGroups), new(finalFail),
-                              new(retType), env);
+    monadCompilePatternGroups(matchEs, tail(ruleGroups), ^finalFail,
+                              ^retType, env);
 
   local firstGroup::[AbstractMatchRule] =
         case ruleGroups of
@@ -298,10 +298,10 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
   local constructorGroups::[[AbstractMatchRule]] = groupMRules(firstGroup);
   local mappedPatterns::[PrimPattern] =
           map(monadAllConCaseTransform(head(matchEs), tail(matchEs),
-                                       compileRest, new(retType), _, env),
+                                       compileRest, ^retType, _, env),
               constructorGroups);
   nondecorated local currentConCase::Expr =
-    matchPrimitive(firstMatchExpr, typerepTypeExpr(new(retType)),
+    matchPrimitive(firstMatchExpr, typerepTypeExpr(^retType),
            foldPrimPatterns(mappedPatterns),
            compileRest);
 
@@ -312,11 +312,11 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
         map(bindHeadPattern(firstMatchExpr, freshType(), _), firstGroup);
   nondecorated local currentVarCase::Expr =
     monadCompileCaseExpr(tail(matchEs), boundVarRules,
-       compileRest, new(retType), env);
+       compileRest, ^retType, env);
 
   return
      case ruleGroups of
-     | [] -> new(finalFail)
+     | [] -> ^finalFail
      | _::_ -> if firstPatt.patternIsVariable
                then currentVarCase
                else currentConCase
@@ -337,12 +337,12 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
     monadCompileCaseExpr(
       map(exprFromName, names) ++ annoAccesses ++ restExprs,
       map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-      new(failCase), new(retType), env);
+      ^failCase, ^retType, env);
 
   local annos :: [String] =
     nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
   local annoAccesses :: [Expr] =
-    map(\ n::String -> access(new(currExpr), '.', qNameAttrOccur(qName(n))), annos);
+    map(\ n::String -> access(^currExpr, '.', qNameAttrOccur(qName(n))), annos);
   
   -- Maybe this one is more reasonable? We need to test examples and see what happens...
   local l :: Location = getParsedOriginLocationOrFallback(head(mrs).headPattern);
@@ -350,7 +350,7 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   return
     case head(mrs).headPattern of
     | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        prodPattern(new(qn), '(', convStringsToVarBinders(names), ')', terminal(Arrow_kwd, "->", l), subcase)
+        prodPattern(^qn, '(', convStringsToVarBinders(names), ')', terminal(Arrow_kwd, "->", l), subcase)
     | intPattern(it) -> integerPattern(it, terminal(Arrow_kwd, "->", l), subcase)
     | fltPattern(it) -> floatPattern(it, terminal(Arrow_kwd, "->", l), subcase)
     | strPattern(it) -> stringPattern(it, terminal(Arrow_kwd, "->", l), subcase)
@@ -471,19 +471,19 @@ Expr ::= exprs::[Expr] names::[String] base::Expr
          fe::FlowEnv em::Type iR::Boolean
 {
   nondecorated local subcall::Expr =
-    mcaseBindsApps(tail(exprs), tail(names), new(base),
-                   env, sub, new(f), gn, cg, c, fe, new(em), iR);
+    mcaseBindsApps(tail(exprs), tail(names), ^base,
+                   env, sub, ^f, gn, cg, c, fe, ^em, iR);
   return
      if null(exprs)
-     then new(base)
+     then ^base
      else let ety::Type = decorate head(exprs) with
-                             {env=env; mDownSubst=sub; frame=new(f); grammarName=gn;
+                             {env=env; mDownSubst=sub; frame=^f; grammarName=gn;
                               downSubst=sub; finalSubst=sub;
                               compiledGrammars=cg; config=c; flowEnv=fe;
-                              expectedMonad=new(em);
+                              expectedMonad=^em;
                               isRoot = iR; decSiteVertexInfo = nothing(); alwaysDecorated = false; }.mtyperep
            in
-             if isMonad(ety, env) && fst(monadsMatch(ety, new(em), sub))
+             if isMonad(ety, env) && fst(monadsMatch(ety, ^em, sub))
              then buildApplication(
                     monadBind(),
                     [if ety.isDecorated
@@ -576,7 +576,7 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList arr::Arrow_kwd e::Expr
 {
-  local ne::Expr = new(e);
+  local ne::Expr = ^e;
   ne.flowEnv = top.temp_flowEnv;
   ne.env = top.env;
   ne.config = top.config;
@@ -597,7 +597,7 @@ top::MatchRule ::= pt::PatternList arr::Arrow_kwd e::Expr
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
 {
-  local ncond::Expr = new(cond);
+  local ncond::Expr = ^cond;
   ncond.flowEnv = top.temp_flowEnv;
   ncond.env = top.env;
   ncond.config = top.config;
@@ -609,7 +609,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ncond.decSiteVertexInfo = nothing();
   ncond.alwaysDecorated = false;
   ncond.isRoot = false;
-  local ne::Expr = new(e);
+  local ne::Expr = ^e;
   ne.flowEnv = top.temp_flowEnv;
   ne.env = top.env;
   ne.config = top.config;
@@ -630,7 +630,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
 aspect production matchRuleWhenMatches_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::Arrow_kwd e::Expr
 {
-  local ncond::Expr = new(cond);
+  local ncond::Expr = ^cond;
   ncond.flowEnv = top.temp_flowEnv;
   ncond.env = top.env;
   ncond.config = top.config;
@@ -642,7 +642,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ncond.decSiteVertexInfo = nothing();
   ncond.alwaysDecorated = false;
   ncond.isRoot = false;
-  local ne::Expr = new(e);
+  local ne::Expr = ^e;
   ne.flowEnv = top.temp_flowEnv;
   ne.env = top.env;
   ne.config = top.config;
@@ -693,7 +693,7 @@ attribute mDownSubst, merrors, mtyperep, expectedMonad occurs on AbstractMatchRu
 aspect production matchRule
 top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Pattern>)> e::Expr
 {
-  local ne::Expr = new(e);
+  local ne::Expr = ^e;
   ne.flowEnv = top.temp_flowEnv;
   ne.env = top.temp_env;
   ne.config = top.temp_config;

@@ -73,7 +73,7 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   forwards to
     appendAGDcl(
       collectionAttributeDclInh('inherited', 'attribute', @inh, @tl, '::', @te, 'with', @q, ';'),
-      collectionAttributeDclSyn('synthesized', 'attribute', @syn, new(tl), '::', new(te), 'with', new(q), ';'));
+      collectionAttributeDclSyn('synthesized', 'attribute', @syn, ^tl, '::', ^te, 'with', ^q, ';'));
 }
 
 synthesized attribute reversed::Boolean;
@@ -252,7 +252,7 @@ concrete production idName
 top::ChildName ::= id::Name
 {
   top.unparse = id.unparse;
-  top.id = new(id);
+  top.id = ^id;
 }
 
 concrete production idForward

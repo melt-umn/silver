@@ -145,7 +145,7 @@ abstract production globalExprContext
 top::BlockContext ::= fn::String  ctxs::Contexts  ty::Type  g::ProductionGraph
 {
   top.fullName = fn;
-  top.signature = globalSignature(fn, new(ctxs), new(ty));
+  top.signature = globalSignature(fn, ^ctxs, ^ty);
   top.flowGraph = g;
 }
 

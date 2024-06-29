@@ -49,7 +49,7 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
   local terminalFullName::String = top.grammarName ++ ":" ++ terminalName;
   top.syntaxAst <-
     [ syntaxTerminal(
-        terminalFullName, new(regex),
+        terminalFullName, ^regex,
         foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers),
         location=loc, sourceGrammar=top.grammarName)
     ];
@@ -156,7 +156,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
   top.errors <- t.lookupType.errors;
   
-  local pluckTAction::ProductionStmt = Silver_ProductionStmt { pluck $QName{new(t)}; };
+  local pluckTAction::ProductionStmt = Silver_ProductionStmt { pluck $QName{^t}; };
   -- Most of these aren't actually needed since we just want the translation. 
   pluckTAction.config = top.config;
   pluckTAction.env = top.env;

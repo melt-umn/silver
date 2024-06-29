@@ -26,11 +26,11 @@ top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> propagateOnOneNTDcl(@attrs, new(n), @ps)
+    | nameListOne(n) -> propagateOnOneNTDcl(@attrs, ^n, @ps)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        propagateOnOneNTDcl(@attrs, new(n), @ps),
-        propagateOnNTListDcl(new(attrs), new(rest), new(ps)))
+        propagateOnOneNTDcl(@attrs, ^n, @ps),
+        propagateOnNTListDcl(^attrs, ^rest, ^ps))
     end;
 }
 
@@ -58,7 +58,7 @@ top::AGDcl ::= attrs::AttrNameList nt::QName ps::ProdNameList
   nondecorated local dcl::AGDcl =
     foldr(
       appendAGDcl, emptyAGDcl(),
-      map(propagateAspectDcl(_, new(attrs)), includedProds));
+      map(propagateAspectDcl(_, ^attrs), includedProds));
   
   forwards to
     if !null(nt.lookupType.errors)
@@ -112,11 +112,11 @@ top::ProductionStmt ::= 'propagate' ns::AttrNameList ';'
   -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
-    | attrNameListOne(ms, n) -> propagateOneAttr(new(ms), new(n))
+    | attrNameListOne(ms, n) -> propagateOneAttr(^ms, ^n)
     | attrNameListCons(ms, n, _, rest) ->
       productionStmtAppend(
-        propagateOneAttr(new(ms), new(n)),
-        propagateAttrList($1, new(rest), $3))
+        propagateOneAttr(^ms, ^n),
+        propagateAttrList($1, ^rest, $3))
     end;
 }
 

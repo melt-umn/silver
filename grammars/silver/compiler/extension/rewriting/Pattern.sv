@@ -66,7 +66,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
 {
   pt.scrutineeTypes = [top.scrutineeType];
 
-  production transE::Expr = new(e);
+  production transE::Expr = ^e;
   transE.grammarName = top.grammarName;
   transE.config = top.config;
   transE.frame = top.frame;
@@ -104,7 +104,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   pt.scrutineeTypes = [top.scrutineeType];
 
-  production transCond::Expr = new(cond);
+  production transCond::Expr = ^cond;
   transCond.grammarName = top.grammarName;
   transCond.config = top.config;
   transCond.frame = top.frame;
@@ -122,7 +122,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
     then [errFromOrigin(e, "Rule condition has type " ++ checkCondType.leftpp ++ ", expected " ++ checkCondType.rightpp)]
     else [];
 
-  production transE::Expr = new(e);
+  production transE::Expr = ^e;
   transE.grammarName = top.grammarName;
   transE.config = top.config;
   transE.frame = top.frame;
@@ -164,7 +164,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   pt.scrutineeTypes = [top.scrutineeType];
 
-  production transCond::Expr = new(cond);
+  production transCond::Expr = ^cond;
   transCond.grammarName = top.grammarName;
   transCond.config = top.config;
   transCond.frame = top.frame;
@@ -178,7 +178,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 
   p.scrutineeType = performSubstitution(transCond.typerep, transCond.upSubst);
 
-  production transE::Expr = new(e);
+  production transE::Expr = ^e;
   transE.grammarName = top.grammarName;
   transE.config = top.config;
   transE.frame = top.frame;

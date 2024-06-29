@@ -57,7 +57,7 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
 
   local importStmts :: ImportStmts =
     consImportStmts(
-      importStmt('import', moduleAll(new(m)), ';'),
+      importStmt('import', moduleAll(^m), ';'),
       @is);
 
   forwards to root(@gdcl, @mStmts, @importStmts, @agDcls);

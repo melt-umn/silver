@@ -406,7 +406,7 @@ top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QName
     attributeDef(
       transAttrDefLHS(
         case dl of
-        | concreteDefLHS(q) -> new(q)
+        | concreteDefLHS(q) -> ^q
         | _ -> error("Unexpected concrete DefLHS")
         end, @transAttr),
       $4, @attr, $6, @e, $8);
@@ -562,7 +562,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal
-    then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(new(ty))} are not supported")]
+    then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(^ty)} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
@@ -586,7 +586,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal
-    then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(new(ty))} are not supported")]
+    then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(^ty)} are not supported")]
     else [];
 
   top.typerep = attr.typerep;

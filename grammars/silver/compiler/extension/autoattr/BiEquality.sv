@@ -37,7 +37,7 @@ top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String sy
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(synPartial)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^synPartial} =
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
@@ -78,7 +78,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String synPartia
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^syn} =
         $name{top.frame.signature.outputElement.elementName}.$qName{synPartial} ||
         $name{top.frame.signature.outputElement.elementName}.$qName{inh}.$qName{synPartial};
     };

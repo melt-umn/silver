@@ -33,7 +33,7 @@ top::Expr ::= @q::QName
     && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.expectedUndecorated
     then
       rule on Expr of
-      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
+      | baseExpr(q1) when q1.name == ^q.name && q1.nameLoc == ^q.nameLoc ->
         if top.decSiteVertexInfo.isJust
         then Silver_Expr { @$QName{q1} }
         else Silver_Expr { ^$QName{q1} }
@@ -49,7 +49,7 @@ top::Expr ::= @q::QName
     && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.expectedUndecorated
     then
       rule on Expr of
-      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
+      | baseExpr(q1) when q1.name == ^q.name && q1.nameLoc == ^q.nameLoc ->
         Silver_Expr { ^$QName{q1} }
       end
     else fail();
@@ -63,7 +63,7 @@ top::Expr ::= @q::QName
     && isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.expectedUndecorated
     then
       rule on Expr of
-      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
+      | baseExpr(q1) when q1.name == ^q.name && q1.nameLoc == ^q.nameLoc ->
         if top.decSiteVertexInfo.isJust
         then Silver_Expr { @$QName{q1} }
         else Silver_Expr { ^$QName{q1} }
@@ -79,7 +79,7 @@ top::Expr ::= @q::QName _ _
     && q.lookupValue.typeScheme.monoType.isDecorated && top.expectedUndecorated
     then
       rule on Expr of
-      | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
+      | baseExpr(q1) when q1.name == ^q.name && q1.nameLoc == ^q.nameLoc ->
         Silver_Expr { ^$QName{q1} }
       end
     else fail();

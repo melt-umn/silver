@@ -24,8 +24,8 @@ top::PolyType ::= ty::Type
 {
   top.boundVars = [];
   top.contexts = [];
-  top.typerep = new(ty);
-  top.monoType = new(ty);
+  top.typerep = ^ty;
+  top.monoType = ^ty;
 }
 
 abstract production polyType
@@ -33,7 +33,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = [];
-  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
+  top.typerep = freshenTypeWith(^ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
 }
 
@@ -42,7 +42,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
-  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
+  top.typerep = freshenTypeWith(^ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a (constraint) poly type!");
 }
 
@@ -130,7 +130,7 @@ top::Type ::= c::Type a::Type
 {
   top.kindrep =
     case c.kindrep of
-    | arrowKind(_, k) -> new(k)
+    | arrowKind(_, k) -> ^k
     | _ -> starKind()
     end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);

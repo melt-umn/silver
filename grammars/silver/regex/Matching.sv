@@ -11,13 +11,13 @@ strategy attribute simpl =
     rule on Regex of
     | seq(empty(), r) -> empty()
     | seq(r, empty()) -> empty()
-    | seq(epsilon(), r) -> new(r)
-    | seq(r, epsilon()) -> new(r)
-    | alt(empty(), r) -> new(r)
-    | alt(r, empty()) -> new(r)
-    | alt(epsilon(), r) when r.nullable -> new(r)
-    | alt(r, epsilon()) when r.nullable -> new(r)
-    | alt(r1, r2) when new(r1) == new(r2) -> new(r1)
+    | seq(epsilon(), r) -> ^r
+    | seq(r, epsilon()) -> ^r
+    | alt(empty(), r) -> ^r
+    | alt(r, empty()) -> ^r
+    | alt(epsilon(), r) when r.nullable -> ^r
+    | alt(r, epsilon()) when r.nullable -> ^r
+    | alt(r1, r2) when ^r1 == ^r2 -> ^r1
     | star(empty()) -> epsilon()
     | star(epsilon()) -> epsilon()
     end)
@@ -86,7 +86,7 @@ top::Regex ::= r1::Regex r2::Regex
   top.nullable = r1.nullable && r2.nullable;
   top.deriv =
     alt(
-      seq(r1.deriv, new(r2)),
+      seq(r1.deriv, ^r2),
       if r1.nullable then r2.deriv else empty());
   r1.wrt = top.wrt;
   r2.wrt = top.wrt;
@@ -105,7 +105,7 @@ aspect production star
 top::Regex ::= r::Regex
 {
   top.nullable = true;
-  top.deriv = seq(r.deriv, new(top));
+  top.deriv = seq(r.deriv, ^top);
   r.wrt = top.wrt;
 }
 

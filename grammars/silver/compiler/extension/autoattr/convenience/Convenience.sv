@@ -16,7 +16,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
   forwards to
     appendAGDcl(
       functorAttributeDcl($1, $2, @a, $7),
-      makeOccursDclsHelp(qNameWithTL(qNameId(new(a)), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(^a), botlNone()), qs.qnames));
 }
 
 concrete production monoidAttributeDclMultiple
@@ -26,7 +26,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   forwards to
     appendAGDcl(
       monoidAttributeDcl($1, $2, @a, @tl, $5, @te, $7, @e, $9, @q, $14),
-      makeOccursDclsHelp(qNameWithTL(qNameId(new(a)), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(^a), botlNone()), qs.qnames));
 }
 
 concrete production tcMonoidAttributeDclMultiple
@@ -36,7 +36,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   forwards to
     appendAGDcl(
       tcMonoidAttributeDcl($1, $2, @a, @tl, $5, @te, $10),
-      makeOccursDclsHelp(qNameWithTL(qNameId(new(a)), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(^a), botlNone()), qs.qnames));
 }
 
 concrete production destructAttributeDclMultiple
@@ -46,7 +46,7 @@ top::AGDcl ::= 'destruct' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
   forwards to
     appendAGDcl(
       destructAttributeDcl($1, $2, @a, ';'),
-      makeOccursDclsHelp(qNameWithTL(qNameId(new(a)), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(^a), botlNone()), qs.qnames));
 }
 
 concrete production equalityAttributeDclMultiple
@@ -56,7 +56,7 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName 'occurs' 'on' 
   forwards to
     appendAGDcl(
       equalityAttributeDcl($1, $2, @syn, $4, @inh, $9),
-      makeOccursDclsHelp(qNameWithTL(qNameId(new(syn)), botlNone()), qs.qnames));
+      makeOccursDclsHelp(qNameWithTL(qNameId(^syn), botlNone()), qs.qnames));
 }
 
 concrete production orderingAttributeDclMultiple
@@ -67,8 +67,8 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
     appendAGDcl(
       orderingAttributeDcl($1, $2, @keySyn, $4, @syn, $6, @inh, $11),
       appendAGDcl(
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(keySyn)), botlNone()), qs.qnames),
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(syn)), botlNone()), qs.qnames)));
+        makeOccursDclsHelp(qNameWithTL(qNameId(^keySyn), botlNone()), qs.qnames),
+        makeOccursDclsHelp(qNameWithTL(qNameId(^syn), botlNone()), qs.qnames)));
 }
 
 -- Deprecate?  Eric suggested keeping this: https://github.com/melt-umn/silver/issues/431#issuecomment-760552226
@@ -79,7 +79,7 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
   forwards to
     appendAGDcl(
       destructAttributeDcl('destruct', $2, @inh, $6),
-      equalityAttributeDcl($1, $2, @syn, 'with', qNameId(new(inh)), $6));
+      equalityAttributeDcl($1, $2, @syn, 'with', qNameId(^inh), $6));
 }
 concrete production destructEqualityAttributeDclMultiple
 top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
@@ -88,7 +88,7 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::
   forwards to
     appendAGDcl(
       destructAttributeDclMultiple('destruct', $2, @inh, $6, $7, @qs, $9),
-      equalityAttributeDclMultiple($1, $2, @syn, 'with', qNameId(new(inh)), $6, $7, new(qs), $9));
+      equalityAttributeDclMultiple($1, $2, @syn, 'with', qNameId(^inh), $6, $7, ^qs, $9));
 }
 concrete production destructOrderingAttributeDcl
 top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name ';'
@@ -97,7 +97,7 @@ top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name '
   forwards to
     appendAGDcl(
       destructAttributeDcl('destruct', $2, @inh, $8),
-      orderingAttributeDcl($1, $2, @keySyn, $6, @syn, 'with', qNameId(new(inh)), $8));
+      orderingAttributeDcl($1, $2, @keySyn, $6, @syn, 'with', qNameId(^inh), $8));
 }
 concrete production destructOrderingAttributeDclMultiple
 top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
@@ -106,7 +106,7 @@ top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name '
   forwards to
     appendAGDcl(
       destructAttributeDclMultiple('destruct', $2, @inh, $8, $9, @qs, $11),
-      orderingAttributeDclMultiple($1, $2, @keySyn, $6, @syn, 'with', qNameId(new(inh)), $8, $9, new(qs), $11));
+      orderingAttributeDclMultiple($1, $2, @keySyn, $6, @syn, 'with', qNameId(^inh), $8, $9, ^qs, $11));
 }
 
 concrete production biequalityAttributeDclMultiple
@@ -117,8 +117,8 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
     appendAGDcl(
       biequalityAttributeDcl($1, $2, @synPartial, ',', @syn, 'with', @inh, ';'),
       appendAGDcl(
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(synPartial)), botlNone()), qs.qnames),
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(syn)), botlNone()), qs.qnames)));
+        makeOccursDclsHelp(qNameWithTL(qNameId(^synPartial), botlNone()), qs.qnames),
+        makeOccursDclsHelp(qNameWithTL(qNameId(^syn), botlNone()), qs.qnames)));
 }
 
 concrete production threadedAttributeDclMultiple
@@ -129,8 +129,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
     appendAGDcl(
       threadedAttributeDcl($1, $2, @inh, $4, @syn, @tl, $7, @te, @d, ';'),
       appendAGDcl(
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(inh)), botlNone()), qs.qnames),
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(syn)), botlNone()), qs.qnames)));
+        makeOccursDclsHelp(qNameWithTL(qNameId(^inh), botlNone()), qs.qnames),
+        makeOccursDclsHelp(qNameWithTL(qNameId(^syn), botlNone()), qs.qnames)));
 }
 
 concrete production collectionThreadedAttributeDclMultiple
@@ -141,6 +141,6 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
     appendAGDcl(
       collectionThreadedAttributeDcl($1, $2, @inh, $4, @syn, @tl, $7, @te, 'with', @q, @d, ';'),
       appendAGDcl(
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(inh)), botlNone()), qs.qnames),
-        makeOccursDclsHelp(qNameWithTL(qNameId(new(syn)), botlNone()), qs.qnames)));
+        makeOccursDclsHelp(qNameWithTL(qNameId(^inh), botlNone()), qs.qnames),
+        makeOccursDclsHelp(qNameWithTL(qNameId(^syn), botlNone()), qs.qnames)));
 }

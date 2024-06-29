@@ -19,7 +19,7 @@ synthesized attribute tupleElems :: [Type] occurs on Type;
 aspect default production
 top::Type ::=
 {
-  top.tupleElems = [new(top)];
+  top.tupleElems = [^top];
 }
 
 -- For any Pair (or nested Pair) type, accumulate its tupleElems
@@ -31,7 +31,7 @@ top::Type ::= c::Type a::Type
     -- c.argTypes should only have a single element
     case c.baseType of
     | nonterminalType("silver:core:Pair", [starKind(), starKind()], true, false) -> c.argTypes ++ a.tupleElems
-    | _ -> [new(top)]
+    | _ -> [^top]
     end;
 
 }
@@ -41,13 +41,13 @@ top::Type ::= c::Type a::Type
 aspect production listType
 top::Type ::= _
 {
-  top.tupleElems = [new(top)];
+  top.tupleElems = [^top];
 }
 
 aspect production listCtrType
 top::Type ::=
 {
-  top.tupleElems = [new(top)];
+  top.tupleElems = [^top];
 }
 
 -- accepts a [Type] (will be tupleElems here)

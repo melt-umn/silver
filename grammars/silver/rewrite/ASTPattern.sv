@@ -11,7 +11,7 @@ top::ASTPattern ::= prodName::String children::ASTPatterns annotations::NamedAST
 {
   top.pp = pp"${text(prodName)}(${ppImplode(pp", ", children.pps ++ annotations.pps)})";
   
-  children.matchWith = case top.matchWith of nonterminalAST(_, c, _) -> new(c) | _ -> error("not nonterminalAST") end;
+  children.matchWith = case top.matchWith of nonterminalAST(_, c, _) -> ^c | _ -> error("not nonterminalAST") end;
   annotations.matchWith = case top.matchWith of nonterminalAST(_, _, a) -> a.bindings | _ -> error("not nonterminalAST") end;
   top.substitution =
     do {
@@ -30,8 +30,8 @@ top::ASTPattern ::= h::ASTPattern t::ASTPattern
 {
   top.pp = pp"(${h.pp} :: ${t.pp})";
   
-  h.matchWith = case top.matchWith of listAST(consAST(h, _)) -> new(h) | _ -> error("not listAST(consAST(_, _))") end;
-  t.matchWith = case top.matchWith of listAST(consAST(_, t)) -> listAST(new(t)) | _ -> error("not listAST(consAST(_, _))") end;
+  h.matchWith = case top.matchWith of listAST(consAST(h, _)) -> ^h | _ -> error("not listAST(consAST(_, _))") end;
+  t.matchWith = case top.matchWith of listAST(consAST(_, t)) -> listAST(^t) | _ -> error("not listAST(consAST(_, _))") end;
   top.substitution =
     do {
       case top.matchWith of
@@ -130,10 +130,10 @@ abstract production consASTPattern
 top::ASTPatterns ::= h::ASTPattern t::ASTPatterns
 {
   top.pps = h.pp :: t.pps;
-  top.astPatterns = new(h) :: t.astPatterns;
+  top.astPatterns = ^h :: t.astPatterns;
   
-  h.matchWith = case top.matchWith of consAST(h, _) -> new(h) | _ -> error("not consAST") end;
-  t.matchWith = case top.matchWith of consAST(_, t) -> new(t) | _ -> error("not consAST") end;
+  h.matchWith = case top.matchWith of consAST(h, _) -> ^h | _ -> error("not consAST") end;
+  t.matchWith = case top.matchWith of consAST(_, t) -> ^t | _ -> error("not consAST") end;
   top.substitution =
     do {
       case top.matchWith of
@@ -160,7 +160,7 @@ top::ASTPatterns ::=
 
 fun appendASTPatterns ASTPatterns ::= a::ASTPatterns b::ASTPatterns =
   case a of
-  | consASTPattern(h, t) -> consASTPattern(new(h), appendASTPatterns(new(t), b))
+  | consASTPattern(h, t) -> consASTPattern(^h, appendASTPatterns(^t, b))
   | nilASTPattern() -> b
   end;
 
@@ -190,7 +190,7 @@ top::NamedASTPatterns ::=
 
 fun appendNamedASTPatterns NamedASTPatterns ::= a::NamedASTPatterns b::NamedASTPatterns =
   case a of
-  | consNamedASTPattern(h, t) -> consNamedASTPattern(new(h), appendNamedASTPatterns(new(t), b))
+  | consNamedASTPattern(h, t) -> consNamedASTPattern(^h, appendNamedASTPatterns(^t, b))
   | nilNamedASTPattern() -> b
   end;
 

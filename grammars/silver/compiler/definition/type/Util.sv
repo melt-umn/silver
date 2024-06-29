@@ -60,7 +60,7 @@ top::PolyType ::= ty::Type
   top.isEqual =
     top.compareTo.boundVars == [] &&
     top.compareTo.contexts == [] &&
-    top.compareTo.typerep == new(ty);
+    top.compareTo.typerep == ^ty;
 }
 
 aspect production polyType
@@ -78,7 +78,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
     zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
   top.isEqual =
     top.compareTo.contexts == [] &&
-    top.compareTo.typerep == performRenaming(new(ty), eqSub);
+    top.compareTo.typerep == performRenaming(^ty, eqSub);
 }
 
 aspect production constraintType
@@ -96,7 +96,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
   top.isEqual =
     top.compareTo.contexts == map(performContextRenaming(_, eqSub), contexts) &&
-    top.compareTo.typerep == performRenaming(new(ty), eqSub);
+    top.compareTo.typerep == performRenaming(^ty, eqSub);
 }
 
 attribute
@@ -115,7 +115,7 @@ top::Type ::=
   top.outputType = errorType();
   top.namedTypes = [];
   top.arity = 0;
-  top.baseType = new(top);
+  top.baseType = ^top;
   top.argTypes = [];
   top.inhSetMembers = [];
   
@@ -147,7 +147,7 @@ top::Type ::= tv::TyVar
   top.freeSkolemVars <- [tv];
 
   -- Skolems with occurs-on contexts act like nonterminals, so use that behavior in unification
-  top.asDecoratedType = decoratedType(new(top), freshInhSet());
+  top.asDecoratedType = decoratedType(^top, freshInhSet());
   top.unifyInstanceNonterminal = emptySubst();
   top.unifyInstanceDecorable = emptySubst();
 }
@@ -156,11 +156,11 @@ aspect production appType
 top::Type ::= c::Type a::Type
 {
   top.baseType = c.baseType;
-  top.argTypes = c.argTypes ++ [new(a)];
+  top.argTypes = c.argTypes ++ [^a];
   top.isNonterminal = c.isNonterminal;
   top.isData = c.isData;
   top.isTracked = c.isTracked;
-  top.asDecoratedType = decoratedType(new(top), freshInhSet());  -- c.baseType should be a nonterminal or skolem
+  top.asDecoratedType = decoratedType(^top, freshInhSet());  -- c.baseType should be a nonterminal or skolem
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
   top.unifyInstanceDecorable = c.unifyInstanceDecorable;
   top.arity = c.arity;
@@ -212,7 +212,7 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
   top.isNonterminal = true;
   top.isData = data;
   top.isTracked = tracked;
-  top.asDecoratedType = if data then new(top) else decoratedType(new(top), freshInhSet());
+  top.asDecoratedType = if data then ^top else decoratedType(^top, freshInhSet());
   top.unifyInstanceNonterminal = emptySubst();
   top.unifyInstanceDecorable = if data then errorSubst("data") else emptySubst();
 }
@@ -233,7 +233,7 @@ aspect production decoratedType
 top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
-  top.decoratedType = new(te);
+  top.decoratedType = ^te;
   top.inhSetMembers = i.inhSetMembers;
   top.unifyInstanceDecorated = emptySubst();
 }

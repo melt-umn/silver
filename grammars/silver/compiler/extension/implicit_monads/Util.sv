@@ -36,19 +36,19 @@ threaded attribute mDownSubst, mUpSubst::Substitution;
 
 fun isMonad Boolean ::= ty::Type env::Env =
   case dropDecorated(ty) of
-  | appType(t, _) -> length(getInstanceDcl("silver:core:Monad", new(t), env)) > 0
+  | appType(t, _) -> length(getInstanceDcl("silver:core:Monad", ^t, env)) > 0
   | t -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
   end;
 
 fun isMonadPlus Boolean ::= ty::Type env::Env =
   case dropDecorated(ty) of
-  | appType(t, _) -> length(getInstanceDcl("silver:core:MonadPlus", new(t), env)) > 0
+  | appType(t, _) -> length(getInstanceDcl("silver:core:MonadPlus", ^t, env)) > 0
   | t -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
   end;
 
 fun isMonadFail Boolean ::= ty::Type env::Env =
   case dropDecorated(ty) of
-  | appType(t, _) -> length(getInstanceDcl("silver:core:MonadFail", new(t), env)) > 0
+  | appType(t, _) -> length(getInstanceDcl("silver:core:MonadFail", ^t, env)) > 0
   | t -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0
   end;
 
@@ -56,7 +56,7 @@ fun isMonadFail Boolean ::= ty::Type env::Env =
 function dropDecorated
 Type ::= ty::Type
 {
-  return if ty.isDecorated then ty.decoratedType else new(ty);
+  return if ty.isDecorated then ty.decoratedType else ^ty;
 }
 
 
@@ -65,7 +65,7 @@ Type ::= ty::Type
 fun monadsMatch Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution =
   case dropDecorated(ty1), dropDecorated(ty2) of
   | appType(c1, _), appType(c2, _) ->
-    tyMatch(new(c1), new(c2), subst)
+    tyMatch(^c1, ^c2, subst)
   | _, _ -> (false, subst)
   end;
 
@@ -98,11 +98,11 @@ function monadInnerType
 Type ::= mty::Type
 {
   local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
-  return case dropDecorated(new(mty)) of
-         | appType(c, a) -> new(a)
+  return case dropDecorated(^mty) of
+         | appType(c, a) -> ^a
          | _ -> error("The monadInnerType function should only be called " ++
                       "once a type has been verified to be a monad (" ++
-                      prettyType(new(mty)) ++ " at " ++  loc.unparse ++ ")")
+                      prettyType(^mty) ++ " at " ++  loc.unparse ++ ")")
          end;
 }
 
@@ -111,7 +111,7 @@ Type ::= mty::Type
   to make a new monadic type-}
 fun monadOfType Type ::= mty::Type newInner::Type =
   case dropDecorated(mty) of
-  | appType(c, _) -> appType(new(c), newInner)
+  | appType(c, _) -> appType(^c, newInner)
   | _ -> error("Tried to take a monad out of a non-monadic type (" ++ prettyType(mty) ++ ") to apply")
   end;
 
@@ -122,7 +122,7 @@ fun monadToString String ::= ty::Type =
   | appType(c, _) ->
     --We use nonterminalType to get it to show just an underscore
     --e.g. this gives us Maybe<_>, Either<String _>
-    prettyType(appType(new(c), nonterminalType("_", [], false, false)))
+    prettyType(appType(^c, nonterminalType("_", [], false, false)))
   | _ -> error("Tried to get monadToString for a non-monadic type (" ++ prettyType(ty) ++ ")")
   end;
 
@@ -194,6 +194,6 @@ Expr ::= names::[Pair<String Type>] body::Expr
                                 p)
             end,
           lambdaRHSNil(), names);
-  return lambdap(sig, new(body));
+  return lambdap(sig, ^body);
 }
 

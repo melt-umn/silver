@@ -36,11 +36,11 @@ top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataCo
     | consDataConstructor(h1, _, t1) ->
       consDataConstructor(
         @h, '|',
-        consDataConstructor(documentedConstructor(comment, new(h1)), '|', new(t1)))
+        consDataConstructor(documentedConstructor(comment, ^h1), '|', ^t1))
     | oneDataConstructor(h1) ->
       consDataConstructor(
         @h, '|',
-        oneDataConstructor(documentedConstructor(comment, new(h1))))
+        oneDataConstructor(documentedConstructor(comment, ^h1)))
     | nilDataConstructor() -> consDataConstructor(@h, '|', @t)
     end;
 }

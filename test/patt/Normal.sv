@@ -215,13 +215,13 @@ String ::= undecoratedFirst::OrdinaryNonterminal  attrSecond::String
 function doesThisGenerateSilverErrors
 String ::= d::OrdinaryNonterminal
 { return case d of
-         | ordinaryProduction(p) -> ordinaryFunction(new(p),p) -- This should be okay!!
+         | ordinaryProduction(p) -> ordinaryFunction(^p,p) -- This should be okay!!
          end;
 }
 function doesThisGenerateJavaCodeWithErrors
 String ::= d::OrdinaryNonterminal
 { return case d of
-         | ordinaryProduction(p) -> ordinaryFunction2(new(p),p.ordinaryAttribute) -- Just checking we don't have type issues in the generated Java with this 'p' used both ways.
+         | ordinaryProduction(p) -> ordinaryFunction2(^p,p.ordinaryAttribute) -- Just checking we don't have type issues in the generated Java with this 'p' used both ways.
          end;
 }
 -------------------

@@ -86,11 +86,11 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = consListOp(new(e), '::', emptyList('[',']'));
+  top.listtrans = consListOp(^e, '::', emptyList('[',']'));
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = consListOp(new(e1), '::', e2.listtrans);
+  top.listtrans = consListOp(^e1, '::', e2.listtrans);
 }

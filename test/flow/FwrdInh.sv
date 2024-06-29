@@ -8,6 +8,6 @@ production fwrdEqSiteExceedsFT
 top::FIExpr ::= e::FIExpr
 {
   forward.env1 = top.env2;
-  forwards to new(e);
+  forwards to ^e;
 }
 }

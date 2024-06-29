@@ -326,12 +326,12 @@ aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.asListPattern = 
-    consListPattern(new(p), '::', nilListPattern('[', ']'));
+    consListPattern(^p, '::', nilListPattern('[', ']'));
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.asListPattern = consListPattern(new(p), '::', ps1.asListPattern);
+  top.asListPattern = consListPattern(^p, '::', ps1.asListPattern);
 }
 aspect production patternList_nil
 top::PatternList ::=

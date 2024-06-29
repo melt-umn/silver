@@ -188,8 +188,8 @@ aspect attributeRefLocs on top::StrategyExpr using <- of
 end;
 
 aspect attributeRefLocs on StrategyExpr using := of
-| partialRef(a) -> if attrDclFound then [(a.nameLoc, new(attrDcl))] else []
-| totalRef(a) -> if attrDclFound then [(a.nameLoc, new(attrDcl))] else []
+| partialRef(a) -> if attrDclFound then [(a.nameLoc, ^attrDcl)] else []
+| totalRef(a) -> if attrDclFound then [(a.nameLoc, ^attrDcl)] else []
 end;
 
 -- Productions

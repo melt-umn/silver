@@ -58,5 +58,5 @@ top::AttributeDclInfo ::=
   top.partialRefs := partialRefs;
   top.totalRefs := totalRefs;
   top.containsTraversal := containsTraversal;
-  top.strategyExpr = new(e);
+  top.strategyExpr = ^e;
 }

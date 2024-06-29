@@ -114,7 +114,7 @@ aspect default production
 top::Context ::=
 {
   top.contextRuntimeResolveFailure = s"""
-			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${prettyContext(new(top))} cannot be resolved at runtime");
+			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${prettyContext(^top)} cannot be resolved at runtime");
 			final ${top.transType} ${top.transContextMemberName} = ${top.transContextDummyInit};
 """;
   top.contextRuntimeResolve := top.contextRuntimeResolveFailure;
@@ -123,26 +123,26 @@ top::Context ::=
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, new(t), top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(fn, new(t), top.boundVariables);
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, ^t, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(fn, ^t, top.boundVariables);
 }
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSigElem = s"final int ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(attr, new(ntty), top.boundVariables);
-  top.contextInhOccurs <- [(new(ntty), attr)];
+  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ^ntty, top.boundVariables);
+  top.contextInhOccurs <- [(^ntty, attr)];
   top.inhOccursIndexDecls <-
     s"\tpublic static final int ${makeIdName(attr)}__ON__${ntty.transTypeName} = count_inh__ON__${ntty.transTypeName}++;\n";
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, new(ntty), top.typeChildrenIn) of
+    case lookupBy(typeNameEq, ^ntty, top.typeChildrenIn) of
     | just(child) -> s"""
-			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
-			if (${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt == null) {
+			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
+			if (${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, new(ntty), top.boundVariables)} = ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt.getInhOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt.getInhOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -151,16 +151,16 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 aspect production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
-  top.contextSigElem = s"final int ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(attr, new(ntty), top.boundVariables);
+  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, new(ntty), top.typeChildrenIn) of
+    case lookupBy(typeNameEq, ^ntty, top.typeChildrenIn) of
     | just(child) -> s"""
-			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
-			if (${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt == null) {
+			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
+			if (${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, new(ntty), top.boundVariables)} = ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}_nt.getSynOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt.getSynOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -169,15 +169,15 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 aspect production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, new(ntty), top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(attr, new(ntty), top.boundVariables);
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, new(ntty), top.typeChildrenIn) of
+    case lookupBy(typeNameEq, ^ntty, top.typeChildrenIn) of
     | just(child) -> s"""
 			if (!${child} instanceof makeAnnoName(${attr})) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " does not have annotation ${attr}.");
 			}
-			final ${top.transType} ${makeConstraintDictName(attr, new(ntty), top.boundVariables)} = null;
+			final ${top.transType} ${makeConstraintDictName(attr, ^ntty, top.boundVariables)} = null;
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -186,11 +186,11 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(new(t), top.boundVariables)}";
-  top.contextRefElem = makeTypeableName(new(t), top.boundVariables);
+  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(^t, top.boundVariables)}";
+  top.contextRefElem = makeTypeableName(^t, top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, new(t), top.typeChildrenIn) of
-    | just(child) -> s"\t\t\tfinal ${top.transType} ${makeTypeableName(new(t), top.boundVariables)} = common.Reflection.getType(${child});\n"
+    case lookupBy(typeNameEq, ^t, top.typeChildrenIn) of
+    | just(child) -> s"\t\t\tfinal ${top.transType} ${makeTypeableName(^t, top.boundVariables)} = common.Reflection.getType(${child});\n"
     | nothing() -> top.contextRuntimeResolveFailure
     end;
 }
@@ -198,9 +198,9 @@ top::Context ::= t::Type
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(new(i1), new(i2), top.boundVariables)}";
-  top.contextRefElem = makeInhSubsetName(new(i1), new(i2), top.boundVariables);
-  top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(new(i1), new(i2), top.boundVariables)} = null;";
+  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(^i1, ^i2, top.boundVariables)}";
+  top.contextRefElem = makeInhSubsetName(^i1, ^i2, top.boundVariables);
+  top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(^i1, ^i2, top.boundVariables)} = null;";
 }
 
 aspect production typeErrorContext
@@ -253,22 +253,22 @@ s"""private Object child_${n};
   }
 """;
 
-  local ntType::Type = if ty.isDecorated then ty.decoratedType else new(ty);
+  local ntType::Type = if ty.isDecorated then ty.decoratedType else ^ty;
   ntType.boundVariables = ty.boundVariables;
 
   top.childTypeVarElem =
-    if lookupBy(typeNameEq, new(ty), top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, ^ty, top.sigInhOccurs).isJust
     then s"type_${ntType.transTypeName}"
     else "-1";
   
   top.childStaticElem =
-    if lookupBy(typeNameEq, new(ty), top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, ^ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
     else if ty.isNonterminal && !ty.isData
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
-  top.typeChildren := [(new(ty), top.childRefElem)];
+  top.typeChildren := [(^ty, top.childRefElem)];
   
   -- annos are full names:
   
@@ -374,11 +374,11 @@ function makeInhOccursContextAccess
 String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhArray::String t::Type
 {
   t.boundVariables = bv;
-  local inhs::[String] = lookupAllBy(typeNameEq, new(t), sigInhOccurs);
+  local inhs::[String] = lookupAllBy(typeNameEq, ^t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
 			${if null(inhs) then "return null;" else
-s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, new(t), bv), inhs))} + 1];
-${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, new(t), bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
+s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, ^t, bv), inhs))} + 1];
+${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, ^t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
 			return res;"""}
 		}
 """;

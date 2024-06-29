@@ -133,7 +133,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     -- Current class context is the first context on the member's type scheme
     | instContext(cls, ty) :: _ when cls == top.className ->
       composeSubst(
-        unify(new(ty), top.instanceType),
+        unify(^ty, top.instanceType),
         -- Skolemize all the other type vars that didn't get instantiated by the instance head
         zipVarsIntoSkolemizedSubstitution(typeScheme.boundVars, memberSkolemVars))
     | _ -> emptySubst() -- Fall back in case of errors

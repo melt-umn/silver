@@ -41,7 +41,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
            defaultEnvItem(
              strategyDcl(
                fName, isTotal,
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, new(e),
+               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, ^e,
                sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]),
       map(
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
@@ -89,7 +89,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
         map(
           \ n::String ->
             attributionDcl(
-              'attribute', qName(n), new(attl), 'occurs', 'on', new(nt), new(nttl), ';'),
+              'attribute', qName(n), ^attl, 'occurs', 'on', ^nt, ^nttl, ';'),
           at.lookupAttribute.dcl.liftedStrategyNames)))(
       at,
       botlSome(
@@ -100,7 +100,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
             | botlSome(tl) -> 
               appTypeExpr(
                 nominalTypeExpr(nt.qNameType),
-                new(tl))
+                ^tl)
             | botlNone() -> nominalTypeExpr(nt.qNameType)
             end),
           '>')),
@@ -159,7 +159,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
       attributeDef(
         concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
         '.',
-        qNameAttrOccur(new(attr)),
+        qNameAttrOccur(^attr),
         '=',
         if isTotal then e2.totalTranslation else e2.partialTranslation,
         ';'),

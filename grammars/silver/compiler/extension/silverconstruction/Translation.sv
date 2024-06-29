@@ -25,7 +25,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     case prodName, children of
     | "silver:compiler:extension:silverconstruction:antiquote_qName",
       consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))) ->
-        case reify(new(a)) of
+        case reify(^a) of
         | right(e) ->
           just(
             mkFullFunctionInvocation(
@@ -38,7 +38,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
     | "silver:compiler:extension:silverconstruction:antiquote_name",
       consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))) ->
-        case reify(new(a)) of
+        case reify(^a) of
         | right(e) ->
           just(
             mkFullFunctionInvocation(

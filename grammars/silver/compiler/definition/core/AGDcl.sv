@@ -75,7 +75,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
 fun makeAppendAGDclOfAGDcls AGDcl ::= dcls::AGDcls =
   case dcls of
   | nilAGDcls() -> emptyAGDcl()
-  | consAGDcls(dcl, rest) -> appendAGDcl(new(dcl), makeAppendAGDclOfAGDcls(new(rest)))
+  | consAGDcls(dcl, rest) -> appendAGDcl(^dcl, makeAppendAGDclOfAGDcls(^rest))
   end;
 
 abstract production jarNameDcl

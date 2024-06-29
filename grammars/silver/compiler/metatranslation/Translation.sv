@@ -55,7 +55,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     then
       let wrapped::AST = 
         case children of
-        | consAST(a, nilAST()) -> new(a)
+        | consAST(a, nilAST()) -> ^a
         | consAST(
             terminalAST(_, _, _),
             consAST(
@@ -64,7 +64,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
                 a,
                 consAST(
                   terminalAST(_, _, _),
-                  nilAST())))) -> new(a)
+                  nilAST())))) -> ^a
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
@@ -88,7 +88,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         | consAST(
             nonterminalAST(p, consAST(a, _), _),
             consAST(rest, nilAST())) ->
-          just((p, new(a), rest))
+          just((p, ^a, rest))
         | _ -> nothing()
         end;
       -- (nonterminal short name, cons production name, nil production name, append production name)
@@ -140,8 +140,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     then
       let wrapped::AST = 
         case children of
-        | consAST(a, nilAST()) -> new(a)
-        | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> new(a)
+        | consAST(a, nilAST()) -> ^a
+        | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> ^a
         | consAST(
             terminalAST(_, _, _),
             consAST(
@@ -150,7 +150,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
                 a,
                 consAST(
                   terminalAST(_, _, _),
-                  nilAST())))) -> new(a)
+                  nilAST())))) -> ^a
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
@@ -280,7 +280,7 @@ top::ASTs ::= h::AST t::ASTs
     -- Try to reify the last child as a location
     case t of
     | nilAST() ->
-        case reify(new(h)) of
+        case reify(^h) of
         | right(l) -> just(l)
         | left(_) -> nothing()
         end
@@ -323,7 +323,7 @@ top::NamedAST ::= n::String v::AST
   top.foundLocation =
     if n == "silver:core:location"
     then
-      case reify(new(v)) of
+      case reify(^v) of
       | right(l) -> just(l)
       | left(msg) -> error(s"Error in reifying location:\n${msg}")
       end

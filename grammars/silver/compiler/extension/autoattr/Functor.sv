@@ -43,7 +43,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  new(tl))
+                  ^tl)
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end),
             '>')),
@@ -75,7 +75,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
     attributeDef(
       concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
       '.',
-      qNameAttrOccur(new(attr)),
+      qNameAttrOccur(^attr),
       '=',
       mkFullFunctionInvocation(baseExpr(qName(top.frame.fullName)), inputs, annotations),
       ';');
@@ -99,7 +99,7 @@ Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
   
   return
     if validTypeHead && attrOccursOnHead
-    then Silver_Expr { $name{input.elementName}.$QName{new(attrName)} }
+    then Silver_Expr { $name{input.elementName}.$QName{^attrName} }
     else if inputDecorable
     then Silver_Expr { silver:core:new($name{input.elementName}) }
     else Silver_Expr { $name{input.elementName} };

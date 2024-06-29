@@ -8,7 +8,7 @@ synthesized attribute str :: String occurs on Q;
 abstract production q1
 top::Q ::= bot::Q
 {
-  top.a_q = new(bot);
+  top.a_q = ^bot;
   top.str = "q";
 }
 

@@ -68,7 +68,7 @@ aspect production functionSignature
 top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
   -- Need to override constraintPos
-  production clGlobal::ConstraintList = new(cl);
+  production clGlobal::ConstraintList = ^cl;
   clGlobal.env = top.env;
   clGlobal.flowEnv = top.flowEnv;
   clGlobal.grammarName = top.grammarName;

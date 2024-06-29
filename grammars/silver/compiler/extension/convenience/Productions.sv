@@ -26,7 +26,7 @@ top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclS
   top.unparse = "concrete productions " ++ lhs.unparse ++ stmts.unparse;
   propagate grammarName, moduleNames, jarName; -- Avoid dependency on forward
   
-  stmts.lhsdcl = new(lhs);
+  stmts.lhsdcl = ^lhs;
   
   forwards to @stmts.proddcls;
 }
@@ -61,7 +61,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
            ++ substitute(":", "_", top.proddcls.grammarName)
            ++ "_" ++ substitute(".", "_", v.location.filename)
            ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column))
-    | anOptionalName(_, n, _) -> new(n)
+    | anOptionalName(_, n, _) -> ^n
     end;
 
   local newSig :: ProductionSignature =
@@ -72,7 +72,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
     | noOptionalAction() -> 
         concreteProductionDcl('concrete', 'production', nme, @newSig, @mods, @body)
     | anOptionalAction(a,c) ->
-        concreteProductionDclAction('concrete', 'production', nme, @newSig, @mods, @body, a, new(c))
+        concreteProductionDclAction('concrete', 'production', nme, @newSig, @mods, @body, a, ^c)
     end;
 }
 

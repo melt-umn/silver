@@ -41,10 +41,10 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
     top.typeScheme == top.compareTo.typeScheme &&
     o.isEqual;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
   top.isSynthesized = true;
   top.isCollection = true;
-  top.operation = new(o);
+  top.operation = ^o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler;
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
@@ -66,10 +66,10 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
     top.typeScheme == top.compareTo.typeScheme &&
     o.isEqual;
 
-  top.typeScheme = polyType(bound, new(ty));
+  top.typeScheme = polyType(bound, ^ty);
   top.isInherited = true;
   top.isCollection = true;
-  top.operation = new(o);
+  top.operation = ^o;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler;
@@ -87,8 +87,8 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   top.fullName = fn;
   propagate compareTo, isEqual;
 
-  top.typeScheme = monoType(new(ty));
-  top.operation = new(o);
+  top.typeScheme = monoType(^ty);
+  top.operation = ^o;
   
   top.refDispatcher = localReference;
   top.defDispatcher = errorColNormalValueDef;
@@ -97,7 +97,7 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   top.baseDefDispatcher = baseCollectionValueDef;
   top.appendDefDispatcher = appendCollectionValueDef;
   
-  top.substitutedDclInfo = localCollectionDcl(fn, performRenaming(new(ty), top.givenSubstitution), new(o), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.substitutedDclInfo = localCollectionDcl(fn, performRenaming(^ty, top.givenSubstitution), ^o, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
   
   -- TODO: attrOccursIndex
   -- We shouldn't be forwarding here

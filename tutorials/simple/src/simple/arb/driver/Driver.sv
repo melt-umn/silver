@@ -20,7 +20,7 @@ IOToken ::= args::[String]
   local r_ast :: ast:Root = r_cst.iovalue.ast;
 
   local print_success :: IOToken = 
-    printT( "AST: \n" ++ pp:show(100, reflect(new(r_ast))) ++
+    printT( "AST: \n" ++ pp:show(100, reflect(^r_ast)) ++
            "\n\n" ++
            "AST pretty print: \n" ++ pp:show(100, r_ast) ++
            "\n\n" ++

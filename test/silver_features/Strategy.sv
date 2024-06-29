@@ -1,7 +1,7 @@
 grammar silver_features;
 
 strategy attribute elimPlusZero =
-  bottomUp(try(rule on SExpr of addSExpr(e, constSExpr(0)) -> new(e) end));
+  bottomUp(try(rule on SExpr of addSExpr(e, constSExpr(0)) -> ^e end));
 
 nonterminal SExpr with elimPlusZero;
 
@@ -55,7 +55,7 @@ equalityTest(
 
 partial strategy attribute removeLastStmt =
     rule on SStmt of
-    | seqSStmt(s, assignSStmt(_, _)) -> new(s)
+    | seqSStmt(s, assignSStmt(_, _)) -> ^s
     end <+
     seqSStmt(id, removeLastStmt)
   occurs on SStmt, SExpr;
@@ -107,7 +107,7 @@ inherited attribute target::String occurs on SStmt, SExpr;
 strategy attribute incTargetConsts =
   allTopDown(
     rule on top::SStmt of
-    | assignSStmt(n, _) when n == top.target ->  new(top)
+    | assignSStmt(n, _) when n == top.target ->  ^top
     end <* incConsts)
   occurs on SStmt, SExpr;
 propagate target, incTargetConsts on SStmt, SExpr;

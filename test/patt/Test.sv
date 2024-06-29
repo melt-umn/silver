@@ -126,11 +126,11 @@ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
                      end
          | arrow(aa, ab) ->
                      match tb return Maybe<Eq<a b>> with
-                       arrow(ba, bb) -> match typeEquals(new(aa), new(ba)) return Maybe<Eq<a b>> with
+                       arrow(ba, bb) -> match typeEquals(^aa, ^ba) return Maybe<Eq<a b>> with
                                           just(lrn1) -> 
                                               match decorate lrn1 with {} return Maybe<Eq<a b>> with
                                                 refl() ->
-                                                        match typeEquals(new(ab), new(bb)) return Maybe<Eq<a b>> with
+                                                        match typeEquals(^ab, ^bb) return Maybe<Eq<a b>> with
                                                           just(lrn2) ->
                                                              match decorate lrn2 with {} return Maybe<Eq<a b>> with
                                                                refl() -> just(refl())

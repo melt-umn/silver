@@ -297,7 +297,7 @@ top::Abstract ::= a1::Abstract a2::Abstract
 
 abstract production abstract4
 top::Abstract ::= a::Abstract
-{ forwards to abstract3(new(a), new(a)); }
+{ forwards to abstract3(^a, ^a); }
 
 warnCode "not exhaustive" {
   function fun_nonterminal_missing_1

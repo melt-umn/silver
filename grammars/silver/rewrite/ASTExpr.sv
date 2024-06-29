@@ -27,7 +27,7 @@ top::ASTExpr ::= h::ASTExpr t::ASTExpr
   top.pp = pp"(${h.pp} :: ${t.pp})";
   top.value =
     case t.value of
-    | listAST(a) -> listAST(consAST(h.value, new(a)))
+    | listAST(a) -> listAST(consAST(h.value, ^a))
     | _ -> error("Rewrite type error")
     end;
 }
@@ -339,7 +339,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
   top.value =
     case a.value, b.value of
     | stringAST(x), stringAST(y) -> stringAST(x ++ y)
-    | listAST(x), listAST(y) -> listAST(appendASTs(new(x), new(y)))
+    | listAST(x), listAST(y) -> listAST(appendASTs(^x, ^y))
     | _, _ -> error("Invalid values")
     end;
 }
@@ -351,7 +351,7 @@ top::ASTExpr ::= a::NamedASTExprs body::ASTExpr
   top.value = body.value;
   a.substitutionEnv = top.substitutionEnv;
   body.substitutionEnv =
-    map(\ n::NamedAST -> case n of namedAST(n, a) -> (n, new(a)) end, a.namedValues) ++ top.substitutionEnv;
+    map(\ n::NamedAST -> case n of namedAST(n, a) -> (n, ^a) end, a.namedValues) ++ top.substitutionEnv;
 }
 
 abstract production lengthASTExpr
@@ -461,7 +461,7 @@ abstract production consASTExpr
 top::ASTExprs ::= h::ASTExpr t::ASTExprs
 {
   top.pps = h.pp :: t.pps;
-  top.astExprs = new(h) :: t.astExprs;
+  top.astExprs = ^h :: t.astExprs;
   top.values = h.value :: t.values;
   top.appValues =
     case h of
@@ -481,7 +481,7 @@ top::ASTExprs ::=
 
 fun appendASTExprs ASTExprs ::= a::ASTExprs b::ASTExprs =
   case a of
-  | consASTExpr(h, t) -> consASTExpr(new(h), appendASTExprs(new(t), b))
+  | consASTExpr(h, t) -> consASTExpr(^h, appendASTExprs(^t, b))
   | nilASTExpr() -> b
   end;
 
@@ -509,7 +509,7 @@ top::NamedASTExprs ::=
 
 fun appendNamedASTExprs NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs =
   case a of
-  | consNamedASTExpr(h, t) -> consNamedASTExpr(new(h), appendNamedASTExprs(new(t), b))
+  | consNamedASTExpr(h, t) -> consNamedASTExpr(^h, appendNamedASTExprs(^t, b))
   | nilNamedASTExpr() -> b
   end;
 

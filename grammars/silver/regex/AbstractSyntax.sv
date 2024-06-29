@@ -105,7 +105,7 @@ top::Regex ::= r::Regex
   top.altPP = top.seqPP;
   top.seqPP = top.basePP;
   top.basePP = pp"${r.basePP}+";
-  forwards to seq(@r, star(new(r)));
+  forwards to seq(@r, star(^r));
 }
 
 abstract production opt

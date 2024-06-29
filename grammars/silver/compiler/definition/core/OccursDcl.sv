@@ -192,7 +192,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   forwards to
     if !at.lookupAttribute.found
     then errorAttributionDcl(at.lookupAttribute.errors, at, @attl, @nt, @nttl)
-    else at.lookupAttribute.dcl.attributionDispatcher(at, new(attl), new(nt), new(nttl));
+    else at.lookupAttribute.dcl.attributionDispatcher(at, ^attl, ^nt, ^nttl);
 }
 
 concrete production annotateDcl

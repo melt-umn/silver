@@ -60,7 +60,7 @@ top::AInstruction ::= h::String n::String a::AAction
 {
   top.tapeHead = h;
   top.nextState = n;
-  top.theAction = new(a);
+  top.theAction = ^a;
 }
 
 abstract production newAOption
@@ -74,7 +74,7 @@ function runMachine
 Decorated ATape ::= theMachine::AMachine ms::[AMachine] t::Decorated ATape
 {
   return if theMachine.isSimpleMachine 
-  	 then runSimpleMachine(new(theMachine), theMachine.startState, t)
+  	 then runSimpleMachine(^theMachine, theMachine.startState, t)
 	 else runComplexMachine(theMachine.startState, theMachine.machineFlow, ms, t);
 }
 
@@ -126,7 +126,7 @@ Decorated ATape ::= m::AMachine str::String t::Decorated ATape
 
   return if null(theInstruction)
 	 then t
-	 else runSimpleMachine(new(m), head(theInstruction).nextState, theTheAction.newTape);
+	 else runSimpleMachine(^m, head(theInstruction).nextState, theTheAction.newTape);
 }
 
 

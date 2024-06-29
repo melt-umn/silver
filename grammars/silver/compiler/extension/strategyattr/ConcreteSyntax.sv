@@ -73,18 +73,18 @@ concrete productions top::StrategyExpr_c
 | 'rec' n::Name Arrow_t s::StrategyExpr_c
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
-  top.ast = recComb(new(n), s.ast, genName=top.givenGenName);
+  top.ast = recComb(^n, s.ast, genName=top.givenGenName);
   s.givenGenName = top.givenGenName;
 }
 | 'rule' 'on' id::Name '::' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ id.unparse ++ "::" ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(new(id), new(ty), new(ml), genName=top.givenGenName);
+  top.ast = rewriteRule(^id, ^ty, ^ml, genName=top.givenGenName);
 }
 | 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(name("top"), new(ty), new(ml), genName=top.givenGenName);
+  top.ast = rewriteRule(name("top"), ^ty, ^ml, genName=top.givenGenName);
 }
 | id::StrategyQName
 {

@@ -115,26 +115,26 @@ Expr ::= env::Env  specEnv::Env  depth::Expr  t::Type
     -- Monomorphic nonterminals that don't have an explicit Arbitrary instance,
     -- call the appropriate local generator function.
     | nonterminalType(ntName, [], _, _)
-      when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", new(t), env))
-      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName))}($Expr{new(depth)}) }
+      when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", ^t, env))
+      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName))}($Expr{^depth}) }
     
     | terminalType(tName)
-      when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", new(t), env))
-      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName))}($Expr{new(depth)}) }
+      when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", ^t, env))
+      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName))}($Expr{^depth}) }
 
     -- Lists are handled specially here, to allow recusively generating for
     -- e.g. lists of nonterminals in a production RHS.
     | appType(listCtrType(), elemT) ->
       Silver_Expr {
-        silver:core:bind(silver:util:random:randomRange(0, $Expr{new(depth)}), \ len::Integer ->
+        silver:core:bind(silver:util:random:randomRange(0, $Expr{^depth}), \ len::Integer ->
           silver:core:traverseA(
-            \ depth::Integer -> $Expr{genForType(env, specEnv, Silver_Expr { depth - 1 }, new(elemT))},
-            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{new(depth)})))))
+            \ depth::Integer -> $Expr{genForType(env, specEnv, Silver_Expr { depth - 1 }, ^elemT)},
+            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{^depth})))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
     -- handled by the Arbitrary type class.
-    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb")}($Expr{new(depth)}) }
+    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb")}($Expr{^depth}) }
     end; 
 }
 
@@ -146,8 +146,8 @@ Boolean ::= env::Env  specEnv::Env  t::Type
     case t of
     | nonterminalType(ntName, [], _, _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | terminalType(ntName) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
-    | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, new(elemT))
-    | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", new(t), env))
+    | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, ^elemT)
+    | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", ^t, env))
     end;
 }
 

@@ -87,7 +87,7 @@ Boolean ::= ty::Type conf::Decorated CmdArgs env::Env
   return if conf.noOrigins || contains(ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
               | nonterminalType(fn, _, _, tracked) -> conf.forceOrigins || tracked
-              | appType(c, _) -> typeWantsTracking(new(c), conf, env)
+              | appType(c, _) -> typeWantsTracking(^c, conf, env)
               | _ -> false
               end;
 }
@@ -111,7 +111,7 @@ String ::= top::Decorated Expr expr::String
   local noop       :: String = expr;
 
   local impl :: String = if ty.transType == "Object" then polyCopy else
-          (if typeWantsTracking(new(ty), top.config, top.env) then directCopy else noop);
+          (if typeWantsTracking(^ty, top.config, top.env) then directCopy else noop);
 
   return if (top.config.noRedex || top.config.noOrigins) then noop else impl;
   -- The extra (common.Node) cast in the non-generic non-primitive case is sometimes required for reasons I don't fully understand.

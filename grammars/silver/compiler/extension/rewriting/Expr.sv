@@ -15,7 +15,7 @@ top::Expr ::=
       -- Constrain the type of the wrapped expression to the type that was inferred here,
       -- to allow for any type class constraints to be resolved in the translation.
       silver:rewrite:anyASTExpr(
-        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(top.finalType)} = $Expr{new(top)}
+        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(top.finalType)} = $Expr{^top}
         in rewrite_rule_anyAST_val__
         end)
     });
@@ -29,38 +29,38 @@ top::Expr ::= @q::QName _ _
     -- The variable is bound in the rule pattern or a let expression in the RHS
     | [_] -> varASTExpr(q.name)
     -- The variable is bound in an enclosing let/match
-    | _ -> antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) })
+    | _ -> antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) })
     end;
 }
 
 aspect production childReference
 top::Expr ::= @q::QName
 {
-  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production lhsReference
 top::Expr ::= @q::QName
 {
-  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production localReference
 top::Expr ::= @q::QName
 {
-  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production nondecLocalReference
 top::Expr ::= @q::QName
 {
-  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
-  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{new(q)}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production errorApplication
@@ -142,7 +142,7 @@ top::Expr ::= e::Expr '.' 'forward'
   nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(new(nt), inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -221,7 +221,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(new(nt), inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -268,7 +268,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(new(nt), inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -290,7 +290,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(new(nt), inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -312,7 +312,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(new(nt), inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -334,7 +334,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(new(nt), inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -412,7 +412,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
       name(paramName), '::',
       typerepTypeExpr(e.finalType));
   top.bodyExprInhTransform =
-    exprInh(new(lhs), '=', baseExpr(qName(paramName)), ';');
+    exprInh(^lhs, '=', baseExpr(qName(paramName)), ';');
 }
 
 aspect production trueConst
@@ -489,7 +489,7 @@ top::Expr ::= '[' es::Exprs ']'
 {
   -- TODO: Consider refactoring listtrans on Exprs to decorate the expressions here
   -- before forwarding via translation attributes.
-  local decEs::Exprs = new(es);
+  local decEs::Exprs = ^es;
   decEs.downSubst = top.downSubst;
   decEs.finalSubst = top.finalSubst;
   decEs.frame = top.frame;
@@ -509,7 +509,7 @@ top::Expr ::= '[' es::Exprs ']'
 aspect production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
 {
-  local decEs::Exprs = new(es);
+  local decEs::Exprs = ^es;
   decEs.downSubst = top.downSubst;
   decEs.finalSubst = top.finalSubst;
   decEs.frame = top.frame;
@@ -530,7 +530,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
                 decEs.lambdaParams,
                 caseExpr_c(
                   'case', decEs.lambdaParamRefs, 'of',
-                  o, new(ml), 'end'))})
+                  o, ^ml, 'end'))})
         }),
       decEs.transform,
       nilNamedASTExpr());

@@ -45,9 +45,9 @@ e::Expr ::= id::String t::Type e1::Expr e2::Expr
  e.type = e2.type;
 
  e1.envi = [] ++ e.envi;
- e2.envi = [(id, new(t))];
+ e2.envi = [(id, ^t)];
 
- e.errors = if !eqType(e1.type, new(t))
+ e.errors = if !eqType(e1.type, ^t)
             then "Declaration type and definition are mismatched\n" 
               ++ "\tDecl:" ++ show(80,t.pp) ++ "\n"
               ++ "\tDef :" ++ show(80,e1.type.pp) ++ "\n"
@@ -62,9 +62,9 @@ e::Expr ::= id::String tl::Type e1::Expr
  synErrors = tl.errors ++ e1.errors;
 
  e.pp = pp"lambda ${text(id)}:${tl.pp}.${e1.pp}";
- e.type = arrow(new(tl), e1.type);
+ e.type = arrow(^tl, e1.type);
 
- e1.envi = [(id, new(tl))] ++ e.envi;
+ e1.envi = [(id, ^tl)] ++ e.envi;
 
  e.errors = case tl of
               type_err() -> id ++ " is type_err\n"
@@ -97,7 +97,7 @@ mp::Expr_funct ::= mp1::Expr_funct e::Expr_arith
 
  mp.pp = pp"${mp1.pp} ${e.pp}";
  mp.type = case mp1.type of
-             arrow(ta, tb) -> new(tb)
+             arrow(ta, tb) -> ^tb
            | int() -> type_err()
            | type_err() -> type_err()
            end ;
@@ -106,7 +106,7 @@ mp::Expr_funct ::= mp1::Expr_funct e::Expr_arith
  e.envi = mp.envi;
 
  mp.errors = case mp1.type of
-               arrow(ta, tb) -> if !eqType(new(ta), e.type)
+               arrow(ta, tb) -> if !eqType(^ta, e.type)
                                 then "Incompatible types\n"
                                   ++ "\tMethod:" ++ show(80,mp1.type.pp) ++ "\n"
                                   ++ "\tInput :" ++ show(80,e.type.pp) ++ "\n"
@@ -313,7 +313,7 @@ Boolean ::= t1::Type t2::Type
 {
  return case t1 of
           arrow(ta, tb) -> case t2 of 
-                             arrow(tc, td) -> eqType(new(ta), new(tc)) && eqType(new(tb), new(td)) 
+                             arrow(tc, td) -> eqType(^ta, ^tc) && eqType(^tb, ^td) 
                            | int() -> false 
                            | type_err() -> false
                            end

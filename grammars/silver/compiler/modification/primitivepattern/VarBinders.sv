@@ -134,7 +134,7 @@ top::VarBinder ::= n::Name
   -- (in the env above its okay, since that must always be consulted with the current substitution,
   -- but here we're rendering the translation. it's the end of the line.)
   production finalTy :: Type = performSubstitution(ty, top.finalSubst);
-  production refSet::Maybe<[String]> = getMaxRefSet(new(finalTy), top.env);
+  production refSet::Maybe<[String]> = getMaxRefSet(^finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   

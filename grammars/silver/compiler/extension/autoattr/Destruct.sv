@@ -42,7 +42,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  new(tl))
+                  ^tl)
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
@@ -57,7 +57,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  new(tl))
+                  ^tl)
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
@@ -85,8 +85,8 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
       map(
         \ ie::Pair<Integer NamedSignatureElement> ->
           Silver_ProductionStmt {
-            $name{ie.snd.elementName}.$QName{new(attr)} =
-              case $name{top.frame.signature.outputElement.elementName}.$QName{new(attr)} of
+            $name{ie.snd.elementName}.$QName{^attr} =
+              case $name{top.frame.signature.outputElement.elementName}.$QName{^attr} of
               | $Pattern{
                   prodAppPattern(
                     qName(top.frame.signature.fullName),

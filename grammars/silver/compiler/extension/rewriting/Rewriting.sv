@@ -143,7 +143,7 @@ top::AppExpr ::= '_'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  top.traverseTransform = antiquoteStrategy(new(e));
+  top.traverseTransform = antiquoteStrategy(^e);
 }
 
 aspect production snocAppExprs
@@ -246,7 +246,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 abstract production hackExprType
 top::Expr ::= t::Type
 {
-  top.typerep = new(t);
+  top.typerep = ^t;
   forwards to errorExpr([]);
 }
 

@@ -32,20 +32,20 @@ attribute isEqual {compareTo} occurs on a =>
 ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
-  ei.dcl = new(di);
+  ei.dcl = ^di;
   ei.envContribs =
     if newname != di.fullName
-    then [(newname, new(di)), (di.fullName, new(di))]
-    else [(newname, new(di))];
+    then [(newname, ^di), (di.fullName, ^di)]
+    else [(newname, ^di)];
 
   ei.filterIncludeOnly := contains(newname, ei.filterItems);
   ei.filterIncludeHiding := !contains(newname, ei.filterItems);
   ei.renamed =
     case lookup(newname, ei.withRenames) of
-    | nothing() -> new(ei)
-    | just(result) -> renamedEnvItem(result, new(di))
+    | nothing() -> ^ei
+    | just(result) -> renamedEnvItem(result, ^di)
     end;
-  ei.prepended = renamedEnvItem(ei.pfx ++ newname, new(di));
+  ei.prepended = renamedEnvItem(ei.pfx ++ newname, ^di);
 
   propagate compareTo, isEqual;
 }
@@ -61,8 +61,8 @@ attribute isEqual {compareTo} occurs on a =>
 ei::EnvItem<a> ::= di::a
 {
   ei.itemName = di.fullName;
-  ei.dcl = new(di);
-  ei.envContribs = [(di.fullName, new(di))];
+  ei.dcl = ^di;
+  ei.envContribs = [(di.fullName, ^di)];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Always imported & not renamed
   propagate compareTo, isEqual;
@@ -78,8 +78,8 @@ attribute isEqual {compareTo} occurs on a =>
 ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
-  ei.dcl = new(di);
-  ei.envContribs = [(newname, new(di))];
+  ei.dcl = ^di;
+  ei.envContribs = [(newname, ^di)];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Should never be imported
   propagate compareTo, isEqual;
@@ -94,7 +94,7 @@ attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo} occurs on a =>
 EnvItem<a> ::= di::a
 {
-  return renamedEnvItem(fullNameToShort(di.fullName), new(di));
+  return renamedEnvItem(fullNameToShort(di.fullName), ^di);
 }
 fun fullNameToShort String ::= s::String = substring(lastIndexOf(":", s) + 1, length(s), s);
 
