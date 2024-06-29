@@ -20,7 +20,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [ flagSpec(name="--refactor-explicit-undec", paramString=nothing(),
-               help="Change (former) instances of implicit undecoration to use tree sharing or explicit new() calls",
+               help="Change (former) instances of implicit undecoration to use @ or ^ explicitly",
                flagParser=flag(refactorExplicitUndecFlag))
            ];
 }
@@ -36,7 +36,7 @@ top::Expr ::= @q::QName
       | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
         if top.decSiteVertexInfo.isJust
         then Silver_Expr { @$QName{q1} }
-        else Silver_Expr { new($QName{q1}) }
+        else Silver_Expr { ^$QName{q1} }
       end
     else fail();
 }
@@ -50,7 +50,7 @@ top::Expr ::= @q::QName
     then
       rule on Expr of
       | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
-        Silver_Expr { new($QName{q1}) }
+        Silver_Expr { ^$QName{q1} }
       end
     else fail();
 }
@@ -66,7 +66,7 @@ top::Expr ::= @q::QName
       | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
         if top.decSiteVertexInfo.isJust
         then Silver_Expr { @$QName{q1} }
-        else Silver_Expr { new($QName{q1}) }
+        else Silver_Expr { ^$QName{q1} }
       end
     else fail();
 }
@@ -80,7 +80,7 @@ top::Expr ::= @q::QName _ _
     then
       rule on Expr of
       | baseExpr(q1) when q1.name == new(q).name && q1.nameLoc == new(q).nameLoc ->
-        Silver_Expr { new($QName{q1}) }
+        Silver_Expr { ^$QName{q1} }
       end
     else fail();
 }
