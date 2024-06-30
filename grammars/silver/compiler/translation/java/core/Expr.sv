@@ -543,6 +543,16 @@ top::Expr ::= '@' e::Expr
     end;
 }
 
+aspect production undecExpr
+top::Expr ::= '^' e::Expr
+{
+  top.translation =
+    if e.finalType.isTracked
+    then s"((${top.finalType.transType})(${e.translation}.undecorate().duplicate(originCtx)))"
+    else s"((${top.finalType.transType})(${e.translation}.undecorate()))";
+  top.lazyTranslation = s"common.Thunk.transformUndecorate(${e.lazyTranslation})";
+}
+
 aspect production trueConst
 top::Expr ::='true'
 {

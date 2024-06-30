@@ -59,6 +59,7 @@ fun makeSpecialLocalBinding String ::= fn::String  et::String  ty::String =
 aspect production lexicalLocalReference
 top::Expr ::= @q::QName  _ _
 {
+  -- TODO: Remove this special case!
   -- To account for a magic case where we generate a let expression with a type
   -- that is, for example, a ntOrDecType or something,
   -- we do final subst on q.lookupValue ALSO here...
