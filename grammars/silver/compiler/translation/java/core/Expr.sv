@@ -547,10 +547,13 @@ aspect production undecExpr
 top::Expr ::= '^' e::Expr
 {
   top.translation =
-    if e.finalType.isTracked
-    then s"((${top.finalType.transType})(${e.translation}.undecorate().duplicate(originCtx)))"
-    else s"((${top.finalType.transType})(${e.translation}.undecorate()))";
-  top.lazyTranslation = s"common.Thunk.transformUndecorate(${e.lazyTranslation})";
+    if typeWantsTracking(top.finalType, top.config, top.env)
+    then s"((${top.finalType.transType})((common.Tracked)${e.translation}.undecorate()).duplicate(${makeOriginContextRef(top)}))"
+    else s"((${top.finalType.transType})${e.translation}.undecorate())";
+  top.lazyTranslation =
+    if typeWantsTracking(top.finalType, top.config, top.env)
+    then s"common.Thunk.transformUndecorate(${e.lazyTranslation}, ${makeOriginContextRef(top)})"
+    else s"common.Thunk.transformUndecorate(${e.lazyTranslation})";
 }
 
 aspect production trueConst
