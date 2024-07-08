@@ -195,6 +195,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "    </pathconvert>\n" ++
 "    <jar destfile='" ++ outputFile ++ "' zip64Mode='as-needed'>\n" ++
     flatMap(includeClassFiles, grammarsRelevant) ++
+    flatMap(includeInterfaceFiles, grammarsRelevant) ++
 "      <manifest>\n" ++
 "        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
 "      </manifest>\n" ++
@@ -265,4 +266,6 @@ fun includeJavaFiles String ::= gram::String =
   s"      <include name='${grammarToPath(gram)}*.java' />\n";
 fun includeClassFiles String ::= gram::Decorated RootSpec =
   s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
+fun includeInterfaceFiles String ::= gram::Decorated RootSpec =
+  s"      <fileset dir='${gram.generateLocation}src/' includes='${grammarToPath(gram.declaredName)}Silver.svi' />\n";
 
