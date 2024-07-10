@@ -15,23 +15,23 @@ type SVParser = (ParseResult<Root> ::= String String);
 function cmdLineRun
 IO<Integer> ::= args::[String]  svParser::SVParser
 {
-  local unit :: IOErrorable<Decorated Compilation> =
+  local unit :: IOErrorable<Compilation> =
     cmdLineRunInitial(args, svParser);
     
   return performActions(unit);
 }
 
 -- Compute the environment, and then setup and do a build run. No postOps executed, though.
-fun cmdLineRunInitial IOErrorable<Decorated Compilation> ::= args::[String]  svParser::SVParser =
+fun cmdLineRunInitial IOErrorable<Compilation> ::= args::[String]  svParser::SVParser =
   do {
     env::(Decorated CmdArgs, BuildEnv) <- computeEnv(args);
     setupBuildRun(svParser, env.1, env.2);
   };
 
 -- Perform the postOps from a cmdLineRunInitial.
-fun performActions IO<Integer> ::= unit::IOErrorable<Decorated Compilation> =
+fun performActions IO<Integer> ::= unit::IOErrorable<Compilation> =
   do {
-    res::Either<RunError Decorated Compilation> <- unit.run;
+    res::Either<RunError Compilation> <- unit.run;
     case res of
     | left(re) -> do {
         eprintln(re.errMsg);
@@ -64,7 +64,7 @@ fun computeEnv IOErrorable<(Decorated CmdArgs, BuildEnv)> ::= args::[String] =
 
 -- Upon deciding that we're to build one or more grammars into a jar, we do this
 fun setupBuildRun
-IOErrorable<Decorated Compilation> ::=
+IOErrorable<Compilation> ::=
   svParser::SVParser
   a::Decorated CmdArgs
   benv::BuildEnv =
@@ -74,7 +74,7 @@ IOErrorable<Decorated Compilation> ::=
     when_(!null(checkbuild), throwRunError(1, implode("\n", checkbuild)));
 
     -- Build!
-    buildrun :: Decorated Compilation <- lift(buildRun(svParser, a, benv, a.buildGrammars));
+    buildrun :: Compilation <- lift(buildRun(svParser, a, benv, a.buildGrammars));
     let missingGrammars::[String] =
       removeAll(map((.declaredName), buildrun.grammarList), a.buildGrammars);
     when_(!null(missingGrammars),
@@ -89,12 +89,11 @@ IOErrorable<Decorated Compilation> ::=
  - compilation's actions.
  -}
 fun buildRun
-IO<Decorated Compilation> ::=
+IO<Compilation> ::=
   svParser::SVParser
   a::Decorated CmdArgs
   benv::BuildEnv
-  buildGrammars::[String] =
-  mdo {
+  buildGrammars::[String] = mdo {
     -- Compile grammars. There's some tricky circular program data flow here.
     -- This does an "initial grammar stream" composed of 
     -- grammars and interface files that *locally* seem good.
@@ -110,16 +109,11 @@ IO<Decorated Compilation> ::=
     
     -- This is, essentially, a data structure representing a compilation.
     -- Note that it is pure: it doesn't take any actions.
-    let unit :: Decorated Compilation =
-      decorate
-        compilation(
-          foldr(consGrammars, nilGrammars(), catMaybes(rootStream)),
-          foldr(consGrammars, nilGrammars(), catMaybes(reRootStream)),
-          buildGrammars, benv)
-      with {
-        -- This is something we should probably get rid of, someday. Somehow. It's hard.
-        config = a;
-      };
+    let unit :: Compilation =
+      compilation(
+        foldr(consGrammars, nilGrammars(), catMaybes(rootStream)),
+        foldr(consGrammars, nilGrammars(), catMaybes(reRootStream)),
+        buildGrammars, a, benv);
 
     -- There is a second circularity here where we use unit.recompiledGrammars
     -- to supply the second parameter to unit.

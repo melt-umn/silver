@@ -37,7 +37,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdArgs  benv::BuildEnv
 {
   local refactorGrammars::[Decorated RootSpec] =
     filter(\ r::Decorated RootSpec ->
@@ -50,8 +50,8 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
       grammarsRelevant);
 
   top.postOps <-
-    if top.config.doRefactor
-    then [doRefactor(top.config, refactorGrammars)]
+    if a.doRefactor
+    then [doRefactor(a, refactorGrammars)]
     else [];
 }
 

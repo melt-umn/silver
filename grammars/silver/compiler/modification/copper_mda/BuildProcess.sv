@@ -8,7 +8,7 @@ import silver:reflect:nativeserialize;
 import silver:util:cmdargs;
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  _  benv::BuildEnv
 {
   -- TODO: consider examining all grammars, not just grammarsToTranslate?
   -- I believe this choice was originally because we weren't serializing MdaSpecs to

@@ -2,13 +2,11 @@ grammar silver:compiler:driver:util;
 
 import silver:compiler:definition:core only jarName, grammarErrors;
 import silver:util:treemap as map;
+import silver:util:cmdargs;
 
 synthesized attribute initRecompiledGrammars::[Decorated RootSpec];
 
-nonterminal Compilation with config, postOps, grammarList, allGrammars, initRecompiledGrammars, recompiledGrammars;
-propagate config on Compilation;
-
-flowtype postOps {config} on Compilation;
+data nonterminal Compilation with postOps, grammarList, allGrammars, initRecompiledGrammars, recompiledGrammars;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
@@ -24,10 +22,11 @@ synthesized attribute allGrammars :: [Decorated RootSpec];
  - @param g  A list of grammar initially read in
  - @param r  A list of grammars that we re-compiled, due to dirtiness in 'g'
  - @param buildGrammars  The initial grammars requested built
+ - @param a  The command line arguments
  - @param benv  The build configuration
  -}
 abstract production compilation
-top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::BuildEnv
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decorated CmdArgs  benv::BuildEnv
 {
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;
@@ -55,6 +54,9 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   -- See above comments.
   -- Assumption: if a grammar has an up-to-date interface file, then its dependencies are unchanged.
   r.dependentGrammars = g.dependentGrammars;
+
+  g.config = a;
+  r.config = a;
   
   -- This determines what is actually needed in this build.
   -- For example, it excludes "options" and conditional builds that aren't

@@ -81,7 +81,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
            ];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdArgs  benv::BuildEnv
 {
   -- Main class, jar name, etc. are based on the first specified grammar.
   local buildGrammar::String = head(buildGrammars);
@@ -90,19 +90,19 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
   -- for Silver to put this file elsewhere than the local directory.
   -- e.g. --build-xml-location /path/to/workspace/project/build.xml
   local buildXmlLocation :: String =
-    if null(top.config.buildXmlLocation) then "build.xml"
-    else head(top.config.buildXmlLocation);
+    if null(a.buildXmlLocation) then "build.xml"
+    else head(a.buildXmlLocation);
   
   production attribute keepFiles :: [String] with ++;
   keepFiles := [];
 
   -- Seed flow deps with {config}
-  keepFiles <- if false then error(genericShow(top.config)) else [];
+  keepFiles <- if false then error(genericShow(a)) else [];
 
   top.postOps <-
     [genBuild(buildXmlLocation, buildXml)] ++
-    (if top.config.noJavaGeneration then []
-     else [genJava(top.config, benv.silverGen, keepFiles, grammarsToTranslate)]);
+    (if a.noJavaGeneration then []
+     else [genJava(a, benv.silverGen, keepFiles, grammarsToTranslate)]);
 
   -- From here on, it's all build.xml stuff:
 
@@ -112,7 +112,7 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
 
   -- Presently, impide and copper_mda introduce a new top-level goal:
   production attribute extraDistDeps :: [String] with ++;
-  extraDistDeps := if top.config.noJavaGeneration then [] else ["jars"];
+  extraDistDeps := if a.noJavaGeneration then [] else ["jars"];
   
   -- Presently, unused?
   production attribute extraJarsDeps :: [String] with ++;
@@ -129,7 +129,7 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
   classpathRuntime := ["${sh}/jars/commonmark-0.17.1.jar", "${sh}/jars/SilverRuntime.jar"];
   
   -- The --XRTjar hack
-  classpathRuntime <- top.config.includeRTJars;
+  classpathRuntime <- a.includeRTJars;
 
   production attribute extraManifestAttributes :: [String] with ++;
   extraManifestAttributes := [
@@ -138,11 +138,11 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
     "<attribute name='Main-Class' value='" ++ makeName(buildGrammar) ++ ".Main' />"]; -- TODO: we "should" make main depend on whether there is a main...
 
   extraManifestAttributes <-
-    if top.config.buildSingleJar then []
+    if a.buildSingleJar then []
     else ["<attribute name='Class-Path' value='${man.classpath}' />"];
   
   local attribute outputFile :: String;
-  outputFile = if !null(top.config.outName) then head(top.config.outName)
+  outputFile = if !null(a.outName) then head(a.outName)
     else (if g.jarName.isJust then g.jarName.fromJust else makeName(buildGrammar)) ++ ".jar";
 
   local attribute buildXml :: String;
@@ -183,7 +183,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 -- Uncondintionally compute this, but it's included conditionally as a manifest attribute
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>\n" ++
 (
- if top.config.relativeJar then
+ if a.relativeJar then
 -- Removes all paths from the classpath. This means we expect to find all these
 -- jars in the same directory as this jar.
 "      <flattenmapper />\n"
@@ -201,7 +201,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "      </manifest>\n" ++
 
 -- If we're building a single jar, then include the runtimes TODO: this method kinda sucks
-    (if top.config.buildSingleJar then implode("", map(zipfileset, classpathRuntime)) else "") ++
+    (if a.buildSingleJar then implode("", map(zipfileset, classpathRuntime)) else "") ++
  
 "    </jar>\n" ++
 "  </target>\n\n" ++

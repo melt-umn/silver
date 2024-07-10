@@ -19,6 +19,8 @@ synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not a
  - Note: each of these paths always terminates with /
  - TODO: consider moving svParser, args to this structure too? (e.g. clean flag, build grammar)
  - maybe also buildGrammar?
+ - Note: this constructor is referenced in the language server, so any
+ - anno args here should be easy to construct from Java.
  -}
 abstract production buildEnv
 top::BuildEnv ::=

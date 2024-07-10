@@ -71,7 +71,7 @@ fun obtainParserSpecs [ParserSpec] ::= g::Decorated RootSpec  benv::BuildEnv =
   else g.parserSpecs;
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  a::Decorated CmdArgs  benv::BuildEnv
 {
   -- Add the Copper compiler to the CLASSPATH. In theory, this is only
   -- necessary when building Silver (or other programs that invoke the Copper
@@ -96,7 +96,7 @@ top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
 
   -- Generate the .java files.
   top.postOps <-
-    map(buildParserAction(_, g.compiledGrammars, benv.silverGen, top.config), allParsers);
+    map(buildParserAction(_, g.compiledGrammars, benv.silverGen, a), allParsers);
 }
 
 {------------------------------}
