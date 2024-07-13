@@ -131,6 +131,8 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdAr
   -- The --XRTjar hack
   classpathRuntime <- a.includeRTJars;
 
+  classpathRuntime <- g.includedJars;
+
   production attribute extraManifestAttributes :: [String] with ++;
   extraManifestAttributes := [
     "<attribute name='Built-By' value='${user.name}' />",
@@ -265,7 +267,12 @@ fun pathLocation String ::= s::String = "    <pathelement location='" ++ s ++ "'
 fun includeJavaFiles String ::= gram::String =
   s"      <include name='${grammarToPath(gram)}*.java' />\n";
 fun includeClassFiles String ::= gram::Decorated RootSpec =
-  s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
+  case gram.generateLocation of
+  | just(g) -> s"      <fileset dir='${g}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n"
+  | nothing() -> ""
+  end;
 fun includeInterfaceFiles String ::= gram::Decorated RootSpec =
-  s"      <fileset dir='${gram.generateLocation}src/' includes='${grammarToPath(gram.declaredName)}Silver.svi' />\n";
-
+  case gram.generateLocation of
+  | just(g) -> s"      <fileset dir='${g}src/' includes='${grammarToPath(gram.declaredName)}Silver.svi' />\n"
+  | nothing() -> ""
+  end;

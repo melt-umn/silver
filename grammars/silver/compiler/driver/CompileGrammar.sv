@@ -14,7 +14,7 @@ MaybeT<IO RootSpec> ::=
 {
   local gramPath :: String = grammarToPath(grammarName);
 
-  return do {
+  local fromIntefaceOrSource::MaybeT<IO RootSpec> = do {
     findGrammar::Maybe<(Integer, String, [String])> <- lift(do {
         -- IO Step 1: Look for the grammar's source files
         grammarLocation :: String <- findGrammarLocation(gramPath, benv.grammarPath);
@@ -54,7 +54,7 @@ MaybeT<IO RootSpec> ::=
         -- The old interface file contents, used to tell if we need to transitively re-translate
         let oldInterface::Maybe<InterfaceItems> =
           case findInterface of
-          | just(interfaceRootSpec(i, _)) -> just(^i)
+          | just(interfaceRootSpec(i, _, _)) -> just(^i)
           | _ -> nothing()
           end;
         return if null(gramCompile.2)
@@ -62,6 +62,10 @@ MaybeT<IO RootSpec> ::=
           else errorRootSpec(gramCompile.2, grammarName, grammarLocation, grammarTime, benv.silverGen);
       });
   };
+
+  return alt(
+    compileIncludeJar(grammarName, benv.grammarPath),
+    fromIntefaceOrSource);
 }
 
 fun foldRoot Grammar ::= l::[Root] = foldr(consGrammar, nilGrammar(), l);

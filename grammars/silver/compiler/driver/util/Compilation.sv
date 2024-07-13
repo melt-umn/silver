@@ -80,9 +80,13 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   top.postOps := [];
 }
 
-nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars, grammarList, dirtyGrammars, recompiledGrammars, jarName;
+nonterminal Grammars with
+  config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars,
+  grammarList, dirtyGrammars, recompiledGrammars, jarName, includedJars;
 
-propagate config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars on Grammars;
+propagate
+  config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars, includedJars
+  on Grammars;
 
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars

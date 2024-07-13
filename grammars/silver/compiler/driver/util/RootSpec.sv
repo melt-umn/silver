@@ -25,11 +25,13 @@ nonterminal RootSpec with
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
   defs, occursDefs, grammarErrors, grammarSource, grammarTime, dirtyGrammars, recompiledGrammars,
-  parsingErrors, allFileErrors, jarName, generateLocation, serInterface;
+  parsingErrors, allFileErrors, jarName, generateLocation, serInterface, includedJars;
 
 flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
 
-propagate productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
+propagate
+  productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGrammars, condBuild, defs, occursDefs, includedJars
+  on RootSpec;
 
 {--
  - Grammars (a, b) where b depends on a
@@ -52,10 +54,15 @@ monoid attribute recompiledGrammars :: [Decorated RootSpec];
 synthesized attribute parsingErrors :: [Pair<String [Message]>];
 
 {-- Where generated files are or should be created -}
-synthesized attribute generateLocation :: String;
+synthesized attribute generateLocation :: Maybe<String>;
 
-{-- The serialized interface file for this grammar -}
-synthesized attribute serInterface :: ByteArray;
+{-- The serialized interface file that should be written for this grammar -}
+synthesized attribute serInterface :: Maybe<ByteArray>;
+
+{--
+ - The paths to the included jars containing grammars.
+ -}
+monoid attribute includedJars :: [String];
 
 {--
  - Create a RootSpec from a real grammar, a set of Silver files.
@@ -94,11 +101,12 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
   nondecorated production newInterface::InterfaceItems = packInterfaceItems(top);
-  top.serInterface =
+  production serInterface::ByteArray =
     case nativeSerialize(newInterface) of
     | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(newInterface).pp) ++ "\n" ++ msg)
     | right(ser) -> ser
     end;
+  top.serInterface = just(serInterface);
 
   -- Echo down global compiler info
   g.config = top.config;
@@ -106,7 +114,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
-  top.generateLocation = generateLocation;
+  top.generateLocation = just(generateLocation);
   top.dirtyGrammars :=
     -- If the interface file is unchanged and we aren't running the flow analysis,
     -- we don't need to rebuild the dependent grammars.
@@ -153,7 +161,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
  - Create a RootSpec from an interface file, representing a grammar.
  -}
 abstract production interfaceRootSpec
-top::RootSpec ::= i::InterfaceItems  generateLocation::String
+top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource::Maybe<String>
 {
   top.grammarSource = i.maybeGrammarSource.fromJust;
   top.grammarTime = i.maybeGrammarTime.fromJust;
@@ -170,11 +178,8 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::String
   top.allFileErrors = [];
 
   top.jarName := nothing();
-  top.serInterface =
-    case nativeSerialize(^i) of
-    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(^i).pp) ++ "\n" ++ msg)
-    | right(ser) -> ser
-    end;
+  top.includedJars <- case jarSource of just(j) -> [j] | nothing() -> [] end;
+  top.serInterface = nothing();  -- What we loaded is still on disk, no need to write it again.
 }
 
 {--
@@ -185,7 +190,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
 {
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
-  top.generateLocation = generateLocation;
+  top.generateLocation = just(generateLocation);
   
   top.dirtyGrammars := [];
   top.recompiledGrammars := [];
@@ -197,7 +202,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.allFileErrors = top.parsingErrors;
 
   top.jarName := nothing();
-  top.serInterface = error("errorRootSpec demanded interface");
+  top.serInterface = nothing();
 }
 
 fun parseErrorToMessage Pair<String [Message]> ::= grammarSource::String  e::ParseError =
@@ -428,6 +433,9 @@ IO<()> ::= silverGen::String r::Decorated RootSpec
       });
     });
     deleteDirFiles(srcPath);
-    writeBinaryFile(srcPath ++ "Silver.svi", r.serInterface);
+    case r.serInterface of
+    | just(i) -> writeBinaryFile(srcPath ++ "Silver.svi", i)
+    | nothing() -> pure(())
+    end;
   };
 }

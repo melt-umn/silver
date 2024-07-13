@@ -1,7 +1,6 @@
 grammar silver:compiler:driver;
 
-import silver:reflect;
-import silver:reflect:nativeserialize;
+imports silver:reflect:nativeserialize;
 
 {--
  - Find an interface file, if it exists, and can be deserialized.
@@ -40,7 +39,7 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]
           "\n\tRecovering by parsing grammar...."));
         empty;
       }
-    | right(i) -> pure(interfaceRootSpec(i, gen))
+    | right(i) -> pure(interfaceRootSpec(i, just(gen), nothing()))
     end;
   };
 }
