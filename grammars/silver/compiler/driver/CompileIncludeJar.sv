@@ -46,8 +46,17 @@ fun findGrammarJarLocation MaybeT<IO String> ::= gramPath::String searchPaths::[
 fun findGrammarJarInLocation MaybeT<IO String> ::= gramPath::String path::String =
   do {
     isJar :: Boolean <- lift(isJarFile(path));
-    guard(isJar);
-    hasGrammar :: Boolean <- lift(jarContainsEntry(path, gramPath ++ "Silver.svi"));
-    guard(hasGrammar);
-    return path;
+    isDir :: Boolean <- lift(isDirectory(path));
+    alt(
+      do {
+        guard(isJar);
+        hasGrammar :: Boolean <- lift(jarContainsEntry(path, gramPath ++ "Silver.svi"));
+        guard(hasGrammar);
+        return path;
+      },
+      do {
+        guard(isDir);
+        contents :: [String] <- lift(listContents(path));
+        findGrammarJarLocation(gramPath, contents);
+      });
   };
