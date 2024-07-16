@@ -14,6 +14,7 @@ synthesized attribute forceOrigins :: Boolean;
 synthesized attribute noOrigins :: Boolean;
 synthesized attribute noRedex :: Boolean;
 synthesized attribute tracingOrigins :: Boolean;
+synthesized attribute noStdlib :: Boolean;
 
 synthesized attribute buildGrammars :: [String];
 
@@ -35,6 +36,7 @@ top::CmdArgs ::= l::[String]
   top.noOrigins = false;
   top.noRedex = false;
   top.tracingOrigins = false;
+  top.noStdlib = false;
 }
 abstract production versionFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -102,6 +104,12 @@ top::CmdArgs ::= s::String rest::CmdArgs
   top.silverHomeOption = s :: forward.silverHomeOption;
   forwards to @rest;
 }
+abstract production noStdlibFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.noStdlib = true;
+  forwards to @rest;
+}
 abstract production nobindingFlag
 top::CmdArgs ::= rest::CmdArgs
 {
@@ -157,6 +165,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
     , flagSpec(name="--tracing-origins", paramString=nothing(),
         help="attach source locations as origin notes to trace control flow",
         flagParser=flag(tracingOriginsFlag))
+    , flagSpec(name="--no-stdlib", paramString=nothing(),
+        help="do not automatically include the pre-compiled standard library",
+        flagParser=flag(noStdlibFlag))
     ];
   
   local usage :: String = 
@@ -206,7 +217,7 @@ fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
         fromArgsAndEnv(
           -- TODO: maybe we should use the java platform separator here?
           derivedSH, envSG, explode(":", envGP), explode(":", envSHG),
-          a.silverHomeOption, a.genLocation, a.searchPath);
+          a.silverHomeOption, a.genLocation, a.searchPath, a.noStdlib);
     });
 
     -- Let's do some checks on the environment

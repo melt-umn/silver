@@ -40,6 +40,7 @@ BuildEnv ::=
   homeArg::[String] -- empty list or one value
   genArg::[String] -- empty list or one value
   pathArg::[String] -- any number of values
+  noStdlib::Boolean -- if true, don't use the defaultGrammarPath
 {
   -- If provided with one, use that, otherwise always use the environment value (if empty, use that)
   local silverHome :: String =
