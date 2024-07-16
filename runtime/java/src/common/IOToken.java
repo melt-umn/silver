@@ -224,8 +224,13 @@ public final class IOToken implements Typed {
 	 */
 	public NIOVal isJarFile(StringCatter filename) {
         try {
+			Path path = Paths.get(filename.toString());
+			// Check if the file exists
+			if (!Files.exists(path)) {
+				return this.wrap(false);
+			}
             // Check if the file's content-type is 'application/java-archive'
-            String contentType = Files.probeContentType(Paths.get(filename.toString()));
+            String contentType = Files.probeContentType(path);
             return this.wrap(contentType != null && contentType.equals("application/java-archive"));
         } catch (Exception e) {
             throw new RuntimeException(e);
