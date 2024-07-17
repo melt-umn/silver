@@ -1,8 +1,9 @@
 grammar silver:compiler:driver;
 
-attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, searchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, noStdlib, searchPath, libSearchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
+synthesized attribute libSearchPath :: [String];
 synthesized attribute outName :: [String];
 synthesized attribute genLocation :: [String];
 synthesized attribute silverHomeOption :: [String];
@@ -28,6 +29,7 @@ top::CmdArgs ::= l::[String]
   top.warnError = false;
   top.outName = [];
   top.searchPath = [];
+  top.libSearchPath = [];
   top.genLocation = [];
   top.silverHomeOption = [];
   top.buildGrammars = l;
@@ -92,6 +94,12 @@ top::CmdArgs ::= s::String rest::CmdArgs
   top.searchPath = s :: forward.searchPath;
   forwards to @rest;
 }
+abstract production libFlag
+top::CmdArgs ::= s::String rest::CmdArgs
+{
+  top.libSearchPath = s :: forward.libSearchPath;
+  forwards to @rest;
+}
 abstract production genFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
@@ -132,6 +140,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
     [ flagSpec(name="-I", paramString=just("<path>"),
         help="path to grammars (GRAMMAR_PATH)",
         flagParser=option(includeFlag))
+    , flagSpec(name="-L", paramString=just("<path>"),
+        help="path to libraries",
+        flagParser=option(libFlag))
     , flagSpec(name="-o", paramString=just("<file>"),
         help="name of binary file",
         flagParser=option(outFlag))
@@ -217,7 +228,7 @@ fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
         fromArgsAndEnv(
           -- TODO: maybe we should use the java platform separator here?
           derivedSH, envSG, explode(":", envGP), explode(":", envSHG),
-          a.silverHomeOption, a.genLocation, a.searchPath, a.noStdlib);
+          a.silverHomeOption, a.genLocation, a.searchPath, a.libSearchPath, a.noStdlib);
     });
 
     -- Let's do some checks on the environment
@@ -230,7 +241,7 @@ fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
 fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
   do {
     isGenDir :: Boolean <- isDirectory(benv.silverGen);
-    isGramDir :: Boolean <- isDirectory(benv.defaultGrammarPath);
+    isLibDir :: Boolean <- isDirectory(benv.defaultLibPath);
 
     return
       if benv.silverHome == "/" -- because we called 'endWithSlash' on empty string
@@ -239,8 +250,8 @@ fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
           then if benv.silverGen == benv.defaultSilverGen
           then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ benv.silverGen ++ " is not a directory.\n"]
           else ["Supplied SILVER_GEN location " ++ benv.silverGen ++ " is not a directory.\n"]
-      else if !isGramDir
-      then ["Missing standard library grammars: tried " ++ benv.defaultGrammarPath ++ " but this did not exist.\n"]
+      else if !isLibDir
+      then ["Missing standard library grammars: tried " ++ benv.defaultLibPath ++ " but this did not exist.\n"]
       else [];
       -- TODO: We should probably check everything in grammarPath?
       -- TODO: Maybe look for 'core' specifically?

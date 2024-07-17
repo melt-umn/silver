@@ -1,6 +1,6 @@
 grammar silver:compiler:driver:util;
 
-data nonterminal BuildEnv with silverHome, silverGen, grammarPath, silverHostGen, defaultSilverGen, defaultGrammarPath;
+data nonterminal BuildEnv with silverHome, silverGen, grammarPath, libPath, silverHostGen, defaultSilverGen, defaultLibPath;
 
 {-- Find jars, standard library -}
 annotation silverHome :: String;
@@ -8,11 +8,13 @@ annotation silverHome :: String;
 annotation silverGen :: String;
 {-- Search for source files -}
 annotation grammarPath :: [String];
+{-- Search for libraries -}
+annotation libPath :: [String];
 {-- Search for already built grammars. **Always includes silverGen!** -}
 annotation silverHostGen :: [String];
 
 synthesized attribute defaultSilverGen :: String;
-synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not actually just the default value
+synthesized attribute defaultLibPath :: String; -- Just the stdlib, so not actually just the default value
 
 {--
  - Build environment information.
@@ -27,7 +29,7 @@ top::BuildEnv ::=
 {
   -- So that this exists in exactly one location:
   top.defaultSilverGen = top.silverHome ++ "generated/";
-  top.defaultGrammarPath = top.silverHome ++ "grammars/";
+  top.defaultLibPath = top.silverHome ++ "jars/";
 }
 
 -- Takes environment and values from args and determines buildEnv according to correct priorities.
@@ -40,7 +42,8 @@ BuildEnv ::=
   homeArg::[String] -- empty list or one value
   genArg::[String] -- empty list or one value
   pathArg::[String] -- any number of values
-  noStdlib::Boolean -- if true, don't use the defaultGrammarPath
+  libPathArg::[String] -- any number of values
+  noStdlib::Boolean -- if true, don't use the defaultLibPath
 {
   -- If provided with one, use that, otherwise always use the environment value (if empty, use that)
   local silverHome :: String =
@@ -55,8 +58,11 @@ BuildEnv ::=
     map(endWithSlash,
       pathArg ++
       GRAMMAR_PATH ++
-      [benv.defaultGrammarPath] ++
       ["."]);
+  
+  local libPath :: [String] =
+    libPathArg ++
+    if noStdlib then [] else [benv.defaultLibPath];
   
   -- Always search generated first, and what the environment provides us with.
   local silverHostGen :: [String] =
@@ -66,6 +72,7 @@ BuildEnv ::=
     silverHome=silverHome,
     silverGen=silverGen,
     grammarPath=grammarPath,
+    libPath=libPath,
     silverHostGen=silverHostGen);
   
   return benv;

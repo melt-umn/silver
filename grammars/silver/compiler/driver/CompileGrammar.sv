@@ -64,7 +64,7 @@ MaybeT<IO RootSpec> ::=
   };
 
   return alt(
-    compileIncludeJar(grammarName, benv.grammarPath),
+    compileLibrary(grammarName, benv.libPath),
     fromIntefaceOrSource);
 }
 
