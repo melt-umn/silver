@@ -1,6 +1,6 @@
 grammar silver:compiler:driver;
 
-attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, searchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, noStdlib, searchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: [String];
@@ -230,7 +230,11 @@ fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
 fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
   do {
     isGenDir :: Boolean <- isDirectory(benv.silverGen);
-    isGramDir :: Boolean <- isDirectory(benv.defaultGrammarPath);
+    missingGrammarPath :: [String] <- filterM(\ f -> do {
+        isDir :: Boolean <- isDirectory(f);
+        isJar :: Boolean <- isJarFile(f);
+        return !(isDir || isJar);
+      }, benv.grammarPath);
 
     return
       if benv.silverHome == "/" -- because we called 'endWithSlash' on empty string
@@ -239,11 +243,9 @@ fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
           then if benv.silverGen == benv.defaultSilverGen
           then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ benv.silverGen ++ " is not a directory.\n"]
           else ["Supplied SILVER_GEN location " ++ benv.silverGen ++ " is not a directory.\n"]
-      else if !isGramDir
-      then ["Missing standard library grammars: tried " ++ benv.defaultGrammarPath ++ " but this did not exist.\n"]
+      else if !null(missingGrammarPath)
+      then ["Failed to find include dirs or jars in grammar path: " ++ implode(", ", missingGrammarPath)]
       else [];
-      -- TODO: We should probably check everything in grammarPath?
-      -- TODO: Maybe look for 'core' specifically?
   };
 
 fun checkPreBuild

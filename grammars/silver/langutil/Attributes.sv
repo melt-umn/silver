@@ -1,9 +1,10 @@
 {- A Universal set of common attributes for use in language descriptions -}
 grammar silver:langutil;
 
-exports silver:langutil:reflect; -- Contains pp definitions for AST
+exports silver:langutil:reflect with silver:core; -- Contains pp definitions for AST
 
 import silver:langutil:pp;
+import silver:langutil:lsp;  -- Make sure it gets built in the langutil artifact
 
 {--
  - The unparse of a syntax tree.

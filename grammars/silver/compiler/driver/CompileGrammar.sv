@@ -1,6 +1,6 @@
 grammar silver:compiler:driver;
 
-import silver:reflect:nativeserialize;
+import silver:reflect;
 
 {--
  - Hunts down a grammar and obtains its symbols, either by building or from an interface file.
@@ -64,7 +64,7 @@ MaybeT<IO RootSpec> ::=
   };
 
   return alt(
-    compileIncludeJar(grammarName, benv.grammarPath),
+    compileLibrary(grammarName, benv.grammarPath),
     fromIntefaceOrSource);
 }
 
@@ -129,8 +129,8 @@ MaybeT<IO String> ::= gram::String inPath::String
   local nextGram :: String = substring(0, idx, gram) ++ "." ++ substring(idx + 1, length(gram), gram);
   
   return do {
-    exists :: Boolean <- lift(isDirectory(inPath ++ gram));
-    if exists then pure(inPath ++ gram)
+    exists :: Boolean <- lift(isDirectory(endWithSlash(inPath) ++ gram));
+    if exists then pure(endWithSlash(inPath) ++ gram)
       else if idx == -1 then empty
       else findGrammarInLocation(nextGram, inPath);
   };

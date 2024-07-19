@@ -12,7 +12,7 @@ annotation grammarPath :: [String];
 annotation silverHostGen :: [String];
 
 synthesized attribute defaultSilverGen :: String;
-synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not actually just the default value
+synthesized attribute defaultGrammarPath :: [String]; -- Just the stdlib, so not actually just the default value
 
 {--
  - Build environment information.
@@ -27,7 +27,16 @@ top::BuildEnv ::=
 {
   -- So that this exists in exactly one location:
   top.defaultSilverGen = top.silverHome ++ "generated/";
-  top.defaultGrammarPath = top.silverHome ++ "grammars/";
+  top.defaultGrammarPath = [
+    top.silverHome ++ "jars/silver.core.jar",
+    top.silverHome ++ "jars/silver.util.jar",
+    top.silverHome ++ "jars/silver.lamgutil.jar",
+    top.silverHome ++ "jars/silver.rewrite.jar",
+    top.silverHome ++ "jars/silver.regex.jar",
+    -- Allow linking against the compiler by default.
+    -- This makes it easier to build extended versions of Silver.
+    top.silverHome ++ "jars/silver.compiler.composed.Default.jar"
+  ];
 }
 
 -- Takes environment and values from args and determines buildEnv according to correct priorities.
@@ -52,11 +61,10 @@ BuildEnv ::=
   
   -- Use the arguments (all of them), followed by environment (if any?), followed by STDLIB, and CWD.
   local grammarPath :: [String] =
-    map(endWithSlash,
-      pathArg ++
-      GRAMMAR_PATH ++
-      [benv.defaultGrammarPath] ++
-      ["."]);
+    pathArg ++
+    GRAMMAR_PATH ++
+    (if noStdlib then [] else benv.defaultGrammarPath) ++
+    ["."];
   
   -- Always search generated first, and what the environment provides us with.
   local silverHostGen :: [String] =

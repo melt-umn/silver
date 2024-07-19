@@ -3,7 +3,7 @@ grammar silver:compiler:modification:copper;
 import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:compiler:driver;
 import silver:compiler:translation:java:driver;
-import silver:reflect:nativeserialize;
+import silver:reflect;
 import silver:util:cmdargs;
 
 {---------------------------------}
@@ -73,14 +73,8 @@ fun obtainParserSpecs [ParserSpec] ::= g::Decorated RootSpec  benv::BuildEnv =
 aspect production compilation
 top::Compilation ::= g::Grammars  _  _  a::Decorated CmdArgs  benv::BuildEnv
 {
-  -- Add the Copper compiler to the CLASSPATH. In theory, this is only
-  -- necessary when building Silver (or other programs that invoke the Copper
-  -- compiler directly), and could be replaced with the Copper runtime
-  -- otherwise. If we re-do the build system, we could make the Copper compiler
-  -- JAR not include the runtime, link against the runtime here, and make
-  -- importing the silver:compiler:definition:concrete_syntax:copper grammar
-  -- add the Copper compiler back.
-  classpathRuntime <- ["${sh}/jars/CopperCompiler.jar"];
+  -- Add the Copper runtime to the CLASSPATH.
+  classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
 
   -- Get the parsers.
   production allParsers :: [ParserSpec] =
@@ -140,7 +134,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
           parserName ++ ".html", cmdArgs.copperXmlDump);
         when_(ret == 0,
-          case nativeSerialize(^specCstAst) of
+          case serializeBytes(^specCstAst) of
           | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
           | right(dump) -> writeBinaryFile(dumpFile, dump)
           end);
@@ -156,7 +150,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if !cmdArgs.doClean && dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      let dumpMatched::Either<String Boolean> = map(eq(^specCstAst, _), nativeDeserialize(dumpFileContents));
+      let dumpMatched::Either<String Boolean> = map(eq(^specCstAst, _), deserializeBytes(dumpFileContents));
       if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
         eprintln("Parser " ++ spec.fullName ++ " is up to date.");
         return 0;

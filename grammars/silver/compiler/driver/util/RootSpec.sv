@@ -1,7 +1,6 @@
 grammar silver:compiler:driver:util;
 
 import silver:reflect;
-import silver:reflect:nativeserialize;
 import silver:langutil;
 import silver:langutil:pp only show;
 
@@ -102,7 +101,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   
   nondecorated production newInterface::InterfaceItems = packInterfaceItems(top);
   production serInterface::ByteArray =
-    case nativeSerialize(newInterface) of
+    case serializeBytes(newInterface) of
     | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(newInterface).pp) ++ "\n" ++ msg)
     | right(ser) -> ser
     end;

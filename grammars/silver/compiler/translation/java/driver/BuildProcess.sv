@@ -8,8 +8,6 @@ import silver:compiler:definition:core;
 
 import silver:util:cmdargs;
 
-import silver:reflect:nativeserialize;
-
 synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
 synthesized attribute relativeJar :: Boolean occurs on CmdArgs;
@@ -118,20 +116,20 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdAr
   production attribute extraJarsDeps :: [String] with ++;
   extraJarsDeps := ["grammars"];
 
-  -- Presently, copper and copper_mda
+  -- Presently, unused?
   production attribute extraGrammarsDeps :: [String] with ++;
   extraGrammarsDeps := ["init"];
   
   production attribute classpathCompiler :: [String] with ++;
-  classpathCompiler := ["${sh}/jars/commonmark-0.17.1.jar"];
+  classpathCompiler := [];
   
   production attribute classpathRuntime :: [String] with ++;
-  classpathRuntime := ["${sh}/jars/commonmark-0.17.1.jar", "${sh}/jars/SilverRuntime.jar"];
+  classpathRuntime := [];
   
-  -- The --XRTjar hack
+  -- The --include-jar flag
   classpathRuntime <- a.includeRTJars;
 
-  classpathRuntime <- g.includedJars;
+  classpathRuntime <- nub(g.includedJars);  -- TODO: include in classpathCompiler too?
 
   production attribute extraManifestAttributes :: [String] with ++;
   extraManifestAttributes := [

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -eu
+
+export SILVER_HOME=$(pwd)
+JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar"
+export GRAMMAR_PATH="../grammars:silver.core.jar"
+export ANT_OPTS=-Xss10M
+
+mkdir -p build
+
+NOINSTALL=1 ./make-core-runtime $@
+
+cd build
+
+echo    === BUILD LIBRARIES ===
+time java $JVM_ARGS $@ silver:util
+ant
+
+export GRAMMAR_PATH="$GRAMMAR_PATH:silver.util.jar"
+time java $JVM_ARGS $@ silver:langutil
+ant
+
+export GRAMMAR_PATH="$GRAMMAR_PATH:silver.langutil.jar"
+time java $JVM_ARGS $@ silver:rewrite
+ant
+
+export GRAMMAR_PATH="$GRAMMAR_PATH:silver.rewrite.jar"
+time java $JVM_ARGS $@ silver:regex
+ant
+
+set +u
+if [ -z "$NOINSTALL" ]; then
+    echo    === INSTALL NEW LIBRARIES ===
+    mv *.jar ../jars
+fi

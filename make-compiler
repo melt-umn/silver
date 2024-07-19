@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -eu
+
+export SILVER_HOME=$(pwd)
+JVM_ARGS="-Xss20M -Xmx6G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --include-jar ../jars/CopperCompiler.jar --include-jar commonmark-0.17.1.jar --relative-jar"
+export GRAMMAR_PATH="../grammars:silver.core.jar:silver.util.jar:silver.langutil.jar:silver.rewrite.jar:silver.regex.jar"
+export ANT_OPTS=-Xss10M
+
+mkdir -p build
+
+NOINSTALL=1 ./make-stdlib $@
+
+cd build
+
+echo    === BUILD COMPILER ===
+time java $JVM_ARGS $@ silver:compiler:composed:Default
+ant
+
+set +u
+if [ -z "$NOINSTALL" ]; then
+    echo    === INSTALL NEW JARS ===
+    mv *.jar ../jars
+fi
