@@ -30,7 +30,7 @@ top::BuildEnv ::=
   top.defaultGrammarPath = [
     top.silverHome ++ "jars/silver.core.jar",
     top.silverHome ++ "jars/silver.util.jar",
-    top.silverHome ++ "jars/silver.lamgutil.jar",
+    top.silverHome ++ "jars/silver.langutil.jar",
     top.silverHome ++ "jars/silver.rewrite.jar",
     top.silverHome ++ "jars/silver.regex.jar",
     -- Allow linking against the compiler by default.
