@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
 export SILVER_HOME=$(pwd)
 JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --one-jar"
@@ -13,15 +13,10 @@ cd build
 echo    === BUILD CORE JAVA SOURCES ===
 time java $JVM_ARGS --include-jar ../runtime/java/SilverRuntime.jar $@ silver:core silver:xml:ast
 
-set +u
-# In deep-rebuild, there might be translation changes with corresponding runtime changes,
-# so we want to hold off on recompling the runtime until the second pass.
-if [ -z "$NORUNTIME" ]; then
-    echo    === BUILD JAVA RUNTIME ===
-    cd ../runtime/java
-    ant
-    cd ../../build
-fi
+echo    === BUILD JAVA RUNTIME ===
+cd ../runtime/java
+ant
+cd ../../build
 
 echo    === BUILD CORE ===
 ant

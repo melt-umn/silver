@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# This script does a deep rebuild of the Silver compiler, which should be done
+# when there are changes to the translation.
+
 set -eu
 
 export SILVER_HOME=$(pwd)
@@ -24,10 +27,14 @@ echo "   Pass 2"
 echo "   Pass 3"
 echo ""
 
-# Don't build the runtime, in case there are changes to the translation that are reflected there.
+(
+# Don't build core or the runtime, in case there are changes to the translation that are reflected there.
 export NORUNTIME=1
+cp jars/silver.core.jar build/
+
 # Doesn't need to be clean, since we are starting with a known good state of generated/
 time ./make-compiler
+)
 
 echo "One full cycle ..."
 echo ""
@@ -40,7 +47,6 @@ echo ""
 rm -rf generated/*/
 
 # Build, and recompile the runtime now
-export NORUNTIME=0
 time ./make-compiler
 
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
@@ -55,8 +61,6 @@ echo ""
 # Clean out stale generated files from the last pass
 rm -rf generated/*/
 
-# No reason to compile the java runtime again, since that code didn't change.
-export NORUNTIME=1
 time ./make-compiler
 
 echo "Cleaning out stale runtime class files..."

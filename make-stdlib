@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
 export SILVER_HOME=$(pwd)
 JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar"
@@ -9,7 +9,12 @@ export ANT_OPTS=-Xss10M
 
 mkdir -p build
 
-NOINSTALL=1 ./make-core-runtime $@
+# In deep-rebuild, there might be translation changes with corresponding runtime changes,
+# so we want to hold off on recompling the runtime until the second pass.
+if [ -z "$NORUNTIME" ]; then
+    NOINSTALL=1 ./make-core-runtime $@
+fi
+
 
 cd build
 
