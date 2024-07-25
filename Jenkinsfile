@@ -98,7 +98,7 @@ melt.trynode('silver') {
   }
 
   stage("Modular Analyses") {
-    sh "./self-compile --clean --mwda --dont-translate"
+    sh "./check-compile --clean --mwda"
   }
 
   // Avoid deadlock condition from all executor slots being filled with builds
