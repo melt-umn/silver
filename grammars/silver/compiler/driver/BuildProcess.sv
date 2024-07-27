@@ -115,15 +115,16 @@ IO<Compilation> ::=
         foldr(consGrammars, nilGrammars(), catMaybes(reRootStream)),
         buildGrammars, a, benv);
 
-    -- There is a second circularity here where we use unit.recompiledGrammars
+    -- There is a second circularity here where we use unit.reGrammarList
     -- to supply the second parameter to unit.
     reRootStream :: [Maybe<RootSpec>] <-
       unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, true));
     
     let reGrammarStream :: [String] =
+      unit.initDirtyGrammars ++
       eatGrammars(
-        (.dirtyGrammars), length(unit.initRecompiledGrammars), map((.declaredName), unit.initRecompiledGrammars),
-        map(compose(just, new), unit.initRecompiledGrammars) ++ reRootStream, unit.recompiledGrammars);
+        (.dirtyGrammars), length(unit.initDirtyGrammars), unit.initDirtyGrammars,
+        reRootStream, unit.reGrammarList);
 
     return unit;
   };

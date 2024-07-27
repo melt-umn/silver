@@ -23,8 +23,8 @@ nonterminal RootSpec with
   dependentGrammars,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, occursDefs, grammarErrors, grammarSource, grammarTime, dirtyGrammars, recompiledGrammars,
-  parsingErrors, allFileErrors, jarName, generateLocation, serInterface, includedJars;
+  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, dirtyGrammars, recompiledGrammars,
+  parsingErrors, allFileErrors, jarName, generateLocation, jarSource, serInterface, includedJars;
 
 flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
 
@@ -38,7 +38,7 @@ propagate
 inherited attribute dependentGrammars :: [(String, String)];
 
 {--
- - Grammars that must be recompiled
+ - Grammars that must be recompiled, due to (potential) changes in an interface
  -}
 monoid attribute dirtyGrammars :: [String];
 
@@ -54,6 +54,9 @@ synthesized attribute parsingErrors :: [Pair<String [Message]>];
 
 {-- Where generated files are or should be created -}
 synthesized attribute generateLocation :: Maybe<String>;
+
+{-- The jar file from which this grammar was loaded -}
+synthesized attribute jarSource :: Maybe<String>;
 
 {-- The serialized interface file that should be written for this grammar -}
 synthesized attribute serInterface :: Maybe<ByteArray>;
@@ -114,6 +117,8 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
   top.generateLocation = just(generateLocation);
+  top.jarSource = nothing();
+  top.interfaceTime = foldr(max, grammarTime, map((.grammarTime), rootSpecs));
   top.dirtyGrammars :=
     -- If the interface file is unchanged and we aren't running the flow analysis,
     -- we don't need to rebuild the dependent grammars.
@@ -126,8 +131,8 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
     if !top.config.warnMissingInh && oldInterface == just(newInterface)
     then []  -- Dependent grammars don't need to be re-translated
     else lookupAll(grammarName, top.dependentGrammars);
-  {- Useful for debugging:
-  top.dirtyGrammars <- unsafeTracePrint([],
+  -- Useful for debugging:
+  {-top.dirtyGrammars <- unsafeTracePrint([],
     if oldInterface == just(newInterface)
     then s"Interface for ${grammarName} unchanged\n"
     else s"Interface for ${grammarName} changed\nDependent grammars: ${implode(", ", lookupAll(grammarName, top.dependentGrammars))}\n");-}
@@ -164,10 +169,26 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
 {
   top.grammarSource = i.maybeGrammarSource.fromJust;
   top.grammarTime = i.maybeGrammarTime.fromJust;
+  top.interfaceTime = i.maybeInterfaceTime.fromJust;
   top.generateLocation = generateLocation;
-  
-  local ood :: Boolean = isOutOfDate(i.maybeGrammarTime.fromJust, top.allGrammarDependencies, top.compiledGrammars);
-  top.dirtyGrammars := if ood then [i.maybeDeclaredName.fromJust] else [];
+
+  -- Libraries dependencies may have been rebuilt more recently than this grammar,
+  -- without directly triggering a rebuild of this grammar:
+  top.dirtyGrammars := do {
+    guard(jarSource.isJust);
+    g :: String <- lookupAll(top.declaredName, top.dependentGrammars);
+    r :: Decorated RootSpec <- searchEnvTree(g, top.compiledGrammars);
+    guard(!r.jarSource.isJust && top.interfaceTime > r.interfaceTime);
+    return g;
+  };
+  {-
+  top.dirtyGrammars <- if !jarSource.isJust then [] else unsafeTracePrint([],
+    s"Dirty grammars for ${top.declaredName}: ${implode(", ", do {
+    g :: String <- lookupAll(top.declaredName, top.dependentGrammars);
+    r :: Decorated RootSpec <- searchEnvTree(g, top.compiledGrammars);
+    guard(!r.jarSource.isJust && top.interfaceTime > r.interfaceTime);
+    return g;
+  })}\n");-}
   top.recompiledGrammars := [];
 
   top.declaredName = i.maybeDeclaredName.fromJust;
@@ -177,6 +198,7 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
   top.allFileErrors = [];
 
   top.jarName := nothing();
+  top.jarSource = jarSource;
   top.includedJars <- case jarSource of just(j) -> [j] | nothing() -> [] end;
   top.serInterface = nothing();  -- What we loaded is still on disk, no need to write it again.
 }
@@ -189,7 +211,9 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
 {
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
+  top.interfaceTime = grammarTime;  -- TODO: is this the right error behavior?
   top.generateLocation = just(generateLocation);
+  top.jarSource = nothing();
   
   top.dirtyGrammars := [];
   top.recompiledGrammars := [];
@@ -218,6 +242,7 @@ fun parseErrorToMessage Pair<String [Message]> ::= grammarSource::String  e::Par
 
 monoid attribute maybeGrammarSource::Maybe<String> with nothing(), orElse;
 monoid attribute maybeGrammarTime::Maybe<Integer> with nothing(), orElse;
+monoid attribute maybeInterfaceTime::Maybe<Integer> with nothing(), orElse;
 monoid attribute maybeDeclaredName::Maybe<String> with nothing(), orElse;
 monoid attribute hasModuleNames::Boolean with false, ||;
 monoid attribute hasExportedGrammars::Boolean with false, ||;
@@ -234,13 +259,13 @@ monoid attribute interfaceErrors::[String];
  - file.
  -}
 nonterminal InterfaceItems with
-  maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
+  maybeGrammarSource, maybeGrammarTime, maybeInterfaceTime, maybeDeclaredName,
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs, interfaceErrors,
   hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs,
   compareTo, isEqual;
 
 propagate
-  maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
+  maybeGrammarSource, maybeGrammarTime, maybeInterfaceTime, maybeDeclaredName,
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs,
   hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs,
   compareTo, isEqual
@@ -252,6 +277,7 @@ top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
   top.interfaceErrors := [];
   top.interfaceErrors <- if !top.maybeGrammarSource.isJust then ["Missing item grammarSource"] else [];
   top.interfaceErrors <- if !top.maybeGrammarTime.isJust then ["Missing item grammarTime"] else [];
+  top.interfaceErrors <- if !top.maybeInterfaceTime.isJust then ["Missing item interfaceTime"] else [];
   top.interfaceErrors <- if !top.maybeDeclaredName.isJust then ["Missing item declaredName"] else [];
   top.interfaceErrors <- if !top.hasModuleNames then ["Missing item moduleNames"] else [];
   top.interfaceErrors <- if !top.hasExportedGrammars then ["Missing item exportedGrammars"] else [];
@@ -269,7 +295,7 @@ top::InterfaceItems ::=
 }
 
 closed nonterminal InterfaceItem with
-  maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
+  maybeGrammarSource, maybeGrammarTime, maybeInterfaceTime, maybeDeclaredName,
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs,
   hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs,
   compareTo, isEqual;
@@ -283,7 +309,7 @@ aspect default production
 top::InterfaceItem ::=
 {
   propagate
-    maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
+    maybeGrammarSource, maybeGrammarTime, maybeInterfaceTime, maybeDeclaredName,
     moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs,
     hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs;
 }
@@ -300,6 +326,13 @@ top::InterfaceItem ::= val::Integer
 {
   top.isEqual = true;  -- Ignore
   top.maybeGrammarTime := just(val);
+}
+
+abstract production interfaceTimeInterfaceItem
+top::InterfaceItem ::= val::Integer
+{
+  top.isEqual = true;  -- Ignore
+  top.maybeInterfaceTime := just(val);
 }
 
 abstract production declaredNameInterfaceItem
@@ -377,6 +410,7 @@ InterfaceItems ::= r::Decorated RootSpec
   interfaceItems := [
     grammarSourceInterfaceItem(r.grammarSource),
     grammarTimeInterfaceItem(r.grammarTime),
+    interfaceTimeInterfaceItem(r.interfaceTime),
     declaredNameInterfaceItem(r.declaredName),
     moduleNamesInterfaceItem(r.moduleNames),
     exportedGrammarsInterfaceItem(r.exportedGrammars),
@@ -395,20 +429,6 @@ InterfaceItems ::= r::Decorated RootSpec
  -}
 fun mentionedGrammars [String] ::= r::Decorated RootSpec =
   nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
-
--- We're comparing INTERFACE TIME against GRAMMAR TIME, just to emphasize what's going on here...
-function isOutOfDate
-Boolean ::= mine::Integer  l::[String]  e::EnvTree<Decorated RootSpec>
-{
-  local n :: [Decorated RootSpec] = searchEnvTree(head(l), e);
-
-  return if null(l) then
-    false
-  else if null(n) || mine >= head(n).grammarTime then
-    isOutOfDate(mine, tail(l), e)
-  else
-    true;
-}
 
 {--
  - Write out the interface file for root spec.

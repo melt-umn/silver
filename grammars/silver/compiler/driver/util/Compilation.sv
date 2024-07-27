@@ -4,12 +4,13 @@ import silver:compiler:definition:core only jarName, grammarErrors;
 import silver:util:treemap as map;
 import silver:util:cmdargs;
 
-synthesized attribute initRecompiledGrammars::[Decorated RootSpec];
+synthesized attribute initDirtyGrammars::[String];
 
-data nonterminal Compilation with postOps, grammarList, allGrammars, initRecompiledGrammars, recompiledGrammars;
+data nonterminal Compilation with postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initDirtyGrammars;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
+synthesized attribute reGrammarList :: [Decorated RootSpec];
 synthesized attribute allGrammars :: [Decorated RootSpec];
 
 {--
@@ -30,12 +31,15 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 {
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;
+  -- the list of rootspecs coming out of r
+  top.reGrammarList = r.grammarList;
   -- all compiled rootspecs from g and r
   top.allGrammars = g.grammarList ++ r.grammarList;
-  -- the initial list of rootspecs from g that were re-compiled
-  top.initRecompiledGrammars = keepGrammars(grammarsDependedUpon, g.recompiledGrammars);
   -- the list of re-compiled rootspecs from g and r
-  top.recompiledGrammars := top.initRecompiledGrammars ++ r.grammarList;
+  top.recompiledGrammars := keepGrammars(grammarsDependedUpon, g.recompiledGrammars) ++ r.grammarList;
+  -- the initial list of grammar names from g known to be in need of recompilation
+  top.initDirtyGrammars = nub(removeAll(map((.declaredName), g.recompiledGrammars),
+    flatMap((.dirtyGrammars), keepGrammars(grammarsDependedUpon, g.grammarList))));
   
   -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
   -- see all the other initially compiled grammars.
