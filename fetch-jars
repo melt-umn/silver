@@ -124,3 +124,11 @@ else
       cp "$JARS_BAK/$file" jars/
   done
 fi
+
+if [ -d generated/src ]; then
+  echo "Deleting stale generated file cache..."
+  for file in generated/*/*; do
+    echo $file
+    rm -rf $file
+  done
+fi
