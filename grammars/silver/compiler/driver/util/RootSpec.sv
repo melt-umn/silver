@@ -38,6 +38,16 @@ propagate
 inherited attribute dependentGrammars :: [(String, String)];
 
 {--
+ - The modification time of the source .sv files of this grammar.
+ -}
+synthesized attribute grammarTime :: Integer;
+
+{--
+ - The modification time of any source file that may have affected the interface of this grammar.
+ -}
+synthesized attribute interfaceTime :: Integer;
+
+{--
  - Grammars that must be recompiled, due to (potential) changes in an interface
  -}
 monoid attribute dirtyGrammars :: [String];
