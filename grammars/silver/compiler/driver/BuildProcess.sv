@@ -98,7 +98,7 @@ IO<Compilation> ::=
     -- This does an "initial grammar stream" composed of 
     -- grammars and interface files that *locally* seem good.
     rootStream :: [Maybe<RootSpec>] <-
-      unsafeInterleaveIO(compileGrammars(svParser, benv, grammarStream, a.doClean));
+      unsafeInterleaveIO(compileGrammars(svParser, benv, grammarStream, a.doClean, false));
 
     -- The list of grammars to build. This is circular with the above, producing
     -- a list that's terminated when the response count is equal to the number of emitted
@@ -118,7 +118,7 @@ IO<Compilation> ::=
     -- There is a second circularity here where we use unit.reGrammarList
     -- to supply the second parameter to unit.
     reRootStream :: [Maybe<RootSpec>] <-
-      unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, true));
+      unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, a.doClean, true));
     
     let reGrammarStream :: [String] =
       unit.initDirtyGrammars ++
@@ -141,7 +141,9 @@ IO<[Maybe<RootSpec>]> ::=
   svParser::SVParser
   benv::BuildEnv
   need::[String]
-  clean::Boolean = traverseA(\ g::String -> compileGrammar(svParser, benv, g, clean).run, need);
+  ignoreInterface::Boolean
+  forceRecompile::Boolean
+  = traverseA(\ g::String -> compileGrammar(svParser, benv, g, ignoreInterface, forceRecompile).run, need);
 
 {--
  - Consumes a stream of parses, outputs a stream of new dependencies.

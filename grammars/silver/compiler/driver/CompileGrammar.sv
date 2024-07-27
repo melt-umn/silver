@@ -10,11 +10,12 @@ MaybeT<IO RootSpec> ::=
   svParser::SVParser
   benv::BuildEnv
   grammarName::String
-  clean::Boolean  -- TODO: distinguish --clean from rechecking, and don't parse interfaces
+  ignoreInterface::Boolean
+  forceRecompile::Boolean
 {
   local gramPath :: String = grammarToPath(grammarName);
 
-  local fromIntefaceOrSource::MaybeT<IO RootSpec> = do {
+  local fromInterfaceOrSource::MaybeT<IO RootSpec> = do {
     findGrammar::Maybe<(Integer, String, [String])> <- lift(do {
         -- IO Step 1: Look for the grammar's source files
         grammarLocation :: String <- findGrammarLocation(gramPath, benv.grammarPath);
@@ -28,7 +29,8 @@ MaybeT<IO RootSpec> ::=
       }.run);
     findInterface::Maybe<RootSpec> <-
       -- IO Step 3: Let's look for an interface file
-      lift(compileInterface(grammarName, benv.silverHostGen).run);
+      if ignoreInterface then pure(nothing())
+      else lift(compileInterface(grammarName, benv.silverHostGen).run);
     let interfaceDirty::Boolean = do {
       -- If we found both, check if the interface file is out of date
       foundGrammar::(Integer, String, [String]) <- findGrammar;
@@ -36,7 +38,7 @@ MaybeT<IO RootSpec> ::=
       guard(foundGrammar.1 > foundInterface.grammarTime);
     }.isJust;
     alt(
-      if interfaceDirty || clean then empty else maybeT(pure(findInterface)),
+      if forceRecompile || interfaceDirty then empty else maybeT(pure(findInterface)),
       do {
         -- We didn't find a valid interface file
         foundGrammar::(Integer, String, [String]) <- maybeT(pure(findGrammar));
@@ -62,7 +64,7 @@ MaybeT<IO RootSpec> ::=
 
   return alt(
     compileLibrary(grammarName, benv.grammarPath),
-    fromIntefaceOrSource);
+    fromInterfaceOrSource);
 }
 
 fun foldRoot Grammar ::= l::[Root] = foldr(consGrammar, nilGrammar(), l);
