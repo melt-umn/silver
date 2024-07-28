@@ -117,7 +117,7 @@ melt.trynode('silver') {
     // Build test driver
     withEnv (newenv) {
       dir ("${WS}/test") {
-        sh "silver --clean silver:testing:bin"
+        sh "silver --clean -I ${WS}/grammars silver:testing:bin"
       }
     }
 

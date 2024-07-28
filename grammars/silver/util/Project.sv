@@ -8,4 +8,8 @@ imports silver:util:random;
 imports silver:util:subprocess;
 imports silver:util:treemap;
 imports silver:util:treeset;
+
+-- These are also included in the silver.util artifact.
+-- TODO: Consider moving these grammars under silver:util.
 imports silver:reflect;
+imports silver:testing;
