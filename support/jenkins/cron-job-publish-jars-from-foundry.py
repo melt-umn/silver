@@ -24,7 +24,6 @@ dont_delete = ["copper", "downloads", "melt-artifacts"]
 files = [
     "CopperCompiler.jar",
     "CopperRuntime.jar",
-    "SilverRuntime.jar",
     "commonmark-0.17.1.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_ableC.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_all.jar",

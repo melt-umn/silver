@@ -35,8 +35,12 @@
   </target>
   
   <target name='dist' depends='build'>
-    <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
+    <jar destfile='${dist}/silver.core.jar' basedir='${bin}' compress='true' level='9'>
       <include name='common/**/*.class' />
+      <include name='silver/core/*.class' />
+      <fileset dir='../../generated/src/' includes='silver/core/Silver.svi' />
+      <include name='silver/xml/ast/*.class' />
+      <fileset dir='../../generated/src/' includes='silver/xml/ast/Silver.svi' />
       <manifest>
         <attribute name='Built-By' value='${user.name}'/>
         <attribute name='Bundle-Name' value='Silver Runtime support'/>
