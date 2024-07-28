@@ -2,12 +2,13 @@
 
 # This script does a deep rebuild of the Silver compiler, which should be done
 # when there are changes to the translation.
+# If you have made changes to core or the runtime that are needed in the rest of
+# the standard libraries or compiler, you should run ./make-core-runtime before
+# running this script.
 
 set -eu
 
 export SILVER_HOME=$(pwd)
-
-# just run this script, no parameters or options.
 
 trap 'echo -e "\a"' EXIT
 
@@ -27,14 +28,15 @@ echo "   Pass 2"
 echo "   Pass 3"
 echo ""
 
-(
-# Don't build core or the runtime, in case there are changes to the translation that are reflected there.
-export NORUNTIME=1
-cp jars/silver.core.jar build/
+# There might be translation changes with corresponding runtime changes,
+# so we hold off on recompling core and the runtime until the second pass.
 
-# Doesn't need to be clean, since we are starting with a known good state of generated/
-time ./make-compiler
-)
+
+# Doesn't need to be clean, since we are starting with a known good state of generated/.
+# Only pass along flags like --clean, --mwda, etc. in the first pass.
+NOINSTALL=1 ./make-stdlib $@
+./make-compiler $@
+
 
 echo "One full cycle ..."
 echo ""
@@ -46,8 +48,8 @@ echo ""
 # Clean out stale generated files from the last pass
 rm -rf generated/*/
 
-# Build, and recompile the runtime now
-time ./make-compiler
+# Build everything, including the runtime now.
+time ./make-all
 
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
@@ -61,7 +63,7 @@ echo ""
 # Clean out stale generated files from the last pass
 rm -rf generated/*/
 
-time ./make-compiler
+time ./make-all
 
 echo "Cleaning out stale runtime class files..."
 rm -rf generated/bin/common

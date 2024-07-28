@@ -1,38 +1,32 @@
 #!/usr/bin/env bash
 
+# Build the Silver standard libraries.
+# Note that this does not rebuild the silver:core and the runtime.
+
 set -e
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar"
-export GRAMMAR_PATH="../grammars:silver.core.jar"
+JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar $@"
+export GRAMMAR_PATH="../grammars"
 export ANT_OPTS=-Xss10M
+
+# Use silver.core.jar from build/ if it exists:
+if [ -f silver.core.jar ]; then
+    export GRAMMAR_PATH="$GRAMMAR_PATH:silver.core.jar"
+else
+    export GRAMMAR_PATH="$GRAMMAR_PATH:../jars/silver.core.jar"
+fi
 
 mkdir -p build
 
-# In deep-rebuild, there might be translation changes with corresponding runtime changes,
-# so we want to hold off on recompling the runtime until the second pass.
-if [ -z "$NORUNTIME" ]; then
-    NOINSTALL=1 ./make-core-runtime $@
-fi
-
-
 cd build
 
-echo    === BUILD LIBRARIES ===
-time java $JVM_ARGS $@ silver:util
-ant
-
-export GRAMMAR_PATH="$GRAMMAR_PATH:silver.util.jar"
-time java $JVM_ARGS $@ silver:langutil
-ant
-
-export GRAMMAR_PATH="$GRAMMAR_PATH:silver.langutil.jar"
-time java $JVM_ARGS $@ silver:rewrite
-ant
-
-export GRAMMAR_PATH="$GRAMMAR_PATH:silver.rewrite.jar"
-time java $JVM_ARGS $@ silver:regex
-ant
+for lib in util langutil rewrite regex; do
+    echo    === BUILD LIBRARY $lib ===
+    time java $JVM_ARGS silver:$lib
+    ant
+    export GRAMMAR_PATH="$GRAMMAR_PATH:silver.$lib.jar"
+done
 
 set +u
 if [ -z "$NOINSTALL" ]; then
