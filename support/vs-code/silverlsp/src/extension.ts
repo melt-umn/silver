@@ -25,15 +25,18 @@ export function activate(context: vscode.ExtensionContext) {
 		let excecutable: string = path.join(JAVA_HOME, 'bin', 'java');
 
 		// path to the launcher.jar
+		let classPath = [];
+
+		let compilerJars: string = config.get('compilerJar') || "";
 		let launcherJar: string = path.join(__dirname, '..', 'launcher', 'launcher.jar');
-		let compilerJar: string = config.get('compilerJar') || "";
-		if (compilerJar && !compilerJar.startsWith("/") && vscode.workspace.workspaceFolders !== undefined) {
-			compilerJar = path.join(vscode.workspace.workspaceFolders[0].uri.path, "/", compilerJar);
+		for (let compilerJar of compilerJars.split(':')) {
+			if (!compilerJar.startsWith("/") && vscode.workspace.workspaceFolders !== undefined) {
+				compilerJar = path.join(vscode.workspace.workspaceFolders[0].uri.path, "/", compilerJar);
+			}
+			classPath.push(compilerJar);
 		}
-		let classPath = [launcherJar];
-		if (compilerJar) {
-			classPath.unshift(compilerJar);
-		}
+		classPath.push(launcherJar);
+
 		console.log(classPath);
 		let jvmArgs: string = config.get('jvmArgs') || "";
 		const args: string[] = [
