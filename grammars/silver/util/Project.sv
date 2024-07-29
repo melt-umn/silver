@@ -13,3 +13,4 @@ imports silver:util:treeset;
 -- TODO: Consider moving these grammars under silver:util.
 imports silver:reflect;
 imports silver:testing;
+imports silver:xml;
