@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Build all grammars in a single invocation of Silver, but don't translate.
-# This is quicker than make-compiler for running analyses/refactorings.
+# This is quicker than make-all for running analyses/refactorings.
 # Run with --clean --mwda to run the modular well definedness analysis.
 
 set -eu
