@@ -45,7 +45,7 @@ global des3 :: Either<String [String]> = if ser3.isRight then deserializeBytes(s
 global fin3 :: String = if des3.isRight then genericShow(des3.fromRight) else des3.fromLeft;
 
 equalityTest(
-  "deserializeBytes is constructing [String], but found [Integer]", fin3,
+  "Native deserialize is constructing [String], but found [Integer]", fin3,
   String, core_tests);
 
 
