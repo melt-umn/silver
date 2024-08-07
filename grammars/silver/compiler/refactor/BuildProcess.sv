@@ -41,9 +41,9 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdAr
 {
   local refactorGrammars::[Decorated RootSpec] =
     filter(\ r::Decorated RootSpec ->
-      null(g.config.refactorGrammars) ||
       case r of
       | grammarRootSpec(_, _, grammarName, _, _, _) ->
+        null(g.config.refactorGrammars) ||
         any(map(startsWith(_, grammarName), g.config.refactorGrammars))
       | _ -> false
       end,
