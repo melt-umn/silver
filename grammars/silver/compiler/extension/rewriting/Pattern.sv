@@ -78,6 +78,8 @@ top::MatchRule ::= pt::PatternList _ e::Expr
   transE.alwaysDecorated = false;
   transE.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
 
+  top.ruleErrors <- transE.errors;
+
   local checkResultType::TypeCheck = check(transE.typerep, top.scrutineeType);
   top.ruleErrors <-
     if checkResultType.typeerror
@@ -116,6 +118,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   transCond.alwaysDecorated = false;
   transCond.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
 
+  top.ruleErrors <- transCond.errors;
+
   local checkCondType::TypeCheck = check(transCond.typerep, boolType());
   top.ruleErrors <-
     if checkCondType.typeerror
@@ -133,6 +137,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   transE.decSiteVertexInfo = nothing();
   transE.alwaysDecorated = false;
   transE.ruleEnv = transCond.ruleEnv;
+
+  top.ruleErrors <- transE.errors;
 
   local checkResultType::TypeCheck = check(transE.typerep, top.scrutineeType);
   top.ruleErrors <-
@@ -176,6 +182,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   transCond.alwaysDecorated = false;
   transCond.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
 
+  top.ruleErrors <- transCond.errors;
+
   p.scrutineeType = performSubstitution(transCond.typerep, transCond.upSubst);
 
   production transE::Expr = ^e;
@@ -189,6 +197,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   transE.decSiteVertexInfo = nothing();
   transE.alwaysDecorated = false;
   transE.ruleEnv = newScopeEnv(p.ruleDefs, transCond.ruleEnv);
+
+  top.ruleErrors <- transE.errors;
 
   local checkResultType::TypeCheck = check(transE.typerep, top.scrutineeType);
   top.ruleErrors <-

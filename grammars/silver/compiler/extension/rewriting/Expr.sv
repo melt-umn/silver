@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:rewriting;
 
--- Environment containing just the 
+-- Environment containing just the vars locally bound in the rule.
 inherited attribute ruleEnv::Env occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
 propagate @ruleEnv on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
   excluding letp, prodPatternNormal, prodPatternGadt;
@@ -27,7 +27,7 @@ top::Expr ::= @q::QName _ _
   top.transform =
     case getValueDcl(q.name, top.ruleEnv) of
     -- The variable is bound in the rule pattern or a let expression in the RHS
-    | [_] -> varASTExpr(q.name)
+    | _ :: _ -> varASTExpr(q.name)
     -- The variable is bound in an enclosing let/match
     | _ -> antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) })
     end;

@@ -214,7 +214,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   ml.ruleFlowEnv = top.flowEnv;
   
   local localErrors::[Message] =
-    ty.errors ++ ml.errors ++ ml.ruleErrors ++
+    ty.errors ++ ml.ruleErrors ++
     ty.errorsKindStar ++
     if null(getTypeDcl("silver:rewrite:Strategy", top.env))
     then [errFromOrigin(top, "Term rewriting requires import of silver:rewrite")]
@@ -240,14 +240,6 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, transform.pp) ++ "\n\n\n", unsafeIO()));
   forwards to fwrd;
-}
-
--- Hack dummy expr with a given type
-abstract production hackExprType
-top::Expr ::= t::Type
-{
-  top.typerep = ^t;
-  forwards to errorExpr([]);
 }
 
 -- Strategy meta-translation
