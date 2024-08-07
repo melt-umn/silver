@@ -4,7 +4,11 @@ grammar silver:langutil;
 exports silver:langutil:reflect with silver:core; -- Contains pp definitions for AST
 
 import silver:langutil:pp;
-import silver:langutil:lsp;  -- Make sure it gets built in the langutil artifact
+
+-- Make sure these get built in the langutil artifact.
+import silver:langutil:lsp;
+import silver:langutil:unparse;
+
 
 {--
  - The unparse of a syntax tree.
