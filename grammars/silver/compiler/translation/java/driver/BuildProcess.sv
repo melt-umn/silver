@@ -74,7 +74,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
                help="links to an additional JAR",
                flagParser=option(includeRTJarFlag))
            , flagSpec(name="--build-xml-location", paramString=nothing(),
-               help="sets the path the Ant build.xml will be saved to. Used by Eclipse",
+               help="sets the path the Ant build.xml will be saved to",
                flagParser=option(buildXmlFlag))
            ];
 }
