@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
 // Import the language client, language client options and server options from VSCode language client.
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
@@ -36,6 +37,14 @@ export function activate(context: vscode.ExtensionContext) {
 			classPath.push(compilerJar);
 		}
 		classPath.push(launcherJar);
+
+		for (let jar of classPath) {
+			// Check if the jar file exists, and if not, raise an error.
+			if (!fs.existsSync(jar)) {
+				vscode.window.showErrorMessage(`Jar file not found: ${jar}`);
+				return;
+			}
+		}
 
 		console.log(classPath);
 		let jvmArgs: string = config.get('jvmArgs') || "";
