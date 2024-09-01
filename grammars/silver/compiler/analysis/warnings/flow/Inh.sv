@@ -265,8 +265,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case filter(\ v::VertexType ->
-      resolvePossibleInhEq(top.frame.fullName, v, attr.attrDcl.fullName, top.flowEnv, top.env) == alwaysDec(),
+    case filter(
+      vertexHasInhEq(top.frame.fullName, _, attr.attrDcl.fullName, top.flowEnv),
       lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
@@ -278,8 +278,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
-      case filter(\ v::VertexType ->
-        resolvePossibleInhEq(top.frame.fullName, v, dl.inhAttrName, top.flowEnv, top.env) == alwaysDec(),
+      case filter(
+        vertexHasInhEq(top.frame.fullName, _, dl.inhAttrName, top.flowEnv),
         lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(

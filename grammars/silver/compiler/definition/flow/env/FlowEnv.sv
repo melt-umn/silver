@@ -124,10 +124,12 @@ fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::Stri
   end;
 
 -- inherited equation for some arbitrary vertex type
+-- (note that inh is just an inherited attribute, not trans.inh)
 fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | forwardVertexType_real() -> true
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
     !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(localVertexType(fName), transAttr) ->
@@ -142,10 +144,10 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   -- anything in the prod flow graph.
   | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
   | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwared to us.
-  | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
   end;
 
 -- used for duplicate equations checks
+-- (note that inh is just an inherited attribute, not trans.inh)
 fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
   case vt of
   | rhsVertexType(sigName) ->
