@@ -117,10 +117,6 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
   local parserName::String = makeParserName(spec.fullName);
   local dumpFile::String = outDir ++ parserName ++ ".copperdump";
 
-
-  -- cmdArgs _could_ be top.config, if the driver were to decorate DriverAction
-  -- with config. However, the driver doesn't, and it seems like it'd be a pain
-  -- to make it do so.
   nondecorated local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
       if cmdArgs.noJavaGeneration then do {
@@ -146,21 +142,19 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
       return 1;
     };
 
-  top.run = do {
-    dumpFileExists :: Boolean <- isFile(dumpFile);
-    if !cmdArgs.doClean && dumpFileExists then do {
-      dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      let dumpMatched::Either<String Boolean> = map(eq(^specCstAst, _), deserializeBytes(dumpFileContents));
-      if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
-        eprintln("Parser " ++ spec.fullName ++ " is up to date.");
-        return 0;
-      } else do {
-        buildGrammar;
-      };
-    } else do {
-      buildGrammar;
+  top.run =
+    if cmdArgs.doClean || cmdArgs.forceCopperDump || cmdArgs.copperXmlDump
+    then buildGrammar
+    else do {
+      dumpFileExists :: Boolean <- isFile(dumpFile);
+      if dumpFileExists then do {
+        dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
+        if deserializeBytes(dumpFileContents) == right(^specCstAst) then do {
+          eprintln("Parser " ++ spec.fullName ++ " is up to date.");
+          return 0;
+        } else buildGrammar;
+      } else buildGrammar;
     };
-  };
 
   top.order = 7;
 }
