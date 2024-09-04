@@ -6,7 +6,7 @@
 set -e
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss20M -Xmx6G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --include-jar ../jars/CopperCompiler.jar --include-jar ../jars/commonmark-0.17.1.jar --relative-jar $@"
+JVM_ARGS="-Xss20M -Xmx6500M -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --include-jar ../jars/CopperCompiler.jar --include-jar ../jars/commonmark-0.17.1.jar --relative-jar $@"
 export GRAMMAR_PATH="../grammars"
 export ANT_OPTS=-Xss10M
 
