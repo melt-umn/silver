@@ -33,7 +33,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       eprintln("Running MDA for " ++ spec.fullName ++ ".");
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName, true, "",
-        cmdArgs.forceCopperDump,parserName ++ ".html",
+        cmdArgs.forceCopperDump, parserName ++ ".copperdump.html",
         false  -- TODO: Make Copper support XML dump for MDA specs
       );
       when_(ret == 0,

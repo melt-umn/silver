@@ -128,7 +128,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
         ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
           makeName(spec.sourceGrammar), parserName, false,
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
-          parserName ++ ".html", cmdArgs.copperXmlDump);
+          parserName ++ ".copperdump.html", cmdArgs.copperXmlDump);
         when_(ret == 0,
           case serializeBytes(^specCstAst) of
           | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
