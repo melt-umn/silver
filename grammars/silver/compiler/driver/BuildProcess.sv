@@ -123,7 +123,8 @@ IO<Compilation> ::=
     let reGrammarStream :: [String] =
       unit.initDirtyGrammars ++
       eatGrammars(
-        (.dirtyGrammars), length(unit.initDirtyGrammars), unit.initDirtyGrammars,
+        (.dirtyGrammars), length(unit.initDirtyGrammars),
+        unit.initRecompiledGrammars ++ unit.initDirtyGrammars,
         reRootStream, unit.reGrammarList);
 
     return unit;
