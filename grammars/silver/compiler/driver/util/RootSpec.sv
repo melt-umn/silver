@@ -193,11 +193,11 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
   };
   {-
   top.dirtyGrammars <- if !jarSource.isJust then [] else unsafeTracePrint([],
-    s"Dirty grammars for ${top.declaredName}: ${implode(", ", do {
+    s"Dirty grammars for ${top.declaredName} (${toString(top.interfaceTime)}): ${implode(", ", do {
     g :: String <- lookupAll(top.declaredName, top.dependentGrammars);
     r :: Decorated RootSpec <- searchEnvTree(g, top.compiledGrammars);
     guard(!r.jarSource.isJust && top.interfaceTime > r.interfaceTime);
-    return g;
+    return g ++ s" (${toString(r.interfaceTime)})";
   })}\n");-}
   top.recompiledGrammars := [];
 

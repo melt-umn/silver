@@ -10,16 +10,15 @@ JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-
 export GRAMMAR_PATH="../grammars"
 export ANT_OPTS=-Xss10M
 
+mkdir -p build
+cd build
+
 # Use silver.core.jar from build/ if it exists:
 if [ -f silver.core.jar ]; then
     export GRAMMAR_PATH="$GRAMMAR_PATH:silver.core.jar"
 else
     export GRAMMAR_PATH="$GRAMMAR_PATH:../jars/silver.core.jar"
 fi
-
-mkdir -p build
-
-cd build
 
 for lib in util langutil rewrite regex; do
     echo    === BUILD LIBRARY $lib ===
