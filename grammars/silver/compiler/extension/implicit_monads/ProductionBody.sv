@@ -81,7 +81,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
                then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
                     --if not found, let the normal dispatcher handle it
                else attributeDef(^dl, '.', ^attr, '=', @e, ';')
-          else errorAttributeDef(merrors, dl, attr, @e);
+          else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -121,7 +121,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
                then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
                     --if not found, let the normal dispatcher handle it
                else attributeDef(^dl, '.', ^attr, '=', @e, ';')
-          else errorAttributeDef(merrors, dl, attr, @e);
+          else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -154,10 +154,10 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   forwards to
           if attr.found
           then case attr.attrDcl of
-               | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
-               | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
-               | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
-               | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
+               | restrictedSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
+               | restrictedInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
+               | implicitSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
+               | implicitInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
                | _ -> attributeDef(^dl, '.', ^attr, '=', @e, ';')
                end
           --if not found, let the normal dispatcher handle it
@@ -203,7 +203,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   forwards to
     if null(merrors)
     then synthesizedAttributeDef(dl, attr, @e)
-    else errorAttributeDef(merrors, dl, attr, @e);
+    else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -229,7 +229,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   forwards to
     if null(merrors)
     then inheritedAttributeDef(dl, attr, @e)
-    else errorAttributeDef(merrors, dl, attr, @e);
+    else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -263,7 +263,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
                                                     $Expr {monadReturn()}
                                                         ($Expr {e.monadRewritten})
                                                   })
-         else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten);
+         else errorAttributeDef(dl, attr, e.monadRewritten, e.merrors);
 }
 
 
@@ -294,6 +294,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
                                                     $Expr {monadReturn()}
                                                         ($Expr {e.monadRewritten})
                                                   })
-         else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten);
+         else errorAttributeDef(dl, attr, e.monadRewritten, e.merrors);
 }
 

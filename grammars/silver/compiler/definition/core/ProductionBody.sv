@@ -345,14 +345,14 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
     if !dl.found || !attr.found || !null(problems)
-    then errorAttributeDef(problems, dl, attr, @e)
+    then errorAttributeDef(dl, attr, @e, problems)
     else attr.attrDcl.attrDefDispatcher(dl, attr, @e);
 }
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
-abstract production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
+abstract production errorAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, config, env, frame, compiledGrammars;
@@ -367,8 +367,8 @@ abstract production annoErrorAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
-    [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")],
-    dl, attr, @e);
+    dl, attr, @e,
+    [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]);
 }
 
 abstract production synthesizedAttributeDef implements AttributeDef

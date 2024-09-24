@@ -270,24 +270,24 @@ abstract production nonCollectionErrorBaseAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
-    [errFromOrigin(top, "The ':=' operator can only be used for collections. " ++ dl.unparse ++ "." ++ attr.unparse ++ " is not a collection.")],
-    dl, attr, @e);
+    dl, attr, @e,
+    [errFromOrigin(top, "The ':=' operator can only be used for collections. " ++ dl.unparse ++ "." ++ attr.unparse ++ " is not a collection.")]);
 }
 
 abstract production nonCollectionErrorAppendAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
-    [errFromOrigin(top, "The '<-' operator can only be used for collections. " ++ dl.unparse ++ "." ++ attr.unparse ++ " is not a collection.")],
-    dl, attr, @e);
+    dl, attr, @e,
+    [errFromOrigin(top, "The '<-' operator can only be used for collections. " ++ dl.unparse ++ "." ++ attr.unparse ++ " is not a collection.")]);
 }
 
 abstract production collectionErrorRegularAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
-    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")],
-    dl, attr, @e);
+    dl, attr, @e,
+    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")]);
 }
 
 -- NON-ERRORS for SYN ATTRS
@@ -396,7 +396,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, @e)
+    then errorAttributeDef(dl, attr, @e, dl.errors ++ attr.errors)
     else attr.attrDcl.attrAppendDefDispatcher(dl, attr, @e);
 }
 
@@ -415,7 +415,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, @e)
+    then errorAttributeDef(dl, attr, @e, dl.errors ++ attr.errors)
     else attr.attrDcl.attrBaseDefDispatcher(dl, attr, @e);
 }
 
