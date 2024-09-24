@@ -401,19 +401,16 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
-  local extraArgs::[Expr] = drop(es.appExprSize - length(t.inputTypes), es.rawExprs);
-  local dispatchArgs::[Expr] = take(es.appExprSize - length(t.inputTypes), es.rawExprs);
+  nondecorated local extraArgs :: AppExprs =
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, drop(es.appExprSize - length(t.inputTypes), es.rawExprs)));
+  nondecorated local dispatchArgs :: AppExprs =
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, take(es.appExprSize - length(t.inputTypes), es.rawExprs)));
 
   forwards to application(
-    application(
-      @e, '(',
-      foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
-        map(presentAppExpr, extraArgs)),
-      ',', emptyAnnoAppExprs(), ')'),
-    '(',
-    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
-      map(presentAppExpr, dispatchArgs)),
-    ',', @anns, ')');
+    application(@e, '(', extraArgs, ',', emptyAnnoAppExprs(), ')'),
+    '(', dispatchArgs, ',', ^anns, ')');
 }
 
 abstract production dispatchApplication implements Application
