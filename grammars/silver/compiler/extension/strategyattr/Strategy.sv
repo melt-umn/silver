@@ -168,6 +168,6 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
   -- Uncomment for debugging
-  --forwards to unsafeTrace(fwrd, printT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
-  forwards to fwrd;
+  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), printT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
+  forwards to propagateImpl(includeShared, attr, fwrd);
 }

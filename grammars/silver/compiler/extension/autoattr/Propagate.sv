@@ -153,6 +153,12 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
       [errFromOrigin(attr, s"Attribute ${attr.name} cannot be propagated")]);
 }
 
+abstract production propagateImpl implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName impl::ProductionStmt
+{
+  forwards to @impl;
+}
+
 tracked nonterminal AttrNameList with config, grammarName, unparse, errors, env;
 propagate config, grammarName, env, errors on AttrNameList;
 

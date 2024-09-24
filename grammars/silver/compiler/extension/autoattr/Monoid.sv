@@ -156,6 +156,6 @@ abstract production monoidErrorRegularAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
-    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")],
-    dl, attr, @e);
+    dl, attr, @e,
+    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")]);
 }

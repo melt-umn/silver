@@ -271,7 +271,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }

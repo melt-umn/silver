@@ -45,5 +45,21 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     && !isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars)
     then [mwdaWrnFromOrigin(top, "Orphaned production: " ++ id.name ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
-}
 
+  -- This check is about orphaned implementation prods that don't forward properly,
+  -- this seems like a reasonablke place to put it.
+  top.errors <-
+    if null(body.errors ++ ns.errors)
+    && top.config.warnFwd
+    then
+      case d.implementsSig of
+      | just(dSig) when
+          -- If this production implements a dispatch signature from a grammar that does not export this production
+          !isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) &&
+          -- AND this production does not forward to an application of the same dispatch signature with the same shared children
+          !forwardsToImplementedSig
+        -> [mwdaWrnFromOrigin(top, s"Orphaned implementation production ${id.name} for dispatch ${dSig.fullName}; this production must forward directly to an application of this dispatch signature with the same shared children.")]
+      | _ -> []
+      end
+    else [];
+}

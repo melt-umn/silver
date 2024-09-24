@@ -34,6 +34,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
   
   -- Does this production forward to an application of the same dispatch signature
   -- with the same shared children?
+  -- This is also used in checking for orphaned implementation productions.
+  -- TODO: This is overly conservative - we should allow for the children to be decorated
+  -- through an application of the dispatch under a forward prod attr, or under all branches
+  -- of a conditional.
   production forwardsToImplementedSig :: Boolean = 
     case d.implementsSig, body.forwardExpr of
     | just(dSig), [dispatchApplication(e, es, emptyAnnoAppExprs())]
