@@ -34,26 +34,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
   
   -- Does this production forward to an application of the same dispatch signature
   -- with the same shared children?
+  -- Note that decorating the children under a forward production attribute is also sufficient.
   -- This is also used in checking for orphaned implementation productions.
-  -- TODO: This is overly conservative - we should allow for the children to be decorated
-  -- through an application of the dispatch under a forward prod attr, or under all branches
-  -- of a conditional.
   production forwardsToImplementedSig :: Boolean = 
-    case d.implementsSig, body.forwardExpr of
-    | just(dSig), [dispatchApplication(e, es, emptyAnnoAppExprs())]
-        when e.typerep matches dispatchType(fwrdDSig) ->
-      dSig.fullName == fwrdDSig.fullName &&
-      all(zipWith(
-        \ ie::NamedSignatureElement e::Decorated Expr ->
-          !ie.elementShared ||
-          case e of
-          | childReference(q) ->
-            positionOf(q.lookupValue.fullName, namedSig.inputNames) ==
-            positionOf(ie.elementName, dSig.inputNames)
-          | _ -> false
-          end,
-        dSig.inputElements, es.exprs))
-    | _, _ -> false
+    case d.implementsSig of
+    | just(dSig) -> any(map(
+        \ e::Decorated Expr -> e.isDispatchApplication(dSig),
+        body.forwardExpr ++ body.forwardProdAttrExprs))
+    | _ -> false
     end;
 
   top.flowDefs <-
