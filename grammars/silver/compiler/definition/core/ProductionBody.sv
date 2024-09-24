@@ -2,13 +2,13 @@ grammar silver:compiler:definition:core;
 
 tracked nonterminal ProductionBody with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr;
+  productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs;
 tracked nonterminal ProductionStmts with 
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs, originRules;
 tracked nonterminal ProductionStmt with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs, originRules;
 
 flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody;
@@ -48,6 +48,10 @@ monoid attribute productionAttributes :: [Def];
  -}
 monoid attribute forwardExpr :: [Decorated Expr];
 monoid attribute returnExpr :: [Decorated Expr];
+{--
+ - The defining expression(s) for forward production attribute(s) in the production body.
+ -}
+monoid attribute forwardProdAttrExprs::[Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.
@@ -60,7 +64,7 @@ synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStm
 
 propagate config, grammarName, env, errors, frame, compiledGrammars on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
-propagate defs, productionAttributes, forwardExpr, returnExpr on ProductionBody, ProductionStmts;
+propagate defs, productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs on ProductionBody, ProductionStmts;
 propagate originRules on ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding attachNoteStmt;
 
@@ -123,6 +127,7 @@ top::ProductionStmt ::=
   top.productionAttributes := [];
   top.forwardExpr := [];
   top.returnExpr := [];
+  top.forwardProdAttrExprs := [];
   
   top.defs := [];
 
@@ -636,5 +641,7 @@ top::ProductionStmt ::= @val::QName e::Expr
   e.isRoot = true;
 
   -- TODO: missing redefinition check
+
+  top.forwardProdAttrExprs := if val.lookupValue.dcl.hasForward then [e] else [];
 }
 
