@@ -101,7 +101,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
-  propagate defs, productionAttributes, forwardExpr, returnExpr;
+  propagate defs, productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs;
 }
 
 abstract production errorProductionStmt
