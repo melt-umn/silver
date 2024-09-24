@@ -116,10 +116,11 @@ fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::Stri
   -- or in a dispatch signature that this production implements
   case getValueDcl(prod, realEnv) of
   | dcl :: _ when dcl.implementedSignature matches just(sig) ->
-    lookupSigShareSites(
-      sig.fullName,
-      head(drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames)),
-      e)
+    case drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames) of
+    | sn :: _ -> lookupSigShareSites(sig.fullName, sn, e)
+    -- Error case. Sometimes this gets called when the prod sig doesn't match the implemented sig.
+    | _ -> []
+    end
   | _ -> []
   end;
 
