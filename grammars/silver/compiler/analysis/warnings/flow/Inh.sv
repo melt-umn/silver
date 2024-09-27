@@ -128,7 +128,7 @@ fun checkInhEq
 [Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env =
   case resolveInhEq(prodName, vt, attrName, flowEnv, realEnv) of
   | alwaysDec() -> []
-  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
+  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(0, missing)}")]
   end;
 
 function checkAllEqDeps
@@ -738,7 +738,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             mwdaWrnFromOrigin(top,
               "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++
               " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-              " to be supplied to " ++ prettyDecSites(di.1)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             missingEqs)
         end
       | _ -> []
@@ -849,7 +849,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             mwdaWrnFromOrigin(top,
               "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
               " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-              " to be supplied to " ++ prettyDecSites(di.1)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             missingEqs)
         end
       | _ -> []
@@ -961,7 +961,7 @@ top::VarBinder ::= n::Name
     && isDecorable(top.bindingType, top.env)
     && top.matchingAgainst.isJust
     then map(\ eqs::(DecSiteTree, [String]) ->
-        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(eqs.1)}\n"),
+        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(0, eqs.1)}"),
       missingInhEqs)
     else [];
 }
