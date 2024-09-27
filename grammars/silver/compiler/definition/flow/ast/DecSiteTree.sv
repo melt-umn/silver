@@ -101,11 +101,13 @@ fun foldAnyDecSite DecSiteTree ::= ds::[DecSiteTree] =
 fun foldAllDecSite DecSiteTree ::= ds::[DecSiteTree] =
   foldr(bothDec, alwaysDec(), ds);
 
-fun prettyDecSites String ::= d::DecSiteTree =
-  case d.decSiteAlts of
-  | [d] -> d.decSitePP
-  | ds -> "any of\n\t" ++ implode("\n\t", map((.decSitePP), ds))
-  end;
+fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
+  replicate(nest, "\t") ++
+  if length(d.decSiteAlts) > 1
+  then "any of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteAlts))
+  else if length(d.decSiteReqs) > 1
+  then "all of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteReqs))
+  else d.decSitePP;
 
 derive Eq, Ord on DecSiteTree;
 
