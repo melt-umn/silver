@@ -54,11 +54,20 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
         forwardDec(prodName, just(fName))
       -- Via projected remote equation
       | subtermVertexType(_, prodOrSig, sigName) ->
-        foldAllDecSite(
-          map(recurse(_, rhsVertexType(sigName)),
-            if !null(getValueDcl(prodOrSig, realEnv))
-            then [prodOrSig]
-            else getImplementingProds(prodOrSig, flowEnv)))
+          if !null(getValueDcl(prodOrSig, realEnv))
+          -- Projected from a production
+          then recurse(prodOrSig, rhsVertexType(sigName))
+          -- Projected from a dispatch signature
+          else foldAllDecSite(map(
+            \ prod ->
+              case getTypeDcl(prodOrSig, realEnv), getValueDcl(prod, realEnv) of
+              | sigDcl :: _, prodDcl :: _
+                  when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prodDcl.namedSignature.inputNames)
+                  matches sn :: _ ->
+                recurse(prod, rhsVertexType(sn))
+              | _, _ -> neverDec()
+              end,
+            getImplementingProds(prodOrSig, flowEnv)))
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         foldAllDecSite(unzipWith(recurse,
@@ -84,7 +93,7 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
 
 -- Flatten a resolved decision tree, to determine the minimal places where an
 -- equation is needed.
-strategy attribute reduceDecSite = innermost(  -- TODO: Avoid forcing the entire tree if the first dec site is supplied?
+partial strategy attribute reduceDecSiteStep =
   rule on DecSiteTree of
   | altDec(alwaysDec(), d) -> alwaysDec()
   | altDec(d, alwaysDec()) -> alwaysDec()
@@ -101,8 +110,7 @@ strategy attribute reduceDecSite = innermost(  -- TODO: Avoid forcing the entire
   | transAttrDec(attrName, neverDec()) -> neverDec()
   -- This is assuming the we have already resolved for some inh-on-a-trans-attr that matches attrName.
   | transAttrDec(attrName, alwaysDec()) -> alwaysDec()
-  end
-) occurs on DecSiteTree;
+  end occurs on DecSiteTree;
 
 inherited attribute attrToResolve::String occurs on DecSiteTree;
 propagate attrToResolve on DecSiteTree excluding transAttrDec;
@@ -116,7 +124,7 @@ attribute flowEnv occurs on DecSiteTree;
 
 -- Resolve the decision tree for a particular attribute, replacing decoration
 -- sites known to be supplied with alwaysDec().
-strategy attribute resolveDecSite = allTopDown(
+partial strategy attribute resolveDecSiteStep =
   rule on top::DecSiteTree of
   | directDec(prodName, vt)
         when vertexHasInhEq(prodName, vt, top.attrToResolve, top.flowEnv) ->
@@ -139,11 +147,17 @@ strategy attribute resolveDecSite = allTopDown(
       | just((transAttr, inhAttr)) -> transAttr != attrName
       | _ -> true
       end -> neverDec()
-  end
-) <* reduceDecSite
-occurs on DecSiteTree;
+  end occurs on DecSiteTree;
 
-propagate flowEnv, reduceDecSite, resolveDecSite on DecSiteTree;
+strategy attribute resolveDecSite =
+  repeat(
+    {-rule on DecSiteTree of
+    | ds -> unsafeTracePrint(^ds, prettyDecSites(^ds) ++ "\n\n")
+    end <*-}
+    onceTopDown(resolveDecSiteStep <+ reduceDecSiteStep))
+  occurs on DecSiteTree;
+
+propagate flowEnv, reduceDecSiteStep, resolveDecSiteStep, resolveDecSite on DecSiteTree;
 
 {--
   - Determine if some decoration site has some inherited attribute supplied.
