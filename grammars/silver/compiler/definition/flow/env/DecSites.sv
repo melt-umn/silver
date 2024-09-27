@@ -54,11 +54,20 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
         forwardDec(prodName, just(fName))
       -- Via projected remote equation
       | subtermVertexType(_, prodOrSig, sigName) ->
-        foldAllDecSite(
-          map(recurse(_, rhsVertexType(sigName)),
-            if !null(getValueDcl(prodOrSig, realEnv))
-            then [prodOrSig]
-            else getImplementingProds(prodOrSig, flowEnv)))
+          if !null(getValueDcl(prodOrSig, realEnv))
+          -- Projected from a production
+          then recurse(prodOrSig, rhsVertexType(sigName))
+          -- Projected from a dispatch signature
+          else foldAllDecSite(map(
+            \ prod ->
+              case getTypeDcl(prodOrSig, realEnv), getValueDcl(prod, realEnv) of
+              | sigDcl :: _, prodDcl :: _
+                  when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prodDcl.namedSignature.inputNames)
+                  matches sn :: _ ->
+                recurse(prod, rhsVertexType(sn))
+              | _, _ -> neverDec()
+              end,
+            getImplementingProds(prodOrSig, flowEnv)))
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         foldAllDecSite(unzipWith(recurse,
