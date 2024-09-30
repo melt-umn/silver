@@ -124,7 +124,7 @@ attribute flowEnv occurs on DecSiteTree;
 
 -- Resolve the decision tree for a particular attribute, replacing decoration
 -- sites known to be supplied with alwaysDec().
-partial strategy attribute resolveDecSiteStep =
+partial strategy attribute lookupDecSiteStep =
   rule on top::DecSiteTree of
   | directDec(prodName, vt)
         when vertexHasInhEq(prodName, vt, top.attrToResolve, top.flowEnv) ->
@@ -149,15 +149,20 @@ partial strategy attribute resolveDecSiteStep =
       end -> neverDec()
   end occurs on DecSiteTree;
 
-strategy attribute resolveDecSite =
-  repeat(
-    {-rule on DecSiteTree of
-    | ds -> unsafeTracePrint(^ds, prettyDecSites(^ds) ++ "\n\n")
-    end <*-}
-    onceTopDown(resolveDecSiteStep <+ reduceDecSiteStep))
+partial strategy attribute resolveDecSiteStep =
+  --rule on DecSiteTree of
+  --| ds -> unsafeTracePrint(^ds, ds.dbgPP ++ "\n\n")
+  --end <*
+  lookupDecSiteStep <+ reduceDecSiteStep <+
+  -- Short-circuit alternatives to potentially avoid building the entire tree
+  altDec(resolveDecSiteStep, id) <+
+  some(resolveDecSiteStep)
   occurs on DecSiteTree;
 
-propagate flowEnv, reduceDecSiteStep, resolveDecSiteStep, resolveDecSite on DecSiteTree;
+strategy attribute resolveDecSite = repeat(resolveDecSiteStep)
+  occurs on DecSiteTree;
+
+propagate flowEnv, reduceDecSiteStep, lookupDecSiteStep, resolveDecSiteStep, resolveDecSite on DecSiteTree;
 
 {--
   - Determine if some decoration site has some inherited attribute supplied.
@@ -173,6 +178,7 @@ DecSiteTree ::= attrName::String d::DecSiteTree flowEnv::FlowEnv
 {
   d.attrToResolve = attrName;
   d.flowEnv = flowEnv;
+  d.maxDepth = 10;
   return d.resolveDecSite;
 }
 
