@@ -4,18 +4,22 @@ grammar silver:compiler:definition:flow:ast;
  - Represents a decision tree of potential decoration sites to determine if an inherited attribute
  - has been supplied for some vertex type.
  -}
-nonterminal DecSiteTree with decSitePP, decSiteAlts, decSiteReqs;
+nonterminal DecSiteTree with decSitePP, decSiteAlts, decSiteReqs, maxDepth, dbgPP;
 flowtype DecSiteTree = decorate {}, forward {};
 
 synthesized attribute decSitePP::String;
 synthesized attribute decSiteAlts::[DecSiteTree];
 synthesized attribute decSiteReqs::[DecSiteTree];
 
+inherited attribute maxDepth::Integer;
+synthesized attribute dbgPP::String;
+
 aspect default production
 top::DecSiteTree ::=
 {
   top.decSiteAlts = [^top];
   top.decSiteReqs = [^top];
+  top.dbgPP = top.decSitePP;
 }
 
 {--
@@ -48,6 +52,9 @@ top::DecSiteTree ::= d1::DecSiteTree d2::DecSiteTree
 {
   top.decSitePP = implode(" | ", map((.decSitePP), top.decSiteAlts));
   top.decSiteAlts = d1.decSiteAlts ++ d2.decSiteAlts;
+  top.dbgPP = if top.maxDepth > 0 then s"(${d1.dbgPP} | ${d2.dbgPP})" else "...";
+  d1.maxDepth = top.maxDepth - 1;
+  d2.maxDepth = top.maxDepth - 1;
 }
 
 {--
@@ -58,6 +65,9 @@ top::DecSiteTree ::= d1::DecSiteTree d2::DecSiteTree
 {
   top.decSitePP = s"{${implode(", ", map((.decSitePP), top.decSiteReqs))}}";
   top.decSiteReqs = d1.decSiteReqs ++ d2.decSiteReqs;
+  top.dbgPP = if top.maxDepth > 0 then s"(${d1.dbgPP} & ${d2.dbgPP})" else "...";
+  d1.maxDepth = top.maxDepth - 1;
+  d2.maxDepth = top.maxDepth - 1;
 }
 
 {--
@@ -93,6 +103,8 @@ production transAttrDec
 top::DecSiteTree ::= attrName::String d::DecSiteTree
 {
   top.decSitePP = s"via translation attribute ${attrName}: ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"via translation attribute ${attrName}: ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
 }
 
 fun foldAnyDecSite DecSiteTree ::= ds::[DecSiteTree] =
