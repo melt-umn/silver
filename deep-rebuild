@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-export SILVER_HOME=$(pwd)
+export SILVER_HOME=$PWD
 
 trap 'echo -e "\a"' EXIT
 

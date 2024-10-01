@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-export SILVER_HOME=$(pwd)
+export SILVER_HOME=$PWD
 JVM_ARGS=(-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib "$@")
 export GRAMMAR_PATH="../grammars"
 export ANT_OPTS=-Xss10M
