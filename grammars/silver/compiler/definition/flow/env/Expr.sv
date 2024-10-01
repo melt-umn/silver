@@ -169,11 +169,11 @@ top::Expr ::= 'forwardParent'
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   top.flowDeps <-
     if top.finalType.isDecorated
-    then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
+    then map(forwardParentVertexType().inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo =
     if top.finalType.isDecorated
-    then just(forwardVertexType)
+    then just(forwardParentVertexType())
     else nothing();
 }
 
