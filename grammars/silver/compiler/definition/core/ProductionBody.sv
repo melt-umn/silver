@@ -349,9 +349,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- consider "production foo  top::DoesNotExist ::= { top.errors = ...; }"
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
-    if !dl.found || !attr.found || !null(problems)
-    then errorAttributeDef(dl, attr, @e, problems)
-    else attr.attrDcl.attrDefDispatcher(dl, attr, @e);
+   (if !dl.found || !attr.found || !null(problems)
+    then errorAttributeDef(problems)
+    else attr.attrDcl.attrDefDispatcher)(dl, attr, @e);
 }
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
