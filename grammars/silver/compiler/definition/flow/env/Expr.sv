@@ -169,11 +169,11 @@ top::Expr ::= 'forwardParent'
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   top.flowDeps <-
     if top.finalType.isDecorated
-    then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
+    then map(forwardParentVertexType().inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo =
     if top.finalType.isDecorated
-    then just(forwardVertexType)
+    then just(forwardParentVertexType())
     else nothing();
 }
 
@@ -248,15 +248,20 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production curriedDispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  es.appProd =
+  -- We override these attributes in what we forward to, as a special case to
+  -- be more precise about what production is being applied.
+  dispatchArgs.appProd =
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
     end;
-  es.appIndexOffset = 0;
-  e.decSiteVertexInfo = nothing();
-  es.decSiteVertexInfo = top.decSiteVertexInfo;
-  es.alwaysDecorated = top.alwaysDecorated;
+  dispatchArgs.appIndexOffset = 0;
+  dispatchArgs.decSiteVertexInfo = top.decSiteVertexInfo;
+  dispatchArgs.alwaysDecorated = top.alwaysDecorated;
+  extraArgs.appProd = dispatchArgs.appProd;
+  extraArgs.appIndexOffset = dispatchArgs.appExprSize;
+  extraArgs.decSiteVertexInfo = top.decSiteVertexInfo;
+  extraArgs.alwaysDecorated = top.alwaysDecorated;
 }
 
 aspect production dispatchApplication
