@@ -4,16 +4,16 @@
 # This is quicker than make-all for running analyses/refactorings.
 # Run with --clean --mwda to run the modular well definedness analysis.
 
-set -eu
+set -euo pipefail
 
 BUILDGRAMMAR=${BUILDGRAMMAR:-"silver:compiler:composed:Default"}
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss20M -Xmx6G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --dont-translate"
+JVM_ARGS=(-Xss20M -Xmx6G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --dont-translate "$@")
 export GRAMMAR_PATH="../grammars"
 
 mkdir -p build
 cd build
 
-time java $JVM_ARGS $@ $BUILDGRAMMAR
+time java "${JVM_ARGS[@]}" $BUILDGRAMMAR
 

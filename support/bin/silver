@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 case "$(uname)" in
 *Darwin*)
   READLINK=greadlink
@@ -32,7 +34,7 @@ fi
 SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx5000M -Xss20M"}
 
 # Save the command line arguments to pass to Silver
-SV_ARGS="$*"
+SV_ARGS=("$@")
 
 # Tell ant if we named the build file something else
 while [ "$#" -gt 0 ]; do
@@ -43,5 +45,4 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
-# shellcheck disable=SC2086
-java $SVJVM_FLAGS -jar "$SILVER" $SV_ARGS && ant
+java "$SVJVM_FLAGS" -jar "$SILVER" "${SV_ARGS[@]}" && ant

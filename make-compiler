@@ -3,10 +3,10 @@
 # Build the Silver compiler.
 # Note that this does not rebuild the standard libraries or the runtime; use make-all for that.
 
-set -e
+set -eo pipefail
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss20M -Xmx6500M -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --include-jar ../jars/CopperCompiler.jar --include-jar ../jars/commonmark-0.17.1.jar --relative-jar $@"
+JVM_ARGS=(-Xss20M -Xmx6500M -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --include-jar ../jars/CopperCompiler.jar --include-jar ../jars/commonmark-0.17.1.jar --relative-jar "$@")
 export GRAMMAR_PATH="../grammars"
 export ANT_OPTS=-Xss10M
 
@@ -22,11 +22,11 @@ for lib in core util langutil rewrite regex; do
     fi
 done
 
-echo    === BUILD COMPILER ===
-time java $JVM_ARGS silver:compiler:composed:Default
+echo    "=== BUILD COMPILER ==="
+time java "${JVM_ARGS[@]}" silver:compiler:composed:Default
 ant
 
 if [ -z "$NOINSTALL" ]; then
-    echo    === INSTALL NEW JARS ===
-    mv *.jar ../jars
+    echo    "=== INSTALL NEW JARS ==="
+    mv ./*.jar ../jars
 fi

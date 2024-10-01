@@ -6,7 +6,7 @@
 # the standard libraries or compiler, you should run ./make-core-runtime before
 # running this script.
 
-set -eu
+set -euo pipefail
 
 export SILVER_HOME=$(pwd)
 

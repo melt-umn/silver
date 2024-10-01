@@ -5,6 +5,6 @@
 
 set -eu
 
-NOINSTALL=1 ./make-core-runtime $@
-NOINSTALL=1 ./make-stdlib $@
-./make-compiler $@
+NOINSTALL=1 ./make-core-runtime "$@"
+NOINSTALL=1 ./make-stdlib "$@"
+./make-compiler "$@"

@@ -3,10 +3,10 @@
 # Build the Silver standard libraries.
 # Note that this does not rebuild the silver:core and the runtime.
 
-set -e
+set -eo pipefail
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar $@"
+JVM_ARGS=(-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar "$@")
 export GRAMMAR_PATH="../grammars"
 export ANT_OPTS=-Xss10M
 
@@ -21,14 +21,14 @@ else
 fi
 
 for lib in util langutil rewrite regex; do
-    echo    === BUILD LIBRARY $lib ===
-    time java $JVM_ARGS silver:$lib
+    echo    "=== BUILD LIBRARY $lib ==="
+    time java "${JVM_ARGS[@]}" silver:$lib
     ant
     export GRAMMAR_PATH="$GRAMMAR_PATH:silver.$lib.jar"
 done
 
 set +u
 if [ -z "$NOINSTALL" ]; then
-    echo    === INSTALL NEW LIBRARIES ===
-    mv *.jar ../jars
+    echo    "=== INSTALL NEW LIBRARIES ==="
+    mv ./*.jar ../jars
 fi
