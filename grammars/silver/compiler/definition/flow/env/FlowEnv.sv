@@ -28,7 +28,7 @@ synthesized attribute defTree :: EnvTree<FlowDef>;
 synthesized attribute fwdTree :: EnvTree<FlowDef>;
 synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
 synthesized attribute prodTree :: EnvTree<String>;
-synthesized attribute implTree :: EnvTree<String>;
+synthesized attribute implTree :: EnvTree<(String, [String])>;
 synthesized attribute refTree :: EnvTree<[String]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
@@ -183,8 +183,8 @@ fun getNonSuspectAttrsForProd [String] ::= prod::String  e::FlowEnv =
 fun getNonforwardingProds [String] ::= nt::String  e::FlowEnv =
   searchEnvTree(nt, e.prodTree);
 
--- all host productions implementing a dispatch signature
-fun getImplementingProds [String] ::= dispatchSig::String e::FlowEnv =
+-- all host productions implementing a dispatch signature, along with their input sig names
+fun getImplementingProds [(String, [String])] ::= dispatchSig::String e::FlowEnv =
   searchEnvTree(dispatchSig, e.implTree);
 
 -- Ext Syns subject to ft lower bound

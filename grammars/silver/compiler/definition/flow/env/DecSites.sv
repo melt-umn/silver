@@ -59,13 +59,13 @@ DecSiteTree ::= prodName::String vt::VertexType seen::[(String, VertexType)] flo
           then recurse(prodOrSig, rhsVertexType(sigName))
           -- Projected from a dispatch signature
           else foldAllDecSite(map(
-            \ prod ->
-              case getTypeDcl(prodOrSig, realEnv), getValueDcl(prod, realEnv) of
-              | sigDcl :: _, prodDcl :: _
-                  when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prodDcl.namedSignature.inputNames)
+            \ prod::(String, [String]) ->
+              case getTypeDcl(prodOrSig, realEnv) of
+              | sigDcl :: _
+                  when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
                   matches sn :: _ ->
-                recurse(prod, rhsVertexType(sn))
-              | _, _ -> neverDec()
+                recurse(prod.1, rhsVertexType(sn))
+              | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
               end,
             getImplementingProds(prodOrSig, flowEnv)))
       -- Via signature/dispatch sharing

@@ -53,7 +53,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
         -- This is a potential circularity, as the prod could in principle forward to itself,
         -- but not something we want to forbid.
         !forwardsToImplementedSig ->
-      [implFlowDef(dSig.fullName, fName)]
+      [implFlowDef(dSig.fullName, fName, namedSig.inputNames)]
     | _ -> []
     end;
 
