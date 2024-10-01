@@ -201,7 +201,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     -- TODO: We could be more precise here by only considering the productions
     -- that could have actually forwarded to this one. But that would require
     -- introducing a new sort of stitch point.
-    then nonterminalStitchPoints(realEnv, nt, localVertexType("forwardParent"))
+    then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType())
     else [];
   
   local flowTypeVertexesOverall :: [FlowVertex] =
