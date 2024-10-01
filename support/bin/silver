@@ -45,4 +45,5 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
-java "$SVJVM_FLAGS" -jar "$SILVER" "${SV_ARGS[@]}" && ant
+# shellcheck disable=SC2086
+java $SVJVM_FLAGS -jar "$SILVER" "${SV_ARGS[@]}" && ant
