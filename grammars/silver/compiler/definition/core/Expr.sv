@@ -401,6 +401,8 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
+
+  -- TODO: args are being (unavoidably?) re-decorated here.
   production extraArgs :: AppExprs =
     foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
       map(presentAppExpr, drop(es.appExprSize - length(t.inputTypes), es.rawExprs)));

@@ -248,17 +248,23 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production curriedDispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  -- We override these attributes in what we forward to, as a special case to
-  -- be more precise about what production is being applied.
-  dispatchArgs.appProd =
+  es.appProd =
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
     end;
+  es.appIndexOffset = 0;
+  e.decSiteVertexInfo = nothing();
+  es.decSiteVertexInfo = top.decSiteVertexInfo;
+  es.alwaysDecorated = top.alwaysDecorated;
+
+  -- We override these attributes in what we forward to, as a special case to
+  -- be more precise about what production is being applied.
+  dispatchArgs.appProd = es.appProd;
   dispatchArgs.appIndexOffset = 0;
   dispatchArgs.decSiteVertexInfo = top.decSiteVertexInfo;
   dispatchArgs.alwaysDecorated = top.alwaysDecorated;
-  extraArgs.appProd = dispatchArgs.appProd;
+  extraArgs.appProd = es.appProd;
   extraArgs.appIndexOffset = dispatchArgs.appExprSize;
   extraArgs.decSiteVertexInfo = top.decSiteVertexInfo;
   extraArgs.alwaysDecorated = top.alwaysDecorated;
