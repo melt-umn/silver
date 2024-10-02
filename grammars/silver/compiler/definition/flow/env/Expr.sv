@@ -58,15 +58,6 @@ inherited attribute alwaysDecorated :: Boolean;
  -}
 monoid attribute lexicalLocalDecSites :: [(String, Maybe<VertexType>)];
 monoid attribute lexicalLocalAlwaysDecorated :: [(String, Boolean)];
-
-{--
- - Is this expression an application of the given dispatch signature.
- - Used in checking for orphaned implementation productions.
- - This is a function, because we cannot supply the parameter as an inherited
- - attribute to a Decorated Expr.
- -}
-monoid attribute isDispatchApplication :: (Boolean ::= NamedSignature) with pure(false), lift2(conj, _, _);
-
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints
 attribute flowDeps, flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
   occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
@@ -84,8 +75,6 @@ propagate flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
 attribute decSiteVertexInfo, alwaysDecorated occurs on Expr, AppExprs, AppExpr;
 propagate decSiteVertexInfo, alwaysDecorated on AppExprs;
 
-attribute isDispatchApplication occurs on Expr;
-
 aspect default production
 top::Expr ::=
 {
@@ -93,8 +82,6 @@ top::Expr ::=
   -- (a) it's safe. vertexInfo is for being less conservative and more precise.
   -- (b) only a few productions actually provide it.
   top.flowVertexInfo = nothing();
-
-  top.isDispatchApplication := pure(false);
 }
 
 aspect production childReference
@@ -284,22 +271,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
-
-  top.isDispatchApplication := \ dSig::NamedSignature ->
-    case getValueDcl(top.frame.fullName, top.env), e.finalType of
-    | dcl :: _, dispatchType(ns) -> dSig.fullName == ns.fullName &&
-      all(zipWith(
-        \ ie::NamedSignatureElement e::Decorated Expr ->
-          !isDecorable(ie.elementDclType, top.env) ||
-          case e.flowVertexInfo of
-          | just(rhsVertexType(sigName)) ->
-            positionOf(sigName, dcl.namedSignature.inputNames) ==
-            positionOf(ie.elementName, dSig.inputNames)
-          | _ -> false
-          end,
-        dSig.inputElements, es.exprs))
-    | _, _ -> false
-    end;
 }
 
 aspect production annoExpr
@@ -520,7 +491,6 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   e1.alwaysDecorated = false;
   e2.alwaysDecorated = false;
   e3.alwaysDecorated = false;
-  top.isDispatchApplication := lift2(conj, e2.isDispatchApplication, e3.isDispatchApplication);
 }
 
 aspect production terminalConstructor
@@ -611,9 +581,9 @@ top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType, isDispatchApplication
+attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType
   occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType, isDispatchApplication
+propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType
   on PrimPatterns, PrimPattern;
 
 inherited attribute scrutineeVertexType :: VertexType;
@@ -658,8 +628,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   e.alwaysDecorated = false;
   pr.alwaysDecorated = false;
   f.alwaysDecorated = false;
-
-  top.isDispatchApplication := pr.isDispatchApplication;
 }
 
 aspect production prodPattern

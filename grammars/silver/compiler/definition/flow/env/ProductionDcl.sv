@@ -31,28 +31,11 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     if null(body.forwardExpr)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
-  
-  -- Does this production forward to an application of the same dispatch signature
-  -- with the same children?
-  -- Note that decorating the children under a forward production attribute is also sufficient.
-  -- This is also used in checking for orphaned implementation productions.
-  production forwardsToImplementedSig :: Boolean = 
-    case d.implementsSig of
-    | just(dSig) -> any(map(
-        \ e::Decorated Expr -> e.isDispatchApplication(dSig),
-        body.forwardExpr ++ body.forwardProdAttrExprs))
-    | _ -> false
-    end;
 
   top.flowDefs <-
     case d.implementsSig of
     | just(dSig) when
-        isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) &&
-        -- Productions that forward to the same dispatch signature with the same shared children
-        -- cannot affect inherited completeness.
-        -- This is a potential circularity, as the prod could in principle forward to itself,
-        -- but not something we want to forbid.
-        !forwardsToImplementedSig ->
+        isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) ->
       [implFlowDef(dSig.fullName, fName, namedSig.inputNames)]
     | _ -> []
     end;
