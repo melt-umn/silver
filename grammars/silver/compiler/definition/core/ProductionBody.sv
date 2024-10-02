@@ -354,6 +354,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     else attr.attrDcl.attrDefDispatcher)(dl, attr, @e);
 }
 
+dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
+
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
 abstract production errorAttributeDef implements AttributeDef
@@ -365,8 +367,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
 
   forwards to errorProductionStmt(msg ++ e.errors);
 }
-
-dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
 
 abstract production annoErrorAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
@@ -398,6 +398,14 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   e.isRoot = true;
 }
+
+-- Utility for extensions to rewrite the expression in an attribute definition
+abstract production transformExprAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr prod::AttributeDef transE::Expr
+{
+  forwards to prod(dl, attr, @transE);
+}
+
 
 -- The grammar needs to be structured in this way to avoid a shift/reduce conflict...
 concrete production transInhAttributeDef

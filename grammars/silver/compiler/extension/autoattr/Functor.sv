@@ -20,34 +20,30 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 }
 
 abstract production functorAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  attl.env = nttl.envBindingTyVars;
-  attl.flowEnv = top.flowEnv;
-  attl.grammarName = top.grammarName;
+  local fwrdProd::AttributionDcl =
+    if length(attl.types) > 0
+    then defaultAttributionDcl
+    else altParamAttributionDcl(
+      defaultAttributionDcl,
+      botlSome(
+        bTypeList(
+          '<',
+          typeListSingle(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType),
+                ^tl)
+            | botlNone() -> nominalTypeExpr(nt.qNameType)
+            end),
+          '>')));
   
-  forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then @attl
-      else
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  ^tl)
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end),
-            '>')),
-      @nt, @nttl);
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 {--
