@@ -60,11 +60,16 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   top.errors <-
     if !top.config.warnSharing
     then []
-    else case top.decSiteVertexInfo of
-    | just(forwardVertexType_real()) -> []
-    | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
-    | _ -> [mwdaWrnFromOrigin(e, s"Dispatch can only be applied in the root position of a forward or forward production attribute equation.")]
-    end;
+    else
+      case e.finalType of
+      | dispatchType(ns) when any(map((.elementShared), ns.inputElements)) ->
+        case top.decSiteVertexInfo of
+        | just(forwardVertexType_real()) -> []
+        | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
+        | _ -> [mwdaWrnFromOrigin(e, s"Dispatch ${ns.fullName} has shared children in its signature, and can only be applied in the root position of a forward or forward production attribute equation.")]
+        end
+      | _ -> []
+      end;
 }
 
 aspect production presentAppExpr

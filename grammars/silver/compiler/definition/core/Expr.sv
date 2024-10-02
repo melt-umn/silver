@@ -274,7 +274,7 @@ top::Expr ::= 'forwardParent'
   top.typerep = top.frame.signature.outputElement.typerep.asDecoratedType;
   top.errors <-
     if !any(map((.elementShared), top.frame.signature.inputElements))
-    then [errFromOrigin(top, "This production has no shared children and is not known to be the target of forwarding.")]
+    then [errFromOrigin(top, "This production has no shared children, and thus is not known to be the target of forwarding.")]
     else [];
 }
 

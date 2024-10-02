@@ -286,19 +286,19 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   es.alwaysDecorated = top.alwaysDecorated;
 
   top.isDispatchApplication := \ dSig::NamedSignature ->
-    case e.finalType of
-    | dispatchType(ns) -> dSig.fullName == ns.fullName &&
+    case getValueDcl(top.frame.fullName, top.env), e.finalType of
+    | dcl :: _, dispatchType(ns) -> dSig.fullName == ns.fullName &&
       all(zipWith(
         \ ie::NamedSignatureElement e::Decorated Expr ->
-          !ie.elementShared ||
-          case e of
-          | childReference(q) ->
-            positionOf(q.lookupValue.fullName, top.frame.signature.inputNames) ==
+          !isDecorable(ie.elementDclType, top.env) ||
+          case e.flowVertexInfo of
+          | just(rhsVertexType(sigName)) ->
+            positionOf(sigName, dcl.namedSignature.inputNames) ==
             positionOf(ie.elementName, dSig.inputNames)
           | _ -> false
           end,
         dSig.inputElements, es.exprs))
-    | _ -> false
+    | _, _ -> false
     end;
 }
 
@@ -352,7 +352,7 @@ top::AppExpr ::= e::Expr
     | _ -> false
     end;
   production isForwardParam::Boolean =
-    -- Don't try to share if someone uses an implementation prod somewhere invalid.
+    -- Don't try to share if someone uses a signature sharing prod somewhere invalid.
     case top.decSiteVertexInfo of
     | just(forwardVertexType_real()) -> true
     | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> true
