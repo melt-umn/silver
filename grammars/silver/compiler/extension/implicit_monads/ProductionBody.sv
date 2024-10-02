@@ -255,15 +255,18 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.forwardExpr := [];
   top.returnExpr := [];
 
-  forwards to
-         if null(e.merrors)
-         then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-              then synthesizedAttributeDef(dl, attr, e.monadRewritten)
-              else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                    $Expr {monadReturn()}
-                                                        ($Expr {e.monadRewritten})
-                                                  })
-         else errorAttributeDef(dl, attr, e.monadRewritten, e.merrors);
+  local fwrdProd::AttributeDef = 
+     if !null(e.merrors)
+     then errorAttributeDef(e.merrors)
+     else if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+     then transformExprAttributeDef(synthesizedAttributeDef, e.monadRewritten)
+     else transformExprAttributeDef(synthesizedAttributeDef,
+       Silver_Expr {
+       $Expr {monadReturn()}
+            ($Expr {e.monadRewritten})
+       });
+
+  forwards to fwrdProd(dl, attr, @e);
 }
 
 
@@ -286,14 +289,17 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.forwardExpr := [];
   top.returnExpr := [];
 
-  forwards to
-         if null(e.merrors)
-         then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-              then synthesizedAttributeDef(dl, attr, e.monadRewritten)
-              else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                    $Expr {monadReturn()}
-                                                        ($Expr {e.monadRewritten})
-                                                  })
-         else errorAttributeDef(dl, attr, e.monadRewritten, e.merrors);
+  local fwrdProd::AttributeDef = 
+     if !null(e.merrors)
+     then errorAttributeDef(e.merrors)
+     else if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+     then transformExprAttributeDef(inheritedAttributeDef, e.monadRewritten)
+     else transformExprAttributeDef(inheritedAttributeDef,
+       Silver_Expr {
+       $Expr {monadReturn()}
+            ($Expr {e.monadRewritten})
+       });
+
+  forwards to fwrdProd(dl, attr, @e);
 }
 

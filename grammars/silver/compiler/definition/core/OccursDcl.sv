@@ -1,9 +1,9 @@
 grammar silver:compiler:definition:core;
 
-dispatch AttributionDcl = AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs;
+dispatch AttributionDcl = AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs;
 
 abstract production defaultAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 { 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
@@ -32,6 +32,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
     else [];
   
   nttl.initialEnv = top.env;
+  at.env = top.env;
   attl.env = nttl.envBindingTyVars;
   nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
@@ -192,7 +193,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   forwards to
     if !at.lookupAttribute.found
     then errorAttributionDcl(at.lookupAttribute.errors, at, @attl, @nt, @nttl)
-    else at.lookupAttribute.dcl.attributionDispatcher(at, ^attl, ^nt, ^nttl);
+    else at.lookupAttribute.dcl.attributionDispatcher(^at, ^attl, ^nt, ^nttl);
 }
 
 concrete production annotateDcl
@@ -202,17 +203,16 @@ top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' 
 }
 
 -- Utility productions for extensions to inject extra declarations besides the occurs-on.
-production extraDefaultAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs extraDcls::AGDcl
+production extraDclsAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs prod::AttributionDcl extraDcls::AGDcl
 {
-  forwards to
-    appendAGDcl(
-      directDefaultAttributionDcl(@at, @attl, @nt, @nttl),
-      @extraDcls);
+  forwards to appendAGDcl(prod(@at, @attl, @nt, @nttl), @extraDcls);
 }
-production directDefaultAttributionDcl
-top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production altParamAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs prod::AttributionDcl newAttl::BracketedOptTypeExprs
 {
-  at.env = top.env;
-  forwards to defaultAttributionDcl(at, @attl, @nt, @nttl);
+  attl.env = nttl.envBindingTyVars;
+  attl.flowEnv = top.flowEnv;
+  attl.grammarName = top.grammarName;
+  forwards to prod(@at, @newAttl, @nt, @nttl);
 }

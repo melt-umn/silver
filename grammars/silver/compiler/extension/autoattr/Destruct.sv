@@ -20,20 +20,16 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 }
 
 abstract production destructAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  attl.env = nttl.envBindingTyVars;
-  attl.flowEnv = top.flowEnv;
-  attl.grammarName = top.grammarName;
-  
-  forwards to
-    defaultAttributionDcl(
-      at,
-      case attl.types of
-      | [] ->
+  local fwrdProd::AttributionDcl =
+    case attl.types of
+    | [] ->
+      altParamAttributionDcl(
+        defaultAttributionDcl,
         botlSome(
           bTypeList(
             '<',
@@ -47,8 +43,10 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               end,
               typeListSingle(
                 typerepTypeExpr(inhSetType([])))),
-            '>'))
-      | [i] ->
+            '>')))
+    | [i] ->
+      altParamAttributionDcl(
+        defaultAttributionDcl,
         botlSome(
           bTypeList(
             '<',
@@ -62,10 +60,11 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               end,
               typeListSingle(
                 typerepTypeExpr(i))),
-            '>'))
-      | _ -> @attl
-      end,
-      @nt, @nttl);
+            '>')))
+    | _ -> defaultAttributionDcl
+    end;
+  
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 {--

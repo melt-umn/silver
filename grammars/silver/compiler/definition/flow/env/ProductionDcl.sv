@@ -33,7 +33,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     else [];
   
   -- Does this production forward to an application of the same dispatch signature
-  -- with the same shared children?
+  -- with the same children?
   -- Note that decorating the children under a forward production attribute is also sufficient.
   -- This is also used in checking for orphaned implementation productions.
   production forwardsToImplementedSig :: Boolean = 

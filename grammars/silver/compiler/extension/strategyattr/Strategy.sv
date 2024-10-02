@@ -56,11 +56,10 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 }
 
 abstract production strategyAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  attl.grammarName = top.grammarName;
-  attl.env = top.env;
-  attl.flowEnv = top.flowEnv;
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  top.moduleNames := [];
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -83,28 +82,30 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  forwards to
-    extraDefaultAttributionDcl(
+  local fwrdProd::AttributionDcl =
+    extraDclsAttributionDcl(
+      altParamAttributionDcl(
+        defaultAttributionDcl,
+        botlSome(
+          bTypeList(
+            '<',
+            typeListSingle(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType),
+                  ^tl)
+              | botlNone() -> nominalTypeExpr(nt.qNameType)
+              end),
+            '>'))),
       foldr(appendAGDcl, emptyAGDcl(),
         map(
           \ n::String ->
             attributionDcl(
               'attribute', qName(n), ^attl, 'occurs', 'on', ^nt, ^nttl, ';'),
-          at.lookupAttribute.dcl.liftedStrategyNames)))(
-      at,
-      botlSome(
-        bTypeList(
-          '<',
-          typeListSingle(
-            case nttl of
-            | botlSome(tl) -> 
-              appTypeExpr(
-                nominalTypeExpr(nt.qNameType),
-                ^tl)
-            | botlNone() -> nominalTypeExpr(nt.qNameType)
-            end),
-          '>')),
-      @nt, @nttl);
+          at.lookupAttribute.dcl.liftedStrategyNames)));
+  
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 {--
