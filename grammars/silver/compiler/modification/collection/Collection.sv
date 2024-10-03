@@ -52,6 +52,7 @@ top::NameOrBOperator ::= e::Expr
   e.isRoot = false;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 concrete production plusplusOperator

@@ -76,6 +76,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
   transE.flowEnv = top.ruleFlowEnv;
   transE.decSiteVertexInfo = nothing();
   transE.alwaysDecorated = false;
+  transE.appDecSiteVertexInfo = nothing();
   transE.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
 
   top.ruleErrors <- transE.errors;
@@ -116,6 +117,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   transCond.flowEnv = top.ruleFlowEnv;
   transCond.decSiteVertexInfo = nothing();
   transCond.alwaysDecorated = false;
+  transCond.appDecSiteVertexInfo = nothing();
   transCond.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
 
   top.ruleErrors <- transCond.errors;
@@ -136,6 +138,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   transE.flowEnv = top.ruleFlowEnv;
   transE.decSiteVertexInfo = nothing();
   transE.alwaysDecorated = false;
+  transE.appDecSiteVertexInfo = nothing();
   transE.ruleEnv = transCond.ruleEnv;
 
   top.ruleErrors <- transE.errors;
@@ -180,6 +183,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   transCond.flowEnv = top.ruleFlowEnv;
   transCond.decSiteVertexInfo = nothing();
   transCond.alwaysDecorated = false;
+  transCond.appDecSiteVertexInfo = nothing();
   transCond.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
 
   top.ruleErrors <- transCond.errors;
@@ -196,6 +200,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   transE.flowEnv = top.ruleFlowEnv;
   transE.decSiteVertexInfo = nothing();
   transE.alwaysDecorated = false;
+  transE.appDecSiteVertexInfo = nothing();
   transE.ruleEnv = newScopeEnv(p.ruleDefs, transCond.ruleEnv);
 
   top.ruleErrors <- transE.errors;

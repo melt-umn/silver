@@ -21,6 +21,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.expectedMonad = top.expectedMonad;
   ne.decSiteVertexInfo = top.decSiteVertexInfo;
   ne.alwaysDecorated = top.alwaysDecorated;
+  ne.appDecSiteVertexInfo = nothing();
   ne.isRoot = top.isRoot;
 
   la.mDownSubst = top.mDownSubst;

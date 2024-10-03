@@ -47,10 +47,10 @@ top::Expr ::= @q::QName
     || !any(map((.elementShared), q.lookupValue.dcl.namedSignature.inputElements))
     || q.lookupValue.dcl.implementedSignature.isJust
     then []
-    else case top.decSiteVertexInfo of
+    else case top.appDecSiteVertexInfo of
     | just(forwardVertexType_real()) -> []
     | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
-    | _ -> [mwdaWrnFromOrigin(top, s"Production ${q.name} has shared children in its signature, and can only be applied in the root position of a forward or forward production attribute equation.")]
+    | _ -> [mwdaWrnFromOrigin(top, s"Non-dispatch production ${q.name} has shared children in its signature, and can only be referenced by applying it in the root position of a forward or forward production attribute equation.")]
     end;
 }
 

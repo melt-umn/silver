@@ -53,6 +53,11 @@ inherited attribute decSiteVertexInfo :: Maybe<VertexType>;
 inherited attribute alwaysDecorated :: Boolean;
 
 {--
+ - The decSiteVertexInfo where this expression is directly applied.
+ -}
+inherited attribute appDecSiteVertexInfo :: Maybe<VertexType>;
+
+{--
  - Mappings of lexical local (let/pattern var) bindings referenced in this expression,
  - to their decoration site vertices and whether they are always decorated.
  -}
@@ -74,6 +79,8 @@ propagate flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
 
 attribute decSiteVertexInfo, alwaysDecorated occurs on Expr, AppExprs, AppExpr;
 propagate decSiteVertexInfo, alwaysDecorated on AppExprs;
+
+attribute appDecSiteVertexInfo occurs on Expr;
 
 aspect default production
 top::Expr ::=
@@ -176,13 +183,14 @@ aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate flowEnv;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
 }
 
 aspect production errorApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  e.decSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
   es.appProd = nothing();
@@ -206,7 +214,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
       else 0
     | _ -> 0
     end;
-  e.decSiteVertexInfo = top.decSiteVertexInfo;
+  e.appDecSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
 }
@@ -227,7 +235,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
       else 0
     | _ -> 0
     end;
-  e.decSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = nothing();
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
 }
@@ -235,13 +243,13 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production curriedDispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
+  e.appDecSiteVertexInfo = nothing();
   es.appProd =
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
     | _ -> nothing()
     end;
   es.appIndexOffset = 0;
-  e.decSiteVertexInfo = nothing();
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
 
@@ -261,6 +269,7 @@ aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
+  e.appDecSiteVertexInfo = top.decSiteVertexInfo;
   es.appProd =
     case e, e.finalType of
     | productionReference(q), _ -> just(q.lookupValue.dcl.namedSignature)
@@ -268,7 +277,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
     | _, _ -> error("dispatchApplication: unexpected type")
     end;
   es.appIndexOffset = 0;
-  e.decSiteVertexInfo = top.decSiteVertexInfo;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
 }
@@ -309,6 +317,7 @@ top::AppExpr ::= e::Expr
     | _, _ -> nothing()
     end;
   e.alwaysDecorated = top.alwaysDecorated && e.decSiteVertexInfo.isJust;
+  e.appDecSiteVertexInfo = nothing();
 
   production inputSigIsShared::Boolean =
     case e.flowVertexInfo of
@@ -348,6 +357,8 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   note.alwaysDecorated = false;
   e.alwaysDecorated = top.alwaysDecorated;
+  note.appDecSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = top.appDecSiteVertexInfo;
 }
 
 aspect production access
@@ -356,6 +367,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   propagate flowEnv;
   e.alwaysDecorated = false;
   e.decSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production accessBouncer
@@ -364,6 +376,7 @@ top::Expr ::= e::Expr  @q::QNameAttrOccur target::Access
   propagate flowEnv;
   e.alwaysDecorated = false;
   e.decSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production forwardAccess
@@ -376,6 +389,7 @@ top::Expr ::= e::Expr '.' 'forward'
     end;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 
@@ -441,6 +455,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   e.decSiteVertexInfo = just(anonVertexType(inh.decorationVertex));
   -- The type of decorate ... with ... is a normal reference for now, so this should always be false, but that could change.
   e.alwaysDecorated = top.alwaysDecorated;
+  e.appDecSiteVertexInfo = nothing();
 
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
@@ -465,6 +480,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     end;
   e1.decSiteVertexInfo = nothing();
   e1.alwaysDecorated = false;
+  e1.appDecSiteVertexInfo = nothing();
 }
 
 aspect production decorationSiteExpr
@@ -473,6 +489,7 @@ top::Expr ::= '@' e::Expr
   top.flowVertexInfo = e.flowVertexInfo;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 
   top.flowDefs <-
     case e.flowVertexInfo, top.decSiteVertexInfo of
@@ -491,6 +508,9 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   e1.alwaysDecorated = false;
   e2.alwaysDecorated = false;
   e3.alwaysDecorated = false;
+  e1.appDecSiteVertexInfo = nothing();
+  e2.appDecSiteVertexInfo = nothing();
+  e3.appDecSiteVertexInfo = nothing();
 }
 
 aspect production terminalConstructor
@@ -500,6 +520,8 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   el.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
   el.alwaysDecorated = false;
+  es.appDecSiteVertexInfo = nothing();
+  el.appDecSiteVertexInfo = nothing();
 }
 
 aspect production exprsSingle
@@ -507,12 +529,14 @@ top::Exprs ::= e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   e1.decSiteVertexInfo = nothing();
   e1.alwaysDecorated = false;
+  e1.appDecSiteVertexInfo = nothing();
 }
 
 aspect production lambdap
@@ -520,6 +544,7 @@ top::Expr ::= params::LambdaRHS e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 -- FROM LET TODO
@@ -539,6 +564,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   la.bodyAlwaysDecorated = e.lexicalLocalAlwaysDecorated;
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   e.alwaysDecorated = top.alwaysDecorated;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production assignExpr
@@ -550,6 +576,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     | _ -> nothing()
     end;
   e.alwaysDecorated = lookupAll(fName, top.bodyAlwaysDecorated) == [true];
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production lexicalLocalReference
@@ -581,9 +608,9 @@ top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType
+attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
   occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType
+propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
   on PrimPatterns, PrimPattern;
 
 inherited attribute scrutineeVertexType :: VertexType;
@@ -628,6 +655,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   e.alwaysDecorated = false;
   pr.alwaysDecorated = false;
   f.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
+  pr.appDecSiteVertexInfo = nothing();
+  f.appDecSiteVertexInfo = nothing();
 }
 
 aspect production prodPattern
