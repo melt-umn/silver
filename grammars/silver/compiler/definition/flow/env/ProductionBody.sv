@@ -35,6 +35,7 @@ top::ProductionStmt ::= 'attachNote' note::Expr ';'
 {
   note.decSiteVertexInfo = nothing();
   note.alwaysDecorated = false;
+  note.appDecSiteVertexInfo = nothing();
 }
 
 aspect production forwardsTo
@@ -59,6 +60,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   e.decSiteVertexInfo = just(forwardVertexType);
   e.alwaysDecorated = true;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
@@ -71,12 +73,14 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     end;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production attributeDef
@@ -90,6 +94,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
   propagate flowEnv;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
@@ -111,6 +116,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     then just(transAttrVertexType(dl.defLHSVertex, attr.attrDcl.fullName))
     else nothing();
   e.alwaysDecorated = attr.found && attr.attrDcl.isTranslation;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
@@ -118,6 +124,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 -- The flow vertex type corresponding to attributes on this DefLHS
@@ -184,6 +191,7 @@ top::ProductionStmt ::= @val::QName e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production localValueDef
@@ -206,6 +214,7 @@ top::ProductionStmt ::= @val::QName e::Expr
     else nothing();
   e.alwaysDecorated =
     isDecorable(e.finalType, top.env) && val.lookupValue.found && !val.lookupValue.dcl.isNondec;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 -- FROM COLLECTIONS TODO
@@ -222,6 +231,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
     [extraEq(top.frame.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production inhAppendColAttributeDef
@@ -230,6 +240,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
   top.flowDefs <- [extraEq(top.frame.fullName, dl.defLHSVertex.inhVertex(attr.attrDcl.fullName), e.flowDeps, true)];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production synBaseColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
@@ -248,6 +259,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
@@ -255,6 +267,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.flowDefs <- flap(dl.defLHSInhEq, e.flowDeps);
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 aspect production baseCollectionValueDef
@@ -264,6 +277,7 @@ top::ProductionStmt ::= @val::QName e::Expr
   -- since we don't actually know the entire tree in which it is decorated.
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= @val::QName e::Expr
@@ -287,6 +301,7 @@ top::ProductionStmt ::= @val::QName e::Expr
     else [];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 -- TODO: flowDefs for Copper ProductionStmts
@@ -295,42 +310,49 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production parserAttributeValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 aspect production pushTokenStmt
 top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 {
   lexeme.decSiteVertexInfo = nothing();
   lexeme.alwaysDecorated = false;
+  lexeme.appDecSiteVertexInfo = nothing();
 }
 aspect production insertSemanticTokenStmt
 top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
 {
   loc.decSiteVertexInfo = nothing();
   loc.alwaysDecorated = false;
+  loc.appDecSiteVertexInfo = nothing();
 }
 aspect production ifElseStmt
 top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
 {
   condition.decSiteVertexInfo = nothing();
   condition.alwaysDecorated = false;
+  condition.appDecSiteVertexInfo = nothing();
 }
 aspect production termAttrValueValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
 }
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'

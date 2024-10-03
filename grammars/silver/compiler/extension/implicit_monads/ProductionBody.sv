@@ -190,6 +190,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.downSubst = top.downSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -216,6 +217,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.downSubst = top.downSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -247,6 +249,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.finalSubst = e.mUpSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
@@ -281,6 +284,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.finalSubst = e.mUpSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;

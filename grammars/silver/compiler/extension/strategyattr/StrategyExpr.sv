@@ -785,6 +785,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   checkExpr.flowEnv = top.flowEnv;
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.alwaysDecorated = false;
+  checkExpr.appDecSiteVertexInfo = nothing();
   checkExpr.downSubst = emptySubst();
   checkExpr.downSubst2 = checkExpr.upSubst;
   checkExpr.finalSubst = checkExpr.upSubst2;

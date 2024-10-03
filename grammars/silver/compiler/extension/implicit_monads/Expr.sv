@@ -13,12 +13,12 @@ propagate @expectedMonad on Expr;
 
 
 type MonadInhs = {
-  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, isRoot,
+  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, isRoot,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 };
 
 flowtype merrors {
-  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, isRoot,
+  downSubst, finalSubst, frame, grammarName, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, isRoot,
   compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
 } on Expr;
 
@@ -202,6 +202,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   ne.downSubst = top.downSubst;
   ne.alwaysDecorated = false;
   ne.decSiteVertexInfo = nothing();
+  ne.appDecSiteVertexInfo = nothing();
   ne.isRoot = false;
   local nes::AppExprs = ^es;
   nes.mDownSubst = ne.mUpSubst;
@@ -479,6 +480,7 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.flowEnv = top.flowEnv;
   ne.decSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
+  ne.appDecSiteVertexInfo = nothing();
   ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
 
@@ -494,6 +496,7 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.flowEnv = top.flowEnv;
   res_e.decSiteVertexInfo = nothing();
   res_e.alwaysDecorated = false;
+  res_e.appDecSiteVertexInfo = nothing();
   res_e.isRoot = false;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
 
