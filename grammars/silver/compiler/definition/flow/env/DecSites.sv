@@ -5,6 +5,7 @@ import silver:util:treemap as map;
 {--
  - Generate a decision tree to determine all decoration sites where an inherited equation could be supplied
  - for it to be available on some vertex type.
+ - This is used in checking for inherited completeness.
  -
  - @param prodName The name of the production containing the vertex type.
  - @param vt The vertex type to find decoration sites for.
@@ -44,10 +45,11 @@ DecSiteTree ::=
       -- Direct inherited equation at a decoration site
       (if vt.isInhDefVertex
        then directDec(prodName, vt)
-       else neverDec()) ++
+       else neverDec()) +
       case vt of
       -- Via flow type
-      | lhsVertexType_real() -> alwaysDec()  -- Shouldn't actually be consulted
+      -- TODO: We shouldn't actually ever ask for these?
+      | lhsVertexType_real() -> alwaysDec()
       | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
       -- Via forwarding
       | forwardVertexType_real() -> forwardDec(prodName, nothing())
@@ -68,7 +70,7 @@ DecSiteTree ::=
           -- production that dispatches again, which we want to permit.
           then alwaysDec()
           -- Otherwise, look at all the (host) productions that implement this dispatch signature
-          else foldAllDecSite(map(
+          else product(map(
             \ prod::(String, [String]) ->
               case getTypeDcl(prodOrSig, realEnv) of
               | sigDcl :: _
@@ -80,22 +82,126 @@ DecSiteTree ::=
             getImplementingProds(prodOrSig, flowEnv)))
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
-        foldAllDecSite(unzipWith(recurse,
+        product(unzipWith(recurse,
           -- places where this child was decorated in a production forwarding to this one,
           -- or in a dispatch signature that this production implements
           lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
       | _ -> neverDec()
-      end ++
+      end +
       -- Via direct sharing
-      foldAnyDecSite(map(recurse(prodName, _), lookupRefDecSite(prodName, vt, flowEnv))) ++
+      sum(map(recurse(prodName, _), lookupRefDecSite(prodName, vt, flowEnv))) +
       -- Via translation attribute sharing
-      foldAnyDecSite(
+      sum(
         flatMap(
           \ attrName ->
             case getAttrDcl(attrName, realEnv) of
             | dcl :: _ when dcl.isTranslation ->
               map(\ transDecSite -> transAttrDec(attrName, recurse(prodName, transDecSite)),
                 lookupRefDecSite(prodName, transAttrVertexType(vt, attrName), flowEnv))
+            | _ -> []
+            end,
+          getHostSynsFor(ntName, flowEnv)));
+}
+
+{--
+ - Generate a decision tree to determine all decoration sites where an inherited attribute
+ - might be supplied to some vertex type.
+ - This is used in checking for potentially hidden transitive dependencies.
+ - This mirrors the above, but we also consider sites where a tree is only conditionally shared.
+ -
+ - @param prodName The name of the production containing the vertex type.
+ - @param vt The vertex type to find decoration sites for.
+ - @param seen A list of (production name, vertex type) pairs that have already been visited.
+ - @param seenDispatch A list of (dispatch name, dispatch rhs name) pairs that have already been visited.
+ - @param flowEnv The flow environment.
+ - @param realEnv The regular environment.
+ - @return A decision tree to determine if an inherited attributes could possibly be supplied for vt.
+ -}
+function findPossibleDecSites
+DecSiteTree ::=
+  prodName::String vt::VertexType
+  seen::[(String, VertexType)] seenDispatch::[(String, String)]
+  flowEnv::FlowEnv realEnv::Env
+{
+  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
+  local ns :: NamedSignature =
+    case prodDcl of
+    | d :: _ -> d.namedSignature
+    | [] -> bogusNamedSignature()
+    end;
+  local ntName::String =
+    case vt of
+    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
+    | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
+    | _ -> ""
+    end;
+
+  local recurse::(DecSiteTree ::= String VertexType) =
+    findPossibleDecSites(_, _, (prodName, vt) :: seen, seenDispatch, flowEnv, realEnv);
+
+  return
+    if contains((prodName, vt), seen)
+    then neverDec()
+    else
+      -- Direct inherited equation at a decoration site
+      (if vt.isInhDefVertex
+       then directDec(prodName, vt)
+       else neverDec()) +
+      case vt of
+      -- Via flow type
+      -- TODO: We shouldn't actually ever ask for these?
+      | lhsVertexType_real() -> alwaysDec()
+      | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
+      -- Via forwarding
+      | forwardVertexType_real() -> forwardDec(prodName, nothing())
+      | localVertexType("forward") -> forwardDec(prodName, nothing())
+      | localVertexType(fName) when
+          isForwardProdAttr(fName,
+            newScopeEnv(flatMap((.prodDefs), getProdAttrs(prodName, realEnv)), emptyEnv())) ->
+        forwardDec(prodName, just(fName))
+      -- Via projected remote equation
+      | subtermVertexType(_, prodOrSig, sigName) ->
+          if !null(getValueDcl(prodOrSig, realEnv))
+          -- Projected from a production
+          then recurse(prodOrSig, rhsVertexType(sigName))
+          -- Projected from a dispatch signature
+          else if contains((prodOrSig, sigName), seenDispatch)
+          -- This is a dispatch that we are already trying to resolve.
+          then neverDec()
+          -- Otherwise, look at all the (host) productions that implement this dispatch signature
+          else sum(map(
+            \ prod::(String, [String]) ->
+              case getTypeDcl(prodOrSig, realEnv) of
+              | sigDcl :: _
+                  when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
+                  matches sn :: _ ->
+                findPossibleDecSites(
+                  prod.1, rhsVertexType(sn),
+                  (prodOrSig, rhsVertexType(sigName)) :: seen,
+                  (prod.1, sn) :: seenDispatch,
+                  flowEnv, realEnv)
+              | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
+              end,
+            getImplementingProds(prodOrSig, flowEnv)))
+      -- Via signature/dispatch sharing
+      | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
+        sum(unzipWith(recurse,
+          -- places where this child was decorated in a production forwarding to this one,
+          -- or in a dispatch signature that this production implements
+          lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
+      | _ -> neverDec()
+      end +
+      -- Via direct sharing
+      sum(map(recurse(prodName, _), lookupRefPossibleDecSites(prodName, vt, flowEnv))) +
+      -- Via translation attribute sharing
+      sum(
+        flatMap(
+          \ attrName ->
+            case getAttrDcl(attrName, realEnv) of
+            | dcl :: _ when dcl.isTranslation ->
+              map(\ transDecSite -> transAttrDec(attrName, recurse(prodName, transDecSite)),
+                lookupRefPossibleDecSites(prodName, transAttrVertexType(vt, attrName), flowEnv))
             | _ -> []
             end,
           getHostSynsFor(ntName, flowEnv)));
@@ -201,6 +307,7 @@ DecSiteTree ::= attrName::String d::DecSiteTree flowEnv::FlowEnv
   - @param vt The vertex type to check.
   - @param attrName The name of the inherited attribute.
   - @param flowEnv The flow environment.
+  - @param realEnv The regular environment.
   - @return alwaysDec(), if the attribute is always present,
   - or else the places where it could be supplied.
   -}
@@ -222,3 +329,17 @@ function decSitesMissingInhEqs
     end,
     remove(alwaysDec(), map:keys(resolved)));
 }
+
+{--
+ - Determine if a possible decoration site for some vertex has an inherited attribute supplied.
+ - 
+ - @param prodName The name of the production containing the vertex.
+ - @param vt The vertex type to check.
+ - @param attrName The name of the inherited attribute.
+ - @param flowEnv The flow environment.
+ - @param realEnv The regular environment.
+ - @return true if the vertex might ever be supplied with the attribute, false otherwise.
+ -}
+fun possibleDecSiteHasInhEq
+Boolean ::= prodName::String vt::VertexType attrName::String flowEnv::FlowEnv realEnv::Env =
+  resolveDecSiteInhEq(attrName, findPossibleDecSites(prodName, vt, [], [], flowEnv, realEnv), flowEnv) == alwaysDec();

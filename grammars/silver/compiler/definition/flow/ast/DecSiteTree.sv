@@ -107,12 +107,6 @@ top::DecSiteTree ::= attrName::String d::DecSiteTree
   d.maxDepth = top.maxDepth - 1;
 }
 
-fun foldAnyDecSite DecSiteTree ::= ds::[DecSiteTree] =
-  foldr(altDec, neverDec(), ds);
-
-fun foldAllDecSite DecSiteTree ::= ds::[DecSiteTree] =
-  foldr(bothDec, alwaysDec(), ds);
-
 fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
   replicate(nest, "\t") ++
   if length(d.decSiteAlts) > 1
@@ -123,11 +117,9 @@ fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
 
 derive Eq, Ord on DecSiteTree;
 
--- Semigroup/monoid instances for composing alternatives, since that more common that conjunction
-instance Semigroup DecSiteTree {
-  append = altDec;
-}
-
-instance Monoid DecSiteTree {
-  mempty = neverDec();
+instance Semiring DecSiteTree {
+  add = altDec;
+  zero = neverDec();
+  mul = bothDec;
+  one = alwaysDec();
 }
