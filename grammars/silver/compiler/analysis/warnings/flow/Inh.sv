@@ -266,7 +266,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case filter(
-      vertexHasInhEq(top.frame.fullName, _, attr.attrDcl.fullName, top.flowEnv),
+      possibleDecSiteHasInhEq(top.frame.fullName, _, attr.attrDcl.fullName, top.flowEnv, top.env),
       lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
@@ -279,7 +279,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
       case filter(
-        vertexHasInhEq(top.frame.fullName, _, dl.inhAttrName, top.flowEnv),
+        possibleDecSiteHasInhEq(top.frame.fullName, _, dl.inhAttrName, top.flowEnv, top.env),
         lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
