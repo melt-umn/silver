@@ -34,8 +34,8 @@ echo ""
 
 # Doesn't need to be clean, since we are starting with a known good state of generated/.
 # Only pass along flags like --clean, --mwda, etc. in the first pass.
-NOINSTALL=1 ./make-stdlib $@
-./make-compiler $@
+NOINSTALL=1 ./make-stdlib "$@"
+./make-compiler "$@"
 
 
 echo "One full cycle ..."
