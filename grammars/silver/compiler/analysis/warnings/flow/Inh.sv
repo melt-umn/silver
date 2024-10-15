@@ -68,21 +68,12 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - @param realEnv  The local real environment
  - @returns  Errors for missing equations
  -}
-function checkEqDeps
+fun checkEqDeps
 [Message] ::=
   v::FlowVertex  anonResolve::[(String, Location)]
-  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env
-{
+  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env =
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
-  
-  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
-  local ns :: NamedSignature =
-    case prodDcl of
-    | d :: _ -> d.namedSignature
-    | [] -> bogusNamedSignature()
-    end;
-
-  return case v of
+  case v of
   -- A dependency on an LHS.INH is a flow issue: these equations do not exist
   -- locally, so we cannot check them.
   | lhsInhVertex(_) -> []
@@ -122,7 +113,6 @@ function checkEqDeps
       checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, flowEnv, realEnv)
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
-}
 
 fun checkInhEq
 [Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env =
