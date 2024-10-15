@@ -667,15 +667,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 
-concrete production decorationSiteExpr
-top::Expr ::= '@' e::Expr
-{
-  top.unparse = s"@${e.unparse}";
-
-  top.typerep = e.typerep.decoratedType;
-  e.isRoot = false;
-}
-
 abstract production exprInhsEmpty
 top::ExprInhs ::= 
 {
@@ -721,6 +712,23 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
   top.suppliedInhs = if q.attrFound then [q.attrDcl.fullName] else [];
   
   q.attrFor = top.decoratingnt;
+}
+
+concrete production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.unparse = s"@${e.unparse}";
+
+  top.typerep = e.typerep.decoratedType;
+  e.isRoot = false;
+}
+
+concrete production undecExpr
+top::Expr ::= '^' e::Expr
+{
+  top.unparse = s"^${e.unparse}";
+
+  forwards to Silver_Expr { silver:core:new($Expr{@e}) };
 }
 
 concrete production trueConst
