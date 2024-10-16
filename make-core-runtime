@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -euo pipefail
 
 export SILVER_HOME=$PWD
 JVM_ARGS=(-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib "$@")
@@ -22,7 +22,7 @@ ant
 mv silver.core.jar ../../build
 cd ../../build
 
-if [ -z "$NOINSTALL" ]; then
+if [ -z "${NOINSTALL:-}" ]; then
     echo    "=== INSTALL NEW CORE/RUNTIME ==="
     mv silver.core.jar ../jars
 fi

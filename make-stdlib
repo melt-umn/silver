@@ -3,7 +3,7 @@
 # Build the Silver standard libraries.
 # Note that this does not rebuild the silver:core and the runtime.
 
-set -eo pipefail
+set -euo pipefail
 
 export SILVER_HOME=$PWD
 JVM_ARGS=(-Xss20M -Xmx1G -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --relative-jar "$@")
@@ -27,8 +27,7 @@ for lib in util langutil rewrite regex; do
     export GRAMMAR_PATH="$GRAMMAR_PATH:silver.$lib.jar"
 done
 
-set +u
-if [ -z "$NOINSTALL" ]; then
+if [ -z "${NOINSTALL:-}" ]; then
     echo    "=== INSTALL NEW LIBRARIES ==="
     mv ./*.jar ../jars
 fi

@@ -3,7 +3,7 @@
 # Build the Silver compiler.
 # Note that this does not rebuild the standard libraries or the runtime; use make-all for that.
 
-set -eo pipefail
+set -euo pipefail
 
 export SILVER_HOME=$PWD
 JVM_ARGS=(-Xss20M -Xmx6500M -jar ../jars/silver.compiler.composed.Default.jar --no-stdlib --include-jar ../jars/CopperCompiler.jar --include-jar ../jars/commonmark-0.17.1.jar --relative-jar "$@")
@@ -26,7 +26,7 @@ echo    "=== BUILD COMPILER ==="
 time java "${JVM_ARGS[@]}" silver:compiler:composed:Default
 ant
 
-if [ -z "$NOINSTALL" ]; then
+if [ -z "${NOINSTALL:-}" ]; then
     echo    "=== INSTALL NEW JARS ==="
     mv ./*.jar ../jars
 fi
