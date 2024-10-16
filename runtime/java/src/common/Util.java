@@ -192,6 +192,24 @@ public final class Util {
 	public static void printStackCauses(Throwable e) {
 		freeThisToPrintErrors = null;
 
+		// // Get all environment variables
+        // Map<String, String> envVariables = System.getenv();
+
+        // // // Print all environment variables
+        // // for (Map.Entry<String, String> entry : envVariables.entrySet()) {
+        // //     String variableName = entry.getKey();
+        // //     String variableValue = entry.getValue();
+        // //     System.out.println(variableName + " = " + variableValue);
+        // // }
+		// String stackTraceString = envVariables.get("SILVERTRACE");
+        // System.out.println("Value of SILVERTRACE: " + stackTraceString);
+
+		// System.setProperty("SILVERTRACE", "1");
+
+		// stackTraceString = envVariables.get("SILVERTRACE");
+        // System.out.println("Value of SILVERTRACE: " + stackTraceString);
+
+
 		System.err.println("\nAn error occurred.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
@@ -404,17 +422,56 @@ public final class Util {
 	 * @return A string representation.
 	 */
 	public static StringCatter genericShow(Object o) {
+		Object pp = null;
 		try {
 			Method genericPP = Class.forName("silver.langutil.reflect.PgenericPP")
 				.getMethod("invoke", OriginContext.class, Object.class);
-			Method showDoc = Class.forName("silver.langutil.pp.PshowDoc")
-				.getMethod("invoke", OriginContext.class, Object.class, Object.class);
-			Object pp = genericPP.invoke(null, OriginContext.FFI_CONTEXT, o);
-			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, 80, pp);
+			pp = genericPP.invoke(null, OriginContext.FFI_CONTEXT, o);
 		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
 		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			return hackyhackyUnparse(o);
 		}
+		return showDoc(pp);
+	}
+
+	/**
+	 * Reflective wrapper around silver:langutil:pp:showDoc.
+	 * 
+	 * @param pp  The Document value to render
+	 * @return A string representation.
+	 */
+	public static StringCatter showDoc(Object pp) {
+		try {
+			Method showDoc = Class.forName("silver.langutil.pp.PshowDoc")
+				.getMethod("invoke", OriginContext.class, Object.class, Object.class);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, 80, pp);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			// If we already *have* a Document value, then the showDoc function should exist,
+			// so this should never happen.
+			throw new SilverInternalError("Error rendering pretty print", e);
+		}
+	}
+
+	/**
+	 * Get the pretty-print or unparse of a tree if available,
+	 * otherwise falling back to genericShow.
+	 * 
+	 * @param dn  The tree to show
+	 * @return A string representation.
+	 */
+	public static String getPrettyPrint(DecoratedNode dn) {
+		int numAttrs = dn.getNode().getNumberOfSynAttrs();
+		for (int i = 0; i < numAttrs; i++) {
+            String attrName = dn.getNode().getNameOfSynAttr(i);
+            switch (attrName) {
+                case "silver:langutil:pp":
+                    return showDoc(dn.synthesized(i)).toString();
+                case "silver:langutil:unparse":
+                    return dn.synthesized(i).toString();
+            }
+		}
+		return genericShow(dn.getNode()).toString();
 	}
 
 	/**

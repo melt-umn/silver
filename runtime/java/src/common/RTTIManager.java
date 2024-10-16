@@ -85,6 +85,7 @@ public final class RTTIManager {
 			final Object[] annos); // NO reify or other checking, used by native[De]Serialize
 
 		public abstract String getName();
+		//need to return an array literal 
 		public abstract Nonterminalton<? super T> getNonterminalton();
 		
 		public abstract String getTypeUnparse(); // Nominally opaque representation of the type
@@ -118,6 +119,9 @@ public final class RTTIManager {
 		public final boolean hasSyn(String attrName) {
 			return synOccursIndices.containsKey(attrName);
 		}
+		public final boolean hasAttribute(String attrName) {
+			return synOccursIndices.containsKey(attrName) || inhOccursIndices.containsKey(attrName);
+		}
 		public final int getInhOccursIndex(String attrName) {
 			if (!hasInh(attrName)) {
 				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
@@ -130,6 +134,34 @@ public final class RTTIManager {
 			}
 			return synOccursIndices.get(attrName);
 		}
+		// write a getAllInh() and getAllSyn() that return the keySet of each of these maps
+		public Set<String> getAllInh() {
+			return inhOccursIndices.keySet();
+		}
+		
+		public Set<String> getAllSynth() {
+			return synOccursIndices.keySet();
+		}
+
+		public List<String> alphabeticalAttributes() {
+			Set<String> allAttributesSet = new HashSet<>();
+			allAttributesSet.addAll(inhOccursIndices.keySet());
+			allAttributesSet.addAll(synOccursIndices.keySet());
+			List<String> allAttributesList = new ArrayList<>();
+			allAttributesList.addAll(allAttributesSet);
+			allAttributesList.sort(null);
+			return allAttributesList;
+		} 
+
+		public Map<String, Integer> getSynOccursIndices() {
+			return synOccursIndices;
+		}
+
+		public Map<String, Integer> getInhOccursIndices() {
+			return inhOccursIndices;
+		}
 	}
+
+	//TODO: Add way to access children names
 
 }

@@ -1,6 +1,15 @@
 package common;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+
+import javax.sound.midi.SysexMessage;
+
+import silver.core.NOriginInfo;
+// import silver.core.OriginsUtils;
+import silver.core.PoriginOriginInfo;
+import silver.core.PoriginAndRedexOriginInfo;
 
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
@@ -202,6 +211,21 @@ public class DecoratedNode implements Decorable, Typed {
 		} else {
 			return self;
 		}
+	}
+
+	public DecoratedNode getParent()
+	{
+		return parent;
+	}
+
+	public DecoratedNode getForwardParent()
+	{
+		return forwardParent;
+	}
+
+	//Getter added by Micahel
+	public Lazy getInheritedAttribute(int index) {
+		return inheritedAttributes[index];
 	}
 
 	/**
@@ -850,4 +874,23 @@ public class DecoratedNode implements Decorable, Typed {
 	public final String toString() {
 		return getDebugID();
 	}
+
+	//curesed function added by Michael who does not know how to get Inherited attributes otherwise
+	public final Object evalInhSomehowButPublic(final int attribute) {
+		// We specifically have to check here for inheritedAttributes == null, because
+		// that's what happens when we don't supply any inherited attributes...
+		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
+		// (which could be null if *no inherited attributes occur at all* on this
+		// node), this could be the result of correctly compiled, but wrongly written user
+		// code.
+		if(inheritedAttributes != null && inheritedAttributes[attribute] != null)
+			return evalInhHere(attribute);
+		else
+			return evalInhViaFwdP(attribute);
+	}
+
 }
+
+
+
+	
