@@ -45,14 +45,14 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
 {
   top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ ntty.transTypeName);
   top.attrOccursInitIndex = top.attrOccursIndex;
-  top.attrOccursIndex = makeConstraintDictName(fnat, ntty, tvs);
+  top.attrOccursIndex = makeConstraintDictName(fnat, ^ntty, tvs);
 }
 aspect production occursSigConstraintDcl
 top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ ntty.transTypeName);
   top.attrOccursInitIndex = makeProdName(ns.fullName) ++ "." ++ top.attrOccursIndexName;
-  top.attrOccursIndex = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeConstraintDictName(fnat, ntty, ns.freeVariables)}";
+  top.attrOccursIndex = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeConstraintDictName(fnat, ^ntty, ns.freeVariables)}";
 }
 aspect production occursSuperDcl
 top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo

@@ -68,7 +68,7 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
   top.unparse = s"class ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
-  forwards to typeClassDcl($1, nilConstraint(), '=>', id, var, $4, body, $6);
+  forwards to typeClassDcl($1, nilConstraint(), '=>', @id, @var, $4, @body, $6);
 } action {
   insert semantic token IdTypeClassDcl_t at id.nameLoc;
 }
@@ -103,7 +103,7 @@ top::ClassBody ::=
 concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
-  forwards to constraintClassBodyItem(id, $2, nilConstraint(), '=>', @ty, $4);
+  forwards to constraintClassBodyItem(@id, $2, nilConstraint(), '=>', @ty, $4);
 } action {
   insert semantic token IdTypeClassMemberDcl_t at id.nameLoc;
 }
@@ -140,7 +140,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 concrete production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
-  forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(), '=>', ty, $4, e, $6);
+  forwards to defaultConstraintClassBodyItem(@id, $2, nilConstraint(), '=>', @ty, $4, @e, $6);
 } action {
   insert semantic token IdTypeClassMemberDcl_t at id.nameLoc;
 }

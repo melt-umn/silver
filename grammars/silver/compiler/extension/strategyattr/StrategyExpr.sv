@@ -32,6 +32,7 @@ monoid attribute totalRefs::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute containsTraversal::Boolean with false, ||;
 
+-- TODO: Merge these into a translation attribute
 synthesized attribute partialTranslation::Expr; -- Maybe<a> on a
 synthesized attribute totalTranslation::Expr; -- a on a, can raise a runtime error if demanded on partial strategy expression
 
@@ -42,16 +43,16 @@ partial strategy attribute genericStep =
   rule on top::StrategyExpr of
   | sequence(fail(), _) -> fail(genName=top.genName)
   | sequence(_, fail()) -> fail(genName=top.genName)
-  | sequence(id(), s) -> s
-  | sequence(s, id()) -> s
-  | choice(fail(), s) -> s
-  | choice(s, fail()) -> s
-  | choice(s, _) when s.isTotal -> s
+  | sequence(id(), s) -> ^s
+  | sequence(s, id()) -> ^s
+  | choice(fail(), s) -> ^s
+  | choice(s, fail()) -> ^s
+  | choice(s, _) when s.isTotal -> ^s
   | allTraversal(id()) -> id(genName=top.genName)
   | someTraversal(fail()) -> fail(genName=top.genName)
   | oneTraversal(fail()) -> fail(genName=top.genName)
   | prodTraversal(_, ss) when ss.containsFail -> fail(genName=top.genName)
-  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> s
+  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> ^s
   | inlined(_, fail()) -> fail(genName=top.genName)
   end;
 -- Nonterminal-dependent, production-independent optimizations
@@ -68,7 +69,7 @@ partial strategy attribute ntStep =
   | partialRef(n) when !n.matchesFrame -> fail(genName=top.genName)
   | inlined(n, _) when !n.matchesFrame -> fail(genName=top.genName)
   | inlined(n, id()) when n.matchesFrame -> id(genName=top.genName)
-  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(n2, genName=top.genName)
+  | inlined(n1, totalRef(n2)) when n1.matchesFrame -> totalRef(^n2, genName=top.genName)
   end;
 -- Production-dependent optimizations
 partial strategy attribute prodStep =
@@ -83,8 +84,8 @@ partial strategy attribute prodStep =
 partial strategy attribute elimInfeasibleMRules =
   onceBottomUp(
     rule on top::MRuleList of
-    | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
-    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h)
+    | mRuleList_cons(h, _, t) when !h.matchesFrame -> ^t
+    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(^h)
     end);
 attribute elimInfeasibleMRules occurs on MRuleList;
 
@@ -193,7 +194,10 @@ top::StrategyExpr ::=
   top.isId = true;
   top.isTotal = true;
   top.isTotalNoEnv = true;
-  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName} };
+  top.totalTranslation =
+    if top.frame.signature.outputElement.typerep.isData
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName} }
+    else Silver_Expr { silver:core:new($name{top.frame.signature.outputElement.elementName}) };
 }
 
 abstract production fail
@@ -228,7 +232,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   -- be exported by the syn occurence anyway.
   -- TODO - future optimization potential: this is where common sub-trees shared between
   -- the incoming tree and the result of s1 get re-decorated.
-  local allInhs::ExprInhs =
+  nondecorated local allInhs::ExprInhs =
     foldr(
       exprInhsCons(_, _),
       exprInhsEmpty(),
@@ -266,7 +270,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
       }
     end;
-  local totalTrans::Expr =
+  nondecorated local totalTrans::Expr =
     Silver_Expr {
       decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
     };
@@ -317,11 +321,11 @@ top::StrategyExpr ::= s::StrategyExpr
   s.isOutermost = false;
   
   local sBaseName::String = last(explode(":", sName));
-  -- (child name, attr occurs on child)
-  local childAccesses::[Pair<String Boolean>] =
+  -- (child name, child decorable, attr occurs on child)
+  local childAccesses::[(String, Boolean, Boolean)] =
     map(
       \ e::NamedSignatureElement ->
-        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.partialTranslation =
     if sTotal
@@ -335,16 +339,16 @@ top::StrategyExpr ::= s::StrategyExpr
          Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
-          \ a::Pair<String Boolean> ->
-            if a.snd then [Silver_Expr { $name{a.fst}.$name{sName} }] else [],
+          \ a::(String, Boolean, Boolean) ->
+            if a.3 then [Silver_Expr { $name{a.1}.$name{sName} }] else [],
           childAccesses),
         [matchRule(
            flatMap(
-             \ a::Pair<String Boolean> ->
-               if a.snd
+             \ a::(String, Boolean, Boolean) ->
+               if a.3
                then
-                 [decorate Silver_Pattern { silver:core:just($name{a.fst ++ "_" ++ sBaseName}) }
-                  with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+                 [decorate Silver_Pattern { silver:core:just($name{a.1 ++ "_" ++ sBaseName}) }
+                  with { grammarName = top.grammarName; config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                else [],
              childAccesses),
            nothing(),
@@ -354,10 +358,12 @@ top::StrategyExpr ::= s::StrategyExpr
                  mkFullFunctionInvocation(
                    baseExpr(qName(top.frame.fullName)),
                    map(
-                     \ a::Pair<String Boolean> ->
-                       if a.snd
-                       then Silver_Expr { $name{a.fst ++ "_" ++ sBaseName} }
-                       else Silver_Expr { $name{a.fst} },
+                     \ a::(String, Boolean, Boolean) ->
+                       if a.3
+                       then Silver_Expr { $name{a.1 ++ "_" ++ sBaseName} }
+                       else if a.2
+                       then Silver_Expr { silver:core:new($name{a.1}) }
+                       else Silver_Expr { $name{a.1} },
                      childAccesses),
                    map(
                      makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -374,10 +380,12 @@ top::StrategyExpr ::= s::StrategyExpr
        mkFullFunctionInvocation(
          baseExpr(qName(top.frame.fullName)),
          map(
-           \ a::Pair<String Boolean> ->
-             if a.snd
-             then Silver_Expr { $name{a.fst}.$name{sName} }
-             else Silver_Expr { $name{a.fst} },
+           \ a::(String, Boolean, Boolean) ->
+             if a.3
+             then Silver_Expr { $name{a.1}.$name{sName} }
+             else if a.2
+             then Silver_Expr { silver:core:new($name{a.1}) }
+             else Silver_Expr { $name{a.1} },
            childAccesses),
          map(
            makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -401,13 +409,13 @@ top::StrategyExpr ::= s::StrategyExpr
 
   s.isOutermost = false;
   
-  -- (child name, attr occurs on child)
-  local childAccesses::[Pair<String Boolean>] =
+  -- (child name, child decorable, attr occurs on child)
+  local childAccesses::[(String, Boolean, Boolean)] =
     map(
       \ e::NamedSignatureElement ->
-        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
-  local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
+  local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
   top.partialTranslation =
     if sTotal
     then
@@ -434,10 +442,16 @@ top::StrategyExpr ::= s::StrategyExpr
               mkFullFunctionInvocation(
                 baseExpr(qName(top.frame.fullName)),
                 map(
-                  \ a::Pair<String Boolean> ->
-                    if a.snd
-                    then Silver_Expr { silver:core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
-                    else Silver_Expr { $name{a.fst} },
+                  \ a::(String, Boolean, Boolean) ->
+                    let defaultRes::Expr =
+                      if a.2
+                      then Silver_Expr { silver:core:new($name{a.1}) }
+                      else Silver_Expr { $name{a.1} }
+                    in
+                      if a.3
+                      then Silver_Expr { silver:core:fromMaybe($Expr{defaultRes}, $name{a.1}.$name{sName}) }
+                      else defaultRes
+                    end,
                   childAccesses),
                 map(
                   makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -452,10 +466,12 @@ top::StrategyExpr ::= s::StrategyExpr
        mkFullFunctionInvocation(
          baseExpr(qName(top.frame.fullName)),
          map(
-           \ a::Pair<String Boolean> ->
-             if a.snd
-             then Silver_Expr { $name{a.fst}.$name{sName} }
-             else Silver_Expr { $name{a.fst} },
+           \ a::(String, Boolean, Boolean) ->
+             if a.3
+             then Silver_Expr { $name{a.1}.$name{sName} }
+             else if a.2
+             then Silver_Expr { silver:core:new($name{a.1}) }
+             else Silver_Expr { $name{a.1} },
            childAccesses),
          map(
            makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -480,13 +496,13 @@ top::StrategyExpr ::= s::StrategyExpr
   s.isOutermost = false;
   
   local sBaseName::String = last(explode(":", sName));
-  -- (child name, attr occurs on child)
-  local childAccesses::[Pair<String Boolean>] =
+  -- (child name, child decorable, attr occurs on child)
+  local childAccesses::[(String, Boolean, Boolean)] =
     map(
       \ e::NamedSignatureElement ->
-        (e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+        (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
-  local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
+  local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
   top.partialTranslation =
     if sTotal
     then
@@ -515,7 +531,7 @@ top::StrategyExpr ::= s::StrategyExpr
             in 
               matchRule(
                 map(
-                  \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
+                  \ p::Pattern -> decorate p with { grammarName = top.grammarName; config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
                   repeat(wildcPattern('_'), i) ++
                   Silver_Pattern { silver:core:just($name{childI ++ "_" ++ sBaseName}) } ::
                   repeat(wildcPattern('_'), length(matchingChildren) - (i + 1))),
@@ -526,11 +542,17 @@ top::StrategyExpr ::= s::StrategyExpr
                       mkFullFunctionInvocation(
                         baseExpr(qName(top.frame.fullName)),
                         map(
-                          \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                          \ a::(String, Boolean, Boolean) ->
+                            if a.2
+                            then Silver_Expr { silver:core:new($name{a.1}) }
+                            else Silver_Expr { $name{a.1} },
                           take(childIndex, childAccesses)) ++
                         Silver_Expr { $name{childI ++ "_" ++ sBaseName} } ::
                         map(
-                          \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                          \ a::(String, Boolean, Boolean) ->
+                            if a.2
+                            then Silver_Expr { silver:core:new($name{a.1}) }
+                            else Silver_Expr { $name{a.1} },
                           drop(childIndex + 1, childAccesses)),
                         map(
                           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -549,10 +571,12 @@ top::StrategyExpr ::= s::StrategyExpr
       mkFullFunctionInvocation(
         baseExpr(qName(top.frame.fullName)),
         map(
-          \ a::Pair<String Boolean> ->
-            if a.fst == head(matchingChildren)
-            then Silver_Expr { $name{a.fst}.$name{sName} }
-            else Silver_Expr { $name{a.fst} },
+          \ a::(String, Boolean, Boolean) ->
+            if a.1 == head(matchingChildren)
+            then Silver_Expr { $name{a.1}.$name{sName} }
+            else if a.2
+            then Silver_Expr { silver:core:new($name{a.1}) }
+            else Silver_Expr { $name{a.1} },
           childAccesses),
         map(
           makeAnnoArg(top.frame.signature.outputElement.elementName, _),
@@ -583,9 +607,11 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   
   top.containsTraversal <- true;
   
-  -- (child name, if attr occurs on child then just(attr name) else nothing())
-  local childAccesses::[Pair<String Maybe<String>>] =
-    zip(top.frame.signature.inputNames, s.attrRefNames);
+  -- (child name, child decorable, if attr occurs on child then just(attr name) else nothing())
+  local childAccesses::[(String, Boolean, Maybe<String>)] = zip3(
+    top.frame.signature.inputNames,
+    map(isDecorable(_, top.env), top.frame.signature.inputTypes),
+    s.attrRefNames);
   top.partialTranslation = -- This is never total
     if prod.lookupValue.fullName == top.frame.fullName
     then
@@ -598,19 +624,19 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
          Could also be implemented using the Applicative instance for Maybe.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
-          \ a::Pair<String Maybe<String>> ->
-            case a.snd of
-            | just(attr) when !attrIsTotal(top.env, attr) -> [Silver_Expr { $name{a.fst}.$name{attr} }]
+          \ a::(String, Boolean, Maybe<String>) ->
+            case a.3 of
+            | just(attr) when !attrIsTotal(top.env, attr) -> [Silver_Expr { $name{a.1}.$name{attr} }]
             | _ -> []
             end,
           childAccesses),
         [matchRule(
            flatMap(
-             \ a::Pair<String Maybe<String>> ->
-               case a.snd of
+             \ a::(String, Boolean, Maybe<String>) ->
+               case a.3 of
                | just(attr) when !attrIsTotal(top.env, attr)  ->
-                 [decorate Silver_Pattern { silver:core:just($name{a.fst ++ "_" ++ last(explode(":", attr))}) }
-                  with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+                 [decorate Silver_Pattern { silver:core:just($name{a.1 ++ "_" ++ last(explode(":", attr))}) }
+                  with { grammarName = top.grammarName; config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                | _ -> []
                end,
              childAccesses),
@@ -621,11 +647,14 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                  mkFullFunctionInvocation(
                    baseExpr(qName(top.frame.fullName)),
                    map(
-                     \ a::Pair<String Maybe<String>> ->
-                       case a.snd of
-                       | just(attr) when attrIsTotal(top.env, attr) -> Silver_Expr { $name{a.fst}.$name{attr} }
-                       | just(attr) -> Silver_Expr { $name{a.fst ++ "_" ++ last(explode(":", attr))} }
-                       | nothing() -> Silver_Expr { $name{a.fst} }
+                     \ a::(String, Boolean, Maybe<String>) ->
+                       case a.3 of
+                       | just(attr) when attrIsTotal(top.env, attr) -> Silver_Expr { $name{a.1}.$name{attr} }
+                       | just(attr) -> Silver_Expr { $name{a.1 ++ "_" ++ last(explode(":", attr))} }
+                       | nothing() ->
+                          if a.2
+                          then Silver_Expr { silver:core:new($name{a.1}) }
+                          else Silver_Expr { $name{a.1} }
                        end,
                      childAccesses),
                    map(
@@ -653,7 +682,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
      else [(h.genName, h)]) ++
     t.liftedStrategies;
   
-  local hType::Type = head(top.givenInputElements).typerep;
+  nondecorated local hType::Type = head(top.givenInputElements).typerep;
   local attr::String = fromMaybe(h.genName, h.attrRefName);
   local attrMatch::Boolean = attrMatchesFrame(top.env, attr, hType);
   top.attrRefNames =
@@ -696,7 +725,7 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
 
   -- Decorate s assuming that the bound strategy is total, in order to check for totality.
   -- See Fig 4 of the strategy attributes paper (https://www-users.cse.umn.edu/~evw/pubs/kramer20sle/kramer20sle.pdf)
-  local s2::StrategyExpr = s;
+  local s2::StrategyExpr = ^s;
   s2.recVarTotalEnv = (n.name, true) :: s.recVarTotalEnv;
   s2.recVarTotalNoEnvEnv = (n.name, true) :: s.recVarTotalNoEnvEnv;
   s2.env = s.env;
@@ -739,12 +768,13 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   -- so we need to decorate one of those here.
   production checkExpr::Expr =
     caseExpr(
-      [hackLHSExprType(ty.typerep.asNtOrDecType)],
+      [hackLHSExprType(ty.typerep.asDecoratedType)],
       -- TODO: matchRuleList on MRuleList depends on frame for some reason.
       -- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
-      decorate ml with {
+      decorate ^ml with {
         env = top.env;
         config = top.config;
+        grammarName = top.grammarName; 
         matchRulePatternSize = 1;
         frame = error("not needed");
       }.matchRuleList, false,
@@ -755,8 +785,10 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   checkExpr.flowEnv = top.flowEnv;
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.alwaysDecorated = false;
+  checkExpr.appDecSiteVertexInfo = nothing();
   checkExpr.downSubst = emptySubst();
-  checkExpr.finalSubst = checkExpr.upSubst;
+  checkExpr.downSubst2 = checkExpr.upSubst;
+  checkExpr.finalSubst = checkExpr.upSubst2;
   checkExpr.grammarName = top.grammarName;
   checkExpr.config = top.config;
   checkExpr.compiledGrammars = top.compiledGrammars;
@@ -777,7 +809,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     else [];
   top.errors <- ty.errorsKindStar;
   
-  local res::Expr =
+  nondecorated local res::Expr =
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation, false,
@@ -788,9 +820,15 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     then Silver_Expr { silver:core:nothing() }
     else if top.frame.signature.outputElement.elementName == id.name
     then res
+    else if top.frame.signature.outputElement.typerep.isData
+    then Silver_Expr {
+      let $Name{^id}::$TypeExpr{^ty} = $name{top.frame.signature.outputElement.elementName}
+      in $Expr{res}
+      end
+    }
     else Silver_Expr {
-      -- TODO: Data NTs shouldn't be decorated.
-      let $Name{id}::Decorated $TypeExpr{ty} = $name{top.frame.signature.outputElement.elementName}
+      let $Name{^id}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
+        $name{top.frame.signature.outputElement.elementName}
       in $Expr{res}
       end
     };
@@ -800,7 +838,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
 abstract production hackLHSExprType
 top::Expr ::= t::Type
 {
-  top.typerep = t;
+  top.typerep = ^t;
   top.flowVertexInfo = just(lhsVertexType);
   forwards to errorExpr([]);
 }
@@ -830,7 +868,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{e}) });
+      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{^e}) });
 }
 
 aspect production matchRuleWhen_c
@@ -838,7 +876,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just((cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) });
+      pt.patternList, just((^cond, nothing())), Silver_Expr { silver:core:just($Expr{^e}) });
 }
 
 aspect production matchRuleWhenMatches_c
@@ -846,7 +884,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   top.translation =
     matchRule(
-      pt.patternList, just((cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) });
+      pt.patternList, just((^cond, just(^p))), Silver_Expr { silver:core:just($Expr{^e}) });
 }
 
 aspect default production
@@ -875,15 +913,15 @@ top::StrategyExpr ::= id::QName
   top.isFail = false;
   top.isTotalNoEnv = fromMaybe(false, lookup(id.name, top.recVarTotalNoEnvEnv));
   
-  local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
+  nondecorated local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
   forwards to
     if lookup(id.name, top.recVarNameEnv).isJust
     then recVarRef(id, genName=top.genName)
     else if !null(id.lookupAttribute.errors)
     then errorRef(id.lookupAttribute.errors, id, genName=top.genName)
     else if attrIsTotal(top.env, id.name)
-    then totalRef(qNameAttrOccur(id), genName=top.genName)
-    else partialRef(qNameAttrOccur(id), genName=top.genName);
+    then totalRef(qNameAttrOccur(@id), genName=top.genName)
+    else partialRef(qNameAttrOccur(@id), genName=top.genName);
 }
 abstract production errorRef
 top::StrategyExpr ::= msg::[Message] id::Decorated QName
@@ -948,7 +986,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   top.partialTranslation =
     if attr.matchesFrame
-    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr} }
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr} }
     else Silver_Expr { silver:core:nothing() };
 }
 abstract production totalRef
@@ -982,7 +1020,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
-  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr} };
+  top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr} };
 }
 
 -- The result of performing an inlining optimization
@@ -1010,7 +1048,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.matchesFrame := top.found &&
     case top.typerep of
-    | appType(nonterminalType("silver:core:Maybe", _, _, _), t) -> !unify(top.attrFor, t).failure
+    | appType(nonterminalType("silver:core:Maybe", _, _, _), t) -> !unify(top.attrFor, ^t).failure
     | t -> !unify(top.attrFor, t).failure
     end;
 }

@@ -8,7 +8,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local inhVar :: String = "count_inh__ON__" ++ id.name;
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
-  local ntty::Type = nonterminalType(fName, map((.kindrep), tl.types), quals.data, quals.tracked);
+  nondecorated local ntty::Type = nonterminalType(fName, map((.kindrep), tl.types), quals.data, quals.tracked);
   local myAnnos :: [NamedSignatureElement] =
     annotationsForNonterminal(ntty, top.env);
 

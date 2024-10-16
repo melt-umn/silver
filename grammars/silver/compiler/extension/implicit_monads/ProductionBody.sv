@@ -80,8 +80,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
           then if attr.found
                then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
                     --if not found, let the normal dispatcher handle it
-               else attributeDef(new(dl), '.', new(attr), '=', @e, ';')
-          else errorAttributeDef(merrors, dl, attr, @e);
+               else attributeDef(^dl, '.', ^attr, '=', @e, ';')
+          else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -120,8 +120,8 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
           then if attr.found
                then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
                     --if not found, let the normal dispatcher handle it
-               else attributeDef(new(dl), '.', new(attr), '=', @e, ';')
-          else errorAttributeDef(merrors, dl, attr, @e);
+               else attributeDef(^dl, '.', ^attr, '=', @e, ';')
+          else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -154,14 +154,14 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   forwards to
           if attr.found
           then case attr.attrDcl of
-               | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
-               | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, @e)
-               | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
-               | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, @e)
-               | _ -> attributeDef(new(dl), '.', new(attr), '=', @e, ';')
+               | restrictedSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
+               | restrictedInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
+               | implicitSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
+               | implicitInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
+               | _ -> attributeDef(^dl, '.', ^attr, '=', @e, ';')
                end
           --if not found, let the normal dispatcher handle it
-          else attributeDef(new(dl), '.', new(attr), '=', @e, ';');
+          else attributeDef(^dl, '.', ^attr, '=', @e, ';');
 }
 
 
@@ -190,6 +190,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.downSubst = top.downSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -203,7 +204,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   forwards to
     if null(merrors)
     then synthesizedAttributeDef(dl, attr, @e)
-    else errorAttributeDef(merrors, dl, attr, @e);
+    else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -216,6 +217,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.downSubst = top.downSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -229,7 +231,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   forwards to
     if null(merrors)
     then inheritedAttributeDef(dl, attr, @e)
-    else errorAttributeDef(merrors, dl, attr, @e);
+    else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -247,6 +249,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.finalSubst = e.mUpSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
@@ -255,15 +258,18 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.forwardExpr := [];
   top.returnExpr := [];
 
-  forwards to
-         if null(e.merrors)
-         then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-              then synthesizedAttributeDef(dl, attr, e.monadRewritten)
-              else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                    $Expr {monadReturn()}
-                                                        ($Expr {e.monadRewritten})
-                                                  })
-         else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten);
+  local fwrdProd::AttributeDef = 
+     if !null(e.merrors)
+     then errorAttributeDef(e.merrors)
+     else if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+     then transformExprAttributeDef(synthesizedAttributeDef, e.monadRewritten)
+     else transformExprAttributeDef(synthesizedAttributeDef,
+       Silver_Expr {
+       $Expr {monadReturn()}
+            ($Expr {e.monadRewritten})
+       });
+
+  forwards to fwrdProd(dl, attr, @e);
 }
 
 
@@ -278,6 +284,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.finalSubst = e.mUpSubst;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
@@ -286,14 +293,17 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.forwardExpr := [];
   top.returnExpr := [];
 
-  forwards to
-         if null(e.merrors)
-         then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-              then synthesizedAttributeDef(dl, attr, e.monadRewritten)
-              else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                    $Expr {monadReturn()}
-                                                        ($Expr {e.monadRewritten})
-                                                  })
-         else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten);
+  local fwrdProd::AttributeDef = 
+     if !null(e.merrors)
+     then errorAttributeDef(e.merrors)
+     else if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+     then transformExprAttributeDef(inheritedAttributeDef, e.monadRewritten)
+     else transformExprAttributeDef(inheritedAttributeDef,
+       Silver_Expr {
+       $Expr {monadReturn()}
+            ($Expr {e.monadRewritten})
+       });
+
+  forwards to fwrdProd(dl, attr, @e);
 }
 

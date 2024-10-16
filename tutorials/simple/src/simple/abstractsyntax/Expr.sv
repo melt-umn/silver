@@ -147,7 +147,7 @@ abstract production neqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} != ${r})";
-  forwards to notOp(eqOp(l,r));
+  forwards to notOp(eqOp(@l,@r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
   -- automatically copied, as are other yet-to-be defined attributes.
@@ -156,19 +156,19 @@ abstract production lteOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} <= ${r})";
-  forwards to or( ltOp(l,r), eqOp(l,r) );
+  forwards to or( ltOp(@l,@r), eqOp(^l,^r) );
 }
 abstract production gtOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} > ${r})";
-  forwards to notOp(lteOp(l,r));
+  forwards to notOp(lteOp(@l,@r));
 }
 abstract production gteOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} >= ${r})";
-  forwards to notOp(ltOp(l,r));
+  forwards to notOp(ltOp(@l,@r));
 }
 
 
@@ -190,7 +190,7 @@ abstract production or
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} || ${r})";
-  forwards to notOp( and(notOp(l), notOp(r)) );
+  forwards to notOp( and(notOp(@l), notOp(@r)) );
 }
 
 

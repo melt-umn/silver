@@ -7,7 +7,7 @@ grammar silver:langutil:reflect;
 function genericPP
 Document ::= x::a
 {
-  local typeNamePP::Document = text(fromMaybe("<OBJ>", reflectTypeName(x)));
+  nondecorated local typeNamePP::Document = text(fromMaybe("<OBJ>", reflectTypeName(x)));
   return
     fromRight(
       alt(

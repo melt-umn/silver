@@ -33,7 +33,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
       rule on AGDcl of
       | a when getParsedOriginLocation(a) == getParsedOriginLocation(top) ->
         Silver_AGDcl {
-          fun $Name{new(id)} $FunctionSignature{new(ns)} = $Expr{new(e)};
+          fun $Name{^id} $FunctionSignature{^ns} = $Expr{^e};
         }
       end
     | _ -> fail()
@@ -48,9 +48,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
 }
 
 monoid attribute hasImplicitDec::Boolean with false, || occurs on
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AnnoExpr, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
 propagate hasImplicitDec on
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AnnoAppExprs, AnnoExpr, AppExpr, AssignExpr, PrimPatterns, PrimPattern;
 aspect hasImplicitDec on top::Expr using <- of
 | childReference(q) -> isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
 end;

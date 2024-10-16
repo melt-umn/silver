@@ -26,27 +26,30 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 tracked nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
   unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, downSubst2, upSubst2, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
 tracked nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, downSubst2, upSubst2, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
 
 inherited attribute scrutineeType :: Type;
 inherited attribute returnType :: Type;
 
-propagate config, grammarName, compiledGrammars, frame, errors, scrutineeType, returnType, initTransDecSites, originRules
+propagate
+  config, grammarName, compiledGrammars, frame, errors, downSubst2, upSubst2,
+  scrutineeType, returnType, initTransDecSites, originRules
   on PrimPatterns, PrimPattern;
-propagate env, finalSubst, freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
+propagate env, finalSubst, freeVars
+  on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
-  forwards to matchPrimitive(e, t, pr, f);
+  forwards to matchPrimitive(@e, @t, @pr, @f);
 }
 abstract production matchPrimitive
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
@@ -55,6 +58,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   propagate config, grammarName, env, freeVars, frame, compiledGrammars, finalSubst, originRules, flowEnv;
   e.decSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = nothing();
   e.isRoot = false;
 
   e.downSubst = top.downSubst;
@@ -65,7 +69,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
       if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
       then decorateExprWithEmpty('decorate', @e, 'with', '{', '}')
       else @e,
-      t, pr, f);
+      @t, @pr, @f);
 }
 
 {--
@@ -104,8 +108,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   f.downSubst = pr.upSubst;
   errCheck2.downSubst = f.upSubst;
   top.upSubst = errCheck2.upSubst;
+  propagate downSubst2, upSubst2;
   
-  pr.scrutineeType = scrutineeType;
+  pr.scrutineeType = ^scrutineeType;
   pr.returnType = t.typerep;
 
   e.isRoot = false;
@@ -116,7 +121,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of (x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
   -- type 'a' which is Object, which doesn't have .childAsIs for 'x'.)
-  local scrutineeFinalType :: Type = performSubstitution(scrutineeType, top.finalSubst);
+  local scrutineeFinalType :: Type = performSubstitution(^scrutineeType, top.finalSubst);
   local scrutineeTransType :: String = scrutineeFinalType.transType;
   
   top.translation = 
@@ -172,7 +177,8 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
-  propagate frame, env, compiledGrammars, grammarName;
+  propagate config, frame, grammarName, compiledGrammars, originRules;
+  qn.env = top.env;
 
   top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
 
@@ -193,12 +199,13 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   -- around is very different, and I don't want to confuse myself while I'm writing
   -- the code. After it works, perhaps these can be merged into one non-forwarding
   -- production, once the code is understood fully.
-  forwards to if isGadt
-              then prodPatternGadt(qn, ns, e)
-              else prodPatternNormal(qn, ns, e);
+  forwards to (if isGadt then prodPatternGadt else prodPatternNormal)(qn, ns, e);
 }
-abstract production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+
+dispatch ProdPattern = PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr;
+
+abstract production prodPatternNormal implements ProdPattern
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
@@ -246,7 +253,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
-  production expectedScrutineeType :: Type =
+  nondecorated production expectedScrutineeType :: Type =
     if prod_type.outputType.isData
     then prod_type.outputType
     else decoratedType(prod_type.outputType, freshInhSet());
@@ -266,7 +273,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
-  propagate finalSubst;
+  propagate @finalSubst;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -287,8 +294,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
-abstract production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
+abstract production prodPatternGadt implements ProdPattern
+top::PrimPattern ::= @qn::QName  @ns::VarBinders  @e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
@@ -333,7 +340,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   ns.env = occursEnv(contextOccursDefs, top.env);
 
-  production expectedScrutineeType :: Type =
+  nondecorated production expectedScrutineeType :: Type =
     if prod_type.outputType.isData
     then prod_type.outputType
     else decoratedType(prod_type.outputType, freshInhSet());
@@ -525,7 +532,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  local elemType :: Type = freshType();
+  nondecorated local elemType::Type = freshType();
   
   errCheck1 = check(listType(elemType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror

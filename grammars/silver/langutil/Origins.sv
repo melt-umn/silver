@@ -89,7 +89,7 @@ aspect production originOriginInfo
 top::OriginInfo ::= origin :: a
                     newlyConstructed :: Boolean
 {
-  local constructionNote::Document =
+  nondecorated local constructionNote::Document =
     case top.originType of
     | setAtConstructionOIT() ->
       if newlyConstructed then pp"" else pp" (preserved)"
@@ -104,7 +104,7 @@ top::OriginInfo ::= origin :: a
                     redexNotes :: [OriginNote]
                     newlyConstructed :: Boolean
 {
-  local constructionNote::Document =
+  nondecorated local constructionNote::Document =
     case top.originType of
     | setAtConstructionOIT() ->
       if newlyConstructed then pp"" else pp" (preserved)"

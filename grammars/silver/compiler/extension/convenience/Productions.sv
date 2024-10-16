@@ -6,15 +6,15 @@ import silver:compiler:modification:copper;
 concrete production productionDclImplicitAbs
 top::AGDcl ::= 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
-  forwards to productionDcl('abstract', $1, id, d, ns, body);
+  forwards to productionDcl('abstract', $1, @id, @d, @ns, @body);
 }
 
 -- "concrete productions" syntax
-tracked nonterminal ProductionDclStmts with unparse, proddcls, lhsdcl, grammarName;
-tracked nonterminal ProductionDclStmt with unparse, proddcls, lhsdcl, grammarName;
-propagate lhsdcl, grammarName on ProductionDclStmts, ProductionDclStmt;
+tracked nonterminal ProductionDclStmts with unparse, proddcls, lhsdcl;
+tracked nonterminal ProductionDclStmt with unparse, proddcls, lhsdcl;
+propagate lhsdcl on ProductionDclStmts, ProductionDclStmt;
 
-synthesized attribute proddcls :: AGDcl;
+translation attribute proddcls :: AGDcl;
 inherited attribute lhsdcl :: ProductionLHS;
 
 terminal Productions_kwd 'productions' lexer classes {KEYWORD};
@@ -26,22 +26,22 @@ top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclS
   top.unparse = "concrete productions " ++ lhs.unparse ++ stmts.unparse;
   propagate grammarName, moduleNames, jarName; -- Avoid dependency on forward
   
-  stmts.lhsdcl = lhs;
+  stmts.lhsdcl = ^lhs;
   
-  forwards to stmts.proddcls;
+  forwards to @stmts.proddcls;
 }
 
 concrete production productionDclStmtsOne
 top::ProductionDclStmts ::= s::ProductionDclStmt
 {
   top.unparse = s.unparse;
-  top.proddcls = s.proddcls;
+  top.proddcls = @s.proddcls;
 }
 concrete production productionDclStmtsCons
 top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 {
   top.unparse = s.unparse ++ ss.unparse;
-  top.proddcls = appendAGDcl(s.proddcls, ss.proddcls);
+  top.proddcls = appendAGDcl(@s.proddcls, @ss.proddcls);
 }
 
 concrete production productionDclStmt
@@ -53,26 +53,26 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
 {
   top.unparse = "| " ++ rhs.unparse ++ mods.unparse ++ body.unparse; -- TODO missing some here...
   -- Either we have a name, or we generate an appropriate one.
-  local nme :: Name =
+  nondecorated local nme::Name =
     case optn of
     | noOptionalName() ->
         name(
           "p_"
-           ++ substitute(":", "_", top.grammarName)
+           ++ substitute(":", "_", top.proddcls.grammarName)
            ++ "_" ++ substitute(".", "_", v.location.filename)
            ++ "_" ++ toString(v.line) ++ "_" ++ toString(v.column))
-    | anOptionalName(_, n, _) -> n
+    | anOptionalName(_, n, _) -> ^n
     end;
 
   local newSig :: ProductionSignature =
-    productionSignature(nilConstraint(), '=>', top.lhsdcl, '::=', rhs);
+    productionSignature(nilConstraint(), '=>', top.lhsdcl, '::=', @rhs);
 
   top.proddcls = 
     case opta of
     | noOptionalAction() -> 
-        concreteProductionDcl('concrete', 'production', nme, newSig, mods, body)
+        concreteProductionDcl('concrete', 'production', nme, @newSig, @mods, @body)
     | anOptionalAction(a,c) ->
-        concreteProductionDclAction('concrete', 'production', nme, newSig, mods, body, a, c)
+        concreteProductionDclAction('concrete', 'production', nme, @newSig, @mods, @body, a, ^c)
     end;
 }
 

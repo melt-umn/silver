@@ -49,7 +49,7 @@ concrete production run_alternate
 r::Run ::= f::OptionalFail run_kwd::'run' ':' rest::CommandAlt_t
 {
  forwards to 
-   run(f, run_kwd, terminal(Command_t, "\"" ++ rest.lexeme ++ "\"") ) ;
+   run(@f, run_kwd, terminal(Command_t, "\"" ++ rest.lexeme ++ "\"") ) ;
 }
 
 concrete production run

@@ -7,7 +7,7 @@ top::AGDcl ::= 'propagate' attrs::AttrNameList 'on' nts::NameList 'excluding' ps
   propagate env;
   
   top.errors <- ps.errors;
-  forwards to propagateOnNTListDcl(attrs, nts, ps);
+  forwards to propagateOnNTListDcl(@attrs, @nts, @ps);
 }
 
 concrete production propagateOnNTListDcl_c
@@ -16,7 +16,7 @@ top::AGDcl ::= 'propagate' attrs::AttrNameList 'on' nts::NameList ';'
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse};";
   
   forwards to
-    propagateOnNTListDcl(attrs, nts, prodNameListNil());
+    propagateOnNTListDcl(@attrs, @nts, prodNameListNil());
 }
 
 abstract production propagateOnNTListDcl
@@ -26,11 +26,11 @@ top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> propagateOnOneNTDcl(attrs, n, ps)
+    | nameListOne(n) -> propagateOnOneNTDcl(@attrs, ^n, @ps)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        propagateOnOneNTDcl(attrs, n, ps),
-        propagateOnNTListDcl(attrs, rest, ps))
+        propagateOnOneNTDcl(@attrs, ^n, @ps),
+        propagateOnNTListDcl(^attrs, ^rest, ^ps))
     end;
 }
 
@@ -55,10 +55,10 @@ top::AGDcl ::= attrs::AttrNameList nt::QName ps::ProdNameList
     filter(
       \ d::ValueDclInfo -> !d.hasForward && !contains(d.fullName, ps.names),
       getKnownProds(nt.lookupType.fullName, top.env));
-  local dcl::AGDcl =
+  nondecorated local dcl::AGDcl =
     foldr(
       appendAGDcl, emptyAGDcl(),
-      map(propagateAspectDcl(_, attrs), includedProds));
+      map(propagateAspectDcl(_, ^attrs), includedProds));
   
   forwards to
     if !null(nt.lookupType.errors)
@@ -99,7 +99,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::AttrNameList
         '{',
         productionStmtsSnoc(
           productionStmtsNil(),
-          propagateAttrList('propagate', attrs, ';')),
+          propagateAttrList('propagate', @attrs, ';')),
         '}'));
 }
 
@@ -112,11 +112,11 @@ top::ProductionStmt ::= 'propagate' ns::AttrNameList ';'
   -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
-    | attrNameListOne(ms, n) -> propagateOneAttr(ms, n)
+    | attrNameListOne(ms, n) -> propagateOneAttr(^ms, ^n)
     | attrNameListCons(ms, n, _, rest) ->
       productionStmtAppend(
-        propagateOneAttr(ms, n),
-        propagateAttrList($1, rest, $3))
+        propagateOneAttr(^ms, ^n),
+        propagateAttrList($1, ^rest, $3))
     end;
 }
 
@@ -151,6 +151,12 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
   forwards to
     errorProductionStmt(
       [errFromOrigin(attr, s"Attribute ${attr.name} cannot be propagated")]);
+}
+
+abstract production propagateImpl implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName impl::ProductionStmt
+{
+  forwards to @impl;
 }
 
 tracked nonterminal AttrNameList with config, grammarName, unparse, errors, env;

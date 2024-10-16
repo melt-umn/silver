@@ -14,7 +14,7 @@ propagate config, grammarName, env, errors, termList on TermList;
 concrete production termListOne
 terms::TermList ::= t::QName
 {
-  forwards to termList(t,termListNull());
+  forwards to termList(@t,termListNull());
 } action {
   insert semantic token IdType_t at t.nameLoc;
 }
@@ -22,7 +22,7 @@ terms::TermList ::= t::QName
 concrete production termListCons
 terms::TermList ::= t::QName ',' terms_tail::TermList
 {
-  forwards to termList(t,terms_tail);
+  forwards to termList(@t,@terms_tail);
 } action {
   insert semantic token IdType_t at t.nameLoc;
 }

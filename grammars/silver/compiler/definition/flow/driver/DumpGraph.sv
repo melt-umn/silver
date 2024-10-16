@@ -17,7 +17,7 @@ abstract production dumpFlowGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpFlowGraph = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]

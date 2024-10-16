@@ -20,32 +20,30 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 }
 
 abstract production functorAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  propagate grammarName, env, flowEnv;
+  local fwrdProd::AttributionDcl =
+    if length(attl.types) > 0
+    then defaultAttributionDcl
+    else altParamAttributionDcl(
+      defaultAttributionDcl,
+      botlSome(
+        bTypeList(
+          '<',
+          typeListSingle(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType),
+                ^tl)
+            | botlNone() -> nominalTypeExpr(nt.qNameType)
+            end),
+          '>')));
   
-  forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then attl
-      else
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  tl)
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end),
-            '>')),
-      nt, nttl);
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 {--
@@ -73,7 +71,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
     attributeDef(
       concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
       '.',
-      qNameAttrOccur(new(attr)),
+      qNameAttrOccur(^attr),
       '=',
       mkFullFunctionInvocation(baseExpr(qName(top.frame.fullName)), inputs, annotations),
       ';');
@@ -89,21 +87,18 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
 function makeArg
 Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
 {
-  local at::QName = qName(input.elementName);
-  at.env = env;
-  
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
-  local validTypeHead :: Boolean = 
-    isDecorable(input.typerep, env) || input.typerep.isNonterminal;
+  local inputDecorable :: Boolean = isDecorable(input.typerep, env);
+  local validTypeHead :: Boolean = inputDecorable || input.typerep.isNonterminal;
   
   return
     if validTypeHead && attrOccursOnHead
-    then access(
-           baseExpr(at), '.',
-           qNameAttrOccur(new(attrName)))
-    else baseExpr(at);
+    then Silver_Expr { $name{input.elementName}.$QName{^attrName} }
+    else if inputDecorable
+    then Silver_Expr { silver:core:new($name{input.elementName}) }
+    else Silver_Expr { $name{input.elementName} };
 }
 
 {--

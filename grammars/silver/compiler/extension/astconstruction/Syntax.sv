@@ -31,7 +31,7 @@ top::AST_c ::= '$' '{' e::Expr '}'
 layout {silver:compiler:definition:core:WhiteSpace}
 {
   top.unparse = s"$${${e.unparse}}";
-  top.ast = antiquoteAST(new(e));
+  top.ast = antiquoteAST(^e);
   top.errors := [];
 }
 

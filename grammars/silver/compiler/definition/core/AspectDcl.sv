@@ -166,10 +166,10 @@ top::AspectProductionLHS ::= id::Name
 {
   top.unparse = id.unparse;
 
-  production attribute rType :: Type;
+  nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
-  forwards to aspectProductionLHSFull(id, rType);
+  forwards to aspectProductionLHSFull(@id, rType);
 } action {
   insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
@@ -182,7 +182,7 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 
   top.errors <- t.errors;
   
-  forwards to aspectProductionLHSFull(id, t.typerep);
+  forwards to aspectProductionLHSFull(@id, t.typerep);
 } action {
   insert semantic token IdSigNameDcl_t at id.nameLoc;
 }
@@ -190,16 +190,16 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::Type
 {
-  top.unparse = id.unparse ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(^t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
-  production attribute rType :: Type;
+  nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
 
-  top.outputElement = namedSignatureElement(id.name, t, false);
+  top.outputElement = namedSignatureElement(id.name, ^t, false);
   
-  top.defs := [aliasedLhsDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.nameLoc, fName, performSubstitution(^t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
@@ -234,7 +234,7 @@ top::AspectRHSElem ::= '_'
 {
   top.unparse = "_";
 
-  production attribute rType :: Type;
+  nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
   production shared :: Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
@@ -257,11 +257,11 @@ top::AspectRHSElem ::= id::Name
 {
   top.unparse = id.unparse;
 
-  production attribute rType :: Type;
+  nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
   production shared :: Boolean = !null(top.realSignature) && head(top.realSignature).elementShared;
 
-  forwards to aspectRHSElemFull(shared, id, rType);
+  forwards to aspectRHSElemFull(shared, @id, rType);
 }
 
 concrete production aspectRHSElemTyped
@@ -293,16 +293,16 @@ top::AspectRHSElem ::= '@' id::Name '::' t::TypeExpr
 abstract production aspectRHSElemFull
 top::AspectRHSElem ::= shared::Boolean id::Name t::Type
 {
-  top.unparse = (if shared then "@" else "") ++ id.unparse ++ "::" ++ prettyType(t);
+  top.unparse = (if shared then "@" else "") ++ id.unparse ++ "::" ++ prettyType(^t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
-  production attribute rType :: Type;
+  nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
 
-  top.inputElements = [namedSignatureElement(id.name, t, shared)];
+  top.inputElements = [namedSignatureElement(id.name, ^t, shared)];
 
-  top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(t, top.upSubst), shared, id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(^t, top.upSubst), shared, id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [errFromOrigin(id, "Value '" ++ id.name ++ "' is already bound.")]
@@ -335,7 +335,7 @@ top::AspectFunctionLHS ::= t::TypeExpr
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;
-  production attribute rType :: Type;
+  nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   top.outputElement = namedSignatureElement(fName, t.typerep, false);

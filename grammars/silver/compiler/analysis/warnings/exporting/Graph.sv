@@ -21,13 +21,13 @@ abstract production dumpDepGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpDepGraph = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production dumpExportGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpExportGraph = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]

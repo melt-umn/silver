@@ -28,7 +28,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
         location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)
     ];
   
-  forwards to productionDcl('abstract', $2, id, productionImplementsNone(), ns, body);
+  forwards to productionDcl('abstract', $2, @id, productionImplementsNone(), @ns, @body);
 } action {
   insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];

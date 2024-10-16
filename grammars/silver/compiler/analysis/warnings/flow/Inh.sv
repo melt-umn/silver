@@ -13,7 +13,7 @@ abstract production warnMissingInhFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnMissingInh = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -68,21 +68,12 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - @param realEnv  The local real environment
  - @returns  Errors for missing equations
  -}
-function checkEqDeps
+fun checkEqDeps
 [Message] ::=
   v::FlowVertex  anonResolve::[(String, Location)]
-  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env
-{
+  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env =
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
-  
-  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
-  local ns :: NamedSignature =
-    case prodDcl of
-    | d :: _ -> d.namedSignature
-    | [] -> bogusNamedSignature()
-    end;
-
-  return case v of
+  case v of
   -- A dependency on an LHS.INH is a flow issue: these equations do not exist
   -- locally, so we cannot check them.
   | lhsInhVertex(_) -> []
@@ -122,13 +113,12 @@ function checkEqDeps
       checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, flowEnv, realEnv)
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
-}
 
 fun checkInhEq
 [Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env =
   case resolveInhEq(prodName, vt, attrName, flowEnv, realEnv) of
   | alwaysDec() -> []
-  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
+  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(0, missing)}")]
   end;
 
 function checkAllEqDeps
@@ -265,8 +255,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case filter(\ v::VertexType ->
-      resolvePossibleInhEq(top.frame.fullName, v, attr.attrDcl.fullName, top.flowEnv, top.env) == alwaysDec(),
+    case filter(
+      possibleDecSiteHasInhEq(top.frame.fullName, _, attr.attrDcl.fullName, top.flowEnv, top.env),
       lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
@@ -278,8 +268,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
-      case filter(\ v::VertexType ->
-        resolvePossibleInhEq(top.frame.fullName, v, dl.inhAttrName, top.flowEnv, top.env) == alwaysDec(),
+      case filter(
+        possibleDecSiteHasInhEq(top.frame.fullName, _, dl.inhAttrName, top.flowEnv, top.env),
         lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
@@ -380,7 +370,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
         s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsDispatchHostSigInhDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
+        s"in a production that dispatched to this one, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
         s" (from ${sig.fullName})")]
     | _ -> []
     end;
@@ -684,7 +674,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], ^i, top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -738,7 +728,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             mwdaWrnFromOrigin(top,
               "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++
               " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-              " to be supplied to " ++ prettyDecSites(di.1)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             missingEqs)
         end
       | _ -> []
@@ -795,7 +785,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], ^i, top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -849,7 +839,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             mwdaWrnFromOrigin(top,
               "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
               " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-              " to be supplied to " ++ prettyDecSites(di.1)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             missingEqs)
         end
       | _ -> []
@@ -910,14 +900,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(scrutineeType, top.env), set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinRefSet(^scrutineeType, top.env), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
     && top.config.warnMissingInh
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
+    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(^scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
     else [];
 
 }
@@ -930,7 +920,7 @@ fun toAnonInhs [String] ::= vs::[FlowVertex]  vertex::String =
     end, vs);
 
 inherited attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
-propagate receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
+propagate @receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
 
 aspect production varVarBinder
 top::VarBinder ::= n::Name
@@ -940,7 +930,7 @@ top::VarBinder ::= n::Name
     if top.config.warnMissingInh
     && isDecorable(top.bindingType, top.env)
     then if refSet.isJust then []
-         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(^finalTy)}, as the reference set is not bounded.")]
     else [];
 
   -- fName is our invented vertex name for the pattern variable
@@ -961,7 +951,7 @@ top::VarBinder ::= n::Name
     && isDecorable(top.bindingType, top.env)
     && top.matchingAgainst.isJust
     then map(\ eqs::(DecSiteTree, [String]) ->
-        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(eqs.1)}\n"),
+        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(0, eqs.1)}"),
       missingInhEqs)
     else [];
 }
@@ -976,10 +966,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 
   -- The logic here mirrors the reference case in synDecoratedAccessHandler
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
-    inhDepsForSynOnType(attr, ntty, myFlow, top.frame.signature, top.env);
+    inhDepsForSynOnType(attr, ^ntty, myFlow, top.frame.signature, top.env);
   local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
 
-  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], inhs, top.env);
+  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], ^inhs, top.env);
   local diff :: [String] = set:toList(set:removeAll(acceptable.1, inhDeps));
 
   top.contextErrors <-
@@ -993,10 +983,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
         then if deps.1.isJust then []  -- We have a bound on the inh deps, and they are all present
         -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
         else if null(acceptable.2)
-        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
-        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
+        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(^top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
+        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(^top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
       -- We didn't find the inh deps
-      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
+      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(^top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
    else [];
 }
 

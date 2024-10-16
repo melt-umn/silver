@@ -14,7 +14,7 @@ abstract production warnEqdefFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnEqdef = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]

@@ -1,5 +1,32 @@
 grammar silver:compiler:extension:rewriting;
 
+import silver:compiler:driver:util;
+
+inherited attribute scrutineeType::Type occurs on MRuleList, MatchRule;
+propagate scrutineeType on MRuleList;
+
+-- Note that the second type checking pass to specialize type variables is
+-- omitted here, for the moment.
+threaded attribute pDownSubst, pUpSubst::Substitution occurs on
+  PatternList, Pattern, NamedPatternList, NamedPattern;
+inherited attribute pFinalSubst::Substitution occurs on
+  PatternList, Pattern, NamedPatternList, NamedPattern;
+propagate pFinalSubst on PatternList, Pattern, NamedPatternList, NamedPattern;
+
+inherited attribute ruleFlowEnv::FlowEnv occurs on MRuleList, MatchRule;
+inherited attribute ruleCompiledGrammars::EnvTree<Decorated RootSpec> occurs on MRuleList, MatchRule;
+propagate ruleFlowEnv, ruleCompiledGrammars on MRuleList, MatchRule;
+
+monoid attribute ruleDefs::[Def] occurs on
+  MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
+propagate ruleDefs on
+  MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
+
+monoid attribute ruleErrors::[Message] occurs on
+  MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
+propagate ruleErrors on
+  MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
+
 synthesized attribute transform<a>::a;
 
 attribute transform<Strategy> occurs on MRuleList, MatchRule;
@@ -17,177 +44,231 @@ attribute transform<Strategy> occurs on MRuleList, MatchRule;
  - to the construction of a type-unsafe tree.  More generally, a rule is
  - polymorphic if the type of a variable/wildcard pattern depends on the rule
  - type.
- - 
- - Since type inference is done by the primitive match extension, detailed
- - type information is not available here, and so we can "cheat" by being
- - slightly more liberal with our analysis, for potentially a slight penalty to
- - performance (by performing superfluous type checks) - a pattern might be
- - polymorphic if either of the following hold:
- -   * It is a variable/wildcard pattern
- -   * A constructor pattern has a polymorphic pattern as an argument
- -   corresponding to a parameter containing type variables that also occur in
- -   the constructor's output type (note that this means existential type
- -   variables and GADT productions with fully concrete output types are OK, as
- -   their expected output type cannot affect the type of the arguments)
  -}
-synthesized attribute isPolymorphic :: Boolean occurs on MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
-inherited attribute typeHasUniversalVars :: Boolean occurs on Pattern;
-inherited attribute typesHaveUniversalVars :: [Boolean] occurs on PatternList;
-inherited attribute namedTypesHaveUniversalVars :: [(String, Boolean)] occurs on NamedPatternList, NamedPattern;
-
-synthesized attribute wrappedMatchRuleList :: [AbstractMatchRule] occurs on MRuleList, MatchRule;
-
-inherited attribute decRuleExprsIn::[(String, Decorated Expr with {decorate, decSiteVertexInfo, boundVars})] occurs on MRuleList, MatchRule;
-inherited attribute ruleIndex::Integer occurs on MRuleList, MatchRule;
-
-propagate decRuleExprsIn on MRuleList;
-propagate namedTypesHaveUniversalVars on NamedPatternList, NamedPattern;
+synthesized attribute hasUnconstrainedPoly :: Boolean occurs on MRuleList, MatchRule;
 
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.transform = m.transform;
-  top.isPolymorphic = m.isPolymorphic;
-  top.wrappedMatchRuleList = m.wrappedMatchRuleList;
-  m.ruleIndex = top.ruleIndex;
+  top.hasUnconstrainedPoly = m.hasUnconstrainedPoly;
 }
 
 aspect production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
   top.transform = h.transform <+ t.transform;
-  top.isPolymorphic = h.isPolymorphic || t.isPolymorphic;
-  top.wrappedMatchRuleList = h.wrappedMatchRuleList ++ t.wrappedMatchRuleList;
-  h.ruleIndex = top.ruleIndex;
-  t.ruleIndex = top.ruleIndex + 1;
+  top.hasUnconstrainedPoly = h.hasUnconstrainedPoly || t.hasUnconstrainedPoly;
 }
 
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
-  -- Awful hack: pattern match type checking is happens on the forward "primitive match".
-  -- However, we are translating on the pattern matching extension syntax,
-  -- so we need the Decorated Expr here.
-  -- Solution: extract the Decorated Exprs from the case expression and compute
-  -- the translation on them.
-  top.transform =
-    rewriteRule(
-      pt.firstTransform,
-      case lookup(toString(top.ruleIndex), top.decRuleExprsIn) of
-      | just(e) -> e.transform
-      | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
-      end);
+  pt.scrutineeTypes = [top.scrutineeType];
+
+  production transE::Expr = ^e;
+  transE.grammarName = top.grammarName;
+  transE.config = top.config;
+  transE.frame = top.frame;
+  transE.env = newScopeEnv(pt.ruleDefs, top.env);
+  transE.compiledGrammars = top.ruleCompiledGrammars;
+  transE.isRoot = false;
+  transE.flowEnv = top.ruleFlowEnv;
+  transE.decSiteVertexInfo = nothing();
+  transE.alwaysDecorated = false;
+  transE.appDecSiteVertexInfo = nothing();
+  transE.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
+
+  top.ruleErrors <- transE.errors;
+
+  local checkResultType::TypeCheck = check(transE.typerep, top.scrutineeType);
+  top.ruleErrors <-
+    if checkResultType.typeerror
+    then [errFromOrigin(e, "RHS of rule has type " ++ checkResultType.leftpp ++ ", expected " ++ checkResultType.rightpp)]
+    else [];
+
+  pt.pDownSubst = emptySubst();
+  transE.downSubst = pt.pUpSubst;
+  checkResultType.downSubst = transE.upSubst;
+
+  pt.pFinalSubst = checkResultType.upSubst;
+  transE.finalSubst = checkResultType.upSubst;
+  checkResultType.finalSubst = checkResultType.upSubst;
+
+  top.transform = rewriteRule(pt.firstTransform, transE.transform);
   
-  top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
-  pt.typesHaveUniversalVars = [true];
-  
-  top.wrappedMatchRuleList =
-    [matchRule(
-      pt.patternList, nothing(),
-      hackWrapKey(toString(top.ruleIndex), e))];
+  top.hasUnconstrainedPoly =
+    head(pt.patternList).patternIsVariable ||
+    !null(performSubstitution(top.scrutineeType, pt.pUpSubst).freeVariables);
 }
 
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
+  pt.scrutineeTypes = [top.scrutineeType];
+
+  production transCond::Expr = ^cond;
+  transCond.grammarName = top.grammarName;
+  transCond.config = top.config;
+  transCond.frame = top.frame;
+  transCond.env = newScopeEnv(pt.ruleDefs, top.env);
+  transCond.compiledGrammars = top.ruleCompiledGrammars;
+  transCond.isRoot = false;
+  transCond.flowEnv = top.ruleFlowEnv;
+  transCond.decSiteVertexInfo = nothing();
+  transCond.alwaysDecorated = false;
+  transCond.appDecSiteVertexInfo = nothing();
+  transCond.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
+
+  top.ruleErrors <- transCond.errors;
+
+  local checkCondType::TypeCheck = check(transCond.typerep, boolType());
+  top.ruleErrors <-
+    if checkCondType.typeerror
+    then [errFromOrigin(e, "Rule condition has type " ++ checkCondType.leftpp ++ ", expected " ++ checkCondType.rightpp)]
+    else [];
+
+  production transE::Expr = ^e;
+  transE.grammarName = top.grammarName;
+  transE.config = top.config;
+  transE.frame = top.frame;
+  transE.env = newScopeEnv(pt.ruleDefs, top.env);
+  transE.compiledGrammars = top.ruleCompiledGrammars;
+  transE.isRoot = false;
+  transE.flowEnv = top.ruleFlowEnv;
+  transE.decSiteVertexInfo = nothing();
+  transE.alwaysDecorated = false;
+  transE.appDecSiteVertexInfo = nothing();
+  transE.ruleEnv = transCond.ruleEnv;
+
+  top.ruleErrors <- transE.errors;
+
+  local checkResultType::TypeCheck = check(transE.typerep, top.scrutineeType);
+  top.ruleErrors <-
+    if checkResultType.typeerror
+    then [errFromOrigin(e, "RHS of rule has type " ++ checkResultType.leftpp ++ ", expected " ++ checkResultType.rightpp)]
+    else [];
+
+  pt.pDownSubst = emptySubst();
+  transCond.downSubst = pt.pUpSubst;
+  thread downSubst, upSubst on transCond, checkCondType, transE, checkResultType;
+
+  pt.pFinalSubst = checkResultType.upSubst;
+  transCond.finalSubst = checkResultType.upSubst;
+  checkCondType.finalSubst = checkResultType.upSubst;
+  transE.finalSubst = checkResultType.upSubst;
+  checkResultType.finalSubst = checkResultType.upSubst;
+
   top.transform =
-    require(
-      pt.firstTransform,
-      case lookup(toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
-      | just(e) -> e.transform
-      | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex) ++ "_cond")
-      end) <*
-    rewriteRule(
-      pt.firstTransform,
-      case lookup(toString(top.ruleIndex), top.decRuleExprsIn) of
-      | just(e) -> e.transform
-      | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
-      end);
-  
-  top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
-  pt.typesHaveUniversalVars = [true];
-  
-  top.wrappedMatchRuleList =
-    [matchRule(
-      pt.patternList,
-      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond), nothing())),
-      hackWrapKey(toString(top.ruleIndex), e))];
+    require(pt.firstTransform, transCond.transform) <*
+    rewriteRule(pt.firstTransform, transE.transform);
+
+  top.hasUnconstrainedPoly =
+    head(pt.patternList).patternIsVariable ||
+    !null(performSubstitution(top.scrutineeType, pt.pUpSubst).freeVariables);
 }
 
 aspect production matchRuleWhenMatches_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::Expr
 {
+  pt.scrutineeTypes = [top.scrutineeType];
+
+  production transCond::Expr = ^cond;
+  transCond.grammarName = top.grammarName;
+  transCond.config = top.config;
+  transCond.frame = top.frame;
+  transCond.env = newScopeEnv(pt.ruleDefs, top.env);
+  transCond.compiledGrammars = top.ruleCompiledGrammars;
+  transCond.isRoot = false;
+  transCond.flowEnv = top.ruleFlowEnv;
+  transCond.decSiteVertexInfo = nothing();
+  transCond.alwaysDecorated = false;
+  transCond.appDecSiteVertexInfo = nothing();
+  transCond.ruleEnv = newScopeEnv(pt.ruleDefs, emptyEnv());
+
+  top.ruleErrors <- transCond.errors;
+
+  p.scrutineeType = performSubstitution(transCond.typerep, transCond.upSubst);
+
+  production transE::Expr = ^e;
+  transE.grammarName = top.grammarName;
+  transE.config = top.config;
+  transE.frame = top.frame;
+  transE.env = newScopeEnv(p.ruleDefs, cond.env);
+  transE.compiledGrammars = top.ruleCompiledGrammars;
+  transE.isRoot = false;
+  transE.flowEnv = top.ruleFlowEnv;
+  transE.decSiteVertexInfo = nothing();
+  transE.alwaysDecorated = false;
+  transE.appDecSiteVertexInfo = nothing();
+  transE.ruleEnv = newScopeEnv(p.ruleDefs, transCond.ruleEnv);
+
+  top.ruleErrors <- transE.errors;
+
+  local checkResultType::TypeCheck = check(transE.typerep, top.scrutineeType);
+  top.ruleErrors <-
+    if checkResultType.typeerror
+    then [errFromOrigin(e, "RHS of rule has type " ++ checkResultType.leftpp ++ ", expected " ++ checkResultType.rightpp)]
+    else [];
+
+  pt.pDownSubst = emptySubst();
+  transCond.downSubst = pt.pUpSubst;
+  p.pDownSubst = transCond.upSubst;
+  transE.downSubst = p.pUpSubst;
+  checkResultType.downSubst = transE.upSubst;
+
+  pt.pFinalSubst = checkResultType.upSubst;
+  transCond.finalSubst = checkResultType.upSubst;
+  p.pFinalSubst = checkResultType.upSubst;
+  transE.finalSubst = checkResultType.upSubst;
+  checkResultType.finalSubst = checkResultType.upSubst;
+
   top.transform =
     require(
       pt.firstTransform,
-      matchASTExpr(
-        case lookup(toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
-        | just(e) -> e.transform
-        | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex) ++ "_cond")
-        end,
-        p.transform, booleanASTExpr(true), booleanASTExpr(false))) <*
-    rewriteRule(
-      pt.firstTransform,
-      case lookup(toString(top.ruleIndex), top.decRuleExprsIn) of
-      | just(e) -> e.transform
-      | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
-      end);
-  
-  top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
-  pt.typesHaveUniversalVars = [true];
-  
-  top.wrappedMatchRuleList =
-    [matchRule(
-      pt.patternList,
-      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond), just(p))),
-      hackWrapKey(toString(top.ruleIndex), e))];
+      matchASTExpr(transCond.transform, p.transform, booleanASTExpr(true), booleanASTExpr(false))) <*
+    rewriteRule(pt.firstTransform, transE.transform);
+
+  top.hasUnconstrainedPoly =
+    head(pt.patternList).patternIsVariable ||
+    !null(performSubstitution(top.scrutineeType, pt.pUpSubst).freeVariables);
 }
 
-abstract production hackWrapKey
-top::Expr ::= key::String e::Expr
-{
-  top.unparse = s"key(${key}, ${e.unparse})";
-  top.decRuleExprs = [(key, forward)];
-  forwards to e;
-}
-
-aspect production caseExpr_c
-top::Expr ::= 'case' es::Exprs 'of' _ ml::MRuleList 'end'
-{
-  ml.ruleIndex = 0;
-}
+inherited attribute scrutineeTypes::[Type] occurs on PatternList;
 
 attribute transform<ASTPatterns> occurs on PatternList;
 synthesized attribute firstTransform::ASTPattern occurs on PatternList;
 
+propagate pDownSubst, pUpSubst on PatternList;
+
 aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
+  p.scrutineeType =
+    case top.scrutineeTypes of
+    | [] -> errorType()
+    | h :: _ -> h
+    end;
+
   top.transform = consASTPattern(p.transform, nilASTPattern());
   top.firstTransform = p.transform;
-  top.isPolymorphic = p.isPolymorphic;
-  p.typeHasUniversalVars =
-    case top.typesHaveUniversalVars of
-    | h :: _ -> h
-    | _ -> false
-    end;
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps::PatternList
 {
+  p.scrutineeType =
+    case top.scrutineeTypes of
+    | [] -> errorType()
+    | h :: _ -> h
+    end;
+  ps.scrutineeTypes =
+    case top.scrutineeTypes of
+    | [] -> []
+    | _ :: t -> t
+    end;
+
   top.transform = consASTPattern(p.transform, ps.transform);
   top.firstTransform = p.transform;
-  top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
-  p.typeHasUniversalVars =
-    case top.typesHaveUniversalVars of
-    | h :: _ -> h
-    | _ -> false
-    end;
-  ps.typesHaveUniversalVars =
-    case top.typesHaveUniversalVars of
-    | _ :: t -> t
-    | _ -> []
-    end;
 }
 
 aspect production patternList_nil
@@ -195,227 +276,156 @@ top::PatternList ::=
 {
   top.transform = nilASTPattern();
   top.firstTransform = error("Empty pattern list");
-  top.isPolymorphic = false;
 }
 
-attribute transform<NamedASTPatterns> occurs on NamedPatternList;
+inherited attribute scrutineeNamedTypes::[(String, Type)];
+
+attribute scrutineeNamedTypes, transform<NamedASTPatterns> occurs on NamedPatternList;
+propagate scrutineeNamedTypes, pDownSubst, pUpSubst on NamedPatternList;
 
 aspect production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
 {
   top.transform = consNamedASTPattern(p.transform, nilNamedASTPattern());
-  top.isPolymorphic = p.isPolymorphic;
 }
 aspect production namedPatternList_more
 top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
 {
   top.transform = consNamedASTPattern(p.transform, ps.transform);
-  top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
 }
 
 aspect production namedPatternList_nil
 top::NamedPatternList ::=
 {
   top.transform = nilNamedASTPattern();
-  top.isPolymorphic = false;
 }
 
-attribute transform<NamedASTPattern> occurs on NamedPattern;
+attribute scrutineeNamedTypes, transform<NamedASTPattern> occurs on NamedPattern;
+propagate pDownSubst, pUpSubst on NamedPattern;
 
 aspect production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern
 {
+  local lookupRes::Maybe<Type> = lookup(last(explode(":", qn.name)), top.scrutineeNamedTypes);
+  p.scrutineeType = fromMaybe(errorType(), lookupRes);
+
+  top.ruleErrors <-
+    if lookupRes.isJust then []
+    else [errFromOrigin(top, "Unexpected annotation " ++ qn.name ++ " for production")];
+
   top.transform = namedASTPattern(qn.lookupAttribute.fullName, p.transform);
-  top.isPolymorphic = p.isPolymorphic;
-  p.typeHasUniversalVars =
-    fromMaybe(
-      -- Should be an internal error, but error checking for annotation patterns is broken,
-      -- so we might demand a transform from a pattern that mentions an annotation that the
-      -- nonterminal type doesn't have.
-      -- See the comment on the silver:compiler:extension:patternmatching:namedPattern production.
-      false,
-      lookup(last(explode(":", qn.name)), top.namedTypesHaveUniversalVars));
 }
 
-attribute transform<ASTPattern> occurs on Pattern;
+attribute scrutineeType, transform<ASTPattern> occurs on Pattern;
+
+propagate pDownSubst, pUpSubst on Pattern
+  excluding prodAppPattern_named, nilListPattern, consListPattern;
 
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
+  -- Ignoring contexts and GADT productions here, for now.
+  local prodType::Type = skolemizeProductionType(prod.lookupValue.typeScheme).2;
+  ps.scrutineeTypes = prodType.inputTypes;
+  nps.scrutineeNamedTypes = prodType.namedTypes;
+
+  local checkResultType::TypeCheck = check(prodType.outputType, top.scrutineeType);
+  top.ruleErrors <-
+    if checkResultType.typeerror
+    then [errFromOrigin(top, "Production " ++ prod.name ++ " has type " ++ checkResultType.leftpp ++ ", but we are matching against " ++ checkResultType.rightpp)]
+    else [];
+  
+  checkResultType.downSubst = top.pDownSubst;
+  ps.pDownSubst = checkResultType.upSubst;
+  thread pDownSubst, pUpSubst on ps, nps, top;
+
+  checkResultType.finalSubst = top.pFinalSubst;
+
   top.transform =
     prodCallASTPattern(prod.lookupValue.fullName, ps.transform, nps.transform);
-  top.isPolymorphic = ps.isPolymorphic || nps.isPolymorphic;
-  
-  local prodType::Type = prod.lookupValue.typeScheme.typerep;
-  local outputFreeVars::[TyVar] = prodType.outputType.freeVariables;
-  ps.typesHaveUniversalVars =
-    map(
-      \ t::Type -> !null(intersect(outputFreeVars, t.freeVariables)),
-      prodType.inputTypes);
-  nps.namedTypesHaveUniversalVars =
-    map(
-      \ t::Pair<String Type> ->
-        (t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
-      prodType.namedTypes);
-} 
+}
 
 aspect production wildcPattern
 top::Pattern ::= '_'
 {
   top.transform = wildASTPattern();
-  top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production varPattern
 top::Pattern ::= v::Name
 {
+  top.ruleDefs <- [lexicalLocalDef(top.grammarName, v.nameLoc, v.name, top.scrutineeType, nothing(), [])];
   top.transform = varASTPattern(v.name);
-  top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production errorPattern
 top::Pattern ::= msg::[Message]
 {
   top.transform = error("transform undefined in the presence of errors");
-  top.isPolymorphic = false;
 }
 
 aspect production intPattern
 top::Pattern ::= num::Int_t
 {
   top.transform = integerASTPattern(toInteger(num.lexeme));
-  top.isPolymorphic = false;
 }
 
 aspect production fltPattern
 top::Pattern ::= num::Float_t
 {
   top.transform = floatASTPattern(toFloat(num.lexeme));
-  top.isPolymorphic = false;
 }
 
 aspect production strPattern
 top::Pattern ::= str::String_t
 {
   top.transform = stringASTPattern(unescapeString(substring(1, length(str.lexeme) - 1, str.lexeme)));
-  top.isPolymorphic = false;
 }
 
 aspect production truePattern
 top::Pattern ::= 'true'
 {
   top.transform = booleanASTPattern(true);
-  top.isPolymorphic = false;
 }
 
 aspect production falsePattern
 top::Pattern ::= 'false'
 {
   top.transform = booleanASTPattern(false);
-  top.isPolymorphic = false;
 }
 
 aspect production nilListPattern
 top::Pattern ::= '[' ']'
 {
+  local checkIsList::TypeCheck = check(top.scrutineeType, listType(freshType()));
+  top.ruleErrors <-
+    if checkIsList.typeerror
+    then [errFromOrigin(top, "Expected to match a list type, but got " ++ checkIsList.leftpp)]
+    else [];
+  
+  checkIsList.downSubst = top.pDownSubst;
+  top.pUpSubst = checkIsList.upSubst;
+  checkIsList.finalSubst = top.pFinalSubst;
+
   top.transform = nilListASTPattern();
-  top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production consListPattern
 top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
+  hp.scrutineeType = freshType();
+  tp.scrutineeType = top.scrutineeType;
+
+  local checkIsList::TypeCheck = check(top.scrutineeType, listType(hp.scrutineeType));
+  top.ruleErrors <-
+    if checkIsList.typeerror
+    then [errFromOrigin(top, "Expected to match a list type, but got " ++ checkIsList.leftpp)]
+    else [];
+
+  checkIsList.downSubst = top.pDownSubst;
+  hp.pDownSubst = checkIsList.upSubst;
+  thread pDownSubst, pUpSubst on hp, tp, top;
+  checkIsList.finalSubst = top.pFinalSubst;
+
   top.transform = consListASTPattern(hp.transform, tp.transform);
-  
-  -- Slight special case optimization for lists:
-  -- :: has type ([a] ::= a [a]), so only polymorphic if both args are as well. 
-  top.isPolymorphic = hp.isPolymorphic && tp.isPolymorphic;
-  hp.typeHasUniversalVars = top.typeHasUniversalVars;
-  tp.typeHasUniversalVars = top.typeHasUniversalVars;
-}
-
--- Primitive pattern stuff
-aspect production onePattern
-top::PrimPatterns ::= p::PrimPattern
-{
-  top.decRuleExprs = p.decRuleExprs;
-}
-aspect production consPattern
-top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
-{
-  top.decRuleExprs = p.decRuleExprs ++ ps.decRuleExprs;
-}
-
-aspect production prodPatternNormal
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-  e.boundVars = top.boundVars ++ ns.varBindings;
-}
-
-aspect production prodPatternGadt
-top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-  e.boundVars = top.boundVars ++ ns.varBindings;
-}
-
-aspect production integerPattern
-top::PrimPattern ::= i::Int_t _ e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-}
-aspect production floatPattern
-top::PrimPattern ::= f::Float_t _ e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-}
-aspect production stringPattern
-top::PrimPattern ::= s::String_t _ e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-}
-aspect production booleanPattern
-top::PrimPattern ::= i::String _ e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-}
-aspect production nilPattern
-top::PrimPattern ::= e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-}
-aspect production conslstPattern
-top::PrimPattern ::= h::Name t::Name e::Expr
-{
-  top.decRuleExprs = e.decRuleExprs;
-}
-
-synthesized attribute varBindings::[Pair<String Boolean>] occurs on VarBinders, VarBinder;
-
-aspect production oneVarBinder
-top::VarBinders ::= v::VarBinder
-{
-  top.varBindings = v.varBindings;
-}
-aspect production consVarBinder
-top::VarBinders ::= v::VarBinder ',' vs::VarBinders
-{
-  top.varBindings = v.varBindings ++ vs.varBindings;
-}
-aspect production nilVarBinder
-top::VarBinders ::=
-{
-  top.varBindings = [];
-}
-
-aspect production varVarBinder
-top::VarBinder ::= n::Name
-{
-  top.varBindings = [(n.name, performSubstitution(top.bindingType, top.finalSubst).isDecorated)];
-}
-aspect production ignoreVarBinder
-top::VarBinder ::= '_'
-{
-  top.varBindings = [];
 }

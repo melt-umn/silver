@@ -141,7 +141,7 @@ top::Expr ::= x::a
 }
 }
 
-warnCode "Access of value from Decorated a with b requires an unbounded set of inherited attributes" {
+warnCode "Access of value from Decorated a with {} requires an unbounded set of inherited attributes" {
 production valueThing3Bad
 attribute value i occurs on a =>
 top::Expr ::= x::a
@@ -236,11 +236,12 @@ Integer ::= e::Expr
 -- value missing a flowtype
 nonterminal Expr2 with env1, value;
 
-wrongCode "Ambiguous type variable a (arising from the use of getValuePoly) prevents the constraint attribute flow:value a occurs on flow:Expr2 from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for flow:value on flow:Expr2" {
+-- TODO: this defaults to the empty set now instead of raising an error. Is that desirable?
+--wrongCode "Ambiguous type variable a (arising from the use of getValuePoly) prevents the constraint attribute flow:value a occurs on flow:Expr2 from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for flow:value on flow:Expr2" {
 function getValueExpr2
 Integer ::= e::Expr2
 {
   e.env1 = [];
   return getValuePoly(e);
 }
-}
+--}

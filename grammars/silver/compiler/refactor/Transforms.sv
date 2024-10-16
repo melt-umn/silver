@@ -6,8 +6,8 @@ propagate transformed on Root;
 aspect transformed on AGDcls of
 | consAGDcls(h, t) -> consAGDcls(
     case h.transforms of
-    | fail() -> new(h)
-    | ts -> rewriteWith(allTopDown(ts), new(h)).fromJust
+    | fail() -> ^h
+    | ts -> rewriteWith(allTopDown(ts), ^h).fromJust
     end,
     t.transformed)
 | nilAGDcls() -> nilAGDcls()

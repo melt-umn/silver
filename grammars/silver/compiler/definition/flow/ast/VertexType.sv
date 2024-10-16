@@ -109,6 +109,20 @@ top::VertexType ::=
   top.eqVertex = [forwardEqVertex_singleton];
 }
 
+abstract production forwardParentVertexType
+top::VertexType ::=
+{
+  top.vertexName = "forwardParent";
+  top.vertexPP = "forward parent";
+  top.isInhDefVertex = false;
+  top.synVertex = forwardParentSynVertex;
+  top.inhVertex = lhsInhVertex;
+  -- The forward of the forward parent is the LHS of this production, which doesn't have a vertex!
+  -- This should never really be consulted in practice.
+  top.fwdVertex = localEqVertex("__lhs");
+  top.eqVertex = [];
+}
+
 {--
  - Represents the vertexes for anonymous vertex types somewhere within a production (e.g. 'decorate with' expressions).
  -}

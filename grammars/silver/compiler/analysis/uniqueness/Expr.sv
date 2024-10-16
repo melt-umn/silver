@@ -101,7 +101,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.sharedRefs :=
     e1.sharedRefs ++
-    unionMutuallyExclusiveRefs(e1.sharedRefs, e2.sharedRefs);
+    unionMutuallyExclusiveRefs(e2.sharedRefs, e3.sharedRefs);
 }
 
 aspect production matchPrimitiveReal

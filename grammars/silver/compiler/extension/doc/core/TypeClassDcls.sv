@@ -86,7 +86,7 @@ top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
-  forwards to item;
+  forwards to @item;
 }
 
 aspect production constraintClassBodyItem
@@ -165,7 +165,7 @@ top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
-  forwards to item;
+  forwards to @item;
 }
 
 aspect production instanceBodyItem

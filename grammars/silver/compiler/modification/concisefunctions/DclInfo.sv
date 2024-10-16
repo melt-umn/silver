@@ -21,7 +21,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 
   top.refDispatcher = shortFunParamReference;
   top.defDispatcher = errorValueDef; -- should be impossible (never in scope at production level?)

@@ -35,7 +35,7 @@ top::FunctorTestNT ::= h::FunctorTestNT2
 {
   forwards to
     consFTNT2(
-      h,
+      @h,
       nilFTNT(42, functorTestAnno=top.functorTestAnno),
       functorTestAnno=top.functorTestAnno);
 }

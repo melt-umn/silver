@@ -47,9 +47,9 @@ fun composeSubst Substitution ::= s1::Substitution s2::Substitution =
 
 fun ignoreFailure Substitution ::= s::Substitution =
   case s of
-| goodSubst(_) -> s
-| badSubst(sl,_) -> goodSubst(sl)
-end;
+  | goodSubst(_) -> s
+  | badSubst(sl,_) -> goodSubst(sl)
+  end;
 
 --------------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ functor attribute flatRenamed occurs on Context, Type;
 
 propagate substitution on Context, Type;
 propagate substituted, flatRenamed on Context, Type
-  excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType, ntOrDecType;
+  excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType;
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
@@ -105,11 +105,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else new(top);
+    else ^top;
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else new(top);
+    else ^top;
 }
 
 aspect production skolemType
@@ -139,25 +139,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else new(top);
+    else ^top;
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else new(top);
-}
-
-aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
-{
-  -- We rely very carefully on eliminating ourselves once we've specialized!
-  -- Note: we're matching on hidden.subsituted, not just hidden. Important!
-  top.substituted =
-    case hidden.substituted of
-    | varType(_) -> ntOrDecType(nt.substituted, inhs.substituted, hidden.substituted)
-    | _          -> hidden.substituted
-    end;
-  -- For a renaming, we don't need to specialize.
-  propagate substitution, flatRenamed;
+    else ^top;
 }
 
 --------------------------------------------------------------------------------

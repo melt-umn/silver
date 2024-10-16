@@ -7,7 +7,7 @@ tracked nonterminal ListOfTypeExprs with unparse, te_translation;
 -- Used to convert the comma-separated list of TypeExprs 
 -- that make up the tuple type expression into a 
 -- pair type expression:
-synthesized attribute te_translation :: TypeExpr;
+translation attribute te_translation :: TypeExpr;
 
 -- A list of the types that make up any given tuple:
 synthesized attribute tupleElems :: [Type] occurs on Type;
@@ -19,7 +19,7 @@ synthesized attribute tupleElems :: [Type] occurs on Type;
 aspect default production
 top::Type ::=
 {
-  top.tupleElems = [top];
+  top.tupleElems = [^top];
 }
 
 -- For any Pair (or nested Pair) type, accumulate its tupleElems
@@ -31,16 +31,9 @@ top::Type ::= c::Type a::Type
     -- c.argTypes should only have a single element
     case c.baseType of
     | nonterminalType("silver:core:Pair", [starKind(), starKind()], true, false) -> c.argTypes ++ a.tupleElems
-    | _ -> [top]
+    | _ -> [^top]
     end;
 
-}
-
--- Avoid specializing possibly-decorated types
-aspect production ntOrDecType
-top::Type ::= _ _ _
-{
-  top.tupleElems = [top];
 }
 
 -- Aspect productions needed to avoid discarding 
@@ -48,13 +41,13 @@ top::Type ::= _ _ _
 aspect production listType
 top::Type ::= _
 {
-  top.tupleElems = [top];
+  top.tupleElems = [^top];
 }
 
 aspect production listCtrType
 top::Type ::=
 {
-  top.tupleElems = [top];
+  top.tupleElems = [^top];
 }
 
 -- accepts a [Type] (will be tupleElems here)
@@ -63,8 +56,6 @@ top::Type ::=
 abstract production tupleType
 top::Type ::= ts::[Type]
 {
-  top.defaultSpecialization = top;
-
   -- to avoid transforming away the tupleType and turning it back 
   -- into a chain of Pairs when performing substitutions
   top.substituted = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.substituted, ts));
@@ -99,19 +90,19 @@ top::TypeExpr ::= '(' tes::ListOfTypeExprs ')'
 {
   top.unparse = "(" ++ tes.unparse ++ ")";
   top.typerep = tupleType(forward.typerep.tupleElems);
-  forwards to tes.te_translation;
+  forwards to @tes.te_translation;
 }
 
 concrete production tupleTypeExpr2
 top::ListOfTypeExprs ::= te1::TypeExpr ',' te2::TypeExpr
 {
   top.unparse = te1.unparse ++ "," ++ te2.unparse;
-  top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{te1} $TypeExpr{te2}>};
+  top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{@te1} $TypeExpr{@te2}>};
 }
 
 concrete production tupleTypeExprn
 top::ListOfTypeExprs ::= te::TypeExpr ',' tes::ListOfTypeExprs
 {
   top.unparse = te.unparse ++ "," ++ tes.unparse;
-  top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{te} $TypeExpr{tes.te_translation}>};
+  top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{@te} $TypeExpr{@tes.te_translation}>};
 }

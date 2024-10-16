@@ -22,7 +22,6 @@ concrete production generatorDcl
 top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorComponents '}'
 {
   top.unparse = s"generator ${n.unparse} :: ${t.unparse} { ${grammars.unparse} }";
-  propagate config, grammarName, compiledGrammars, grammarDependencies, env, flowEnv;
 
   -- Compute the defs exported by the specified grammars
   local med::ModuleExportedDefs =
@@ -67,8 +66,8 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   implicitImports <- ["silver:regex"];
 
   forwards to Silver_AGDcl {
-    function $Name{n}
-    silver:core:RandomGen<$TypeExpr{t}> ::= minDepth::Integer maxDepth::Integer
+    function $Name{@n}
+    silver:core:RandomGen<$TypeExpr{@t}> ::= minDepth::Integer maxDepth::Integer
     {
       $ProductionStmt{
         foldr(
@@ -116,26 +115,26 @@ Expr ::= env::Env  specEnv::Env  depth::Expr  t::Type
     -- Monomorphic nonterminals that don't have an explicit Arbitrary instance,
     -- call the appropriate local generator function.
     | nonterminalType(ntName, [], _, _)
-      when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
-      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName))}($Expr{depth}) }
+      when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", ^t, env))
+      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName))}($Expr{^depth}) }
     
     | terminalType(tName)
-      when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
-      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName))}($Expr{depth}) }
+      when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", ^t, env))
+      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName))}($Expr{^depth}) }
 
     -- Lists are handled specially here, to allow recusively generating for
     -- e.g. lists of nonterminals in a production RHS.
     | appType(listCtrType(), elemT) ->
       Silver_Expr {
-        silver:core:bind(silver:util:random:randomRange(0, $Expr{depth}), \ len::Integer ->
+        silver:core:bind(silver:util:random:randomRange(0, $Expr{^depth}), \ len::Integer ->
           silver:core:traverseA(
-            \ depth::Integer -> $Expr{genForType(env, specEnv, Silver_Expr { depth - 1 }, elemT)},
-            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{depth})))))
+            \ depth::Integer -> $Expr{genForType(env, specEnv, Silver_Expr { depth - 1 }, ^elemT)},
+            silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{^depth})))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
     -- handled by the Arbitrary type class.
-    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb")}($Expr{depth}) }
+    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb")}($Expr{^depth}) }
     end; 
 }
 
@@ -147,8 +146,8 @@ Boolean ::= env::Env  specEnv::Env  t::Type
     case t of
     | nonterminalType(ntName, [], _, _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | terminalType(ntName) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
-    | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, elemT)
-    | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", t, env))
+    | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, ^elemT)
+    | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", ^t, env))
     end;
 }
 
@@ -205,7 +204,7 @@ ProductionStmt ::= env::Env  specEnv::Env  nt::String
   local num_lowest_arity :: Integer = length(takeWhile2(prodDclInfoNumChildEq, prods));
   local num_nonzero_arity :: Integer = length(filter(prodDclInfoNumChildNonzero, prods));
   
-  local result::Expr =
+  nondecorated local result::Expr =
     if null(prods)
     -- TODO: This could be a compile-time error, in theory
     then Silver_Expr { error($Expr{stringConst(terminal(String_t, "\"no generatable productions for nonterminal " ++ nt ++ "\""))}) }
@@ -234,7 +233,7 @@ ProductionStmt ::= env::Env  specEnv::Env  nt::String
 function genTermLocalDecl
 ProductionStmt ::= env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
 {
-  local te::TypeExpr = nominalTypeExpr(qName(t).qNameType);
+  nondecorated local te::TypeExpr = nominalTypeExpr(qName(t).qNameType);
 
   -- Filter out cantidate lexemes by checking if they match dominating terminal regexes.
   -- TODO: This a approach is somewhat somewhat inefficient, and fails with
@@ -251,7 +250,7 @@ ProductionStmt ::= env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorate
   -- Also note that this does not consider disambiguation functions, and may
   -- generate trees that could have arisen from different ambigous parses of the
   -- same source.
-  local termDominated::Expr =
+  nondecorated local termDominated::Expr =
     foldr(
       or(_, '||', _),
       falseConst('false'),
@@ -293,17 +292,17 @@ Expr ::= env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
     prodType.namedTypes;
   local argGenExprs::[Expr] =
     map(genForType(env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));
-  local genRes::Expr =
+  nondecorated local genRes::Expr =
     mkFullFunctionInvocation(
       Silver_Expr { $name{prod.fullName} },
       map(\ i::Integer -> Silver_Expr { $name{"a" ++ toString(i)} }, range(0, length(prodType.inputTypes))),
       map(\ a::String -> (a, Silver_Expr { $name{a} }), map(fst, prodType.namedTypes)));
-  local lambdaChain::Expr =
+  nondecorated local lambdaChain::Expr =
     foldr(
       \ arg::(String, Type) res::Expr ->
         Silver_Expr { \ $name{arg.1}::$TypeExpr{typerepTypeExpr(arg.2)} -> $Expr{res} },
       genRes, args);
-  local genProd::Expr =
+  nondecorated local genProd::Expr =
     if null(argGenExprs)
     then Silver_Expr { silver:core:pure($Expr{genRes}) }
     else foldl(

@@ -72,7 +72,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
   top.errors <- undecidableInstanceErrors;
 
-  local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep);
+  nondecorated local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
   top.occursDefs <- transitiveSuperOccursDefs(top.env, t.typerep, [], instDcl);
@@ -125,12 +125,12 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
 
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
-  production attrTy::Type =
+  nondecorated production attrTy::Type =
     if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
+  nondecorated local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 }
 
@@ -175,12 +175,12 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
 
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
-  production attrTy::Type =
+  nondecorated production attrTy::Type =
     if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
+  nondecorated local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 
   top.lexicalTyVarKinds <-
@@ -226,12 +226,12 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
-  production attrTy::Type =
+  nondecorated production attrTy::Type =
     if map((.kind), atTypeScheme.boundVars) == map((.kindrep), attl.types)
     then performRenaming(atTypeScheme.typerep, rewrite)
     else errorType();
 
-  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
+  nondecorated local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy);
   top.occursDefs <- [instDcl];
 }
 
@@ -244,7 +244,7 @@ top::Constraint ::= 'runtimeTypeable' t::TypeExpr
   top.errors <- t.errorsTyVars;
   top.errors <- t.errorsKindStar;
 
-  local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep);
+  nondecorated local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep);
   top.defs <- [tcInstDef(instDcl)];
 }
 
@@ -263,7 +263,7 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
-  local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep);
+  nondecorated local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep);
   top.defs <-
     case top.constraintPos of
     | classPos(_, _) -> []
@@ -323,7 +323,7 @@ top::ConstraintPosition ::= instHead::Context tvs::[TyVar]
   top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
   top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=top.sourceGrammar, sourceLocation=loc);
-  top.instanceHead = just(instHead);
+  top.instanceHead = just(^instHead);
 }
 abstract production classPos
 top::ConstraintPosition ::= className::String tvs::[TyVar]
@@ -383,7 +383,7 @@ function transitiveSuperContexts
 {
   local dcls::[TypeDclInfo] = getTypeDcl(className, env);
   local dcl::TypeDclInfo = head(dcls);
-  dcl.givenInstanceType = ty;
+  dcl.givenInstanceType = ^ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
@@ -391,7 +391,7 @@ function transitiveSuperContexts
     else unionsBy(
       sameSuperContext,
       dcl.superContexts ::
-      map(transitiveSuperContexts(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
+      map(transitiveSuperContexts(env, ^ty, dcl.fullName :: seenClasses, _), superClassNames));
 }
 
 -- TODO: Should be an equality attribute, maybe?
@@ -413,11 +413,11 @@ function transitiveSuperDefs
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);
-  dcl.givenInstanceType = ty;
+  dcl.givenInstanceType = ^ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   local superInstDcls::[InstDclInfo] =
     map(
-      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      instSuperDcl(_, ^instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
@@ -425,8 +425,8 @@ function transitiveSuperDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      flatMap(\ c::Context -> c.contextSuperDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
-      flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
+      flatMap(\ c::Context -> c.contextSuperDefs(^instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
+      flatMap(transitiveSuperDefs(env, ^ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }
 
 function transitiveSuperOccursDefs
@@ -434,11 +434,11 @@ function transitiveSuperOccursDefs
 {
   local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::TypeDclInfo = head(dcls);
-  dcl.givenInstanceType = ty;
+  dcl.givenInstanceType = ^ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   local superInstDcls::[InstDclInfo] =
     map(
-      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      instSuperDcl(_, ^instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
@@ -446,6 +446,6 @@ function transitiveSuperOccursDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      flatMap(\ c::Context -> c.contextSuperOccursDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
-      flatMap(transitiveSuperOccursDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
+      flatMap(\ c::Context -> c.contextSuperOccursDefs(^instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
+      flatMap(transitiveSuperOccursDefs(env, ^ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }

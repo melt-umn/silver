@@ -24,8 +24,8 @@ top::PolyType ::= ty::Type
 {
   top.boundVars = [];
   top.contexts = [];
-  top.typerep = new(ty);
-  top.monoType = new(ty);
+  top.typerep = ^ty;
+  top.monoType = ^ty;
 }
 
 abstract production polyType
@@ -33,7 +33,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = [];
-  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
+  top.typerep = freshenTypeWith(^ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
 }
 
@@ -42,7 +42,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
-  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
+  top.typerep = freshenTypeWith(^ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a (constraint) poly type!");
 }
 
@@ -130,7 +130,7 @@ top::Type ::= c::Type a::Type
 {
   top.kindrep =
     case c.kindrep of
-    | arrowKind(_, k) -> new(k)
+    | arrowKind(_, k) -> ^k
     | _ -> starKind()
     end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
@@ -252,57 +252,6 @@ top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
   top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
-}
-
-{--
- - An intermediate type. This *should* never appear as the type of a symbol,
- - etc. Rather, this is a helper type only used within expressions.
- -
- - It represents a nonterminal that is *either* decorated or undecorated
- - (e.g. when referencing a child) but has not yet been specialized.
- -
- - This is annoyingly complicated because there are some cases in which it is
- - fine for the type to be decorated with any set of inherited attributes
- - (e.g. taking references to children, locals) and some where we only want to
- - permit a specific set of attributes if the type does get specialized to decorated
- - (references to variables bound in let expressions/pattern matching.)
- - This is what 'inhs' tracks.
- -
- - Seperately, we also want to control the default behavior for when we never
- - specialize - whether we are partially or totally decorated reference
- - (determined by 'defaultPartialDec') and what set of attributes we should have
- - (determined by 'defaultInhs'.)  These are not affected by unification, but we
- - must not specialize to 'defaultInhs' if 'inhs' ultimately unifies with
- - something incompatible.
- -
- - @param nt  MUST be a 'nonterminalType'
- - @param inhs  The inh set that we're decorated with, or a free var if we don't care - MUST have kind InhSet
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'uniqueDecoratedType(nt, inhs)'
- -                representing state: unspecialized, undecorated, or decorated.
- - @param defaultPartialDec  The default for what we are if we never specialize.
- - @param inhs  The default for what we're decorated with if we never specialize - MUST have kind InhSet
- -}
-
--- This will ONLY appear in the types of expressions, nowhere else!
-abstract production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
-{
-  -- Note that we are excluding hidden here if it is unspecialized
-  top.freeVariables =
-    case hidden of
-    | varType(_) -> setUnionTyVars(nt.freeVariables, inhs.freeVariables)
-    | _ -> hidden.freeVariables
-    end;
-
-  -- If we never specialize what we're decorated with, we're decorated with nothing.
-  production actualInhs::Type =
-    case inhs of
-    | varType(_) -> inhSetType([])
-    | _ -> inhs
-    end;
-
-   -- If we never specialize, we're decorated.
-  forwards to decoratedType(nt, actualInhs);
 }
 
 {--

@@ -20,7 +20,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   local elems :: [NamedSignatureElement] =
     filter(hasAst(_, top.env), top.frame.signature.inputElements);
     
-  local inferredType :: Type =
+  nondecorated local inferredType::Type =
     appTypes(
       functionType(length(elems), if hasLoc then ["location"] else []),
       map(astType(_, top.env), elems) ++
@@ -37,7 +37,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   
   thread downSubst, upSubst on top, errCheck1, forward;
 
-  errCheck1 = check(vty, inferredType);
+  errCheck1 = check(^vty, inferredType);
   top.errors <-
     if !errCheck1.typeerror then []
     else [errFromOrigin(v, "Signature yields ast type " ++ errCheck1.rightpp ++ ", but the supplied ast constructor has type " ++ errCheck1.leftpp)];
@@ -47,10 +47,8 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
     then [errFromOrigin(top, "Ast constructor wants 'location' but this nonterminal does not have a location")]
     else [];
   
-  local lhsQName :: QName =
-    qName(top.frame.signature.outputElement.elementName);
-  local astQName :: QNameAttrOccur =
-    qNameAttrOccur(qName("silver:langutil:ast"));
+  nondecorated local lhsQName::QName = qName(top.frame.signature.outputElement.elementName);
+  nondecorated local astQName::QNameAttrOccur = qNameAttrOccur(qName("silver:langutil:ast"));
 
   -- lhs.ast = v( (.ast) on elems if present);
   forwards to
@@ -60,7 +58,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       astQName,
       '=',
       mkFullFunctionInvocation(
-        baseExpr(v),
+        baseExpr(^v),
         map(accessAst, elems),
         if hasLoc then
          [("location", 

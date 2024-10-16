@@ -79,7 +79,7 @@ instance MonadFix IO {
 function runIO
 IOToken ::= st::IO<a> ioIn::IOToken
 {
-  return evalIO(new(st), ioIn).io;
+  return evalIO(^st, ioIn).io;
 }
 
 function evalIO
@@ -92,7 +92,7 @@ IOVal<a> ::= st::IO<a> ioIn::IOToken
 function unsafeEvalIO
 a ::= st::IO<a>
 {
-  local res::IOVal<a> = evalIO(new(st), unsafeIO());
+  local res::IOVal<a> = evalIO(^st, unsafeIO());
   return unsafeTrace(res.iovalue, res.io);
 }
 

@@ -30,6 +30,6 @@ top::Expr ::= e::Expr '=~' r::Expr
   forwards to
     if null(getValueDcl("silver:regex:matches", top.env))
     then errorExpr([errFromOrigin(top, "Use of regexes requires import of silver:regex")])
-    else Silver_Expr { silver:regex:matches($Expr{r}, $Expr{e}) };
+    else Silver_Expr { silver:regex:matches($Expr{@r}, $Expr{@e}) };
 }
 

@@ -36,14 +36,20 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   prodChildLayout <- [
     ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 1, line()),
-    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 3, line())
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 3, line()),
+    ("silver:compiler:extension:convenience:shortNondecLocalDecl", 5, line()),
+    ("silver:compiler:extension:convenience:shortNondecLocalDeclwKwds", 6, line())
   ];
   prodChildIndent <- [
-    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 4, 2)
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 4, 2),
+    ("silver:compiler:extension:convenience:shortNondecLocalDecl", 6, 2),
+    ("silver:compiler:extension:convenience:shortNondecLocalDeclwKwds", 7, 2)
   ];
   prodChildGroup <- [
     ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 0, 2),
-    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 3, 5)
+    ("silver:compiler:modification:concisefunctions:shortFunctionDcl", 3, 5),
+    ("silver:compiler:extension:convenience:shortNondecLocalDecl", 5, 7),
+    ("silver:compiler:extension:convenience:shortNondecLocalDeclwKwds", 6, 8)
   ];
 }
 
@@ -57,6 +63,9 @@ top::AST ::= _ _ _
     ("silver:compiler:definition:core:Global_kwd", pp" "),
     ("silver:compiler:modification:concisefunctions:Fun_kwd", pp" "),
     ("silver:compiler:definition:core:Comma_t", pp" "),
-    ("silver:compiler:definition:core:Equal_t", pp" ")
+    ("silver:compiler:definition:core:Equal_t", pp" "),
+    ("silver:compiler:definition:core:Nondec_kwd", pp" "),
+    ("silver:compiler:definition:core:Local_kwd", pp" "),
+    ("silver:compiler:definition:core:Attribute_kwd", pp" ")
   ];
 }

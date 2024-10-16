@@ -272,14 +272,14 @@ function annotationsForNonterminal
   local annos :: [OccursDclInfo] =
     filter((.isAnnotation), getAttrOccursOn(nt.typeName, env));
   
-  return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(nt, _), annos));
+  return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(^nt, _), annos));
 }
 -- only used by the above
 function annoInstanceToNamed
 NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
 {
   -- Used to compute the local typerep for this nonterminal
-  anno.givenNonterminalType = nt;
+  anno.givenNonterminalType = ^nt;
   
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep, false);
 }
@@ -288,7 +288,7 @@ NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
 function getInstanceDcl
 [InstDclInfo] ::= fntc::String t::Type e::Env
 {
-  local c::Context = instContext(fntc, t);
+  local c::Context = instContext(fntc, @t);
   c.env = e;
   return c.resolved;
 }
@@ -297,7 +297,7 @@ function getInstanceDcl
 function getMinInhSetMembers
 ([String], [TyVar]) ::= seen::[TyVar] t::Type e::Env
 {
-  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
+  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), @t);
   c.env = e;
   
   local recurse::[([String], [TyVar])] =
@@ -318,7 +318,7 @@ function getMinRefSet
 {
   return
     case t of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
+    | decoratedType(_, i) -> getMinInhSetMembers([], ^i, e).fst
     | _ -> []
     end;
 }
@@ -327,7 +327,7 @@ function getMinRefSet
 function getMaxInhSetMembers
 (Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Env
 {
-  local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
+  local c::Context = inhSubsetContext(@t, varType(freshTyVar(inhSetKind())));
   c.env = e;
   
   local recurse::[(Maybe<[String]>, [TyVar])] =
@@ -352,7 +352,7 @@ Maybe<[String]> ::= t::Type e::Env
 {
   return
     case t of
-    | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
+    | decoratedType(_, i) -> getMaxInhSetMembers([], ^i, e).fst
     | _ -> just([])
     end;
 }

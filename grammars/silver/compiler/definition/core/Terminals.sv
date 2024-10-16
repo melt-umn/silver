@@ -43,6 +43,7 @@ terminal End_kwd         'end'          lexer classes {KEYWORD,RESERVED};
 terminal Forwarding_kwd  'forwarding'   lexer classes {KEYWORD,RESERVED};
 terminal Forward_kwd     'forward'      lexer classes {KEYWORD,RESERVED};
 terminal Forwards_kwd    'forwards'     lexer classes {KEYWORD,RESERVED};
+terminal ForwardParent_kwd 'forwardParent' lexer classes {KEYWORD,RESERVED};
 terminal Function_kwd    'function'     lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
 terminal If_kwd          'if'           lexer classes {KEYWORD,RESERVED};

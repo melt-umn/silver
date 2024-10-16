@@ -103,9 +103,9 @@ top::TypeExpr ::= e::[Message]
 abstract production typerepTypeExpr
 top::TypeExpr ::= t::Type
 {
-  top.unparse = prettyType(t);
+  top.unparse = prettyType(^t);
 
-  top.typerep = t;
+  top.typerep = ^t;
 
   top.errorsTyVars :=
     case t of
@@ -165,7 +165,7 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 
   -- When we are in a refTypeExpr where we know the nonterminal type,
   -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  production ntInhs::FlowSpecInhs = inhs;
+  production ntInhs::FlowSpecInhs = ^inhs;
   ntInhs.config = top.config;
   ntInhs.grammarName = top.grammarName;
   ntInhs.env = top.env;
@@ -246,8 +246,8 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
     | nominalTypeExpr(q) when
         q.lookupType.found && q.lookupType.dcl.isTypeAlias &&
         length(q.lookupType.typeScheme.boundVars) > 0 ->
-      aliasAppTypeExpr(q, tl)
-    | _ -> typeAppTypeExpr(ty, tl)
+      aliasAppTypeExpr(q, @tl)
+    | _ -> typeAppTypeExpr(ty, @tl)
     end;
 }
 
@@ -507,7 +507,7 @@ concrete production typeListSingle
 top::TypeExprs ::= t::TypeExpr
 {
   top.unparse = t.unparse;
-  forwards to typeListCons(t, typeListNone());
+  forwards to typeListCons(@t, typeListNone());
 }
 
 concrete production typeListSingleMissing
@@ -571,7 +571,7 @@ concrete production namedTypeListSingle
 top::NamedTypeExprs ::= n::Name '::' t::TypeExpr
 {
   top.unparse = t.unparse;
-  forwards to namedTypeListCons(n, $2, t, namedTypeListNone());
+  forwards to namedTypeListCons(@n, $2, @t, namedTypeListNone());
 }
 
 concrete production namedTypeListCons

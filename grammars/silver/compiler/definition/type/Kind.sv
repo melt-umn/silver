@@ -9,7 +9,7 @@ propagate compareTo, isEqual on Kind;
 aspect default production
 top::Kind ::=
 {
-  top.baseKind = new(top);
+  top.baseKind = ^top;
   top.argKinds = [];
 }
 
@@ -25,7 +25,7 @@ abstract production arrowKind
 top::Kind ::= k1::Kind k2::Kind
 {
   top.baseKind = k2.baseKind;
-  top.argKinds = new(k1) :: k2.argKinds;
+  top.argKinds = ^k1 :: k2.argKinds;
 }
 
 global constructorKind::(Kind ::= Integer) = \ arity::Integer ->

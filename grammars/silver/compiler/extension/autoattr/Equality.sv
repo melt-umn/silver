@@ -34,7 +34,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^syn} =
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
@@ -53,9 +53,15 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String
               trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
+                  if !null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
+                  then Silver_Expr { $name{ie.elementName}.$QName{^syn} }
+                  else if isDecorable(ie.typerep, top.env)
+                  then Silver_Expr {
+                    silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))
+                  }
+                  else Silver_Expr {
+                    silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"})
+                  },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;

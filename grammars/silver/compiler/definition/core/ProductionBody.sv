@@ -2,13 +2,13 @@ grammar silver:compiler:definition:core;
 
 tracked nonterminal ProductionBody with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr;
+  productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs;
 tracked nonterminal ProductionStmts with 
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs, originRules;
 tracked nonterminal ProductionStmt with
   config, grammarName, env, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, forwardExpr, returnExpr, originRules;
+  productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs, originRules;
 
 flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody;
@@ -48,6 +48,10 @@ monoid attribute productionAttributes :: [Def];
  -}
 monoid attribute forwardExpr :: [Decorated Expr];
 monoid attribute returnExpr :: [Decorated Expr];
+{--
+ - The defining expression(s) for forward production attribute(s) in the production body.
+ -}
+monoid attribute forwardProdAttrExprs::[Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.
@@ -60,7 +64,7 @@ synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStm
 
 propagate config, grammarName, env, errors, frame, compiledGrammars on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
-propagate defs, productionAttributes, forwardExpr, returnExpr on ProductionBody, ProductionStmts;
+propagate defs, productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs on ProductionBody, ProductionStmts;
 propagate originRules on ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding attachNoteStmt;
 
@@ -97,7 +101,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
-  propagate defs, productionAttributes, forwardExpr, returnExpr;
+  propagate defs, productionAttributes, forwardExpr, returnExpr, forwardProdAttrExprs;
 }
 
 abstract production errorProductionStmt
@@ -123,6 +127,7 @@ top::ProductionStmt ::=
   top.productionAttributes := [];
   top.forwardExpr := [];
   top.returnExpr := [];
+  top.forwardProdAttrExprs := [];
   
   top.defs := [];
 
@@ -267,16 +272,18 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
                 else [];
 }
 
+-- TODO: deprecate this syntax
 concrete production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
 
   forwards to productionStmtAppend(
-    forwardsTo($1, $2, $3, $8),
-    forwardingWith('forwarding', $4, $5, inh, $7, $8));
+    forwardsTo($1, $2, @e, $8),
+    forwardingWith('forwarding', $4, $5, @inh, $7, $8));
 }
 
+-- TODO: deprecate this syntax
 concrete production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
@@ -342,15 +349,17 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- consider "production foo  top::DoesNotExist ::= { top.errors = ...; }"
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
-    if !dl.found || !attr.found || !null(problems)
-    then errorAttributeDef(problems, dl, attr, e)
-    else attr.attrDcl.attrDefDispatcher(dl, attr, e);
+   (if !dl.found || !attr.found || !null(problems)
+    then errorAttributeDef(problems)
+    else attr.attrDcl.attrDefDispatcher)(dl, attr, @e);
 }
+
+dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
-abstract production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
+abstract production errorAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, config, env, frame, compiledGrammars;
@@ -359,14 +368,12 @@ top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
   forwards to errorProductionStmt(msg ++ e.errors);
 }
 
-dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
-
 abstract production annoErrorAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   forwards to errorAttributeDef(
-    [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")],
-    dl, attr, @e);
+    dl, attr, @e,
+    [errFromOrigin(attr, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]);
 }
 
 abstract production synthesizedAttributeDef implements AttributeDef
@@ -392,6 +399,14 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.isRoot = true;
 }
 
+-- Utility for extensions to rewrite the expression in an attribute definition
+abstract production transformExprAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr prod::AttributeDef transE::Expr
+{
+  forwards to prod(dl, attr, @transE);
+}
+
+
 -- The grammar needs to be structured in this way to avoid a shift/reduce conflict...
 concrete production transInhAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QNameAttrOccur '=' e::Expr ';'
@@ -404,10 +419,10 @@ top::ProductionStmt ::= dl::DefLHS '.' transAttr::QNameAttrOccur '.' attr::QName
     attributeDef(
       transAttrDefLHS(
         case dl of
-        | concreteDefLHS(q) -> q
+        | concreteDefLHS(q) -> ^q
         | _ -> error("Unexpected concrete DefLHS")
-        end, transAttr),
-      $4, attr, $6, e, $8);
+        end, @transAttr),
+      $4, @attr, $6, @e, $8);
 }
 
 concrete production concreteDefLHS
@@ -560,7 +575,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal
-    then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(new(ty))} are not supported")]
+    then [errFromOrigin(q, s"Inherited equations on translation attributes on child ${q.name} of type ${prettyType(^ty)} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
@@ -584,7 +599,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
   local ty::Type = q.lookupValue.typeScheme.monoType;
   top.errors <-
     if attr.found && !ty.isNonterminal
-    then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(new(ty))} are not supported")]
+    then [errFromOrigin(q, s"Inherited equations on translation attributes on local ${q.name} of type ${prettyType(^ty)} are not supported")]
     else [];
 
   top.typerep = attr.typerep;
@@ -604,9 +619,10 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, e)
-              else val.lookupValue.dcl.defDispatcher(val, e);
+  forwards to
+    (if null(val.lookupValue.dcls)
+     then errorValueDef
+     else val.lookupValue.dcl.defDispatcher)(val, @e);
 }
 
 dispatch ValueDef = ProductionStmt ::= @val::QName e::Expr;
@@ -633,5 +649,7 @@ top::ProductionStmt ::= @val::QName e::Expr
   e.isRoot = true;
 
   -- TODO: missing redefinition check
+
+  top.forwardProdAttrExprs := if val.lookupValue.dcl.hasForward then [e] else [];
 }
 

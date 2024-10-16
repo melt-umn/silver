@@ -13,6 +13,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
-  e.finalSubst = errCheck1.upSubst;
+  e.downSubst2 = errCheck1.upSubst;
+  e.finalSubst = e.upSubst2;
   errCheck1.finalSubst = e.finalSubst;
 }

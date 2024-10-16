@@ -15,19 +15,19 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
   'construct' parserName::Name  'as' m::QName  'translator'  'using'  ms::ParserComponents
 {
   local agDcls :: AGDcls =
-    consAGDcls(setJarName, consAGDcls(prsr, consAGDcls(main,
+    consAGDcls(@setJarName, consAGDcls(@prsr, consAGDcls(@main,
       nilAGDcls())));
 
-  local setJarName :: AGDcl = jarNameDcl(parserName);
+  local setJarName :: AGDcl = jarNameDcl(@parserName);
 
   local prsr :: AGDcl =
     parserDcl('parser', name("extendedParser"), '::',
       nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Root"))),
       '{',
       consParserComponent(
-        parserComponent(moduleName(m),
+        parserComponent(moduleName(@m),
           nilParserComponentModifier(), ';'),
-        ms),
+        @ms),
       '}');
 
   local main :: AGDcl =
@@ -57,9 +57,9 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
 
   local importStmts :: ImportStmts =
     consImportStmts(
-      importStmt('import', moduleAll(m), ';'),
-      is);
+      importStmt('import', moduleAll(^m), ';'),
+      @is);
 
-  forwards to root(gdcl, mStmts, importStmts, agDcls);
+  forwards to root(@gdcl, @mStmts, @importStmts, @agDcls);
 }
 

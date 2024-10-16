@@ -45,7 +45,7 @@ top::Scope ::= rightCodeScoping::String -- shadowing the above production
 aspect production rightCodeNaming
 rightCodeScoping::Scope ::= top::String
 {
-  local sc::Scope = rightCodeScoping;
+  local sc::Scope = ^rightCodeScoping;
   local tp::String = top;
 }
 
