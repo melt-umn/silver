@@ -10,6 +10,9 @@ let client: LanguageClient;
 // Name of the launcher class which contains the main.
 const main: string = 'StdioLauncher';
 
+// TODO: should activate be an async function, and should this be the version from fs/promises?
+// https://code.visualstudio.com/api/references/vscode-api makes it sound like Extension<T>.activate
+// should return a Thenable<T>
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "silverlsp" is now active!');
 
