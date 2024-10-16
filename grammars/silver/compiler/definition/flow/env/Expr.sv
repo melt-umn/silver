@@ -151,6 +151,19 @@ top::Expr ::= @q::QName
     then just(forwardVertexType)
     else nothing();
 }
+aspect production forwardParentReference
+top::Expr ::= 'forwardParent'
+{
+  production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
+  top.flowDeps <-
+    if top.finalType.isDecorated
+    then map(forwardParentVertexType().inhVertex, fromMaybe([], refSet))
+    else [];
+  top.flowVertexInfo =
+    if top.finalType.isDecorated
+    then just(forwardParentVertexType())
+    else nothing();
+}
 
 -- The named signature of the applied production.
 -- Note that we don't project functions at the moment, since we don't build function flow graphs during inference.

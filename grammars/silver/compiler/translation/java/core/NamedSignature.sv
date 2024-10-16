@@ -351,6 +351,7 @@ fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String 
     end
   | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
   | forwardVertexType_real() -> s"context.forward()"
+  | forwardParentVertexType() -> error("forward parent shouldn't be a ref decoration site")
   | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
   | subtermVertexType(parent, prodName, sigName) ->
     -- prodName is either a production or dispatch signature name

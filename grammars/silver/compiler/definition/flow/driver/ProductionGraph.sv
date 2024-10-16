@@ -156,7 +156,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local inhs :: [String] = getInhAndInhOnTransAttrsOn(nt, realEnv);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
-    
+  
   -- Normal edges!
   local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
@@ -196,7 +196,13 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
         dcl.namedSignature.inputElements,
         sig.inputElements))
     | nothing() -> []
-    end;
+    end ++
+    if any(map((.elementShared), dcl.namedSignature.inputElements))
+    -- TODO: We could be more precise here by only considering the productions
+    -- that could have actually forwarded to this one. But that would require
+    -- introducing a new sort of stitch point.
+    then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType())
+    else [];
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -366,6 +372,14 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
   return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
+{--
+ - Constructs a graph for a dispatch signature.
+ -
+ - @param ns  The dispatch signature
+ - @param flowEnv  A full flow environment (need to find uses and impls of this sig)
+ - @param realEnv  A full real environment (need to find out original signature and what inhs occur for stitch points)
+ - @return A fixed up graph.
+ -}
 function constructDispatchGraph
 ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 {

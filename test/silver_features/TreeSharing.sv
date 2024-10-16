@@ -81,7 +81,23 @@ top::UDExpr ::= @e::UDExpr
   top.errors2 = e2.errors2;
 }
 
-global udTerm::UDExpr = udOp1(udOp2(udOp3(udOp4(udVar("foo")))));
+production udOp5
+top::UDExpr ::= e::UDExpr
+{
+  e.env1 = top.env1;
+  top.errors1 = e.errors1;
+  forwards to udOp5Impl(e);
+}
+
+production udOp5Impl
+top::UDExpr ::= @e::UDExpr
+{
+  e.env2 = forwardParent.env2;
+  top.errors1 = forwardParent.errors1;
+  top.errors2 = e.errors2;
+}
+
+global udTerm::UDExpr = udOp1(udOp2(udOp3(udOp4(udOp5(udVar("foo"))))));
 equalityTest(decorate udTerm with { env1 = ["foo"]; env2 = ["foo"]; }.errors1, false, Boolean, silver_tests);
 equalityTest(decorate udTerm with { env1 = ["foo"]; env2 = ["foo"]; }.errors2, false, Boolean, silver_tests);
 equalityTest(decorate udTerm with { env1 = ["foo"]; env2 = []; }.errors1, false, Boolean, silver_tests);
