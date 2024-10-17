@@ -240,6 +240,30 @@ top::IO<ByteArray> ::= s::String
   top.stateVal = res.iovalue;
 }
 
+abstract production isJarFile
+top::IO<Boolean> ::= s::String
+{
+  local res::IOVal<Boolean> = isJarFileT(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
+abstract production jarContainsEntry
+top::IO<Boolean> ::= jar::String entry::String
+{
+  local res::IOVal<Boolean> = jarContainsEntryT(jar, entry, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
+abstract production readBinaryJarEntry
+top::IO<ByteArray> ::= jar::String entry::String
+{
+  local res::IOVal<ByteArray> = readBinaryJarEntryT(jar, entry, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
 abstract production cwd
 top::IO<String> ::=
 {
