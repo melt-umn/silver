@@ -97,6 +97,28 @@ top::DecSiteTree ::= prodName::String prodAttrName::Maybe<String>
 }
 
 {--
+ - Decoration sites where some other attribute must be supplied as a dependency.
+ -}
+production depAttrDec
+top::DecSiteTree ::= attrName::String d::DecSiteTree
+{
+  top.decSitePP = s"dependency ${attrName} supplied to ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"dependency ${attrName} supplied to ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
+}
+
+{--
+  - Supplying an inherited attribute via a flow projection requires the projected dependencies to be supplied.
+  -}
+production projectedDepsDec
+top::DecSiteTree ::= prodName::String sigName::String d::DecSiteTree
+{
+  top.decSitePP = s"projected dependencies for ${sigName} in production ${prodName}: ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"projected dependencies for ${sigName} in production ${prodName}: ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
+}
+
+{--
  - An inherited attribute on a translation attribute can be supplied via a translation attribute.
  -}
 production transAttrDec
@@ -113,7 +135,11 @@ fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
   then "any of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteAlts))
   else if length(d.decSiteReqs) > 1
   then "all of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteReqs))
-  else d.decSitePP;
+  else
+    case d of
+    | depAttrDec(attrName, d) -> s"dependency ${attrName} supplied to ${prettyDecSites(nest, ^d)}"
+    | _ -> d.decSitePP
+    end;
 
 derive Eq, Ord on DecSiteTree;
 
