@@ -11,17 +11,12 @@ import silver:compiler:definition:flow:driver;
  -
  - @param prodName The name of the production containing the vertex type.
  - @param vt The vertex type to find decoration sites for.
- - @param seen A list of (production name, vertex type) pairs that have already been visited.
- - @param seenDispatch A list of (dispatch name, dispatch rhs name) pairs that have already been visited.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
  - @return A decision tree to determine if an inherited attributes has been supplied for vt.
  -}
 function findDecSites
-DecSiteTree ::=
-  prodName::String vt::VertexType
-  seen::[(String, VertexType)] seenDispatch::[(String, String)]
-  flowEnv::FlowEnv realEnv::Env
+DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
 {
   local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
   local ns :: NamedSignature =
@@ -38,12 +33,10 @@ DecSiteTree ::=
     end;
 
   local recurse::(DecSiteTree ::= String VertexType) =
-    findDecSites(_, _, (prodName, vt) :: seen, seenDispatch, flowEnv, realEnv);
+    findDecSites(_, _, flowEnv, realEnv);
 
   return
-    if contains((prodName, vt), seen)
-    then neverDec()
-    else
+    viaProdVertexDec(prodName, vt,
       -- Direct inherited equation at a decoration site
       (if vt.isInhDefVertex
        then directDec(prodName, vt)
@@ -65,27 +58,17 @@ DecSiteTree ::=
           -- Projected from a production
           then recurse(prodOrSig, rhsVertexType(sigName))
           -- Projected from a dispatch signature
-          else if contains((prodOrSig, sigName), seenDispatch)
-          -- This is a dispatch that we are already trying to resolve.
-          -- Could potentially be a cycle, but more likely is just an implementation
-          -- production that dispatches again, which we want to permit.
-          then alwaysDec()
-          -- Otherwise, look at all the (host) productions that implement this dispatch signature
-          else product(map(
+          else viaDispatchDec(prodOrSig, sigName, product(map(
             \ prod::(String, [String]) ->
               case getTypeDcl(prodOrSig, realEnv) of
               | sigDcl :: _
                   when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
-                  matches sn :: _ ->
-                findDecSites(prod.1, rhsVertexType(sn), [], (prodOrSig, sigName) :: seenDispatch, flowEnv, realEnv)
+                  matches sn :: _ -> recurse(prod.1, rhsVertexType(sn))
               | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
               end,
-            getImplementingProds(prodOrSig, flowEnv)))) *
-          projectedDepsDec(prodOrSig, sigName,
-            -- TODO: Technically, recursing with the same `seen' here is too conservative,
-            -- since we could be depending on a different inherited attribute.
-            -- Keeping `seenDispatch' is probably a bug.
-            recurse(prodName, parent))
+            -- Look at all the (host) productions that implement this dispatch signature
+            getImplementingProds(prodOrSig, flowEnv))))) *
+          projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         product(unzipWith(recurse,
@@ -106,7 +89,7 @@ DecSiteTree ::=
                 lookupRefDecSite(prodName, transAttrVertexType(vt, attrName), flowEnv))
             | _ -> []
             end,
-          getHostSynsFor(ntName, flowEnv)));
+          getHostSynsFor(ntName, flowEnv))));
 }
 
 {--
@@ -233,6 +216,7 @@ partial strategy attribute reduceDecSiteStep =
   | depAttrDec(_, neverDec()) -> neverDec()
   end occurs on DecSiteTree;
 
+-- The inherited attribute for which we are trying to resolve the decision tree
 inherited attribute attrToResolve::String occurs on DecSiteTree;
 propagate attrToResolve on DecSiteTree excluding depAttrDec, projectedDepsDec, transAttrDec;
 aspect production depAttrDec
@@ -240,6 +224,43 @@ top::DecSiteTree ::= attrName::String d::DecSiteTree
 {
   d.attrToResolve = attrName;
 }
+
+-- The set of (prod, vertex, inh) that have been seen so far in this branch of the tree
+inherited attribute seenProdVertexAttrs::set:Set<(String, VertexType, String)> occurs on DecSiteTree;
+propagate seenProdVertexAttrs on DecSiteTree excluding viaProdVertexDec, viaDispatchDec;
+aspect production viaProdVertexDec
+top::DecSiteTree ::= prodName::String vt::VertexType d::DecSiteTree
+{
+  d.seenProdVertexAttrs = set:add([(prodName, vt, top.attrToResolve)], top.seenProdVertexAttrs);
+}
+
+-- The set of (dispatch, child, inh) that have been seen so far in this branch of the tree
+inherited attribute seenDispatchSigAttrs::set:Set<(String, String, String)> occurs on DecSiteTree;
+propagate seenDispatchSigAttrs on DecSiteTree excluding viaDispatchDec;
+aspect production viaDispatchDec
+top::DecSiteTree ::= dispatchSig::String sigName::String d::DecSiteTree
+{
+  d.seenProdVertexAttrs = set:empty();
+  d.seenDispatchSigAttrs = set:add([(dispatchSig, sigName, top.attrToResolve)], top.seenDispatchSigAttrs);
+}
+
+partial strategy attribute elimCycleDecSiteStep =
+  rule on DecSiteTree of
+  | viaProdVertexDec(prodName, vt, _)
+      when set:contains((prodName, vt, top.attrToResolve), top.seenProdVertexAttrs) ->
+      -- This is a cycle due to a missing equation somewhere.
+      neverDec()
+  | viaProdVertexDec(_, _, alwaysDec()) -> alwaysDec()
+  | viaProdVertexDec(_, _, neverDec()) -> neverDec()
+  | viaDispatchDec(dispatchSig, sigName, _)
+      when set:contains((dispatchSig, sigName, top.attrToResolve), top.seenDispatchSigAttrs) ->
+      -- This is a dispatch that we are already trying to resolve.
+      -- Could potentially be a cycle, but more likely is just an implementation
+      -- production that dispatches again, which we want to permit.
+      alwaysDec()
+  | viaDispatchDec(_, _, alwaysDec()) -> alwaysDec()
+  | viaDispatchDec(_, _, neverDec()) -> neverDec()
+  end occurs on DecSiteTree;
 
 attribute flowEnv, productionFlowGraphs occurs on DecSiteTree;
 
@@ -279,7 +300,7 @@ partial strategy attribute resolveDecSiteStep =
   --rule on DecSiteTree of
   --| ds -> unsafeTracePrint(^ds, ds.dbgPP ++ "\n\n")
   --end <*
-  lookupDecSiteStep <+ reduceDecSiteStep <+
+  elimCycleDecSiteStep <+ lookupDecSiteStep <+ reduceDecSiteStep <+
   -- Short-circuit alternatives to potentially avoid building the entire tree
   altDec(resolveDecSiteStep, id) <+
   some(resolveDecSiteStep)
@@ -288,7 +309,7 @@ partial strategy attribute resolveDecSiteStep =
 strategy attribute resolveDecSite = repeat(resolveDecSiteStep)
   occurs on DecSiteTree;
 
-propagate flowEnv, productionFlowGraphs, reduceDecSiteStep, lookupDecSiteStep, resolveDecSiteStep, resolveDecSite on DecSiteTree;
+propagate flowEnv, productionFlowGraphs, reduceDecSiteStep, elimCycleDecSiteStep, lookupDecSiteStep, resolveDecSiteStep, resolveDecSite on DecSiteTree;
 
 {--
   - Determine if some decoration site has some inherited attribute supplied.
@@ -306,6 +327,8 @@ DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGr
   d.attrToResolve = attrName;
   d.productionFlowGraphs = prodGraphs;
   d.flowEnv = flowEnv;
+  d.seenProdVertexAttrs = set:empty();
+  d.seenDispatchSigAttrs = set:empty();
   d.maxDepth = 10;
   return d.resolveDecSite;
 }
@@ -326,7 +349,7 @@ fun resolveInhEq
 DecSiteTree ::=
     prodName::String vt::VertexType attrName::String
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, [], [], flowEnv, realEnv), prodGraphs, flowEnv);
+  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, flowEnv, realEnv), prodGraphs, flowEnv);
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs
@@ -334,7 +357,7 @@ function decSitesMissingInhEqs
   prodName::String vt::VertexType attrNames::[String]
   prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env
 {
-  nondecorated local d::DecSiteTree = findDecSites(prodName, vt, [], [], flowEnv, realEnv);
+  nondecorated local d::DecSiteTree = findDecSites(prodName, vt, flowEnv, realEnv);
   local resolved::map:Map<DecSiteTree String> =
     map:add(map(\ a -> (resolveDecSiteInhEq(a, d, prodGraphs, flowEnv), a), attrNames), map:empty());
   return flatMap(\ d -> 
