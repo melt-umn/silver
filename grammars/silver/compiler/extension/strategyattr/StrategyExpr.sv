@@ -22,10 +22,12 @@ synthesized attribute isId::Boolean;
 synthesized attribute isFail::Boolean;
 synthesized attribute isTotal::Boolean;
 synthesized attribute isTotalNoEnv::Boolean; -- same as above but doesn't depend on env
+synthesized attribute isTotalInProd::Boolean; -- can use env and frame
 inherited attribute givenInputElements::[NamedSignatureElement];
 synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
+monoid attribute allTotal::Boolean with true, &&;
 monoid attribute freeRecVars::[String];
 monoid attribute partialRefs::[String];
 monoid attribute totalRefs::[String];
@@ -33,8 +35,8 @@ monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute containsTraversal::Boolean with false, ||;
 
 -- TODO: Merge these into a translation attribute
-synthesized attribute partialTranslation::Expr; -- Maybe<a> on a
-synthesized attribute totalTranslation::Expr; -- a on a, can raise a runtime error if demanded on partial strategy expression
+synthesized attribute partialTranslation<a>::a; -- Maybe<a> on a
+synthesized attribute totalTranslation<a>::a; -- a on a, can raise a runtime error if demanded on partial strategy expression
 
 -- Nonterminal-independent algebraic simplifications
 -- Theoretically these could be applied to the strategy before lifting/propagation,
@@ -74,6 +76,7 @@ partial strategy attribute ntStep =
 -- Production-dependent optimizations
 partial strategy attribute prodStep =
   rule on top::StrategyExpr of
+  | choice(s, _) when s.isTotalInProd -> ^s
   | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(genName=top.genName)
   | someTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(genName=top.genName)
   | oneTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(genName=top.genName)
@@ -115,13 +118,15 @@ strategy attribute optimize =
 
 tracked nonterminal StrategyExpr with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
-  genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName, isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
-  partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
+  genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName,
+  isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
+  partialTranslation<Expr>, totalTranslation<Expr>, matchesFrame, isTotalInProd, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
 tracked nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, compiledGrammars, flowEnv, -- Normal expression stuff
-  outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
+  outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames,
+  containsFail, allId, allTotal, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
   inlinedStrategies, genericSimplify; -- Optimization stuff
 
 flowtype StrategyExpr =
@@ -135,7 +140,7 @@ flowtype StrategyExpr =
   isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, containsTraversal {decorate, flowEnv},
   genericStep {decorate, inlinedStrategies}, genericSimplify {decorate, inlinedStrategies},
   -- Frame-dependent attrs
-  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame}, matchesFrame {decorate, frame},
+  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame}, matchesFrame {decorate, frame}, isTotalInProd {decorate, frame},
   ntStep {decorate, inlinedStrategies, frame}, prodStep {decorate, inlinedStrategies, frame},
   ntSimplify {decorate, inlinedStrategies, frame}, optimize {decorate, inlinedStrategies, frame};
 
@@ -146,12 +151,11 @@ flowtype StrategyExprs =
   -- Frame-independent attrs
   liftedStrategies {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr},
   attrRefNames {env, recVarNameEnv, givenInputElements},
-  containsFail {}, allId {}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate};
+  containsFail {}, allId {}, allTotal {decorate, givenInputElements}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate};
 
 propagate grammarName, config, compiledGrammars, env, flowEnv, outerAttr, partialRefs, totalRefs, containsTraversal on StrategyExpr, StrategyExprs;
-propagate frame on StrategyExpr excluding allTraversal, someTraversal, oneTraversal, prodTraversal;
 propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef, rewriteRule;
-propagate containsFail, allId on StrategyExprs;
+propagate containsFail, allId, allTotal on StrategyExprs;
 propagate recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 propagate inlinedStrategies on StrategyExpr, StrategyExprs excluding inlined;
 propagate genericSimplify on StrategyExprs;
@@ -183,6 +187,7 @@ top::StrategyExpr ::=
   top.isFail = false;
   top.isTotal = false;
   top.isTotalNoEnv = false;
+  top.isTotalInProd = false;
 }
 
 -- Basic combinators
@@ -194,6 +199,7 @@ top::StrategyExpr ::=
   top.isId = true;
   top.isTotal = true;
   top.isTotalNoEnv = true;
+  top.isTotalInProd = true;
   top.totalTranslation =
     if top.frame.signature.outputElement.typerep.isData
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName} }
@@ -213,6 +219,9 @@ abstract production sequence
 top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
 {
   top.unparse = s"(${s1.unparse} <* ${s2.unparse})";
+
+  s1.frame = top.frame;
+  s2.frame = top.frame;  -- CAUTION when using s2.frame: wrong prod, but same nt
   
   local s2Name::String = fromMaybe(top.genName ++ "_snd", s2.attrRefName);
   local s2Total::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
@@ -223,6 +232,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     else [(s2Name, s2)];
   top.isTotal = s1.isTotal && s2.isTotal;
   top.isTotalNoEnv = s1.isTotalNoEnv && s2.isTotalNoEnv;
+  top.isTotalInProd = s1.isTotalInProd && s2.isTotal;
   
   s1.isOutermost = false;
   s2.isOutermost = false;
@@ -246,7 +256,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   top.partialTranslation =
     -- Optimizations when one or both of these is total, in this case a
     -- monadic bind may not be required.
-    case s1.isTotal, s2Total of
+    case s1.isTotalInProd, s2Total of
     | true, true ->
       Silver_Expr {
         silver:core:just(decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name})
@@ -281,9 +291,10 @@ abstract production choice
 top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
 {
   top.unparse = s"(${s1.unparse} <+ ${s2.unparse})";
-  propagate liftedStrategies;
+  propagate frame, liftedStrategies;
   top.isTotal = s1.isTotal || s2.isTotal;
   top.isTotalNoEnv = s1.isTotalNoEnv || s2.isTotalNoEnv;
+  top.isTotalInProd = s1.isTotalInProd || s2.isTotalInProd;
   
   s1.isOutermost = false;
   s2.isOutermost = false;
@@ -293,7 +304,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       silver:core:orElse($Expr{s1.partialTranslation}, $Expr{s2.partialTranslation})
     };
   top.totalTranslation =
-    if s1.isTotal
+    if s1.isTotalInProd
     then s1.totalTranslation
     else 
       Silver_Expr {
@@ -315,6 +326,7 @@ top::StrategyExpr ::= s::StrategyExpr
     else [(sName, s)];
   top.isTotal = s.isTotal;
   top.isTotalNoEnv = s.isTotalNoEnv;
+  top.isTotalInProd = s.isTotal;
 
   top.containsTraversal <- true;
 
@@ -404,6 +416,7 @@ top::StrategyExpr ::= s::StrategyExpr
     if s.attrRefName.isJust
     then []
     else [(sName, s)];
+  top.isTotalInProd = s.isTotal && !null(matchingChildren);
   
   top.containsTraversal <- true;
 
@@ -490,6 +503,7 @@ top::StrategyExpr ::= s::StrategyExpr
     if s.attrRefName.isJust
     then []
     else [(sName, s)];
+  top.isTotalInProd = s.isTotal && !null(matchingChildren);
 
   top.containsTraversal <- true;
   
@@ -599,6 +613,8 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
     else [];
   
   propagate liftedStrategies;
+
+  top.isTotalInProd = prod.lookupValue.fullName == top.frame.fullName && s.allTotal;
   
   s.givenInputElements =
     if prod.lookupValue.found
@@ -696,6 +712,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
   
   top.containsFail <- h.isFail;
   top.allId <- h.isId;
+  top.allTotal <- !null(top.givenInputElements) && attrMatch && h.isTotal;
   
   h.isOutermost = false;
   t.givenInputElements =
@@ -728,6 +745,7 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
   local s2::StrategyExpr = ^s;
   s2.recVarTotalEnv = (n.name, true) :: s.recVarTotalEnv;
   s2.recVarTotalNoEnvEnv = (n.name, true) :: s.recVarTotalNoEnvEnv;
+  s2.frame = s.frame;
   s2.env = s.env;
   s2.config = s.config;
   s2.grammarName = s.grammarName;
@@ -736,7 +754,9 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
   s2.isOutermost = top.isOutermost;
   top.isTotal = s2.isTotal;
   top.isTotalNoEnv = s2.isTotalNoEnv;
+  top.isTotalInProd = s2.isTotalInProd;
   
+  s.frame = top.frame;
   s.recVarNameEnv = (n.name, sName) :: top.recVarNameEnv;
   s.recVarTotalEnv = (n.name, top.isTotal) :: top.recVarTotalEnv;
   s.recVarTotalNoEnvEnv = (n.name, top.isTotalNoEnv) :: top.recVarTotalNoEnvEnv;
@@ -762,7 +782,9 @@ abstract production rewriteRule
 top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
 {
   top.unparse = "rule on " ++ id.name ++ "::" ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  propagate liftedStrategies;
+  propagate frame, liftedStrategies;
+
+  top.isTotalInProd = ml.isTotalInProd;
   
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
   -- so we need to decorate one of those here.
@@ -809,29 +831,50 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     else [];
   top.errors <- ty.errorsKindStar;
   
-  nondecorated local res::Expr =
+  nondecorated local partialRes::Expr =
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
-      ml.translation, false,
+      ml.partialTranslation, false,
       Silver_Expr { silver:core:nothing() },
       appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), ty.typerep));
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure
     then Silver_Expr { silver:core:nothing() }
     else if top.frame.signature.outputElement.elementName == id.name
-    then res
+    then partialRes
     else if top.frame.signature.outputElement.typerep.isData
     then Silver_Expr {
       let $Name{^id}::$TypeExpr{^ty} = $name{top.frame.signature.outputElement.elementName}
-      in $Expr{res}
+      in $Expr{partialRes}
       end
     }
     else Silver_Expr {
       let $Name{^id}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
         $name{top.frame.signature.outputElement.elementName}
-      in $Expr{res}
+      in $Expr{partialRes}
       end
     };
+    nondecorated local totalRes::Expr =
+      caseExpr(
+        [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
+        ml.totalTranslation, false,
+        Silver_Expr { silver:core:error("Internal error: total rule did not match: " ++ $Expr{stringConst(terminal(String_t, s"\"${top.unparse}\""))}) },
+        ty.typerep);
+    top.totalTranslation =
+      if top.frame.signature.outputElement.elementName == id.name
+      then totalRes
+      else if top.frame.signature.outputElement.typerep.isData
+      then Silver_Expr {
+        let $Name{^id}::$TypeExpr{^ty} = $name{top.frame.signature.outputElement.elementName}
+        in $Expr{totalRes}
+        end
+      }
+      else Silver_Expr {
+        let $Name{^id}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
+          $name{top.frame.signature.outputElement.elementName}
+        in $Expr{totalRes}
+        end
+      };
 }
 
 -- Hack dummy expr with a given type
@@ -844,60 +887,88 @@ top::Expr ::= t::Type
 }
 
 attribute matchesFrame occurs on MRuleList, MatchRule, PatternList, Pattern;
-propagate matchesFrame on MRuleList, MatchRule, PatternList;
+propagate matchesFrame on MRuleList, MatchRule, PatternList excluding matchRuleWhenMatches_c;
 
-synthesized attribute translation<a>::a;
-attribute translation<[AbstractMatchRule]> occurs on MRuleList;
+attribute isTotalInProd occurs on MRuleList, MatchRule, PatternList, Pattern;
+
+attribute partialTranslation<[AbstractMatchRule]>, totalTranslation<[AbstractMatchRule]> occurs on MRuleList;
 
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
-  top.translation = [m.translation];
+  top.partialTranslation = [m.partialTranslation];
+  top.totalTranslation = [m.totalTranslation];
+  top.isTotalInProd = m.isTotalInProd;
 }
 
 aspect production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
-  top.translation = h.translation :: t.translation;
+  top.partialTranslation = h.partialTranslation :: t.partialTranslation;
+  top.totalTranslation = h.totalTranslation :: t.totalTranslation;
+  top.isTotalInProd = h.isTotalInProd && t.isTotalInProd;
 }
 
-attribute translation<AbstractMatchRule> occurs on MatchRule;
+attribute partialTranslation<AbstractMatchRule>, totalTranslation<AbstractMatchRule> occurs on MatchRule;
 
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
-  top.translation =
+  top.partialTranslation =
     matchRule(
       pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{^e}) });
+  top.totalTranslation = matchRule(pt.patternList, nothing(), ^e);
+  top.isTotalInProd = pt.isTotalInProd;
 }
 
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
-  top.translation =
+  top.partialTranslation =
     matchRule(
       pt.patternList, just((^cond, nothing())), Silver_Expr { silver:core:just($Expr{^e}) });
+  top.totalTranslation = matchRule(pt.patternList, just((^cond, nothing())), ^e);
+  top.isTotalInProd = false;
 }
 
 aspect production matchRuleWhenMatches_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::Expr
 {
-  top.translation =
+  top.partialTranslation =
     matchRule(
       pt.patternList, just((^cond, just(^p))), Silver_Expr { silver:core:just($Expr{^e}) });
+  top.totalTranslation = matchRule(pt.patternList, just((^cond, just(^p))), ^e);
+  top.matchesFrame := pt.matchesFrame;
+  top.isTotalInProd = false;
 }
 
-aspect default production
-top::Pattern ::=
-{
-  top.matchesFrame := true;
-}
+aspect matchesFrame on top::Pattern using := of
+| prodAppPattern_named(prod, _, _, _, _, _) -> prod.lookupValue.fullName == top.frame.fullName
+| _ -> true
+end;
 
-aspect production prodAppPattern_named
-top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
-{
-  top.matchesFrame := prod.lookupValue.fullName == top.frame.fullName;
-}
+aspect isTotalInProd on PatternList of
+| patternList_one(p) -> p.isTotalInProd
+| patternList_more(p, _, _) -> p.isTotalInProd
+| patternList_nil() -> false
+end;
+
+aspect isTotalInProd on top::Pattern of
+| prodAppPattern_named(prod, _, ps, _, nps, _) ->
+    prod.lookupValue.fullName == top.frame.fullName && ps.allWildcards && nps.allWildcards
+| wildcPattern(_) -> true
+| varPattern(_) -> true
+| _ -> false
+end;
+
+monoid attribute allWildcards::Boolean with true, && occurs on PatternList, NamedPatternList, NamedPattern, Pattern;
+propagate allWildcards on PatternList, NamedPatternList, NamedPattern;
+
+aspect allWildcards on Pattern using := of
+| wildcPattern(_) -> true
+| varPattern(_) -> true
+| _ -> false
+end;
 
 -- References to other attributes or rec variables
 abstract production nameRef
@@ -1016,6 +1087,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.matchesFrame := attr.matchesFrame;
   top.isTotal = true;
   top.isTotalNoEnv = true;
+  top.isTotalInProd = true;
   top.totalRefs <- [attrDcl.fullName];
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
@@ -1028,9 +1100,10 @@ abstract production inlined
 top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
 {
   top.unparse = s"(${s.unparse} aka ${attr.unparse})";
-  propagate liftedStrategies;
+  propagate frame, liftedStrategies;
   top.attrRefName = just(attr.attrDcl.fullName);
   top.isTotal = s.isTotal;
+  top.isTotalInProd = s.isTotalInProd;
   top.partialTranslation =
     if attr.matchesFrame
     then s.partialTranslation
