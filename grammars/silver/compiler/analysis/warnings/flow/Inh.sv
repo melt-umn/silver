@@ -145,7 +145,7 @@ function checkAllEqDeps
       | _ -> []
       end;
     decSite::VertexType <- lookupRefDecSite(prodName, refInh.1, flowEnv);
-    guard(resolveInhEq(prodName, refInh.1, refInh.2, prodGraphs, flowEnv, realEnv) != alwaysDec());
+    guard(!decSiteHasInhEq(prodName, refInh.1, refInh.2, prodGraphs, flowEnv, realEnv));
     expandGraph([decSite.inhVertex(refInh.2)], findProductionGraph(prodName, prodGraphs));
   };
   local anonResolve::[(String, Location)] = collectAnonOrigin(flowDefs);
@@ -268,9 +268,12 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
+  local vertexHasHideableEq :: (Boolean ::= VertexType String) =
+    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
+
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case filter(
-      possibleDecSiteHasInhEq(top.frame.fullName, _, attr.attrDcl.fullName, myGraphs, top.flowEnv, top.env),
+      vertexHasHideableEq(_, attr.attrDcl.fullName),
       lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
@@ -283,7 +286,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
       case filter(
-        possibleDecSiteHasInhEq(top.frame.fullName, _, dl.inhAttrName, myGraphs, top.flowEnv, top.env),
+        vertexHasHideableEq(_, dl.inhAttrName),
         lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
