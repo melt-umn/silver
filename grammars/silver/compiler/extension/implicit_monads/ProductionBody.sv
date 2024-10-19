@@ -242,31 +242,36 @@ abstract production implicitSynAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
-  e.appDecSiteVertexInfo = nothing();
-  e.isRoot = true;
-
-  e.expectedMonad = attr.typerep;
+  local checkE::Expr = ^e;
+  checkE.grammarName = top.grammarName;
+  checkE.compiledGrammars = top.compiledGrammars;
+  checkE.config = top.config;
+  checkE.frame = top.frame;
+  checkE.env = top.env;
+  checkE.flowEnv = top.flowEnv;
+  checkE.downSubst = top.downSubst;
+  checkE.mDownSubst = top.downSubst;
+  checkE.finalSubst = checkE.mUpSubst;
+  checkE.decSiteVertexInfo = nothing();
+  checkE.alwaysDecorated = false;
+  checkE.appDecSiteVertexInfo = nothing();
+  checkE.isRoot = true;
+  checkE.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
 
   local fwrdProd::AttributeDef = 
-     if !null(e.merrors)
-     then errorAttributeDef(e.merrors)
-     else if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-     then transformExprAttributeDef(synthesizedAttributeDef, e.monadRewritten)
+     if !null(checkE.merrors)
+     then errorAttributeDef(checkE.merrors)
+     else if  fst(monadsMatch(attr.typerep, checkE.mtyperep, checkE.mUpSubst))
+     then transformExprAttributeDef(synthesizedAttributeDef, checkE.monadRewritten)
      else transformExprAttributeDef(synthesizedAttributeDef,
        Silver_Expr {
        $Expr {monadReturn()}
-            ($Expr {e.monadRewritten})
+            ($Expr {checkE.monadRewritten})
        });
 
   forwards to fwrdProd(dl, attr, @e);
@@ -277,31 +282,36 @@ abstract production implicitInhAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
-  e.appDecSiteVertexInfo = nothing();
-  e.isRoot = true;
-
-  e.expectedMonad = attr.typerep;
+  local checkE::Expr = ^e;
+  checkE.grammarName = top.grammarName;
+  checkE.compiledGrammars = top.compiledGrammars;
+  checkE.config = top.config;
+  checkE.frame = top.frame;
+  checkE.env = top.env;
+  checkE.flowEnv = top.flowEnv;
+  checkE.downSubst = top.downSubst;
+  checkE.mDownSubst = top.downSubst;
+  checkE.finalSubst = checkE.mUpSubst;
+  checkE.decSiteVertexInfo = nothing();
+  checkE.alwaysDecorated = false;
+  checkE.appDecSiteVertexInfo = nothing();
+  checkE.isRoot = true;
+  checkE.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
 
   local fwrdProd::AttributeDef = 
-     if !null(e.merrors)
-     then errorAttributeDef(e.merrors)
-     else if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-     then transformExprAttributeDef(inheritedAttributeDef, e.monadRewritten)
+     if !null(checkE.merrors)
+     then errorAttributeDef(checkE.merrors)
+     else if  fst(monadsMatch(attr.typerep, checkE.mtyperep, checkE.mUpSubst))
+     then transformExprAttributeDef(inheritedAttributeDef, checkE.monadRewritten)
      else transformExprAttributeDef(inheritedAttributeDef,
        Silver_Expr {
        $Expr {monadReturn()}
-            ($Expr {e.monadRewritten})
+            ($Expr {checkE.monadRewritten})
        });
 
   forwards to fwrdProd(dl, attr, @e);

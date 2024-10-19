@@ -183,8 +183,11 @@ aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate flowEnv;
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+  -- Seed flow graphs with deps on top.decSiteVertexInfo, top.alwaysDecorated,
+  -- needed to avoid hidden transitive deps for override eqs in curriedDispatchApplication.
+  -- TODO: Perhaps possible to infer this by changing how projection stitch points work?
+  e.decSiteVertexInfo = if true then nothing() else top.decSiteVertexInfo;
+  e.alwaysDecorated = false && top.alwaysDecorated;
 }
 
 aspect production errorApplication
