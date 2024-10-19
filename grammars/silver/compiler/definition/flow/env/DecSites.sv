@@ -227,7 +227,7 @@ top::DecSiteTree ::= attrName::String d::DecSiteTree
 
 -- The set of (prod, vertex, inh) that have been seen so far in this branch of the tree
 inherited attribute seenProdVertexAttrs::set:Set<(String, VertexType, String)> occurs on DecSiteTree;
-propagate seenProdVertexAttrs on DecSiteTree excluding viaProdVertexDec, viaDispatchDec;
+propagate seenProdVertexAttrs on DecSiteTree excluding viaProdVertexDec;
 aspect production viaProdVertexDec
 top::DecSiteTree ::= prodName::String vt::VertexType d::DecSiteTree
 {
@@ -240,7 +240,6 @@ propagate seenDispatchSigAttrs on DecSiteTree excluding viaDispatchDec;
 aspect production viaDispatchDec
 top::DecSiteTree ::= dispatchSig::String sigName::String d::DecSiteTree
 {
-  d.seenProdVertexAttrs = set:empty();
   d.seenDispatchSigAttrs = set:add([(dispatchSig, sigName, top.attrToResolve)], top.seenDispatchSigAttrs);
 }
 
@@ -249,7 +248,9 @@ partial strategy attribute elimCycleDecSiteStep =
   | viaProdVertexDec(prodName, vt, _)
       when set:contains((prodName, vt, top.attrToResolve), top.seenProdVertexAttrs) ->
       -- This is a cycle due to a missing equation somewhere.
-      neverDec()
+      if set:isEmpty(top.seenDispatchSigAttrs)
+      then neverDec()  -- Not via a dispatch, so this must be a real cycle
+      else alwaysDec() -- Via a dispatch, see below
   | viaProdVertexDec(_, _, alwaysDec()) -> alwaysDec()
   | viaProdVertexDec(_, _, neverDec()) -> neverDec()
   | viaDispatchDec(dispatchSig, sigName, _)
