@@ -144,13 +144,16 @@ State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
               newScopeEnv(flatMap((.prodDefs), getProdAttrs(prodName, realEnv)), emptyEnv())) ->
           pure(forwardDec(prodName, just(fName)))
         -- Via projected remote equation
-        | subtermVertexType(_, prodOrSig, sigName) ->
+        | subtermVertexType(parent, prodOrSig, sigName) -> map(
+            -- Transitive dependencies of an attribute on the projection must be supplied
+            -- for the attribute on the projection to be depended upon.
+            bothDec(_, projectedDepsDec(prodOrSig, sigName, findDecSites(prodName, parent, flowEnv, realEnv))),
             if !null(getValueDcl(prodOrSig, realEnv))
             -- Projected from a production
             then recurse(prodOrSig, rhsVertexType(sigName))
             -- Projected from a dispatch signature
             else if contains((prodOrSig, sigName), seen.2)
-            -- This is a dispatch that we are already trying to resolve.
+            -- This is a dispatch that we have already tried to resolve.
             then pure(neverDec())
             -- Otherwise, look at all the (host) productions that implement this dispatch signature
             else map(sum, traverseA(
@@ -164,7 +167,7 @@ State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
                     }
                 | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
                 end,
-              getImplementingProds(prodOrSig, flowEnv)))
+              getImplementingProds(prodOrSig, flowEnv))))
         -- Via signature/dispatch sharing
         | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
           map(sum, sequence(unzipWith(recurse,
@@ -351,6 +354,22 @@ DecSiteTree ::=
     prodName::String vt::VertexType attrName::String
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
   resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, flowEnv, realEnv), prodGraphs, flowEnv);
+
+{--
+ - Determine if a decoration site for some vertex has an inherited attribute supplied.
+ - 
+ - @param prodName The name of the production containing the vertex.
+ - @param vt The vertex type to check.
+ - @param attrName The name of the inherited attribute.
+ - @param flowEnv The flow environment.
+ - @param realEnv The regular environment.
+ - @return true if the vertex is guranteed to be supplied with the attribute.
+ -}
+fun decSiteHasInhEq
+Boolean ::=
+    prodName::String vt::VertexType attrName::String
+    prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
+  resolveInhEq(attrName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs
