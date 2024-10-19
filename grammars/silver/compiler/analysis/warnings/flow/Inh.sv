@@ -135,7 +135,6 @@ function checkAllEqDeps
   -- We want to suppress reporting the error again on the decoration site vertex,
   -- since that error wouldn't list the original vertex as a place where the
   -- attribute could be supplied.
-  -- TODO: Do something similar with the deps introduced by flow projections?
   local alreadyReported::[FlowVertex] = do {
     v :: FlowVertex <- vs;
     refInh::(VertexType, String) <-
@@ -147,7 +146,7 @@ function checkAllEqDeps
       end;
     decSite::VertexType <- lookupRefDecSite(prodName, refInh.1, flowEnv);
     guard(resolveInhEq(prodName, refInh.1, refInh.2, prodGraphs, flowEnv, realEnv) != alwaysDec());
-    return decSite.inhVertex(refInh.2);
+    expandGraph([decSite.inhVertex(refInh.2)], findProductionGraph(prodName, prodGraphs));
   };
   local anonResolve::[(String, Location)] = collectAnonOrigin(flowDefs);
   return flatMap(
