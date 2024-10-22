@@ -43,12 +43,12 @@ top::AttributeDclInfo ::=
   top.isSynthesized = true;
   top.isStrategy = true;
   
-  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
-  top.dataAccessHandler = synDataAccessHandler(_, _, location=_);
-  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
-  top.attributionDispatcher = strategyAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateStrategy(_, location=_);
+  top.decoratedAccessHandler = synDecoratedAccessHandler;
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
+  top.dataAccessHandler = synDataAccessHandler;
+  top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
+  top.attributionDispatcher = strategyAttributionDcl;
+  top.propagateDispatcher = propagateStrategy;
   
   top.isTotal = isTotal;
   top.containsErrors = containsErrors;

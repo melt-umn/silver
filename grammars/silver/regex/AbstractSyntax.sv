@@ -10,7 +10,7 @@ synthesized attribute seqPP::Document;
 synthesized attribute basePP::Document;
 implicit synthesized attribute classPP::Maybe<Document>;
 
-nonterminal Regex with pp, altPP, seqPP, basePP, classPP, compareTo, isEqual;
+tracked nonterminal Regex with pp, altPP, seqPP, basePP, classPP, compareTo, isEqual;
 
 propagate isEqual, compareTo on Regex;
 
@@ -124,38 +124,26 @@ top::Regex ::= r::Regex
  - Returns a regex that matches a string literal.
  - (i.e. no interpretation of special characters.)
  -}
-function regexLiteral
-Regex ::= s::String
-{
-  return
-    if s == "" then epsilon()
-    else foldr1(seq, map(char, stringToChars(s)));
-}
+fun regexLiteral Regex ::= s::String =
+  if s == "" then epsilon()
+  else foldr1(seq, map(char, stringToChars(s)));
 
-function escapeRegexChar
-Document ::= char::String
-{
-  return
-    case char of
-    | "+" -> pp"\\+"
-    | "*" -> pp"\\*"
-    | "?" -> pp"\\?"
-    | "|" -> pp"\\|"
-    | "[" -> pp"\\["
-    | "(" -> pp"\\("
-    | ")" -> pp"\\)"
-    | "." -> pp"\\."
-    | _ -> text(escapeString(char))
-    end;
-}
+fun escapeRegexChar Document ::= char::String =
+  case char of
+  | "+" -> pp"\\+"
+  | "*" -> pp"\\*"
+  | "?" -> pp"\\?"
+  | "|" -> pp"\\|"
+  | "[" -> pp"\\["
+  | "(" -> pp"\\("
+  | ")" -> pp"\\)"
+  | "." -> pp"\\."
+  | _ -> text(escapeString(char))
+  end;
 
-function escapeRegexClassChar
-Document ::= char::String
-{
-  return
-    case char of
-    | "-" -> pp"\\-"
-    | "]" -> pp"\\]"
-    | _ -> text(escapeString(char))
-    end;
-}
+fun escapeRegexClassChar Document ::= char::String =
+  case char of
+  | "-" -> pp"\\-"
+  | "]" -> pp"\\]"
+  | _ -> text(escapeString(char))
+  end;

@@ -26,7 +26,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   local exportedBy :: [String] = 
     if top.frame.hasPartialSignature
@@ -38,18 +38,18 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur e
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
-  
+
   -- Duplicate equation check
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
+    if dl.found && attr.found && countVertexEqs(top.frame.fullName, dl.defLHSVertex, attr.attrDcl.fullName, top.flowEnv, top.env) > 1
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   local exportedBy :: [String] = 
     case dl of
@@ -70,13 +70,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
-    
+
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    if dl.found && attr.found && countVertexEqs(top.frame.fullName, dl.defLHSVertex, attr.attrDcl.fullName, top.flowEnv, top.env) > 1
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -84,7 +84,7 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 --- FROM COLLECTIONS
 
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   local exportedBy :: [String] = 
     if top.frame.hasPartialSignature
@@ -96,17 +96,17 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     else [];
-  
+
   -- Duplicate equation check
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
+    if dl.found && attr.found && countVertexEqs(top.frame.fullName, dl.defLHSVertex, attr.attrDcl.fullName, top.flowEnv, top.env) > 1
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   local exportedBy :: [String] = 
     case dl of
@@ -127,13 +127,13 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     if dl.found && attr.found
     && top.config.warnEqdef
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [mwdaWrn(top.config, top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrnFromOrigin(top, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
     -- Now, check for duplicate equations!
     else [];
-    
+
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1 || contains(dl.inhAttrName, getMinRefSet(dl.typerep, top.env))
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    if dl.found && attr.found && countVertexEqs(top.frame.fullName, dl.defLHSVertex, attr.attrDcl.fullName, top.flowEnv, top.env) > 1
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
     else [];
 }
 
@@ -143,35 +143,6 @@ top::ExprLHSExpr ::= attr::QNameAttrOccur
   -- Duplicate equation check
   top.errors <-
     if attr.attrFound && length(filter(eq(attr.attrDcl.fullName, _), top.allSuppliedInhs)) > 1
-    then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name)]
+    then [mwdaWrnFromOrigin(top, "Duplicate equation for " ++ attr.name)]
     else [];
 }
-
---- For our DefLHSs:
-
-{--
- - A lookup for other instances of this equation on this DefLHS.
- -}
-synthesized attribute lookupEqDefLHS :: [FlowDef] occurs on DefLHS;
-flowtype lookupEqDefLHS {decorate} on DefLHS;
-
-aspect lookupEqDefLHS on top::DefLHS of
-  -- prod, child, attr
-| childDefLHS(q) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
-  -- prod, child, trans attr, attr
-| childTransAttrDefLHS(q, attr) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}", top.flowEnv)
-  -- prod, attr
-| lhsDefLHS(q) -> lookupSyn(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
-  -- prod, local, attr
-| localDefLHS(q) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
-  -- prod, local, trans attr, attr
-| localTransAttrDefLHS(q, attr) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}", top.flowEnv)
-  -- prod, attr
-| forwardDefLHS(q) -> lookupFwdInh(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
-  -- nt, attr
-| defaultLhsDefLHS(q) -> lookupDef(top.frame.lhsNtName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
-
-| errorDefLHS(q) -> []
-| errorTransAttrDefLHS(_, _) -> []
-| parserAttributeDefLHS(q) -> [] -- TODO: maybe error?
-end;

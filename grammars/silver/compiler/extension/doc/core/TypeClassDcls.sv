@@ -12,7 +12,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 {
   top.docForName = "class " ++ id.name;
   top.docUnparse = s"`class ${id.unparse}`";
-  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=top.location, sourceGrammar=top.grammarName))] ++ body.docDcls;
+  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))] ++ body.docDcls;
   top.docs := [mkUndocumentedItem(top.docForName, top)] ++ body.docs;
   body.scopeName = top.docForName;
   body.downDocConfig = top.downDocConfig;
@@ -24,7 +24,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
 {
   top.docForName = "instance "++id.name++" "++ty.unparse;
   top.docUnparse = s"`instance ${id.unparse} ${ty.unparse}`";
-  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=top.location, sourceGrammar=top.grammarName))] ++ body.docDcls;
+  top.docDcls := [(id.name, docDclInfo(top.docForName, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))] ++ body.docDcls;
   top.docs := [mkUndocumentedItem(top.docForName, top)] ++ body.docs;
   body.scopeName = top.docForName;
   body.downDocConfig = top.downDocConfig;
@@ -52,11 +52,11 @@ top::ClassBody ::= h::ClassBodyItem t::ClassBody
 aspect default production
 top::ClassBodyItem ::=
 {
-  top.docForName = "<undefined docForName for "++hackUnparse(top)++">";
+  top.docForName = "<undefined docForName for "++genericShow(top)++">";
   top.upDocConfig := [];
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
-  top.docUnparse = "<undefined docUnparse for "++hackUnparse(top)++">";
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
+  top.docUnparse = "<undefined docUnparse for "++genericShow(top)++">";
 }
 
 concrete production documentedClassBodyItem
@@ -78,10 +78,12 @@ top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
   local isDoubleComment::Boolean = length(realDclDocs) != 0;
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                else [dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
+                else [attachNote logicalLocationFromOrigin(item) on
+                        dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, parsed)
+                      end];
   top.docErrors <-
     if isDoubleComment
-    then [wrn(parsed.location, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+    then [wrnFromOrigin(parsed, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
   forwards to item;
@@ -92,7 +94,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 {
   top.docForName = id.name;
   top.docUnparse = "`" ++ id.unparse ++ " :: " ++ cl.unparse ++ " => " ++ ty.unparse ++ "`";
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
 }
 
 aspect production defaultConstraintClassBodyItem
@@ -100,7 +102,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
 {
   top.docForName = id.name;
   top.docUnparse = "`" ++ id.unparse ++ " :: " ++ cl.unparse ++ " => " ++ ty.unparse ++ "` (has default)";
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
 }
 
 
@@ -129,11 +131,11 @@ top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 aspect default production
 top::InstanceBodyItem ::=
 {
-  top.docForName = "<undefined docForName for "++hackUnparse(top)++">";
+  top.docForName = "<undefined docForName for "++genericShow(top)++">";
   top.upDocConfig := [];
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
-  top.docUnparse = "<undefined docUnparse for "++hackUnparse(top)++">";
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
+  top.docUnparse = "<undefined docUnparse for "++genericShow(top)++">";
 }
 
 concrete production documentedInstanceBodyItem
@@ -155,10 +157,12 @@ top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
   local isDoubleComment::Boolean = length(realDclDocs) != 0;
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                else [dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, item.location, parsed)];
+                else [attachNote logicalLocationFromOrigin(item) on
+                        dclCommentItem(top.scopeName ++ "." ++ forward.docForName, forward.docUnparse, forward.grammarName, parsed)
+                      end];
   top.docErrors <-
     if isDoubleComment
-    then [wrn(parsed.location, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+    then [wrnFromOrigin(parsed, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
   forwards to item;
@@ -169,5 +173,5 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   top.docForName = id.name;
   top.docUnparse = "`" ++ id.unparse ++ "`";
-  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName, top.location)];
+  top.docs := [undocumentedItem(top.scopeName ++ "." ++ top.docForName, "`" ++ top.scopeName ++ "`." ++ top.docUnparse, top.grammarName)];
 }

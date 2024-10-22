@@ -16,14 +16,13 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
   
   top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
-    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
+    then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
 
   forwards to
     appTypeExpr(
-      listCtrTypeExpr('[', ']', location=top.location),
-      bTypeList('<', typeListSingle(te, location=te.location), '>', location=top.location),
-      location=top.location);
+      listCtrTypeExpr('[', ']'),
+      bTypeList('<', typeListSingle(te), '>'));
 }
 
 concrete production listCtrTypeExpr
@@ -35,10 +34,10 @@ top::TypeExpr ::= '[' ']'
   
   top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
-    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
+    then [errFromOrigin(top, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
 
-  forwards to typerepTypeExpr(listCtrType(),location=top.location);
+  forwards to typerepTypeExpr(listCtrType());
 }
 
 -- The expressions -------------------------------------------------------------
@@ -48,7 +47,7 @@ top::Expr ::= '[' ']'
 {
   top.unparse = "[]";
 
-  forwards to mkStrFunctionInvocation(top.location, "silver:core:nil", []);
+  forwards to Silver_Expr { silver:core:nil() };
 }
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
@@ -59,26 +58,12 @@ top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
 
-  -- Needed to satisfy flow analysis, since we demand translation of h and t.
   h.decSiteVertexInfo = nothing();
-  t.decSiteVertexInfo = nothing();
   h.alwaysDecorated = false;
+  t.decSiteVertexInfo = nothing();
   t.alwaysDecorated = false;
 
-  forwards to application(
-    baseExpr(
-      qName(top.location, "silver:core:cons"),
-      location=top.location), '(',
-    snocAppExprs(
-      snocAppExprs(
-        emptyAppExprs(location=top.location), ',',
-        presentAppExpr(@h, location=top.location),
-        location=top.location), ',',
-      presentAppExpr(@t, location=top.location),
-      location=top.location),
-    ',',
-    emptyAnnoAppExprs(location=top.location),
-    ')', location=top.location);
+  forwards to Silver_Expr { silver:core:cons($Expr{@h}, $Expr{@t}) };
 }
 
 concrete production fullList
@@ -94,17 +79,17 @@ synthesized attribute listtrans :: Expr occurs on Exprs;
 aspect production exprsEmpty
 top::Exprs ::=
 {
-  top.listtrans = emptyList('[',']', location=top.location);
+  top.listtrans = emptyList('[',']');
 }
 
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = consListOp(e, '::', emptyList('[',']', location=top.location), location=top.location);
+  top.listtrans = consListOp(e, '::', emptyList('[',']'));
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = consListOp(e1, '::', e2.listtrans, location=top.location);
+  top.listtrans = consListOp(e1, '::', e2.listtrans);
 }

@@ -6,7 +6,7 @@ imports silver:langutil:pp;
 inherited attribute substitutionEnv::[Pair<String AST>];
 synthesized attribute value::AST;
 
-nonterminal ASTExpr with pp, substitutionEnv, value;
+tracked nonterminal ASTExpr with pp, substitutionEnv, value;
 propagate substitutionEnv on ASTExpr excluding letASTExpr, matchASTExpr;
 
 -- AST constructors
@@ -315,7 +315,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
   top.value =
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> integerAST(x % y)
-    | floatAST(x), floatAST(y) -> floatAST(x % y)
+    | floatAST(x), floatAST(y) -> floatAST(0.0)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -454,7 +454,7 @@ synthesized attribute astExprs::[ASTExpr];
 synthesized attribute values::[AST];
 synthesized attribute appValues::[Maybe<AST>];
 
-nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues;
+tracked nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues;
 propagate substitutionEnv on ASTExprs;
 
 abstract production consASTExpr
@@ -492,7 +492,7 @@ ASTExprs ::= a::ASTExprs b::ASTExprs
 synthesized attribute namedValues::[NamedAST];
 synthesized attribute namedAppValues::[Pair<String Maybe<AST>>];
 
-nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues;
+tracked nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues;
 propagate substitutionEnv on NamedASTExprs;
 
 abstract production consNamedASTExpr
@@ -524,7 +524,7 @@ NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs
 synthesized attribute namedValue::NamedAST;
 synthesized attribute namedAppValue::Pair<String Maybe<AST>>;
 
-nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue;
+tracked nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue;
 propagate substitutionEnv on NamedASTExpr;
 
 abstract production namedASTExpr

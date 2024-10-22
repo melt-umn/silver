@@ -47,7 +47,7 @@ top::ParserSpec ::=
   -- to all grammars imported in the env. 
   -- This could affect which conditional imports get triggered, and thus what gets included in the parser
   production deps :: [String] = computeDependencies(grams, top.compiledGrammars);
-  production med :: ModuleExportedDefs = moduleExportedDefs(top.location, top.compiledGrammars, deps, grams, []);
+  production med :: ModuleExportedDefs = moduleExportedDefs(top.compiledGrammars, deps, grams, []);
   
   -- Compute the list of terminal prefixes for marking terminals here, because the set of marking
   -- terminals exported by a grammar depends on conditional imports that may be triggered by other
@@ -62,7 +62,7 @@ top::ParserSpec ::=
       \ g::String ->
         (g,
           foldr(consSyntax, nilSyntax(),
-            moduleExportedDefs(top.location, top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
+            moduleExportedDefs(top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
       grams);
   production markingTerminalPrefixes::[Pair<String String>] =
     flatMap(

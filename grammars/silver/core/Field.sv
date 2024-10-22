@@ -12,3 +12,5 @@ grammar silver:core;
   - * Non-Zero Multiplicative Inverse: `mod(a, b) = zero`
   -}
 class DivisionRing a, EuclideanRing a => Field a {}
+
+instance Field Float {}

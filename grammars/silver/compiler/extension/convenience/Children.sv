@@ -18,11 +18,8 @@ top::Expr ::= '$' e::Int_t
         findChild(toInteger(e.lexeme),
           [top.frame.signature.outputElement.elementName] ++ top.frame.signature.inputNames));
 
-  forwards to baseExpr(qName(top.location, ref), location=top.location);
+  forwards to baseExpr(qName(ref));
 }
 
-function findChild
-Maybe<String> ::= i::Integer s::[String]
-{
-  return if null(s) then nothing() else if i == 0 then just(head(s)) else findChild(i-1, tail(s));
-}
+fun findChild Maybe<String> ::= i::Integer s::[String] =
+  if null(s) then nothing() else if i == 0 then just(head(s)) else findChild(i-1, tail(s));

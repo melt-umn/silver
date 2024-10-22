@@ -31,6 +31,7 @@ option silver:compiler:modification:copper;
 option silver:compiler:modification:defaultattr;
 option silver:compiler:modification:collection;
 option silver:compiler:modification:copper_mda;
+option silver:compiler:modification:concisefunctions;
 
 -- The list extension doesn't need to be an option here,
 -- it only needs to be one of silver:compiler:definition:type

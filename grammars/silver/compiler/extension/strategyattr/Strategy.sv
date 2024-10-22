@@ -19,12 +19,12 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
   top.errors <-
     if isTotal && !e.isTotal
     -- Not an error since we can still translate this, but the translation may raise run-time errors in case of failure
-    then [wrn(e.location, s"Implementation of total strategy ${a.name} is not total")]
+    then [wrnFromOrigin(e, s"Implementation of total strategy ${a.name} is not total")]
     else [];
 
   e.recVarNameEnv = recVarNameEnv;
@@ -35,20 +35,18 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   
   local fwrd::AGDcl =
     foldr(
-      appendAGDcl(_, _, location=top.location),
+      appendAGDcl,
       defsAGDcl(
         [attrDef(
            defaultEnvItem(
              strategyDcl(
                fName, isTotal,
                !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, e,
-               sourceGrammar=top.grammarName, sourceLocation=a.location)))],
-        location=top.location),
+               sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]),
       map(
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
-            d.snd.isTotalNoEnv, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd),
-            location=top.location),
+            d.snd.isTotalNoEnv, name(d.fst), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd)),
         e.liftedStrategies));
   
   -- Uncomment for debugging
@@ -57,18 +55,19 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   forwards to fwrd;
 }
 
-abstract production strategyAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production strategyAttributionDcl implements AttributionDcl
+top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
-  propagate grammarName, env, flowEnv;
+  attl.grammarName = top.grammarName;
+  attl.env = top.env;
+  attl.flowEnv = top.flowEnv;
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
     attl.errors ++ attl.errorsTyVars ++ nt.lookupType.errors ++ nttl.errors ++ nttl.errorsTyVars;
   localErrors <-
     if length(attl.types) > 0
-    then [err(attl.location, "Explicit type arguments are not allowed for strategy attributes")]
+    then [errFromOrigin(attl, "Explicit type arguments are not allowed for strategy attributes")]
     else [];
   
   -- Technically we could do this check on the propagate, but it seems clearer to raise it here
@@ -76,7 +75,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     flatMap(
       \ totalAttr::String ->
         if null(getOccursDcl(totalAttr, nt.lookupType.fullName, top.env))
-        then [err(top.location, s"Total strategy attribute ${totalAttr} referenced by ${at.name} does not occur on ${nt.name}")]
+        then [errFromOrigin(top, s"Total strategy attribute ${totalAttr} referenced by ${at.name} does not occur on ${nt.name}")]
         else [],
       nub(at.lookupAttribute.dcl.totalRefs));
   
@@ -84,8 +83,14 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  local atOccursDcl::AGDcl =
-    defaultAttributionDcl(
+  forwards to
+    extraDefaultAttributionDcl(
+      foldr(appendAGDcl, emptyAGDcl(),
+        map(
+          \ n::String ->
+            attributionDcl(
+              'attribute', qName(n), attl, 'occurs', 'on', nt, nttl, ';'),
+          at.lookupAttribute.dcl.liftedStrategyNames)))(
       at,
       botlSome(
         bTypeList(
@@ -94,41 +99,22 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
             case nttl of
             | botlSome(tl) -> 
               appTypeExpr(
-                nominalTypeExpr(nt.qNameType, location=top.location),
-                tl, location=top.location)
-            | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
-            end,
-            location=top.location),
-          '>', location=top.location),
-        location=top.location),
-      nt, nttl,
-      location=top.location);
-
-  forwards to
-    if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl
-    else
-      appendAGDcl(
-        @atOccursDcl,
-        foldr1(
-          appendAGDcl(_, _, location=top.location),
-          map(
-            \ n::String ->
-              attributionDcl(
-                'attribute', qName(top.location, n), attl, 'occurs', 'on', nt, nttl, ';',
-                location=top.location),
-            at.lookupAttribute.dcl.liftedStrategyNames)),
-        location=top.location);
+                nominalTypeExpr(nt.qNameType),
+                tl)
+            | botlNone() -> nominalTypeExpr(nt.qNameType)
+            end),
+          '>')),
+      @nt, @nttl);
 }
 
 {--
  - Propagate a strategy attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateStrategy
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateStrategy implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
-  top.unparse = s"propagate ${attr.unparse}";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;
   production e::StrategyExpr = attr.lookupAttribute.dcl.strategyExpr;
@@ -169,17 +155,16 @@ top::ProductionStmt ::= attr::Decorated! QName
   
   local fwrd::ProductionStmt =
     foldr(
-      productionStmtAppend(_, _, location=top.location),
+      productionStmtAppend(_, _),
       attributeDef(
-        concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
+        concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
         '.',
-        qNameAttrOccur(new(attr), location=top.location),
+        qNameAttrOccur(new(attr)),
         '=',
         if isTotal then e2.totalTranslation else e2.partialTranslation,
-        ';',
-        location=top.location),
+        ';'),
       map(
-        \ n::String -> propagateOneAttr(qName(top.location, n), location=top.location),
+        \ n::String -> propagateOneAttr(if includeShared then elemShared('@') else elemNotShared(), qName(n)),
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
   -- Uncomment for debugging

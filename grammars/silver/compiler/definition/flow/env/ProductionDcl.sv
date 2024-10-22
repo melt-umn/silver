@@ -9,16 +9,16 @@ import silver:compiler:definition:flow:driver;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
 
 attribute flowEnv occurs on
-  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
+  ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
 propagate flowEnv on
-  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
+  ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   -- TODO: bit of a hack, isn't it?
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
@@ -31,6 +31,39 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.forwardExpr)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
+  
+  -- Does this production forward to an application of the same dispatch signature
+  -- with the same shared children?
+  production forwardsToImplementedSig :: Boolean = 
+    case d.implementsSig, body.forwardExpr of
+    | just(dSig), [dispatchApplication(e, es, emptyAnnoAppExprs())]
+        when e.typerep matches dispatchType(fwrdDSig) ->
+      dSig.fullName == fwrdDSig.fullName &&
+      all(zipWith(
+        \ ie::NamedSignatureElement e::Decorated Expr ->
+          !ie.elementShared ||
+          case e of
+          | childReference(q) ->
+            positionOf(q.lookupValue.fullName, namedSig.inputNames) ==
+            positionOf(ie.elementName, dSig.inputNames)
+          | _ -> false
+          end,
+        dSig.inputElements, es.exprs))
+    | _, _ -> false
+    end;
+
+  top.flowDefs <-
+    case d.implementsSig of
+    | just(dSig) when
+        isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) &&
+        -- Productions that forward to the same dispatch signature with the same shared children
+        -- cannot affect inherited completeness.
+        -- This is a potential circularity, as the prod could in principle forward to itself,
+        -- but not something we want to forbid.
+        !forwardsToImplementedSig ->
+      [implFlowDef(dSig.fullName, fName)]
+    | _ -> []
+    end;
 
   top.flowDefs <- flatMap(
     \ ie::NamedSignatureElement -> occursContextDeps(namedSig, body.env, ie.typerep, rhsVertexType(ie.elementName)),
@@ -68,6 +101,12 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 
 aspect production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
+{
+  propagate flowEnv;
+}
+
+aspect production aspectRHSElemSharedTyped
+top::AspectRHSElem ::= '@' id::Name '::' t::TypeExpr
 {
   propagate flowEnv;
 }

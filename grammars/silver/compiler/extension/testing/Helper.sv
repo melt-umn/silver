@@ -9,46 +9,20 @@ import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
 
 -- Expression creating functions
+-- TODO: These are duplicates of existing helpers, are obsolete with concrete syntax quotation,
+-- or otherwise don't belong here!
 
 -- Create an Expr from a String.
-function mkNameExpr
-Expr ::= name::String  l::Location
-{ 
-  return baseExpr(qName(l, name), location=l);
-}
+fun mkNameExpr Expr ::= name::String = baseExpr(qName(name));
 
 -- fold a list of expressions(Expr) into a single "++"-separated Expr
-function foldStringExprs 
-Expr ::= es::[Expr]
-{
- return if null(es)
-        then stringConst(terminal(String_t, "\"\""), location=bogusLoc())
-        else plusPlus(head(es), '++', foldStringExprs(tail(es)), location=head(es).location);
-}
+fun foldStringExprs Expr ::= es::[Expr] =
+  if null(es)
+  then stringConst(terminal(String_t, "\"\""))
+  else plusPlus(head(es), '++', foldStringExprs(tail(es)));
 
 -- Create an Expr that is a string constant from a string.
-function strCnst
-Expr ::= s::String
-{
-  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""), location=bogusLoc());
-}
+fun strCnst Expr ::= s::String = stringConst(terminal(String_t, "\"" ++ escapeString(s) ++ "\""));
 
 -- Create an attribute reference from two names. as in "n.a"
-function attrAcc
-Expr ::= n::String a::String l::Location
-{
-  return  
-    access(mkNameExpr(n, l), '.', qNameAttrOccur(qName(l, a), location=l), location=l);
-}
-
--- replace " characters with two: \ and "
-function stringifyString
-String ::= s::String
-{
-  -- be sure to escape backslashes first!
-  return substitute("\n", "\\n",
-          substitute("\t", "\\t",
-           substitute("\"", "\\\"",
-            substitute("\\",  "\\\\", s))));
-}
-
+fun attrAcc Expr ::= n::String a::String = access(mkNameExpr(n), '.', qNameAttrOccur(qName(a)));

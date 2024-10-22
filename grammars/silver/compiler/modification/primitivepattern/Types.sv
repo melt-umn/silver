@@ -76,11 +76,11 @@ top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | varType(j) when j.kindrep == tv.kindrep ->
+    | varType(j) when j.kind == tv.kind ->
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindrep == tv.kindrep ->
+    | t when t.kindrep == tv.kind ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -93,11 +93,11 @@ top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | skolemType(j) when j.kindrep == tv.kindrep -> 
+    | skolemType(j) when j.kind == tv.kind -> 
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindrep == tv.kindrep ->
+    | t when t.kindrep == tv.kind ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -220,16 +220,6 @@ top::Type ::= te::Type i::Type
     end;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  top.refine = 
-    case top.refineWith of
-    | uniqueDecoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
-    | _ -> errorSubst("Tried to refine unique decorated type with " ++ prettyType(top.refineWith))
-    end;
-}
-
 aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
@@ -237,6 +227,19 @@ top::Type ::= params::Integer namedParams::[String]
     case top.refineWith of
     | functionType(op, onp) when params == op && namedParams == onp -> emptySubst()
     | _ -> errorSubst("Tried to refine function type with " ++ prettyType(top.refineWith))
+    end;
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.refine = 
+    case top.refineWith of
+    | dispatchType(ons) ->
+        if ns.fullName == ons.fullName
+        then emptySubst()
+        else errorSubst("Tried to refine conflicting dispatch types " ++ ns.fullName ++ " and " ++ ons.fullName)
+    | _ -> errorSubst("Tried to refine dispatch type " ++ ns.fullName ++ " with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -318,16 +321,13 @@ Substitution ::= te1::[Type] te2::[Type]
 
 
 --------
-function isOnlyTyVars
-Boolean ::= ls::[Type]
-{
-  return case ls of
-         | [] -> true
-         | varType(_) :: t -> isOnlyTyVars(t)
-         | skolemType(_) :: t -> isOnlyTyVars(t)
-         | _ -> false
-         end;
-}
+fun isOnlyTyVars Boolean ::= ls::[Type] =
+  case ls of
+  | [] -> true
+  | varType(_) :: t -> isOnlyTyVars(t)
+  | skolemType(_) :: t -> isOnlyTyVars(t)
+  | _ -> false
+  end;
 
 
 --------

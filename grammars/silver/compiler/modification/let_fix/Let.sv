@@ -14,10 +14,10 @@ top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
 
-  forwards to letp(la.letAssignExprs, e, location=top.location);
+  forwards to letp(la.letAssignExprs, e);
 }
 
-nonterminal LetAssigns with unparse, location, letAssignExprs;
+tracked nonterminal LetAssigns with unparse, letAssignExprs;
 
 synthesized attribute letAssignExprs :: AssignExpr;
 
@@ -25,7 +25,7 @@ concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
   top.unparse = ae.unparse ++ ", " ++ list.unparse;
-  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs, location=top.location);
+  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs);
 }
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
@@ -59,9 +59,13 @@ top::Expr ::= la::AssignExpr  e::Expr
 
 monoid attribute boundNames::[String];
 
-nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
+tracked nonterminal AssignExpr with config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
                             downSubst, finalSubst, frame, originRules;
+
+flowtype AssignExpr =
+  decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, bodyDecSites},
+  upSubst {decorate}, defs {decorate};
 
 propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
@@ -95,13 +99,13 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
   top.errors <- 
     if length(getValueDclInScope(id.name, top.env)) > 1
-    then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
+    then [errFromOrigin(id, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 
   top.errors <- t.errorsKindStar;
@@ -113,16 +117,15 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   errCheck1 = check(e.typerep, t.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+    then [errFromOrigin(id, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
     else [];
 
   e.isRoot = false;
 }
 
-abstract production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+abstract production lexicalLocalReference implements Reference
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 {
-  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);
@@ -146,7 +149,6 @@ top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::
     case q.lookupValue.typeScheme.monoType of
     | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
     | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;
 

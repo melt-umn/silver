@@ -7,7 +7,13 @@ grammar silver:compiler:definition:env;
  - TODO: we might want to remove the full name of the production from this, and make it just `Signature`?
  - It's not clear if this information really belongs here, or not.
  -}
-data nonterminal NamedSignature with fullName, contexts, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep, freshenNamedSignature;
+data nonterminal NamedSignature with
+  fullName, contexts, inputElements, outputElement, namedInputElements, freeVariables,
+  inputNames, inputTypes, typeScheme, dclTypeScheme, typerep, freshenNamedSignature;
+
+-- The type scheme for the signature as written, without sharing.
+synthesized attribute dclTypeScheme :: PolyType;
+-- typeScheme has all shared children changed to Decorated types.
 
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
@@ -39,6 +45,8 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
   top.inputTypes = ie.elementTypes; -- Does anything actually use this? TODO: eliminate?
   local typerep::Type = appTypes(functionType(length(ie.elements), np.elementShortNames), ie.elementTypes ++ np.elementTypes ++ [oe.typerep]);
   top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, typerep);
+  local dclType::Type = appTypes(functionType(length(ie.elements), np.elementShortNames), ie.elementDclTypes ++ np.elementDclTypes ++ [oe.elementDclType]);
+  top.dclTypeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, dclType);
   top.freeVariables = setUnionTyVars(ctxs.freeVariables, typerep.freeVariables);
   top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
   
@@ -72,6 +80,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
   top.inputNames = error("Not a production or function");
   top.inputTypes = ty.inputTypes; -- Does anything actually use this? TODO: eliminate?
   top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, ty);
+  top.dclTypeScheme = top.typeScheme;
   top.freeVariables = setUnionTyVars(ctxs.freeVariables, ty.freeVariables);
   top.typerep = ty;
   
@@ -85,22 +94,20 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
  - Used when an error occurs. e.g. aspecting a non-existant production.
  - Or, in contexts that have no valid signature, which maybe we should do something about...
  -}
-function bogusNamedSignature
-NamedSignature ::= 
-{
-  return namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
-}
+fun bogusNamedSignature NamedSignature ::= =
+  namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
 
 {--
- - Represents a collection of NamedSignatureElements
- -}
-nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, freeVariables, boundVariables;
+  - Represents a collection of NamedSignatureElements
+  -}
+nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, elementDclTypes, freeVariables, boundVariables;
 propagate boundVariables on NamedSignatureElements;
 
 synthesized attribute elements::[NamedSignatureElement];
 synthesized attribute elementNames::[String];
 synthesized attribute elementShortNames::[String];
 synthesized attribute elementTypes::[Type];
+synthesized attribute elementDclTypes::[Type];
 
 abstract production consNamedSignatureElement
 top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElements
@@ -109,6 +116,7 @@ top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElemen
   top.elementNames = h.elementName :: t.elementNames;
   top.elementShortNames = h.elementShortName :: t.elementShortNames;
   top.elementTypes = h.typerep :: t.elementTypes;
+  top.elementDclTypes = h.elementDclType :: t.elementDclTypes;
   top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables);
 }
 
@@ -119,6 +127,7 @@ top::NamedSignatureElements ::=
   top.elementNames = [];
   top.elementShortNames = [];
   top.elementTypes = [];
+  top.elementDclTypes = [];
   top.freeVariables = [];
 }
 
@@ -128,20 +137,24 @@ global foldNamedSignatureElements::(NamedSignatureElements ::= [NamedSignatureEl
 {--
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
-nonterminal NamedSignatureElement with elementName, elementShortName, typerep, freeVariables, boundVariables;
+nonterminal NamedSignatureElement with elementName, elementShortName, elementShared, elementDclType, typerep, freeVariables, boundVariables;
 propagate boundVariables on NamedSignatureElement;
 
 synthesized attribute elementName :: String;
+synthesized attribute elementDclType :: Type;
 synthesized attribute elementShortName :: String;
+synthesized attribute elementShared :: Boolean;
 
 {--
  - Represents an element of the function/production signature.
  -}
 abstract production namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::Type
+top::NamedSignatureElement ::= n::String ty::Type shared::Boolean
 {
   top.elementName = n;
-  top.typerep = ty;
+  top.elementDclType = ty;
+  top.typerep = if shared then decoratedType(ty, inhSetType([])) else ty;
+  top.elementShared = shared;
   top.freeVariables = ty.freeVariables;
 
   -- When we convert from a SignatureElement to a functionType, we cut down to the short name only:
@@ -156,7 +169,7 @@ top::NamedSignatureElement ::= n::String ty::Type
 abstract production bogusNamedSignatureElement
 top::NamedSignatureElement ::=
 {
-  forwards to namedSignatureElement("__SV_BOGUS_ELEM", errorType());
+  forwards to namedSignatureElement("__SV_BOGUS_ELEM", errorType(), false);
 }
 
 ----------------
@@ -168,20 +181,18 @@ Boolean ::= a::NamedSignatureElement  b::NamedSignatureElement
 }
 
 -- This is a big of an awful pile. Related to annotations, for now.
-function findNamedSigElem
-Integer ::= s::String l::[NamedSignatureElement] z::Integer
-{
-  return if null(l) then -1
+fun findNamedSigElem
+Integer ::= s::String l::[NamedSignatureElement] z::Integer =
+  if null(l) then -1
   else if s == head(l).elementName then z
   else findNamedSigElem(s, tail(l), z+1);
-}
 
-function findNamedSigElemType
-Type ::= n::String l::[NamedSignatureElement]
-{
-  local elems::NamedSignatureElements = foldNamedSignatureElements(l);
-  return fromMaybe(errorType(), lookup(n, zip(elems.elementNames, elems.elementTypes)));
-}
+fun lookupSignatureInputElem
+NamedSignatureElement ::= s::String ns::NamedSignature =
+  case lookup(s, zip(ns.inputNames, ns.inputElements)) of
+  | just(e) -> e
+  | nothing() -> bogusNamedSignatureElement()
+  end;
 
 --------------
 

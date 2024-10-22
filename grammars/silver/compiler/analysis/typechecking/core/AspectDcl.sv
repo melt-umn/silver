@@ -8,18 +8,18 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
-  errCheck1 = check(realSig.typeScheme.typerep, namedSig.typeScheme.typerep);
+  errCheck1 = check(realSig.dclTypeScheme.typerep, namedSig.dclTypeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
+    then [errFromOrigin(top, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
                             ++ errCheck1.leftpp ++ "\nActual: " ++ errCheck1.rightpp)]
     else
     -- dcl is potentially not found, accessing it can crash.
     -- so check on dcls for this.
       case id.lookupValue.dcls of
-      | prodDcl (_, _) :: _ -> []
-      | funDcl  (_) :: _ -> [err(top.location, "Production aspect for '" ++ id.name ++ "' should be a 'function' aspect instead.")]
-      | _ -> [err(id.location, id.name ++ " is not a production.")]
+      | prodDcl (_, _, _) :: _ -> []
+      | funDcl  (_) :: _ -> [errFromOrigin(top, "Production aspect for '" ++ id.name ++ "' should be a 'function' aspect instead.")]
+      | _ -> [errFromOrigin(id, id.name ++ " is not a production.")]
       end;
 
   ns.downSubst = emptySubst();
@@ -34,17 +34,17 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
-  errCheck1 = check(realSig.typeScheme.typerep, namedSig.typeScheme.typerep);
+  errCheck1 = check(realSig.dclTypeScheme.typerep, namedSig.dclTypeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
+    then [errFromOrigin(top, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
                             ++ errCheck1.leftpp ++ "\nActual: " ++ errCheck1.rightpp)]
     else
     -- must be on dcls because lookup may have failed.
       case id.lookupValue.dcls of
       | funDcl (_) :: _ -> []
-      | prodDcl  (_, _) :: _ -> [err(top.location, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.")]
-      | _ -> [err(id.location, id.name ++ " is not a function.")]
+      | prodDcl  (_, _, _) :: _ -> [errFromOrigin(top, "Function aspect for '" ++ id.name ++ "' should be a 'production' aspect instead.")]
+      | _ -> [errFromOrigin(id, id.name ++ " is not a function.")]
       end;
 
   ns.downSubst = emptySubst();
@@ -71,7 +71,7 @@ top::AspectProductionLHS ::= id::Name t::Type
   errCheck1 = check(rType, t);
   top.errors <-
         if errCheck1.typeerror
-        then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
+        then [errFromOrigin(top, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
         else [];
 }
 
@@ -88,7 +88,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 }
 
 aspect production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::Type
+top::AspectRHSElem ::= shared::Boolean id::Name t::Type
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -97,8 +97,13 @@ top::AspectRHSElem ::= id::Name t::Type
   errCheck1 = check(rType, t);
   top.errors <-
         if errCheck1.typeerror
-        then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
+        then [errFromOrigin(top, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
         else [];
+  
+  top.errors <-
+    if !null(top.realSignature) && head(top.realSignature).elementShared != shared
+    then [errFromOrigin(top, "Sharedness incorrect in aspect signature.")]
+    else [];
 }
 
 aspect production aspectFunctionSignature
@@ -117,7 +122,7 @@ top::AspectFunctionLHS ::= t::TypeExpr
   errCheck1 = check(rType, t.typerep);
   top.errors <-
         if errCheck1.typeerror
-        then [err(top.location, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
+        then [errFromOrigin(top, "Type incorrect in aspect signature. Expected: " ++ errCheck1.leftpp ++ "  Got: " ++ errCheck1.rightpp)]
         else [];
 }
 

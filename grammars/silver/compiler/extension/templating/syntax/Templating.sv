@@ -17,27 +17,27 @@ terminal LiteralBackslashN /\\n/ lexer classes {LITERAL, lsp:String_};
 terminal OpenEscape '${';
 
 {-- A string without the first triple quote, with escaped expressions within -}
-nonterminal TemplateString with location;
+tracked nonterminal TemplateString;
 {-- A single-line string without the first quote, with escaped expressions within -}
-nonterminal SingleLineTemplateString with location;
+tracked nonterminal SingleLineTemplateString;
 {-- A list of alternating String/Exprs -}
-nonterminal TemplateStringBody with location;
+tracked nonterminal TemplateStringBody;
 {-- A single-line list of alternating String/Exprs -}
-nonterminal SingleLineTemplateStringBody with location;
+tracked nonterminal SingleLineTemplateStringBody;
 {-- Either a String or an Expr -}
-nonterminal TemplateStringBodyItem with location;
+tracked nonterminal TemplateStringBodyItem;
 {-- Either a single-line String or an Expr -}
-nonterminal SingleLineTemplateStringBodyItem with location;
+tracked nonterminal SingleLineTemplateStringBodyItem;
 {-- An escape -}
-nonterminal NonWater with location;
+tracked nonterminal NonWater;
 {-- List that yields a string -}
-nonterminal Water with location, waterString, waterDoc;
+tracked nonterminal Water with waterString, waterDoc;
 {-- List that yields a single-line string -}
-nonterminal SingleLineWater with location, waterString, waterDoc;
+tracked nonterminal SingleLineWater with waterString, waterDoc;
 {-- Components that yield a string -}
-nonterminal WaterItem with location, waterString, waterDoc;
+tracked nonterminal WaterItem with waterString, waterDoc;
 {-- Components that yield a single-line string -}
-nonterminal SingleLineWaterItem with location, waterString, waterDoc;
+tracked nonterminal SingleLineWaterItem with waterString, waterDoc;
 
 {-- The string corresponding to the water -}
 synthesized attribute waterString :: String;

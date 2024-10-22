@@ -22,14 +22,14 @@ concrete production templateExpr
 top::Expr ::= Template_kwd t::TemplateString
 layout {}
 {
-  forwards to foldr1(stringAppendCall(_, _, location=top.location), t.stringTemplate);
+  forwards to foldr1(stringAppendCall(_, _), t.stringTemplate);
 }
 
 concrete production singleLineTemplateExpr
 top::Expr ::= SLTemplate_kwd t::SingleLineTemplateString
 layout {}
 {
-  forwards to foldr1(stringAppendCall(_, _, location=top.location), t.stringTemplate);
+  forwards to foldr1(stringAppendCall(_, _), t.stringTemplate);
 }
 
 production stringAppendCall
@@ -46,18 +46,15 @@ top::Expr ::= a::Expr b::Expr
 
   forwards to application(
     baseExpr(
-      qName(top.location, "silver:core:stringAppend"),
-      location=top.location), '(',
+      qName("silver:core:stringAppend")), '(',
     snocAppExprs(
       snocAppExprs(
-        emptyAppExprs(location=top.location), ',',
-        presentAppExpr(@a, location=top.location),
-        location=top.location), ',',
-      presentAppExpr(@b, location=top.location),
-      location=top.location),
+        emptyAppExprs(), ',',
+        presentAppExpr(@a)), ',',
+      presentAppExpr(@b)),
     ',',
-    emptyAnnoAppExprs(location=top.location),
-    ')', location=top.location);
+    emptyAnnoAppExprs(),
+    ')');
 }
 
 terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL, lsp:String_};
@@ -68,14 +65,14 @@ concrete production pptemplateExpr
 top::Expr ::= PPTemplate_kwd t::TemplateString
 layout {}
 {
-  forwards to translate(top.location, reflect(t.ppTemplate));
+  forwards to translate(reflect(t.ppTemplate));
 }
 
 concrete production singleLinepptemplateExpr
 top::Expr ::= SLPPTemplate_kwd t::SingleLineTemplateString
 layout {}
 {
-  forwards to translate(top.location, reflect(t.ppTemplate));
+  forwards to translate(reflect(t.ppTemplate));
 }
 
 -- Antiquote production used in translating nonwater Exprs that should get directly embedded in the result.
@@ -107,7 +104,7 @@ top::TemplateString ::= b::TemplateStringBody _
 aspect production templateStringEmpty
 top::TemplateString ::= _
 {
-  top.stringTemplate = [stringConst(terminal(String_t, "\"\"", top.location), location=top.location)];
+  top.stringTemplate = [Silver_Expr { "" }];
   top.ppTemplate = notext();
 }
 
@@ -121,7 +118,7 @@ top::SingleLineTemplateString ::= b::SingleLineTemplateStringBody _
 aspect production singleLineTemplateStringEmpty
 top::SingleLineTemplateString ::= _
 {
-  top.stringTemplate = [stringConst(terminal(String_t, "\"\"", top.location), location=top.location)];
+  top.stringTemplate = [Silver_Expr { "" }];
   top.ppTemplate = notext();
 }
 
@@ -142,7 +139,7 @@ top::TemplateStringBody ::= h::TemplateStringBodyItem
 aspect production bodyOneWater
 top::TemplateStringBody ::= w::Water
 {
-  top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
+  top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\""))];
   top.ppTemplate = w.waterDoc;
 }
 
@@ -163,7 +160,7 @@ top::SingleLineTemplateStringBody ::= h::SingleLineTemplateStringBodyItem
 aspect production singleLineBodyOneWater
 top::SingleLineTemplateStringBody ::= w::SingleLineWater
 {
-  top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
+  top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\""))];
   top.ppTemplate = w.waterDoc;
 }
 
@@ -171,7 +168,7 @@ aspect production itemWaterEscape
 top::TemplateStringBodyItem ::= w::Water nw::NonWater
 {
   top.stringTemplate = [
-    stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
+    stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\""))] ++
       nw.stringTemplate;
   top.ppTemplate = cat(w.waterDoc, nw.ppTemplate);
 }
@@ -187,7 +184,7 @@ aspect production singleLineItemWaterEscape
 top::SingleLineTemplateStringBodyItem ::= w::SingleLineWater nw::NonWater
 {
   top.stringTemplate = [
-    stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
+    stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\""))] ++
       nw.stringTemplate;
   top.ppTemplate = cat(w.waterDoc, nw.ppTemplate);
 }
@@ -203,5 +200,5 @@ aspect production nonwater
 top::NonWater ::= '${' e::Expr '}'
 {
   top.stringTemplate = [e];
-  top.ppTemplate = antiquoteDoc(mkStrFunctionInvocation(top.location, "silver:langutil:pp:pp", [e]));
+  top.ppTemplate = antiquoteDoc(mkStrFunctionInvocation("silver:langutil:pp:pp", [e]));
 }

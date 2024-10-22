@@ -49,7 +49,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     -- And we can ignore any attribute that has a default equation:
     && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv))
     -- Otherwise, examine them all:
-    then flatMap(raiseMissingProds(top.config, top.location, at.lookupAttribute.fullName, _, top.flowEnv), nfprods)
+    then flatMap(raiseMissingProds(top.config, at.lookupAttribute.fullName, _, top.flowEnv), nfprods)
     else [];
 }
 
@@ -57,21 +57,20 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
  - Examine a non-forwarding production `prod` to see if it is missing an equation
  - for the synthesized attribute `attr`.
  -
- - @param l      Location to raise the error message (of the attribute occurence)
  - @param attr   Full name of a synthesized attribute
  - @param prod   Full name of non-forwarding production to examine
  - @param e      The local flow environment
  - @returns      An error message from the attribute occurrence's perspective, if any
  -}
 function raiseMissingProds
-[Message] ::= config::Decorated CmdArgs  l::Location  attr::String  prod::String  e::FlowEnv
+[Message] ::= config::Decorated CmdArgs  attr::String  prod::String  e::FlowEnv
 {
   -- Because the location is of the attribute occurrence, deliberately use the attribute's shortname
   local shortName :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
 
   return case lookupSyn(prod, attr, e) of
   | _ :: _ -> [] -- equation exists
-  | [] -> [mwdaWrn(config, l, "attribute "  ++ shortName ++ " missing equation for production " ++ prod)]
+  | [] -> [mwdaWrnAmbientOrigin(config, "attribute "  ++ shortName ++ " missing equation for production " ++ prod)]
   end;
 
 }
@@ -82,7 +81,7 @@ function raiseMissingProds
  - closer to the location where a fix would be requird.
  -}
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   -- All locally known synthesized attributes. This does not need to be exhaustive,
   -- because this error message is a courtesy, not the basis of the analysis.
@@ -95,7 +94,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     -- Forwarding productions do not have missing synthesized equations:
     && null(body.forwardExpr)
     -- Otherwise, examine them all:
-    then flatMap(raiseMissingAttrs(top.config, top.location, fName, namedSig.outputElement.typerep.typeName, _, top.flowEnv), attrs)
+    then flatMap(raiseMissingAttrs(top.config, fName, namedSig.outputElement.typerep.typeName, _, top.flowEnv), attrs)
     else [];
 }
 
@@ -103,7 +102,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
  - Examine a non-forwarding production `prod` to see if it is missing an equation
  - for the synthesized attribute `attr`.
  -
- - @param l      Location to raise the error message (of the production)
  - @param prod   Full name of the non-forwarding production in question
  - @param nt     Full name of prod's lhs nonterminal
  - @param attr   Full name of a synthesized attribute
@@ -111,7 +109,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
  - @returns      An error message from the production's perspective, if any
  -}
 function raiseMissingAttrs
-[Message] ::= config::Decorated CmdArgs  l::Location  prod::String  nt::String  attr::String  e::FlowEnv
+[Message] ::= config::Decorated CmdArgs  prod::String  nt::String  attr::String  e::FlowEnv
 {
   -- Because the location is of the production, deliberately use the production's shortname
   local shortName :: String = substring(lastIndexOf(":", prod) + 1, length(prod), prod);
@@ -125,7 +123,7 @@ function raiseMissingAttrs
     end;
  
   return if lacks_default_equation && missing_explicit_equation
-  then [mwdaWrn(config, l, "production " ++ shortName ++ " lacks synthesized equation for " ++ attr)]
+  then [mwdaWrnAmbientOrigin(config, "production " ++ shortName ++ " lacks synthesized equation for " ++ attr)]
   else [];
 }
 

@@ -3,13 +3,13 @@ grammar silver:compiler:definition:type;
 synthesized attribute baseKind::Kind;
 synthesized attribute argKinds::[Kind];
 
-nonterminal Kind with compareTo, isEqual, baseKind, argKinds;
+tracked nonterminal Kind with compareTo, isEqual, baseKind, argKinds;
 propagate compareTo, isEqual on Kind;
 
 aspect default production
 top::Kind ::=
 {
-  top.baseKind = top;
+  top.baseKind = new(top);
   top.argKinds = [];
 }
 
@@ -25,7 +25,7 @@ abstract production arrowKind
 top::Kind ::= k1::Kind k2::Kind
 {
   top.baseKind = k2.baseKind;
-  top.argKinds = k1 :: k2.argKinds;
+  top.argKinds = new(k1) :: k2.argKinds;
 }
 
 global constructorKind::(Kind ::= Integer) = \ arity::Integer ->

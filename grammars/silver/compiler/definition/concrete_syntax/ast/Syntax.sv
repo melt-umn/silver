@@ -301,7 +301,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     end;
   local commaIfArgsOrAnnos :: String = if length(ns.inputElements) + length(ns.namedInputElements)!= 0 then "," else "";
   local originImpl :: String = if isTracked then
-                               "new silver.core.PparsedOriginInfo(common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil)"  ++ commaIfArgsOrAnnos
+                               "new silver.core.PparsedOriginInfo(common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil, common.OriginsUtil.SET_FROM_PARSER_OIT)"  ++ commaIfArgsOrAnnos
                                else "";
 
   local code::String =
@@ -324,13 +324,10 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     ];
 }
 
-function fetchChildren
-String ::= i::Integer  ns::[NamedSignatureElement]
-{
-  return if null(ns) then ""
+fun fetchChildren String ::= i::Integer  ns::[NamedSignatureElement] =
+  if null(ns) then ""
   else if null(tail(ns)) then "_children[" ++ toString(i) ++ "]"
   else "_children[" ++ toString(i) ++ "], " ++ fetchChildren(i + 1, tail(ns));
-}
 
 function insertLocationAnnotation
 String ::= ns::NamedSignature
@@ -344,25 +341,18 @@ String ::= ns::NamedSignature
 }
 
 
-function lookupStrings
-[[a]] ::= t::[String] e::EnvTree<a>
-{
-  return map(searchEnvTree(_, e), t);
-}
-function checkRHS
-[String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]]
-{
-  return if null(rhs) then []
-         else (if length(head(refs)) == 1 then
-                case head(head(refs)) of
-                | syntaxNonterminal(_,_,_,_,_) -> []
-                | syntaxTerminal(_,_,_) -> []
-                | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
-                end
-              else ["Terminal " ++ head(rhs).typeName ++ " was referenced but " ++
-                    "this grammar was not included in this parser. (Referenced from RHS of " ++ pn ++ ")"])
-              ++ checkRHS(pn, tail(rhs), tail(refs));
-}
+fun lookupStrings [[a]] ::= t::[String] e::EnvTree<a> = map(searchEnvTree(_, e), t);
+fun checkRHS [String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]] =
+  if null(rhs) then []
+  else (if length(head(refs)) == 1 then
+         case head(head(refs)) of
+         | syntaxNonterminal(_,_,_,_,_) -> []
+         | syntaxTerminal(_,_,_) -> []
+         | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
+         end
+       else ["Terminal " ++ head(rhs).typeName ++ " was referenced but " ++
+             "this grammar was not included in this parser. (Referenced from RHS of " ++ pn ++ ")"])
+       ++ checkRHS(pn, tail(rhs), tail(refs));
 
 {--
  - A lexer class. Copper doesn't take these, so we'll have to translate away

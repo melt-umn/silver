@@ -46,7 +46,7 @@ instance Bind [] {
 instance Monad [] {}
 
 instance MonadFail [] {
-  fail = \ String -> [];
+  fail = \ _ -> [];
 }
 
 instance Alt [] {
@@ -95,16 +95,13 @@ instance Length [a] {
   - all the results that are just. The same as Haskell's 'mapMaybe' and Rust's
   - filter_map.
   -}
-function filterMap
-[b] ::= f::(Maybe<b> ::= a)  lst::[a]
-{
-  return flatMap(
+fun filterMap [b] ::= f::(Maybe<b> ::= a)  lst::[a] =
+  flatMap(
     \x::a -> case f(x) of
              | just(y) -> [y]
              | nothing() -> []
              end,
     lst);
-}
 
 @{--
  - Applies an operator right-associatively over a list.
@@ -115,12 +112,9 @@ function filterMap
  - @param l  The list to fold
  - @return  The result of the function applied right-associatively to the list.
  -}
-function foldr
-b ::= f::(b ::= a b)  i::b  l::[a]
-{
-  return if null(l) then i
-         else f(head(l), foldr(f, i, tail(l)));
-}
+fun foldr b ::= f::(b ::= a b)  i::b  l::[a] =
+  if null(l) then i
+  else f(head(l), foldr(f, i, tail(l)));
 
 @{--
  - Applies an operator left-associatively over a list.
@@ -130,24 +124,18 @@ b ::= f::(b ::= a b)  i::b  l::[a]
  - @param l  The list to fold
  - @return  The result of the function applied left-associatively to the list.
  -}
-function foldl
-b ::= f::(b ::= b a)  i::b  l::[a]
-{
-  return if null(l) then i
-         else foldl(f, f(i, head(l)), tail(l));
-}
+fun foldl b ::= f::(b ::= b a)  i::b  l::[a] =
+  if null(l) then i
+  else foldl(f, f(i, head(l)), tail(l));
 
 @{--
  - Right-fold, assuming there is always one element, and leaving that element
  - unchanged for single element lists. See @link[foldr].
  -}
-function foldr1
-a ::= f::(a ::= a a)  l::[a]
-{
-  return if null(l) then error("Applying foldr1 to empty list.")
-         else if null(tail(l)) then head(l)
-         else f(head(l), foldr1(f, tail(l)));
-}
+fun foldr1 a ::= f::(a ::= a a)  l::[a] =
+  if null(l) then error("Applying foldr1 to empty list.")
+  else if null(tail(l)) then head(l)
+  else f(head(l), foldr1(f, tail(l)));
 
 @{-
   - @param f The fold function for combining an element and your accumulator
@@ -156,27 +144,21 @@ a ::= f::(a ::= a a)  l::[a]
   - @return An element that is the result of your combining functions applied to the list elements.
   - Right-Fold, assuming there is always at least one element, and also takes in a function a->b to apply to the last element of a list, and applies that function to the last element.
 -}
-function foldrLastElem
-b ::= f::(b ::= a b)  i::(b ::= a) l::[a]
-{
-  return case l of
+fun foldrLastElem b ::= f::(b ::= a b)  i::(b ::= a) l::[a] =
+  case l of
   | [elem] -> i(elem)
   | h::t -> f(h, foldrLastElem(f,i,t))
   | [] -> error("You can't call foldrLastElem with an empty list")
   end;
-}
 
 
 @{--
  - Left-fold, assuming there is always one element, and leaving that element
  - unchanged for single element lists. See @link[foldl].
  -}
-function foldl1
-a ::= f::(a ::= a a)  l::[a]
-{
-  return if null(l) then error("Applying foldl1 to empty list.")
-         else foldl(f, head(l), tail(l));
-}
+fun foldl1 a ::= f::(a ::= a a)  l::[a] =
+  if null(l) then error("Applying foldl1 to empty list.")
+  else foldl(f, head(l), tail(l));
 
 @{--
  - Filter out elements of a list.
@@ -186,15 +168,12 @@ a ::= f::(a ::= a a)  l::[a]
  - @return  Only those elements of 'lst' that 'f' returns true for, in the
  -   same order as they appeared in 'lst'
  -}
-function filter
-[a] ::= f::(Boolean ::= a) lst::[a]
-{
-  return if null(lst)
-         then []
-         else if f(head(lst))
-              then head(lst) :: filter(f, tail(lst))
-              else filter(f, tail(lst));
-}
+fun filter [a] ::= f::(Boolean ::= a) lst::[a] =
+  if null(lst)
+  then []
+  else if f(head(lst))
+       then head(lst) :: filter(f, tail(lst))
+       else filter(f, tail(lst));
 
 @{--
  - Monadic (actually Applicative) version of filter
@@ -204,20 +183,17 @@ function filter
  - @return  Only those elements of 'lst' that 'f' returns true for, in the
  -   same order as they appeared in 'lst'
  -}
-function filterM
+fun filterM
 Applicative m =>
-m<[a]> ::= f::(m<Boolean> ::= a) lst::[a]
-{
-  return
-    case lst of
-    | [] -> pure([])
-    | h :: t -> do {
-        cond::Boolean <- f(h);
-        rest::[a] <- filterM(f, t);
-        return if cond then h :: rest else rest;
-      }
-    end;
-}
+m<[a]> ::= f::(m<Boolean> ::= a) lst::[a] =
+  case lst of
+  | [] -> pure([])
+  | h :: t -> do {
+      cond::Boolean <- f(h);
+      rest::[a] <- filterM(f, t);
+      return if cond then h :: rest else rest;
+    }
+  end;
 
 @{--
  - Partition a list in two
@@ -247,11 +223,8 @@ Pair<[a] [a]> ::= f::(Boolean ::= a) lst::[a]
  - @return  True if the equality function returns true for some element of the list,
  -   false otherwise.
  -}
-function containsBy
-Boolean ::= eq::(Boolean ::= a a)  elem::a  lst::[a]
-{
-  return (!null(lst)) && (eq(elem, head(lst)) || containsBy(eq, elem, tail(lst)));
-}
+fun containsBy Boolean ::= eq::(Boolean ::= a a)  elem::a  lst::[a] =
+  (!null(lst)) && (eq(elem, head(lst)) || containsBy(eq, elem, tail(lst)));
 
 @{--
  - Determine if an element appears in a list.
@@ -260,11 +233,7 @@ Boolean ::= eq::(Boolean ::= a a)  elem::a  lst::[a]
  - @param lst  The list to search
  - @return  True if == is true for some element of the list, false otherwise.
  -}
-function contains
-Eq a => Boolean ::= elem::a  lst::[a]
-{
-  return containsBy(eq, elem, lst);
-}
+fun contains Eq a => Boolean ::= elem::a  lst::[a] = containsBy(eq, elem, lst);
 
 @{--
  - Removes all duplicates from a list.
@@ -273,12 +242,9 @@ Eq a => Boolean ::= elem::a  lst::[a]
  - @param xs  The list to remove duplicates from
  - @return  A list containing no duplicates, according to the equality function.
  -}
-function nubBy
-[a] ::= eq::(Boolean ::= a a)  xs::[a]
-{
- return if null(xs) then []
-        else head(xs) :: nubBy(eq, removeBy(eq, head(xs), tail(xs)));
-}
+fun nubBy [a] ::= eq::(Boolean ::= a a)  xs::[a] =
+  if null(xs) then []
+  else head(xs) :: nubBy(eq, removeBy(eq, head(xs), tail(xs)));
 
 @{--
  - Removes all duplicates from a list.
@@ -286,11 +252,7 @@ function nubBy
  - @param xs  The list to remove duplicates from
  - @return  A list containing no duplicates, according to ==.
  -}
-function nub
-Eq a => [a] ::= xs::[a]
-{
-  return nubBy(eq, xs);
-}
+fun nub Eq a => [a] ::= xs::[a] = nubBy(eq, xs);
 
 @{--
  - Removes all instances of an element from a list.
@@ -300,12 +262,9 @@ Eq a => [a] ::= xs::[a]
  - @param xs  The list to remove the element from
  - @return  A list with no remaining instances of 'x' according to 'eq'
  -}
-function removeBy
-[a] ::= eq::(Boolean ::= a a)  x::a  xs::[a]
-{
- return if null(xs) then []
-        else (if eq(x,head(xs)) then [] else [head(xs)]) ++ removeBy(eq, x, tail(xs));
-}
+fun removeBy [a] ::= eq::(Boolean ::= a a)  x::a  xs::[a] =
+  if null(xs) then []
+  else (if eq(x,head(xs)) then [] else [head(xs)]) ++ removeBy(eq, x, tail(xs));
 
 @{--
  - Removes all instances of an element from a list.
@@ -314,11 +273,7 @@ function removeBy
  - @param xs  The list to remove the element from
  - @return  A list with no remaining instances of 'x' according to ==
  -}
-function remove
-Eq a => [a] ::= x::a  xs::[a]
-{
-  return removeBy(eq, x, xs);
-}
+fun remove Eq a => [a] ::= x::a  xs::[a] = removeBy(eq, x, xs);
 
 @{--
  - Removes all instances of several elements from a list: xs - ys
@@ -328,12 +283,9 @@ Eq a => [a] ::= x::a  xs::[a]
  - @param xs  The list to remove elements from
  - @return  A list with no remaining instances in 'ys' according to 'eq'
  -}
-function removeAllBy
-[a] ::= eq::(Boolean ::= a a)  ys::[a]  xs::[a]
-{
- return if null(ys) then xs
-        else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs));
-}
+fun removeAllBy [a] ::= eq::(Boolean ::= a a)  ys::[a]  xs::[a] =
+  if null(ys) then xs
+  else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs));
 
 @{--
  - Removes all instances of several elements from a list: xs - ys
@@ -342,11 +294,7 @@ function removeAllBy
  - @param xs  The list to remove elements from
  - @return  A list with no remaining instances in 'ys' according to 'eq'
  -}
-function removeAll
-Eq a => [a] ::= ys::[a]  xs::[a]
-{
-  return removeAllBy(eq, ys, xs);
-}
+fun removeAll Eq a => [a] ::= ys::[a]  xs::[a] = removeAllBy(eq, ys, xs);
 
 @{--
  - Returns the initial elements of a list.
@@ -354,13 +302,10 @@ Eq a => [a] ::= ys::[a]  xs::[a]
  - @param lst  The list to examine
  - @return  The initial elements of 'lst'. If 'lst' is empty, crash.
  -}
-function init
-[a] ::= lst::[a]
-{
-  return if null(tail(lst))
-         then []
-         else head(lst)::init(tail(lst));
-}
+fun init [a] ::= lst::[a] =
+  if null(tail(lst))
+  then []
+  else head(lst)::init(tail(lst));
 
 @{--
  - Returns the last element of a list.
@@ -368,98 +313,54 @@ function init
  - @param lst  The list to examine
  - @return  The last element of 'lst'. If 'lst' is empty, crash.
  -}
-function last
-a ::= lst::[a]
-{
-  return if null(tail(lst)) then head(lst)
-         else last(tail(lst));
-}
+fun last a ::= lst::[a] =
+  if null(tail(lst)) then head(lst)
+  else last(tail(lst));
 
-function drop
-[a] ::= number::Integer lst::[a]
-{
-  return if null(lst) || number <= 0 then lst
-         else drop(number-1, tail(lst));
-}
-function take
-[a] ::= number::Integer lst::[a]
-{
-  return if null(lst) || number <= 0 then []
-         else head(lst) :: take(number-1, tail(lst));
-}
-function dropWhile
-[a] ::= f::(Boolean::=a) lst::[a]
-{
-  return if null(lst) || !f(head(lst)) then lst
-         else dropWhile(f, tail(lst));
-}
-function takeWhile
-[a] ::= f::(Boolean::=a) lst::[a]
-{
-  return if null(lst) || !f(head(lst)) then []
-         else head(lst) :: takeWhile(f, tail(lst));
-}
-function takeUntil
-[a] ::= f::(Boolean::=a) lst::[a]
-{
-  return if null(lst) || f(head(lst))
-         then []
-         else head(lst) :: takeUntil(f, tail(lst));
-}
+fun drop [a] ::= number::Integer lst::[a] =
+  if null(lst) || number <= 0 then lst
+  else drop(number-1, tail(lst));
+fun take [a] ::= number::Integer lst::[a] =
+  if null(lst) || number <= 0 then []
+  else head(lst) :: take(number-1, tail(lst));
+fun dropWhile [a] ::= f::(Boolean::=a) lst::[a] =
+  if null(lst) || !f(head(lst)) then lst
+  else dropWhile(f, tail(lst));
+fun takeWhile [a] ::= f::(Boolean::=a) lst::[a] =
+  if null(lst) || !f(head(lst)) then []
+  else head(lst) :: takeWhile(f, tail(lst));
+fun takeUntil [a] ::= f::(Boolean::=a) lst::[a] =
+  if null(lst) || f(head(lst))
+  then []
+  else head(lst) :: takeUntil(f, tail(lst));
 
-function positionOfBy
-Integer ::= eq::(Boolean ::= a a) x::a xs::[a]
-{
-  return positionOfHelper(eq,x,xs,0);
-}
+fun positionOfBy Integer ::= eq::(Boolean ::= a a) x::a xs::[a] = positionOfHelper(eq,x,xs,0);
 
-function positionOfHelper
-Integer ::= eq::(Boolean ::= a a) x::a xs::[a] currentPos::Integer
-{
-  return if null(xs) then -1
-         else if eq(x, head(xs)) then currentPos
-         else positionOfHelper(eq, x, tail(xs), currentPos+1);
-}
+fun positionOfHelper Integer ::= eq::(Boolean ::= a a) x::a xs::[a] currentPos::Integer =
+  if null(xs) then -1
+  else if eq(x, head(xs)) then currentPos
+  else positionOfHelper(eq, x, tail(xs), currentPos+1);
 
-function positionOf
-Eq a => Integer ::= x::a xs::[a]
-{
-  return positionOfBy(eq, x, xs);
-}
+fun positionOf Eq a => Integer ::= x::a xs::[a] = positionOfBy(eq, x, xs);
 
-function repeat
-[a] ::= v::a times::Integer
-{
-  return if times <= 0 then []
-         else v :: repeat(v, times-1);
-}
+fun repeat [a] ::= v::a times::Integer =
+  if times <= 0 then []
+  else v :: repeat(v, times-1);
 
-function range
-[Integer] ::= lower::Integer upper::Integer
-{
-  return if lower >= upper then [] else lower :: range(lower + 1, upper);
-}
+fun range [Integer] ::= lower::Integer upper::Integer =
+  if lower >= upper then [] else lower :: range(lower + 1, upper);
 
-function zipWith
-[c] ::= f::(c ::= a b)  l1::[a]  l2::[b]
-{
-  return if null(l1) || null(l2) then []
-         else f(head(l1), head(l2)) :: zipWith(f, tail(l1), tail(l2));
-}
+fun zipWith [c] ::= f::(c ::= a b)  l1::[a]  l2::[b] =
+  if null(l1) || null(l2) then []
+  else f(head(l1), head(l2)) :: zipWith(f, tail(l1), tail(l2));
 
-function unzipWith
-[c] ::= f::(c ::= a b)  l::[(a, b)]
-{
-  return if null(l) then []
-         else f(head(l).1, head(l).2) :: unzipWith(f, tail(l));
-}
+fun unzipWith [c] ::= f::(c ::= a b)  l::[(a, b)] =
+  if null(l) then []
+  else f(head(l).1, head(l).2) :: unzipWith(f, tail(l));
 
-function zip
-[(a, b)] ::= l1::[a]  l2::[b]
-{
-  return if null(l1) || null(l2) then []
-         else (head(l1), head(l2)) :: zip(tail(l1), tail(l2));
-}
+fun zip [(a, b)] ::= l1::[a]  l2::[b] =
+  if null(l1) || null(l2) then []
+  else (head(l1), head(l2)) :: zip(tail(l1), tail(l2));
 
 function unzip
 ([a], [b]) ::= l::[(a, b)]
@@ -469,12 +370,9 @@ function unzip
          else (head(l).1 :: rest.1, head(l).2 :: rest.2);
 }
 
-function zip3
-[(a, b, c)] ::= l1::[a]  l2::[b]  l3::[c]
-{
-  return if null(l1) || null(l2) || null(l3) then []
-         else (head(l1), head(l2), head(l3)) :: zip3(tail(l1), tail(l2), tail(l3));
-}
+fun zip3 [(a, b, c)] ::= l1::[a]  l2::[b]  l3::[c] =
+  if null(l1) || null(l2) || null(l3) then []
+  else (head(l1), head(l2), head(l3)) :: zip3(tail(l1), tail(l2), tail(l3));
 
 function unzip3
 ([a], [b], [c]) ::= l::[(a, b, c)]
@@ -484,36 +382,25 @@ function unzip3
          else (head(l).1 :: rest.1, head(l).2 :: rest.2, head(l).3 :: rest.3);
 }
 
-function reverse
-[a] ::= lst::[a]
-{
-  return reverseHelp(lst, []);
-}
-function reverseHelp -- do not use
-[a] ::= lst::[a] sofar::[a]
-{
-  return if null(lst) then sofar
-         else reverseHelp(tail(lst), head(lst) :: sofar);
-}
+global enumerate :: ([(Integer, a)] ::= [a]) = enumerateFrom(0, _);
+fun enumerateFrom [(Integer, a)] ::= i::Integer l::[a] =
+  case l of
+  | h :: t -> (i, h) :: enumerateFrom(i + 1, t)
+  | [] -> []
+  end;
 
-function sortBy
-[a] ::= lte::(Boolean ::= a a) lst::[a]
-{
-  return sortByHelp(lte, lst, length(lst));
-}
+fun reverse [a] ::= lst::[a] = reverseHelp(lst, []);
+fun reverseHelp [a] ::= lst::[a] sofar::[a] =
+  if null(lst) then sofar
+  else reverseHelp(tail(lst), head(lst) :: sofar);
 
-function sortByKey
-Ord b => [a] ::= key::(b ::= a) lst::[a]
-{
-  return sortBy(\l::a  r::a -> key(l) <= key(r),
-                lst);
-}
+fun sortBy [a] ::= lte::(Boolean ::= a a) lst::[a] = sortByHelp(lte, lst, length(lst));
 
-function sort
-Ord a => [a] ::= lst::[a]
-{
-  return sortByHelp(lte, lst, length(lst));
-}
+fun sortByKey Ord b => [a] ::= key::(b ::= a) lst::[a] =
+  sortBy(\l::a  r::a -> key(l) <= key(r),
+         lst);
+
+fun sort Ord a => [a] ::= lst::[a] = sortByHelp(lte, lst, length(lst));
 
 function sortByHelp -- do not use
 [a] ::= lte::(Boolean ::= a a) lst::[a] upTo::Integer
@@ -531,15 +418,12 @@ function sortByHelp -- do not use
   local attribute middle :: Integer;
   middle = toInteger(toFloat(upTo) / 2.0);
 }
-function mergeBy -- do not use
-[a] ::= lte::(Boolean ::= a a) l1::[a] l2::[a]
-{
-  return if null(l1) then l2
+fun mergeBy [a] ::= lte::(Boolean ::= a a) l1::[a] l2::[a] =
+  if null(l1) then l2
     else if null(l2) then l1
          else if lte(head(l1), head(l2))
               then head(l1) :: mergeBy(lte, tail(l1), l2)
               else head(l2) :: mergeBy(lte, l1, tail(l2));
-}
 
 function groupBy
 [[a]] ::= eq::(Boolean ::= a a) l::[a]
@@ -564,96 +448,56 @@ Pair<[a] [a]> ::= eq::(Boolean ::= a a) f::a l::[a]
          else (head(l) :: recurse.fst, recurse.snd);
 }
 
-function group
-Eq a => [[a]] ::= l::[a]
-{
-  return groupBy(eq, l);
-}  
+fun group Eq a => [[a]] ::= l::[a] = groupBy(eq, l);  
 
 @{--
  - Inserts the separator in between all elements of the list.
  -}
-function intersperse
-[a] ::= sep::a xs::[a]
-{ return if null(xs) then []
-         else if null(tail(xs)) then xs
-         else head(xs) :: sep :: intersperse(sep, tail(xs));
-}
+fun intersperse [a] ::= sep::a xs::[a] =
+  if null(xs) then []
+  else if null(tail(xs)) then xs
+  else head(xs) :: sep :: intersperse(sep, tail(xs));
 
 
 -- Set operations
-function unionBy
-[a] ::= eq::(Boolean ::= a a) l::[a] r::[a]
-{
-  return if null(l) then r
-         else
-         (if containsBy(eq, head(l), r)
-          then []
-          else [head(l)])
-         ++ unionBy(eq, tail(l), r);
-}
+fun unionBy [a] ::= eq::(Boolean ::= a a) l::[a] r::[a] =
+  if null(l) then r
+  else
+  (if containsBy(eq, head(l), r)
+   then []
+   else [head(l)])
+  ++ unionBy(eq, tail(l), r);
 
-function union
-Eq a => [a] ::= l::[a] r::[a]
-{
-  return unionBy(eq, l, r);
-}
+fun union Eq a => [a] ::= l::[a] r::[a] = unionBy(eq, l, r);
 
-function intersectBy
-[a] ::= eq::(Boolean ::= a a) l::[a] r::[a]
-{
-  return if null(l) then []
-         else
-         (if containsBy(eq, head(l), r)
-          then [head(l)]
-          else [])
-         ++ intersectBy(eq, tail(l), r);
-}
+fun intersectBy [a] ::= eq::(Boolean ::= a a) l::[a] r::[a] =
+  if null(l) then []
+  else
+  (if containsBy(eq, head(l), r)
+   then [head(l)]
+   else [])
+  ++ intersectBy(eq, tail(l), r);
 
-function intersect
-Eq a => [a] ::= l::[a] r::[a]
-{
-  return intersectBy(eq, l, r);
-}
+fun intersect Eq a => [a] ::= l::[a] r::[a] = intersectBy(eq, l, r);
 
-function unionsBy
-[a] ::= eq::(Boolean ::= a a) ss::[[a]]
-{
-  return nubBy(eq, concat(ss));
-}
+fun unionsBy [a] ::= eq::(Boolean ::= a a) ss::[[a]] = nubBy(eq, concat(ss));
 
-function unions
-Eq a => [a] ::= ss::[[a]]
-{
-  return nub(concat(ss));
-}
+fun unions Eq a => [a] ::= ss::[[a]] = nub(concat(ss));
 
-function powerSet
-[[a]] ::= xs::[a]
-{
-  return
-    case xs of
-    | h :: t ->
-      let rest::[[a]] = powerSet(t)
-      in rest ++ map(cons(h, _), rest)
-      end
-    | [] -> [[]]
-    end;
-}
+fun powerSet [[a]] ::= xs::[a] =
+  case xs of
+  | h :: t ->
+    let rest::[[a]] = powerSet(t)
+    in rest ++ map(cons(h, _), rest)
+    end
+  | [] -> [[]]
+  end;
 
 
 -- Boolean list operations
-function all
-Boolean ::= l::[Boolean]
-{
-  return foldr(\ a::Boolean b::Boolean -> a && b, true, l);
-}
+fun all Boolean ::= l::[Boolean] = foldr(\ a::Boolean b::Boolean -> a && b, true, l);
 
-function any
-Boolean ::= l::[Boolean]
-{
-  return foldr(\ a::Boolean b::Boolean -> a || b, false, l);
-}
+fun any Boolean ::= l::[Boolean] = foldr(\ a::Boolean b::Boolean -> a || b, false, l);
 
 --------------------------------------------------------------------------------
 

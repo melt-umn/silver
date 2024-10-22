@@ -5,9 +5,9 @@ top::ProductionBody ::= ';'
 {
   top.unparse = ";";
   
-  top.errors <- [wrn(top.location, "Terminating a production declaration with a semicolon is deprecated. Use {}.")];
+  top.errors <- [wrnFromOrigin(top, "Terminating a production declaration with a semicolon is deprecated. Use {}.")];
 
-  forwards to productionBody('{', productionStmtsNil(location=top.location), '}', location=top.location);
+  forwards to productionBody('{', productionStmtsNil(), '}');
 }
 
 

@@ -1,7 +1,7 @@
 grammar silver:compiler:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
-nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
+tracked nonterminal FunctionSignature with config, grammarName, env, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
+tracked nonterminal FunctionLHS with config, grammarName, env, unparse, errors, defs, outputElement;
 
 propagate config, grammarName, errors on FunctionSignature, FunctionLHS;
 
@@ -13,20 +13,20 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs := funDef(top.grammarName, id.location, namedSig) ::
+  top.defs := funDef(top.grammarName, id.nameLoc, namedSig) ::
     if null(body.productionAttributes) then []
-    else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
+    else [prodOccursDef(top.grammarName, id.nameLoc, namedSig, body.productionAttributes)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
-        then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+        then [errFromOrigin(id, "Value '" ++ fName ++ "' is already bound.")]
         else [];
 
   top.errors <-
         if null(body.returnExpr)
-        then [err(top.location, "Function '" ++ id.name ++ "' does not have a return value.")]
+        then [errFromOrigin(top, "Function '" ++ id.name ++ "' does not have a return value.")]
         else if length(body.returnExpr) > 1
-        then [err(top.location, "Function '" ++ id.name ++ "' has more than one declared return value.")]
+        then [errFromOrigin(top, "Function '" ++ id.name ++ "' has more than one declared return value.")]
         else [];
 
   production attribute sigDefs :: [Def] with ++;
@@ -41,7 +41,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env)));
   body.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 } action {
-  insert semantic token IdFnProdDcl_t at id.location;
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
 }
 
@@ -50,10 +50,11 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
 
-  cl.constraintPos = signaturePos(top.namedSignature);
+  cl.constraintPos = signaturePos(top.namedSignature, sourceGrammar=top.grammarName);
   cl.env = top.env;
   lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
+  rhs.implementedSig = nothing();
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
@@ -67,6 +68,11 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
       lhs.outputElement,
       -- For the moment, functions do not have named parameters (hence, nilNamedSignatureElement)
       nilNamedSignatureElement());
+  
+  top.errors <-
+    if any(map((.elementShared), rhs.inputElements))
+    then [errFromOrigin(rhs, "Sharing in function parameters is not permitted.")]
+    else [];
 } action {
   sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
@@ -76,7 +82,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
 
-  forwards to functionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+  forwards to functionSignature(nilConstraint(), '=>', lhs, $2, rhs);
 } action {
   sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
@@ -90,9 +96,9 @@ top::FunctionLHS ::= t::TypeExpr
   production attribute fName :: String;
   fName = "__func__lhs";
 
-  top.outputElement = namedSignatureElement(fName, t.typerep);
+  top.outputElement = namedSignatureElement(fName, t.typerep, false);
 
   -- TODO: think about this. lhs doesn't really have an fName.
-  top.defs := [lhsDef(top.grammarName, t.location, fName, t.typerep)];
+  top.defs := [lhsDef(top.grammarName, getParsedOriginLocationOrFallback(t), fName, t.typerep)];
 }
 

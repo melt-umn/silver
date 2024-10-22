@@ -12,19 +12,19 @@ concrete production multipleAttributionDclsManyMany
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNames2 ';'
 {
   top.unparse = "attribute " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(top.location, a.qnames, nts.qnames);
+  forwards to makeOccursDcls(a.qnames, nts.qnames);
 }
 concrete production multipleAttributionDclsSingleMany
 top::AGDcl ::= 'attribute' a::QName tl::BracketedOptTypeExprs 'occurs' 'on' nts::QNames2 ';' 
 {
   top.unparse = "attribute " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(top.location, [qNameWithTL(a, tl)], nts.qnames);
+  forwards to makeOccursDcls([qNameWithTL(a, tl)], nts.qnames);
 }
 concrete production multipleAttributionDclsManySingle
 top::AGDcl ::= 'attribute' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 {
   top.unparse = "attribute " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(top.location, a.qnames, [nts]);
+  forwards to makeOccursDcls(a.qnames, [nts]);
 }
 
 -- Multiple annotation occurs on statements
@@ -32,19 +32,19 @@ concrete production multipleAnnotationDclsManyMany
 top::AGDcl ::= 'annotation' a::QNames2 'occurs' 'on' nts::QNames2 ';'
 {
   top.unparse = "annotation " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(top.location, a.qnames, nts.qnames);
+  forwards to makeOccursDcls(a.qnames, nts.qnames);
 }
 concrete production multipleAnnotationDclsSingleMany
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs 'occurs' 'on' nts::QNames2 ';' 
 {
   top.unparse = "annotation " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(top.location, [qNameWithTL(a, tl)], nts.qnames);
+  forwards to makeOccursDcls([qNameWithTL(a, tl)], nts.qnames);
 }
 concrete production multipleAnnotationDclsManySingle
 top::AGDcl ::= 'annotation' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 {
   top.unparse = "annotation " ++ a.unparse ++ " occurs on " ++ nts.unparse ++ " ;" ;
-  forwards to makeOccursDcls(top.location, a.qnames, [nts]);
+  forwards to makeOccursDcls(a.qnames, [nts]);
 }
 
 
@@ -53,11 +53,10 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 {
   top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ " with " ++ attrs.unparse ++ " ;";
   forwards to appendAGDcl(
-    nonterminalDcl(quals, $2, id, tl, nm, $8, location=top.location),
-    makeOccursDcls(top.location, attrs.qnames, [qNameWithTL(qNameId(id, location=id.location), tl)]),
-    location=top.location);
+    nonterminalDcl(quals, $2, id, tl, nm, $8),
+    makeOccursDcls(attrs.qnames, [qNameWithTL(qNameId(id), tl)]));
 } action {
-  insert semantic token IdTypeDcl_t at id.location;
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }
 
 
@@ -66,9 +65,8 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 {
   top.unparse = "inherited attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
   forwards to appendAGDcl(
-    attributeDclInh($1, $2, a, tl, $5, te, $10, location=top.location),
-    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
-    location=top.location);
+    attributeDclInh($1, $2, a, tl, $5, te, $10),
+    makeOccursDclsHelp(qNameWithTL(qNameId(a), tl), qs.qnames));
 }
 
 concrete production attributeDclSynMultiple
@@ -76,9 +74,8 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 {
   top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
   forwards to appendAGDcl(
-    attributeDclSyn($1, $2, a, tl, $5, te, $10, location=top.location),
-    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
-    location=top.location);
+    attributeDclSyn($1, $2, a, tl, $5, te, $10),
+    makeOccursDclsHelp(qNameWithTL(qNameId(a), tl), qs.qnames));
 }
 
 concrete production attributeDclTransMultiple
@@ -86,9 +83,8 @@ top::AGDcl ::= 'translation' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 {
   top.unparse = "translation attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
   forwards to appendAGDcl(
-    attributeDclTrans($1, $2, a, tl, $5, te, $10, location=top.location),
-    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
-    location=top.location);
+    attributeDclTrans($1, $2, a, tl, $5, te, $10),
+    makeOccursDclsHelp(qNameWithTL(qNameId(a), tl), qs.qnames));
 }
 
 concrete production collectionAttributeDclInhMultiple
@@ -96,9 +92,8 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 {
   top.unparse = "inherited attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
   forwards to appendAGDcl(
-    collectionAttributeDclInh($1, $2, a, tl, $5, te, $7, q, $12, location=top.location),
-    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
-    location=top.location);
+    collectionAttributeDclInh($1, $2, a, tl, $5, te, $7, q, $12),
+    makeOccursDclsHelp(qNameWithTL(qNameId(a), tl), qs.qnames));
 }
 
 concrete production collectionAttributeDclSynMultiple
@@ -106,9 +101,8 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 {
   top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
   forwards to appendAGDcl(
-    collectionAttributeDclSyn($1, $2, a, tl, $5, te, $7, q, $12, location=top.location),
-    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
-    location=top.location);
+    collectionAttributeDclSyn($1, $2, a, tl, $5, te, $7, q, $12),
+    makeOccursDclsHelp(qNameWithTL(qNameId(a), tl), qs.qnames));
 }
 
 

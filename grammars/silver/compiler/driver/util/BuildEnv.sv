@@ -1,15 +1,15 @@
 grammar silver:compiler:driver:util;
 
-nonterminal BuildEnv with silverHome, silverGen, grammarPath, silverHostGen, defaultSilverGen, defaultGrammarPath;
+data nonterminal BuildEnv with silverHome, silverGen, grammarPath, silverHostGen, defaultSilverGen, defaultGrammarPath;
 
 {-- Find jars, standard library -}
-synthesized attribute silverHome :: String;
+annotation silverHome :: String;
 {-- Write files, look for already built grammars -}
-synthesized attribute silverGen :: String;
+annotation silverGen :: String;
 {-- Search for source files -}
-synthesized attribute grammarPath :: [String];
+annotation grammarPath :: [String];
 {-- Search for already built grammars. **Always includes silverGen!** -}
-synthesized attribute silverHostGen :: [String];
+annotation silverHostGen :: [String];
 
 synthesized attribute defaultSilverGen :: String;
 synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not actually just the default value
@@ -21,16 +21,11 @@ synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not a
  - maybe also buildGrammar?
  -}
 abstract production buildEnv
-top::BuildEnv ::= silverHome::String  silverGen::String  grammarPath::[String]  silverHostGen::[String]
+top::BuildEnv ::=
 {
-  top.silverHome = silverHome;
-  top.silverGen = silverGen;
-  top.grammarPath = grammarPath;
-  top.silverHostGen = silverHostGen;
-  
   -- So that this exists in exactly one location:
-  top.defaultSilverGen = silverHome ++ "generated/";
-  top.defaultGrammarPath = silverHome ++ "grammars/";
+  top.defaultSilverGen = top.silverHome ++ "generated/";
+  top.defaultGrammarPath = top.silverHome ++ "grammars/";
 }
 
 -- Takes environment and values from args and determines buildEnv according to correct priorities.
@@ -64,7 +59,11 @@ BuildEnv ::=
   local silverHostGen :: [String] =
     silverGen :: map(endWithSlash, SILVER_HOST_GEN);
 
-  local benv :: BuildEnv = buildEnv(silverHome, silverGen, grammarPath, silverHostGen);
+  local benv :: BuildEnv = buildEnv(
+    silverHome=silverHome,
+    silverGen=silverGen,
+    grammarPath=grammarPath,
+    silverHostGen=silverHostGen);
   
   return benv;
 }
@@ -72,10 +71,6 @@ BuildEnv ::=
 {--
  - Ensures a string ends with a forward slash. Safe to use if it already has one.
  -}
-function endWithSlash
-String ::= s::String
-{
-  return if endsWith("/", s) then s else s ++ "/";
-}
+fun endWithSlash String ::= s::String = if endsWith("/", s) then s else s ++ "/";
 
 

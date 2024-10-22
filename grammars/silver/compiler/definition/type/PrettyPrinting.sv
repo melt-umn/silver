@@ -216,12 +216,6 @@ top::Type ::= t::Type i::Type
   top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= t::Type i::Type
-{
-  top.typepp = s"Decorated! ${t.typepp} with ${i.typepp}";
-}
-
 aspect production ntOrDecType
 top::Type ::= nt::Type inhs::Type hidden::Type
 {
@@ -233,6 +227,12 @@ aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
   top.typepp = s"(_ ::=${replicate(params, " _") }${if null(namedParams) then "" else "; " ++ implode("::_; ", namedParams) ++ "::_"})";
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.typepp = ns.fullName;
 }
 
 aspect production starKind
@@ -261,26 +261,22 @@ top::Kind ::= k1::Kind k2::Kind
 function findAbbrevFor
 String ::= tv::TyVar  bv::[TyVar]
 {
-  local named::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_, _, _) -> true | _ -> false end, bv);
-  local anon::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_, _, _) -> false | _ -> true end, bv);
+  local named::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_) -> true | _ -> false end, bv);
+  local anon::[TyVar] = filter(\ tv::TyVar -> case tv of tyVarNamed(_) -> false | _ -> true end, bv);
   return findAbbrevHelp(tv, named ++ anon, ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"], []);
 }
 
-function findAbbrevHelp
-String ::= tv::TyVar  bv::[TyVar]  vn::[String] assigned::[String]
-{
-  return
-    case bv, vn of
-    | tyVarNamed(_, _, n) :: tbv, _ when !contains(n, assigned) ->
-      if tv == head(bv) then n else findAbbrevHelp(tv, tbv, vn, n :: assigned)
-    | hbv :: tbv, hvn :: tvn ->
-      if contains(hvn, assigned)
-      then findAbbrevHelp(tv, bv, tvn, assigned)
-      else if tv == hbv then hvn else findAbbrevHelp(tv, tbv, tvn, hvn :: assigned)
-    | _, _ ->
-      case positionOf(tv, bv) of
-      | i when i > 0 && !contains("a" ++ toString(i), assigned) -> "a" ++ toString(i)
-      | _ -> "V_" ++ toString(tv.extractTyVarRep)
-      end
-  end;
-}
+fun findAbbrevHelp String ::= tv::TyVar  bv::[TyVar]  vn::[String] assigned::[String] =
+  case bv, vn of
+  | tyVarNamed(n) :: tbv, _ when !contains(n, assigned) ->
+    if tv == head(bv) then n else findAbbrevHelp(tv, tbv, vn, n :: assigned)
+  | hbv :: tbv, hvn :: tvn ->
+    if contains(hvn, assigned)
+    then findAbbrevHelp(tv, bv, tvn, assigned)
+    else if tv == hbv then hvn else findAbbrevHelp(tv, tbv, tvn, hvn :: assigned)
+  | _, _ ->
+    case positionOf(tv, bv) of
+    | i when i > 0 && !contains("a" ++ toString(i), assigned) -> "a" ++ toString(i)
+    | _ -> "V_" ++ toString(tv.varId)
+    end
+end;

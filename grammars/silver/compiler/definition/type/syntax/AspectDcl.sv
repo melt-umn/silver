@@ -6,11 +6,9 @@ attribute lexicalTypeVariables, lexicalTyVarKinds occurs on
 flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
 flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName, deterministicCount} on AspectRHSElem;
 
-function addNewLexicalTyVars_ActuallyVariables
-[Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
-{
-  return map(\ n::String -> aspectLexTyVarDef(gn, sl, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
-}
+fun addNewLexicalTyVars_ActuallyVariables
+[Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String] =
+  map(\ n::String -> aspectLexTyVarDef(gn, sl, n, freshTyVarNamed(n, fromMaybe(starKind(), lookup(n, lk)))), l);
 
 -- This binds variables that appear in the signature to type variables, rather than skolem constants
 -- as in productions declarations.  They will be unified with the "real" type, and therefore
@@ -22,7 +20,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, id.nameLoc, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 aspect production aspectFunctionDcl
@@ -31,7 +29,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, id.nameLoc, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;
@@ -57,6 +55,12 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 
 aspect production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
+{
+  propagate lexicalTypeVariables, lexicalTyVarKinds;
+}
+
+aspect production aspectRHSElemSharedTyped
+top::AspectRHSElem ::= '@' id::Name '::' t::TypeExpr
 {
   propagate lexicalTypeVariables, lexicalTyVarKinds;
 }

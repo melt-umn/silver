@@ -13,7 +13,7 @@ attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS,
   ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem,
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
-  PrimPatterns, PrimPattern, ProdNameList;
+  PrimPatterns, PrimPattern, AttrNameList, ProdNameList;
 
 propagate valueRefLocs, typeRefLocs, attributeRefLocs on
   RootSpec, Grammar, Root, NameList, AGDcls, AGDcl,
@@ -24,36 +24,36 @@ propagate valueRefLocs, typeRefLocs, attributeRefLocs on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS,
   ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem,
   Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
-  PrimPatterns, PrimPattern, ProdNameList;
+  PrimPatterns, PrimPattern, AttrNameList, ProdNameList;
 
 aspect valueRefLocs on NameList using <- of
-| nameListCons(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| nameListOne(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| nameListCons(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| nameListOne(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect typeRefLocs on NameList using <- of
-| nameListCons(q, _, _) -> if q.lookupType.found then [(q.location, q.lookupType.dcl)] else []
-| nameListOne(q) -> if q.lookupType.found then [(q.location, q.lookupType.dcl)] else []
+| nameListCons(q, _, _) -> if q.lookupType.found then [(q.nameLoc, q.lookupType.dcl)] else []
+| nameListOne(q) -> if q.lookupType.found then [(q.nameLoc, q.lookupType.dcl)] else []
 end;
 
 aspect attributeRefLocs on NameList using <- of
-| nameListCons(q, _, _) -> if q.lookupAttribute.found then [(q.location, q.lookupAttribute.dcl)] else []
-| nameListOne(q) -> if q.lookupAttribute.found then [(q.location, q.lookupAttribute.dcl)] else []
+| nameListCons(q, _, _) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
+| nameListOne(q) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
 end;
 
 attribute typeRefLocs occurs on QNameType;
 aspect typeRefLocs on top::QNameType using := of
-| _ -> if top.lookupType.found then [(top.location, top.lookupType.dcl)] else []
+| _ -> if top.lookupType.found then [(top.nameLoc, top.lookupType.dcl)] else []
 end;
 
 attribute attributeRefLocs occurs on QNameAttrOccur;
 aspect attributeRefLocs on top::QNameAttrOccur using := of
-| qNameAttrOccur(at) -> if top.found then [(at.location, top.attrDcl)] else []
+| qNameAttrOccur(at) -> if top.found then [(at.nameLoc, top.attrDcl)] else []
 end;
 
 aspect valueRefLocs on AGDcl using <- of
-| aspectProductionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| aspectFunctionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| aspectProductionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| aspectFunctionDcl(_, _, q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on AGDcl using := of
@@ -64,7 +64,7 @@ aspect valueRefLocs on AGDcl using := of
 end;
 
 aspect typeRefLocs on AGDcl using <- of
-| defaultAttributionDcl(_, _, nt, _) -> if nt.lookupType.found then [(nt.location, nt.lookupType.dcl)] else []
+| defaultAttributionDcl(_, _, nt, _) -> if nt.lookupType.found then [(nt.nameLoc, nt.lookupType.dcl)] else []
 end;
 
 aspect typeRefLocs on AGDcl using := of
@@ -73,7 +73,7 @@ aspect typeRefLocs on AGDcl using := of
 end;
 
 aspect attributeRefLocs on AGDcl using <- of
-| defaultAttributionDcl(at, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
+| defaultAttributionDcl(at, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect attributeRefLocs on AGDcl using := of
@@ -83,7 +83,7 @@ aspect attributeRefLocs on AGDcl using := of
 end;
 
 aspect production propagateOnNTListDcl
-top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
+top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
 {
   propagate grammarName, env, flowEnv;
 }
@@ -95,37 +95,39 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs _ te::Type
 }
 
 aspect attributeRefLocs on Constraint using <- of
-| inhOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
-| synOccursConstraint(_, at, _, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
-| annoOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
+| inhOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
+| synOccursConstraint(_, at, _, _, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
+| annoOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect valueRefLocs on top::ProductionStmt using <- of
-| localAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
-| productionAttributeDcl(_, _, id, _, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
-| forwardProductionAttributeDcl(_, _, _, id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| localAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| productionAttributeDcl(_, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| nondecLocalAttributeDcl(_, _, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| nondecProductionAttributeDcl(_, _, _, n, _, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
+| forwardProductionAttributeDcl(_, _, _, n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on ProductionStmt using := of
-| propagateOneAttr(_) -> []
+| propagateOneAttr(_, _) -> []
 end;
 
 aspect attributeRefLocs on ProductionStmt using := of
-| propagateOneAttr(at) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
+| propagateOneAttr(_, at) -> if at.lookupAttribute.found then [(at.nameLoc, at.lookupAttribute.dcl)] else []
 end;
 
 aspect typeRefLocs on ProductionStmt using := of
-| propagateOneAttr(_) -> []
+| propagateOneAttr(_, _) -> []
 end;
 
 aspect valueRefLocs on DefLHS using <- of
-| lhsDefLHS(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| childDefLHS(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| localDefLHS(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| lhsDefLHS(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| childDefLHS(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| localDefLHS(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on Expr using <- of
-| baseExpr(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| baseExpr(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 aspect valueRefLocs on Expr using := of
@@ -146,17 +148,22 @@ aspect typeRefLocs on Expr using := of
 end;
 
 aspect attributeRefLocs on AnnoExpr using <- of
-| annoExpr(q, _, _) -> if q.lookupAttribute.found then [(q.location, q.lookupAttribute.dcl)] else []
+| annoExpr(q, _, _) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
 end;
 
 aspect valueRefLocs on PrimPattern using <- of
-| prodPatternNormal(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| prodPatternGadt(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| prodPatternNormal(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| prodPatternGadt(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+end;
+
+aspect attributeRefLocs on AttrNameList using <- of
+| attrNameListCons(_, q, _, _) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
+| attrNameListOne(_, q) -> if q.lookupAttribute.found then [(q.nameLoc, q.lookupAttribute.dcl)] else []
 end;
 
 aspect valueRefLocs on ProdNameList using <- of
-| prodNameListCons(q, _, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
-| prodNameListOne(q) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| prodNameListCons(q, _, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
+| prodNameListOne(q) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 end;
 
 attribute valueRefLocs, typeRefLocs, attributeRefLocs occurs on StrategyExpr, StrategyExprs;
@@ -168,7 +175,7 @@ propagate attributeRefLocs on StrategyExpr, StrategyExprs
   excluding partialRef, totalRef;
 
 aspect valueRefLocs on top::StrategyExpr using <- of
-| prodTraversal(q, _) -> if q.lookupValue.found then [(q.location, q.lookupValue.dcl)] else []
+| prodTraversal(q, _) -> if q.lookupValue.found then [(q.nameLoc, q.lookupValue.dcl)] else []
 | rewriteRule(_, _, _) -> checkExpr.valueRefLocs
 end;
 
@@ -181,18 +188,18 @@ aspect attributeRefLocs on top::StrategyExpr using <- of
 end;
 
 aspect attributeRefLocs on StrategyExpr using := of
-| partialRef(a) -> if attrDclFound then [(a.location, attrDcl)] else []
-| totalRef(a) -> if attrDclFound then [(a.location, attrDcl)] else []
+| partialRef(a) -> if attrDclFound then [(a.nameLoc, attrDcl)] else []
+| totalRef(a) -> if attrDclFound then [(a.nameLoc, attrDcl)] else []
 end;
 
 -- Productions
 -- LHS
 aspect valueRefLocs on top::ProductionLHS using <- of
-| productionLHS(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| productionLHS(n, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectProductionLHS using <- of
-| aspectProductionLHSFull(id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectProductionLHSFull(n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionLHS using <- of
@@ -209,19 +216,20 @@ end;
 
 --RHS
 aspect valueRefLocs on top::ProductionRHSElem using <- of
-| productionRHSElem(id, _, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| productionRHSElem(_, n, _, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect valueRefLocs on top::AspectRHSElem using <- of
-| aspectRHSElemFull(id, _) -> map(\dcl :: ValueDclInfo -> (id.location, dcl), getValueDcl(id.name, top.env))
+| aspectRHSElemFull(_, n, _) -> map(\dcl :: ValueDclInfo -> (n.nameLoc, dcl), getValueDcl(n.name, top.env))
 end;
 
 aspect typeRefLocs on ProductionRHSElem using <- of
-| productionRHSElem(_, _, t) -> t.typeRefLocs
+| productionRHSElem(_, _, _, t) -> t.typeRefLocs
 end;
 
 aspect typeRefLocs on AspectRHSElem using <- of
 | aspectRHSElemTyped(_, _, t) -> t.typeRefLocs
+| aspectRHSElemSharedTyped(_, _, _, t) -> t.typeRefLocs
 end;
 
 synthesized attribute valueFileRefLocs::map:Map<String (Location, Decorated RootSpec, ValueDclInfo)>;
@@ -245,15 +253,14 @@ top::Compilation ::= g::Grammars r::Grammars _ _
   top.allAttributeRefs = buildAllRefs((.attributeRefLocs), g.grammarList);
 }
 
-function buildFileRefs
+fun buildFileRefs
 annotation sourceLocation occurs on a,
 annotation sourceGrammar occurs on a =>
 map:Map<String (Location, Decorated RootSpec, a)> ::= 
   accessor::([(Location, a)] ::= Decorated RootSpec)  
   accessList::([EnvItem<a>] ::= Def)
-  rs::[Decorated RootSpec]
-{
-  return directBuildTree(flatMap(\ r::Decorated RootSpec ->
+  rs::[Decorated RootSpec] =
+  directBuildTree(flatMap(\ r::Decorated RootSpec ->
     map(\ item::(Location, a) ->
       (r.grammarSource ++ item.1.filename, item.1, head(map:lookup(item.2.sourceGrammar, r.compiledGrammars)), item.2),
       accessor(r)) ++
@@ -265,7 +272,6 @@ map:Map<String (Location, Decorated RootSpec, a)> ::=
         accessList(def)),
       r.defs),
     rs));
-}
 
 -- Create a map from a reference's unique id to its path & location
 function buildAllRefs
@@ -327,61 +333,45 @@ InterfaceItems ::= r::Decorated RootSpec
   ];
 }
 
-function lookupPos
-[a] ::= line::Integer col::Integer items::[(Location, a)]
-{
-  return map(snd, filter(
+fun lookupPos [a] ::= line::Integer col::Integer items::[(Location, a)] =
+  map(snd, filter(
     \ item::(Location, a) ->
       item.1.line <= line && item.1.endLine >= line && item.1.column <= col && item.1.endColumn >= col,
     items));
-}
 
-function updateLocPath
-Location ::= p::String l::Location
-{
-  return loc(p, l.line, l.column, l.endLine, l.endColumn, l.index, l.endIndex);
-}
+fun updateLocPath Location ::= p::String l::Location =
+  loc(p, l.line, l.column, l.endLine, l.endColumn, l.index, l.endIndex);
 
-function lookupDeclLocation
+fun lookupDeclLocation
 annotation sourceGrammar occurs on a,
 annotation sourceLocation occurs on a =>
-[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)>
-{
-  return map(\ item::(Decorated RootSpec, a) ->
+[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> =
+  map(\ item::(Decorated RootSpec, a) ->
     updateLocPath(item.1.grammarSource ++ item.2.sourceLocation.filename, item.2.sourceLocation),
     lookupPos(line, col, map:lookup(fileName, decls)));
-}
 
-function findDeclLocation
-[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation
-{
-  return
-    lookupDeclLocation(fileName, line, col, c.valueFileRefLocs) ++
-    lookupDeclLocation(fileName, line, col, c.typeFileRefLocs) ++
-    lookupDeclLocation(fileName, line, col, c.attributeFileRefLocs);
-}
+fun findDeclLocation
+[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation =
+  lookupDeclLocation(fileName, line, col, c.valueFileRefLocs) ++
+  lookupDeclLocation(fileName, line, col, c.typeFileRefLocs) ++
+  lookupDeclLocation(fileName, line, col, c.attributeFileRefLocs);
 
 -- Looks up all references to symbol at the given location
 -- Returns a list of all reference locations
 -- Input is filename, line & col number, & decl map to resolve the symbol
 -- Uses refs map to lookup the reference paths & locations from the symbol unique id  
-function lookupReferenceLocations
+fun lookupReferenceLocations
 annotation sourceGrammar occurs on a,
 annotation sourceLocation occurs on a,
 attribute fullName {} occurs on a =>
-[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)>
-{
-  return flatMap(\ item::(Decorated RootSpec, a) -> 
+[Location] ::= fileName::String line::Integer col::Integer decls::map:Map<String (Location, Decorated RootSpec, a)> refs::map:Map<String (String, Location)> =
+  flatMap(\ item::(Decorated RootSpec, a) -> 
     map(\ loc::(String, Location) -> updateLocPath(loc.1, loc.2), 
       map:lookup(makeRefId(item.2), refs)), 
     lookupPos(line, col, map:lookup(fileName, decls)));
-}
 
-function findReferences
-[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation
-{
-  return
-    lookupReferenceLocations(fileName, line, col, c.valueFileRefLocs, c.allValueRefs) ++
-    lookupReferenceLocations(fileName, line, col, c.typeFileRefLocs, c.allTypeRefs) ++
-    lookupReferenceLocations(fileName, line, col, c.attributeFileRefLocs, c.allAttributeRefs);
-}
+fun findReferences
+[Location] ::= fileName::String line::Integer col::Integer c::Decorated Compilation =
+  lookupReferenceLocations(fileName, line, col, c.valueFileRefLocs, c.allValueRefs) ++
+  lookupReferenceLocations(fileName, line, col, c.typeFileRefLocs, c.allTypeRefs) ++
+  lookupReferenceLocations(fileName, line, col, c.attributeFileRefLocs, c.allAttributeRefs);

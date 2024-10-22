@@ -14,7 +14,7 @@ class CFoo a => CBar a
 class CBaz a
 {
   cy :: a;
-  bazFromInt :: (a ::= Integer) = \ Integer -> cy;
+  bazFromInt :: (a ::= Integer) = \ _ -> cy;
   bazEq :: MyEq a => (Boolean ::= a) = \ x::a -> myeq(x, cy);  
 }
 
@@ -248,7 +248,7 @@ equalityTest(myfmap(\ x::Integer -> toFloat(x), left("abc")).fromLeft, "abc", St
 equalityTest(myfmap(\ x::Integer -> toFloat(x), let e::Either<String Integer> = right(42) in e end).fromRight, 42.0, Float, silver_tests);
 
 wrongCode "Ambiguous type variable a (arising from the use of myfmap) prevents the constraint silver_features:MyFunctor silver:core:Either<a _> from being solved" {
-  global ambRes::String = hackUnparse(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight);
+  global ambRes::String = genericShow(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight);
 }
 
 wrongCode "Either has kind * -> * -> *, but the class MyFunctor expected kind * -> *" {
@@ -283,7 +283,7 @@ instance AmbInst Float {
 }
 
 wrongCode "Ambiguous type variable a (arising from the use of ambval) prevents the constraint silver_features:AmbInst a from being solved." {
-  global ambStr::String = hackUnparse(ambval);
+  global ambStr::String = genericShow(ambval);
 }
 
 global intIsEqual::(Boolean ::= Integer Integer) = myeq;

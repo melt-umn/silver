@@ -11,15 +11,15 @@ class Arbitrary a {
 }
 
 instance Arbitrary Integer {
-  genArb = \ Integer -> randomRange(-100, 100);  -- TODO: Is this a reasonable default?  Revisit.
+  genArb = \ _ -> randomRange(-100, 100);  -- TODO: Is this a reasonable default?  Revisit.
 }
 
 instance Arbitrary Float {
-  genArb = \ Integer -> randomRange(-10.0, 10.0);  -- TODO: Is this a reasonable default?  Revisit.
+  genArb = \ _ -> randomRange(-10.0, 10.0);  -- TODO: Is this a reasonable default?  Revisit.
 }
 
 instance Arbitrary Boolean {
-  genArb = \ Integer -> random;
+  genArb = \ _ -> random;
 }
 
 instance Arbitrary String {

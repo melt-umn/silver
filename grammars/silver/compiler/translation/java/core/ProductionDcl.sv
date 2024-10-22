@@ -3,7 +3,7 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:driver;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   local className :: String = "P" ++ id.name;
 
@@ -31,9 +31,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local undecChild :: (String ::= NamedSignatureElement) =
     \ x::NamedSignatureElement ->
       if x.typerep.isDecorated
-      then if isDecorable(x.typerep, body.env)
-        then error("Production " ++ fName ++ " has a decorable decorated child but no 'undecorates to'.")  -- TODO: Remove this when this becomes a uniqueness analysis warning 
-        else s"context.childDecoratedLazy(i_${x.elementName})"
+      then s"context.childDecoratedLazy(i_${x.elementName})"
       else if isDecorable(x.typerep, body.env)
       then s"context.childUndecoratedLazy(i_${x.elementName})"
       else s"child_${x.elementName}";
@@ -51,6 +49,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local copyAnno :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> s"anno_${makeIdName(x.elementName)}");
+
+  local getChildNames :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> s"\"${x.elementName}\"");
 
   local getChildTypes :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> case x.typerep of
@@ -74,6 +75,7 @@ public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}
 
+    public static final String childNames[] = {${implode(",", map(getChildNames, namedSig.inputElements))}};
     public static final String childTypes[] = {${implode(",", map(getChildTypes, namedSig.inputElements))}};
 
     public static final int num_local_attrs = Init.${localVar};
@@ -82,6 +84,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
+    public static final boolean[] localDecorable = new boolean[num_local_attrs];
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -103,9 +106,7 @@ ${namedSig.childStatic}
         super(${implode(", ",
         	(if wantsTracking then ["origin"] else []) ++
         	(if isData then []
-             else if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
-		     then ["true"]
-		     else ["isUniqueInvocation"]) ++
+             else ["isUniqueInvocation"]) ++
         	map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
@@ -126,6 +127,14 @@ ${contexts.contextInitTrans}
 ${namedSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
+
+	@Override
+	public boolean isChildDecorable(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecorableCase(body.env, _), namedSig.inputElements))}
+            default: return false;
+        }
+    }
 
 	@Override
 	public Object getChild(final int index) {
@@ -176,19 +185,16 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 ${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if !null(body.undecorateExpr)
-          then s"return (common.Node)${head(body.undecorateExpr).translation};"
+        ${if any(map((.elementShared), namedSig.inputElements))
+          then "return context.getForwardParent().undecorate();"
           else if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
-            -- A production node with no special undecoration behavior has the same origin as the
-            -- original node when implicitly undecorated.
+            -- An implicitly undecorated production node has the same origin as the original node.
             -- This will be overidden by duplicate when calling new().
             (if wantsTracking then ["this.origin"] else []) ++
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-          -- TODO: Consider if all decorable children are directly undecorable.
-          -- This must avoid forcing children that are thunks, and probably also should be cached.
           else "return this;"}
     }
 
@@ -203,7 +209,7 @@ ${if isData then "" else s"""
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
           else s"return ((common.Node)${head(body.forwardExpr).translation}${
             if wantsTracking && !top.config.noRedex
-            then s".duplicateForForwarding(context.getNode(), \"${escapeString(hackUnparse(head(body.forwardExpr).location))}\")"
+            then s".duplicateForForwarding(context.getNode(), \"${escapeString(getParsedOriginLocationOrFallback(head(body.forwardExpr)).unparse)}\")"
             else ""})"};
     }
 
@@ -216,6 +222,11 @@ ${if isData then "" else s"""
     public boolean getLocalIsForward(final int key) {
         return localIsForward[key];
     }"""}
+
+    @Override
+    public boolean isLocalDecorable(final int key) {
+        return localDecorable[key];
+    }
 
     @Override
     public common.Lazy getLocal(final int key) {
@@ -290,7 +301,7 @@ ${body.translation}
             ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
             ${namedSig.contextRuntimeResolve}
 
-            return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfAny else ""} ${namedSig.refInvokeTrans});
+            return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(origAST, true, rules, common.OriginsUtil.SET_FROM_REIFICATION_OIT)"++commaIfAny else ""} ${namedSig.refInvokeTrans});
         }
 
         public ${className} constructDirect(
@@ -316,6 +327,7 @@ ${body.translation}
         public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
+        public String[] getChildNames() { return ${className}.childNames; }
         public String[] getChildTypes() { return ${className}.childTypes; }
         public common.Lazy[][] getChildInheritedAttributes() { return ${className}.childInheritedAttributes; }
     }
@@ -360,13 +372,13 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     public ${fnnt} duplicate(common.Node redex, common.ConsCell notes) {
         silver.core.NOriginInfo oi;
         if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
-            oi = new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true);
+            oi = new PoriginOriginInfo(this, true, notes, common.OriginsUtil.SET_AT_NEW_OIT);
         } else {
-            oi = new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true);
+            oi = new PoriginAndRedexOriginInfo(this, redex, notes, true, notes, common.OriginsUtil.SET_AT_NEW_OIT);
         }
         return new ${className}(
             ${implode(", ",
-                "oi" ::
+                "oi" :: "isUnique" ::
                 namedSig.contextRefElems ++
                 map(dupChild, namedSig.inputElements) ++
                 map(copyAnno, namedSig.namedInputElements))});
@@ -376,7 +388,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     public ${fnnt} updateOriginInfo(silver.core.NOriginInfo oi) {
         return new ${className}(
             ${implode(", ",
-                "oi" ::
+                "oi" :: "isUnique" ::
                 namedSig.contextRefElems ++
                 map(copyChild, namedSig.inputElements) ++
                 map(copyAnno, namedSig.namedInputElements))});
@@ -386,6 +398,6 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-
     if id.name == "main"
-    then [err(top.location, "main should be a function!")]
+    then [errFromOrigin(top, "main should be a function!")]
     else [];
 }

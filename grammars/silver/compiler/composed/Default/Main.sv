@@ -6,8 +6,4 @@ parser svParse::Root {
   silver:compiler:host;
 }
 
-function main 
-IOVal<Integer> ::= args::[String] ioin::IOToken
-{
-  return evalIO(cmdLineRun(args, svParse), ioin);
-}
+fun main IO<Integer> ::= args::[String] = cmdLineRun(args, svParse);

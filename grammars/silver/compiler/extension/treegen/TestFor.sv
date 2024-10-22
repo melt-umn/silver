@@ -30,31 +30,31 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
       'function',
       name(generatedName, l),
       sig,
-      body, location=l);
+      body);
 
   local sig :: FunctionSignature =
     functionSignature(
-      nilConstraint(location=l), '=>',
-      functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
+      nilConstraint(), '=>',
+      functionLHS(typerepTypeExpr(boolType())),
       '::=',
       productionRHSCons(
-        productionRHSElem(n, '::', typerepTypeExpr(id.lookupType.typeScheme.typerep, location=l), location=l),
-        productionRHSNil(location=l), location=l),
+        productionRHSElem(n, '::', typerepTypeExpr(id.lookupType.typeScheme.typerep)),
+        productionRHSNil()),
       location=l);
   
   local body :: ProductionBody =
-    productionBody('{', foldl(productionStmtsSnoc(_, _, location=l), productionStmtsNil(location=l), stmts), '}', location=l);
+    productionBody('{', foldl(productionStmtsSnoc(_, _), productionStmtsNil(), stmts), '}');
   
   local stmts :: [ProductionStmt] =
     [
-      returnDef('return', e, ';', location=l)
+      returnDef('return', e, ';')
     ];
 
   -- emit function taking a ID tree GENERATING FUNCTION and check e on it
   forwards to 
     foldr(
-      appendAGDcl(_, _, location=top.location),
-      emptyAGDcl(location=top.location),
+      appendAGDcl,
+      emptyAGDcl(),
       fundcl ::
         map(
           generateTestFor(_, generatedName, l, testSuite), prods));
@@ -69,38 +69,38 @@ AGDcl ::= d::ValueDclInfo  testfunname::String  l::Location  testSuite::Name
   local sig :: FunctionSignature =
     -- id ::= 
     functionSignature(
-      nilConstraint(location=l), '=>',
-      functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
+      nilConstraint(), '=>',
+      functionLHS(typerepTypeExpr(boolType())),
       '::=',
-      productionRHSNil(location=l),
+      productionRHSNil(),
       location=l);
   
   local body :: ProductionBody =
-    productionBody('{', foldl(productionStmtsSnoc(_, _, location=l), productionStmtsNil(location=l), stmts), '}', location=l);
+    productionBody('{', foldl(productionStmtsSnoc(_, _), productionStmtsNil(), stmts), '}');
   
   local stmts :: [ProductionStmt] =
     [
-      shortLocalDecl('local', name("current__depth", l), '::', typerepTypeExpr(intType(), location=l), '=', intConst(terminal(Int_t, "1"), location=l), ';', location=l),
-      returnDef('return', mkStrFunctionInvocation(l, testfunname, [deriveGenerateOn(d, l)]), ';', location=l)
+      shortLocalDecl('local', name("current__depth"), '::', typerepTypeExpr(intType()), '=', intConst(terminal(Int_t, "1")), ';'),
+      returnDef('return', mkStrFunctionInvocation(l, testfunname, [deriveGenerateOn(d, l)]), ';')
     ];
 
   -- emit function 'testArbitraryProduction_ID' that generates a production-rooted tree, and calls above generating function on it
   -- emit test case calling 'repeatTestTimes(testArbitraryProduction_ID, 100)'
   return 
     foldr(
-      appendAGDcl(_, _, location=l),
-      emptyAGDcl(location=l),
+      appendAGDcl,
+      emptyAGDcl(),
       [
         functionDcl(
           'function',
           name(generatedName, l),
           sig,
-          body, location=l),
+          body),
         equalityTest2_p(
           terminal(EqualityTest_t, "equalityTest", l), '(',
-          mkStrFunctionInvocation(l, "repeatTestTimes", [baseExpr(qName(l, generatedName), location=l), intConst(terminal(Int_t, "10"), location=l)]), ',',
-          trueConst('true', location=l), ',',
-          booleanTypeExpr('Boolean', location=l), ',',
+          mkStrFunctionInvocation(l, "repeatTestTimes", [baseExpr(qName(generatedName)), intConst(terminal(Int_t, "10"))]), ',',
+          trueConst('true'), ',',
+          booleanTypeExpr('Boolean'), ',',
           testSuite, ')', ';', location=l
         )
       ]

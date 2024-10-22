@@ -24,27 +24,19 @@ class Apply f => Applicative f {
   - Prefer `map` to this function. However, it can be useful to get a `Functor`
   - instance for free, given an existing `Applicative` instance.
   -}
-function liftA1
-Applicative f => f<b> ::= f::(b ::= a)  x::f<a>
-{ return ap(pure(f), x); }
+fun liftA1 Applicative f => f<b> ::= f::(b ::= a)  x::f<a> = ap(pure(f), x);
 
-function when_
-Applicative f => f<Unit> ::= cond::Boolean  body::f<Unit>
-{ return if cond then body else pure(unit()); }
+fun when_ Applicative f => f<Unit> ::= cond::Boolean  body::f<Unit> =
+  if cond then body else pure(unit());
 
-function unless
-Applicative f => f<Unit> ::= cond::Boolean  body::f<Unit>
-{ return if cond then pure(unit()) else body; }
+fun unless Applicative f => f<Unit> ::= cond::Boolean  body::f<Unit> =
+  if cond then pure(unit()) else body;
 
 -- These should be factored out into a Traversable type class, eventually.
-function traverseA
-Applicative m => m<[b]> ::= f::(m<b> ::= a) lst::[a]
-{ return foldr(lift2(cons, _, _), pure([]), map(f, lst)); }
+fun traverseA Applicative m => m<[b]> ::= f::(m<b> ::= a) lst::[a] =
+  foldr(lift2(cons, _, _), pure([]), map(f, lst));
 
-function traverse_
-Applicative m => m<()> ::= f::(m<()> ::= a) lst::[a]
-{ return foldr(applySecond, pure(()), map(f, lst)); }
+fun traverse_ Applicative m => m<()> ::= f::(m<()> ::= a) lst::[a] =
+  foldr(applySecond, pure(()), map(f, lst));
 
-function sequence
-Applicative m => m<[a]> ::= lst::[m<a>]
-{ return foldr(lift2(cons, _, _), pure([]), lst); }
+fun sequence Applicative m => m<[a]> ::= lst::[m<a>] = foldr(lift2(cons, _, _), pure([]), lst);

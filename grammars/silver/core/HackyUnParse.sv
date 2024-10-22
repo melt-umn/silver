@@ -4,10 +4,7 @@ grammar silver:core;
  - hackUnparse takes any value, and produce a string that represents
  - that value.  It is mainly useful for debugging.
  -
- - Not considered part of the "standard" library of Silver.  It may change from
- - release to release. Don't rely on it.
- -
- - In the distant future, this may become obsolete when a 'Show' typeclass is available.
+ - @warning This is deprecated. Use silver:langutil:pp:show instead, or genericShow in polymorphic contexts/generated code.
  -}
 function hackUnparse
 String ::= nt::a
@@ -17,4 +14,18 @@ String ::= nt::a
   "java" : return "(common.Util.hackyhackyUnparse(%nt%))";
 }
 
-
+@{--
+ - Take any value, and return a human-readable string representation.
+ - This attempts to make use of the pp or unparse attributes, if a term/tree with either of those is provided.
+ - Intended for debugging purposes or for error handling in generated code; prefer silver:langutil:pp:show when possible.
+ -
+ - Implementation note: this function makes use of silver:langutil:reflect:genericPP if that library is available,
+ - else falling back to the less-sophisticated hackUnparse implementation in the runtime.
+ -}
+function genericShow
+String ::= x::a
+{
+  return error("Not impl");
+} foreign {
+  "java" : return "(common.Util.genericShow(%x%))";
+}

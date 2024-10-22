@@ -19,29 +19,51 @@ class CommutativeRing a => EuclideanRing a {
 }
 
 instance EuclideanRing Integer {
-  degree = \n::Integer -> if n < 0 then -n else n;
-  div = \a::Integer b::Integer -> a / b;
-  mod = \a::Integer b::Integer -> a % b;
+  degree = \n -> if n < 0 then -n else n;
+  div = divInteger;
+  mod = modInteger;
+}
+
+function divInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% / (int)%b%)";
+}
+
+function modInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% % (int)%b%)";
+}
+
+instance EuclideanRing Float {
+  degree = \ _ -> 1;
+  div = divFloat;
+  mod = \ a b -> 0.0;  -- This matches what PureScript does.
+}
+
+function divFloat
+Float ::= a::Float b::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% / (float)%b%)";
 }
 
 @{- Computes the greatest common divisor of two numbers. -}
-function gcd
-Eq a, EuclideanRing a => a ::= a::a  b::a
-{
-  return
-    if b == zero then
-      a
-    else
-      gcd(b, mod(a, b));
-}
+fun gcd Eq a, EuclideanRing a => a ::= a::a  b::a =
+  if b == zero then
+    a
+  else
+    gcd(b, mod(a, b));
 
 @{- Computes the least common multiple of two numbers. -}
-function lcm
-Eq a, EuclideanRing a => a ::= a::a  b::a
-{
-  return
-    if a == zero || b == zero then
-      zero
-    else
-      div(mul(a, b), gcd(a, b));
-}
+fun lcm Eq a, EuclideanRing a => a ::= a::a  b::a =
+  if a == zero || b == zero then
+    zero
+  else
+    div(mul(a, b), gcd(a, b));

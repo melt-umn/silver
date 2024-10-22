@@ -48,7 +48,7 @@ top::Expr ::= 'mdo' '{' body::DoBody '}'
   body.recVars = mempty;
   body.recRes = error("First binding cannot have unbound vars");
 
-  forwards to do_c('do', '{', body.mdoTransform, '}', location=top.location);
+  forwards to do_c('do', '{', body.mdoTransform, '}');
 }
 
 -- The set of variables that have been bound within this do body so far
@@ -63,7 +63,7 @@ synthesized attribute bindingFreeVars::ts:Set<String>;
 -- Can this do body be translated using ap/map instead of bind
 synthesized attribute isApplicative::Boolean;
 -- Parameter bindings that will be used in applicative translation
-synthesized attribute appBindings::[ProductionRHSElem];
+synthesized attribute appBindings::[LambdaRHSElem];
 -- Expressions that will be bound in applicative translation
 synthesized attribute appExprs::[Expr];
 -- The final result in applicative translation
@@ -87,13 +87,13 @@ synthesized attribute recBody::DoBody;
 -- A transformation on a do body, wrapping segments in mfix
 synthesized attribute mdoTransform::DoBody;
 
-nonterminal DoBody with
-  location, unparse, frame, boundVarEnv, allBoundVars, boundVars, bindingFreeVars,
+tracked nonterminal DoBody with
+  unparse, frame, boundVarEnv, allBoundVars, boundVars, bindingFreeVars,
   isApplicative, appBindings, appExprs, appResult, transform,
   recVars, recBindings, recRes, recBody, mdoTransform;
 
-nonterminal DoBinding with
-  location, unparse, frame, boundVars, freeVars,
+tracked nonterminal DoBinding with
+  unparse, frame, boundVars, freeVars,
   isApplicative, appBindings, appExprs,
   transform, transformIn,
   recBindings;
@@ -121,13 +121,12 @@ top::DoBody ::= b::DoBinding rest::DoBody
     if top.isApplicative
     then
       foldl(
-        \ trans::Expr e::Expr -> mkStrFunctionInvocation(top.location, "silver:core:ap", [trans, e]),
-        mkStrFunctionInvocation(top.location, "silver:core:map", [
+        \ trans::Expr e::Expr -> mkStrFunctionInvocation("silver:core:ap", [trans, e]),
+        mkStrFunctionInvocation("silver:core:map", [
           foldr(
-            \ el::ProductionRHSElem trans::Expr ->
+            \ el::LambdaRHSElem trans::Expr ->
               lambdap(
-                productionRHSCons(el, productionRHSNil(location=top.location), location=top.location),
-                trans, location=top.location),
+                lambdaRHSCons(el, lambdaRHSNil()), trans),
             top.appResult, top.appBindings),
           head(top.appExprs)]),
         tail(top.appExprs))
@@ -151,14 +150,13 @@ top::DoBody ::= b::DoBinding rest::DoBody
         foldr1(
           \ e1::Expr e2::Expr -> Silver_Expr { silver:core:pair(fst=$Expr{e1}, snd=$Expr{e2}) },
           map(\ item::(String, TypeExpr) -> Silver_Expr { $name{item.1} }, top.recBindings)),
-        ';', location=top.location)
+        ';')
     else top.recRes;
 
   top.recBody = consDoBody(b,
     if ts:isEmpty(rest.recVars)
     then rest.recRes
-    else rest.recBody,
-    location=top.location);
+    else rest.recBody);
 
   local recVarName::String = s"_rec_items_${toString(genInt())}";
   local recVarType::TypeExpr =
@@ -168,14 +166,13 @@ top::DoBody ::= b::DoBinding rest::DoBody
       map(snd, top.recBindings));
   local wrapUnpackRecBindings::(DoBody ::= DoBody) =
     foldr(
-      consDoBody(_, _, location=top.location),
+      consDoBody(_, _),
       _,
       zipWith(
         \ i::Integer item::(String, TypeExpr) ->
           letDoBinding(
-            'let', name(item.1, top.location), '::', item.2, '=',
-            select(Silver_Expr { $name{recVarName} }, 1, i + 1, length(top.recBindings), location=top.location), ';',
-            location=top.location),
+            'let', name(item.1), '::', item.2, '=',
+            select(Silver_Expr { $name{recVarName} }, 1, i + 1, length(top.recBindings)), ';'),
         range(0, length(top.recBindings)),
         top.recBindings));
   top.mdoTransform =
@@ -184,18 +181,16 @@ top::DoBody ::= b::DoBinding rest::DoBody
     else if !ts:isEmpty(newRecVars)
     then consDoBody(
       bindDoBinding(
-        name(recVarName, top.location), '::', recVarType, '<-',
+        name(recVarName), '::', recVarType, '<-',
         Silver_Expr {
           mfix(
             \ $name{recVarName}::$TypeExpr{recVarType} ->
               $Expr{
-                do_c('do', '{', wrapUnpackRecBindings(top.recBody), '}', location=top.location)
+                do_c('do', '{', wrapUnpackRecBindings(top.recBody), '}')
               })
-        }, ';',
-        location=top.location),
-      wrapUnpackRecBindings(rest.mdoTransform),
-      location=top.location)
-    else consDoBody(b, rest.mdoTransform, location=top.location);
+        }, ';'),
+      wrapUnpackRecBindings(rest.mdoTransform))
+    else consDoBody(b, rest.mdoTransform);
 }
 
 concrete production finalExprDoBody
@@ -222,7 +217,7 @@ top::DoBody ::= 'return' e::Expr ';'
   top.appBindings = [];
   top.appExprs = [];
   top.appResult = e;
-  top.transform = mkStrFunctionInvocation(top.location, "silver:core:pure", [e]);
+  top.transform = mkStrFunctionInvocation("silver:core:pure", [e]);
   top.recBindings = [];
   top.recBody = top.recRes;
   top.mdoTransform = top;
@@ -234,18 +229,16 @@ top::DoBinding ::= n::Name DoDoubleColon_t t::TypeExpr '<-' e::Expr ';'
   top.unparse = s"${n.unparse}::${t.unparse} <- ${e.unparse};";
   top.boundVars <- ts:fromList([n.name]);
   top.isApplicative = true;
-  top.appBindings = [productionRHSElem(n, terminal(ColonColon_t, "::"), t, location=top.location)];
+  top.appBindings = [lambdaRHSElemIdTy(n, terminal(ColonColon_t, "::"), t)];
   top.appExprs = [e];
 
   local cont :: Expr =
     lambdap(
-      productionRHSCons(
-        productionRHSElem(n, terminal(ColonColon_t, "::"), t, location=top.location),
-        productionRHSNil(location=top.location),
-        location=top.location),
-      top.transformIn,
-      location=top.location);
-  top.transform = mkStrFunctionInvocation(top.location, "silver:core:bind", [e, cont]);
+      lambdaRHSCons(
+        lambdaRHSElemIdTy(n, terminal(ColonColon_t, "::"), t),
+        lambdaRHSNil()),
+      top.transformIn);
+  top.transform = mkStrFunctionInvocation("silver:core:bind", [e, cont]);
 
   top.recBindings = [(n.name, t)];
 }
@@ -256,9 +249,9 @@ top::DoBinding ::= e::Expr ';'
   top.unparse = s"${e.unparse};";
   top.isApplicative = true;
   top.appBindings =
-    [productionRHSElemType(typerepTypeExpr(freshType(), location=top.location), location=top.location)];
+    [lambdaRHSElemTy('_', terminal(ColonColon_t, "::"), typerepTypeExpr(freshType()))];
   top.appExprs = [e];
-  top.transform = mkStrFunctionInvocation(top.location, "silver:core:applySecond", [e, top.transformIn]);
+  top.transform = mkStrFunctionInvocation("silver:core:applySecond", [e, top.transformIn]);
 
   top.recBindings = [];
 }
@@ -274,9 +267,8 @@ top::DoBinding ::= 'let' n::Name '::' t::TypeExpr '=' e::Expr ';'
 
   top.transform =
     letp(
-      assignExpr(n, terminal(ColonColon_t, "::"), t, '=', e, location=top.location),
-      top.transformIn,
-    location=top.location);
+      assignExpr(n, terminal(ColonColon_t, "::"), t, '=', e),
+      top.transformIn);
 
   top.recBindings = [(n.name, t)];
 }

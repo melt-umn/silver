@@ -34,11 +34,7 @@ synthesized attribute let_translation :: String occurs on AssignExpr;
 attribute initTransDecSites occurs on AssignExpr;
 propagate initTransDecSites on AssignExpr;
 
-function makeLocalValueName
-String ::= s::String
-{
-  return "__SV_LOCAL_" ++ makeIdName(s);
-}
+fun makeLocalValueName String ::= s::String = "__SV_LOCAL_" ++ makeIdName(s);
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -57,14 +53,11 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   top.let_translation = makeSpecialLocalBinding(fName, e.translation, finalTy.transType);
 }
 
-function makeSpecialLocalBinding
-String ::= fn::String  et::String  ty::String
-{
-  return s"final common.Thunk<${ty}> ${makeLocalValueName(fn)} = ${wrapThunkText(et, ty)};\n";
-}
+fun makeSpecialLocalBinding String ::= fn::String  et::String  ty::String =
+  s"final common.Thunk<${ty}> ${makeLocalValueName(fn)} = ${wrapThunkText(et, ty)};\n";
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  _ _ _
+top::Expr ::= @q::QName  _ _
 {
   -- To account for a magic case where we generate a let expression with a type
   -- that is, for example, a ntOrDecType or something,

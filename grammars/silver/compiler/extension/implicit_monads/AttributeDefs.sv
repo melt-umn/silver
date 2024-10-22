@@ -17,7 +17,7 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
 
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;
@@ -25,7 +25,7 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([restrictedInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
+  local fwd::AGDcl = defsAGDcl([restrictedInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -47,7 +47,7 @@ top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
 
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;
@@ -55,7 +55,7 @@ top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([restrictedSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
+  local fwd::AGDcl = defsAGDcl([restrictedSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -77,11 +77,11 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
 
   top.errors := if isMonad(te.typerep, top.env)
                 then []
-                else [err(top.location, "Implicit attributes must have a monadic type; " ++
+                else [errFromOrigin(top, "Implicit attributes must have a monadic type; " ++
                                         prettyType(te.typerep) ++ " is not monadic")];
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;
@@ -89,7 +89,7 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([implicitInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
+  local fwd::AGDcl = defsAGDcl([implicitInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -109,11 +109,11 @@ top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
 
   top.errors := if isMonad(te.typerep, top.env)
                 then []
-                else [err(top.location, "Implicit attributes must have a monadic type; " ++
+                else [errFromOrigin(top, "Implicit attributes must have a monadic type; " ++
                                         prettyType(te.typerep) ++ " is not monadic")];
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
-    then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <- tl.errorsTyVars;
@@ -121,7 +121,7 @@ top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([implicitSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
+  local fwd::AGDcl = defsAGDcl([implicitSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -134,7 +134,7 @@ top::AGDcl ::= 'unrestricted' 'inherited' 'attribute' a::Name tl::BracketedOptTy
 {
   top.unparse = "unrestricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', te, ';', location=top.location);
+  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', te, ';');
 }
 
 
@@ -143,6 +143,6 @@ top::AGDcl ::= 'unrestricted' 'synthesized' 'attribute' a::Name tl::BracketedOpt
 {
   top.unparse = "unrestricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', te, ';', location=top.location);
+  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', te, ';');
 }
 

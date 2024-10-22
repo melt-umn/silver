@@ -15,24 +15,22 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
   
   top.errors <-
     if length(getAttrDclAll(synFName, top.env)) > 1
-    then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
+    then [errFromOrigin(syn, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(equalityDcl(inhFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
-      location=top.location);
+      [attrDef(defaultEnvItem(equalityDcl(inhFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
 {--
  - Propagate a equality synthesized attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateEquality
-top::ProductionStmt ::= inh::String syn::Decorated! QName
+abstract production propagateEquality implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
   
   forwards to
     Silver_ProductionStmt {
@@ -40,20 +38,19 @@ top::ProductionStmt ::= inh::String syn::Decorated! QName
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
-              qName(top.location, top.frame.signature.fullName),
+              qName(top.frame.signature.fullName),
               '(',
               foldr(
-                patternList_more(_, ',', _, location=top.location),
-                patternList_nil(location=top.location),
+                patternList_more(_, ',', _),
+                patternList_nil(),
                 map(
                   \ ie::NamedSignatureElement -> Silver_Pattern { $name{ie.elementName ++ "2"} },
                   top.frame.signature.inputElements)),
-              ')',
-              location=top.location)} ->
+              ')')} ->
           $Expr{
             foldr(
-              and(_, '&&', _, location=top.location),
-              trueConst('true', location=top.location),
+              and(_, '&&', _),
+              trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
                   if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))

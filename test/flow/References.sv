@@ -24,7 +24,7 @@ Decorated Expr ::= x::Expr
   return x;
 }
 
-warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env1 but this equation appears to be missing." {
+warnCode "Equation requires inherited attribute flow:env1 be supplied to child x of production flow:getRefEnv1Missing" {
   function getRefEnv1Missing
   Decorated Expr with {env1} ::= x::Expr
   { return x; }
@@ -97,4 +97,23 @@ Decorated RExpr<{env1}> with {env1} ::=
 
 warnCode "Duplicate equation for env1" {
   global decDuplicate::Decorated Expr with {env1, env2} = decorate zero() with {env1 = []; env2 = []; env1 = ["a"];};
+}
+
+wrongFlowCode "Cannot share a tree here" {
+function shareRet
+Expr ::=
+{
+  local x::Expr = zero();
+  return @x;
+}
+}
+
+wrongFlowCode "Cannot share a tree here" {
+function shareNondec
+Boolean ::=
+{
+  local x::Expr = zero();
+  nondecorated y :: Expr = @x;
+  return true;
+}
 }

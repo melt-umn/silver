@@ -21,16 +21,25 @@ MaybeT<IO RootSpec> ::=
 
         -- IO Step 2: List those files, and obtain their newest modification time
         files :: [String] <- lift(listSilverFiles(grammarLocation));
-        when_(null(files), empty); -- Grammar had no files!
+        guard(!null(files)); -- Grammar had no files!
         grammarTime :: Integer <- lift(fileTimes(grammarLocation, files));
 
         return (grammarTime, grammarLocation, files);
       }.run);
+    findInterface::Maybe<RootSpec> <- lift(do {
+        guard(!clean);  -- Ignore interface files if this is a clean build
+
+        -- IO Step 3: Let's look for an interface file
+        compileInterface(grammarName, benv.silverHostGen);
+      }.run);
+    let interfaceDirty::Boolean = do {
+      -- If we found both, check if the interface file is out of date
+      foundGrammar::(Integer, String, [String]) <- findGrammar;
+      foundInterface::RootSpec <- findInterface;
+      guard(foundGrammar.1 > foundInterface.grammarTime);
+    }.isJust;
     alt(
-      -- IO Step 3: Let's look for a valid interface file
-      if clean
-        then empty  -- We just skip this search if it's a clean build
-        else compileInterface(grammarName, benv.silverHostGen, map(fst, findGrammar)),
+      if interfaceDirty then empty else maybeT(pure(findInterface)),
       do {
         -- We didn't find a valid interface file
         foundGrammar::(Integer, String, [String]) <- maybeT(pure(findGrammar));
@@ -42,18 +51,12 @@ MaybeT<IO RootSpec> ::=
         lift(eprintln("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation ++ "]\n\t[" ++ renderFileNames(files, 0) ++ "]"));
         gramCompile::([Root], [ParseError]) <- lift(compileFiles(svParser, grammarLocation, files));
 
-        -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
-        oldInterface::Maybe<InterfaceItems> <- lift(do {
-            gen :: String <- findInterfaceLocation(gramPath, benv.silverHostGen);
-            let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
-            --lift(eprintln(s"Found old interface ${file}"));
-            content::ByteArray <- lift(readBinaryFile(file));
-            case nativeDeserialize(content) of
-            | left(msg) -> empty
-            | right(ii) -> pure(ii)
-            end;
-          }.run);
-
+        -- The old interface file contents, used to tell if we need to transitively re-translate
+        let oldInterface::Maybe<InterfaceItems> =
+          case findInterface of
+          | just(interfaceRootSpec(i, _)) -> just(i)
+          | _ -> nothing()
+          end;
         return if null(gramCompile.2)
           then grammarRootSpec(foldRoot(gramCompile.1), oldInterface, grammarName, grammarLocation, grammarTime, benv.silverGen)
           else errorRootSpec(gramCompile.2, grammarName, grammarLocation, grammarTime, benv.silverGen);
@@ -61,71 +64,49 @@ MaybeT<IO RootSpec> ::=
   };
 }
 
-function foldRoot
-Grammar ::= l::[Root]
-{
-  return foldr(consGrammar, nilGrammar(), l);
-}
+fun foldRoot Grammar ::= l::[Root] = foldr(consGrammar, nilGrammar(), l);
 
 {--
  - Determined whether a file name should be considered a Silver source file.
  -}
-function isValidSilverFile
-Boolean ::= f::String
-{
-  return any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
-}
-function listSilverFiles
-IO<[String]> ::= dir::String
-{
-  return do {
+fun isValidSilverFile Boolean ::= f::String =
+  any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
+fun listSilverFiles IO<[String]> ::= dir::String =
+  do {
     files :: [String] <- listContents(dir);
     return filter(isValidSilverFile, files);
   };
-}
 
 {--
  - Determines the maximum modification time of all files in a directory.
  - Including the directory itself, to detect file deletions.
  -}
-function fileTimes
-IO<Integer> ::= dir::String is::[String]
-{
-  return
-    case is of
-    | [] -> fileTime(dir) -- check the directory itself. Catches deleted files.
-    | h :: t -> do {
-        ft :: Integer <- fileTime(dir ++ h);
-        rest :: Integer <- fileTimes(dir, t);
-        return max(ft, rest);
-      }
-    end;
-}
+fun fileTimes IO<Integer> ::= dir::String is::[String] =
+  case is of
+  | [] -> fileTime(dir) -- check the directory itself. Catches deleted files.
+  | h :: t -> do {
+      ft :: Integer <- fileTime(dir ++ h);
+      rest :: Integer <- fileTimes(dir, t);
+      return max(ft, rest);
+    }
+  end;
 
 -- A crude approximation of line wrapping
-function renderFileNames
-String ::= files::[String]  depth::Integer
-{
-  return
-    if null(files) then "" else
-    if depth >= 7 then "\n\t " ++ renderFileNames(files, 0) else
-    head(files) ++
-    if null(tail(files)) then "" else " " ++ renderFileNames(tail(files), depth + 1);
-}
+fun renderFileNames String ::= files::[String]  depth::Integer =
+  if null(files) then "" else
+  if depth >= 7 then "\n\t " ++ renderFileNames(files, 0) else
+  head(files) ++
+  if null(tail(files)) then "" else " " ++ renderFileNames(tail(files), depth + 1);
 
 {--
  - Takes a grammar name (already converted to a path) and searches the grammar
  - path for the first directory that matches.
  -}
-function findGrammarLocation
-MaybeT<IO String> ::= path::String searchPaths::[String]
-{
-  return
-    case searchPaths of
-    | h :: t -> alt(findGrammarInLocation(path, h), findGrammarLocation(path, t))
-    | [] -> empty
-    end;
-}
+fun findGrammarLocation MaybeT<IO String> ::= path::String searchPaths::[String] =
+  case searchPaths of
+  | h :: t -> alt(findGrammarInLocation(path, h), findGrammarLocation(path, t))
+  | [] -> empty
+  end;
 
 {--
  - Looks to see if the grammar can be found in 'inPath'

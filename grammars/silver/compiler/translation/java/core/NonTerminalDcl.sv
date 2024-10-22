@@ -106,8 +106,8 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs) {
-			return ref.decorate(parent, inhs);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy decSite) {
+			return ref.decorate(parent, inhs, decSite);
 		}
 
 		@Override
@@ -130,6 +130,11 @@ ${if quals.data then "" else s"""
 		@Override
 		public int getNumberOfChildren() {
 			return ref.getNode().getNumberOfChildren();
+		}
+
+		@Override
+		public boolean isChildDecorable(final int child) {
+			return ref.getNode().isChildDecorable(child);
 		}
 
 		@Override
@@ -161,6 +166,11 @@ ${if quals.data then "" else s"""
 
 		@Override
 		public int getNumberOfLocalAttrs() {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
+		}
+
+		@Override
+		public boolean isLocalDecorable(final int child) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 
@@ -231,7 +241,6 @@ ${if quals.data then "" else s"""
 
   public static final class Nonterminalton extends common.RTTIManager.Nonterminalton<${className}> {
       public String getName(){ return "${top.grammarName}:${id.name}"; }
-      public String[] getOccursInh() { return ${className}.occurs_inh; }
   }
 
 	${otImpl}

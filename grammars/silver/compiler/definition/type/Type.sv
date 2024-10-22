@@ -3,6 +3,8 @@ grammar silver:compiler:definition:type;
 option silver:compiler:modification:ffi; -- foreign types
 option silver:compiler:modification:list; -- list type
 
+imports silver:compiler:definition:env only NamedSignature, fullName, outputElement;
+
 synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
@@ -13,7 +15,7 @@ synthesized attribute monoType :: Type; -- Raises on error when we encounter a p
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType with boundVars, contexts, typerep, monoType;
+tracked nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
 flowtype PolyType = decorate {}, forward {};
 
@@ -22,8 +24,8 @@ top::PolyType ::= ty::Type
 {
   top.boundVars = [];
   top.contexts = [];
-  top.typerep = ty;
-  top.monoType = ty;
+  top.typerep = new(ty);
+  top.monoType = new(ty);
 }
 
 abstract production polyType
@@ -31,7 +33,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = [];
-  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
 }
 
@@ -40,7 +42,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {
   top.boundVars = freshTyVars(bound);
   top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
-  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.typerep = freshenTypeWith(new(ty), bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a (constraint) poly type!");
 }
 
@@ -48,7 +50,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
  - Represents a constraint on a type, e.g. a type class instance
  -}
 
-nonterminal Context with freeVariables;
+tracked nonterminal Context with freeVariables;
 
 abstract production instContext
 top::Context ::= cls::String t::Type
@@ -59,19 +61,19 @@ top::Context ::= cls::String t::Type
 abstract production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args) ++ [ntty.freeVariables]);
 }
 
 abstract production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [inhs, ntty]));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args) ++ [inhs.freeVariables, ntty.freeVariables]);
 }
 
 abstract production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args) ++ [ntty.freeVariables]);
 }
 
 abstract production typeableContext
@@ -95,7 +97,7 @@ top::Context ::= msg::String
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindrep, freeVariables;
+tracked nonterminal Type with kindrep, freeVariables;
 
 flowtype Type = decorate {}, forward {};
 
@@ -105,7 +107,7 @@ flowtype Type = decorate {}, forward {};
 abstract production varType
 top::Type ::= tv::TyVar
 {
-  top.kindrep = tv.kindrep;
+  top.kindrep = tv.kind;
   top.freeVariables = [tv];
 }
 
@@ -116,7 +118,7 @@ top::Type ::= tv::TyVar
 abstract production skolemType
 top::Type ::= tv::TyVar
 {
-  top.kindrep = tv.kindrep;
+  top.kindrep = tv.kind;
   top.freeVariables = [tv];
 }
 
@@ -128,7 +130,7 @@ top::Type ::= c::Type a::Type
 {
   top.kindrep =
     case c.kindrep of
-    | arrowKind(_, k) -> k
+    | arrowKind(_, k) -> new(k)
     | _ -> starKind()
     end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
@@ -253,20 +255,6 @@ top::Type ::= te::Type i::Type
 }
 
 {--
- - A *unique decorated* nonterminal type.
- - Represents a reference with some exact set of provided inherited attributes,
- - may be decorated with additional attributes.
- - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
- - @param i  MUST have kind InhSet
- -}
-abstract production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  top.kindrep = starKind();
-  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
-}
-
-{--
  - An intermediate type. This *should* never appear as the type of a symbol,
  - etc. Rather, this is a helper type only used within expressions.
  -
@@ -335,53 +323,31 @@ top::Type ::= params::Integer namedParams::[String]
   top.freeVariables = [];
 }
 
+abstract production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.kindrep = starKind();
+  top.freeVariables = [];
+}
+
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindrep, compareTo, isEqual;
-propagate compareTo, isEqual on TyVar;
+annotation varId :: Integer;
+annotation kind :: Kind;
 
--- In essence, this should be 'private' to this file.
-synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
+data TyVar = tyVar | tyVarNamed n::String
+  with varId, kind;
 
-abstract production tyVar
-top::TyVar ::= k::Kind i::Integer
-{
-  top.kindrep = k;
-  top.extractTyVarRep = i;
+instance Eq TyVar {
+  -- Shouldn't need to compare kinds here, since all type vars have a unique id.
+  eq = \ x::TyVar y::TyVar -> x.varId == y.varId; --&& x.kind == y.kind;
 }
 
-abstract production tyVarNamed
-top::TyVar ::= k::Kind i::Integer n::String
-{
-  forwards to tyVar(k, i);
-}
+global freshTyVar::(TyVar ::= Kind) = \ k::Kind -> tyVar(kind=k, varId=genInt());
+global freshTyVarNamed::(TyVar ::= String Kind) = \ n::String k::Kind -> tyVarNamed(n, kind=k, varId=genInt());
 
-function freshTyVar
-TyVar ::= k::Kind
-{
-  return tyVar(k, genInt());
-}
+fun freshType Type ::= = varType(freshTyVar(starKind()));
 
-function freshTyVarNamed
-TyVar ::= k::Kind n::String
-{
-  return tyVarNamed(k, genInt(), n);
-}
+fun newSkolemConstant Type ::= = skolemType(freshTyVar(starKind()));
 
-function freshType
-Type ::=
-{
-  return varType(freshTyVar(starKind()));
-}
-
-function newSkolemConstant
-Type ::=
-{
-  return skolemType(freshTyVar(starKind()));
-}
-
-function freshInhSet
-Type ::=
-{
-  return varType(freshTyVar(inhSetKind()));
-}
+fun freshInhSet Type ::= = varType(freshTyVar(inhSetKind()));

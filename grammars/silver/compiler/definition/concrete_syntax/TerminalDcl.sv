@@ -24,22 +24,22 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs := [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec, r.easyName, tm.genRepeatProb)];
+  top.defs := [termDef(top.grammarName, id.nameLoc, fName, r.terminalRegExprSpec, r.easyName, tm.genRepeatProb)];
 
   top.errors <-
     if length(getTypeDclAll(fName, top.env)) > 1
-    then [err(id.location, "Type '" ++ fName ++ "' is already bound.")]
+    then [errFromOrigin(id, "Type '" ++ fName ++ "' is already bound.")]
     else [];
 
   top.errors <-
     if isLower(substring(0,1,id.name))
-    then [err(id.location, "Types must be capitalized. Invalid terminal name " ++ id.name)]
+    then [errFromOrigin(id, "Types must be capitalized. Invalid terminal name " ++ id.name)]
     else [];
 
   -- This is a crude check, but effective.
   top.errors <-
     if indexOf("\n", unescapeString(r.unparse)) != -1 && indexOf("\r", unescapeString(r.unparse)) == -1
-    then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
+    then [wrnFromOrigin(r, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 
   propagate config, grammarName, compiledGrammars, env, errors;
@@ -47,30 +47,30 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   top.syntaxAst := [
     syntaxTerminal(fName, r.terminalRegExprSpec,
       foldr(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers),
-      location=top.location, sourceGrammar=top.grammarName)];
+      location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)];
 }
 
 concrete production terminalDclKwdModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr ';'
 {
-  forwards to terminalDclDefault(t, id, r, terminalModifiersNone(location=$5.location), location=top.location);
+  forwards to terminalDclDefault(t, id, r, terminalModifiersNone());
 } action {
-  insert semantic token IdTypeDcl_t at id.location;
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }
 
 concrete production terminalDclAllModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::TerminalModifiers ';'
 {
-  forwards to terminalDclDefault(t, id, r, tm, location=top.location);
+  forwards to terminalDclDefault(t, id, r, tm);
 } action {
-  insert semantic token IdTypeDcl_t at id.location;
+  insert semantic token IdTypeDcl_t at id.nameLoc;
 }
 
 {--
  - This exists as a catch-all for representing regular expressions for terminals.
  - There's only one option here, but it's an extension point.
  -}
-nonterminal RegExpr with config, location, grammarName, unparse, terminalRegExprSpec, easyName;
+tracked nonterminal RegExpr with config, grammarName, unparse, terminalRegExprSpec, easyName;
 
 synthesized attribute terminalRegExprSpec :: abs:Regex;
 synthesized attribute easyName :: Maybe<String>;
@@ -82,7 +82,7 @@ top::RegExpr ::= '/' r::Regex '/'
 layout {}
 {
   top.unparse = "/" ++ r.unparse ++ "/";
-  forwards to regExpr(r.ast, location=top.location);
+  forwards to regExpr(r.ast);
 }
 
 abstract production regExpr
@@ -94,7 +94,7 @@ top::RegExpr ::= r::abs:Regex
 }
 
 
-closed nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
+closed tracked nonterminal TerminalKeywordModifier with unparse, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
@@ -121,8 +121,8 @@ top::TerminalKeywordModifier ::=
 }
 
 
-nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, genRepeatProb, errors, env, grammarName, compiledGrammars, flowEnv;
-closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, genRepeatProb, errors, env, grammarName, compiledGrammars, flowEnv;
+tracked nonterminal TerminalModifiers with config, unparse, terminalModifiers, genRepeatProb, errors, env, grammarName, compiledGrammars, flowEnv;
+closed tracked nonterminal TerminalModifier with config, unparse, terminalModifiers, genRepeatProb, errors, env, grammarName, compiledGrammars, flowEnv;
 
 monoid attribute terminalModifiers :: [SyntaxTerminalModifier];
 monoid attribute genRepeatProb :: Maybe<Float> with nothing(), orElse;
@@ -197,7 +197,7 @@ top::TerminalModifier ::= 'repeatProb' '=' f::Float_t
   top.genRepeatProb := just(toFloat(f.lexeme));
   top.errors :=
     if toFloat(f.lexeme) >= 1.0
-    then [err(f.location, "Repeat probability must be < 1.0")]
+    then [errFromOrigin(f, "Repeat probability must be < 1.0")]
     else [];
 }
 

@@ -88,9 +88,9 @@ aspect default production
 top::AGDcl ::=
 {
   top.upDocConfig := [];
-  -- top.docs := [mkUndocumentedItem(s"<default AGDcl production `${head(explode("(", hackUnparse(top)))}`(fwd)@${top.location.unparse}>", top)];
+  -- top.docs := [mkUndocumentedItem(s"<default AGDcl production `${head(explode("(", genericShow(top)))}`(fwd)@${top.location.unparse}>", top)];
   top.docDcls := [];
-  -- top.docUnparse = head(explode("\n", top.unparse)) ++ "\n{{< hint danger >}}\nNo docUnparse defined for `" ++ hackUnparse(top) ++ "`\n{{< /hint >}}\n\n";
+  -- top.docUnparse = head(explode("\n", top.unparse)) ++ "\n{{< hint danger >}}\nNo docUnparse defined for `" ++ genericShow(top) ++ "`\n{{< /hint >}}\n\n";
 }
 
 aspect production appendAGDcl
@@ -124,7 +124,7 @@ top::Grammar ::= c1::Root  c2::Grammar
   top.docDcls := c1.docDcls ++ c2.docDcls;
   top.undocumentedNamed = c1.undocumentedNamed ++ c2.undocumentedNamed;
   top.documentedNamed = c1.documentedNamed ++ c2.documentedNamed;
-  top.allFileDocErrors = (c1.location.filename, c1.docErrors) :: c2.allFileDocErrors;
+  top.allFileDocErrors = (getParsedOriginLocation(c1).fromJust.filename, c1.docErrors) :: c2.allFileDocErrors;
 }
 
 -- consGrammar(FILE1, consGrammar(FILE2, nilGrammar()))

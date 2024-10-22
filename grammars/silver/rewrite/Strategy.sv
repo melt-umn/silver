@@ -6,16 +6,13 @@ grammar silver:rewrite;
 
 imports silver:core hiding all, fail, id, one, repeat, sequence;
 
-function rewriteWith
-runtimeTypeable a => Maybe<a> ::= s::Strategy x::a
-{
-  return map(reifyUnchecked, decorate s with {term = reflect(x);}.result);
-}
+fun rewriteWith runtimeTypeable a => Maybe<a> ::= s::Strategy x::a =
+  map(reifyUnchecked, decorate s with {term = reflect(x);}.result);
 
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;
 
-nonterminal Strategy with pp, term, result;
+tracked nonterminal Strategy with pp, term, result;
 
 -- Basic combinators
 abstract production id
@@ -49,6 +46,13 @@ top::Strategy ::= s1::Strategy s2::Strategy
   s2.term = top.term;
   top.result = orElse(s1.result, s2.result);
 }
+
+global choice_::(Strategy ::= Strategy Strategy) = \ s1 s2 ->
+  case s1, s2 of
+  | fail(), _ -> s2
+  | _, fail() -> s1
+  | _, _ -> choice(s1, s2)
+  end;
 
 -- Traversals
 abstract production all
@@ -164,107 +168,125 @@ top::Strategy ::=
 abstract production rec
 top::Strategy ::= ctr::(Strategy ::= Strategy)
 {
+  top.pp = pp"rec(${text(nativeToString(ctr))}})";
   forwards to ctr(top);
 }
 
 abstract production try
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"try(${s})";
   forwards to s <+ id();
 }
 
 abstract production repeat
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"repeat(${s})";
   forwards to try(s <* repeat(s));
 }
 
 abstract production reduce
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"reduce(${s})";
   forwards to repeat(rec(\ x::Strategy -> some(x) <+ s));
 }
 
 abstract production bottomUp
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"bottomUp(${s})";
   forwards to all(bottomUp(s)) <* s;
 }
 
 abstract production topDown
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"topDown(${s})";
   forwards to s <* all(topDown(s));
 }
 
 abstract production downUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
+  top.pp = pp"downUp(${s1}, ${s2})";
   forwards to s1 <* all(downUp(s1, s2)) <* s2;
 }
 
 abstract production allBottomUp
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"allBottomUp(${s})";
   forwards to all(allBottomUp(s)) <+ s;
 }
 
 abstract production allTopDown
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"allTopDown(${s})";
   forwards to s <+ all(allTopDown(s));
 }
 
 abstract production allDownUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
+  top.pp = pp"allDownUp(${s1}, ${s2})";
   forwards to s1 <+ all(allDownUp(s1, s2)) <+ s2;
 }
 
 abstract production someBottomUp
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"someBottomUp(${s})";
   forwards to some(someBottomUp(s)) <+ s;
 }
 
 abstract production someTopDown
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"someTopDown(${s})";
   forwards to s <+ some(someTopDown(s));
 }
 
 abstract production someDownUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
+  top.pp = pp"someDownUp(${s1}, ${s2})";
   forwards to s1 <+ some(someDownUp(s1, s2)) <+ s2;
 }
 
 abstract production onceBottomUp
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"onceBottomUp(${s})";
   forwards to one(onceBottomUp(s)) <+ s;
 }
 
 abstract production onceTopDown
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"onceTopDown(${s})";
   forwards to s <+ one(onceTopDown(s));
 }
 
 abstract production onceDownUp
 top::Strategy ::= s1::Strategy s2::Strategy
 {
+  top.pp = pp"onceDownUp(${s1}, ${s2})";
   forwards to s1 <+ one(onceDownUp(s1, s2)) <+ s2;
 }
 
 abstract production innermost
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"innermost(${s})";
   forwards to bottomUp(try(s <* innermost(s)));
 }
 
 abstract production outermost
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"outermost(${s})";
   forwards to repeat(onceTopDown(s));
 }

@@ -2,7 +2,8 @@ grammar silver:compiler:definition:env;
 
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax only mentionedAliases;
-imports silver:regex;
+
+imports silver:regex as r;
 
 -- Some of these nonterminals are closed, but the dispatch attributes are
 -- defined in silver:compiler:definition:core, and we don't want to have defaults for those:
@@ -19,6 +20,7 @@ synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
 synthesized attribute isClosed :: Boolean;
+synthesized attribute dispatchSignature :: NamedSignature;
 
 -- instances
 inherited attribute givenInstanceType :: Type;
@@ -28,6 +30,9 @@ synthesized attribute definedMembers :: [String];
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
+synthesized attribute implementedSignature :: Maybe<NamedSignature>;
+synthesized attribute isShared :: Boolean;
+synthesized attribute isNondec :: Boolean;
 synthesized attribute hasForward :: Boolean;
 
 -- occurs
@@ -49,7 +54,7 @@ inherited attribute givenSubstitution :: Substitution;
 
 closed nonterminal ValueDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+  typeScheme, namedSignature, implementedSignature, isShared, isNondec, hasForward, substitutedDclInfo, givenSubstitution;
 propagate isEqual on ValueDclInfo excluding globalValueDcl, classMemberDcl;
 
 aspect default production
@@ -57,6 +62,9 @@ top::ValueDclInfo ::=
 {
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
+  top.implementedSignature = nothing();
+  top.isShared = false;
+  top.isNondec = false;
   top.hasForward = false;
   
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
@@ -64,11 +72,12 @@ top::ValueDclInfo ::=
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type isShared::Boolean
 {
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
+  top.isShared = isShared;
 }
 abstract production lhsDcl
 top::ValueDclInfo ::= fn::String ty::Type
@@ -80,14 +89,33 @@ top::ValueDclInfo ::= fn::String ty::Type
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::ValueDclInfo ::= fn::String ty::Type isForward::Boolean
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
   
   top.typeScheme = monoType(ty);
   
-  top.hasForward = isForward;
-  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), isForward, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+}
+abstract production nondecLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = monoType(ty);
+  
+  top.isNondec = true;
+  top.substitutedDclInfo = nondecLocalDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+}
+abstract production forwardLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = monoType(ty);
+  
+  top.hasForward = true;
+  top.substitutedDclInfo = forwardLocalDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
 top::ValueDclInfo ::= ty::Type
@@ -101,12 +129,25 @@ top::ValueDclInfo ::= ty::Type
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::ValueDclInfo ::= ns::NamedSignature hasForward::Boolean
+top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForward::Boolean
 {
   top.fullName = ns.fullName;
   
   top.namedSignature = ns;
-  top.typeScheme = ns.typeScheme;
+  top.typeScheme =
+    case dispatch of
+    | nothing() -> ns.typeScheme
+    | just(dSig) ->
+      if length(ns.inputElements) == length(dSig.inputElements)
+      then monoType(dispatchType(dSig))
+      else (if null(ns.contexts) then polyType else constraintType(_, ns.contexts, _))(
+        ns.freeVariables,
+        appTypes(
+          functionType(length(ns.inputElements) - length(dSig.inputElements), []),
+          drop(length(dSig.inputElements), ns.inputTypes) ++
+        [dispatchType(dSig)]))
+    end;
+  top.implementedSignature = dispatch;
   top.hasForward = hasForward;
 }
 abstract production funDcl
@@ -152,7 +193,8 @@ top::ValueDclInfo ::= fn::String
 
 closed nonterminal TypeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts, isClosed;
+  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases,
+  isClass, classMembers, givenInstanceType, superContexts, isClosed, dispatchSignature;
 propagate isEqual, compareTo on TypeDclInfo excluding typeAliasDcl, clsDcl;
 
 aspect default production
@@ -166,6 +208,7 @@ top::TypeDclInfo ::=
   top.classMembers = [];
   top.superContexts = [];
   top.isClosed = false;
+  top.dispatchSignature = bogusNamedSignature();
 }
 
 abstract production ntDcl
@@ -179,7 +222,7 @@ top::TypeDclInfo ::= fn::String ks::[Kind] data::Boolean closed::Boolean tracked
   top.isClosed = closed;
 }
 abstract production termDcl
-top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
+top::TypeDclInfo ::= fn::String regex::r:Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
 {
   top.fullName = fn;
 
@@ -194,7 +237,7 @@ top::TypeDclInfo ::= fn::String isAspect::Boolean tv::TyVar
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:compiler:definition:type:syntax:AspectDcl.sv
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
-  top.kindrep = tv.kindrep;
+  top.kindrep = tv.kind;
   top.isType = true;
 }
 abstract production typeAliasDcl
@@ -212,7 +255,7 @@ top::TypeDclInfo ::= fn::String mentionedAliases::[String] bound::[TyVar] ty::Ty
   top.isTypeAlias = true;
   top.mentionedAliases := mentionedAliases;
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
-  top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
+  top.kindrep = foldr(arrowKind, ty.kindrep, map((.kind), bound)); 
 }
 abstract production clsDcl
 top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
@@ -221,7 +264,9 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   top.isEqual =
     case top.compareTo of
     | clsDcl(fn2, s2, tv2, k2, m2) ->
-      fn == fn2 && k == k2 && supers == map(performContextRenaming(_, subst(tv2, skolemType(tv))), s2) && members == m2
+      fn == fn2 && new(k) == new(k2) &&
+      supers == map(performContextRenaming(_, subst(tv2, skolemType(tv))), s2) &&
+      members == m2
     | _ -> false
     end;
   
@@ -233,6 +278,15 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);
   top.superContexts = map(performContextRenaming(_, tvSubst), supers);
   top.classMembers = members;
+}
+abstract production dispatchDcl
+top::TypeDclInfo ::= ns::NamedSignature
+{
+  top.fullName = ns.fullName;
+
+  top.typeScheme = monoType(dispatchType(ns));
+  top.dispatchSignature = ns;
+  top.isType = true;
 }
 
 closed nonterminal AttributeDclInfo with

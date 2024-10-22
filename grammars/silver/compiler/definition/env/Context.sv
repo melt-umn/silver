@@ -9,7 +9,7 @@ propagate env, config, compiledGrammars, grammarFlowTypes on Context, Contexts;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
+tracked nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
 propagate boundVariables on Contexts;
 
 abstract production consContext
@@ -57,9 +57,9 @@ top::Context ::= cls::String t::Type
     [tcInstDef(instConstraintDcl(cls, t, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
     [tcInstDef(sigConstraintDcl(cls, t, ns, sourceGrammar=g, sourceLocation=l))];
-  top.contextSuperOccursDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
-  top.contextSigOccursDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ _ _ _ -> [];
+  top.contextMemberOccursDefs = \ _ _ _ -> [];
+  top.contextSigOccursDefs = \ _ _ _ -> [];
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point
@@ -96,9 +96,9 @@ top::Context ::= cls::String t::Type
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSuperDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberDefs = \ [TyVar] String Location -> [];
-  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperDefs = \ _ _ _ -> [];
+  top.contextMemberDefs = \ _ _ _ -> [];
+  top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
     [occursSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
@@ -124,9 +124,9 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 aspect production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
-  top.contextSuperDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberDefs = \ [TyVar] String Location -> [];
-  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperDefs = \ _ _ _ -> [];
+  top.contextMemberDefs = \ _ _ _ -> [];
+  top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
     [occursSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
@@ -152,9 +152,9 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 aspect production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSuperDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberDefs = \ [TyVar] String Location -> [];
-  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperDefs = \ _ _ _ -> [];
+  top.contextMemberDefs = \ _ _ _ -> [];
+  top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
     [annoSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
@@ -186,9 +186,9 @@ top::Context ::= t::Type
     [tcInstDef(typeableInstConstraintDcl(t, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
     [tcInstDef(typeableSigConstraintDcl(t, ns, sourceGrammar=g, sourceLocation=l))];
-  top.contextSuperOccursDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
-  top.contextSigOccursDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ _ _ _ -> [];
+  top.contextMemberOccursDefs = \ _ _ _ -> [];
+  top.contextSigOccursDefs = \ _ _ _ -> [];
   top.contextClassName = nothing();
 
   top.resolved =
@@ -223,9 +223,9 @@ top::Context ::= i1::Type i2::Type
     [tcInstDef(inhSubsetInstConstraintDcl(i1, i2, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
     [tcInstDef(inhSubsetSigConstraintDcl(i1, i2, ns, sourceGrammar=g, sourceLocation=l))];
-  top.contextSuperOccursDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
-  top.contextSigOccursDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ _ _ _ -> [];
+  top.contextMemberOccursDefs = \ _ _ _ -> [];
+  top.contextSigOccursDefs = \ _ _ _ -> [];
   top.contextClassName = nothing();
 
   top.resolved =
@@ -239,9 +239,9 @@ top::Context ::= i1::Type i2::Type
 aspect production typeErrorContext
 top::Context ::= msg::String
 {
-  top.contextSuperDefs = \ InstDclInfo String Location -> [];
-  top.contextMemberDefs = \ [TyVar] String Location -> [];
-  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperDefs = \ _ _ _ -> [];
+  top.contextMemberDefs = \ _ _ _ -> [];
+  top.contextSigDefs = \ _ _ _ -> [];
   top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location -> [];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location -> [];
   top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location -> [];
@@ -261,8 +261,6 @@ Boolean ::= a::Type b::Type
     | appType(c1, a1), appType(c2, a2) ->
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
     | decoratedType(t1, i1), decoratedType(t2, i2) ->
-      (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
-    | uniqueDecoratedType(t1, i1), uniqueDecoratedType(t2, i2) ->
       (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
     | _, _ -> false
     end;

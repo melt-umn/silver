@@ -33,18 +33,18 @@ synthesized attribute otherBlocks::[Pair<String String>];
 @{- Config args. -}
 synthesized attribute configArgs::[Pair<String ConfigValue>];
 
-nonterminal DclComment layout {} with docEnv, body, errors, location, downDocConfig, upDocConfig;
+tracked nonterminal DclComment layout {} with docEnv, body, errors, downDocConfig, upDocConfig;
 
-nonterminal DclCommentBlocks layout {} with paramBlocks, otherBlocks, configArgs, location, docEnv, errors;
-nonterminal DclCommentStrictBlocks layout {} with paramBlocks, otherBlocks, configArgs, location, docEnv, errors;
-nonterminal DclCommentBlock layout {} with paramBlocks, otherBlocks, configArgs, body, location, docEnv, errors;
+tracked nonterminal DclCommentBlocks layout {} with paramBlocks, otherBlocks, configArgs, docEnv, errors;
+tracked nonterminal DclCommentStrictBlocks layout {} with paramBlocks, otherBlocks, configArgs, docEnv, errors;
+tracked nonterminal DclCommentBlock layout {} with paramBlocks, otherBlocks, configArgs, body, docEnv, errors;
 
-nonterminal ConfigValue layout {} with location;
+tracked nonterminal ConfigValue layout {};
 
-nonterminal DclCommentLines layout {} with body, location, docEnv, errors;
+tracked nonterminal DclCommentLines layout {} with body, docEnv, errors;
 
-nonterminal DclCommentParts layout {} with body, location, docEnv, errors;
-nonterminal DclCommentPart layout {} with body, location, docEnv, errors;
+tracked nonterminal DclCommentParts layout {} with body, docEnv, errors;
+tracked nonterminal DclCommentPart layout {} with body, docEnv, errors;
 
 propagate docEnv on
     DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
@@ -74,7 +74,7 @@ top::DclComment ::= EmptyDclComment_t
     top.doEmit = false;
 }
 
-global theEmptyDclComment :: DclComment = emptyDclComment(terminal(EmptyDclComment_t, ""), location=txtLoc("<theEmpyDclComment>"));
+global theEmptyDclComment :: DclComment = emptyDclComment(terminal(EmptyDclComment_t, ""));
 
 concrete production normalDclComment
 top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
@@ -123,15 +123,11 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
     top.doEmit =
         ((length(blocks.otherBlocks) + length(paramBlocks)) != 0) &&
         (!doesExcludeFile(top.downDocConfig)) &&
-        (!fromMaybe(false, fromMaybe(kwdValue(terminal(ConfigValueKeyword_t, "off"),
-            location=top.location), lookup("hide", blocks.configArgs)).asBool));
+        (!fromMaybe(false, fromMaybe(kwdValue(terminal(ConfigValueKeyword_t, "off")), lookup("hide", blocks.configArgs)).asBool));
 }
 
-function getBlocksNamed
-[String] ::= l::[Pair<String String>] f::String
-{
-    return flatMap((\x::Pair<String String> -> if x.fst==f then [x.snd] else []), l);
-}
+fun getBlocksNamed [String] ::= l::[Pair<String String>] f::String =
+  flatMap((\x::Pair<String String> -> if x.fst==f then [x.snd] else []), l);
 
 function processConfigOptions
 Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String ConfigValue>] conf::[DocConfigSetting]
@@ -179,15 +175,12 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
            end;
 }
 
-function checkParams
-[String] ::= p::[String] b::[String]
-{
-    return case p, b of
-           | pn::p_, bn::b_ when pn==bn -> checkParams(p_, b_)
-           | pn::p_, bn::b_ -> s"Param '${pn}' in wrong order in doc-comment" :: checkParams(p_, b_)
-           | _, _ -> []
-           end;
-}
+fun checkParams [String] ::= p::[String] b::[String] =
+  case p, b of
+  | pn::p_, bn::b_ when pn==bn -> checkParams(p_, b_)
+  | pn::p_, bn::b_ -> s"Param '${pn}' in wrong order in doc-comment" :: checkParams(p_, b_)
+  | _, _ -> []
+  end;
 
 abstract production errorDclComment
 top::DclComment ::= content::String error::ParseError
@@ -206,7 +199,7 @@ ${content}
                 s"Doc Comment Parse Error at ${printLoc.filename} line ${toString(printLoc.line)} column ${toString(printLoc.column)}"
                 ++ s"\n\tExpected a token of one of the following types: [${implode(", ", expected)}]"
                 ++ s"\n\tInput currently matches: [${implode(", ", matched)}]") end
-        | unknownParseError(s, f) -> wrn(top.location, s"Doc comment unknown parse error: unknownParseError(${s}, ${f})")
+        | unknownParseError(s, f) -> wrnFromOrigin(top, s"Doc comment unknown parse error: unknownParseError(${s}, ${f})")
         end;
 
     top.errors := [errorMessage];
@@ -315,13 +308,13 @@ top::DclCommentBlock ::= Hide_t
 {
     forwards to configBlockImplicitTrue(
         terminal(Config_t, "@config"), terminal(Whitespace_t, ""),
-        terminal(Id_t, "hide"), terminal(Whitespace_t, ""), location=top.location);
+        terminal(Id_t, "hide"), terminal(Whitespace_t, ""));
 }
 
 concrete production configBlock
 top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t Whitespace_t value::ConfigValue
 {
-    top.body = "@config " ++ param.lexeme ++ " = " ++ hackUnparse(value); --not emitted
+    top.body = "@config " ++ param.lexeme ++ " = " ++ genericShow(value); --not emitted
     top.otherBlocks = [];
     top.paramBlocks = [];
     top.configArgs = [(param.lexeme, value)];
@@ -331,7 +324,7 @@ concrete production configBlockImplicitTrue
 top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t
 {
     forwards to configBlock($1, $2, $3, $4, terminal(Equals_t, ""), terminal(Whitespace_t, ""),
-        kwdValue(terminal(ConfigValueKeyword_t, "true"), location=top.location), location=top.location);
+        kwdValue(terminal(ConfigValueKeyword_t, "true")));
 }
 
 synthesized attribute asBool::Maybe<Boolean> occurs on ConfigValue;
@@ -407,7 +400,7 @@ top::DclCommentPart ::= '@link' '[' id::Id_t ']'
                end;
     top.errors <- case res of
                   | [_] -> []
-                  | _ -> [wrn(childParserLoc(top.offsetLocation, top.location, 0, 0, 0, 0),
+                  | _ -> [wrn(childParserLoc(top.offsetLocation, getParsedOriginLocation(top).fromJust, 0, 0, 0, 0),
                             "Broken doc link to `"++id.lexeme++"`")]
                   end;
 }

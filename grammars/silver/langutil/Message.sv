@@ -62,11 +62,7 @@ top::Message ::= l::Location m::String
   top.severity = 2;
 }
 
-function errFromOrigin
-Message ::= a::a m::String
-{
-  return err(getParsedOriginLocationOrFallback(a), m);
-}
+fun errFromOrigin Message ::= a::a m::String = err(getParsedOriginLocationOrFallback(a), m);
 
 @{--
  - A warning that is not required to halt compilation before translation
@@ -80,11 +76,7 @@ top::Message ::= l::Location m::String
   top.severity = 1;
 }
 
-function wrnFromOrigin
-Message ::= a::a m::String
-{
-  return wrn(getParsedOriginLocationOrFallback(a), m);
-}
+fun wrnFromOrigin Message ::= a::a m::String = wrn(getParsedOriginLocationOrFallback(a), m);
 
 @{--
  - An informational message that does not halt compilation, but is usually
@@ -98,11 +90,7 @@ top::Message ::= l::Location m::String
   top.severity = 0;
 }
 
-function infoFromOrigin
-Message ::= a::a m::String
-{
-  return info(getParsedOriginLocationOrFallback(a), m);
-}
+fun infoFromOrigin Message ::= a::a m::String = info(getParsedOriginLocationOrFallback(a), m);
 
 @{--
  - A group of messages.
@@ -130,19 +118,42 @@ Boolean ::= l::[Message] wError::Boolean
 }
 
 @{--
+ - Show a message as a string, specially reporting undesired errors from extension-generated code.
+ -}
+function showMessage
+String ::= m::Message
+{
+  local chain::[OriginInfo] = getOriginInfoChain(m);
+  local fromExt::Maybe<String> =
+    -- The first item in the chain is the message itself;
+    -- we don't want to complain about messages raised directly in extension productions as "extension generated".
+    if null(chain) then nothing() else originatesInExt(tail(chain));
+  local originsSource::Maybe<Location> = getParsedOriginLocationFromChain(chain);
+  local fromExtMessage::String =
+    "INTERNAL ERROR: The following error message originated in extension-generated code." ++
+    "\nThis is probably indicative of a bug in the extension as opposed to your code." ++
+    "\nThe offending extension was: '" ++ fromExt.fromJust ++ "' - please report this to it's developers." ++
+    (if originsSource.isJust
+     then "\nOrigins reports the following source location: " ++ originsSource.fromJust.unparse ++ "."
+     else "\nOrigins chain terminates without location.") ++
+    "\nThe error was: " ++ m.noLocOutput ++ "." ++ -- We do not expect the location to be useful/correct
+    "\nOrigins chain follows:" ++
+    "\n" ++ showOriginInfoChain(m) ++
+    "\n\n";
+
+
+  return if fromExt.isJust
+         then fromExtMessage
+         else m.output;
+}
+
+@{--
  - Returns a list of strings, ready to be printed to the command line.
  -}
-function messagesToString
-String ::= msgs::[Message]
-{
-  return implode("\n", map((.output), sortBy(messageLte, msgs)));
-}
+fun messagesToString String ::= msgs::[Message] =
+  implode("\n", map(showMessage, sortBy(messageLte, msgs)));
 
 -- for use with sortBy
 -- not an instance of Eq/Ord for now, does it really make sense to compare messages for equality?
-function messageLte
-Boolean ::= m1::Message m2::Message
-{
-  return m1.where <= m2.where;
-}
+fun messageLte Boolean ::= m1::Message m2::Message = m1.where <= m2.where;
 

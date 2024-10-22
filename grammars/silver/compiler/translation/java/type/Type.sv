@@ -1,6 +1,7 @@
 grammar silver:compiler:translation:java:type;
 
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core;
 
 -- The Java type corresponding to the Silver Type
@@ -22,7 +23,7 @@ synthesized attribute transTypeName :: String;
 function transFreshTypeRep
 String ::= t::Type
 {
-  t.skolemTypeReps = map(\ tv::TyVar -> (tv, s"freshTypeVar_${toString(tv.extractTyVarRep)}"), t.freeSkolemVars);
+  t.skolemTypeReps = map(\ tv::TyVar -> (tv, s"freshTypeVar_${toString(tv.varId)}"), t.freeSkolemVars);
   return t.transTypeRep;
 }
 
@@ -62,7 +63,7 @@ top::Type ::= tv::TyVar
 {
   top.transCovariantType = "? extends Object";
   top.transClassType = "Object";
-  top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
+  top.transTypeRep = s"freshTypeVar_${toString(tv.varId)}";
   top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
@@ -178,16 +179,6 @@ top::Type ::= te::Type i::Type
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
-  top.transType = "common.DecoratedNode";
-  top.transClassType = "common.DecoratedNode";
-  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
-  top.transTypeName = "Decorated_" ++ te.transTypeName;
-}
-
 aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
@@ -195,4 +186,13 @@ top::Type ::= params::Integer namedParams::[String]
   top.transTypeRep =
     s"new common.FunctionTypeRep(${toString(params)}, new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", namedParams))}})";
   top.transTypeName = "Fn_" ++ toString(params) ++ "_" ++ implode("_", namedParams);
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.transType = s"common.NodeFactory<${ns.outputElement.typerep.transType}>";
+  top.transClassType = "common.NodeFactory";
+  top.transTypeRep = s"new common.BaseTypeRep(\"${ns.fullName}\")";
+  top.transTypeName = substitute(":", "_", ns.fullName);
 }

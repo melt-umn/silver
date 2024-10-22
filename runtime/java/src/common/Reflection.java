@@ -69,7 +69,7 @@ public final class Reflection {
 	 * @return The reflected AST.
 	 */
 	public static NAST reflect(final ConsCell rules, Object o) {
-		silver.core.NOriginInfo origin = (rules!=null)?new silver.core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true):null;
+		silver.core.NOriginInfo origin = (rules!=null)?new silver.core.PoriginOriginInfo(o, true, rules, OriginsUtil.SET_FROM_REFLECTION_OIT):null;
 		if(o instanceof Node) {
 			Node n = (Node)o;
 			NASTs children = new PnilAST(origin);
@@ -459,7 +459,7 @@ public final class Reflection {
 
 			return new Pright(arr.toByteArray());
 		} catch (NativeSerializationException e) {
-			return new Pleft(new StringCatter("Native serialize failed: " + e.toString()));
+			return new Pleft(new StringCatter("Native serialize failed: " + e.getMessage()));
 		} catch (Exception e) {
 			String m = "Native serialize failed: Unknown error: " + e.toString();
 			System.err.println(m);
@@ -596,7 +596,7 @@ public final class Reflection {
 
 			return new Pright(v);
 		} catch (NativeSerializationException e) {
-			return new Pleft(new StringCatter("Native deserialize failed: " + e.toString()));
+			return new Pleft(new StringCatter("Native deserialize failed: " + e.getMessage()));
 		} catch (IOException e) {
 			String m = "Native deserialize failed: Unknown Error: " + e.toString();
 			System.err.println(m);
@@ -670,6 +670,90 @@ public final class Reflection {
 			return false;
 		} else {
 			throw new NativeSerializationException("Unknown type id (" + Integer.toString(typeId) + ")");
+		}
+	}
+
+	/**
+	 * Try to access an inherited attribute from a DecoratedNode, by name.
+	 * @param node  A DecoratedNode on which to compute the attribute.
+	 * @param attr  The name of the inherited attribute to access. 
+	 * @return An Either<String a> object containing either an error message or the reflected result of evaluating the attribute.
+	 */
+	public static NEither getInherited(final TypeRep expected, final DecoratedNode d, final String attr) {
+		RTTIManager.Nonterminalton<?> nt = d.getNode().getProdleton().getNonterminalton();
+		if (!nt.hasInh(attr)) {
+			return new Pleft(new StringCatter("Inherited attribute " + attr + " does not occur on " + nt.getName()));
+		}
+		int i = nt.getInhOccursIndex(attr);
+		Object res;
+		try {
+			res = d.inherited(i);
+			traverseTerm(res);
+		} catch (Throwable t) {
+			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
+		}
+		if (!TypeRep.unify(expected, getType(res))) {
+			return new Pleft(new StringCatter("getInherited expected " + expected.toString() + ", but " + attr + " on " + nt.getName() + " gave type " + getType(res).toString()));
+		}
+		return new Pright(res);
+	}
+
+	/**
+	 * Try to access a synthesized attribute from a node, by name.
+	 * @param node  A Node or DecoratedNode on which to compute the attribute.
+	 * @param attr  The name of the synthesized attribute to access. 
+	 * @return An Either<String a> object containing either an error message or the reflected result of evaluating the attribute.
+	 */
+	public static NEither getSynthesized(final TypeRep expected, final Object o, final String attr) {
+		if (!(o instanceof Decorable)) {
+			return new Pleft(new StringCatter(getType(o).toString() + " does not have attributes"));
+		}
+		DecoratedNode d = ((Decorable)o).decorate();
+		RTTIManager.Nonterminalton<?> nt = d.getNode().getProdleton().getNonterminalton();
+		if (!nt.hasSyn(attr)) {
+			return new Pleft(new StringCatter("Synthesized attribute " + attr + " does not occur on " + nt.getName()));
+		}
+		int i = nt.getSynOccursIndex(attr);
+		Object res;
+		try {
+			res = d.synthesized(i);
+			traverseTerm(res);
+		} catch (Throwable t) {
+			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
+		}
+		if (!TypeRep.unify(expected, getType(res))) {
+			return new Pleft(new StringCatter("getSynthesized expected " + expected.toString() + ", but " + attr + " on " + nt.getName() + " gave type " + getType(res).toString()));
+		}
+		return new Pright(res);
+	}
+
+	/**
+	 * Recursively force the evaluation of a term, catching any errors.
+	 * @param o  A Thunk or Node to force
+	 * @return An Either<String a> containing either an error message or the forced input.
+	 */
+	public static NEither tryForceTerm(Object o) {
+		try {
+			traverseTerm(o);
+		} catch (Throwable t) {
+			return new Pleft(new StringCatter(SilverException.getRootCause(t).getMessage()));
+		}
+		return new Pright(o);
+	}
+	private static void traverseTerm(Object o) {
+		if (o instanceof Thunk) {
+			o = Util.demand(o);
+		}
+		if (o instanceof Node) {
+			Node n = (Node)o;
+			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
+				traverseTerm(n.getChild(i));
+			}
+			String[] annotationNames = n.getAnnoNames();
+			for (int i = annotationNames.length - 1; i >= 0; i--) {
+				String name = annotationNames[i];
+				traverseTerm(n.getAnno(name));
+			}
 		}
 	}
 }

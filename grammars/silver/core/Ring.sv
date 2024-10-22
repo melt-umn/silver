@@ -17,16 +17,50 @@ class Semiring a => Ring a {
 }
 
 instance Ring Integer {
-  sub = \a::Integer b::Integer -> a - b;
+  sub = subInteger;
+  negate = negateInteger;
+}
+
+function subInteger
+Integer ::= a::Integer b::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% - (int)%b%)";
+}
+
+function negateInteger
+Integer ::= a::Integer
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(-(int)%a%)";
+}
+
+instance Ring Float {
+  sub = subFloat;
+  negate = negateFloat;
+}
+
+function subFloat
+Float ::= a::Float b::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(%a% - (float)%b%)";
+}
+
+function negateFloat
+Float ::= a::Float
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "(-(float)%a%)";
 }
 
 @{- Converts an integer into an arbitrary ring. -}
-function fromInteger
-Ring a => a ::= n::Integer
-{
-  return
-    if n < 0 then
-      negate(fromNonnegativeInteger(-n))
-    else
-      fromNonnegativeInteger(n);
-}
+fun fromInteger Ring a => a ::= n::Integer =
+  if n < 0 then
+    negate(fromNonnegativeInteger(-n))
+  else
+    fromNonnegativeInteger(n);

@@ -9,11 +9,11 @@ top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | varType(j) when j.kindrep == tv.kindrep ->
+    | varType(j) when j.kind == tv.kind ->
         if tv == j
         then emptySubst()
         else subst(tv, top.unifyWith)
-    | t when t.kindrep == tv.kindrep ->
+    | t when t.kindrep == tv.kind ->
         if contains(tv, top.unifyWith.freeVariables)
         then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
         else subst(tv, top.unifyWith)
@@ -26,7 +26,7 @@ top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | skolemType(otv) when tv.kindrep == otv.kindrep ->
+    | skolemType(otv) when tv.kind == otv.kind ->
         if tv == otv
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
@@ -40,10 +40,10 @@ top::Type ::= c::Type a::Type
   top.unify = 
     case top.unifyWith of
     | appType(c1, a1) ->
-      let unifyC :: Substitution = unify(c, c1)
-      in composeSubst(unifyC, unify(performSubstitution(a, unifyC), performSubstitution(a1, unifyC)))
+      let unifyC :: Substitution = unify(new(c), new(c1))
+      in composeSubst(unifyC, unify(performSubstitution(new(a), unifyC), performSubstitution(new(a1), unifyC)))
       end
-    | _ -> errorSubst("Tried to unify application of " ++ prettyType(c) ++ " with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify application of " ++ prettyType(new(c)) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -112,7 +112,7 @@ top::Type ::= fn::String ks::[Kind] data::Boolean tracked::Boolean
         if fn == ofn --&& data == odata && tracked == otracked  -- Mismatched data/tractness can happen when comparing interface files
         then if ks == oks
           then emptySubst()
-          else error("kind mismatch during unification for " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
+          else error("kind mismatch during unification for " ++ prettyType(new(top)) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | ntOrDecType(_, _, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
@@ -138,7 +138,7 @@ top::Type ::= inhs::[String]
   top.unify =
     case top.unifyWith of
     | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
-    | _ -> errorSubst("Tried to unify inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify inh set type " ++ prettyType(new(top)) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -150,17 +150,6 @@ top::Type ::= te::Type i::Type
     | decoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
     | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
-    end;
-}
-
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  top.unify = 
-    case top.unifyWith of
-    | uniqueDecoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
-    | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
-    | _ -> errorSubst("Tried to unify unique decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -177,10 +166,6 @@ top::Type ::= nt::Type inhs::Type hidden::Type
         unifyAllShortCircuit([ont1, oi,   ohidden1],
                              [nt,   inhs, hidden])
     | decoratedType(ote, oi) ->
-        -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
-        unifyAllShortCircuit([ote, oi, top.unifyWith],
-                             [nt,  inhs, hidden])
-    | uniqueDecoratedType(ote, oi) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, oi, top.unifyWith],
                              [nt,  inhs, hidden])
@@ -202,7 +187,17 @@ top::Type ::= params::Integer namedParams::[String]
   top.unify = 
     case top.unifyWith of
     | functionType(op, onp) when params == op && namedParams == onp -> emptySubst()
-    | _ -> errorSubst("Tried to unify conflicting function types " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to unify conflicting function types " ++ prettyType(new(top)) ++ " and " ++ prettyType(top.unifyWith))
+    end;
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.unify = 
+    case top.unifyWith of
+    | dispatchType(ons) when ns.fullName == ons.fullName -> emptySubst()
+    | _ -> errorSubst("Tried to unify conflicting dispatch types " ++ ns.fullName ++ " and " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -212,21 +207,18 @@ function unify
 Substitution ::= te1::Type te2::Type
 {
   local leftward :: Substitution = te1.unify;
-  te1.unifyWith = te2;
+  te1.unifyWith = new(te2);
   
   local rightward :: Substitution = te2.unify;
-  te2.unifyWith = te1;
+  te2.unifyWith = new(te1);
   
   return if null(leftward.substErrors)
          then leftward   -- arbitrary choice if both work, but if they are confluent, it's okay
          else rightward; -- arbitrary choice of errors. Non-confluent!!
 }
 
-function unifyCheck
-Substitution ::= te1::Type te2::Type s::Substitution
-{
-  return composeSubst(ignoreFailure(s), unify(performSubstitution(te1, s), performSubstitution(te2, s)));
-}
+fun unifyCheck Substitution ::= te1::Type te2::Type s::Substitution =
+  composeSubst(ignoreFailure(s), unify(performSubstitution(te1, s), performSubstitution(te2, s)));
 
 -- This function is meant to produce a simple rewriting FROM `fromte` to `tote`
 -- suitable for use with `performRenaming` (vs `performSubstitution`).
@@ -236,14 +228,7 @@ Substitution ::= te1::Type te2::Type s::Substitution
 -- should yield: v1 -> int, v2 -> v1.
 -- Rewriting should apply this without `v2` becoming `int`. (As normal subst would do.)
 -- TODO this code is obviously implemented in a fragile way.
-function unifyDirectional
-Substitution ::= fromte::Type tote::Type
-{
-  -- Currently, this is built on the assumption that the unification will not fail.
-  -- Therefore, for now we will FRAGILEY just call unify 
-  -- This is a possible source of bugs/unexpected behavior?
-  return unify(fromte, tote);
-}
+fun unifyDirectional Substitution ::= fromte::Type tote::Type = unify(fromte, tote);
 
 function unifyAll
 Substitution ::= te1::[Type] te2::[Type]

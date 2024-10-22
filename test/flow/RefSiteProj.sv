@@ -56,7 +56,15 @@ top::RSExpr ::= e::RSExpr
   forwards to copy1(@e);
 }
 
-warnCode "missing remote equation" {
+production fork
+top::RSExpr ::= e1::RSExpr e2::RSExpr
+{
+  propagate env1, env2;
+  top.errors1 = e1.errors1 || e2.errors1;
+  top.errors2 = e1.errors2 || e2.errors2;
+}
+
+warnCode "child e of production flow:copy1" {
 production proj2Missing
 top::RSExpr ::= e::RSExpr
 {
@@ -72,7 +80,7 @@ top::RSExpr ::= e::RSExpr
   forwards to copy12(@e);
 }
 
-warnCode "missing remote equation" {
+warnCode "Equation requires inherited attribute flow:env2 be supplied to child e of production flow:copy1" {
 production projNestedMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -94,7 +102,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = false;
 }
 
-warnCode "missing remote equation" {
+warnCode "child e of production flow:copy1" {
 production projNestedLocalsMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -131,18 +139,9 @@ production incrementalDec
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  local e1::Decorated! RSExpr with {env1} = e;
+  local e1::RSExpr = @e;
   e1.env2 = top.env2;
 
-  top.errors1 = e1.errors1;
-  top.errors2 = e.errors2;
-}
-
-production implProd
-top::RSExpr ::= e::Decorated! RSExpr with {env1}
-{
-  undecorates to e;
-  e.env2 = top.env2;
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
 }
@@ -160,7 +159,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production remoteExceedsOverride
 top::RSExpr ::= e::RSExpr
 {
@@ -188,7 +187,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production uselessOverrideWithinFT
 top::RSExpr ::= e::RSExpr
 {
@@ -201,7 +200,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production fwrdDecSiteExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -210,7 +209,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production projExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -220,7 +219,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production condDecExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -238,58 +237,49 @@ top::RSExpr ::= e::RSExpr
     if top.env1 == [] then copy12From2(@e) else base();
 }
 
-production overrideInRefSet
-top::RSExpr ::= e::RSExpr
-{
-  e.env1 = top.env1;
-  e.env2 = top.env1;
-  local e1::Decorated! RSExpr with {env1} = e;
-  e1.env2 = [];
-  top.errors1 = e1.errors1;
-  top.errors2 = e1.errors2;
-}
-
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production overrideNotInRefSet
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
   e.env2 = top.env2;
-  local e1::Decorated! RSExpr with {env1} = e;
+  local e1::Expr = @e;
   e1.env2 = [];
   top.errors1 = e1.errors1;
   top.errors2 = e1.errors2;
 }
 }
 
-production dispatchGood
-top::RSExpr ::= e::RSExpr
+dispatch UnaryOp = RSExpr ::= @e::RSExpr;
+
+warnCode "Duplicate equation for env2 on e in production flow:implProd" {
+production implProd implements UnaryOp
+top::RSExpr ::= @e::RSExpr
 {
-  e.env1 = top.env1;
-  local implProdRef::(RSExpr ::= Decorated! RSExpr with {env1}) = implProd;
-  forwards to implProdRef(e); 
+  e.env2 = top.env2;
+  top.errors1 = e.errors1;
+  top.errors2 = e.errors2;
+}
 }
 
 production dispatchOverrideKnownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  e.env2 = top.env2;
+  e.env2 = top.env1 ++ top.env2;
   forwards to implProd(e); 
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
 production dispatchOverrideUnknownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
-  e.env2 = top.env2;
-  local implProdRef::(RSExpr ::= Decorated! RSExpr with {env1}) = implProd;
+  e.env2 = top.env1 ++ top.env2;
+  local implProdRef::UnaryOp = implProd;
   forwards to implProdRef(e); 
 }
-}
 
-warnCode "Access of syn attribute errors2 on e requires missing inherited attributes flow:env2 to be supplied" {
+warnCode "Access of synthesized attribute errors2 on e requires missing inherited attribute(s) flow:env2 to be supplied to child e of production flow:anonDecSuppliedMissing" {
 production anonDecSuppliedMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -310,7 +300,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = e.errors2;
 }
 
-warnCode "override equation may exceed a flow type with hidden transitive dependencies" {
+warnCode "may exceed a flow type with hidden transitive dependencies" {
 production anonDecOverrideExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -336,7 +326,7 @@ top::RSExpr ::= e::RSExpr
   forwards to projChain(@e);
 }
 
-warnCode "missing remote equation" {
+warnCode "child e of production flow:copy1" {
 production projChain2Missing
 top::RSExpr ::= e::RSExpr
 {
@@ -353,4 +343,81 @@ top::RSExpr ::= e::RSExpr
   forward fwrd = copy12(@e);
 
   forwards to if e.errors1 then base() else @fwrd;
+}
+
+production shareLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::Decorated RSExpr with {} = e
+    in copy12(@e1)
+    end;
+}
+
+production shareInLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in copy12(e1)
+    end;
+}
+
+wrongFlowCode "Cannot share a tree here" {
+production shareInLetBindingNotDecSite
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if hackUnparse(e1) == "" then new(e) else base()
+    end;
+}
+}
+
+production condShareInLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if null(top.env1) then copy12(e1) else base()
+    end;
+}
+
+warnCode "Equation requires inherited attribute flow:env1 be supplied to child e of production flow:condShareInLetBindingDep" {
+production condShareInLetBindingDep
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if null(top.env1) then copy12(e1) else base()
+    end;
+}
+}
+
+wrongFlowCode "Cannot share a tree here" {
+production shareInUnusedLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  top.errors1 = e.errors1;
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in if null(top.env1) then new(e) else base()
+    end;
+}
+}
+
+-- Not an ideal error message (the issue is the duplicate use of e1), but good enough.
+wrongFlowCode "Cannot share a tree here" {
+production duplicateShareLetBinding
+top::RSExpr ::= e::RSExpr
+{
+  forwards to
+    let e1::RSExpr = copy12(@e)
+    in fork(e1, e1)
+    end;
+}
 }

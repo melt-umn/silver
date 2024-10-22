@@ -1,6 +1,7 @@
 package common;
 
 import common.exceptions.SilverInternalError;
+import silver.core.NLocation;
 
 /**
  * Represents the inherited attributes supplied to a translation attribute.
@@ -20,6 +21,11 @@ public class TransInhs implements Lazy {
     @Override
     public Object eval(DecoratedNode context) {
         throw new SilverInternalError("TransInhs should never be evaluated!");
+    }
+
+    @Override
+    public NLocation getSourceLocation() {
+        throw new SilverInternalError("TransInhs location should never be accessed!");
     }
     
     @Override

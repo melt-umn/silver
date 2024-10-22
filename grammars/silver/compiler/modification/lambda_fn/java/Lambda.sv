@@ -12,7 +12,7 @@ import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
 aspect production lambdap
-top::Expr ::= params::ProductionRHS e::Expr
+top::Expr ::= params::LambdaRHS e::Expr
 {
   -- Attempt to solve a context `runtimeTypeable ${top.finalType)}`, from which the runtime TypeRep translation is computed.
   -- If the type somehow contains a skolem (e.g. through scoped type variables),
@@ -36,7 +36,7 @@ ${makeTyVarDecls(5, top.finalType.freeVariables)}
 
 				@Override
 				public final String toString() {
-					return "lambda at ${top.grammarName}:${top.location.unparse}";
+					return "lambda at ${top.grammarName}:${getParsedOriginLocationOrFallback(top).unparse}";
 				}
 			})""";
 
@@ -52,7 +52,7 @@ ${makeTyVarDecls(5, top.finalType.freeVariables)}
 }
 
 aspect production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation = s"common.Util.<${top.finalType.transType}>demandIndex(lambda_${toString(q.lookupValue.dcl.lambdaId)}_args, ${toString(q.lookupValue.dcl.lambdaParamIndex)})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

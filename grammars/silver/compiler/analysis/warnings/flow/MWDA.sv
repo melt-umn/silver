@@ -32,16 +32,6 @@ imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
 
-function isForwardProdAttr
-Boolean ::= a::String  e::Env
-{
-  return case getValueDclAll(a, e) of
-  | d :: _ -> d.hasForward
-  | _ -> false
-  end;
-}
-
-
 
 -- TODO: better way of generating warnings. We ad-hoc check for errors before
 -- raising these warnings, but this is inherently fragile and results in crash

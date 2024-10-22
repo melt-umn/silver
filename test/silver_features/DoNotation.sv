@@ -85,7 +85,7 @@ global mutualMDo::Maybe<(Boolean ::= Integer)> = mdo {
   pure(123);
   even :: (Boolean ::= Integer) <- pure(\ x::Integer -> if x == 0 then true else odd(x - 1, ()));
   pure(456);
-  let odd :: (Boolean ::= Integer ()) = \ x::Integer () -> if x == 0 then false else even(x - 1);
+  let odd :: (Boolean ::= Integer ()) = \ x::Integer _ -> if x == 0 then false else even(x - 1);
   res::Boolean <- just(even(43));
   return even;
 };

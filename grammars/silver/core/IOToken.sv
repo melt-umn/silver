@@ -63,11 +63,7 @@ IOToken ::= s::String i::IOToken
 @{--
   - Like printT, but adds a trailing newline automatically.
   -}
-function printlnT
-IOToken ::= str::String  ioIn::IOToken
-{
-  return printT(str ++ "\n", ioIn);
-}
+fun printlnT IOToken ::= str::String  ioIn::IOToken = printT(str ++ "\n", ioIn);
 
 @{--
   - Like printT, but for stderr.
@@ -83,11 +79,7 @@ IOToken ::= str::String  ioIn::IOToken
 @{--
   - Like eprintT, but adds a trailing newline automatically.
   -}
-function eprintlnT
-IOToken ::= str::String  ioIn::IOToken
-{
-  return eprintT(str ++ "\n", ioIn);
-}
+fun eprintlnT IOToken ::= str::String  ioIn::IOToken = eprintT(str ++ "\n", ioIn);
 
 @{--
  - Read a line from standard input.

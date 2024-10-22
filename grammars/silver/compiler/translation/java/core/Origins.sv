@@ -43,7 +43,8 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${escapeString(top.location.unparse)}\"))";
+  local loc :: Location = getParsedOriginLocationOrFallback(top);
+  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${top.grammarName}:${escapeString(loc.unparse)}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 
@@ -83,7 +84,7 @@ function getSpecialCaseNoOrigins
 function typeWantsTracking
 Boolean ::= ty::Type conf::Decorated CmdArgs env::Env
 {
-  return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getSpecialCaseNoOrigins()) then false
+  return if conf.noOrigins || contains(ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
               | nonterminalType(fn, _, _, tracked) -> conf.forceOrigins || tracked
               | appType(c, _) -> typeWantsTracking(c, conf, env)

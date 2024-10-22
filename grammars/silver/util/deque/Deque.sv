@@ -1,6 +1,6 @@
 grammar silver:util:deque;
 
-import silver:core with reverse as listReverse;
+imports silver:core with reverse as listReverse;
 
 -- This is all based on Okasaki 1998.
 
@@ -10,11 +10,7 @@ abstract production deque
 top::Deque<a> ::= ln::Integer l::[a] rn::Integer r::[a]
 {}
 
-function empty
-Deque<a> ::=
-{
-  return deque(0, [], 0, []);
-}
+fun empty Deque<a> ::= = deque(0, [], 0, []);
 
 function cons
 Deque<a> ::= e::a q::Deque<a>

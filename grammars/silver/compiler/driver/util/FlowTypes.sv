@@ -16,27 +16,26 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), allLatestGrammars));
   local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), allLatestGrammars);
   local allRefDefs :: [(String, [String])] = flatMap((.refDefs), allLatestGrammars);
-  local allUniqueRefs :: [(String, UniqueRefSite)] = flatMap((.uniqueRefs), allLatestGrammars);
-  local allFlowEnv :: FlowEnv = flowEnv(allSpecDefs, allRefDefs, allUniqueRefs, allFlowDefs);
-  
-  -- Look up tree for production info
-  local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
+  local allSharedRefs :: [(String, SharedRefSite)] = flatMap((.sharedRefs), allLatestGrammars);
+  local allFlowEnv :: FlowEnv = flowEnv(allSpecDefs, allRefDefs, allSharedRefs, allFlowDefs);
   
   -- We need to know about all attributes and occurences on nonterminals.
   -- It's possible (likely) we could do better than using the overall env here.
   local allRealDefs :: [Def] = flatMap((.defs), allLatestGrammars);
   local allRealOccursDefs :: [OccursDclInfo] = flatMap((.occursDefs), allLatestGrammars);
-  local allRealEnv :: Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
+  local allRealEnv :: Env = toEnv(allRealDefs, allRealOccursDefs);
   
   -- List of all productions
-  local allProds :: [ValueDclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
+  local allProds :: [ValueDclInfo] = allRealEnv.prodDclList;
   local allNts :: [String] = nub(map(getProdNt, allProds));
+  local allDispatchSigs :: [NamedSignature] = map((.dispatchSignature), allRealEnv.dispatchDclList);
   
   -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 
-    computeAllProductionGraphs(allProds, prodTree, allFlowEnv, allRealEnv) ++
-      -- Add in phantom graphs
-      map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts);
+    computeAllProductionGraphs(allProds, allFlowEnv, allRealEnv) ++
+      -- Add in phantom and dispatch graphs
+      map(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts) ++
+      map(constructDispatchGraph(_, allFlowEnv, allRealEnv), allDispatchSigs);
   
   local initialFT :: EnvTree<FlowType> =
     computeInitialFlowTypes(allSpecDefs);

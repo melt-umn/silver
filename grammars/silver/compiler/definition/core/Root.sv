@@ -3,20 +3,20 @@ grammar silver:compiler:definition:core;
 {--
  - Root represents one textual file of Silver source.
  -}
-nonterminal Root with
+tracked nonterminal Root with
   -- Global-level inherited attributes
   config, compiledGrammars,
   -- Grammar-level inherited attributes
   grammarName, env, globalImports, grammarDependencies,
   -- File-level inherited attributes
   -- Synthesized attributes
-  declaredName, unparse, location, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
+  declaredName, unparse, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
   exportedGrammars, optionalGrammars, condBuild, jarName;
 
 flowtype Root = decorate {config, compiledGrammars, grammarName, env, globalImports, grammarDependencies, flowEnv};
 
-nonterminal GrammarDcl with 
-  declaredName, grammarName, location, unparse, errors;
+tracked nonterminal GrammarDcl with 
+  declaredName, grammarName, unparse, errors;
 
 propagate errors on Root, GrammarDcl;
 propagate config, compiledGrammars, grammarName, globalImports, grammarDependencies, moduleNames on Root;
@@ -38,7 +38,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.jarName := ags.jarName;
   
   -- We have an mismatch in how the environment gets put together:
-  --  Outermost, we have grammar-wide imports in one sope.  That's top.globalImports here.
+  --  Outermost, we have grammar-wide imports in one scope.  That's top.globalImports here.
   --  THEN, we have this particular file's list of local imports. That's ims.defs here.
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
@@ -60,8 +60,8 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
   top.declaredName = qn.name;
   top.errors <-
     if qn.name == top.grammarName then []
-    else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
+    else [errFromOrigin(top, "Grammar declaration is incorrect: " ++ qn.name)];
 } action {
-  insert semantic token IdGrammarName_t at qn.baseNameLoc;
+  insert semantic token IdGrammarName_t at qn.nameLoc;
 }
 

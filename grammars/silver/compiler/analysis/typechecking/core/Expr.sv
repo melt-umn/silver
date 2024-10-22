@@ -4,11 +4,12 @@ import silver:compiler:definition:flow:env;
 
 attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
+flowtype Expr = upSubst {forward}, finalType {forward};
+
 propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
    excluding
-     undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
-     and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
+     undecoratedAccessHandler, forwardAccess, decoratedAccessHandler, ifThenElse,
      decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
@@ -23,40 +24,40 @@ top::Expr ::=
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  contexts.contextLoc = q.location;
+  contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
   top.contexts = typeScheme.contexts;
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  contexts.contextLoc = q.location;
+  contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
   top.contexts = typeScheme.contexts;
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  contexts.contextLoc = q.location;
+  contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
   top.contexts = typeScheme.contexts;
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  instHead.contextLoc = q.location;
+  instHead.contextLoc = q.nameLoc;
   instHead.contextSource = "the use of " ++ q.name;
   top.errors <- instHead.contextErrors;
   
-  contexts.contextLoc = q.location;
+  contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
   
@@ -84,7 +85,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -95,14 +96,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- But let's leave it since it's the right thing to do.
   top.errors <-
     if errCheck1.typeerror && q.found
-    then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
+    then [errFromOrigin(top, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
   
   thread downSubst, upSubst on top, errCheck1, forward;
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= e::Expr @q::QNameAttrOccur target::Access
 {
   propagate upSubst, downSubst, finalSubst;
 }
@@ -117,12 +118,12 @@ top::Expr ::= e::Expr '.' 'forward'
   
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute forward being accessed from an undecorated type.")]
+    then [errFromOrigin(top, "Attribute forward being accessed from an undecorated type.")]
     else [];
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -133,7 +134,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- But let's leave it since it's the right thing to do.
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
+    then [errFromOrigin(top, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
 
   thread downSubst, upSubst on top, errCheck1, forward;
@@ -151,61 +152,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], true, false));
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
-       else [];
-}
-
-aspect production and
-top::Expr ::= e1::Expr '&&' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, errCheck2, top;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  errCheck2 = check(e2.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "First operand to && must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(e2.location, "First operand to && must be type bool. Got instead type " ++ errCheck2.leftpp)]
-       else [];
-}
-
-aspect production or
-top::Expr ::= e1::Expr '||' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, errCheck2, top;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  errCheck2 = check(e2.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "First operand to || must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(e2.location, "First operand to || must be type bool. Got instead type " ++ errCheck2.leftpp)]
-       else [];
-}
-
-aspect production notOp
-top::Expr ::= '!' e1::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  
-  thread downSubst, upSubst on top, e1, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "Operand to ! must be type bool. Got instead type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -221,113 +168,12 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   errCheck2 = check(e1.typerep, boolType());
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Then and else branch must have the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       then [errFromOrigin(top, "Then and else branch must have the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
        else [];
   top.errors <-
        if errCheck2.typeerror
-       then [err(e1.location, "Condition must have the type Boolean. Instead it is " ++ errCheck2.leftpp)]
+       then [errFromOrigin(e1, "Condition must have the type Boolean. Instead it is " ++ errCheck2.leftpp)]
        else [];
-}
-
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to + must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [err(top.location, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to - must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [err(top.location, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to * must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [err(top.location, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to / must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, top;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to % must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(e1.finalType))];
-}
-aspect production neg
-top::Expr ::= '-' e1::Expr
-{
-  
-  top.errors <-
-       if e1.finalType.instanceNum
-       then []
-       else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(e1.finalType))];
 }
 
 aspect production terminalConstructor
@@ -342,18 +188,18 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], true, false));
   top.errors <-
     if errCheck1.typeerror
-    then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]
+    then [errFromOrigin(es, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]
     else [];
 
   top.errors <-
     if errCheck2.typeerror
-    then [err(el.location, "Third operand to 'terminal(type,lexeme,location)' must be a Location, instead it is " ++ errCheck2.leftpp)]
+    then [errFromOrigin(el, "Third operand to 'terminal(type,lexeme,location)' must be a Location, instead it is " ++ errCheck2.leftpp)]
     else [];
   
   top.errors <-
     if t.typerep.isTerminal || t.typerep.isError
     then []
-    else [err(t.location, "First operand to 'terminal(type,lexeme,location)' must be a Terminal type, instead it is " ++ prettyType(t.typerep))];
+    else [errFromOrigin(t, "First operand to 'terminal(type,lexeme,location)' must be a Terminal type, instead it is " ++ prettyType(t.typerep))];
 }
 
 aspect production decorateExprWith
@@ -366,7 +212,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   errCheck1 = checkDecorable(top.env, e.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a decorable type.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Operand to decorate must be a decorable type.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -377,10 +223,10 @@ top::Expr ::= '@' e::Expr
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
-  errCheck1 = check(e.typerep, uniqueDecoratedType(freshType(), inhSetType([])));
+  errCheck1 = check(e.typerep, decoratedType(freshType(), inhSetType([])));
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Operand to @ must be a unique reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [errFromOrigin(top, "Operand to @ must be a reference with no inherited attributes.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -394,7 +240,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
   errCheck1 = check(lhs.typerep, e1.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, lhs.name ++ " has expected type " ++ errCheck1.leftpp
+       then [errFromOrigin(top, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
        else [];
 }
@@ -409,7 +255,7 @@ top::AppExpr ::= e::Expr
   errCheck1 = check(e.typerep, top.appExprTyperep);
   top.errors <-
     if !errCheck1.typeerror then []
-    else [err(top.location, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
+    else [errFromOrigin(top, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
             top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
             " but argument is of type " ++ errCheck1.leftpp)];  
 }

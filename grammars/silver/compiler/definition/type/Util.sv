@@ -20,10 +20,6 @@ monoid attribute freeFlexibleVars :: [TyVar] with [], setUnionTyVars;
 -- Also used by 'new()'
 synthesized attribute isDecorated :: Boolean;
 
--- Determines whether a type is a unique decorated nonterminal type
--- Used in determining whether a type may be supplied with inherited attributes.
-synthesized attribute isUniqueDecorated :: Boolean;
-
 -- Determines whether a type is an (undecorated) nonterminal type
 -- Used in determining whether a type may be supplied with inherited attributes.
 synthesized attribute isNonterminal :: Boolean;
@@ -51,7 +47,7 @@ synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 synthesized attribute unifyInstanceDecorable :: Substitution;  -- NT or unique decorated
 
-attribute arity, isError, isDecorated, isUniqueDecorated, isNonterminal, isData, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
+attribute arity, isError, isDecorated, isNonterminal, isData, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -59,7 +55,6 @@ top::PolyType ::= ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isData = ty.isData;
   top.isTerminal = ty.isTerminal;
@@ -77,7 +72,6 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isData = ty.isData;
   top.isTerminal = ty.isTerminal;
@@ -96,7 +90,6 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isUniqueDecorated = ty.isUniqueDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isData = ty.isData;
   top.isTerminal = ty.isTerminal;
@@ -109,7 +102,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
     top.compareTo.typerep == performRenaming(ty, eqSub);
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isUniqueDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isData, isTracked, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 
@@ -125,7 +118,6 @@ top::Type ::=
   top.inhSetMembers = [];
   
   top.isDecorated = false;
-  top.isUniqueDecorated = false;
   top.isNonterminal = false;
   top.isData = false;
   top.isTracked = false;
@@ -245,18 +237,6 @@ top::Type ::= te::Type i::Type
   top.unifyInstanceDecorated = emptySubst();
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type i::Type
-{
-  top.isDecorated = true;
-  top.isUniqueDecorated = true;
-  top.decoratedType = te;
-  top.asNtOrDecType = ntOrDecType(te, freshInhSet(), freshType());
-  top.inhSetMembers = i.inhSetMembers;
-  top.unifyInstanceDecorated = emptySubst();
-  top.unifyInstanceDecorable = emptySubst();
-}
-
 aspect production ntOrDecType
 top::Type ::= nt::Type inhs::Type hidden::Type
 {
@@ -274,6 +254,14 @@ top::Type ::= params::Integer namedParams::[String]
 {
   top.arity = params;
   top.isApplicable = true;
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.isApplicable = true;
+  top.inputTypes = ns.inputTypes;
+  top.outputType = ns.outputElement.typerep;
 }
 
 -- Strict type equality, assuming all type vars are skolemized

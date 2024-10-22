@@ -5,12 +5,12 @@ attribute lexicalTypeVariables, lexicalTyVarKinds occurs on ProductionSignature,
 flowtype lexicalTypeVariables {decorate} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 propagate lexicalTyVarKinds on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
@@ -28,3 +28,10 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
   top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
+
+--aspect production lambdaRHSCons
+--top::ProductionRHS ::= h::LambdaRHSElem t::LambdaRHS
+--{
+--  top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
+--}
+

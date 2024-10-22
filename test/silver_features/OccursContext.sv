@@ -200,6 +200,10 @@ equalityTest(
   end, "blah", String, silver_tests);
 
 
+wrongCode "Could not find an instance for attribute silver_features:prodNameIn occurs on Decorated silver_features:OCThing with {}; an undecorated type is expected here (arising from the use of ocPolyWrap)" {
+global ocPolyWrapDecorated::OCPolyWrap = ocPolyWrap(decorate ocThing() with {});
+}
+
 nonterminal OCWrapDec<a> with prodName;
 
 production ocWrapDec

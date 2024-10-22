@@ -84,8 +84,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList, nothing(),
-      hackWrapKey(toString(top.ruleIndex), e, location=e.location),
-      location=top.location)];
+      hackWrapKey(toString(top.ruleIndex), e))];
 }
 
 aspect production matchRuleWhen_c
@@ -111,9 +110,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), nothing())),
-      hackWrapKey(toString(top.ruleIndex), e, location=e.location),
-      location=top.location)];
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond), nothing())),
+      hackWrapKey(toString(top.ruleIndex), e))];
 }
 
 aspect production matchRuleWhenMatches_c
@@ -141,9 +139,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), just(p))),
-      hackWrapKey(toString(top.ruleIndex), e, location=e.location),
-      location=top.location)];
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond), just(p))),
+      hackWrapKey(toString(top.ruleIndex), e))];
 }
 
 abstract production hackWrapKey

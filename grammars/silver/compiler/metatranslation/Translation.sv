@@ -11,16 +11,16 @@ imports silver:compiler:modification:list;
 imports silver:compiler:extension:patternmatching;
 
 function translate
-Expr ::= loc::Location ast::AST
+Expr ::= ast::AST
 {
-  ast.givenLocation = loc;
+  ast.givenLocation = getParsedOriginLocationOrFallback(ambientOrigin());
   return ast.translation;
 }
 
 function translatePattern
-Pattern ::= loc::Location ast::AST
+Pattern ::= ast::AST
 {
-  ast.givenLocation = loc;
+  ast.givenLocation = getParsedOriginLocationOrFallback(ambientOrigin());
   return ast.patternTranslation;
 }
 
@@ -41,7 +41,8 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   production givenLocation::Location =
-    fromMaybe(top.givenLocation, orElse(children.foundLocation, annotations.foundLocation));
+    fromMaybe(top.givenLocation, alt(getParsedOriginLocation(top), alt(children.foundLocation, annotations.foundLocation)));
+  attachNote logicalLocationNote(givenLocation);  -- In case the quoted language doesn't use origins
   
   production attribute antiquoteTranslation::Maybe<Expr> with orElse;
   antiquoteTranslation := nothing();
@@ -104,9 +105,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         -- The next item in the list is the nil production, no need to insert an append.
         | nonterminalAST(p, _, _) when p == trans.3 -> antiquoteExpr
         -- There are more items that need to be appended to the antiquoted expression.
-        | _ ->
-          mkStrFunctionInvocation(
-            givenLocation, trans.4, [antiquoteExpr, antiquote.3.translation])
+        | _ -> mkStrFunctionInvocation(trans.4, [antiquoteExpr, antiquote.3.translation])
         end;
     };
   antiquoteTranslation <-
@@ -115,19 +114,18 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       trans::(String, String, String, String) <-
         lookup(prodName, collectionAntiquoteProductions);
       return
-        errorExpr([err(givenLocation, s"$$${trans.1} may only occur as a member of ${trans.1}")], location=givenLocation);
+        errorExpr([err(givenLocation, s"$$${trans.1} may only occur as a member of ${trans.1}")]);
     };
   
   antiquoteTranslation <-
     if contains(prodName, patternAntiquoteProductions)
-    then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")], location=givenLocation))
+    then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")]))
     else nothing();
   
   top.translation =
     fromMaybe(
       mkFullFunctionInvocation(
-        givenLocation,
-        baseExpr(qName(givenLocation, prodName), location=givenLocation),
+        baseExpr(qName(prodName)),
         children.translation,
         annotations.translation),
       antiquoteTranslation);
@@ -165,18 +163,13 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   
   patternAntiquoteTranslation <-
     if contains(prodName, directAntiquoteProductions ++ map(fst, collectionAntiquoteProductions))
-    then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
+    then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")]))
     else nothing();
   
   -- Note that we intentionally ignore annotations here
   top.patternTranslation =
     fromMaybe(
-      prodAppPattern(
-        qName(givenLocation, prodName),
-        '(',
-        children.patternTranslation,
-        ')',
-        location=givenLocation),
+      prodAppPattern(qName(prodName), '(', children.patternTranslation, ')'),
       patternAntiquoteTranslation);
   
   children.givenLocation = givenLocation;
@@ -189,23 +182,20 @@ top::AST ::= terminalName::String lexeme::String location::Location
   local locationAST::AST = reflect(location);
   locationAST.givenLocation = top.givenLocation;
 
-  top.translation =
-    terminalConstructor(
-      'terminal', '(',
-      nominalTypeExpr(
-        makeQNameType(terminalName, top.givenLocation),
-        location=top.givenLocation),
-      ',',
-      stringConst(
-        terminal(String_t, s"\"${escapeString(lexeme)}\"", top.givenLocation),
-        location=top.givenLocation),
-      ',',
-      locationAST.translation,
-      ')', location=top.givenLocation);
+  top.translation = Silver_Expr {
+    terminal(
+      -- The type expression from the name of the terminal
+      $TypeExpr{nominalTypeExpr(makeQNameType(terminalName, top.givenLocation))},
+      -- The quoted lexeme
+      $Expr{stringConst(terminal(String_t, s"\"${escapeString(lexeme)}\"", top.givenLocation))},
+      -- Try to get the location dynamically from the parsed origin location if tracking is available,
+      -- or else fall back to the compile-time AST location.
+      silver:core:fromMaybe($Expr{locationAST.translation}, silver:core:getParsedOriginLocation(silver:core:ambientOrigin())))
+  };
   
   -- TODO: What to do here- warn about this maybe?
   -- Shouldn't really be an issue unless matching against concrete syntax containing non-fixed terminals
-  top.patternTranslation = wildcPattern('_', location=top.givenLocation);
+  top.patternTranslation = wildcPattern('_');
 }
 
 aspect production listAST
@@ -215,44 +205,39 @@ top::AST ::= vals::ASTs
     fullList(
       '[',
       foldr(
-        exprsCons(_, ',', _, location=top.givenLocation),
-        exprsEmpty(location=top.givenLocation),
+        exprsCons(_, ',', _),
+        exprsEmpty(),
         vals.translation),
-      ']',
-      location=top.givenLocation);
+      ']');
   top.patternTranslation =
-    listPattern('[', vals.patternTranslation, ']', location=top.givenLocation);
+    listPattern('[', vals.patternTranslation, ']');
 }
 
 aspect production stringAST
 top::AST ::= s::String
 {
   top.translation =
-    stringConst(
-      terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation),
-      location=top.givenLocation);
+    stringConst(terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation));
   top.patternTranslation =
-    strPattern(
-      terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation),
-      location=top.givenLocation);
+    strPattern(terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation));
 }
 
 aspect production integerAST
 top::AST ::= i::Integer
 {
   top.translation =
-    intConst(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
+    intConst(terminal(Int_t, toString(i), top.givenLocation));
   top.patternTranslation =
-    intPattern(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
+    intPattern(terminal(Int_t, toString(i), top.givenLocation));
 }
 
 aspect production floatAST
 top::AST ::= f::Float
 {
   top.translation =
-    floatConst(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
+    floatConst(terminal(Float_t, toString(f), top.givenLocation));
   top.patternTranslation =
-    fltPattern(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
+    fltPattern(terminal(Float_t, toString(f), top.givenLocation));
 }
 
 aspect production booleanAST
@@ -260,12 +245,12 @@ top::AST ::= b::Boolean
 {
   top.translation =
     if b
-    then trueConst('true', location=top.givenLocation)
-    else falseConst('false', location=top.givenLocation);
+    then trueConst('true')
+    else falseConst('false');
   top.patternTranslation =
     if b
-    then truePattern('true', location=top.givenLocation)
-    else falsePattern('false', location=top.givenLocation);
+    then truePattern('true')
+    else falsePattern('false');
 }
 
 aspect production anyAST
@@ -290,7 +275,7 @@ top::ASTs ::= h::AST t::ASTs
 {
   top.translation = h.translation :: t.translation;
   top.patternTranslation =
-    patternList_more(h.patternTranslation, ',', t.patternTranslation, location=top.givenLocation);
+    patternList_more(h.patternTranslation, ',', t.patternTranslation);
   top.foundLocation =
     -- Try to reify the last child as a location
     case t of
@@ -307,7 +292,7 @@ aspect production nilAST
 top::ASTs ::=
 {
   top.translation = [];
-  top.patternTranslation = patternList_nil(location=top.givenLocation);
+  top.patternTranslation = patternList_nil();
   top.foundLocation = nothing();
 }
 
@@ -348,14 +333,10 @@ top::NamedAST ::= n::String v::AST
 -- the functions below are directly referenced in reflection code in silver:compiler:extensions:silverconstruction
 -- so make sure you grep for that if you change/move them.
 
-function makeName
-Name ::= n::String loc::Location
-{
-  return
-    if isUpper(head(explode("", n)))
-    then nameIdUpper(terminal(IdUpper_t, n, loc), location=loc)
-    else nameIdLower(terminal(IdLower_t, n, loc), location=loc);
-}
+fun makeName Name ::= n::String loc::Location =
+  if isUpper(head(explode("", n)))
+  then nameIdUpper(terminal(IdUpper_t, n, loc))
+  else nameIdLower(terminal(IdLower_t, n, loc));
 
 function makeQName
 QName ::= n::String loc::Location
@@ -363,8 +344,8 @@ QName ::= n::String loc::Location
   local ns::[Name] = map(makeName(_, loc), explode(":", n));
   return
     foldr(
-      qNameCons(_, ':', _, location=loc),
-      qNameId(last(ns), location=loc),
+      qNameCons(_, ':', _),
+      qNameId(last(ns)),
       init(ns));
 }
 
@@ -374,7 +355,7 @@ QNameType ::= n::String loc::Location
   local ns::[String] = explode(":", n);
   return
     foldr(
-      qNameTypeCons(_, ':', _, location=loc),
-      qNameTypeId(terminal(IdUpper_t, last(ns), loc), location=loc),
+      qNameTypeCons(_, ':', _),
+      qNameTypeId(terminal(IdUpper_t, last(ns), loc)),
       map(makeName(_, loc), init(ns)));
 }

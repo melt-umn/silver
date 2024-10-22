@@ -12,6 +12,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
      "silver:compiler:extension:silverconstruction:antiquoteTypeExpr",
      "silver:compiler:extension:silverconstruction:antiquoteConstraintList",
      "silver:compiler:extension:silverconstruction:antiquotePattern",
+     "silver:compiler:extension:silverconstruction:antiquoteFunctionSignature",
      "silver:compiler:extension:silverconstruction:antiquoteProductionRHS",
      "silver:compiler:extension:silverconstruction:antiquoteAspectRHS",
      "silver:compiler:extension:silverconstruction:antiquoteProductionStmt",
@@ -21,37 +22,33 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   
   -- "Indirect" antiquote productions
   antiquoteTranslation <-
-    case prodName, children, annotations of
+    case prodName, children of
     | "silver:compiler:extension:silverconstruction:antiquote_qName",
-      consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))),
-      consNamedAST(namedAST("silver:core:location", locAST), nilNamedAST()) ->
+      consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))) ->
         case reify(a) of
         | right(e) ->
           just(
             mkFullFunctionInvocation(
-              givenLocation,
-              baseExpr(qName(givenLocation, "silver:compiler:metatranslation:makeQName"), location=givenLocation),
-              [e, locAST.translation],
+              baseExpr(qName("silver:compiler:metatranslation:makeQName")),
+              [e, translate(reflect(givenLocation))],
               []))
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
-    | "silver:compiler:extension:silverconstruction:antiquote_qName", _, _ ->
+    | "silver:compiler:extension:silverconstruction:antiquote_qName", _ ->
         error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
     | "silver:compiler:extension:silverconstruction:antiquote_name",
-      consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))),
-      consNamedAST(namedAST("silver:core:location", locAST), nilNamedAST()) ->
+      consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))) ->
         case reify(a) of
         | right(e) ->
           just(
             mkFullFunctionInvocation(
-              givenLocation,
-              baseExpr(qName(givenLocation, "silver:compiler:metatranslation:makeName"), location=givenLocation),
-              [e, locAST.translation],
+              baseExpr(qName("silver:compiler:metatranslation:makeName")),
+              [e, translate(reflect(givenLocation))],
               []))
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
-    | "silver:compiler:extension:silverconstruction:antiquote_name", _, _ ->
+    | "silver:compiler:extension:silverconstruction:antiquote_name", _ ->
         error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
-    | _, _, _ -> nothing()
+    | _, _ -> nothing()
     end;
 }

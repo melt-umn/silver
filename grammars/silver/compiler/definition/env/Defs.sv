@@ -1,6 +1,8 @@
 grammar silver:compiler:definition:env;
 
-nonterminal Defs with defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
+nonterminal Defs with
+  defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, dispatchDclList,
+  filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem<TypeDclInfo>];
@@ -15,6 +17,7 @@ synthesized attribute prodOccursList :: [ProductionAttrDclInfo];
 
 -- Extra space for production list
 synthesized attribute prodDclList :: [ValueDclInfo];
+synthesized attribute dispatchDclList :: [TypeDclInfo];
 
 -- Transformations on lists of Def
 -- This is to support computing the defs introduced by qualified imports
@@ -37,6 +40,7 @@ top::Defs ::=
   top.prodOccursList = [];
   
   top.prodDclList = [];
+  top.dispatchDclList = [];
   
   top.filterOnly = top;
   top.filterHiding = top;
@@ -55,6 +59,7 @@ top::Defs ::= e1::Def e2::Defs
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   
   top.prodDclList = e1.prodDclList ++ e2.prodDclList;
+  top.dispatchDclList = e1.dispatchDclList ++ e2.dispatchDclList;
 
   top.filterOnly = if e1.filterIncludeOnly then consDefs(e1, e2.filterOnly) else e2.filterOnly;
   top.filterHiding = if e1.filterIncludeHiding then consDefs(e1, e2.filterHiding) else e2.filterHiding;
@@ -63,7 +68,7 @@ top::Defs ::= e1::Def e2::Defs
 --------------------------------------------------------------------------------
 
 closed nonterminal Def with
-  typeList, valueList, attrList, instList, prodOccursList, prodDclList,
+  typeList, valueList, attrList, instList, prodOccursList, prodDclList, dispatchDclList,
   filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended,
   compareTo, isEqual;
 
@@ -80,11 +85,19 @@ top::Def ::=
   top.prodOccursList = [];
   
   top.prodDclList = [];
+  top.dispatchDclList = [];
 }
 abstract production typeDef
 top::Def ::= d::EnvItem<TypeDclInfo>
 {
   top.typeList = [d];
+}
+abstract production dispatchDclDef
+top::Def ::= d::EnvItem<TypeDclInfo>
+{
+  top.typeList = [d];
+  -- unlike normal typeDef, also affect dispatch lookups:
+  top.dispatchDclList = [d.dcl];
 }
 abstract production valueDef
 top::Def ::= d::EnvItem<ValueDclInfo>
@@ -120,140 +133,74 @@ top::Def ::= d::InstDclInfo
   top.instList = [d];
 }
 
-function childDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
-{
-  return valueDef(defaultEnvItem(childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function lhsDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
-{
-  return valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function localDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type  isForward::Boolean
-{
-  return valueDef(defaultEnvItem(localDcl(fn,ty,isForward,sourceGrammar=sg,sourceLocation=sl)));
-}
-function prodDef
-Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean
-{
-  return prodDclDef(defaultEnvItem(prodDcl(ns,hasForward,sourceGrammar=sg,sourceLocation=sl)));
-}
-function funDef
-Def ::= sg::String  sl::Location  ns::NamedSignature
-{
-  return valueDef(defaultEnvItem(funDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
-}
-function globalDef
-Def ::= sg::String  sl::Location  fn::String bound::[TyVar] contexts::[Context] ty::Type
-{
-  return valueDef(defaultEnvItem(globalValueDcl(fn, bound, contexts, ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function classMemberDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context contexts::[Context] ty::Type
-{
-  return valueDef(defaultEnvItem(classMemberDcl(fn,bound,head,contexts,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function ntDef
-Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  data::Boolean  closed::Boolean  tracked::Boolean
-{
-  return typeDef(defaultEnvItem(ntDcl(fn,ks,data,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
-}
-function termDef
-Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>  genRepeatProb::Maybe<Float>
-{
-  -- Terminals are also in the value namespace as terminal identifiers
-  return typeValueDef(
+fun childDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean =
+  valueDef(defaultEnvItem(childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
+fun lhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun localDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun nondecLocalDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(nondecLocalDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun forwardLocalDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  valueDef(defaultEnvItem(forwardLocalDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun prodDef Def ::= sg::String  sl::Location  ns::NamedSignature  dispatch::Maybe<NamedSignature>  hasForward::Boolean =
+  prodDclDef(defaultEnvItem(prodDcl(ns,dispatch,hasForward,sourceGrammar=sg,sourceLocation=sl)));
+fun funDef Def ::= sg::String  sl::Location  ns::NamedSignature =
+  valueDef(defaultEnvItem(funDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
+fun globalDef
+Def ::= sg::String  sl::Location  fn::String bound::[TyVar] contexts::[Context] ty::Type =
+  valueDef(defaultEnvItem(globalValueDcl(fn, bound, contexts, ty,sourceGrammar=sg,sourceLocation=sl)));
+fun classMemberDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context contexts::[Context] ty::Type =
+  valueDef(defaultEnvItem(classMemberDcl(fn,bound,head,contexts,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun ntDef
+Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  data::Boolean  closed::Boolean  tracked::Boolean =
+  typeDef(defaultEnvItem(ntDcl(fn,ks,data,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
+fun termDef
+Def ::= sg::String  sl::Location  fn::String  regex::r:Regex  easyName::Maybe<String>  genRepeatProb::Maybe<Float> =
+  typeValueDef(
     defaultEnvItem(termDcl(fn,regex,easyName,genRepeatProb,sourceGrammar=sg,sourceLocation=sl)),
     defaultEnvItem(termIdDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
-}
-function lexTyVarDef
-Def ::= sg::String  sl::Location  fn::String  tv::TyVar
-{
-  return typeDef(defaultEnvItem(lexTyVarDcl(fn,false,tv,sourceGrammar=sg,sourceLocation=sl)));
-}
-function aspectLexTyVarDef
-Def ::= sg::String  sl::Location  fn::String  tv::TyVar
-{
-  return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,sourceLocation=sl)));
-}
-function typeAliasDef
-Def ::= sg::String sl::Location fn::String mentionedAliases::[String] bound::[TyVar] ty::Type
-{
-  return typeDef(defaultEnvItem(typeAliasDcl(fn,mentionedAliases,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function synDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
-{
-  return attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function inhDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
-{
-  return attrDef(defaultEnvItem(inhDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function transDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
-{
-  return attrDef(defaultEnvItem(transDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function prodOccursDef
-Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def]
-{ 
-  return paDef(paDcl(ns,dcls,sourceGrammar=sg,sourceLocation=sl));
-}
-function forwardDef
-Def ::= sg::String  sl::Location  ty::Type
-{
-  return valueDef(defaultEnvItem(forwardDcl(ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun lexTyVarDef Def ::= sg::String  sl::Location  fn::String  tv::TyVar =
+  typeDef(defaultEnvItem(lexTyVarDcl(fn,false,tv,sourceGrammar=sg,sourceLocation=sl)));
+fun aspectLexTyVarDef Def ::= sg::String  sl::Location  fn::String  tv::TyVar =
+  typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,sourceLocation=sl)));
+fun typeAliasDef
+Def ::= sg::String sl::Location fn::String mentionedAliases::[String] bound::[TyVar] ty::Type =
+  typeDef(defaultEnvItem(typeAliasDcl(fn,mentionedAliases,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun dispatchDef Def ::= sg::String  sl::Location  sig::NamedSignature =
+  dispatchDclDef(defaultEnvItem(dispatchDcl(sig,sourceGrammar=sg,sourceLocation=sl)));
+fun synDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
+  attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun inhDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
+  attrDef(defaultEnvItem(inhDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun transDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
+  attrDef(defaultEnvItem(transDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun prodOccursDef Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def] =
+  paDef(paDcl(ns,dcls,sourceGrammar=sg,sourceLocation=sl));
+fun forwardDef Def ::= sg::String  sl::Location  ty::Type =
+  valueDef(defaultEnvItem(forwardDcl(ty,sourceGrammar=sg,sourceLocation=sl)));
 -- These aliased functions are used for aspects.
-function aliasedLhsDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
-{
-  return valueDef(onlyRenamedEnvItem(alias, lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function aliasedChildDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
-{
-  return valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function annoDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
-{
-  return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-function classDef
-Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Kind  members::[Pair<String Boolean>]
-{
-  return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
-}
-function instDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type  definedMembers::[String]
-{
-  return tcInstDef(instDcl(fn,bound,contexts,ty,definedMembers,sourceGrammar=sg,sourceLocation=sl));
-}
-function sigConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type  ns::NamedSignature
-{
-  return tcInstDef(sigConstraintDcl(fn,ty,ns,sourceGrammar=sg,sourceLocation=sl));
-}
-function currentInstDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
-{
-  return tcInstDef(currentInstDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
-}
-function instSuperDef
-Def ::= sg::String  sl::Location  fn::String  baseDcl::InstDclInfo
-{
-  return tcInstDef(instSuperDcl(fn,baseDcl,sourceGrammar=sg,sourceLocation=sl));
-}
-function typeableSuperDef
-Def ::= sg::String  sl::Location  baseDcl::InstDclInfo
-{
-  return tcInstDef(typeableSuperDcl(baseDcl,sourceGrammar=sg,sourceLocation=sl));
-}
+fun aliasedLhsDef Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String =
+  valueDef(onlyRenamedEnvItem(alias, lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun aliasedChildDef Def ::= sg::String  sl::Location  fn::String  ty::Type  s::Boolean  alias::String =
+  valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,s,sourceGrammar=sg,sourceLocation=sl)));
+fun annoDef Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type =
+  attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+fun classDef
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Kind  members::[Pair<String Boolean>] =
+  typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
+fun instDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type  definedMembers::[String] =
+  tcInstDef(instDcl(fn,bound,contexts,ty,definedMembers,sourceGrammar=sg,sourceLocation=sl));
+fun sigConstraintDef Def ::= sg::String  sl::Location  fn::String  ty::Type  ns::NamedSignature =
+  tcInstDef(sigConstraintDcl(fn,ty,ns,sourceGrammar=sg,sourceLocation=sl));
+fun currentInstDef Def ::= sg::String  sl::Location  fn::String  ty::Type =
+  tcInstDef(currentInstDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
+fun instSuperDef Def ::= sg::String  sl::Location  fn::String  baseDcl::InstDclInfo =
+  tcInstDef(instSuperDcl(fn,baseDcl,sourceGrammar=sg,sourceLocation=sl));
+fun typeableSuperDef Def ::= sg::String  sl::Location  baseDcl::InstDclInfo =
+  tcInstDef(typeableSuperDcl(baseDcl,sourceGrammar=sg,sourceLocation=sl));
 
 
 -- I'm leaving "Defsironment" here just for the lols

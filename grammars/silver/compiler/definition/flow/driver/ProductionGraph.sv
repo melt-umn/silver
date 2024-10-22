@@ -1,7 +1,6 @@
 grammar silver:compiler:definition:flow:driver;
 
 import silver:compiler:definition:type only isNonterminal, typerep;
-import silver:compiler:analysis:warnings:flow only sigAttrViaReference, localAttrViaReference;
 
 data nonterminal ProductionGraph with stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes;
 
@@ -51,7 +50,7 @@ top::ProductionGraph ::=
   lhsNt::String
   flowTypeVertexes::[FlowVertex]
   graph::g:Graph<FlowVertex>
-  suspectEdges::[Pair<FlowVertex FlowVertex>]
+  suspectEdges::[(FlowVertex, FlowVertex)]
   stitchPoints::[StitchPoint]
 {
   top.prod = prod;
@@ -59,7 +58,7 @@ top::ProductionGraph ::=
   top.flowTypeVertexes = flowTypeVertexes;
   
   top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
-    let newEdges :: [Pair<FlowVertex FlowVertex>] =
+    let newEdges :: [(FlowVertex, FlowVertex)] =
           filter(edgeIsNew(_, graph),
             flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), stitchPoints))
     in let repaired :: g:Graph<FlowVertex> =
@@ -79,7 +78,7 @@ top::ProductionGraph ::=
   
   top.cullSuspect = \ flowTypes::EnvTree<FlowType> ->
     -- this potentially introduces the same edge twice, but that's a nonissue
-    let newEdges :: [Pair<FlowVertex FlowVertex>] =
+    let newEdges :: [(FlowVertex, FlowVertex)] =
           flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, flowTypes)), suspectEdges)
     in let repaired :: g:Graph<FlowVertex> =
              repairClosure(newEdges, graph)
@@ -88,30 +87,28 @@ top::ProductionGraph ::=
     end end;
 }
 
-function updateGraph
+fun updateGraph
 ProductionGraph ::=
   graph::ProductionGraph
   prodEnv::EnvTree<ProductionGraph>
-  ntEnv::EnvTree<FlowType>
-{
-  return graph.stitchedGraph(ntEnv, prodEnv).cullSuspect(ntEnv);
-}
+  ntEnv::EnvTree<FlowType> =
+    graph.stitchedGraph(ntEnv, prodEnv).cullSuspect(ntEnv);
 
 -- construct a production graph for each production
-function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Env
-{
-  return if null(prods) then []
-  else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
-    computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
-}
+fun computeAllProductionGraphs
+[ProductionGraph] ::= prods::[ValueDclInfo]  flowEnv::FlowEnv  realEnv::Env =
+  if null(prods) then []
+  else constructProductionGraph(head(prods), flowEnv, realEnv) ::
+    computeAllProductionGraphs(tail(prods), flowEnv, realEnv);
 
 
 --------------------------------------------------------------------------------
 -- Below, we have various means of constructing a production graph.
--- Two types are used as part of inference:
+-- Three types are used as part of inference:
 --  1. `constructProductionGraph` builds a graph for a normal production.
 --  2. `constructPhantomProductionGraph` builds a "phantom graph" to guide inference.
+--  3. `constructDispatchGraph` builds a graph for a dispatch signature,
+--     to make projection stitch points work for them.
 --
 -- There are more types of "production" graphs, used NOT for inference, but
 -- for error checking behaviors:
@@ -145,10 +142,12 @@ function computeAllProductionGraphs
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Env
+ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
+  -- The flow defs for this production
+  local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- Just synthesized attributes.
@@ -157,13 +156,13 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local inhs :: [String] = getInhAndInhOnTransAttrsOn(nt, realEnv);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
-    
+  
   -- Normal edges!
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
   -- Insert implicit equations.
-  local fixedEdges :: [Pair<FlowVertex FlowVertex>] =
+  local fixedEdges :: [(FlowVertex, FlowVertex)] =
     normalEdges ++
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
@@ -171,14 +170,15 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
           (lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
-    flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs));
+    flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
+    flatMap(addSharingEqs(flowEnv, realEnv, _), defs);
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
     partition(contains(_, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
   
   -- No implicit equations here, just keep track.
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+  local suspectEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.suspectFlowEdges), defs) ++
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
@@ -188,7 +188,21 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
     flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements) ++
     localStitchPoints(realEnv, nt, defs) ++
     patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
+    subtermDecSiteStitchPoints(flowEnv, realEnv, defs) ++
+    sigSharingStitchPoints(flowEnv, realEnv, defs) ++
+    case dcl.implementedSignature of
+    | just(sig) -> concat(zipWith(
+        implementedSigStitchPoints(realEnv, _, sig.fullName, _),
+        dcl.namedSignature.inputElements,
+        sig.inputElements))
+    | nothing() -> []
+    end ++
+    if any(map((.elementShared), dcl.namedSignature.inputElements))
+    -- TODO: We could be more precise here by only considering the productions
+    -- that could have actually forwarded to this one. But that would require
+    -- introducing a new sort of stitch point.
+    then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType())
+    else [];
   
   local flowTypeVertexesOverall :: [FlowVertex] =
     (if nonForwarding then [] else [forwardEqVertex()]) ++
@@ -222,15 +236,19 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
   local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
 
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
+  local fixedEdges :: [(FlowVertex, FlowVertex)] =
+    normalEdges ++
+    flatMap(addSharingEqs(flowEnv, realEnv, _), defs);
+  
   -- In functions, this is just `<-` contributions to local collections from aspects.
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
+  local suspectEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.suspectFlowEdges), defs);
     
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(normalEdges);
+    createFlowGraph(fixedEdges);
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
@@ -262,11 +280,11 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   local prod :: String = "_NULL_";
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
 
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
   -- suspectEdges should always be empty! (No "aspects" where they could arise.)
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(normalEdges);
@@ -296,11 +314,11 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Env  prodEnv::
   local prod :: String = ns.fullName;
   local nt :: NtName = ns.outputElement.typerep.typeName;
   
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
   -- suspectEdges should always be empty! (No "aspects" where they could arise.)
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
     
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(normalEdges);
@@ -339,7 +357,7 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
   local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);
 
   -- The phantom edges: ext syn -> fwd.eq
-  local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
+  local phantomEdges :: [(FlowVertex, FlowVertex)] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
     (lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, extSyns);
@@ -349,16 +367,42 @@ ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Env
     
   local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   return productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
 
-function getPhantomEdge
-Pair<FlowVertex FlowVertex> ::= at::String
+{--
+ - Constructs a graph for a dispatch signature.
+ -
+ - @param ns  The dispatch signature
+ - @param flowEnv  A full flow environment (need to find uses and impls of this sig)
+ - @param realEnv  A full real environment (need to find out original signature and what inhs occur for stitch points)
+ - @return A fixed up graph.
+ -}
+function constructDispatchGraph
+ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 {
-  return (lhsSynVertex(at), forwardEqVertex());
+  local dispatch :: String = ns.fullName;
+  local nt :: NtName = ns.outputElement.typerep.typeName;
+  local defs :: [FlowDef] = getGraphContribsFor(dispatch, flowEnv);
+
+  -- The graph has no normal edges, only projection stitch points!
+  local normalEdges :: [(FlowVertex, FlowVertex)] = [];
+
+  local stitchPoints :: [StitchPoint] =
+    sigSharingStitchPoints(flowEnv, realEnv, defs) ++  -- where this dispatch is applied
+    dispatchStitchPoints(flowEnv, realEnv, ns, defs);  -- impls of this dispatch
+
+  local flowTypeVertexes :: [FlowVertex] = [];  -- Doesn't (directly) affect flow types
+  local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
+  local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
+
+  return productionGraph(dispatch, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 }
+
+fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
+  (lhsSynVertex(at), forwardEqVertex());
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
@@ -366,60 +410,67 @@ Pair<FlowVertex FlowVertex> ::= at::String
  - Introduces implicit 'lhs.syn -> forward.syn' (& forward.eq) equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
-function addFwdSynEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::FlowEnv
-{
-  return if null(syns) then []
+fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv =
+  if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
     then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
           (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
-}
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.
  - Inherited equations are never suspect.
  -}
-function addFwdInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
-{
-  return if null(inhs) then []
+fun addFwdInhEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv =
+  if null(inhs) then []
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
-}
 {--
  - Introduces implicit 'fwrd.inh = lhs.inh' equations for forward production attributes.
  - Inherited equations are never suspect.
  -}
-function addFwdProdAttrInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv
-{
-  return if null(inhs) then []
+fun addFwdProdAttrInhEqs
+[(FlowVertex, FlowVertex)] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv =
+  if null(inhs) then []
   else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
-}
-function allFwdProdAttrs
-[String] ::= d::[FlowDef]
-{
-  return case d of
+fun allFwdProdAttrs [String] ::= d::[FlowDef] =
+  case d of
   | [] -> []
   | localEq(_, fN, _, true, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
   | _ :: rest -> allFwdProdAttrs(rest)
   end;
-}
 {--
  - Introduces default equations deps. Realistically, should be empty, always.
  -}
-function addDefEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv
-{
-  return if null(syns) then []
+fun addDefEqs
+[(FlowVertex, FlowVertex)] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv =
+  if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv)) 
         then let x :: [FlowDef] = lookupDef(nt, head(syns), flowEnv)
               in if null(x) then [] else head(x).flowEdges 
              end
         else []) ++
     addDefEqs(prod, nt, tail(syns), flowEnv);
-}
+{--
+ - Introduce edges for inherited attributes on shared references to their decoration sites.
+ -}
+ fun addSharingEqs [(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv realEnv::Env d::FlowDef =
+   case d of
+   | refDecSiteEq(prod, nt, ref, decSite, isAlwaysDec) when
+        case ref of
+        | localVertexType(fName) -> !isForwardProdAttr(fName,
+            newScopeEnv(flatMap((.prodDefs), getProdAttrs(prod, realEnv)), emptyEnv()))
+        | _ -> true
+        end ->
+      filterMap(
+        \ attr::String ->
+          if vertexHasInhEq(prod, ref, attr, flowEnv)
+          -- There is an override equation, so the attribute isn't supplied through sharing
+          then nothing()
+          else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
+        getInhAndInhOnTransAttrsOn(nt, realEnv))
+   | _ -> []
+   end;
 
 ---- End helpers for fixing up graphs ------------------------------------------
 
@@ -428,26 +479,20 @@ function addDefEqs
 {--
  - Stitch points for the flow type of 'nt', and the flow types of all translation attributes on 'nt'.
  -}
-function nonterminalStitchPoints
-[StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType
-{
-  return
-    nonterminalStitchPoint(nt, vertexType) ::
-    flatMap(
-      \ o::OccursDclInfo ->
-        case getAttrDcl(o.attrOccurring, realEnv) of
-        | at :: _ when at.isSynthesized && at.isTranslation ->
-          [nonterminalStitchPoint(
-            at.typeScheme.typeName,
-            transAttrVertexType(vertexType, o.attrOccurring))]
-        | _ -> []
-        end,
-      getAttrOccursOn(nt, realEnv));
-}
-function localStitchPoints
-[StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef]
-{
-  return flatMap(\ d::FlowDef ->
+fun nonterminalStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType =
+  nonterminalStitchPoint(nt, vertexType) ::
+  flatMap(
+    \ o::OccursDclInfo ->
+      case getAttrDcl(o.attrOccurring, realEnv) of
+      | at :: _ when at.isSynthesized && at.isTranslation ->
+        [nonterminalStitchPoint(
+          at.typeScheme.typeName,
+          transAttrVertexType(vertexType, o.attrOccurring))]
+      | _ -> []
+      end,
+    getAttrOccursOn(nt, realEnv));
+fun localStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef] =
+  flatMap(\ d::FlowDef ->
     case d of
     -- We add the forward stitch point here, too!
     | fwdEq(_, _, _) -> nonterminalStitchPoints(realEnv, nt, forwardVertexType)
@@ -458,7 +503,6 @@ function localStitchPoints
     -- Ignore all other flow def info
     | _ -> []
     end, ds);
-}
 function rhsStitchPoints
 [StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement
 {
@@ -468,51 +512,75 @@ function rhsStitchPoints
     then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
     else [];
 }
-function patternStitchPoints
-[StitchPoint] ::= realEnv::Env  defs::[FlowDef]
-{
-  return case defs of
+fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
+  case defs of
   | [] -> []
   | patternRuleEq(_, matchProd, scrutinee, vars) :: rest ->
       flatMap(patVarStitchPoints(matchProd, scrutinee, realEnv, _), vars) ++
       patternStitchPoints(realEnv, rest)
   | _ :: rest -> patternStitchPoints(realEnv, rest)
   end;
-}
-function patVarStitchPoints
-[StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection
-{
-  return case var of
+fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection =
+  case var of
   | patternVarProjection(child, typeName, patternVar) -> 
       projectionStitchPoint(
         matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
         getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
       nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
-}
-function subtermDecSiteStitchPoints
-[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef]
-{
-  return flatMap(\ d::FlowDef ->
+-- deps for subterm vertex of applied prod
+fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
+  flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecEq(prodName, parent, termProdName, sigName) ->
-      map(\ prodDcl::ValueDclInfo ->
-        projectionStitchPoint(
+    | subtermDecEq(prodName, parent, termProdName, nt, sigName) ->
+        [projectionStitchPoint(
           termProdName, subtermVertexType(parent, termProdName, sigName), parent, rhsVertexType(sigName),
-          getInhAndInhOnTransAttrsOn(prodDcl.namedSignature.outputElement.typerep.typeName, realEnv)),
-        getValueDcl(termProdName, realEnv))
+          getInhAndInhOnTransAttrsOn(nt, realEnv))]
     | _ -> []
     end,
     defs);
-}
+-- deps for prod/dispatch sig, from prods that forwarded to it
+fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
+  flatMap(\ d::FlowDef ->
+    case d of
+    | sigShareSite(_, nt, sigName, sourceProd, vt, parent) ->
+        [projectionStitchPoint(
+          sourceProd, rhsVertexType(sigName), lhsVertexType, vt,
+          getInhAndInhOnTransAttrsOn(nt, realEnv))]
+    | _ -> []
+    end,
+    defs);
+-- deps for child of prod, from dispatch sig that prod implements
+fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  ie::NamedSignatureElement  prod::String se::NamedSignatureElement =
+  if ie.typerep.isNonterminal
+  then [projectionStitchPoint(
+    prod, rhsVertexType(ie.elementName), lhsVertexType,
+    rhsVertexType(se.elementName),
+    getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
+  else [];
+-- deps for dispatch sig, from prods that implement it
+fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature  defs::[FlowDef] =
+  flatMap(\ d::FlowDef ->
+    case d of
+    | implFlowDef(_, prod) when getValueDcl(prod, realEnv) matches dcl :: _ ->
+      flatMap(\ ie::NamedSignatureElement ->
+        if ie.elementDclType.isNonterminal  -- Dispatch sigs can't have occurs-on constraints
+        then [projectionStitchPoint(
+          prod, rhsVertexType(ie.elementName), lhsVertexType,
+          rhsVertexType(
+            head(drop(positionOf(ie.elementName, dispatch.inputNames), dcl.namedSignature.inputNames))),
+          getInhAndInhOnTransAttrsOn(
+            lookupSignatureInputElem(ie.elementName, dispatch).typerep.typeName,
+            realEnv))]
+        else [],
+        dispatch.inputElements)
+    | _ -> []
+    end,
+    defs);
 
 ---- End helpers for figuring our stitch points --------------------------------
 
-function prodGraphToEnv
-Pair<String ProductionGraph> ::= p::ProductionGraph
-{
-  return (p.prod, p);
-}
+fun prodGraphToEnv Pair<String ProductionGraph> ::= p::ProductionGraph = (p.prod, p);
 
 ---- Begin Suspect edge handling -----------------------------------------------
 
@@ -546,7 +614,7 @@ Pair<String ProductionGraph> ::= p::ProductionGraph
  -          always an lhsInhVertex.
  -}
 function findAdmissibleEdges
-[Pair<FlowVertex FlowVertex>] ::= edge::Pair<FlowVertex FlowVertex>  graph::g:Graph<FlowVertex>  ft::FlowType
+[(FlowVertex, FlowVertex)] ::= edge::(FlowVertex, FlowVertex)  graph::g:Graph<FlowVertex>  ft::FlowType
 {
   -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
   local currentDeps :: set:Set<String> =

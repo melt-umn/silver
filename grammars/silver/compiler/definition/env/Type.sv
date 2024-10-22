@@ -57,12 +57,6 @@ top::Type ::= te::Type _
   top.typeName = te.typeName;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type _
-{
-  top.typeName = te.typeName;
-}
-
 aspect production varType
 top::Type ::= tv::TyVar
 {
@@ -75,16 +69,22 @@ top::Type ::= tv::TyVar
   top.typeName = tv.typeName;
 }
 
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.typeName = ns.fullName;
+}
+
 attribute typeName occurs on TyVar;
 
 aspect production tyVar
-top::TyVar ::= k::Kind i::Integer
+top::TyVar ::= 
 {
-  top.typeName = "_a" ++ toString(i);
+  top.typeName = "_a" ++ toString(top.varId);
 }
 
 aspect production tyVarNamed
-top::TyVar ::= k::Kind i::Integer n::String
+top::TyVar ::= n::String
 {
   top.typeName = n;
 }

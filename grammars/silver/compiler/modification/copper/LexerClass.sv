@@ -9,9 +9,9 @@ terminal IdLexerClassDcl_t '' lexer classes {IDENTIFIER, lsp:Class, lsp:Declarat
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
 {
-  forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(location=$4.location), $4, location=top.location);
+  forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(), $4);
 } action {
-  insert semantic token IdLexerClassDcl_t at id.location;
+  insert semantic token IdLexerClassDcl_t at id.nameLoc;
 }
 
 concrete production lexerClassDecl
@@ -23,10 +23,10 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs := [lexerClassDef(top.grammarName, id.location, fName, modifiers.superClasses)];
+  top.defs := [lexerClassDef(top.grammarName, id.nameLoc, fName, modifiers.superClasses)];
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
-                then [err(id.location, "Lexer class '" ++ fName ++ "' is already bound.")]
+                then [errFromOrigin(id, "Lexer class '" ++ fName ++ "' is already bound.")]
                 else [];	
 
   top.errors := modifiers.errors;
@@ -34,13 +34,13 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   top.syntaxAst :=
     [ syntaxLexerClass(fName, 
         foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
-        location=top.location, sourceGrammar=top.grammarName)];
+        location=id.nameLoc, sourceGrammar=top.grammarName)];
 } action {
-  insert semantic token IdLexerClassDcl_t at id.location;
+  insert semantic token IdLexerClassDcl_t at id.nameLoc;
 }
 
-nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
-closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
+tracked nonterminal LexerClassModifiers with config, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
+closed tracked nonterminal LexerClassModifier with config, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
 
 monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
@@ -76,7 +76,7 @@ top::LexerClassModifier ::= 'extends' cls::LexerClasses
   top.unparse = "extends " ++ cls.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassExtends(cls.lexerClasses, location=top.location,
+    [ lexerClassExtends(cls.lexerClasses, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
   top.superClasses := cls.lexerClasses;
@@ -88,7 +88,7 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecs
   top.unparse = "dominates " ++ terms.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassDominates(terms.precTermList, location=top.location,
+    [ lexerClassDominates(terms.precTermList, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
 }
@@ -99,7 +99,7 @@ top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecs
   top.unparse = "submits to " ++ terms.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassSubmits(terms.precTermList, location=top.location,
+    [ lexerClassSubmits(terms.precTermList, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
 }
@@ -110,7 +110,7 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   top.unparse = "disambiguate " ++ acode.unparse;
 
   top.lexerClassModifiers :=
-    [ lexerClassDisambiguate(acode.actionCode, location=top.location,
+    [ lexerClassDisambiguate(acode.actionCode, location=getParsedOriginLocationOrFallback(top),
         sourceGrammar=top.grammarName)
     ];
   

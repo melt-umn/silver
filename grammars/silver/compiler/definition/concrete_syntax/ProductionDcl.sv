@@ -14,6 +14,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production namedSig :: NamedSignature = ns.namedSignature;
   
   ns.signatureName = fName;
+  ns.implementedSig = nothing();
   ns.env = newScopeEnv(ns.defs, top.env);
   pm.productionSig = ns.namedSignature;
   pm.env = newScopeEnv(ns.actionDefs, top.env);
@@ -24,18 +25,18 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.syntaxAst :=
     [ syntaxProduction(namedSig,
         foldr(consProductionMod, nilProductionMod(), pm.productionModifiers),
-        location=top.location, sourceGrammar=top.grammarName)
+        location=getParsedOriginLocationOrFallback(top), sourceGrammar=top.grammarName)
     ];
   
-  forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
+  forwards to productionDcl('abstract', $2, id, productionImplementsNone(), ns, body);
 } action {
-  insert semantic token IdFnProdDcl_t at id.location;
+  insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
 }
 
-nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionSig; -- 0 or some
-nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionSig; -- 1 or more
-closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionSig; -- 1
+tracked nonterminal ProductionModifiers with config, unparse, productionModifiers, errors, env, productionSig; -- 0 or some
+tracked nonterminal ProductionModifierList with config, unparse, productionModifiers, errors, env, productionSig; -- 1 or more
+closed tracked nonterminal ProductionModifier with config, unparse, productionModifiers, errors, env, productionSig; -- 1
 
 monoid attribute productionModifiers :: [SyntaxProductionModifier];
 
@@ -85,7 +86,7 @@ top::ProductionModifier ::= 'operator' '=' n::QNameType
 
   top.errors <- n.lookupType.errors ++
                 if !n.lookupType.typeScheme.isTerminal
-                then [err(n.location, n.unparse ++ " is not a terminal.")]
+                then [errFromOrigin(n, n.unparse ++ " is not a terminal.")]
                 else [];
 }
 
@@ -109,13 +110,13 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   local checkSecond :: Boolean =
     lstType.isTerminal || !null(getOccursDcl("silver:core:location", lstType.typeName, top.env)) || lstType.isTracked;
   local errFirst :: [Message] =
-    if checkFirst then [] else [err(top.location, "Production has location annotation or is tracked, but first element of signature does not have location and is not tracked.")];
+    if checkFirst then [] else [errFromOrigin(top, "Production has location annotation or is tracked, but first element of signature does not have location and is not tracked.")];
   local errSecond :: [Message] =
-    if checkSecond then [] else [err(top.location, "Production has location annotation or is tracked, but last element of signature does not have location and is not tracked.")];
+    if checkSecond then [] else [errFromOrigin(top, "Production has location annotation or is tracked, but last element of signature does not have location and is not tracked.")];
   
   local lhsHasLocation :: Boolean =
     case top.namedSignature.namedInputElements of
-    | [namedSignatureElement("silver:core:location", _)] -> true
+    | [namedSignatureElement("silver:core:location", _, _)] -> true
     | _ -> false
     end;
   local lhsHasOrigin :: Boolean = top.namedSignature.outputElement.typerep.isTracked;
@@ -123,8 +124,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   top.concreteSyntaxTypeErrors <-
     case top.namedSignature.namedInputElements of
     | [] -> []
-    | [namedSignatureElement("silver:core:location", _)] -> []
-    | _ -> [err(top.location, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only silver:core:location is supported.)")]
+    | [namedSignatureElement("silver:core:location", _, _)] -> []
+    | _ -> [errFromOrigin(top, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only silver:core:location is supported.)")]
     end;
 
   top.concreteSyntaxTypeErrors <-
@@ -138,11 +139,14 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.concreteSyntaxTypeErrors <-
     if t.typerep.permittedInConcreteSyntax then []
-    else [err(t.location, t.unparse ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
+    else [errFromOrigin(t, t.unparse ++ " is not permitted on concrete productions.  Only terminals and nonterminals (without type variables) can appear here")];
+  top.concreteSyntaxTypeErrors <-
+    if ms.isShared then [errFromOrigin(ms, "Sharing is not permitted in concrete production signatures.")]
+    else [];
 }
 
 synthesized attribute permittedInConcreteSyntax :: Boolean occurs on Type;

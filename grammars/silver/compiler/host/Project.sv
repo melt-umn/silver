@@ -17,6 +17,7 @@ exports silver:compiler:host:core;
 -- These are explicitly annotated as "options" within the core host language
 exports silver:compiler:modification:let_fix;
 exports silver:compiler:modification:lambda_fn;
+exports silver:compiler:modification:concisefunctions;
 exports silver:compiler:modification:collection;
 exports silver:compiler:modification:primitivepattern;
 exports silver:compiler:modification:ffi;
@@ -57,3 +58,4 @@ exports silver:compiler:driver;
 exports silver:compiler:analysis:warnings:flow;
 exports silver:compiler:analysis:warnings:exporting;
 exports silver:compiler:langserver;
+exports silver:compiler:refactor;

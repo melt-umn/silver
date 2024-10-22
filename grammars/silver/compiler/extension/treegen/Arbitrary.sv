@@ -27,7 +27,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   -- Compute the defs exported by the specified grammars
   local med::ModuleExportedDefs =
     moduleExportedDefs(
-      top.location, top.compiledGrammars, top.grammarDependencies,
+      top.compiledGrammars, top.grammarDependencies,
       grammars.moduleNames, []);
   production specEnv::Env = newScopeEnv(med.defs, emptyEnv());
   
@@ -37,21 +37,21 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   -- function and refer to its production attributes, which is probably good anyway.
   top.defs :=
     case forward of
-    | functionDcl(_, _, ns, _) -> [funDef(top.grammarName, n.location, ns.namedSignature)]
+    | functionDcl(_, _, ns, _) -> [funDef(top.grammarName, n.nameLoc, ns.namedSignature)]
     | _ -> error("forward should be a function")
     end;
 
   -- Build the syntax AST from the specified grammars to extract lexical precedence info 
   production syntax::SyntaxRoot = cstRoot(
     n.name, t.typerep.typeName, foldr(consSyntax, nilSyntax(), med.syntaxAst),
-    nothing(), [], [], location=top.location, sourceGrammar=top.grammarName);
+    nothing(), [], [], sourceGrammar=top.grammarName, location=n.nameLoc);
 
   production attribute implicitImports::[String] with ++;
   implicitImports := [];
   top.moduleNames <- implicitImports;
   local extraMED::ModuleExportedDefs =
     moduleExportedDefs(
-      top.location, top.compiledGrammars, top.grammarDependencies,
+      top.compiledGrammars, top.grammarDependencies,
       "silver:core" :: implicitImports, []);
 
   -- Generator components must be imported for the translation here,
@@ -72,11 +72,11 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
     {
       $ProductionStmt{
         foldr(
-          productionStmtAppend(_, _, location=top.location),
-          errorProductionStmt([], location=top.location), -- TODO: No nullProductionStmt?
-          map(genNtLocalDecl(top.location, forward.env, specEnv, _), map((.fullName), syntax.allNonterminals)) ++
-          map(genTermLocalDecl(top.location, forward.env, specEnv, syntax.dominatingTerminals, _), map((.fullName), syntax.allTerminals)))}
-      return $Expr{genForType(top.location, forward.env, specEnv, Silver_Expr { 0 }, t.typerep)};
+          productionStmtAppend(_, _),
+          emptyProductionStmt(),
+          map(genNtLocalDecl(forward.env, specEnv, _), map((.fullName), syntax.allNonterminals)) ++
+          map(genTermLocalDecl(forward.env, specEnv, syntax.dominatingTerminals, _), map((.fullName), syntax.allTerminals)))}
+      return $Expr{genForType(forward.env, specEnv, Silver_Expr { 0 }, t.typerep)};
     }
   };
 
@@ -84,8 +84,8 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   --top.errors := unsafeTracePrint(forward.errors, forward.unparse);
 }
 
-nonterminal GeneratorComponents with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
-nonterminal GeneratorComponent with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
+tracked nonterminal GeneratorComponents with config, grammarName, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
+tracked nonterminal GeneratorComponent with config, grammarName, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
 
 propagate config, grammarName, compiledGrammars, grammarDependencies, env, errors, moduleNames on GeneratorComponents, GeneratorComponent;
 
@@ -109,7 +109,7 @@ top::GeneratorComponent ::= m::ModuleName ';'
 
 -- Generate the expression for constructing a type
 function genForType
-Expr ::= loc::Location  env::Env  specEnv::Env  depth::Expr  t::Type
+Expr ::= env::Env  specEnv::Env  depth::Expr  t::Type
 {
   return
     case t of
@@ -117,11 +117,11 @@ Expr ::= loc::Location  env::Env  specEnv::Env  depth::Expr  t::Type
     -- call the appropriate local generator function.
     | nonterminalType(ntName, [], _, _)
       when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
-      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName), loc)}($Expr{depth}) }
+      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName))}($Expr{depth}) }
     
     | terminalType(tName)
       when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
-      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName), loc)}($Expr{depth}) }
+      matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName))}($Expr{depth}) }
 
     -- Lists are handled specially here, to allow recusively generating for
     -- e.g. lists of nonterminals in a production RHS.
@@ -129,13 +129,13 @@ Expr ::= loc::Location  env::Env  specEnv::Env  depth::Expr  t::Type
       Silver_Expr {
         silver:core:bind(silver:util:random:randomRange(0, $Expr{depth}), \ len::Integer ->
           silver:core:traverseA(
-            \ depth::Integer -> $Expr{genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, elemT)},
+            \ depth::Integer -> $Expr{genForType(env, specEnv, Silver_Expr { depth - 1 }, elemT)},
             silver:core:take(len, silver:core:reverse(silver:core:range(0, $Expr{depth})))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
     -- handled by the Arbitrary type class.
-    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb", loc)}($Expr{depth}) }
+    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb")}($Expr{depth}) }
     end; 
 }
 
@@ -186,18 +186,15 @@ Boolean ::= v::ValueDclInfo
 }
 
 -- splits where operator becomes false in list
-function takeWhile2
-[a] ::= f::(Boolean ::= a a)  l::[a]
-{
-  return if null(l) then []
+fun takeWhile2 [a] ::= f::(Boolean ::= a a)  l::[a] =
+  if null(l) then []
   else if null(tail(l)) then l
   else if f(head(l), head(tail(l))) then head(l) :: takeWhile2(f, tail(l))
   else [head(l)];
-}
 
 -- local genExpr::(RandomGen<Expr> ::= Integer) = \ depth::Integer -> ...;
 function genNtLocalDecl
-ProductionStmt ::= loc::Location  env::Env  specEnv::Env  nt::String
+ProductionStmt ::= env::Env  specEnv::Env  nt::String
 {
   -- All productions that are generatable for nt, sorted by arity
   local prods :: [ValueDclInfo] = 
@@ -211,33 +208,33 @@ ProductionStmt ::= loc::Location  env::Env  specEnv::Env  nt::String
   local result::Expr =
     if null(prods)
     -- TODO: This could be a compile-time error, in theory
-    then Silver_Expr { error($Expr{stringConst(terminal(String_t, "\"no generatable productions for nonterminal " ++ nt ++ "\""), location=loc)}) }
+    then Silver_Expr { error($Expr{stringConst(terminal(String_t, "\"no generatable productions for nonterminal " ++ nt ++ "\""))}) }
     else Silver_Expr {
       silver:core:bind(
         if depth >= maxDepth
         -- Exclude all but the lowest-arity productions
-        then randomRange(0, $Expr{intConst(terminal(Int_t, toString(num_lowest_arity - 1)), location=loc)})
+        then randomRange(0, $Expr{intConst(terminal(Int_t, toString(num_lowest_arity - 1)))})
         else if depth < minDepth
         -- Exclude all arity-0 productions
         then randomRange(
-          $Expr{intConst(terminal(Int_t, toString(if num_nonzero_arity == length(prods) then 0 else num_nonzero_arity)), location=loc)},
-          $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)})
+          $Expr{intConst(terminal(Int_t, toString(if num_nonzero_arity == length(prods) then 0 else num_nonzero_arity)))},
+          $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)))})
         -- All productions
-        else randomRange(0, $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)}),
-        \ i::Integer -> $Expr{generateExprChain(loc, env, specEnv, nt, 0, prods)})
+        else randomRange(0, $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)))}),
+        \ i::Integer -> $Expr{generateExprChain(env, specEnv, nt, 0, prods)})
     };
   
   return
     Silver_ProductionStmt {
-      local $name{"gen_" ++ substitute(":", "_", nt)}::(silver:core:RandomGen<$TypeExpr{nominalTypeExpr(qName(loc, nt).qNameType, location=loc)}> ::= Integer) =
+      local $name{"gen_" ++ substitute(":", "_", nt)}::(silver:core:RandomGen<$TypeExpr{nominalTypeExpr(qName(nt).qNameType)}> ::= Integer) =
         \ depth::Integer -> $Expr{result};
     };
 }
 
 function genTermLocalDecl
-ProductionStmt ::= loc::Location  env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
+ProductionStmt ::= env::Env  specEnv::Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
 {
-  local te::TypeExpr = nominalTypeExpr(qName(loc, t).qNameType, location=loc);
+  local te::TypeExpr = nominalTypeExpr(qName(t).qNameType);
 
   -- Filter out cantidate lexemes by checking if they match dominating terminal regexes.
   -- TODO: This a approach is somewhat somewhat inefficient, and fails with
@@ -256,11 +253,11 @@ ProductionStmt ::= loc::Location  env::Env  specEnv::Env  dominatingTerminals::E
   -- same source.
   local termDominated::Expr =
     foldr(
-      or(_, '||', _, location=loc),
-      falseConst('false', location=loc),
+      or(_, '||', _),
+      falseConst('false'),
       map(
         \ term::Decorated SyntaxDcl -> Silver_Expr {
-          silver:regex:matches($Expr{translate(loc, reflect(term.terminalRegex))}, term.lexeme)
+          silver:regex:matches($Expr{translate(reflect(term.terminalRegex))}, term.lexeme)
         },
         searchEnvTree(t, dominatingTerminals)));
   return
@@ -287,7 +284,7 @@ Note that this expects lst to be non-empty!
 -}
 
 function generateExprChain
-Expr ::= loc::Location env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
+Expr ::= env::Env  specEnv::Env  nt::String index::Integer  lst::[ValueDclInfo]
 {
   local prod::ValueDclInfo = head(lst);
   local prodType::Type = prod.typeScheme.typerep;
@@ -295,16 +292,16 @@ Expr ::= loc::Location env::Env  specEnv::Env  nt::String index::Integer  lst::[
     zip(map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
     prodType.namedTypes;
   local argGenExprs::[Expr] =
-    map(genForType(loc, env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));
+    map(genForType(env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));
   local genRes::Expr =
     mkFullFunctionInvocation(
-      loc, Silver_Expr { $name{prod.fullName} },
+      Silver_Expr { $name{prod.fullName} },
       map(\ i::Integer -> Silver_Expr { $name{"a" ++ toString(i)} }, range(0, length(prodType.inputTypes))),
       map(\ a::String -> (a, Silver_Expr { $name{a} }), map(fst, prodType.namedTypes)));
   local lambdaChain::Expr =
     foldr(
       \ arg::(String, Type) res::Expr ->
-        Silver_Expr { \ $name{arg.1}::$TypeExpr{typerepTypeExpr(arg.2, location=loc)} -> $Expr{res} },
+        Silver_Expr { \ $name{arg.1}::$TypeExpr{typerepTypeExpr(arg.2)} -> $Expr{res} },
       genRes, args);
   local genProd::Expr =
     if null(argGenExprs)
@@ -316,8 +313,8 @@ Expr ::= loc::Location env::Env  specEnv::Env  nt::String index::Integer  lst::[
 
   return if null(tail(lst)) then genProd
   else Silver_Expr {
-    if i == $Expr{intConst(terminal(Int_t, toString(index)), location=loc)}
+    if i == $Expr{intConst(terminal(Int_t, toString(index)))}
     then $Expr{genProd}
-    else $Expr{generateExprChain(loc, env, specEnv, nt, index + 1, tail(lst))}
+    else $Expr{generateExprChain(env, specEnv, nt, index + 1, tail(lst))}
   };
 }

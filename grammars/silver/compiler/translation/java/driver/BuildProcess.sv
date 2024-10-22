@@ -30,31 +30,31 @@ abstract production dontTranslateFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noJavaGeneration = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production onejarFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.buildSingleJar = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production relativejarFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.relativeJar = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production includeRTJarFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.includeRTJars = s :: forward.includeRTJars;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production buildXmlFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.buildXmlLocation = s :: forward.buildXmlLocation;
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs
@@ -97,7 +97,7 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
   keepFiles := [];
 
   -- Seed flow deps with {config}
-  keepFiles <- if false then error(hackUnparse(top.config)) else [];
+  keepFiles <- if false then error(genericShow(top.config)) else [];
 
   top.postOps <-
     [genBuild(buildXmlLocation, buildXml)] ++
@@ -258,24 +258,11 @@ IO<()> ::= silverGen::String keepFiles::[String] r::Decorated RootSpec
   };
 }
 
-function zipfileset
-String ::= s::String
-{
-  return "      <zipfileset src='" ++ s ++ "' excludes='META-INF/*' />\n";
-}
-function pathLocation
-String ::= s::String
-{
-  return "    <pathelement location='" ++ s ++ "' />\n";
-}
-function includeJavaFiles
-String ::= gram::String
-{
-  return s"      <include name='${grammarToPath(gram)}*.java' />\n";
-}
-function includeClassFiles
-String ::= gram::Decorated RootSpec
-{
-  return s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
-}
+fun zipfileset String ::= s::String =
+  "      <zipfileset src='" ++ s ++ "' excludes='META-INF/*' />\n";
+fun pathLocation String ::= s::String = "    <pathelement location='" ++ s ++ "' />\n";
+fun includeJavaFiles String ::= gram::String =
+  s"      <include name='${grammarToPath(gram)}*.java' />\n";
+fun includeClassFiles String ::= gram::Decorated RootSpec =
+  s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
 

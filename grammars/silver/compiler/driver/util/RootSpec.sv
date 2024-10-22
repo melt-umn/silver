@@ -66,14 +66,15 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   g.grammarName = grammarName;
   
   -- Create the environments for this grammar
-  g.env = occursEnv(g.occursDefs, toEnv(g.defs));
-  g.globalImports =
-    occursEnv(
-      if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
-      else g.importedOccursDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).occursDefs,
-      toEnv(
-        if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
-        else g.importedDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).defs));
+  g.env = toEnv(g.defs, g.occursDefs);
+
+  -- silver:core gets implicitly imported in a new outermost scope, unless imported explicitly
+  local coreGrammar::Decorated RootSpec = head(searchEnvTree("silver:core", top.compiledGrammars));
+  local coreEnv::Env =
+    if contains("silver:core", g.moduleNames) || grammarName == "silver:core"
+    then emptyEnv()
+    else toEnv(coreGrammar.defs, coreGrammar.occursDefs);
+  g.globalImports = occursEnv(g.importedOccursDefs, newScopeEnv(g.importedDefs, coreEnv));
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)
@@ -89,7 +90,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
     flowEnv(
       flatMap((.specDefs), rootSpecs),
       flatMap((.refDefs), rootSpecs),
-      flatMap((.uniqueRefs), rootSpecs),
+      flatMap((.sharedRefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
   production newInterface::InterfaceItems = packInterfaceItems(top);
@@ -137,7 +138,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   extraFileErrors := [];
 
   -- Seed flow deps with {compiledGrammars, config}
-  extraFileErrors <- if false then error(hackUnparse((top.compiledGrammars, top.config))) else [];
+  extraFileErrors <- if false then error(genericShow((top.compiledGrammars, top.config))) else [];
 
   top.allFileErrors = map(
     \ fe::(String, [Message]) -> case fe of (fileName, fileErrors) ->
@@ -199,10 +200,8 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.serInterface = error("errorRootSpec demanded interface");
 }
 
-function parseErrorToMessage
-Pair<String [Message]> ::= grammarSource::String  e::ParseError
-{
-  return case e of
+fun parseErrorToMessage Pair<String [Message]> ::= grammarSource::String  e::ParseError =
+  case e of
   | syntaxError(str, locat, _, _) ->
       (locat.filename, 
         [err(locat,
@@ -212,7 +211,6 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
         [err(loc(grammarSource ++ file, -1, -1, -1, -1, -1, -1),
           "Unknown error while parsing:\n" ++ str)])
   end;
-}
 
 monoid attribute maybeGrammarSource::Maybe<String> with nothing(), orElse;
 monoid attribute maybeGrammarTime::Maybe<Integer> with nothing(), orElse;
@@ -391,11 +389,8 @@ InterfaceItems ::= r::Decorated RootSpec
 {--
  - All grammar names mentioned by this root spec (not transitive!)
  -}
-function mentionedGrammars
-[String] ::= r::Decorated RootSpec
-{
-  return nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
-}
+fun mentionedGrammars [String] ::= r::Decorated RootSpec =
+  nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
 
 -- We're comparing INTERFACE TIME against GRAMMAR TIME, just to emphasize what's going on here...
 function isOutOfDate

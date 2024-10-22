@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:type:syntax;
 
-nonterminal KindExpr with config, location, grammarName, errors, env, unparse, kindrep;
+tracked nonterminal KindExpr with config, grammarName, errors, env, unparse, kindrep;
 
 propagate errors on KindExpr; -- TODO: Are errors even possible here?
 
@@ -29,5 +29,5 @@ concrete production parenKindExpr
 top::KindExpr ::= '(' k::KindExpr ')'
 {
   top.unparse = s"(${k.unparse})";
-  forwards to k;
+  forwards to @k;
 }

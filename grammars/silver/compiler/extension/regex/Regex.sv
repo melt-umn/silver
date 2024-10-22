@@ -18,8 +18,8 @@ layout {}
   propagate freeVars;
   forwards to
     if null(getTypeDcl("silver:regex:Regex", top.env))
-    then errorExpr([err(top.location, "Use of regexes requires import of silver:regex")], location=top.location)
-    else translate(top.location, reflect(reg.ast));
+    then errorExpr([errFromOrigin(top, "Use of regexes requires import of silver:regex")])
+    else translate(reflect(reg.ast));
 }
 
 concrete production matches
@@ -29,7 +29,7 @@ top::Expr ::= e::Expr '=~' r::Expr
   propagate frame, freeVars;
   forwards to
     if null(getValueDcl("silver:regex:matches", top.env))
-    then errorExpr([err(top.location, "Use of regexes requires import of silver:regex")], location=top.location)
+    then errorExpr([errFromOrigin(top, "Use of regexes requires import of silver:regex")])
     else Silver_Expr { silver:regex:matches($Expr{r}, $Expr{e}) };
 }
 

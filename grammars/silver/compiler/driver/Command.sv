@@ -40,73 +40,73 @@ abstract production versionFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.displayVersion = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production cleanFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.doClean = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production warnErrorFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnError = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production forceOriginsFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.forceOrigins = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production noOriginsFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noOrigins = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production tracingOriginsFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.tracingOrigins = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production noRedexFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noRedex = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production outFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.outName = s :: forward.outName;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production includeFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.searchPath = s :: forward.searchPath;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production genFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.genLocation = s :: forward.genLocation;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production homeFlag
 top::CmdArgs ::= s::String rest::CmdArgs
 {
   top.silverHomeOption = s :: forward.silverHomeOption;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production nobindingFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noBindingChecking = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 function parseArgs
@@ -181,20 +181,14 @@ Either<String  Decorated CmdArgs> ::= args::[String]
          else right(cmdArgs);
 }
 
-function parseArgsOrError
-Decorated CmdArgs ::= args::[String]
-{
-  return
-    case parseArgs(args) of
-    | left(msg) -> error("Failed to parse args: " ++ msg)
-    | right(a) -> a
-    end;
-}
+fun parseArgsOrError Decorated CmdArgs ::= args::[String] =
+  case parseArgs(args) of
+  | left(msg) -> error("Failed to parse args: " ++ msg)
+  | right(a) -> a
+  end;
 
-function determineBuildEnv
-IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
-{
-  return do {
+fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
+  do {
     benv :: BuildEnv <- lift(do {
       -- Let's locally set up and verify the environment
       envSH :: String <- envVar("SILVER_HOME");
@@ -221,12 +215,9 @@ IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
 
     return benv;
   };
-}
 
-function checkEnvironment
-IO<[String]> ::= benv::BuildEnv
-{
-  return do {
+fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
+  do {
     isGenDir :: Boolean <- isDirectory(benv.silverGen);
     isGramDir :: Boolean <- isDirectory(benv.defaultGrammarPath);
 
@@ -243,14 +234,12 @@ IO<[String]> ::= benv::BuildEnv
       -- TODO: We should probably check everything in grammarPath?
       -- TODO: Maybe look for 'core' specifically?
   };
-}
 
-function checkPreBuild
+fun checkPreBuild
 IO<[String]> ::=
   benv::BuildEnv
-  buildGrammars::[String]
-{
-  return pure(
+  buildGrammars::[String] =
+  pure(
     if null(buildGrammars) then ["No grammar(s) to build were specified.\n"]
     else flatMap(\ buildGrammar::String ->
       if indexOf("/", buildGrammar) != -1 -- basic sanity check
@@ -259,8 +248,6 @@ IO<[String]> ::=
       then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
       else [],
       buildGrammars));
-  -- TODO: presently, we check whether we find this grammar elsewhere. Maybe it should be here? not sure.
-}
 
 -- This code has to live in the generated jar for the program, as putting it in the
 -- standard library may someday return the location of the standard library jar instead

@@ -57,8 +57,13 @@ public final class RTTIManager {
 	}
 
 
-	public static void registerOccurs(String nt, String attr, int index) {
-		getNonterminalton(nt).occursIndices.put(attr, index);
+	public static void registerOccurs(String nt, String attr, boolean isInherited, int index) {
+		Nonterminalton<?> ntton = getNonterminalton(nt);
+		if (isInherited) {
+			ntton.inhOccursIndices.put(attr, index);
+		} else {
+			ntton.synOccursIndices.put(attr, index);
+		}
 	}
 	
 
@@ -88,6 +93,7 @@ public final class RTTIManager {
 		public abstract int getChildCount();
 		public abstract int getAnnoCount();
 		
+		public abstract String[] getChildNames();
 		public abstract String[] getChildTypes();
 		public abstract Lazy[][] getChildInheritedAttributes(); // Originally for autocopy, not currently used
 	}
@@ -102,15 +108,27 @@ public final class RTTIManager {
 	// Represents a nonterminal (not a production or instance, but the nonterminal type itself.)
 	// T = the nonterminal type (NSomething)
 	public static abstract class Nonterminalton<T> {
-		public abstract String[] getOccursInh();
 		public abstract String getName();
 
-		private final Map<String, Integer> occursIndices = new HashMap<String, Integer>(16, 0.5f);
-		public int getOccursIndex(String attrName) {
-			if (!occursIndices.containsKey(attrName)) {
+		private final Map<String, Integer> inhOccursIndices = new HashMap<String, Integer>(16, 0.5f);
+		private final Map<String, Integer> synOccursIndices = new HashMap<String, Integer>(16, 0.5f);
+		public final boolean hasInh(String attrName) {
+			return inhOccursIndices.containsKey(attrName);
+		}
+		public final boolean hasSyn(String attrName) {
+			return synOccursIndices.containsKey(attrName);
+		}
+		public final int getInhOccursIndex(String attrName) {
+			if (!hasInh(attrName)) {
 				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
 			}
-			return occursIndices.get(attrName);
+			return inhOccursIndices.get(attrName);
+		}
+		public final int getSynOccursIndex(String attrName) {
+			if (!hasSyn(attrName)) {
+				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
+			}
+			return synOccursIndices.get(attrName);
 		}
 	}
 
