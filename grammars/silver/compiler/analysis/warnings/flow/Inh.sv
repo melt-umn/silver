@@ -13,7 +13,7 @@ abstract production warnMissingInhFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnMissingInh = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -62,27 +62,20 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - @param v  A value we need an equation for.
  - @param anonResolve  A list of anonymous decoration sites
  - @param config  Command-line arguments, that affect error reporting
+ - @param prodGraphs The final production flow graphs.
  - @param prodName  The full name of the production we're in
  - @param prodNt  The nonterminal this production belongs to. (For functions, a dummy value is ok)
  - @param flowEnv  The local flow environment
  - @param realEnv  The local real environment
  - @returns  Errors for missing equations
  -}
-function checkEqDeps
+fun checkEqDeps
 [Message] ::=
   v::FlowVertex  anonResolve::[(String, Location)]
-  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env
-{
+  config::Decorated CmdArgs  prodName::String
+  prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv  realEnv::Env =
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
-  
-  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
-  local ns :: NamedSignature =
-    case prodDcl of
-    | d :: _ -> d.namedSignature
-    | [] -> bogusNamedSignature()
-    end;
-
-  return case v of
+  case v of
   -- A dependency on an LHS.INH is a flow issue: these equations do not exist
   -- locally, so we cannot check them.
   | lhsInhVertex(_) -> []
@@ -91,14 +84,14 @@ function checkEqDeps
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
   | rhsInhVertex(sigName, attrName) ->
-      checkInhEq(prodName, rhsVertexType(sigName), attrName, config, flowEnv, realEnv)
+      checkInhEq(prodName, rhsVertexType(sigName), attrName, config, prodGraphs, flowEnv, realEnv)
   | rhsSynVertex(sigName, attrName) -> []
   -- A dependency on a LOCAL. Technically, local equations may not exist!
   -- But let's just assume they do, since `local name :: type = expr;` is the prefered syntax.
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   | localInhVertex(fName, attrName) -> 
-      checkInhEq(prodName, localVertexType(fName), attrName, config, flowEnv, realEnv)
+      checkInhEq(prodName, localVertexType(fName), attrName, config, prodGraphs, flowEnv, realEnv)
   | localSynVertex(fName, attrName) -> []
   -- A dependency on a ANON. This do always exist (`decorate expr with..` always has expr.)
   | anonEqVertex(fName) -> []
@@ -119,22 +112,23 @@ function checkEqDeps
   | anonSynVertex(fName, attrName) -> []
   -- A dependency on a projected equation in another production.
   | subtermInhVertex(parent, termProdName, sigName, attrName) ->
-      checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, flowEnv, realEnv)
+      checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, prodGraphs, flowEnv, realEnv)
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
-}
 
 fun checkInhEq
-[Message] ::= prodName::String vt::VertexType attrName::String config::Decorated CmdArgs flowEnv::FlowEnv realEnv::Env =
-  case resolveInhEq(prodName, vt, attrName, flowEnv, realEnv) of
+[Message] ::=
+    prodName::String vt::VertexType attrName::String config::Decorated CmdArgs
+    prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv realEnv::Env =
+  case resolveInhEq(prodName, vt, attrName, prodGraphs, flowEnv, realEnv) of
   | alwaysDec() -> []
-  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(missing)}")]
+  | missing -> [mwdaWrnAmbientOrigin(config, s"Equation requires inherited attribute ${attrName} be supplied to ${prettyDecSites(0, missing)}")]
   end;
 
 function checkAllEqDeps
 [Message] ::=
   vs::[FlowVertex]  flowDefs::[FlowDef]
-  config::Decorated CmdArgs  prodName::String  flowEnv::FlowEnv  realEnv::Env
+  config::Decorated CmdArgs  prodName::String  prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv  realEnv::Env
 {
   -- If a shared tree is missing an inherited equation, then the equation is also
   -- missing for the sharing decoration site vertex on which it depends.
@@ -151,13 +145,12 @@ function checkAllEqDeps
       | _ -> []
       end;
     decSite::VertexType <- lookupRefDecSite(prodName, refInh.1, flowEnv);
-    if resolveInhEq(prodName, refInh.1, refInh.2, flowEnv, realEnv) == alwaysDec()
-      then []
-      else [decSite.inhVertex(refInh.2)];
+    guard(!decSiteHasInhEq(prodName, refInh.1, refInh.2, prodGraphs, flowEnv, realEnv));
+    expandGraph([decSite.inhVertex(refInh.2)], findProductionGraph(prodName, prodGraphs));
   };
   local anonResolve::[(String, Location)] = collectAnonOrigin(flowDefs);
   return flatMap(
-    checkEqDeps(_, anonResolve, config, prodName, flowEnv, realEnv),
+    checkEqDeps(_, anonResolve, config, prodName, prodGraphs, flowEnv, realEnv),
     removeAll(alreadyReported, vs));
 }
 
@@ -165,7 +158,7 @@ function checkAllEqDeps
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
  - @param syn  A synthesized attribute's full name
  - @param t  The type to look up this attribute on
- - @param flow  The flow type environment (NOTE: TODO: this is currently 'myFlow' or something, NOT top.flowEnv)
+ - @param flow  The flow type environment (NOTE: TODO: this is currently 'top.grammarFlowTypes' or something, NOT top.flowEnv)
  - @param ns    The named signature of the enclosing production
  - @param env   The regular (type) environment
  - @return A set of inherited attributes (if the inh dependencies for the attribute are bounded) and a list of type variables of kind InhSet,
@@ -192,33 +185,42 @@ function inhDepsForSynOnType
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, e.frame.flowGraph);
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, fName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, fName, myGraphs, top.flowEnv, top.env)
     else [];
 }
 
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, e.frame.flowGraph);
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, fName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, fName, myGraphs, top.flowEnv, top.env)
     else [];
 }
 
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, e.frame.flowGraph);
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, id.lookupValue.fullName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, id.lookupValue.fullName, myGraphs, top.flowEnv, top.env)
     else [];
 }
 
@@ -227,6 +229,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -236,7 +239,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if dl.found && attr.found && top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrnFromOrigin(top, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -247,6 +250,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -264,9 +268,12 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
+  local vertexHasHideableEq :: (Boolean ::= VertexType String) =
+    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
+
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case filter(\ v::VertexType ->
-      resolvePossibleInhEq(top.frame.fullName, v, attr.attrDcl.fullName, top.flowEnv, top.env) == alwaysDec(),
+    case filter(
+      vertexHasHideableEq(_, attr.attrDcl.fullName),
       lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
@@ -278,8 +285,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
-      case filter(\ v::VertexType ->
-        resolvePossibleInhEq(top.frame.fullName, v, dl.inhAttrName, top.flowEnv, top.env) == alwaysDec(),
+      case filter(
+        vertexHasHideableEq(_, dl.inhAttrName),
         lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
@@ -315,7 +322,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     | dcl :: _ -> dcl.implementedSignature
     | _ -> nothing()
     end;
-  local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   local dispatchHostSigInhDepsLhsInh :: Maybe<set:Set<String>> =
     case implementedSig of
     | just(dispatchSig) ->
@@ -348,7 +354,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env)
     else [];
   top.errors <-
     if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
@@ -380,7 +386,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       [mwdaWrnFromOrigin(top,
         s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
         s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsDispatchHostSigInhDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
+        s"in a production that dispatched to this one, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
         s" (from ${sig.fullName})")]
     | _ -> []
     end;
@@ -409,6 +415,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -418,7 +425,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if dl.found && attr.found && top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrnFromOrigin(top, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -428,6 +435,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -437,7 +445,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if dl.found && attr.found && top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrnFromOrigin(top, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -447,6 +455,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -463,7 +472,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
@@ -475,6 +484,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -491,7 +501,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
          if dl.name != "forward" || null(lhsInhExceedsForwardFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds for " ++ dl.inhAttrName ++ " flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
@@ -505,6 +515,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -514,7 +525,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
          if null(lhsInhExceedsFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -524,6 +535,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -542,7 +554,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env) ++
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env) ++
          if null(lhsInhExceedsFlowType) then []
          else [mwdaWrnFromOrigin(top, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -551,37 +563,46 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 aspect production localValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   -- check transitive deps only. No worries about flow types.
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env)
     else [];
 }
 
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env)
     else [];
 }
 
 aspect production attachNoteStmt
 top::ProductionStmt ::= 'attachNote' e::Expr ';'
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
 
   top.errors <-
     if top.config.warnMissingInh
-    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, top.flowEnv, top.env)
+    then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env)
     else [];
 }
 
@@ -675,6 +696,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
     inhDepsForSynOnType(q.attrDcl.fullName, e.finalType, myFlow, top.frame.signature, top.env);
@@ -684,7 +706,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], ^i, top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -732,13 +754,13 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           | localVertexType(_) -> true
           | _ -> false
           end ->
-        case decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), top.flowEnv, top.env) of
+        case decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), myGraphs, top.flowEnv, top.env) of
         | [] -> []
         | missingEqs -> map(\ di::(DecSiteTree, [String]) ->
             mwdaWrnFromOrigin(top,
               "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++
               " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-              " to be supplied to " ++ prettyDecSites(di.1)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             missingEqs)
         end
       | _ -> []
@@ -771,6 +793,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
     inhDepsForSynOnType(q.attrDcl.fullName, e.finalType, myFlow, top.frame.signature, top.env);
@@ -795,7 +818,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case e.finalType of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], ^i, top.env)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -843,13 +866,13 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           | localVertexType(_) -> true
           | _ -> false
           end ->
-        case decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), top.flowEnv, top.env) of
+        case decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), myGraphs, top.flowEnv, top.env) of
         | [] -> []
         | missingEqs -> map(\ di::(DecSiteTree, [String]) ->
             mwdaWrnFromOrigin(top,
               "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
               " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-              " to be supplied to " ++ prettyDecSites(di.1)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             missingEqs)
         end
       | _ -> []
@@ -910,14 +933,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(scrutineeType, top.env), set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinRefSet(^scrutineeType, top.env), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
     && top.config.warnMissingInh
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
+    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(^scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
     else [];
 
 }
@@ -930,17 +953,20 @@ fun toAnonInhs [String] ::= vs::[FlowVertex]  vertex::String =
     end, vs);
 
 inherited attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
-propagate receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
+propagate @receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
 
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   -- Check that we're not taking an unbounded reference
   top.errors <-
     if top.config.warnMissingInh
     && isDecorable(top.bindingType, top.env)
     then if refSet.isJust then []
-         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.")]
+         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(^finalTy)}, as the reference set is not bounded.")]
     else [];
 
   -- fName is our invented vertex name for the pattern variable
@@ -954,14 +980,14 @@ top::VarBinder ::= n::Name
     decSitesMissingInhEqs(
       top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName),
       removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs),
-      top.flowEnv, top.env);
+      myGraphs, top.flowEnv, top.env);
 
   top.errors <-
     if top.config.warnMissingInh
     && isDecorable(top.bindingType, top.env)
     && top.matchingAgainst.isJust
     then map(\ eqs::(DecSiteTree, [String]) ->
-        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(eqs.1)}\n"),
+        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(0, eqs.1)}"),
       missingInhEqs)
     else [];
 }
@@ -976,10 +1002,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 
   -- The logic here mirrors the reference case in synDecoratedAccessHandler
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
-    inhDepsForSynOnType(attr, ntty, myFlow, top.frame.signature, top.env);
+    inhDepsForSynOnType(attr, ^ntty, myFlow, top.frame.signature, top.env);
   local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
 
-  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], inhs, top.env);
+  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], ^inhs, top.env);
   local diff :: [String] = set:toList(set:removeAll(acceptable.1, inhDeps));
 
   top.contextErrors <-
@@ -993,10 +1019,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
         then if deps.1.isJust then []  -- We have a bound on the inh deps, and they are all present
         -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
         else if null(acceptable.2)
-        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
-        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
+        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(^top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
+        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(^top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
       -- We didn't find the inh deps
-      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
+      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(^top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
    else [];
 }
 

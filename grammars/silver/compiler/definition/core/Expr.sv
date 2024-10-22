@@ -18,7 +18,7 @@ tracked nonterminal ExprLHSExpr with
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr =
-  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, compiledGrammars, config, decSiteVertexInfo},
+  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, compiledGrammars, config, decSiteVertexInfo, appDecSiteVertexInfo},
   decorate {forward, alwaysDecorated, originRules},
   errors {forward}, typerep {forward};
 
@@ -82,7 +82,7 @@ top::Expr ::= '(' e::Expr ')'
 {
   top.unparse = "(" ++ e.unparse ++ ")";
   
-  forwards to e;
+  forwards to @e;
 }
 
 concrete production baseExpr
@@ -120,7 +120,7 @@ top::Expr ::= @q::QName
   top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
+                then q.lookupValue.typeScheme.asDecoratedType
                 else q.lookupValue.typeScheme.monoType;
 }
 
@@ -130,8 +130,8 @@ top::Expr ::= @q::QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  -- An (non-data) LHS is *always* a decorated (nonterminal) type.
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 abstract production localReference implements Reference
@@ -142,7 +142,7 @@ top::Expr ::= @q::QName
   
   top.typerep =
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-    then q.lookupValue.typeScheme.asNtOrDecType
+    then q.lookupValue.typeScheme.asDecoratedType
     else q.lookupValue.typeScheme.monoType;
 }
 
@@ -161,8 +161,8 @@ top::Expr ::= @q::QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  -- An LHS (and thus, forward) is *always* a decorated (nonterminal) type.
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -271,10 +271,10 @@ top::Expr ::= 'forwardParent'
 {
   top.unparse = "forwardParent";
 
-  top.typerep = top.frame.signature.outputElement.typerep.asNtOrDecType;
+  top.typerep = top.frame.signature.outputElement.typerep.asDecoratedType;
   top.errors <-
     if !any(map((.elementShared), top.frame.signature.inputElements))
-    then [errFromOrigin(top, "This production has no shared children and is not known to be the target of forwarding.")]
+    then [errFromOrigin(top, "This production has no shared children, and thus is not known to be the target of forwarding.")]
     else [];
 }
 
@@ -401,19 +401,18 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
-  local extraArgs::[Expr] = drop(es.appExprSize - length(t.inputTypes), es.rawExprs);
-  local dispatchArgs::[Expr] = take(es.appExprSize - length(t.inputTypes), es.rawExprs);
+
+  -- TODO: args are being (unavoidably?) re-decorated here.
+  production extraArgs :: AppExprs =
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, drop(es.appExprSize - length(t.inputTypes), es.rawExprs)));
+  production dispatchArgs :: AppExprs =
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, take(es.appExprSize - length(t.inputTypes), es.rawExprs)));
 
   forwards to application(
-    application(
-      @e, '(',
-      foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
-        map(presentAppExpr, extraArgs)),
-      ',', emptyAnnoAppExprs(), ')'),
-    '(',
-    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
-      map(presentAppExpr, dispatchArgs)),
-    ',', @anns, ')');
+    application(@e, '(', @extraArgs, ',', emptyAnnoAppExprs(), ')'),
+    '(', @dispatchArgs, ',', ^anns, ')');
 }
 
 abstract production dispatchApplication implements Application
@@ -456,7 +455,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
-  q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
+  q.attrFor = if eTy.isDecorated then eTy.decoratedType else ^eTy;
   
   -- Note: we're first consulting the TYPE of the LHS.
   forwards to eTy.accessHandler(e, q);
@@ -604,7 +603,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 }
 
 abstract production annoAccessHandler implements Access
@@ -631,7 +630,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep;
 
   top.errors <- [errFromOrigin(top, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
@@ -641,7 +640,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 
   top.errors <- [errFromOrigin(top, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
@@ -669,13 +668,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
-  production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
+  production ntType::Type = if eType.isDecorated then eType.decoratedType else @eType;
 
   -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
-  top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
+  top.typerep = decoratedType(^ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
-  inh.decoratingnt = ntType;
+  inh.decoratingnt = ^ntType;
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 
@@ -945,13 +944,14 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 concrete production terminalFunction
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
 {
-  local locExpr :: Expr = Silver_Expr {
-    silver:core:fromMaybe(
-      silver:core:bogusLoc(),
-      silver:core:getParsedOriginLocation(silver:core:ambientOrigin()))
-  };
+  nondecorated local locExpr::Expr =
+    Silver_Expr {
+      silver:core:fromMaybe(
+        silver:core:bogusLoc(),
+        silver:core:getParsedOriginLocation(silver:core:ambientOrigin()))
+    };
 
-  forwards to terminalConstructor($1, $2, t, $4, e, ',', locExpr, $6);
+  forwards to terminalConstructor($1, $2, @t, $4, @e, ',', locExpr, $6);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.
@@ -971,7 +971,7 @@ top::Exprs ::= e::Expr
   top.unparse = e.unparse;
 
   top.exprs := [e];
-  top.rawExprs := [e];
+  top.rawExprs := [^e];
 
   e.isRoot = false;
 }
@@ -981,7 +981,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.unparse = e1.unparse ++ ", " ++ e2.unparse;
 
   top.exprs := [e1] ++ e2.exprs;
-  top.rawExprs := [e1] ++ e2.rawExprs;
+  top.rawExprs := [^e1] ++ e2.rawExprs;
 
   e1.isRoot = false;
 }
@@ -1050,7 +1050,7 @@ top::AppExpr ::= e::Expr
   top.isPartial = false;
   top.missingTypereps = [];
   
-  top.rawExprs := [e];
+  top.rawExprs := [^e];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
 

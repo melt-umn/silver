@@ -8,7 +8,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.merrors := la.merrors ++ ne.merrors;
 
   --We needed to provide our own environment.
-  local ne::Expr = e;
+  local ne::Expr = ^e;
   ne.config = top.config;
   ne.grammarName = top.grammarName;
   ne.compiledGrammars = top.compiledGrammars;
@@ -21,6 +21,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.expectedMonad = top.expectedMonad;
   ne.decSiteVertexInfo = top.decSiteVertexInfo;
   ne.alwaysDecorated = top.alwaysDecorated;
+  ne.appDecSiteVertexInfo = nothing();
   ne.isRoot = top.isRoot;
 
   la.mDownSubst = top.mDownSubst;
@@ -36,8 +37,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.monadicallyUsed = false;
   top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
-  local mreturn::Expr = monadReturn();
-  local mbind::Expr = monadBind();
+  nondecorated local mreturn::Expr = monadReturn();
+  nondecorated local mbind::Expr = monadBind();
 
   {-
     Our rewriting here binds in anything after the let to keep names from
@@ -53,18 +54,19 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.monadRewritten =
      letp(la.fixedAssigns,
           boundIn);
-  local inside::Expr = if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
-                       then ne.monadRewritten
-                       else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
-  local boundIn::Expr =
-         foldr(\x::Pair<Name TypeExpr> y::Expr ->
-                 buildApplication(mbind,
-                     [baseExpr(qName(x.fst.name)),
-                      buildLambda(x.fst.name,
-                                  decorate x.snd with
-                                     {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
-                                  y)]),
-               inside, la.bindInList);
+  nondecorated local inside::Expr =
+    if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
+    then ne.monadRewritten
+    else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
+  nondecorated local boundIn::Expr =
+    foldr(\x::Pair<Name TypeExpr> y::Expr ->
+            buildApplication(mbind,
+                [baseExpr(qName(x.fst.name)),
+                 buildLambda(x.fst.name,
+                             decorate x.snd with
+                                {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
+                             y)]),
+          inside, la.bindInList);
 }
 
 
@@ -119,14 +121,14 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                e.flowVertexInfo, e.flowDeps)];
 
   top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
-                   then [(id, t)]
+                   then [(^id, ^t)]
                    else [];
 
   top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
-                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
+                     then assignExpr(^id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep)),
                                      '=', e.monadRewritten)
-                     else assignExpr(id, '::', t, '=', e.monadRewritten);
+                     else assignExpr(^id, '::', ^t, '=', e.monadRewritten);
 }
 
 
@@ -139,7 +141,7 @@ top::Expr ::= @q::QName  _ _
   propagate mDownSubst, mUpSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q))]
+                     then [baseExpr(^q)]
                      else [];
-  top.monadRewritten = baseExpr(new(q));
+  top.monadRewritten = baseExpr(^q);
 }

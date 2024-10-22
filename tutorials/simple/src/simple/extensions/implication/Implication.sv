@@ -17,5 +17,5 @@ e::Expr ::= l::Expr r::Expr
 {
   e.pp = pp"(${l} => ${r})";
   --   l => r   is equivalent to   !l || r
-  forwards to or(notOp(l), r);
+  forwards to or(notOp(@l), @r);
 }

@@ -4,18 +4,22 @@ grammar silver:compiler:definition:flow:ast;
  - Represents a decision tree of potential decoration sites to determine if an inherited attribute
  - has been supplied for some vertex type.
  -}
-nonterminal DecSiteTree with decSitePP, decSiteAlts, decSiteReqs;
+nonterminal DecSiteTree with decSitePP, decSiteAlts, decSiteReqs, maxDepth, dbgPP;
 flowtype DecSiteTree = decorate {}, forward {};
 
 synthesized attribute decSitePP::String;
 synthesized attribute decSiteAlts::[DecSiteTree];
 synthesized attribute decSiteReqs::[DecSiteTree];
 
+inherited attribute maxDepth::Integer;
+synthesized attribute dbgPP::String;
+
 aspect default production
 top::DecSiteTree ::=
 {
-  top.decSiteAlts = [top];
-  top.decSiteReqs = [top];
+  top.decSiteAlts = [^top];
+  top.decSiteReqs = [^top];
+  top.dbgPP = top.decSitePP;
 }
 
 {--
@@ -48,6 +52,9 @@ top::DecSiteTree ::= d1::DecSiteTree d2::DecSiteTree
 {
   top.decSitePP = implode(" | ", map((.decSitePP), top.decSiteAlts));
   top.decSiteAlts = d1.decSiteAlts ++ d2.decSiteAlts;
+  top.dbgPP = if top.maxDepth > 0 then s"(${d1.dbgPP} | ${d2.dbgPP})" else "...";
+  d1.maxDepth = top.maxDepth - 1;
+  d2.maxDepth = top.maxDepth - 1;
 }
 
 {--
@@ -58,6 +65,29 @@ top::DecSiteTree ::= d1::DecSiteTree d2::DecSiteTree
 {
   top.decSitePP = s"{${implode(", ", map((.decSitePP), top.decSiteReqs))}}";
   top.decSiteReqs = d1.decSiteReqs ++ d2.decSiteReqs;
+  top.dbgPP = if top.maxDepth > 0 then s"(${d1.dbgPP} & ${d2.dbgPP})" else "...";
+  d1.maxDepth = top.maxDepth - 1;
+  d2.maxDepth = top.maxDepth - 1;
+}
+
+production viaProdVertexDec
+top::DecSiteTree ::= prodName::String vt::VertexType d::DecSiteTree
+{
+  top.decSitePP = d.decSitePP;
+  top.decSiteReqs = d.decSiteReqs;
+  top.decSiteAlts = d.decSiteAlts;
+  top.dbgPP = if top.maxDepth > 0 then s"via ${vt.vertexPP} of production ${prodName}: ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
+}
+
+production viaDispatchDec
+top::DecSiteTree ::= dispatchSig::String sigName::String d::DecSiteTree
+{
+  top.decSitePP = d.decSitePP;
+  top.decSiteReqs = d.decSiteReqs;
+  top.decSiteAlts = d.decSiteAlts;
+  top.dbgPP = if top.maxDepth > 0 then s"via child ${sigName} of dispatch ${dispatchSig}: ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
 }
 
 {--
@@ -87,33 +117,55 @@ top::DecSiteTree ::= prodName::String prodAttrName::Maybe<String>
 }
 
 {--
+ - Decoration sites where some other attribute must be supplied as a dependency.
+ -}
+production depAttrDec
+top::DecSiteTree ::= attrName::String d::DecSiteTree
+{
+  top.decSitePP = s"dependency ${attrName} supplied to ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"dependency ${attrName} supplied to ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
+}
+
+{--
+  - Supplying an inherited attribute via a flow projection requires the projected dependencies to be supplied.
+  -}
+production projectedDepsDec
+top::DecSiteTree ::= prodName::String sigName::String d::DecSiteTree
+{
+  top.decSitePP = s"projected dependencies for ${sigName} in production ${prodName}: ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"projected dependencies for ${sigName} in production ${prodName}: ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
+}
+
+{--
  - An inherited attribute on a translation attribute can be supplied via a translation attribute.
  -}
 production transAttrDec
 top::DecSiteTree ::= attrName::String d::DecSiteTree
 {
   top.decSitePP = s"via translation attribute ${attrName}: ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"via translation attribute ${attrName}: ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
 }
 
-fun foldAnyDecSite DecSiteTree ::= ds::[DecSiteTree] =
-  foldr(altDec, neverDec(), ds);
-
-fun foldAllDecSite DecSiteTree ::= ds::[DecSiteTree] =
-  foldr(bothDec, alwaysDec(), ds);
-
-fun prettyDecSites String ::= d::DecSiteTree =
-  case d.decSiteAlts of
-  | [d] -> d.decSitePP
-  | ds -> "any of\n\t" ++ implode("\n\t", map((.decSitePP), ds))
-  end;
+fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
+  replicate(nest, "\t") ++
+  if length(d.decSiteAlts) > 1
+  then "any of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteAlts))
+  else if length(d.decSiteReqs) > 1
+  then "all of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteReqs))
+  else
+    case d of
+    | depAttrDec(attrName, d) -> s"dependency ${attrName} supplied to ${prettyDecSites(nest, ^d)}"
+    | _ -> d.decSitePP
+    end;
 
 derive Eq, Ord on DecSiteTree;
 
--- Semigroup/monoid instances for composing alternatives, since that more common that conjunction
-instance Semigroup DecSiteTree {
-  append = altDec;
-}
-
-instance Monoid DecSiteTree {
-  mempty = neverDec();
+instance Semiring DecSiteTree {
+  add = altDec;
+  zero = neverDec();
+  mul = bothDec;
+  one = alwaysDec();
 }

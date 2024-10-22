@@ -9,7 +9,7 @@ top::AGDcl ::= 'derive' tcs::NameList 'on' nts::NameList ';'
 {
   top.unparse = s"derive ${tcs.unparse} on ${nts.unparse};";
   
-  forwards to deriveTCsOnNTListDcl(tcs, nts);
+  forwards to deriveTCsOnNTListDcl(@tcs, @nts);
 }
 
 production deriveTCsOnNTListDcl
@@ -19,11 +19,11 @@ top::AGDcl ::= tcs::NameList nts::NameList
   
   forwards to
     case nts of
-    | nameListOne(n) -> deriveTCsOnOneNTDcl(tcs, n)
+    | nameListOne(n) -> deriveTCsOnOneNTDcl(@tcs, ^n)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        deriveTCsOnOneNTDcl(tcs, n),
-        deriveTCsOnNTListDcl(tcs, rest))
+        deriveTCsOnOneNTDcl(@tcs, ^n),
+        deriveTCsOnNTListDcl(^tcs, ^rest))
     end;
 }
 
@@ -34,11 +34,11 @@ top::AGDcl ::= tcs::NameList nt::QName
   
   forwards to
     case tcs of
-    | nameListOne(tc) -> deriveDcl(tc, nt)
+    | nameListOne(tc) -> deriveDcl(^tc, @nt)
     | nameListCons(tc, _, rest) ->
       appendAGDcl(
-        deriveDcl(tc, nt),
-        deriveTCsOnOneNTDcl(rest, nt))
+        deriveDcl(^tc, @nt),
+        deriveTCsOnOneNTDcl(^rest, ^nt))
     end;
 }
 
@@ -80,7 +80,7 @@ top::AGDcl ::= @nt::QName
   top.moduleNames := [];
 
   local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
-  local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
+  nondecorated local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
   
   local includedProds::[ValueDclInfo] =
     filter(
@@ -132,8 +132,11 @@ top::AGDcl ::= @nt::QName
                             and(_, '&&', _),
                             Silver_Expr {true},
                             map(
-                              \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} == $name{s"b${toString(i)}"} },
-                              range(0, length(prod.namedSignature.inputElements)))))),
+                              \ ie::(Integer, NamedSignatureElement) ->
+                                if isDecorable(ie.2.elementDclType, top.env)
+                                then Silver_Expr { new($name{s"a${toString(ie.1)}"}) == new($name{s"b${toString(ie.1)}"}) }
+                                else Silver_Expr { $name{s"a${toString(ie.1)}"} == $name{s"b${toString(ie.1)}"} },
+                              enumerate(prod.namedSignature.inputElements))))),
                       Silver_Expr {false})),
                   includedProds)),
               Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")}),
@@ -173,8 +176,11 @@ top::AGDcl ::= @nt::QName
                             or(_, '||', _),
                             Silver_Expr {false},
                             map(
-                              \ i::Integer -> Silver_Expr { $name{s"a${toString(i)}"} != $name{s"b${toString(i)}"} },
-                              range(0, length(prod.namedSignature.inputElements)))))),
+                              \ ie::(Integer, NamedSignatureElement) ->
+                                if isDecorable(ie.2.elementDclType, top.env)
+                                then Silver_Expr { new($name{s"a${toString(ie.1)}"}) != new($name{s"b${toString(ie.1)}"}) }
+                                else Silver_Expr { $name{s"a${toString(ie.1)}"} != $name{s"b${toString(ie.1)}"} },
+                              enumerate(prod.namedSignature.inputElements))))),
                       Silver_Expr {true})),
                   includedProds)),
               Silver_Expr {silver:core:error("Unexpected production in derived Eq instance!")}),
@@ -193,7 +199,7 @@ top::AGDcl ::= @nt::QName
   top.moduleNames := [];
 
   local tvs::[TyVar] = map(freshTyVar, nt.lookupType.dcl.kindrep.argKinds);
-  local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
+  nondecorated local ntty::Type = appTypes(nt.lookupType.typeScheme.monoType, map(skolemType, tvs));
   
   local includedProds::[ValueDclInfo] =
     filter(
@@ -259,8 +265,11 @@ top::AGDcl ::= @nt::QName
                                 \ e1::Expr e2::Expr ->
                                   Silver_Expr { let res::Integer = $Expr{e1} in if res == 0 then $Expr{e2} else res end },
                                 map(
-                                  \ i::Integer -> Silver_Expr { silver:core:compare($name{s"a${toString(i)}"}, $name{s"b${toString(i)}"}) },
-                                  range(0, length(prod2.namedSignature.inputElements))))),
+                              \ ie::(Integer, NamedSignatureElement) ->
+                                if isDecorable(ie.2.elementDclType, top.env)
+                                then Silver_Expr { silver:core:compare(new($name{s"a${toString(ie.1)}"}), new($name{s"b${toString(ie.1)}"})) }
+                                else Silver_Expr { silver:core:compare($name{s"a${toString(ie.1)}"}, $name{s"b${toString(ie.1)}"}) },
+                              enumerate(prod.namedSignature.inputElements)))),
                           includedProds)),
                       Silver_Expr {silver:core:error("Unexpected production in derived Ord instance!")})),
                   includedProds)),

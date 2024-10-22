@@ -29,7 +29,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 function getInhAttrsOnForReferences
 [String] ::= nt::String  e::Env  authority::(Boolean ::= String)
 {
-  local ntty::Type =
+  nondecorated local ntty::Type =
     case getTypeDcl(nt, e) of
     | ty :: _ -> ty.typeScheme.monoType
     | [] -> errorType()

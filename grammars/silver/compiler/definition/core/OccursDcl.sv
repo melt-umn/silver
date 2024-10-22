@@ -1,9 +1,9 @@
 grammar silver:compiler:definition:core;
 
-dispatch AttributionDcl = AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs;
+dispatch AttributionDcl = AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs;
 
 abstract production defaultAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 { 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
@@ -32,6 +32,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
     else [];
   
   nttl.initialEnv = top.env;
+  at.env = top.env;
   attl.env = nttl.envBindingTyVars;
   nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
@@ -96,7 +97,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   
   -- Apply the nonterminal type to the type variables.
   -- NOT .monoType so we do something sensible if someone does "occurs on TypeAlias<a>" or something.
-  production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
+  nondecorated production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
   
   -- This renames the vars from the environment
   -- at's env types -> type params containing local skolem vars  (vars -> types)
@@ -106,7 +107,7 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
   local rewrite_to :: Substitution = zipVarsIntoSubstitution(nttl.freeVariables, tyVars);
   
   -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
-  production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
+  nondecorated production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
   production occursCheck :: [OccursDclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
@@ -175,7 +176,7 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  -- Note: we are supplying env to attl, nt, nttl here (and then re-decorating them after dispatching.)
+  -- Note: we are supplying (the wrong) env to attl, nt, nttl here (and then re-decorating them after dispatching.)
   -- This is needed to permit computing flow defs on this production.
   propagate env;
   
@@ -191,8 +192,8 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   
   forwards to
     if !at.lookupAttribute.found
-    then errorAttributionDcl(at.lookupAttribute.errors, at, attl, nt, nttl)
-    else at.lookupAttribute.dcl.attributionDispatcher(at, attl, nt, nttl);
+    then errorAttributionDcl(at.lookupAttribute.errors, at, @attl, @nt, @nttl)
+    else at.lookupAttribute.dcl.attributionDispatcher(^at, ^attl, ^nt, ^nttl);
 }
 
 concrete production annotateDcl
@@ -202,17 +203,16 @@ top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' 
 }
 
 -- Utility productions for extensions to inject extra declarations besides the occurs-on.
-production extraDefaultAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs extraDcls::AGDcl
+production extraDclsAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs prod::AttributionDcl extraDcls::AGDcl
 {
-  forwards to
-    appendAGDcl(
-      directDefaultAttributionDcl(@at, @attl, @nt, @nttl),
-      @extraDcls);
+  forwards to appendAGDcl(prod(@at, @attl, @nt, @nttl), @extraDcls);
 }
-production directDefaultAttributionDcl
-top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production altParamAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs prod::AttributionDcl newAttl::BracketedOptTypeExprs
 {
-  at.env = top.env;
-  forwards to defaultAttributionDcl(at, @attl, @nt, @nttl);
+  attl.env = nttl.envBindingTyVars;
+  attl.flowEnv = top.flowEnv;
+  attl.grammarName = top.grammarName;
+  forwards to prod(@at, @newAttl, @nt, @nttl);
 }

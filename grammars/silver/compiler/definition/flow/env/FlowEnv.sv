@@ -28,7 +28,7 @@ synthesized attribute defTree :: EnvTree<FlowDef>;
 synthesized attribute fwdTree :: EnvTree<FlowDef>;
 synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
 synthesized attribute prodTree :: EnvTree<String>;
-synthesized attribute implTree :: EnvTree<String>;
+synthesized attribute implTree :: EnvTree<(String, [String])>;
 synthesized attribute refTree :: EnvTree<[String]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
@@ -116,18 +116,21 @@ fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::Stri
   -- or in a dispatch signature that this production implements
   case getValueDcl(prod, realEnv) of
   | dcl :: _ when dcl.implementedSignature matches just(sig) ->
-    lookupSigShareSites(
-      sig.fullName,
-      head(drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames)),
-      e)
+    case drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames) of
+    | sn :: _ -> lookupSigShareSites(sig.fullName, sn, e)
+    -- Error case. Sometimes this gets called when the prod sig doesn't match the implemented sig.
+    | _ -> []
+    end
   | _ -> []
   end;
 
 -- inherited equation for some arbitrary vertex type
+-- (note that inh is just an inherited attribute, not trans.inh)
 fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | forwardVertexType_real() -> true
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
     !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(localVertexType(fName), transAttr) ->
@@ -142,10 +145,10 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   -- anything in the prod flow graph.
   | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
   | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwared to us.
-  | forwardVertexType_real() -> false  -- Same as LHS, but we can check this if e.g. forwarding to a child.
   end;
 
 -- used for duplicate equations checks
+-- (note that inh is just an inherited attribute, not trans.inh)
 fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
   case vt of
   | rhsVertexType(sigName) ->
@@ -180,8 +183,8 @@ fun getNonSuspectAttrsForProd [String] ::= prod::String  e::FlowEnv =
 fun getNonforwardingProds [String] ::= nt::String  e::FlowEnv =
   searchEnvTree(nt, e.prodTree);
 
--- all host productions implementing a dispatch signature
-fun getImplementingProds [String] ::= dispatchSig::String e::FlowEnv =
+-- all host productions implementing a dispatch signature, along with their input sig names
+fun getImplementingProds [(String, [String])] ::= dispatchSig::String e::FlowEnv =
   searchEnvTree(dispatchSig, e.implTree);
 
 -- Ext Syns subject to ft lower bound
@@ -218,7 +221,7 @@ top::Context ::=
 aspect production synOccursContext
 top::Context ::= syn::String _ _ inhs::Type ntty::Type
 {
-  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], inhs, top.env);
+  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], ^inhs, top.env);
   top.occursContextInhDeps :=
     case maxInhSetMembers.fst of
     | just(inhAttrs) -> [(ntty.typeName, syn, inhAttrs)]

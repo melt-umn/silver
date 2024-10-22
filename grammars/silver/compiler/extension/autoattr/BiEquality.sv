@@ -30,35 +30,6 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
        attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
-abstract production biequalityInhAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
-{
-  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  top.moduleNames := [];
-
-  propagate grammarName, env, flowEnv;
-  
-  forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then attl
-      else
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  tl)
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end),
-            '>')),
-      nt, nttl);
-}
-
 abstract production propagateBiequalitySynPartial implements Propagate
 top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String syn::String
 {
@@ -66,7 +37,7 @@ top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String sy
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(synPartial)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^synPartial} =
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
@@ -85,9 +56,15 @@ top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String sy
               trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$qName{syn} },
+                  if !null(getOccursDcl(syn, ie.typerep.typeName, top.env))
+                  then Silver_Expr { $name{ie.elementName}.$name{syn} }
+                  else if isDecorable(ie.typerep, top.env)
+                  then Silver_Expr {
+                    silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))
+                  }
+                  else Silver_Expr {
+                    silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"})
+                  },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;
@@ -101,7 +78,7 @@ top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String synPartia
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^syn} =
         $name{top.frame.signature.outputElement.elementName}.$qName{synPartial} ||
         $name{top.frame.signature.outputElement.elementName}.$qName{inh}.$qName{synPartial};
     };

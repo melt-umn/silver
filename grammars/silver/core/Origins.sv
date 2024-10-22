@@ -12,7 +12,7 @@ grammar silver:core;
 data OriginInfoType =
 @{- Information was computed at the site of invoking a constructor (this is "normal") -}
   setAtConstructionOIT
-@{- Result of calling new(x) on a tracked nonterminal (including children of x that were also new-ed) -}
+@{- Result of calling ^x on a tracked nonterminal (including children of x that were also new-ed) -}
 | setAtNewOIT
 @{-
   - Result of forwarding to a nonterminal. This is a little weird because there's an extra indirection.

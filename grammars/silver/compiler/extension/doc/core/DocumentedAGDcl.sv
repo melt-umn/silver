@@ -18,7 +18,8 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
 {
     local docCommentContent::String = body.lexeme;
     local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, body.location.filename);
-    local comment::DclComment = if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError);
+    nondecorated local comment::DclComment =
+      if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError);
     return if conf.parseDocs then comment else theEmptyDclComment;
 }
 
@@ -80,7 +81,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
                     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];
 
-    forwards to dcl;
+    forwards to @dcl;
 }
 
 @{-

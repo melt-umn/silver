@@ -42,7 +42,7 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
   top.errors := nts.errors;
   top.specDefs := nts.specDefs;
   
-  nts.flowSpecSpec = new(attr);
+  nts.flowSpecSpec = ^attr;
 }
 
 

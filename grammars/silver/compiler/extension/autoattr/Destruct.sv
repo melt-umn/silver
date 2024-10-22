@@ -20,18 +20,16 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 }
 
 abstract production destructAttributionDcl implements AttributionDcl
-top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  propagate grammarName, env, flowEnv;
-  
-  forwards to
-    defaultAttributionDcl(
-      at,
-      case attl.types of
-      | [] ->
+  local fwrdProd::AttributionDcl =
+    case attl.types of
+    | [] ->
+      altParamAttributionDcl(
+        defaultAttributionDcl,
         botlSome(
           bTypeList(
             '<',
@@ -40,13 +38,15 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  tl)
+                  ^tl)
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
                 typerepTypeExpr(inhSetType([])))),
-            '>'))
-      | [i] ->
+            '>')))
+    | [i] ->
+      altParamAttributionDcl(
+        defaultAttributionDcl,
         botlSome(
           bTypeList(
             '<',
@@ -55,15 +55,16 @@ top::AGDcl ::= @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedO
               | botlSome(tl) -> 
                 appTypeExpr(
                   nominalTypeExpr(nt.qNameType),
-                  tl)
+                  ^tl)
               | botlNone() -> nominalTypeExpr(nt.qNameType)
               end,
               typeListSingle(
                 typerepTypeExpr(i))),
-            '>'))
-      | _ -> attl
-      end,
-      nt, nttl);
+            '>')))
+    | _ -> defaultAttributionDcl
+    end;
+  
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 {--
@@ -83,8 +84,8 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
       map(
         \ ie::Pair<Integer NamedSignatureElement> ->
           Silver_ProductionStmt {
-            $name{ie.snd.elementName}.$QName{new(attr)} =
-              case $name{top.frame.signature.outputElement.elementName}.$QName{new(attr)} of
+            $name{ie.snd.elementName}.$QName{^attr} =
+              case $name{top.frame.signature.outputElement.elementName}.$QName{^attr} of
               | $Pattern{
                   prodAppPattern(
                     qName(top.frame.signature.fullName),

@@ -85,7 +85,7 @@ end;
 aspect production propagateOnNTListDcl
 top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
 {
-  propagate grammarName, env, flowEnv;
+  propagate env, flowEnv;
 }
 
 aspect production tcMonoidAttributeDcl
@@ -188,8 +188,8 @@ aspect attributeRefLocs on top::StrategyExpr using <- of
 end;
 
 aspect attributeRefLocs on StrategyExpr using := of
-| partialRef(a) -> if attrDclFound then [(a.nameLoc, attrDcl)] else []
-| totalRef(a) -> if attrDclFound then [(a.nameLoc, attrDcl)] else []
+| partialRef(a) -> if attrDclFound then [(a.nameLoc, ^attrDcl)] else []
+| totalRef(a) -> if attrDclFound then [(a.nameLoc, ^attrDcl)] else []
 end;
 
 -- Productions

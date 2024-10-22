@@ -17,7 +17,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnOrphaned = true;
   top.warnFwd = true;
   top.warnSharing = true;
-  forwards to rest;
+  forwards to @rest;
 }
 
 -- Also add these under --warn-all

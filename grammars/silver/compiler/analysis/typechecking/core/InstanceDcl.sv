@@ -23,6 +23,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   
   e.downSubst = instSubst;
   errCheck1.downSubst = e.upSubst;
-  e.finalSubst = errCheck1.upSubst;
-  errCheck1.finalSubst = errCheck1.upSubst;
+  e.downSubst2 = errCheck1.upSubst;
+  e.finalSubst = e.upSubst2;
+  errCheck1.finalSubst = e.finalSubst;
 }

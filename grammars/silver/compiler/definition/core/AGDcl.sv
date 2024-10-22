@@ -71,14 +71,12 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.errors <- warnIfMultJarName(h.jarName, t.jarName);
 }
 
-function makeAppendAGDclOfAGDcls
-AGDcl ::= dcls::AGDcls
-{
-  return case dcls of
-         | nilAGDcls() -> emptyAGDcl()
-         | consAGDcls(dcl, rest) -> appendAGDcl(dcl, makeAppendAGDclOfAGDcls(rest))
-         end;
-}
+-- TODO: There should probably just be a production with this signature
+fun makeAppendAGDclOfAGDcls AGDcl ::= dcls::AGDcls =
+  case dcls of
+  | nilAGDcls() -> emptyAGDcl()
+  | consAGDcls(dcl, rest) -> appendAGDcl(^dcl, makeAppendAGDclOfAGDcls(^rest))
+  end;
 
 abstract production jarNameDcl
 top::AGDcl ::= n::Name

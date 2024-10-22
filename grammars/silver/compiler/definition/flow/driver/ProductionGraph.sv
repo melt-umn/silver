@@ -562,7 +562,7 @@ fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  ie::NamedSignatur
 fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | implFlowDef(_, prod) when getValueDcl(prod, realEnv) matches dcl :: _ ->
+    | implFlowDef(_, prod, _) when getValueDcl(prod, realEnv) matches dcl :: _ ->
       flatMap(\ ie::NamedSignatureElement ->
         if ie.elementDclType.isNonterminal  -- Dispatch sigs can't have occurs-on constraints
         then [projectionStitchPoint(

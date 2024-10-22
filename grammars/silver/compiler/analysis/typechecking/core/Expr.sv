@@ -2,7 +2,8 @@ grammar silver:compiler:analysis:typechecking:core;
 
 import silver:compiler:definition:flow:env;
 
-attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
+attribute upSubst, downSubst, upSubst2, downSubst2, finalSubst occurs on
+  Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 flowtype Expr = upSubst {forward}, finalType {forward};
 
@@ -12,47 +13,105 @@ propagate upSubst, downSubst
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler, ifThenElse,
      decorateExprWith, exprInh, presentAppExpr, decorationSiteExpr,
      terminalConstructor, noteAttachment;
+propagate @upSubst2, @downSubst2
+  on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
+  excluding
+    childReference, lhsReference, localReference, forwardReference, transDecoratedAccessHandler,
+    productionReference, functionReference, globalValueReference, classMemberReference;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 attribute finalType occurs on Expr;
-attribute contexts occurs on Expr;
 aspect default production
 top::Expr ::=
 {
   top.finalType = performSubstitution(top.typerep, top.finalSubst);
-  top.contexts = [];
+}
+
+aspect production childReference
+top::Expr ::= @q::QName
+{
+  -- This is safe, even if the child isn't decorable.
+  -- The only way a fresh type var can appear in top.typerep is via .asDecoratedType
+  top.upSubst2 = specializeRefSet(top.downSubst2, top.typerep);
+}
+
+aspect production lhsReference
+top::Expr ::= @q::QName
+{
+  top.upSubst2 = specializeRefSet(top.downSubst2, top.typerep);
+}
+
+aspect production localReference
+top::Expr ::= @q::QName
+{
+  -- This is safe, even if the child isn't decorable.
+  -- The only way a fresh type var can appear in top.typerep is via .asDecoratedType
+  top.upSubst2 = specializeRefSet(top.downSubst2, top.typerep);
+}
+
+aspect production forwardReference
+top::Expr ::= @q::QName
+{
+  top.upSubst2 = specializeRefSet(top.downSubst2, top.typerep);
+}
+
+aspect production transDecoratedAccessHandler
+top::Expr ::= @e::Expr @q::QNameAttrOccur
+{
+  top.upSubst2 = specializeRefSet(top.downSubst2, top.typerep);
 }
 
 aspect production productionReference
 top::Expr ::= @q::QName
 {
+  production specContexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.downSubst2), typeScheme.contexts));
+  specContexts.env = top.env;
+  specContexts.flowEnv = top.flowEnv;
+  top.upSubst2 = composeSubst(top.downSubst2, specContexts.contextSpecialization);
+
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production functionReference
 top::Expr ::= @q::QName
 {
+  production specContexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.downSubst2), typeScheme.contexts));
+  specContexts.env = top.env;
+  specContexts.flowEnv = top.flowEnv;
+  top.upSubst2 = composeSubst(top.downSubst2, specContexts.contextSpecialization);
+
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production globalValueReference
 top::Expr ::= @q::QName
 {
+  production specContexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.downSubst2), typeScheme.contexts));
+  specContexts.env = top.env;
+  specContexts.flowEnv = top.flowEnv;
+  top.upSubst2 = composeSubst(top.downSubst2, specContexts.contextSpecialization);
+
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production classMemberReference
 top::Expr ::= @q::QName
 {
+  production specContexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.downSubst2), typeScheme.contexts));
+  specContexts.env = top.env;
+  specContexts.flowEnv = top.flowEnv;
+  top.upSubst2 = composeSubst(top.downSubst2, specContexts.contextSpecialization);
+
   instHead.contextLoc = q.nameLoc;
   instHead.contextSource = "the use of " ++ q.name;
   top.errors <- instHead.contextErrors;
@@ -60,22 +119,12 @@ top::Expr ::= @q::QName
   contexts.contextLoc = q.nameLoc;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
-  
-  top.contexts = typeScheme.contexts;
 }
 
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- If e's contexts include unrefined ntOrDecTypes at this point (arising from
-  -- es' types, presumably), then refine these ntOrDecTypes types using e's
-  -- contexts in the environment.
-  production infContexts::Contexts = foldContexts(e.contexts);
-  infContexts.env = top.env;
-  infContexts.flowEnv = top.flowEnv;
-
-  thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
-  propagate finalSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production access
@@ -87,8 +136,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 aspect production undecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
-  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  -- TODO: remove?
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = checkNonterminal(top.env, true, e.typerep);
 
@@ -125,8 +173,7 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production decoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
-  -- ensuring that type's specialization, otherwise we could end up in trouble!
+  -- TODO: remove?
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = checkDecorated(e.typerep);
 
@@ -145,7 +192,6 @@ aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, note, e, errCheck1, top;
   

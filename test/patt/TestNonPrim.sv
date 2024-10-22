@@ -7,7 +7,7 @@ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
   return case ta, tb of
            unitT(), unitT() -> just(refl())
          | arrow(aa, ab), arrow(ba, bb) ->
-              case typeEqualsNonPrim(aa,ba), typeEqualsNonPrim(ab, bb) of
+              case typeEqualsNonPrim(^aa,^ba), typeEqualsNonPrim(^ab, ^bb) of
                 just(refl()), just(refl()) -> just(refl())
               | _, _ -> nothing()
               end

@@ -93,4 +93,19 @@ public class Thunk<T> {
 		// Evaluated Thunk, eagerly undecorate:
 		return t.eval().undecorate();
 	}
+	@SuppressWarnings("unchecked")
+	public static Object transformUndecorate(final Object t, final OriginContext ctx) {
+		// DecoratedNode
+		if(t instanceof DecoratedNode)
+			return ((Tracked)((DecoratedNode)t).undecorate()).duplicate(ctx);
+		// Thunk
+		return transformUndecorateThunk((Thunk<DecoratedNode>)t, ctx);
+	}
+	private static Object transformUndecorateThunk(final Thunk<DecoratedNode> t, final OriginContext ctx) {
+		// Unevaluated Thunk
+		if(t.o instanceof Evaluable)
+			return new Thunk<Object>(() -> ((Tracked)t.eval().undecorate()).duplicate(ctx));
+		// Evaluated Thunk, eagerly undecorate:
+		return ((Tracked)t.eval().undecorate()).duplicate(ctx);
+	}
 }

@@ -43,7 +43,7 @@ top::Expr ::= params::LambdaRHS e::Expr
       top.grammarName, getParsedOriginLocationOrFallback(params), params.lexicalTyVarKinds,
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
-  propagate downSubst, upSubst, finalSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2, finalSubst;
   
   params.env = newScopeEnv(sigDefs, top.env);
   params.givenLambdaParamIndex = 0;
@@ -188,5 +188,5 @@ top::Expr ::= @q::QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2;
 }

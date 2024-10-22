@@ -124,7 +124,7 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 abstract production inLambdaContext
 top::BlockContext ::= containingContext::BlockContext
 {
-  forwards to containingContext;
+  forwards to @containingContext;
 }
 
 abstract production aspectFunctionContext
@@ -145,7 +145,7 @@ abstract production globalExprContext
 top::BlockContext ::= fn::String  ctxs::Contexts  ty::Type  g::ProductionGraph
 {
   top.fullName = fn;
-  top.signature = globalSignature(fn, ctxs, ty);
+  top.signature = globalSignature(fn, ^ctxs, ^ty);
   top.flowGraph = g;
 }
 

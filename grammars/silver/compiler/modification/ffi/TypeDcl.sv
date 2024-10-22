@@ -12,7 +12,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' ';'
 {
   local obj :: String_t = terminal(String_t, "\"Object\"");
   --forwards to ffiTypeDcl('foreign', 'type', id, tl, '=', obj, ';');
-  forwards to ffiTypeDclUgly('type', id, tl, 'foreign', '=', obj, ';');
+  forwards to ffiTypeDclUgly('type', @id, @tl, 'foreign', '=', obj, ';');
 } action {
   insert semantic token IdTypeDcl_t at id.nameLoc;
 }

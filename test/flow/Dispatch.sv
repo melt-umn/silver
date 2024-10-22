@@ -82,7 +82,7 @@ top::UDExpr ::= @e::UDExpr
 }
 }
 
-warnCode "Production shareThing has shared children in its signature, and can only be applied in the root position of a forward or forward production attribute equation" {
+warnCode "Non-dispatch production shareThing has shared children in its signature, and can only be referenced by applying it in the root position of a forward or forward production attribute equation" {
 function dispatchFunction
 UDExpr ::= e::UDExpr
 {

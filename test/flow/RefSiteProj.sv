@@ -80,7 +80,7 @@ top::RSExpr ::= e::RSExpr
   forwards to copy12(@e);
 }
 
-warnCode "Equation requires inherited attribute flow:env2 be supplied to child e of production flow:copy1" {
+warnCode "Access of synthesized attribute errors2 on e requires missing inherited attribute(s) flow:env2 to be supplied to any of" {
 production projNestedMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -372,7 +372,7 @@ top::RSExpr ::= e::RSExpr
   top.errors1 = e.errors1;
   forwards to
     let e1::RSExpr = copy12(@e)
-    in if hackUnparse(e1) == "" then new(e) else base()
+    in if hackUnparse(e1) == "" then ^e else base()
     end;
 }
 }
@@ -405,7 +405,7 @@ top::RSExpr ::= e::RSExpr
   top.errors1 = e.errors1;
   forwards to
     let e1::RSExpr = copy12(@e)
-    in if null(top.env1) then new(e) else base()
+    in if null(top.env1) then ^e else base()
     end;
 }
 }

@@ -69,7 +69,7 @@ top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' reg::EasyTerminalRef
   propagate env;
   top.errors <- reg.errors;
 
-  forwards to productionRHSElem(@ms, id, $3, typerepTypeExpr(reg.typerep));
+  forwards to productionRHSElem(@ms, @id, $3, typerepTypeExpr(reg.typerep));
 }
 
 concrete production productionRhsElemTypeEasyReg
@@ -99,7 +99,7 @@ top::AspectRHSElem ::= id::Name '::' reg::EasyTerminalRef
   propagate env;
   top.errors <- reg.errors;
 
-  forwards to aspectRHSElemTyped(id, $2, typerepTypeExpr(reg.typerep));
+  forwards to aspectRHSElemTyped(@id, $2, typerepTypeExpr(reg.typerep));
 }
 
 {-- Introduce single quoted terminal literals in expressions -}

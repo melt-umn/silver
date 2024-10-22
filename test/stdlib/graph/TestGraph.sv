@@ -4,11 +4,7 @@ import silver:util:graph as g;
 import silver:util:treeset as set;
 import stdlib;
 
-function iset
-set:Set<Integer> ::= l::[Integer]
-{
-  return set:add(l, set:empty());
-}
+fun iset set:Set<Integer> ::= l::[Integer] = set:add(l, set:empty());
 
 global e :: g:Graph<Integer> = g:empty();
 

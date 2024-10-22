@@ -35,20 +35,20 @@ top::DataConstructors ::= h::DataConstructor comment::DocComment_t '|' t::DataCo
     case t of
     | consDataConstructor(h1, _, t1) ->
       consDataConstructor(
-        h, '|',
-        consDataConstructor(documentedConstructor(comment, h1), '|', t1))
+        @h, '|',
+        consDataConstructor(documentedConstructor(comment, ^h1), '|', ^t1))
     | oneDataConstructor(h1) ->
       consDataConstructor(
-        h, '|',
-        oneDataConstructor(documentedConstructor(comment, h1)))
-    | nilDataConstructor() -> consDataConstructor(h, '|', t)
+        @h, '|',
+        oneDataConstructor(documentedConstructor(comment, ^h1)))
+    | nilDataConstructor() -> consDataConstructor(@h, '|', @t)
     end;
 }
 
 concrete production documentedConstructor
 top::DataConstructor ::= comment::DocComment_t item::DataConstructor
 {
-  local parsed::DclComment = parseComment(top.config, comment);
+  local parsed::DclComment = parseComment(top.ctorDcls.config, comment);
 
   parsed.paramNames = nothing();
   parsed.isForWhat = "abstract production";
@@ -65,14 +65,14 @@ top::DataConstructor ::= comment::DocComment_t item::DataConstructor
   top.docs := if isDoubleComment
                 then [standaloneDclCommentItem(parsed)] ++ realDclDocs
                 else [attachNote logicalLocationFromOrigin(item) on
-                        dclCommentItem(top.docForName, forward.docUnparse, forward.grammarName, parsed)
+                        dclCommentItem(top.docForName, forward.docUnparse, top.ctorDcls.grammarName, parsed)
                       end];
   top.docErrors <-
     if isDoubleComment
     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding constructor, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
     else [];
 
-  forwards to item;
+  forwards to @item;
 }
 
 aspect production dataConstructor
@@ -81,6 +81,6 @@ top::DataConstructor ::= id::Name rhs::ProductionRHS
   top.docForName = id.name;
   top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ top.ntName ++ top.ntTypeArgs.unparse ++ " ::= " ++ rhs.unparse ++ "`)";
   top.docDcls := [];
-  top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.grammarName)];
+  top.docs := [undocumentedItem(top.docForName, top.docUnparse, top.ctorDcls.grammarName)];
   top.upDocConfig := [];
 }

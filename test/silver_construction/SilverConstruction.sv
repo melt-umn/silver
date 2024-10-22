@@ -28,7 +28,7 @@ Pattern ::= v1::Boolean v2::Boolean
 {
     local a::Pattern = if v1 then Silver_Pattern {true} else Silver_Pattern {false};
     local b::Pattern = if v2 then Silver_Pattern {true} else Silver_Pattern {false};
-    return Silver_Pattern { silver:core:pair(fst=$Pattern{a}, fst=$Pattern{b}) };
+    return Silver_Pattern { silver:core:pair(fst=$Pattern{^a}, fst=$Pattern{^b}) };
 }
 
 equalityTest(genericShow(testPatternBools(true, true)), "silver:compiler:extension:patternmatching:Pattern { silver:core:pair(fst=true, fst=true) }", String, silver_construction_tests);

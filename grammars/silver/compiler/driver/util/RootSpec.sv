@@ -93,10 +93,10 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
       flatMap((.sharedRefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
-  production newInterface::InterfaceItems = packInterfaceItems(top);
+  nondecorated production newInterface::InterfaceItems = packInterfaceItems(top);
   top.serInterface =
-    case nativeSerialize(new(newInterface)) of
-    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(new(newInterface)).pp) ++ "\n" ++ msg)
+    case nativeSerialize(newInterface) of
+    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(newInterface).pp) ++ "\n" ++ msg)
     | right(ser) -> ser
     end;
 
@@ -171,8 +171,8 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::String
 
   top.jarName := nothing();
   top.serInterface =
-    case nativeSerialize(new(i)) of
-    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(new(i)).pp) ++ "\n" ++ msg)
+    case nativeSerialize(^i) of
+    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(^i).pp) ++ "\n" ++ msg)
     | right(ser) -> ser
     end;
 }

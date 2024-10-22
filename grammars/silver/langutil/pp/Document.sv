@@ -239,7 +239,7 @@ top::Document ::= d::Document
 abstract production nest
 top::Document ::= depth::Integer d::Document
 {
-  forwards to d;
+  forwards to @d;
   forward.indent = top.indent + depth;
 }
 

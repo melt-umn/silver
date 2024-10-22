@@ -62,7 +62,7 @@ propagate config, grammarName, env, errors, precTermList on TermPrecs;
 concrete production termPrecsOne
 top::TermPrecs ::= t::QName
 {
-  forwards to termPrecs(termPrecList(t,termPrecListNull()));
+  forwards to termPrecs(termPrecList(@t,termPrecListNull()));
 } action {
   insert semantic token IdType_t at t.nameLoc;
 }
@@ -70,7 +70,7 @@ top::TermPrecs ::= t::QName
 concrete production termPrecsList
 top::TermPrecs ::= '{' terms::TermPrecList '}'
 {
-  forwards to termPrecs(terms);
+  forwards to termPrecs(@terms);
 }
 
 abstract production termPrecs
@@ -111,7 +111,7 @@ top::TermPrecList ::=
 concrete production termPrecListOne
 top::TermPrecList ::= t::QName
 {
-  forwards to termPrecList(t, termPrecListNull());
+  forwards to termPrecList(@t, termPrecListNull());
 } action {
   insert semantic token IdType_t at t.nameLoc;
 }
@@ -119,7 +119,7 @@ top::TermPrecList ::= t::QName
 concrete production termPrecListCons
 top::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
 {
-  forwards to termPrecList(t, terms_tail);
+  forwards to termPrecList(@t, @terms_tail);
 } action {
   insert semantic token IdType_t at t.nameLoc;
 }
@@ -130,7 +130,7 @@ propagate config, env, errors, lexerClasses on LexerClasses;
 concrete production lexerClassesOne
 top::LexerClasses ::= n::QName
 {
-  forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull()));
+  forwards to lexerClasses(lexerClassListMain(@n, lexerClassListNull()));
 } action {
   insert semantic token IdLexerClassDcl_t at n.nameLoc;
 }
@@ -138,7 +138,7 @@ top::LexerClasses ::= n::QName
 concrete production lexerClassesList
 top::LexerClasses ::= '{' cls::LexerClassList '}'
 {
-   forwards to lexerClasses(cls);
+   forwards to lexerClasses(@cls);
 }
 
 abstract production lexerClasses
@@ -153,7 +153,7 @@ propagate config, env, errors, lexerClasses on LexerClassList;
 concrete production lexerClassListOne
 top::LexerClassList ::= n::QName
 {
-  forwards to lexerClassListMain(n,lexerClassListNull());
+  forwards to lexerClassListMain(@n,lexerClassListNull());
 } action {
   insert semantic token IdLexerClassDcl_t at n.nameLoc;
 }
@@ -161,7 +161,7 @@ top::LexerClassList ::= n::QName
 concrete production lexerClassListCons
 top::LexerClassList ::= n::QName ',' cl_tail::LexerClassList
 {
-  forwards to lexerClassListMain(n,cl_tail);
+  forwards to lexerClassListMain(@n,@cl_tail);
 } action {
   insert semantic token IdLexerClassDcl_t at n.nameLoc;
 }

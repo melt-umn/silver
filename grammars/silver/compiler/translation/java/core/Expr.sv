@@ -73,11 +73,6 @@ top::Expr ::= @q::QName
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env) then
       -- Reference to a primitive (not decorated or undecorated):
       s"context.<${top.finalType.transType}>childAsIs(${childIDref})"
-    else if !top.finalType.isDecorated then
-      -- Undecorated reference to a nonterminal:
-      -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
-      -- this is a potential source of minor inefficiency for functions that do not decorate.
-      s"((${top.finalType.transType})context.childDecorated(${childIDref}).undecorate())"
     else
       -- Normal decorated reference:
       -- This may create the child, or demand it via the remote decoration site if the child has one.
@@ -88,8 +83,6 @@ top::Expr ::= @q::QName
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.childAsIsLazy(${childIDref})"
-    else if !top.finalType.isDecorated
-    then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
     else s"context.childDecoratedLazy(${childIDref})";
 }
 
@@ -99,18 +92,13 @@ top::Expr ::= @q::QName
   top.translation =
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.<${top.finalType.transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !top.finalType.isDecorated
-    then s"((${top.finalType.transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
-    else
-      s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
+    else s"context.localDecorated(${q.lookupValue.dcl.attrOccursIndex})";
   -- reminder: look at comments for childReference
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
     if !isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})"
-    else if !top.finalType.isDecorated
-    then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})";
 }
 
@@ -130,6 +118,7 @@ top::Expr ::= @q::QName
   top.translation =
     if top.finalType.isDecorated
     then "context"
+    -- This can happen if the LHS is a data NT, which is always undecorated.
     else s"((${top.finalType.transType})context.undecorate())";
 
   top.lazyTranslation = top.translation;
@@ -138,10 +127,7 @@ top::Expr ::= @q::QName
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
-  top.translation =
-    if top.finalType.isDecorated
-    then "context.forward()"
-    else s"((${top.finalType.transType})context.forward().undecorate())";
+  top.translation = "context.forward()";
 
   -- this might evaluate the forward equation, so suspend it as a thunk
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -150,10 +136,7 @@ top::Expr ::= @q::QName
 aspect production forwardParentReference
 top::Expr ::= 'forwardParent'
 {
-  top.translation =
-    if top.finalType.isDecorated
-    then "context.getForwardParent()"
-    else s"((${top.finalType.transType})context.getForwardParent().undecorate())";
+  top.translation = "context.getForwardParent()";
   top.lazyTranslation = top.translation;  -- Must have already been evaluated
 }
 
@@ -525,8 +508,9 @@ top::Expr ::= '@' e::Expr
 {
   top.translation =
     s"new ${top.finalType.transType}.DecorationSiteWrapper(${
-      if top.finalType.isTracked then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), " else ""}${
-      e.translation})";
+      if typeWantsTracking(top.finalType, top.config, top.env)
+      then makeOriginContextRef(top) ++ ".makeNewConstructionOrigin(true), "
+      else ""}${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
   -- TODO: There isn't really a good place to put this.
@@ -559,6 +543,19 @@ top::Expr ::= '@' e::Expr
     end;
 }
 
+aspect production undecExpr
+top::Expr ::= '^' e::Expr
+{
+  top.translation =
+    if typeWantsTracking(top.finalType, top.config, top.env)
+    then s"((${top.finalType.transType})((common.Tracked)${e.translation}.undecorate()).duplicate(${makeOriginContextRef(top)}))"
+    else s"((${top.finalType.transType})${e.translation}.undecorate())";
+  top.lazyTranslation =
+    if typeWantsTracking(top.finalType, top.config, top.env)
+    then s"common.Thunk.transformUndecorate(${e.lazyTranslation}, ${makeOriginContextRef(top)})"
+    else s"common.Thunk.transformUndecorate(${e.lazyTranslation})";
+}
+
 aspect production trueConst
 top::Expr ::='true'
 {
@@ -572,30 +569,116 @@ top::Expr ::= 'false'
   top.translation = "false";
   top.lazyTranslation = top.translation;
 }
-{- TODO: We should re-enable the specialized translations here for primitive types,
- - but that requires some attributes on the operands that we can't supply here.
- - See https://github.com/melt-umn/silver/issues/812
+
+-- Optimization: override operator translation for primitive types to avoid function call overhead
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
-  top.translation = s"(${e1.translation} && ${e2.translation})";
+  top.translation =
+    case top.finalType of
+    | boolType() -> s"(${e1.translation} && ${e2.translation})"
+    | _ -> forward.translation
+    end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
-  top.translation = s"(${e1.translation} || ${e2.translation})";
+  top.translation =
+    case top.finalType of
+    | boolType() -> s"(${e1.translation} || ${e2.translation})"
+    | _ -> forward.translation
+    end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production notOp
 top::Expr ::= '!' e::Expr
 {
-  top.translation = s"(!${e.translation})";
+  top.translation =
+    case top.finalType of
+    | boolType() -> s"(!${e.translation})"
+    | _ -> forward.translation
+    end;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
--}
+
+aspect production gtOp
+top::Expr ::= e1::Expr '>' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"((int)${e1.translation} > ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} > ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) > 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production ltOp
+top::Expr ::= e1::Expr '<' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"((int)${e1.translation} < ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} < ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) < 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production gteOp
+top::Expr ::= e1::Expr '>=' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"((int)${e1.translation} >= ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} >= ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) >= 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production lteOp
+top::Expr ::= e1::Expr '<=' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | intType() -> s"((int)${e1.translation} <= ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} <= ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().compareTo(${e2.translation}.toString()) <= 0"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production eqOp
+top::Expr ::= e1::Expr '==' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | boolType() -> s"((boolean)${e1.translation} == ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} == ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} == ${e2.translation})"
+    | stringType() -> s"(${e1.translation}).toString().equals(${e2.translation}.toString())"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production neqOp
+top::Expr ::= e1::Expr '!=' e2::Expr
+{
+  top.translation =
+    case e1.finalType of
+    | boolType() -> s"((boolean)${e1.translation} != ${e2.translation})"
+    | intType() -> s"((int)${e1.translation} != ${e2.translation})"
+    | floatType() -> s"((float)${e1.translation} != ${e2.translation})"
+    | stringType() -> s"!(${e1.translation}).toString().equals(${e2.translation}.toString())"
+    | _ -> forward.translation
+    end;
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -628,44 +711,68 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;
 }
-{-
+
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  top.translation = s"(${e1.translation} + ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} + ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  top.translation = s"(${e1.translation} - ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} - ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  top.translation = s"(${e1.translation} * ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} * ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production divide
 top::Expr ::= e1::Expr _ e2::Expr
 {
-  top.translation = s"(${e1.translation} / ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} / ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
-  top.translation = s"(${e1.translation} % ${e2.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(${e1.translation} % ${e2.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
-  top.translation = s"(-${e.translation})";
+  top.translation =
+    if isNumeric(top.finalType)
+    then s"(-${e.translation})"
+    else forward.translation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
--}
+fun isNumeric Boolean ::= t::Type =
+  case t of
+  | intType() -> true
+  | floatType() -> true
+  | _ -> false
+  end;
+
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

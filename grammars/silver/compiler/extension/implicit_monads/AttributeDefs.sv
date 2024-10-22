@@ -25,7 +25,8 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([restrictedInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([restrictedInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -55,7 +56,8 @@ top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([restrictedSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([restrictedSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -89,7 +91,8 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([implicitInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([implicitInhDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -121,7 +124,8 @@ top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  local fwd::AGDcl = defsAGDcl([implicitSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
+  nondecorated local fwd::AGDcl =
+    defsAGDcl([implicitSynDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep)]);
 
   forwards to fwd;
 }
@@ -134,7 +138,7 @@ top::AGDcl ::= 'unrestricted' 'inherited' 'attribute' a::Name tl::BracketedOptTy
 {
   top.unparse = "unrestricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', te, ';');
+  forwards to attributeDclInh('inherited', 'attribute', @a, @tl, '::', @te, ';');
 }
 
 
@@ -143,6 +147,6 @@ top::AGDcl ::= 'unrestricted' 'synthesized' 'attribute' a::Name tl::BracketedOpt
 {
   top.unparse = "unrestricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', te, ';');
+  forwards to attributeDclSyn('synthesized', 'attribute', @a, @tl, '::', @te, ';');
 }
 

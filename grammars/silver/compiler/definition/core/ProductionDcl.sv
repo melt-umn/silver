@@ -155,7 +155,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
   
-  forwards to productionSignature(nilConstraint(), '=>', lhs, $2, rhs);
+  forwards to productionSignature(nilConstraint(), '=>', @lhs, $2, @rhs);
 } action {
   sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
@@ -205,9 +205,9 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   h.deterministicCount = t.elementCount;
 
   h.implementedSig =
-    case top.implementedSig of just(consNamedSignatureElement(h, _)) -> just(h) | _ -> nothing() end;
+    case top.implementedSig of just(consNamedSignatureElement(h, _)) -> just(^h) | _ -> nothing() end;
   t.implementedSig =
-    case top.implementedSig of just(consNamedSignatureElement(_, t)) -> just(t) | _ -> nothing() end;
+    case top.implementedSig of just(consNamedSignatureElement(_, t)) -> just(^t) | _ -> nothing() end;
 }
 
 concrete production productionRHSElem

@@ -1,10 +1,12 @@
 grammar silver:compiler:analysis:typechecking:core;
 
 
-attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
+attribute upSubst, downSubst, upSubst2, downSubst2, finalSubst occurs on
+  ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
-propagate finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr excluding productionStmtAppend;
+propagate @upSubst2, @downSubst2, finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
+  excluding productionStmtAppend;
 
 {--
  - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)
@@ -30,7 +32,8 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
   h.downSubst = top.downSubst;
 
   t.downSubst = top.downSubst;
-  t.finalSubst = t.upSubst;
+  t.downSubst2 = t.upSubst;
+  t.finalSubst = t.upSubst2;
 }
 
 aspect production productionStmtAppend
@@ -38,12 +41,15 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
   -- We treat this as though each is independent here as well.
   h.downSubst = top.downSubst;
-  h.finalSubst = h.upSubst;
+  h.downSubst2 = h.upSubst;
+  h.finalSubst = h.upSubst2;
 
   t.downSubst = top.downSubst;
-  t.finalSubst = t.upSubst;
+  t.downSubst2 = t.upSubst;
+  t.finalSubst = t.upSubst2;
   
   top.upSubst = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
+  top.upSubst2 = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
   -- Of course, this means do not use top.finalSubst here!
 }
 
@@ -132,7 +138,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] @dl::DefLHS @attr::QNameAttrOccur e::Expr
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
 {
   propagate downSubst, upSubst, finalSubst;
 }

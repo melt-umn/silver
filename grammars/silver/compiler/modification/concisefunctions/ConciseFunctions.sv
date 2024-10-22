@@ -30,9 +30,9 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
 
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
-
-  e.finalSubst = errCheck1.upSubst;
-  errCheck1.finalSubst = errCheck1.upSubst;
+  e.downSubst2 = errCheck1.upSubst;
+  e.finalSubst = e.upSubst2;
+  errCheck1.finalSubst = e.finalSubst;
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
@@ -68,7 +68,7 @@ aspect production functionSignature
 top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
   -- Need to override constraintPos
-  production clGlobal::ConstraintList = new(cl);
+  production clGlobal::ConstraintList = ^cl;
   clGlobal.env = top.env;
   clGlobal.flowEnv = top.flowEnv;
   clGlobal.grammarName = top.grammarName;
@@ -93,5 +93,5 @@ top::Expr ::= @q::QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2;
 }
