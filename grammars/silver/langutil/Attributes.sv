@@ -6,8 +6,8 @@ exports silver:langutil:reflect with silver:core; -- Contains pp definitions for
 import silver:langutil:pp;
 
 -- Make sure these get built in the langutil artifact.
-import silver:langutil:lsp;
-import silver:langutil:unparse;
+import silver:langutil:lsp only;
+import silver:langutil:unparse only;
 
 
 {--
