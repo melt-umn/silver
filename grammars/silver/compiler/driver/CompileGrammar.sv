@@ -25,7 +25,7 @@ MaybeT<IO RootSpec> ::=
         guard(!null(files)); -- Grammar had no files!
         grammarTime :: Integer <- lift(fileTimes(grammarLocation, files));
 
-        return (grammarTime, grammarLocation, files);
+        return (grammarTime, grammarLocation, sort(files));
       }.run);
     findInterface::Maybe<RootSpec> <-
       -- IO Step 3: Let's look for an interface file
