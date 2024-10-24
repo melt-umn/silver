@@ -6,11 +6,12 @@ import silver:compiler:definition:flow:env;
 import silver:compiler:analysis:uniqueness;
 import silver:util:treemap as rtm;
 import silver:util:graph as g;
+import silver:util:cmdargs;
 
 -- Hide all the flow type computation over here
 
 aspect production compilation
-top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::BuildEnv
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decorated CmdArgs  benv::BuildEnv
 {
   -- aggregate all flow def information
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), allLatestGrammars));
