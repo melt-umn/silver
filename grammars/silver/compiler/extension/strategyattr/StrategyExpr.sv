@@ -242,17 +242,8 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   -- be exported by the syn occurence anyway.
   -- TODO - future optimization potential: this is where common sub-trees shared between
   -- the incoming tree and the result of s1 get re-decorated.
-  nondecorated local allInhs::ExprInhs =
-    foldr(
-      exprInhsCons(_, _),
-      exprInhsEmpty(),
-      map(
-        \ attr::String ->
-          -- TODO: translation attributes!
-          Silver_ExprInh {
-            $name{attr} = $name{top.frame.signature.outputElement.elementName}.$name{attr};
-          },
-        getInhAttrsOn(top.frame.lhsNtName, top.env)));
+  nondecorated local allInhs::ExprInhs = allOccursExprInhs(top.frame, top.env);
+
   top.partialTranslation =
     -- Optimizations when one or both of these is total, in this case a
     -- monadic bind may not be required.
@@ -287,6 +278,19 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   top.totalTranslation = if s2Total then totalTrans else asTotal(top.frame.signature.outputElement.typerep, totalTrans);
 }
 
+fun allOccursExprInhs ExprInhs ::= frame::BlockContext env::Env =
+  foldr(
+    exprInhsCons(_, _),
+    exprInhsEmpty(),
+    map(
+      \ attr::String ->
+        -- TODO: translation attributes!
+        Silver_ExprInh {
+          $name{attr} = $name{frame.signature.outputElement.elementName}.$name{attr};
+        },
+      getInhAttrsOn(frame.lhsNtName, env)));
+
+
 abstract production choice
 top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
 {
@@ -310,6 +314,85 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       Silver_Expr {
         silver:core:fromMaybe($Expr{s2.totalTranslation}, $Expr{s1.partialTranslation})
       };
+}
+
+abstract production guardedChoice
+top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
+{
+  top.unparse = s"(${s1.unparse} < ${s2.unparse} + ${s3.unparse})";
+  propagate frame;  -- CAUTION when using s2.frame: wrong prod, but same nt
+  
+  local s2Name::String = fromMaybe(top.genName ++ "_snd", s2.attrRefName);
+  local s2Total::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
+  top.liftedStrategies :=
+    s1.liftedStrategies ++ s3.liftedStrategies ++
+    if s2.attrRefName.isJust
+    then []
+    else [(s2Name, s2)];
+  top.isTotal = s1.isTotal && s2.isTotal || s3.isTotal;
+  top.isTotalNoEnv = s1.isTotalNoEnv && s2.isTotalNoEnv || s3.isTotalNoEnv;
+  top.isTotalInProd = s1.isTotalInProd && s2.isTotalInProd || s3.isTotalInProd;
+  
+  s1.isOutermost = false;
+  s2.isOutermost = false;
+  s3.isOutermost = false;
+
+  -- See comments in sequence.
+  nondecorated local allInhs::ExprInhs = allOccursExprInhs(top.frame, top.env);
+  
+  top.partialTranslation =
+    case s1.isTotalInProd, s2Total of
+    | true, true ->
+      Silver_Expr {
+        silver:core:just(decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name})
+      }
+    | true, false ->
+      Silver_Expr {
+        decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
+      }
+    | false, true ->
+      Silver_Expr {
+        case $Expr{s1.partialTranslation} of
+        | silver:core:just(res) ->
+          silver:core:just(decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
+        | silver:core:nothing() -> $Expr{s3.partialTranslation}
+        end
+      }
+    | false, false ->
+      Silver_Expr {
+        case $Expr{s1.partialTranslation} of
+        | silver:core:just(res) ->
+          decorate res with { $ExprInhs{allInhs} }.$name{s2Name}
+        | silver:core:nothing() -> $Expr{s3.partialTranslation}
+        end
+      }
+    end;
+
+  top.totalTranslation =
+    case s1.isTotalInProd, s2Total of
+    | true, true ->
+      Silver_Expr {
+        decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
+      }
+    | true, false -> asTotal(top.frame.signature.outputElement.typerep,
+      Silver_Expr {
+        decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
+      })
+    | false, true ->
+      Silver_Expr {
+        case $Expr{s1.partialTranslation} of
+        | silver:core:just(res) -> decorate res with { $ExprInhs{allInhs} }.$name{s2Name}
+        | silver:core:nothing() -> $Expr{s3.totalTranslation}
+        end
+      }
+    | false, false -> asTotal(top.frame.signature.outputElement.typerep,
+      Silver_Expr {
+        case $Expr{s1.partialTranslation} of
+        | silver:core:just(res) -> decorate res with { $ExprInhs{allInhs} }.$name{s2Name}
+        | silver:core:nothing() -> $Expr{s3.partialTranslation}
+        end
+      })
+    end;
 }
 
 -- Traversals
