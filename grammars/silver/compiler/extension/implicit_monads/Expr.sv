@@ -1291,9 +1291,18 @@ aspect production and
 top::Expr ::= e1::AppExpr '&&' e2::AppExpr
 {
   -- TODO: Need to re-decorate here, to avoid hidden transitive deps flow analysis issue.
-  -- See https://github.com/melt-umn/silver/issues/812
-  forward ne1 = ^e1;
-  forward ne2 = ^e2;
+  -- See httpsgre://github.com/melt-umn/silver/issues/812
+  --forward ne1 = ^e1;  
+  --forward ne2 = ^e2;  -- pattern match on e2 here - if `_`, contribute so errors saying sections not supported on explicit monad ops
+
+  forward ne1 = case e1 of missingAppExpr(_) -> errorExpr([errFromOrigin(top, "Operator sections not supported on explicit monad operations.")])
+                         | presentAppExpr(e) -> ^e
+                end;
+
+  forward ne2 = case e2 of missingAppExpr(_) -> errorExpr([errFromOrigin(top, "Operator sections not supported on explicit monad operations.")])
+                         | presentAppExpr(e) -> ^e
+                end;
+
 
   top.merrors := ne1.merrors ++ ne2.merrors;
   top.merrors <-
@@ -1358,8 +1367,12 @@ top::Expr ::= e1::AppExpr '&&' e2::AppExpr
       ($Expr {e1UnDec},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne1.mtyperep))}
          y::$TypeExpr {typerepTypeExpr(dropDecorated(ne2.mtyperep))} ->
-        $Expr {monadReturn()}
-        (x && y))(_, $Expr {e2UnDec}))
+           $Expr {monadReturn()}
+           --(x && y)
+           (silver:core:conj(x, y))
+       )
+       (_, $Expr {e2UnDec})
+      )
     };
   --if e1 then e2 else Return(false)
   nondecorated local bind2::Expr =
@@ -1372,7 +1385,7 @@ top::Expr ::= e1::AppExpr '&&' e2::AppExpr
                             else bind1
                        else if isMonad(ne2.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne2.mtyperep, top.mDownSubst).fst
                             then bind2
-                            else and(ne1.monadRewritten, '&&', ne2.monadRewritten);
+                            else and(presentAppExpr(ne1.monadRewritten), '&&', presentAppExpr(ne2.monadRewritten));
 }
 
 aspect production or
