@@ -725,7 +725,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
   production ntType::Type = if eType.isDecorated then eType.decoratedType else @eType;
 
-  -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
   top.typerep = decoratedType(^ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
