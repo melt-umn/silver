@@ -45,6 +45,14 @@ concrete productions top::StrategyExpr_c
   s1.givenGenName = top.givenGenName ++ "_left";
   s2.givenGenName = top.givenGenName ++ "_right";
 }
+| s1::StrategyExpr_c '<' s2::StrategyExpr_c '+' s3::StrategyExpr_c
+{
+  top.unparse = s"(${s1.unparse} < ${s2.unparse} + ${s3.unparse})";
+  top.ast = guardedChoice(s1.ast, s2.ast, s3.ast, genName=top.givenGenName);
+  s1.givenGenName = top.givenGenName ++ "_cond";
+  s2.givenGenName = top.givenGenName ++ "_then";
+  s3.givenGenName = top.givenGenName ++ "_else";
+}
 | 'all' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"all(${s.unparse})";
