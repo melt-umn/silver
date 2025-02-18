@@ -336,9 +336,9 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
     if s2.attrRefName.isJust
     then []
     else [(s2Name, s2)];
-  top.isTotal = s1.isTotal && s2.isTotal || s3.isTotal;
-  top.isTotalNoEnv = s1.isTotalNoEnv && s2.isTotalNoEnv || s3.isTotalNoEnv;
-  top.isTotalInProd = s1.isTotalInProd && s2.isTotalInProd || s3.isTotalInProd;
+  top.isTotal = s2.isTotal && (s1.isTotal || s3.isTotal);
+  top.isTotalNoEnv = s2.isTotalNoEnv && (s1.isTotalNoEnv || s3.isTotalNoEnv);
+  top.isTotalInProd = s2.isTotal && (s1.isTotalInProd || s3.isTotalInProd);
   
   s1.isOutermost = false;
   s2.isOutermost = false;
