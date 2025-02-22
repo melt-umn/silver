@@ -32,7 +32,6 @@ top::AGDcl ::=
 
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
-  e.recVarTotalNoEnvEnv = recVarTotalEnv;
   e.outerAttr = a.name;
   e.isOutermost = true;
   
@@ -50,7 +49,7 @@ top::AGDcl ::=
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
             d.snd.isTotalNoEnv, name(d.fst),
-            d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv,
+            d.snd.recVarNameEnv, d.snd.recVarTotalEnv,
             new(d.snd)),
         e.liftedStrategies));
   
