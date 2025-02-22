@@ -185,6 +185,38 @@ equalityTest(
   constSExpr(1),
   SExpr, silver_tests);
 
+strategy attribute elimIfIdOrInc =
+  if someTopDown(idSExpr(id))
+  then elimPlusZero
+  else incConsts
+  occurs on SStmt, SExpr;
+propagate elimIfIdOrInc on SStmt, SExpr;
+
+equalityTest(
+  addSExpr(constSExpr(2), constSExpr(0)).elimIfIdOrInc,
+  addSExpr(constSExpr(3), constSExpr(1)),
+  SExpr, silver_tests);
+equalityTest(
+  addSExpr(idSExpr("a"), constSExpr(0)).elimIfIdOrInc,
+  idSExpr("a"),
+  SExpr, silver_tests);
+
+strategy attribute incIfId =
+  if someTopDown(idSExpr(id))
+  then incConsts
+  end
+  occurs on SStmt, SExpr;
+propagate incIfId on SStmt, SExpr;
+
+equalityTest(
+  addSExpr(constSExpr(0), constSExpr(2)).incIfId,
+  addSExpr(constSExpr(0), constSExpr(2)),
+  SExpr, silver_tests);
+equalityTest(
+  addSExpr(constSExpr(0), idSExpr("a")).incIfId,
+  addSExpr(constSExpr(1), idSExpr("a")),
+  SExpr, silver_tests);
+
 -- Negative tests
 inherited attribute badInh<a>::a;
 wrongCode "cannot be used as a total strategy" {

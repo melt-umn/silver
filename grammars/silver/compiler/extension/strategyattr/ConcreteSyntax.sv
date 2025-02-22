@@ -53,6 +53,21 @@ concrete productions top::StrategyExpr_c
   s2.givenGenName = top.givenGenName ++ "_then";
   s3.givenGenName = top.givenGenName ++ "_else";
 }
+| 'if' s1::StrategyExpr_c 'then' s2::StrategyExpr_c 'else' s3::StrategyExpr_c
+{
+  top.unparse = s"if ${s1.unparse} then ${s2.unparse} else ${s3.unparse}";
+  top.ast = ifThenElseComb(s1.ast, s2.ast, s3.ast, genName=top.givenGenName);
+  s1.givenGenName = top.givenGenName ++ "_cond";
+  s2.givenGenName = top.givenGenName ++ "_then";
+  s3.givenGenName = top.givenGenName ++ "_else";
+}
+| 'if' s1::StrategyExpr_c 'then' s2::StrategyExpr_c 'end'
+{
+  top.unparse = s"if ${s1.unparse} then ${s2.unparse} end";
+  top.ast = ifThenEndComb(s1.ast, s2.ast, genName=top.givenGenName);
+  s1.givenGenName = top.givenGenName ++ "_cond";
+  s2.givenGenName = top.givenGenName ++ "_then";
+}
 | 'all' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"all(${s.unparse})";

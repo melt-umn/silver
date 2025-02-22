@@ -33,6 +33,7 @@ monoid attribute totalRefs::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute containsTraversal::Boolean with false, ||;
 
+synthesized attribute isSuccessTranslation<a>::a;
 synthesized attribute partialTranslation<a>::a; -- Maybe<a> on a
 synthesized attribute totalTranslation<a>::a; -- a on a, can raise a runtime error if demanded on partial strategy expression
 
@@ -125,7 +126,7 @@ tracked nonterminal StrategyExpr with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
   genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName,
   isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
-  partialTranslation<Expr>, totalTranslation<Expr>, matchesFrame, isTotalInProd, -- Frame-dependent attrs
+  isSuccessTranslation<Expr>, partialTranslation<Expr>, totalTranslation<Expr>, matchesFrame, isTotalInProd, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
 tracked nonterminal StrategyExprs with
@@ -146,7 +147,7 @@ flowtype StrategyExpr =
   isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, containsTraversal {decorate, flowEnv},
   genericStep {decorate, inlinedStrategies}, genericSimplify {decorate, inlinedStrategies},
   -- Frame-dependent attrs
-  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame},
+  isSuccessTranslation {decorate, flowEnv, frame}, partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame},
   matchesFrame {decorate, frame}, isTotalInProd {decorate, frame},
   ntStep {decorate, inlinedStrategies, frame}, prodStep {decorate, inlinedStrategies, frame},
   ntSimplify {decorate, inlinedStrategies, frame}, optimize {decorate, inlinedStrategies, frame};
@@ -207,6 +208,7 @@ top::StrategyExpr ::=
   top.isTotal = true;
   top.isTotalNoEnv = true;
   top.isTotalInProd = true;
+  top.isSuccessTranslation = Silver_Expr { true };
   top.totalTranslation =
     if top.frame.signature.outputElement.typerep.isData
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName} }
@@ -219,6 +221,7 @@ top::StrategyExpr ::=
   top.unparse = "fail";
   propagate liftedStrategies;
   top.isFail = true;
+  top.isSuccessTranslation = Silver_Expr { false };
   top.partialTranslation = Silver_Expr { silver:core:nothing() };
 }
 
@@ -251,6 +254,16 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   -- the incoming tree and the result of s1 get re-decorated.
   nondecorated local allInhs::ExprInhs = allOccursExprInhs(top.frame, top.env);
 
+  top.isSuccessTranslation = 
+    case s1.isTotalInProd, s2Total of
+    | true, true -> Silver_Expr { true }
+    | true, false -> Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust }
+    | false, true -> s1.isSuccessTranslation
+    | false, false ->
+      Silver_Expr {
+        $Expr{s1.isSuccessTranslation} && $Expr{top.partialTranslation}.silver:core:isJust
+      }
+    end;
   top.partialTranslation =
     -- Optimizations when one or both of these is total, in this case a
     -- monadic bind may not be required.
@@ -310,6 +323,9 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   s1.isOutermost = false;
   s2.isOutermost = false;
   
+  top.isSuccessTranslation = Silver_Expr {
+    $Expr{s1.isSuccessTranslation} || $Expr{s2.isSuccessTranslation}
+  };
   top.partialTranslation =
     Silver_Expr {
       silver:core:orElse($Expr{s1.partialTranslation}, $Expr{s2.partialTranslation})
@@ -347,6 +363,24 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
   -- See comments in sequence.
   nondecorated local allInhs::ExprInhs = allOccursExprInhs(top.frame, top.env);
   
+  top.isSuccessTranslation = 
+    case s1.isTotalInProd, s2Total of
+    | true, true -> Silver_Expr { true }
+    | true, false -> Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust }
+    | false, true ->
+      Silver_Expr {
+        $Expr{s1.isSuccessTranslation} || $Expr{s3.isSuccessTranslation}
+      }
+    | false, false ->
+      Silver_Expr {
+        case $Expr{s1.partialTranslation} of
+        | silver:core:just(res) ->
+          decorate res with { $ExprInhs{allInhs} }.$name{s2Name}.silver:core:isJust
+        | silver:core:nothing() -> $Expr{s3.isSuccessTranslation}
+        end
+      }
+    end;
+
   top.partialTranslation =
     case s1.isTotalInProd, s2Total of
     | true, true ->
@@ -402,6 +436,53 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
     end;
 }
 
+abstract production ifThenElseComb
+top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
+{
+  top.unparse = s"if ${s1.unparse} then ${s2.unparse} else ${s3.unparse}";
+  propagate frame, liftedStrategies;
+
+  top.isTotal = s2.isTotal && (s1.isTotal || s3.isTotal);
+  top.isTotalNoEnv = s2.isTotalNoEnv && (s1.isTotalNoEnv || s3.isTotalNoEnv);
+  top.isTotalInProd = s2.isTotal && (s1.isTotalInProd || s3.isTotalInProd);
+  
+  s1.isOutermost = false;
+  s2.isOutermost = false;
+  s3.isOutermost = false;
+
+  top.isSuccessTranslation = Silver_Expr {
+    if $Expr{s1.isSuccessTranslation}
+    then $Expr{s2.isSuccessTranslation}
+    else $Expr{s3.isSuccessTranslation}
+  };
+
+  top.partialTranslation =
+    if s1.isTotalInProd
+    then s2.partialTranslation
+    else Silver_Expr {
+      if $Expr{s1.isSuccessTranslation}
+      then $Expr{s2.partialTranslation}
+      else $Expr{s3.partialTranslation}
+    };
+
+  top.totalTranslation =
+    if s1.isTotalInProd
+    then s2.totalTranslation
+    else Silver_Expr {
+      if $Expr{s1.isSuccessTranslation}
+      then $Expr{s2.totalTranslation}
+      else $Expr{s3.totalTranslation}
+    };
+}
+
+abstract production ifThenEndComb
+top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
+{
+  top.unparse = s"if ${s1.unparse} then ${s2.unparse} end";
+
+  forwards to ifThenElseComb(@s1, @s2, id(genName=top.genName ++ "_else"), genName=top.genName);
+}
+
 -- Traversals
 abstract production allTraversal
 top::StrategyExpr ::= s::StrategyExpr
@@ -429,6 +510,18 @@ top::StrategyExpr ::= s::StrategyExpr
       \ e::NamedSignatureElement ->
         (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
+  top.isSuccessTranslation =
+    if sTotal
+    then Silver_Expr { true }
+    else foldr(
+      and(_, '&&', _),
+      trueConst('true'),
+      filterMap(
+        \ a::(String, Boolean, Boolean) ->
+          if a.3
+          then just(Silver_Expr { $name{a.1}.$name{sName}.silver:core:isJust })
+          else nothing(),
+        childAccesses));
   top.partialTranslation =
     if sTotal
     then asPartial(top.totalTranslation)
@@ -519,6 +612,15 @@ top::StrategyExpr ::= s::StrategyExpr
         (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
+  top.isSuccessTranslation =
+    if sTotal
+    then if null(matchingChildren) then Silver_Expr { false } else Silver_Expr { true }
+    else foldr(
+      or(_, '||', _),
+      falseConst('false'),
+      map(
+        \ a::String -> Silver_Expr { $name{a}.$name{sName}.silver:core:isJust },
+        matchingChildren));
   top.partialTranslation =
     if sTotal
     then
@@ -532,13 +634,7 @@ top::StrategyExpr ::= s::StrategyExpr
            else nothing()
          Not sure of a clean way to do this with monads -}
       Silver_Expr {
-        if $Expr{
-          foldr(
-            or(_, '||', _),
-            falseConst('false'),
-            map(
-              \ a::String -> Silver_Expr { $name{a}.$name{sName}.isJust },
-              matchingChildren))}
+        if $Expr{top.isSuccessTranslation}
         then
           silver:core:just(
             $Expr{
@@ -564,7 +660,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
     then
-      {- When s is total, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+      {- When s is total, optimized translation of some(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
        mkFullFunctionInvocation(
          baseExpr(qName(top.frame.fullName)),
@@ -607,6 +703,15 @@ top::StrategyExpr ::= s::StrategyExpr
         (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
+  top.isSuccessTranslation =
+    if sTotal
+    then if null(matchingChildren) then Silver_Expr { false } else Silver_Expr { true }
+    else foldr(
+      or(_, '||', _),
+      falseConst('false'),
+      map(
+        \ a::String -> Silver_Expr { $name{a}.$name{sName}.silver:core:isJust },
+        matchingChildren));
   top.partialTranslation =
     if sTotal
     then
@@ -718,6 +823,19 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
     top.frame.signature.inputNames,
     map(isDecorable(_, top.env), top.frame.signature.inputTypes),
     s.attrRefNames);
+  top.isSuccessTranslation =
+    if prod.lookupValue.fullName == top.frame.fullName
+    then foldr(
+      and(_, '&&', _),
+      trueConst('true'),
+      filterMap(
+        \ a::(String, Boolean, Maybe<String>) ->
+          case a.3 of
+          | just(attr) when !attrIsTotal(top.env, attr) -> just(Silver_Expr { $name{a.1}.$name{attr}.silver:core:isJust })
+          | _ -> nothing()
+          end,
+        childAccesses))
+    else Silver_Expr { false };
   top.partialTranslation = -- This is never total
     if prod.lookupValue.fullName == top.frame.fullName
     then
@@ -777,7 +895,7 @@ abstract production consStrategyExpr
 top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
 {
   top.unparse = s"${h.unparse}, ${t.unparse}";
-   
+
   top.liftedStrategies :=
     -- Slight hack: when h is id (common case for prod traversals), there is no need for a new attribute.
     -- However this can't be avoided during the optimization phase, which happens after lifting.
@@ -854,6 +972,12 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
   nondecorated local attrRef::Expr = Silver_Expr {
     $name{top.frame.signature.outputElement.elementName}.$name{sName}
   };
+  top.isSuccessTranslation =
+    if top.isOutermost
+    then s.isSuccessTranslation
+    else if sTotal
+    then Silver_Expr { true }
+    else Silver_Expr { $Expr{attrRef}.silver:core:isJust };
   top.partialTranslation =
     if top.isOutermost
     then s.partialTranslation
@@ -922,7 +1046,9 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     then [wrnFromOrigin(ty, "Only rules on nonterminals can have an effect")]
     else [];
   top.errors <- ty.errorsKindStar;
-  
+
+  top.isSuccessTranslation = Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust };
+
   nondecorated local partialRes::Expr =
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
@@ -946,31 +1072,31 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       in $Expr{partialRes}
       end
     };
-    nondecorated local totalRes::Expr =
-      caseExpr(
-        [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
-        ml.totalTranslation, false,
-        Silver_Expr {
-          silver:core:error(
-            "Internal error: total rule did not match: " ++
-            $Expr{stringConst(terminal(String_t, s"\"${escapeString(top.unparse)}\""))})
-        },
-        ty.typerep);
-    top.totalTranslation =
-      if top.frame.signature.outputElement.elementName == id.name
-      then totalRes
-      else if top.frame.signature.outputElement.typerep.isData
-      then Silver_Expr {
-        let $Name{^id}::$TypeExpr{^ty} = $name{top.frame.signature.outputElement.elementName}
-        in $Expr{totalRes}
-        end
-      }
-      else Silver_Expr {
-        let $Name{^id}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
-          $name{top.frame.signature.outputElement.elementName}
-        in $Expr{totalRes}
-        end
-      };
+  nondecorated local totalRes::Expr =
+    caseExpr(
+      [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
+      ml.totalTranslation, false,
+      Silver_Expr {
+        silver:core:error(
+          "Internal error: total rule did not match: " ++
+          $Expr{stringConst(terminal(String_t, s"\"${escapeString(top.unparse)}\""))})
+      },
+      ty.typerep);
+  top.totalTranslation =
+    if top.frame.signature.outputElement.elementName == id.name
+    then totalRes
+    else if top.frame.signature.outputElement.typerep.isData
+    then Silver_Expr {
+      let $Name{^id}::$TypeExpr{^ty} = $name{top.frame.signature.outputElement.elementName}
+      in $Expr{totalRes}
+      end
+    }
+    else Silver_Expr {
+      let $Name{^id}::$TypeExpr{typerepTypeExpr(ty.typerep.asDecoratedType)} =
+        $name{top.frame.signature.outputElement.elementName}
+      in $Expr{totalRes}
+      end
+    };
 }
 
 -- Hack dummy expr with a given type
@@ -1099,6 +1225,7 @@ top::StrategyExpr ::= msg::[Message] id::Decorated QName
   top.attrRefName = just(id.name);
   
   top.errors <- msg;
+  top.isSuccessTranslation = Silver_Expr { false };
   top.partialTranslation = Silver_Expr { silver:core:nothing() };
 }
 abstract production recVarRef
@@ -1116,6 +1243,8 @@ top::StrategyExpr ::= id::Decorated QName
   nondecorated local attrRef::Expr = Silver_Expr {
     $name{top.frame.signature.outputElement.elementName}.$qName{top.attrRefName.fromJust}
   };
+  top.isSuccessTranslation =
+    if top.isTotal then Silver_Expr { true } else Silver_Expr { $Expr{attrRef}.silver:core:isJust };
   top.partialTranslation =
     if top.isTotal then asPartial(attrRef) else attrRef;
   top.totalTranslation =
@@ -1152,6 +1281,10 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
+  top.isSuccessTranslation =
+    if attr.matchesFrame
+    then Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust }
+    else Silver_Expr { false };
   top.partialTranslation =
     if attr.matchesFrame
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr} }
@@ -1189,6 +1322,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
+  top.isSuccessTranslation = Silver_Expr { true };
   top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr} };
 }
 
@@ -1201,6 +1335,10 @@ top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
   top.attrRefName = just(attr.attrDcl.fullName);
   top.isTotal = s.isTotal;
   top.isTotalInProd = s.isTotalInProd;
+  top.isSuccessTranslation =
+    if attr.matchesFrame
+    then s.isSuccessTranslation
+    else Silver_Expr { false };
   top.partialTranslation =
     if attr.matchesFrame
     then s.partialTranslation
