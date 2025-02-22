@@ -135,22 +135,24 @@ tracked nonterminal StrategyExprs with
   inlinedStrategies, genericSimplify; -- Optimization stuff
 
 flowtype StrategyExpr =
-  decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost}, -- NOT frame
+  decorate {env, grammarName, config, recVarNameEnv, outerAttr, isOutermost}, -- NOT frame or recVarTotalEnv
   forward {decorate},
   -- Normal expression stuff
   unparse {}, errors {decorate, compiledGrammars, flowEnv},
   -- Frame-independent attrs
-  liftedStrategies {recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost}, isTotalNoEnv {recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost},
+  liftedStrategies {recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost},
+  isTotalNoEnv {recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost},
   attrRefName {recVarNameEnv}, isId {}, isFail {},
   isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, containsTraversal {decorate, flowEnv},
   genericStep {decorate, inlinedStrategies}, genericSimplify {decorate, inlinedStrategies},
   -- Frame-dependent attrs
-  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame}, matchesFrame {decorate, frame}, isTotalInProd {decorate, frame},
+  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame},
+  matchesFrame {decorate, frame}, isTotalInProd {decorate, frame},
   ntStep {decorate, inlinedStrategies, frame}, prodStep {decorate, inlinedStrategies, frame},
   ntSimplify {decorate, inlinedStrategies, frame}, optimize {decorate, inlinedStrategies, frame};
 
 flowtype StrategyExprs =
-  decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv, outerAttr}, -- NOT frame
+  decorate {env, grammarName, config, recVarNameEnv, outerAttr}, -- NOT frame or recVarTotalEnv
   forward {},
   -- Normal expression stuff
   -- Frame-independent attrs
