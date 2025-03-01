@@ -20,6 +20,7 @@ synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
 synthesized attribute isFail::Boolean;
 synthesized attribute isTotal::Boolean;
+-- TODO: rename isTotalNoEnv to isTotalInferred
 synthesized attribute isTotalNoEnv::Boolean; -- same as above but doesn't depend on env, used only in initial pass for totality of lifted strategies
 synthesized attribute isTotalInProd::Boolean; -- can use env and frame
 inherited attribute givenInputElements::[NamedSignatureElement];
@@ -234,28 +235,28 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   s2.frame = top.frame;  -- CAUTION when using s2.frame: wrong prod, but same nt
   
   local s2Name::String = fromMaybe(top.genName ++ "_snd", s2.attrRefName);
-  local s2Total::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
+  local s2AttrTotal::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
   top.liftedStrategies :=
     s1.liftedStrategies ++
     if s2.attrRefName.isJust
     then []
     else [(s2Name, s2)];
-  top.isTotal = s1.isTotal && s2.isTotal;
+  top.isTotal = s1.isTotal && s2AttrTotal;
   top.isTotalNoEnv = s1.isTotalNoEnv && s2.isTotalNoEnv;
-  top.isTotalInProd = s1.isTotalInProd && s2.isTotal;
+  top.isTotalInProd = s1.isTotalInProd && s2AttrTotal;
   
   s1.isOutermost = false;
   s2.isOutermost = false;
   
   -- Equations for all inh attributes on the nt that we know about.
   -- This is safe because the MWDA requires that all inh dependencies of a syn attribute
-  -- be exported by the syn occurence anyway.
+  -- be exported by the syn occurrence anyway.
   -- TODO - future optimization potential: this is where common sub-trees shared between
   -- the incoming tree and the result of s1 get re-decorated.
   nondecorated local allInhs::ExprInhs = allOccursExprInhs(top.frame, top.env);
 
   top.isSuccessTranslation = 
-    case s1.isTotalInProd, s2Total of
+    case s1.isTotalInProd, s2AttrTotal of
     | true, true -> Silver_Expr { true }
     | true, false -> Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust }
     | false, true -> s1.isSuccessTranslation
@@ -267,7 +268,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   top.partialTranslation =
     -- Optimizations when one or both of these is total, in this case a
     -- monadic bind may not be required.
-    case s1.isTotalInProd, s2Total of
+    case s1.isTotalInProd, s2AttrTotal of
     | true, true ->
       Silver_Expr {
         silver:core:just(decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name})
@@ -295,7 +296,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     Silver_Expr {
       decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
     };
-  top.totalTranslation = if s2Total then totalTrans else asTotal(top.frame.signature.outputElement.typerep, totalTrans);
+  top.totalTranslation = if s2AttrTotal then totalTrans else asTotal(top.frame.signature.outputElement.typerep, totalTrans);
 }
 
 fun allOccursExprInhs ExprInhs ::= frame::BlockContext env::Env =
@@ -346,15 +347,15 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
   propagate frame;  -- CAUTION when using s2.frame: wrong prod, but same nt
   
   local s2Name::String = fromMaybe(top.genName ++ "_snd", s2.attrRefName);
-  local s2Total::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
+  local s2AttrTotal::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
   top.liftedStrategies :=
     s1.liftedStrategies ++ s3.liftedStrategies ++
     if s2.attrRefName.isJust
     then []
     else [(s2Name, s2)];
-  top.isTotal = s2.isTotal && (s1.isTotal || s3.isTotal);
+  top.isTotal = s2AttrTotal && (s1.isTotal || s3.isTotal);
   top.isTotalNoEnv = s2.isTotalNoEnv && (s1.isTotalNoEnv || s3.isTotalNoEnv);
-  top.isTotalInProd = s2.isTotal && (s1.isTotalInProd || s3.isTotalInProd);
+  top.isTotalInProd = s2AttrTotal && (s1.isTotalInProd || s3.isTotalInProd);
   
   s1.isOutermost = false;
   s2.isOutermost = false;
@@ -364,7 +365,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
   nondecorated local allInhs::ExprInhs = allOccursExprInhs(top.frame, top.env);
   
   top.isSuccessTranslation = 
-    case s1.isTotalInProd, s2Total of
+    case s1.isTotalInProd, s2AttrTotal of
     | true, true -> Silver_Expr { true }
     | true, false -> Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust }
     | false, true ->
@@ -382,7 +383,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
     end;
 
   top.partialTranslation =
-    case s1.isTotalInProd, s2Total of
+    case s1.isTotalInProd, s2AttrTotal of
     | true, true ->
       Silver_Expr {
         silver:core:just(decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name})
@@ -410,7 +411,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr s3::StrategyExpr
     end;
 
   top.totalTranslation =
-    case s1.isTotalInProd, s2Total of
+    case s1.isTotalInProd, s2AttrTotal of
     | true, true ->
       Silver_Expr {
         decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
@@ -490,7 +491,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.unparse = s"all(${s.unparse})";
   
   local sName::String = fromMaybe(top.genName ++ "_all_arg", s.attrRefName);
-  local sTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
+  local sAttrTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -511,7 +512,7 @@ top::StrategyExpr ::= s::StrategyExpr
         (e.elementName, isDecorable(e.typerep, top.env), attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.isSuccessTranslation =
-    if sTotal
+    if sAttrTotal
     then Silver_Expr { true }
     else foldr(
       and(_, '&&', _),
@@ -523,7 +524,7 @@ top::StrategyExpr ::= s::StrategyExpr
           else nothing(),
         childAccesses));
   top.partialTranslation =
-    if sTotal
+    if sAttrTotal
     then asPartial(top.totalTranslation)
     else
       {- Translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
@@ -568,7 +569,7 @@ top::StrategyExpr ::= s::StrategyExpr
         Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep));
   top.totalTranslation =
-    if sTotal
+    if sAttrTotal
     then
       {- When s is total, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
@@ -594,7 +595,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.unparse = s"some(${s.unparse})";
   
   local sName::String = fromMaybe(top.genName ++ "_some_arg", s.attrRefName);
-  local sTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
+  local sAttrTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -613,7 +614,7 @@ top::StrategyExpr ::= s::StrategyExpr
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
   top.isSuccessTranslation =
-    if sTotal
+    if sAttrTotal
     then if null(matchingChildren) then Silver_Expr { false } else Silver_Expr { true }
     else foldr(
       or(_, '||', _),
@@ -622,7 +623,7 @@ top::StrategyExpr ::= s::StrategyExpr
         \ a::String -> Silver_Expr { $name{a}.$name{sName}.silver:core:isJust },
         matchingChildren));
   top.partialTranslation =
-    if sTotal
+    if sAttrTotal
     then
       if !null(matchingChildren)
       then asPartial(top.totalTranslation)
@@ -658,7 +659,7 @@ top::StrategyExpr ::= s::StrategyExpr
         else silver:core:nothing()
       };
   top.totalTranslation =
-    if sTotal && !null(matchingChildren)
+    if sAttrTotal && !null(matchingChildren)
     then
       {- When s is total, optimized translation of some(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c.s) -}
@@ -684,7 +685,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.unparse = s"one(${s.unparse})";
   
   local sName::String = fromMaybe(top.genName ++ "_one_arg", s.attrRefName);
-  local sTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
+  local sAttrTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -704,7 +705,7 @@ top::StrategyExpr ::= s::StrategyExpr
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(\ a::(String, Boolean, Boolean) -> a.3, childAccesses));
   top.isSuccessTranslation =
-    if sTotal
+    if sAttrTotal
     then if null(matchingChildren) then Silver_Expr { false } else Silver_Expr { true }
     else foldr(
       or(_, '||', _),
@@ -713,7 +714,7 @@ top::StrategyExpr ::= s::StrategyExpr
         \ a::String -> Silver_Expr { $name{a}.$name{sName}.silver:core:isJust },
         matchingChildren));
   top.partialTranslation =
-    if sTotal
+    if sAttrTotal
     then
       if !null(matchingChildren)
       then asPartial(top.totalTranslation)
@@ -773,7 +774,7 @@ top::StrategyExpr ::= s::StrategyExpr
         Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", [starKind()], true, false), top.frame.signature.outputElement.typerep));
   top.totalTranslation =
-    if sTotal && !null(matchingChildren)
+    if sAttrTotal && !null(matchingChildren)
     then
       {- When s is total, optimized translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            prod(a.s, b, c) -}
@@ -968,26 +969,26 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
   s.recVarTotalEnv = (n.name, top.isTotalNoEnv) :: top.recVarTotalEnv;
   s.isOutermost = top.isOutermost;
   
-  local sTotal::Boolean = attrIsTotal(top.env, sName);
+  local sAttrTotal::Boolean = attrIsTotal(top.env, sName);
   nondecorated local attrRef::Expr = Silver_Expr {
     $name{top.frame.signature.outputElement.elementName}.$name{sName}
   };
   top.isSuccessTranslation =
     if top.isOutermost
     then s.isSuccessTranslation
-    else if sTotal
+    else if sAttrTotal
     then Silver_Expr { true }
     else Silver_Expr { $Expr{attrRef}.silver:core:isJust };
   top.partialTranslation =
     if top.isOutermost
     then s.partialTranslation
-    else if sTotal
+    else if sAttrTotal
     then asPartial(attrRef)
     else attrRef;
   top.totalTranslation =
     if top.isOutermost
     then s.totalTranslation
-    else if sTotal
+    else if sAttrTotal
     then attrRef
     else asTotal(top.frame.signature.outputElement.typerep, attrRef);
 }
@@ -1367,7 +1368,7 @@ Boolean ::= env::Env attrName::String
   local dcls::[AttributeDclInfo] = getAttrDcl(attrName, env);
   return
     case dcls of
-    | [] -> false
+    | [] -> error(s"Attribute ${attrName} not found")
     | d :: _ ->
       case d.typeScheme.typerep of
       | appType(nonterminalType("silver:core:Maybe", _, _, _), _) -> false
