@@ -43,7 +43,7 @@ top::AGDcl ::=
       map(
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
-            d.snd.isTotalNoEnv, name(d.fst),
+            d.snd.isTotalInf, name(d.fst),
             d.snd.recVarNameEnv, d.snd.recVarTotalEnv,
             new(d.snd)),
         e.liftedStrategies));
