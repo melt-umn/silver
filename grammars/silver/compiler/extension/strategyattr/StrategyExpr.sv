@@ -57,6 +57,9 @@ partial strategy attribute genericStep =
   | guardedChoice(s1, s2, _) when s1.isTotal -> sequence(^s1, ^s2, genName=top.genName)
   | guardedChoice(s1, id(), s2) -> choice(^s1, ^s2, genName=top.genName)
   | guardedChoice(s1, s2, fail()) -> sequence(^s1, ^s2, genName=top.genName)
+  | ifThenElseComb(fail(), _, s) -> ^s
+  | ifThenElseComb(s1, s2, _) when s1.isTotal -> ^s2
+  | ifThenElseComb(_, s1, s2) when ^s1 == ^s2 -> ^s1
   | allTraversal(id()) -> id(genName=top.genName)
   | someTraversal(fail()) -> fail(genName=top.genName)
   | oneTraversal(fail()) -> fail(genName=top.genName)
@@ -85,6 +88,7 @@ partial strategy attribute prodStep =
   rule on top::StrategyExpr of
   | choice(s, _) when s.isTotalInProd -> ^s
   | guardedChoice(s1, s2, _) when s1.isTotalInProd -> sequence(^s1, ^s2, genName=top.genName)
+  | ifThenElseComb(s1, s2, _) when s1.isTotalInProd -> ^s2
   | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(genName=top.genName)
   | someTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(genName=top.genName)
   | oneTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(genName=top.genName)
@@ -105,6 +109,7 @@ strategy attribute ntSimplify =
   (sequence(ntSimplify, ntSimplify) <+
    choice(ntSimplify, ntSimplify) <+
    guardedChoice(ntSimplify, ntSimplify, ntSimplify) <+
+   ifThenElseComb(ntSimplify, ntSimplify, ntSimplify) <+
    allTraversal(genericSimplify) <+
    someTraversal(genericSimplify) <+
    oneTraversal(genericSimplify) <+
@@ -117,6 +122,7 @@ strategy attribute optimize =
   (sequence(optimize, ntSimplify) <+
    choice(optimize, optimize) <+
    guardedChoice(optimize, ntSimplify, optimize) <+
+   ifThenElseComb(optimize, optimize, optimize) <+
    allTraversal(genericSimplify) <+
    someTraversal(genericSimplify) <+
    oneTraversal(genericSimplify) <+
