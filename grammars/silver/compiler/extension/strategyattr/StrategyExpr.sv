@@ -907,10 +907,8 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
   top.unparse = s"${h.unparse}, ${t.unparse}";
 
   top.liftedStrategies :=
-    -- Slight hack: when h is id (common case for prod traversals), there is no need for a new attribute.
+    -- When h is id (common case for prod traversals), there is no need for a new attribute.
     -- However this can't be avoided during the optimization phase, which happens after lifting.
-    -- So, just don't lift the strategy, and we won't find the occurence of the non-existant attribute
-    -- during translation - which means we will treat it as id anyway!
     (if h.attrRefName.isJust || h.isId
      then []
      else [(h.genName, h)]) ++
@@ -930,7 +928,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
   
   top.containsFail <- h.isFail;
   top.allId <- h.isId;
-  top.allTotal <- !null(top.givenInputElements) && attrMatch && h.isTotal;
+  top.allTotal <- !null(top.givenInputElements) && (h.isId || attrMatch) && h.isTotal;
   
   h.isOutermost = false;
   t.givenInputElements =
