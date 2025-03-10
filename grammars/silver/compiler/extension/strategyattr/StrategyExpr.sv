@@ -26,6 +26,8 @@ synthesized attribute isTotalInf::Boolean;
 synthesized attribute isTotal::Boolean;
 -- Same as above, but also depends on frame
 synthesized attribute isTotalInProd::Boolean;
+-- Can this strategy be evaluated twice without incurring any additional computation?
+synthesized attribute isSimple::Boolean;
 inherited attribute givenInputElements::[NamedSignatureElement];
 synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
@@ -135,7 +137,7 @@ strategy attribute optimize =
 tracked nonterminal StrategyExpr with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
   genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName,
-  isId, isFail, isTotalInf, isTotal, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
+  isId, isFail, isTotalInf, isTotal, isSimple, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
   isSuccessTranslation<Expr>, partialTranslation<Expr>, totalTranslation<Expr>, matchesFrame, isTotalInProd, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
@@ -154,7 +156,7 @@ flowtype StrategyExpr =
   liftedStrategies {recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost},
   isTotalInf {recVarNameEnv, recVarTotalEnv, outerAttr, isOutermost},
   attrRefName {recVarNameEnv}, isId {}, isFail {},
-  isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, containsTraversal {decorate, flowEnv},
+  isTotal {decorate}, isSimple {}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, containsTraversal {decorate, flowEnv},
   genericStep {decorate, inlinedStrategies}, genericSimplify {decorate, inlinedStrategies},
   -- Frame-dependent attrs
   isSuccessTranslation {decorate, flowEnv, frame}, partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame},
@@ -206,6 +208,7 @@ top::StrategyExpr ::=
   top.isTotalInf = false;
   top.isTotal = false;
   top.isTotalInProd = false;
+  top.isSimple = false;
 }
 
 -- Basic combinators
@@ -218,6 +221,7 @@ top::StrategyExpr ::=
   top.isTotalInf = true;
   top.isTotal = true;
   top.isTotalInProd = true;
+  top.isSimple = true;
   top.isSuccessTranslation = Silver_Expr { true };
   top.totalTranslation =
     if top.frame.signature.outputElement.typerep.isData
@@ -231,6 +235,7 @@ top::StrategyExpr ::=
   top.unparse = "fail";
   propagate liftedStrategies;
   top.isFail = true;
+  top.isSimple = true;
   top.isSuccessTranslation = Silver_Expr { false };
   top.partialTranslation = Silver_Expr { silver:core:nothing() };
 }
@@ -1211,6 +1216,7 @@ top::StrategyExpr ::= id::QName
   top.isId = false;
   top.isFail = false;
   top.isTotalInf = fromMaybe(false, lookup(id.name, top.recVarTotalEnv));
+  top.isSimple = true;
   
   nondecorated local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
   forwards to
@@ -1244,6 +1250,7 @@ top::StrategyExpr ::= id::Decorated QName
   top.isTotalInf = lookup(id.name, top.recVarTotalEnv).fromJust;
   top.isTotal = attrIsTotal(top.env, top.attrRefName.fromJust);
   top.isTotalInProd = attrIsTotal(top.env, top.attrRefName.fromJust);
+  top.isSimple = true;
   top.freeRecVars <- [id.name];
   
   nondecorated local attrRef::Expr = Silver_Expr {
@@ -1283,6 +1290,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.attrRefName = just(attr.name);
   top.matchesFrame := attr.matchesFrame;
   top.isTotal = false;
+  top.isSimple = true;
   top.partialRefs <- [attrDcl.fullName];
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
@@ -1324,6 +1332,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.isTotalInf = true;
   top.isTotal = true;
   top.isTotalInProd = true;
+  top.isSimple = true;
   top.totalRefs <- [attrDcl.fullName];
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
@@ -1341,15 +1350,32 @@ top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
   top.attrRefName = just(attr.attrDcl.fullName);
   top.isTotal = s.isTotal;
   top.isTotalInProd = s.isTotalInProd;
+  top.isSimple = true;
+
+  local attrTotal::Boolean = attrIsTotal(top.env, attr.attrDcl.fullName);
+  nondecorated local attrRef::Expr = Silver_Expr {
+    $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{^attr}
+  };
   top.isSuccessTranslation =
     if attr.matchesFrame
-    then s.isSuccessTranslation
+    then
+      if s.isSimple || attrTotal
+      then s.isSuccessTranslation
+      else Silver_Expr { $Expr{attrRef}.silver:core:isJust }
     else Silver_Expr { false };
   top.partialTranslation =
     if attr.matchesFrame
-    then s.partialTranslation
+    then
+      if s.isSimple
+      then s.partialTranslation
+      else if attrTotal then asPartial(attrRef) else attrRef
     else Silver_Expr { silver:core:nothing() };
-  top.totalTranslation = s.totalTranslation;
+  top.totalTranslation =
+    if s.isSimple
+    then s.totalTranslation
+    else if attrTotal
+    then attrRef
+    else asTotal(top.frame.signature.outputElement.typerep, attrRef);
   
   s.isOutermost = top.isOutermost;
   s.inlinedStrategies = attr.attrDcl.fullName :: top.inlinedStrategies;
