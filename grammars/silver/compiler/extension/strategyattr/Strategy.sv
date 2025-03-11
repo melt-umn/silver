@@ -7,7 +7,7 @@ top::AGDcl ::=
   e::StrategyExpr
 {
   top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
-  propagate grammarName, config, env, flowEnv;
+  propagate grammarName, config, flowEnv;
 
   top.occursDefs := [];
   top.specDefs := [];
@@ -32,32 +32,40 @@ top::AGDcl ::=
 
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
-  e.recVarTotalNoEnvEnv = recVarTotalEnv;
   e.outerAttr = a.name;
   e.isOutermost = true;
-  
-  nondecorated local fwrd::AGDcl =
+
+  -- Component strategies that are lifted for the translation of e.
+  -- This does not depend on e.env
+  local liftedStrategyDecls::AGDcl =
     foldr(
-      appendAGDcl,
-      defsAGDcl(
-        [attrDef(
-           defaultEnvItem(
-             strategyDcl(
-               fName, isTotal,
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, ^e,
-               sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]),
+      appendAGDcl, emptyAGDcl(),
       map(
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
-            d.snd.isTotalNoEnv, name(d.fst),
-            d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv,
+            d.snd.isTotalInf, name(d.fst),
+            d.snd.recVarNameEnv, d.snd.recVarTotalEnv,
             new(d.snd)),
         e.liftedStrategies));
   
-  -- Uncomment for debugging
-  --forwards to unsafeTrace(fwrd, printT(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
-
-  forwards to fwrd;
+  -- Supply e with the environment containing the lifted strategy declarations,
+  -- for error checking purposes.
+  e.env = newScopeEnv(liftedStrategyDecls.defs, top.env);
+  
+  nondecorated local fwrd::AGDcl =
+    defsAGDcl(
+      [attrDef(
+          defaultEnvItem(
+            strategyDcl(
+              fName, isTotal,
+              !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, ^e,
+              sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
+  
+  forwards to appendAGDcl(@liftedStrategyDecls,
+    -- Uncomment for debugging
+    --unsafeTrace(fwrd, eprintT((if isTotal then "total" else "partial") ++ " " ++ a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()))
+    fwrd
+  );
 }
 
 abstract production strategyAttributionDcl implements AttributionDcl
@@ -173,7 +181,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
   -- Uncomment for debugging
-  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), printT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.unparse ++ ";\n\n", unsafeIO()));
-  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), printT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
+  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.unparse ++ ";\n\n", unsafeIO()));
+  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
   forwards to propagateImpl(includeShared, attr, fwrd);
 }

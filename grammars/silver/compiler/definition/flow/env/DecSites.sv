@@ -303,7 +303,6 @@ partial strategy attribute resolveDecSiteStep =
   elimCycleDecSiteStep <+ lookupDecSiteStep <+ reduceDecSiteStep <+
   -- Short-circuit alternatives to potentially avoid building the entire tree
   altDec(resolveDecSiteStep, id) <+
-  -- TODO: above potentially being retried after failure
   some(resolveDecSiteStep)
   occurs on DecSiteTree;
 
@@ -319,10 +318,8 @@ partial strategy attribute cleanupDecSiteStep =
   someTopDown(reduceDecSiteStep <+ elimRedundantDecSiteStep)
   occurs on DecSiteTree;
 
-strategy attribute resolveDecSite = repeat(
-  -- TODO: workaround to prevent something from being inlined in a way that causes extra recomputation.
-  rule on DecSiteTree of d -> ^d end <*
-  resolveDecSiteStep) <* repeat(cleanupDecSiteStep)
+strategy attribute resolveDecSite =
+  repeat(resolveDecSiteStep) <* repeat(cleanupDecSiteStep)
   occurs on DecSiteTree;
 
 propagate
