@@ -22,6 +22,15 @@ top::StrategyExpr ::=
 
 -- Utilities
 -- Note that for the translation to work properly, we need to maintain forward.genName == top.genName
+abstract production whenS
+top::StrategyExpr ::= s::StrategyExpr
+{
+  forwards to
+    Silver_StrategyExpr (top.genName) {
+      if $StrategyExpr{@s} then id else fail
+    };
+}
+
 abstract production try
 top::StrategyExpr ::= s::StrategyExpr
 {
