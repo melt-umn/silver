@@ -11,6 +11,7 @@ top::StrategyExpr ::=
   
   propagate liftedStrategies;
   top.isTotal = true;
+  propagate liftedProdStmts;
   top.isSuccessTranslation = Silver_Expr { $Expr{top.partialTranslation}.silver:core:isJust };
   top.totalTranslation =
     Silver_Expr {

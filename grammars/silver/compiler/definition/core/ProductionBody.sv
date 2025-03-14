@@ -117,6 +117,14 @@ top::ProductionStmt ::=
   top.unparse = "";
 }
 
+instance Semigroup ProductionStmt {
+  append = productionStmtAppend;
+}
+
+instance Monoid ProductionStmt {
+  mempty = emptyProductionStmt();
+}
+
 --------------------------------------------------------------------------------
 
 aspect default production
