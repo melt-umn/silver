@@ -174,6 +174,15 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   | forwardVertexType_real() -> length(lookupFwdInh(prodName, attrName, flowEnv))
   end;
 
+-- Check if a production attribute is a forward production attribute.
+-- Note this expects the local env for the production!
+-- If looking up in another prod, need to get the prod attr defs for the prod.
+fun isForwardProdAttr Boolean ::= prod::String  fName::String  e::FlowEnv =
+  case lookupLocalEq(prod, fName, e) of
+  | localEq(_, _, _, _, isFwrd, _) :: _ -> isFwrd
+  | _ -> false
+  end;
+
 -- default set of inherited attributes required/assumed to exist for references
 fun getInhsForNtRef [[String]] ::= nt::String  e::FlowEnv = searchEnvTree(nt, e.refTree);
 

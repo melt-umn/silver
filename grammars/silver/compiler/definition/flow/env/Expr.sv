@@ -381,7 +381,7 @@ top::AppExpr ::= e::Expr
     -- Don't try to share if someone uses a signature sharing prod somewhere invalid.
     case top.decSiteVertexInfo of
     | just(forwardVertexType_real()) -> true
-    | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> true
+    | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> true
     | _ -> false
     end;
   top.flowDefs <-
