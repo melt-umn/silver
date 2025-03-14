@@ -386,7 +386,7 @@ top::AppExpr ::= e::Expr
     end;
   top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd, e.flowVertexInfo of
-    | just(parent), just(ns), just(v) when sigIsShared && isForwardParam ->
+    | just(parent), just(ns), just(v) when sigIsShared ->
       refDecSiteEq(
         top.frame.fullName, e.finalType.typeName, v,
         subtermVertexType(parent, ns.fullName, sigName), top.alwaysDecorated) ::
