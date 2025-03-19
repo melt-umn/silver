@@ -20,12 +20,11 @@ ignore terminal BlockComment
                 /[\/][\*]([^\*]|[\r\n]|([\*]+([^\*\/]|[\r\n])))*[\*]+[\/]/ ;
 ignore terminal WhiteSpace   /[\r\n\t\ ]+/ ;
 
-synthesized attribute ioResult :: IOVal<Integer> ;
-inherited attribute ioInput :: IOVal<Integer> ;
+synthesized attribute ioResult :: IO<Integer> ;
 inherited attribute testFileName :: String ;
 inherited attribute testFileDir :: String ;
 
-nonterminal Run with testFileName, testFileDir, ioInput, ioResult ;
+nonterminal Run with testFileName, testFileDir, ioResult ;
 
 parser parse::Run { silver:testing:bin ; }
 
@@ -33,7 +32,7 @@ parser parse::Run { silver:testing:bin ; }
 concrete production skipRun
 r::Run ::= 'skip' skiprun::Run
 { 
- r.ioResult = ioval (r.ioInput.io, 0) ;
+  r.ioResult = pure(0) ;
 }
 
 nonterminal OptionalFail ;
@@ -55,56 +54,63 @@ r::Run ::= f::OptionalFail run_kwd::'run' ':' rest::CommandAlt_t
 concrete production run
 r::Run ::= f::OptionalFail 'run' c::Command_t
 {
- local msgBefore :: IOToken  =
-  printT ("............................................................\n" ++
+  r.ioResult = do {
+
+    print ("............................................................\n" ++
          "Test \n  " ++ r.testFileName ++ " in directory \n  " ++
-         prettyDirName(r.testFileDir) ++ "\n", r.ioInput.io ) ;
+         prettyDirName(r.testFileDir) ++ "\n" ) ;
+    
+    let cmd :: String = substring(1,length(c.lexeme)-1,c.lexeme) ;
 
- local cmd :: String = substring(1,length(c.lexeme)-1,c.lexeme) ;
-
- local cmdResult :: IOVal<Integer> 
-   = systemT ("cd " ++ r.testFileDir ++ ";" ++
+    cmdResult :: Integer <- system("cd " ++ r.testFileDir ++ ";" ++
              "rm -f " ++ r.testFileName ++ ".output ; " ++ 
-             cmd ++ " >& " ++ r.testFileName ++ ".output"
-             , msgBefore ) ;
+             cmd ++ " >& " ++ r.testFileName ++ ".output") ;
 
- r.ioResult =
-   if   (cmdResult.iovalue == 0 && ! f.fail) ||
-        (cmdResult.iovalue != 0 && f.fail) 
-   then ioval( printT( "passed (rc = 0).\n", cmdResult.io), 0 )
-   else ioval( printT( "failed (rc = " ++ toString(cmdResult.iovalue) ++ ").\n",
-                      cmdResult.io),
-               1 ) ;
+    if   (cmdResult == 0 && ! f.fail) ||
+          (cmdResult != 0 && f.fail) 
+    then do {
+      print( "passed (rc = 0).\n") ;
+      return 0;
+    }
+    else do {
+      print( "failed (rc = " ++ toString(cmdResult) ++ ").\n") ;
+      return 1;
+    };
+
+  };
+
+ 
 }
 
 concrete production runTestSuite
 ts::Run ::= 'test' 'suite' jar::Jar_t
 {
- local msgBefore :: IOToken  =
-  printT ("............................................................\n" ++
-         "Test Suite jar \"" ++ jar.lexeme ++ "\" in \n  " ++ 
-         ts.testFileName ++ " in directory \n  " ++
-         prettyDirName(ts.testFileDir) ++ "\n", ts.ioInput.io ) ;
 
- -- probably should check that jar file by this name exists
+ ts.ioResult = do {
 
- local testSuiteResults :: IOVal<Integer> 
-   = systemT ("cd " ++ ts.testFileDir ++ ";" ++
-             "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
-             " java -Xss6M -jar " ++ jar.lexeme ++
-             " >& " ++ ts.testFileName ++ ".output" ,
-             msgBefore ) ;
+    print ("............................................................\n" ++
+        "Test Suite jar \"" ++ jar.lexeme ++ "\" in \n  " ++ 
+        ts.testFileName ++ " in directory \n  " ++
+        prettyDirName(ts.testFileDir) ++ "\n") ;
 
- local afterMsg :: IOToken
-   = printT ( if testSuiteResults.iovalue == 0
-             then "all tests passed (rc = 0).\n"
-             else toString(testSuiteResults.iovalue) ++ 
-             if testSuiteResults.iovalue == 1
-             then " test in suite failed.\n" 
-             else " tests in suite failed.\n" ,
-             testSuiteResults.io ) ;
+    -- probably should check that jar file by this name exists
 
- ts.ioResult = ioval( afterMsg, testSuiteResults.iovalue ) ;
+    testSuiteResults :: Integer <- 
+        system ("cd " ++ ts.testFileDir ++ ";" ++
+            "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
+            " java -Xss6M -jar " ++ jar.lexeme ++
+            " >& " ++ ts.testFileName ++ ".output" ) ;
+
+    print (if testSuiteResults == 0
+        then "all tests passed (rc = 0).\n"
+        else toString(testSuiteResults) ++ 
+        if testSuiteResults == 1
+        then " test in suite failed.\n" 
+        else " tests in suite failed.\n") ;
+    
+    return testSuiteResults;
+
+ };
 }
 
 

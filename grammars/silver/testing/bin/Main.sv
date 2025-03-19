@@ -3,31 +3,24 @@ grammar silver:testing:bin ;
 import silver:testing;
 
 function main
-IOVal<Integer> ::= args::[String] ioIn::IOToken
-{ return
-   -- if true then printDirs(initDirs, ioIn) else
-   -- uncomment above line to just experiment with the traverse function
-   -- when used for printing directories.
-   ioval(
-    printT( "============================================================\n" ++
-           (if   runTests.iovalue.numFailed == 0
+IO<Integer> ::= args::[String] --ioIn::IOToken
+{ 
+  local attribute initDirs :: [ String ] ;
+  initDirs = map(cleanDirName, args) ; -- was  explode(" ",args)) ;-}
+
+  return do {
+    startDir <- cwd();
+    runTests :: TestingResults <- traverseDirectoriesAndPerform
+                    ( startDir, initDirs, runTest, dirSkip, pure(testingResults(0)) );
+                    --,  ioval(startDir.io, testingResults(0) ) );
+    print("============================================================\n" ++
+           (if   runTests.numFailed == 0
             then "All tests passed. \n"
-            else toString(runTests.iovalue.numFailed) ++ 
+            else toString(runTests.numFailed) ++ 
                  " tests failed. \n") ++
-           "============================================================\n"
-         , runTests.io ) 
-       , runTests.iovalue.numFailed  )
-  ;
-
- local runTests :: IOVal<TestingResults> 
-  = traverseDirectoriesAndPerform
-      ( startDir.iovalue, initDirs, runTest, dirSkip,
-        ioval(startDir.io, testingResults(0) ) );
-
- local startDir :: IOVal<String> = cwdT(ioIn) ;
-
- local attribute initDirs :: [ String ] ;
- initDirs = map(cleanDirName, args) ; -- was  explode(" ",args)) ;
+           "============================================================\n");
+    return runTests.numFailed;
+  };
 }
 
 function cleanDirName
