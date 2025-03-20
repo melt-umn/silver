@@ -3,16 +3,15 @@ grammar silver:testing:bin ;
 import silver:testing;
 
 function main
-IO<Integer> ::= args::[String] --ioIn::IOToken
+IO<Integer> ::= args::[String]
 { 
   local attribute initDirs :: [ String ] ;
-  initDirs = map(cleanDirName, args) ; -- was  explode(" ",args)) ;-}
+  initDirs = map(cleanDirName, args) ;
 
   return do {
     startDir <- cwd();
     runTests :: TestingResults <- traverseDirectoriesAndPerform
                     ( startDir, initDirs, runTest, dirSkip, pure(testingResults(0)) );
-                    --,  ioval(startDir.io, testingResults(0) ) );
     print("============================================================\n" ++
            (if   runTests.numFailed == 0
             then "All tests passed. \n"

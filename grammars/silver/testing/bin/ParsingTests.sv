@@ -7,83 +7,104 @@ import silver:testing;
 abstract production parseOnlyTestAfterCPP
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 {
- local exists::IOVal<Boolean> = isFileT(fn, t.ioIn);
- local cppCommand :: String
-   = -- "cpp -P " ++ fn ++ " | tail -n +3 > " ++ fn ++ ".cpp" ;
-     "cpp " ++ fn ++ " > " ++ fn ++ ".cpp" ;
-   -- even the -P option to cpp leaves 2 blanks lines, so we also
-   -- use tail to remove these blank lines
- local mkCPPfile::IOVal<Integer> = systemT (cppCommand, exists.io ) ;
- local text::IOVal<String> = readFileT(fn++".cpp", mkCPPfile.io);
- local pr::ParseResult<a> = parseF(text.iovalue,fn) ;
 
- t.pass = exists.iovalue && mkCPPfile.iovalue == 0 && pr.parseSuccess ;
+  local msg :: IOVal<Maybe<String>> = 
+    evalIO (
+      do {
+        let cppCommand :: String
+        = -- "cpp -P " ++ fn ++ " | tail -n +3 > " ++ fn ++ ".cpp" ;
+          "cpp " ++ fn ++ " > " ++ fn ++ ".cpp" ;
+        -- even the -P option to cpp leaves 2 blanks lines, so we also
+        -- use tail to remove these blank lines
 
- t.msg = if   ! exists.iovalue
-         then "File \"" ++ fn ++ "\" not found.\n"
-         else
-         if   ! mkCPPfile.iovalue == 0
-         then "The cpp process failed with error code " ++ 
-              toString(mkCPPfile.iovalue) ++ "\n" ++
-              "The cpp command was:\n" ++ cppCommand ++ "\n"
-         else
-         if   ! pr.parseSuccess
-         then "Parser error: " ++ pr.parseErrors ++ "\n"
-         else "" ;
+        exists    :: Boolean <- isFile(fn);
+        mkCPPfile :: Integer <- system(cppCommand);
+        text      :: String <- readFile(fn++".cpp");
+        let pr    :: ParseResult<a> = parseF(text, fn);
 
- t.ioOut = if   ! exists.iovalue
-           then exists.io 
-           else text.io ;
+        return (
+          if   ! exists
+          then just("File \"" ++ fn ++ "\" not found.\n")
+          else
+          if   ! mkCPPfile == 0
+          then just("The cpp process failed with error code " ++ 
+               toString(mkCPPfile) ++ "\n" ++
+               "The cpp command was:\n" ++ cppCommand ++ "\n")
+          else
+          if   ! pr.parseSuccess
+          then just("Parser error: " ++ pr.parseErrors ++ "\n")
+          else nothing()
+        );
+      },
+      t.ioIn
+    );
+
+  t.pass = !msg.iovalue.isJust;
+
+  t.msg = if msg.iovalue.isJust then msg.iovalue.fromJust else "";
+
+  t.ioOut = msg.io;
+
 }
 
 
 abstract production parseOnlyTest
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 {
- local exists::IOVal<Boolean> = isFileT(fn, t.ioIn);
- local text::IOVal<String> = readFileT(fn, exists.io);
- local pr::ParseResult<a> = parseF(text.iovalue,fn) ;
+ local msg :: IOVal<Maybe<String>> = 
+    evalIO (
+        do {
+          exists  :: Boolean <- isFile(fn);
+          text    :: String <- readFile(fn);
+          let pr  :: ParseResult<a> = parseF(text, fn);
 
- local result :: Maybe<String> 
-  = if   ! exists.iovalue
-    then just("File \"" ++ fn ++ "\" not found.\n")
-    else
-    if   ! pr.parseSuccess
-    then just ("Parser error: " ++ pr.parseErrors ++ "\n")
-    else nothing() ;
+          return (
+            if   ! exists
+            then just("File \"" ++ fn ++ "\" not found.\n")
+            else
+            if   ! pr.parseSuccess
+            then just("Parser error: " ++ pr.parseErrors ++ "\n")
+            else nothing()
+          );
+        },
+        t.ioIn
+    );
 
- t.pass = exists.iovalue && pr.parseSuccess ;
+  t.pass = !msg.iovalue.isJust;
 
- t.msg = if   ! exists.iovalue
-         then "File \"" ++ fn ++ "\" not found.\n"
-         else
-         if   ! pr.parseSuccess
-         then "Parser error: " ++ pr.parseErrors ++ "\n"
-         else "" ;
+  t.msg = if msg.iovalue.isJust then msg.iovalue.fromJust else "";
 
- t.ioOut = if   ! exists.iovalue
-           then exists.io 
-           else text.io ;
+  t.ioOut = msg.io;
+
 }
 
 abstract production parseFailTest
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 {
- local exists::IOVal<Boolean> = isFileT(fn, t.ioIn);
- local text::IOVal<String> = readFileT(fn, exists.io);
- local pr::ParseResult<a> = parseF(text.iovalue,fn) ;
+  local msg :: IOVal<Maybe<String>> = 
+    evalIO (
+        do {
+          exists  :: Boolean <- isFile(fn);
+          text    :: String <- readFile(fn);
+          let pr  :: ParseResult<a> = parseF(text, fn);
 
- t.pass = exists.iovalue && ! pr.parseSuccess ;
+          return (
+             if   ! exists
+            then just("File \"" ++ fn ++ "\" not found.\n")
+            else
+            if   pr.parseSuccess
+            then just("Error: File should not be parseable.")
+            else nothing()
+          );
+        },
+        t.ioIn
+    );
 
- t.msg = if   ! exists.iovalue
-         then "File \"" ++ fn ++ "\" not found.\n"
-         else
-         if   pr.parseSuccess
-         then "Error: File should not be parseable."
-         else "" ;
+  t.pass = !msg.iovalue.isJust;
 
- t.ioOut = if   ! exists.iovalue
-           then exists.io 
-           else text.io ;
+  t.msg = if msg.iovalue.isJust then msg.iovalue.fromJust else "";
+
+  t.ioOut = msg.io;
+
 }
 
