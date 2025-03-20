@@ -8,42 +8,46 @@ IO<a> ::= startDir::String paths::[String]
                 --ioIn::IOVal<a>
 {
   return do {
-    {-
-      Thought links were a bug, they seem not to be.  It maybe the 
-          size of the Java stack that was the problem.
-      local bashValueForTrue::Integer = 0 ;
-      local headIsLink_Bash::IOVal<Integer> 
-        = system("[ -L " ++ head(paths) ++ " ];", ioIn.io ); 
-      local headIsLink::IOVal<Boolean> 
-        = d ioval(headIsLink_Bash.io, headIsLink_Bash.iovalue == bashValueForTrue) ;
-      -} 
-    let headIsLink :: Boolean = false;   -- maybe add later.
-
-    headIsDir :: Boolean <- isDirectory( head(paths) );
-
-    dirContents :: [String] <- listContents ( head(paths) ) ;
-
-    skipIt :: Boolean <-
-          if   endsWith("/generated", head(paths))
-          then pure(true)
-          else
-          if   headIsLink 
-          then pure(true)
-          else
-          if   headIsDir 
-          then skipDir(head(paths))
-          else pure(false);
-
-    let newStrings :: [String] =
-          (if   ! headIsDir || skipIt
-            then []
-            else sort ( prependAll ( head(paths), dirContents ) ) );  -- add sorted list of dir contents to list
-
     if null(paths)
       then ^defaultVal
-      else traverseDirectoriesAndPerform (
-              startDir, newStrings ++ tail(paths), f, skipDir, f ( head(paths), ^defaultVal )
-          );
+      else do {
+
+        {-
+          Thought links were a bug, they seem not to be.  It maybe the 
+              size of the Java stack that was the problem.
+          local bashValueForTrue::Integer = 0 ;
+          local headIsLink_Bash::IOVal<Integer> 
+            = system("[ -L " ++ head(paths) ++ " ];", ioIn.io ); 
+          local headIsLink::IOVal<Boolean> 
+            = d ioval(headIsLink_Bash.io, headIsLink_Bash.iovalue == bashValueForTrue) ;
+          -} 
+        let headIsLink :: Boolean = false;   -- maybe add later.
+
+        headIsDir :: Boolean <- isDirectory( head(paths) );
+
+        dirContents :: [String] <- listContents ( head(paths) ) ;
+
+        skipIt :: Boolean <-
+              if   endsWith("/generated", head(paths))
+              then pure(true)
+              else
+              if   headIsLink 
+              then pure(true)
+              else
+              if   headIsDir 
+              then skipDir(head(paths))
+              else pure(false);
+
+        let newStrings :: [String] =
+              (if   ! headIsDir || skipIt
+                then []
+                else sort ( prependAll ( head(paths), dirContents ) ) );  -- add sorted list of dir contents to list
+
+        traverseDirectoriesAndPerform (
+          startDir, newStrings ++ tail(paths), f, skipDir, f ( head(paths), ^defaultVal )
+        );
+
+      };
   };
 }
 
