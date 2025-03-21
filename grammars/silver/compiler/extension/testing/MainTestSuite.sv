@@ -10,6 +10,9 @@ import silver:compiler:modification:ffi;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
 
+import silver:compiler:extension:convenience;
+import silver:compiler:extension:do_notation hiding DoDoubleColon_t;
+
 terminal MainTestSuite_t 'mainTestSuite' lexer classes {KEYWORD};
 terminal MakeTestSuite_t 'makeTestSuite' lexer classes {KEYWORD};
 
@@ -55,72 +58,32 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
 {
   top.unparse = "mainTestSuite " ++ nme.lexeme ++ ";\n";
 
-  forwards to 
-  appendAGDcl(
-   functionDcl(
-    -- function main
-    'function', name("main"),
-    -- IOVal<Integer> ::= args::[String]  mainIO::IOToken
-    functionSignature(
-      nilConstraint(), '=>',
-     functionLHS(
-       appTypeExpr(
-         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOVal"))),
-         bTypeList('<', typeListSingle(integerTypeExpr('Integer')), '>'))),
-     '::=',
-     productionRHSCons(
-      productionRHSElemType(elemNotShared(), listTypeExpr('[', stringTypeExpr('String'), ']')),
-      productionRHSCons(
-       productionRHSElem(
-        elemNotShared(),
-        name("mainIO"),
-        '::', typerepTypeExpr(ioForeignType)),
-       productionRHSNil()))),
-    -- body::ProductionBody 
-   productionBody('{',
-    foldl(productionStmtsSnoc(_, _), productionStmtsNil(), [
-     --  local testResults :: TestSuite;
-     localAttributeDcl(
-      'local', 'attribute', name("testResults"), '::',
-      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite"))), ';'),
-     -- testResults = name()
-     valueEq( qName("testResults"), '=', 
-                 applicationEmpty( baseExpr( qNameId(nameIdLower(nme))), 
-                  '(', ')'),
-                 ';'),
-     -- testResults.ioIn = ...
-     attributeDef( 
-         concreteDefLHS( qName("testResults")), '.', qNameAttrOccur(qName("ioIn")),
-         '=', mkNameExpr("mainIO"), ';'),
-     -- return ...
-     returnDef('return',
-        mkStrFunctionInvocation("ioval",
-         [
-          mkStrFunctionInvocation("exitT",
-           [ attrAcc("testResults","numFailed"),
-             mkStrFunctionInvocation("printT",
-              [ foldStringExprs(
-                 [ strCnst("\n\n"),
-                   strCnst("============================================================\n"),
-                   strCnst("Test Results:\n"), 
-                   attrAcc("testResults","msg"),
-                   strCnst("\n\n"), 
-                   strCnst("Passed "), 
-                   Silver_Expr { silver:core:integerToString(testResults.numPassed) },
-                   strCnst(" tests out of "), 
-                   Silver_Expr { silver:core:integerToString(testResults.numTests) },
-                   strCnst("\n"), 
-                   strCnst("============================================================\n") 
-                 ]),
-                attrAcc("testResults", "ioOut")
-              ])
-           ]),
-           intConst( terminal(Int_t, "0")) 
-         ]), 
-         ';')
-    ]), '}')),
+  local mainDcl::AGDcl = Silver_AGDcl {
+    function main
+    IOVal<a> ::= args::[String] mainIO::IOToken
+    {
+      local testResults :: TestSuite = $QName{qNameId(nameIdLower(nme))}();
+      testResults.ioIn = mainIO;
 
-  makeTestSuite_p( 'makeTestSuite', nme, ';'));
+      return evalIO(
+        do {
+          print("\n\n" ++
+                "============================================================\n" ++
+                "Test results: \n" ++
+                testResults.msg ++ "\n\n" ++ 
+                "Passed " ++ toString(testResults.numPassed) ++
+                " tests out of " ++ 
+                toString(testResults.numTests) ++ "\n" ++
+                "============================================================\n");
+
+          exit( testResults.numTests - testResults.numPassed );    
+        },
+        testResults.ioOut
+      );
+    }
+  };
+
+  forwards to appendAGDcl(@mainDcl, makeTestSuite_p( 'makeTestSuite', nme, ';'));
 }
 
 
