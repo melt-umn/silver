@@ -9,6 +9,7 @@ import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:ffi;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:list;
+import silver:compiler:modification:copper;
 
 import silver:compiler:extension:convenience;
 import silver:compiler:extension:do_notation hiding DoDoubleColon_t;
@@ -60,7 +61,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
 
   local mainDcl::AGDcl = Silver_AGDcl {
     function main
-    IOVal<a> ::= args::[String] mainIO::IOToken
+    IOVal<Integer> ::= args::[String] mainIO::IOToken
     {
       local testResults :: TestSuite = $QName{qNameId(nameIdLower(nme))}();
       testResults.ioIn = mainIO;
@@ -85,37 +86,3 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
 
   forwards to appendAGDcl(@mainDcl, makeTestSuite_p( 'makeTestSuite', nme, ';'));
 }
-
-
-{-
-function main
-IOToken ::= args::String mainIO::IOToken
-{
- local testResults :: TestSuite = core_tests();
- testResults.ioIn = mainIO;
-
- return
-   exitT( testResults.numTests - testResults.numPassed,
-     printT("\n\n" ++
-            "============================================================\n" ++
-            "Test results: \n" ++
-            testResults.msg ++ "\n\n" ++ 
-            "Passed " ++ toString(testResults.numPassed) ++
-            " tests out of " ++ 
-            toString(testResults.numTests) ++ "\n" ++
-            "============================================================\n",
-            testResults.ioOut) 
-);
-}
-
-abstract production core_tests
-t::TestSuite ::= 
-{
- forwards to tsAsNT;
- local tsAsNT :: TestSuite = testsAsNT( testsToPerform);
- production attribute testsToPerform :: [ Test ] with ++;
- testsToPerform := [ ];
-}
-
-mainTestSuite core_tests;
--}
