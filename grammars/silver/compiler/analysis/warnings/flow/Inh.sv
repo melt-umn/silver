@@ -904,7 +904,7 @@ top::Expr ::= '@' e::Expr
   -- Inherited attributes on the shared tree that might be depended upon by dispatching.
   local dispatchDepsOnRef :: [String] =
     case e.flowVertexInfo of
-    | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
+    | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
     | just(vt) -> filter(\ i::String ->
         set:contains(vt.inhVertex(i), dispatchDeps) &&
         !vertexHasInhEq(top.frame.fullName, vt, i, top.flowEnv),
@@ -928,10 +928,10 @@ top::Expr ::= '@' e::Expr
     if top.config.warnMissingInh
     then
       case e.flowVertexInfo of
-      | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) ->
+      | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) ->
         case top.decSiteVertexInfo of
         | just(forwardVertexType_real()) -> []
-        | just(localVertexType(dSiteFName)) when isForwardProdAttr(dSiteFName, top.env) -> []
+        | just(localVertexType(dSiteFName)) when isForwardProdAttr(top.frame.fullName, dSiteFName, top.flowEnv) -> []
         | _ -> [mwdaWrnFromOrigin(top, s"Forward production attribute ${fName} may only be shared in a forward decoration site")]
         end
       | _ -> []
@@ -956,7 +956,7 @@ top::AppExpr ::= e::Expr
   -- Inherited attributes on the shared tree that might be depended upon by dispatching.
   local dispatchDepsOnRef :: [String] =
     case e.flowVertexInfo of
-    | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
+    | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
     | just(vt) -> filter(\ i::String ->
         set:contains(vt.inhVertex(i), dispatchDeps) &&
         !vertexHasInhEq(top.frame.fullName, vt, i, top.flowEnv),
@@ -980,10 +980,10 @@ top::AppExpr ::= e::Expr
     if top.config.warnMissingInh && sigIsShared && isForwardParam
     then
       case e.flowVertexInfo of
-      | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) ->
+      | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) ->
         case top.decSiteVertexInfo of
         | just(forwardVertexType_real()) -> []
-        | just(localVertexType(dSiteFName)) when isForwardProdAttr(dSiteFName, top.env) -> []
+        | just(localVertexType(dSiteFName)) when isForwardProdAttr(top.frame.fullName, dSiteFName, top.flowEnv) -> []
         | _ -> [mwdaWrnFromOrigin(top, s"Forward production attribute ${fName} may only be shared in a forward decoration site")]
         end
       | _ -> []

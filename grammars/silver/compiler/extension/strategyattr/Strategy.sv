@@ -165,23 +165,25 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
        any(map(null, map(getOccursDcl(_, top.frame.signature.outputElement.typerep.typeName, top.env), attr.lookupAttribute.dcl.totalRefs))))
     then []
     else forward.errors;
-  
-  nondecorated local fwrd::ProductionStmt =
-    foldr(
-      productionStmtAppend(_, _),
-      attributeDef(
-        concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
-        '.',
-        qNameAttrOccur(^attr),
-        '=',
-        if isTotal then e2.totalTranslation else e2.partialTranslation,
-        ';'),
-      map(
-        \ n::String -> propagateOneAttr(if includeShared then elemShared('@') else elemNotShared(), qName(n)),
-        attr.lookupAttribute.dcl.liftedStrategyNames));
+
+  local liftedProdStmts::ProductionStmt = e2.liftedProdStmts;
+  local fwrd::ProductionStmt = productionStmtAppend(
+    @liftedProdStmts,
+    attributeDef(
+      concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
+      '.',
+      qNameAttrOccur(^attr),
+      '=',
+      if isTotal then e2.totalTranslation else e2.partialTranslation,
+      ';') ++
+    flatMap(
+      \ n::String -> propagateOneAttr(if includeShared then elemShared('@') else elemNotShared(), qName(n)),
+      attr.lookupAttribute.dcl.liftedStrategyNames));
+  -- defs from here are ignored due to circular dependency workaround in propagateOneAttr
+  forward.env = newScopeEnv(liftedProdStmts.defs ++ liftedProdStmts.productionAttributes, top.env);
   
   -- Uncomment for debugging
-  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.unparse ++ ";\n\n", unsafeIO()));
-  --forwards to unsafeTrace(propagateImpl(includeShared, attr, fwrd), eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
-  forwards to propagateImpl(includeShared, attr, fwrd);
+  --top.errors <- unsafeTrace([], eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.unparse ++ ";\n\n", unsafeIO()));
+  --top.errors <- unsafeTrace([], eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";" ++ e2.liftedProdStmts.unparse ++ "\n\n", unsafeIO()));
+  forwards to propagateImpl(includeShared, attr, @fwrd);
 }

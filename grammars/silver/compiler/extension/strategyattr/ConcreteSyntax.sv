@@ -125,6 +125,12 @@ concrete productions top::StrategyExpr_c
   top.unparse = s"printTerm";
   top.ast = printTerm(genName=top.givenGenName);
 }
+| 'when' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"when(${s.unparse})";
+  top.ast = whenS(s.ast, genName=top.givenGenName);
+  s.givenGenName = top.givenGenName ++ "_when_arg";
+}
 | 'try' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"try(${s.unparse})";

@@ -53,10 +53,8 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
       -- Via forwarding
       | forwardVertexType_real() -> forwardDec(prodName, nothing())
       | localVertexType("forward") -> forwardDec(prodName, nothing())
-      | localVertexType(fName) when
-          isForwardProdAttr(fName,
-            newScopeEnv(flatMap((.prodDefs), getProdAttrs(prodName, realEnv)), emptyEnv())) ->
-        forwardDec(prodName, just(fName))
+      | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
+          forwardDec(prodName, just(fName))
       -- Via projected remote equation
       | subtermVertexType(parent, prodOrSig, sigName) ->
          (if !null(getValueDcl(prodOrSig, realEnv))
@@ -157,10 +155,8 @@ State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
         -- Via forwarding
         | forwardVertexType_real() -> pure(forwardDec(prodName, nothing()))
         | localVertexType("forward") -> pure(forwardDec(prodName, nothing()))
-        | localVertexType(fName) when
-            isForwardProdAttr(fName,
-              newScopeEnv(flatMap((.prodDefs), getProdAttrs(prodName, realEnv)), emptyEnv())) ->
-          pure(forwardDec(prodName, just(fName)))
+        | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
+            pure(forwardDec(prodName, just(fName)))
         -- Via projected remote equation
         | subtermVertexType(parent, prodOrSig, sigName) -> map(
             -- Transitive dependencies of an attribute on the projection must be supplied

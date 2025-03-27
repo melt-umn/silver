@@ -465,8 +465,7 @@ fun addDefEqs
    case d of
    | refDecSiteEq(prod, nt, ref, decSite, isAlwaysDec) when
         case ref of
-        | localVertexType(fName) -> !isForwardProdAttr(fName,
-            newScopeEnv(flatMap((.prodDefs), getProdAttrs(prod, realEnv)), emptyEnv()))
+        | localVertexType(fName) -> !isForwardProdAttr(prod, fName, flowEnv)
         | _ -> true
         end ->
       filterMap(

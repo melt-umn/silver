@@ -49,7 +49,8 @@ top::Expr ::= @q::QName
     then []
     else case top.appDecSiteVertexInfo of
     | just(forwardVertexType_real()) -> []
-    | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
+    | just(localVertexType(fName))
+        when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
     | _ -> [mwdaWrnFromOrigin(top, s"Non-dispatch production ${q.name} has shared children in its signature, and can only be referenced by applying it in the root position of a forward or forward production attribute equation.")]
     end;
 }
@@ -65,7 +66,8 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
       | dispatchType(ns) when any(map((.elementShared), ns.inputElements)) ->
         case top.decSiteVertexInfo of
         | just(forwardVertexType_real()) -> []
-        | just(localVertexType(fName)) when isForwardProdAttr(fName, top.env) -> []
+        | just(localVertexType(fName))
+            when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
         | _ -> [mwdaWrnFromOrigin(e, s"Dispatch ${ns.fullName} has shared children in its signature, and can only be applied in the root position of a forward or forward production attribute equation.")]
         end
       | _ -> []

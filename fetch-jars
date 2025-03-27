@@ -2,12 +2,13 @@
 
 set -eu
 
-# Usage: ./fetch-jars [rev-name] [--unstable] [--local] [--copper]
+# Usage: ./fetch-jars [rev-name] [--unstable] [--local] [--copper] [--keep-generated]
 # If a revision is not specified, the script fetches the latest jars from the current branch,
 # falling back to develop.
 # If --unstable is specified, always fetch from commit artifacts on foundry.
 # If --local is specified, only fetch jars from the local cache.
 # If --copper is specified, only fetch the Copper jars.
+# If --keep-generated is specified, do not delete the generated file cache.
 
 # Parse command line argumants.
 # Hacky, but getopts seems like overkill for this...
@@ -126,7 +127,7 @@ else
   done
 fi
 
-if [ -d generated/src ]; then
+if [[ $* != *--keep-generated* && -d generated/src ]]; then
   echo "Deleting stale generated file cache..."
   for file in generated/*/*; do
     echo $file
