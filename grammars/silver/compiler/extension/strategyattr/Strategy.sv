@@ -58,7 +58,8 @@ top::AGDcl ::=
           defaultEnvItem(
             strategyDcl(
               fName, isTotal,
-              !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, ^e,
+              !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv,
+              e.partialRefs, e.totalRefs, e.containsTraversal, reflect(^e),
               sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
   
   forwards to appendAGDcl(@liftedStrategyDecls,

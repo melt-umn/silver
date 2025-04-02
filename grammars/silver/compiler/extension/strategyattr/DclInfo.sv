@@ -30,13 +30,14 @@ top::AttributeDclInfo ::=
   containsErrors::Boolean liftedStrategyNames::[String]
   givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>]
   partialRefs::[String] totalRefs::[String] containsTraversal::Boolean
-  e::StrategyExpr
+  eAST::AST
 {
   top.fullName = fn;
   propagate compareKey;
   top.isEqual =
     case top.compareTo of
-    | strategyDcl(ofn, oIsTotal, _, _, _, _, _, _, _, oe) -> fn == ofn && isTotal == oIsTotal && ^e == ^oe
+    | strategyDcl(ofn, oIsTotal, _, _, _, _, _, _, _, _) ->
+      fn == ofn && isTotal == oIsTotal && top.strategyExpr == top.compareTo.strategyExpr
     | _ -> false
     end;
 
@@ -63,5 +64,5 @@ top::AttributeDclInfo ::=
   top.partialRefs := partialRefs;
   top.totalRefs := totalRefs;
   top.containsTraversal := containsTraversal;
-  top.strategyExpr = ^e;
+  top.strategyExpr = reifyUnchecked(^eAST);
 }
