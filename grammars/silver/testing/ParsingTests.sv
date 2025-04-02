@@ -1,8 +1,4 @@
-grammar silver:testing:bin ;
-
-import silver:testing;
-
----- Move thest to the testing library ----
+grammar silver:testing;
 
 abstract production parseOnlyTestAfterCPP
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
