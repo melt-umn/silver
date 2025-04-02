@@ -8,41 +8,33 @@ abstract production parseOnlyTestAfterCPP
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 {
 
-  local msg :: IOVal<Maybe<String>> = 
-    evalIO (
-      do {
-        exists    :: Boolean <- isFile(fn);
-        if   ! exists
-        then pure(just("File \"" ++ fn ++ "\" not found.\n"))
-        else do {
-          let cppCommand :: String
-          = -- "cpp -P " ++ fn ++ " | tail -n +3 > " ++ fn ++ ".cpp" ;
-            "cpp " ++ fn ++ " > " ++ fn ++ ".cpp" ;
-          -- even the -P option to cpp leaves 2 blanks lines, so we also
-          -- use tail to remove these blank lines
-          mkCPPfile :: Integer <- system(cppCommand);
+  local act :: EitherT<String IO ()> = do {
+    exists    :: Boolean <- lift(isFile(fn));
+    unless(exists, fail("File \"" ++ fn ++ "\" not found.\n"));
 
-          if   ! mkCPPfile == 0
-          then pure(just("The cpp process failed with error code " ++ 
-                    toString(mkCPPfile) ++ "\n" ++
-                    "The cpp command was:\n" ++ cppCommand ++ "\n"))
-          else do {
-            text      :: String <- readFile(fn++".cpp");
-            let pr    :: ParseResult<a> = parseF(text, fn);
+    let cppCommand :: String
+    = -- "cpp -P " ++ fn ++ " | tail -n +3 > " ++ fn ++ ".cpp" ;
+        "cpp " ++ fn ++ " > " ++ fn ++ ".cpp" ;
+    -- even the -P option to cpp leaves 2 blanks lines, so we also
+    -- use tail to remove these blank lines
 
-            return 
-              if   ! pr.parseSuccess
-              then just("Parser error: " ++ pr.parseErrors ++ "\n")
-              else nothing();
-          };
-        };
-      },
-      t.ioIn
-    );
+    mkCPPfile :: Integer <- lift(system(cppCommand));
+    unless(mkCPPfile == 0, fail(
+      "The cpp process failed with error code " ++ 
+      toString(mkCPPfile) ++ "\n" ++
+      "The cpp command was:\n" ++ cppCommand ++ "\n"));
 
-  t.pass = !msg.iovalue.isJust;
+    text      :: String <- lift(readFile(fn++".cpp"));
+    let pr    :: ParseResult<a> = parseF(text, fn);
 
-  t.msg = fromMaybe("", msg.iovalue);
+    unless(pr.parseSuccess, fail("Parser error: " ++ pr.parseErrors ++ "\n"));
+  };
+
+  local msg :: IOVal<Either<String ()>> = evalIO(act.run, t.ioIn);
+
+  t.pass = msg.iovalue.isLeft;
+
+  t.msg = fromLeft(msg.iovalue, "");
 
   t.ioOut = msg.io;
 
@@ -52,28 +44,20 @@ t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 abstract production parseOnlyTest
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 {
-  local msg :: IOVal<Maybe<String>> = 
-    evalIO (
-      do {
-        exists  :: Boolean <- isFile(fn);
-        if   ! exists
-        then pure(just("File \"" ++ fn ++ "\" not found.\n"))
-        else do {
-          text    :: String <- readFile(fn);
-          let pr  :: ParseResult<a> = parseF(text, fn);
+  local act :: EitherT<String IO ()> = do {
+    exists  :: Boolean <- lift(isFile(fn));
+    unless(exists, fail("File \"" ++ fn ++ "\" not found.\n"));
 
-          return 
-            if   ! pr.parseSuccess
-            then just("Parser error: " ++ pr.parseErrors ++ "\n")
-            else nothing();
-        };
-      },
-      t.ioIn
-    );
+    text    :: String <- lift(readFile(fn));
+    let pr  :: ParseResult<a> = parseF(text, fn);
+    unless(pr.parseSuccess, fail("Parser error: " ++ pr.parseErrors ++ "\n"));
+  };
 
-  t.pass = !msg.iovalue.isJust;
+  local msg :: IOVal<Either<String ()>> = evalIO(act.run, t.ioIn);
 
-  t.msg = fromMaybe("", msg.iovalue);
+  t.pass = msg.iovalue.isLeft;
+
+  t.msg = fromLeft(msg.iovalue, "");
 
   t.ioOut = msg.io;
 
@@ -82,28 +66,21 @@ t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 abstract production parseFailTest
 t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 {
-  local msg :: IOVal<Maybe<String>> = 
-    evalIO (
-      do {
-        exists  :: Boolean <- isFile(fn);
+  local act :: EitherT<String IO ()> = do {
+    exists  :: Boolean <- lift(isFile(fn));
 
-        if   ! exists
-        then pure(just("File \"" ++ fn ++ "\" not found.\n"))
-        else do {
-          text    :: String <- readFile(fn);
-          let pr  :: ParseResult<a> = parseF(text, fn);
-          return 
-            if   pr.parseSuccess
-            then just("Error: File should not be parseable.")
-            else nothing();
-        };
-      },
-      t.ioIn
-    );
+    unless(exists, fail("File \"" ++ fn ++ "\" not found.\n"));
 
-  t.pass = !msg.iovalue.isJust;
+    text    :: String <- lift(readFile(fn));
+    let pr  :: ParseResult<a> = parseF(text, fn);
+    unless(pr.parseSuccess, fail("Error: File should not be parseable."));
+  };
 
-  t.msg = fromMaybe("", msg.iovalue);
+  local msg :: IOVal<Either<String ()>> = evalIO(act.run, t.ioIn);
+
+  t.pass = msg.iovalue.isLeft;
+
+  t.msg = fromLeft(msg.iovalue, "");
 
   t.ioOut = msg.io;
 
