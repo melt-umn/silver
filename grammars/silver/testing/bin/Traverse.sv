@@ -7,7 +7,7 @@ IO<a> ::= startDir::String paths::[String]
                 defaultVal::IO<a> -- default value becomes f(head(path)), so need to have type IO<a>
                 --ioIn::IOVal<a>
 {
-  return do {
+  return
     if null(paths)
       then ^defaultVal
       else do {
@@ -48,7 +48,6 @@ IO<a> ::= startDir::String paths::[String]
         );
 
       };
-  };
 }
 
 function prependAll

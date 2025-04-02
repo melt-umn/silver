@@ -89,82 +89,26 @@ ts::Run ::= 'test' 'suite' jar::Jar_t
  ts.ioResult = do {
 
     print ("............................................................\n" ++
-        "Test Suite jar \"" ++ jar.lexeme ++ "\" in \n  " ++ 
-        ts.testFileName ++ " in directory \n  " ++
-        prettyDirName(ts.testFileDir) ++ "\n") ;
+          "Test Suite jar \"" ++ jar.lexeme ++ "\" in \n  " ++ 
+          ts.testFileName ++ " in directory \n  " ++
+          prettyDirName(ts.testFileDir) ++ "\n") ;
 
     -- probably should check that jar file by this name exists
 
     testSuiteResults :: Integer <- 
-        system ("cd " ++ ts.testFileDir ++ ";" ++
-            "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
-            " java -Xss6M -jar " ++ jar.lexeme ++
-            " >& " ++ ts.testFileName ++ ".output" ) ;
+      system ("cd " ++ ts.testFileDir ++ ";" ++
+              "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
+              " java -Xss6M -jar " ++ jar.lexeme ++
+              " >& " ++ ts.testFileName ++ ".output" ) ;
 
     print (if testSuiteResults == 0
-        then "all tests passed (rc = 0).\n"
-        else toString(testSuiteResults) ++ 
-        if testSuiteResults == 1
-        then " test in suite failed.\n" 
-        else " tests in suite failed.\n") ;
+          then "all tests passed (rc = 0).\n"
+          else toString(testSuiteResults) ++ 
+          if testSuiteResults == 1
+          then " test in suite failed.\n" 
+          else " tests in suite failed.\n") ;
     
     return testSuiteResults;
 
  };
 }
-
-
-
-
-
-{-
-function runCommandOnFile
-IOToken ::= absoluteFilePath::String ioIn::IOToken
-{
- return runCommandOnFileRC(absoluteFilePath, ioval(ioIn,0) ) .io ;
-}
-
-
-function runCommandOnFile
-IOToken ::= absoluteFilePath::String ioIn::IOToken
-{
- local isDir :: IOVal<Boolean> = isDirectoryT( absoluteFilePath, ioIn );
- local isF   :: IOVal<Boolean> = isFileT(absoluteFilePath, ioIn);
- local text  :: IOVal<String>  = readFileT(absoluteFilePath, isF.io);
-
- local parseResult :: ParseResult<Run> = parse(text.iovalue, absoluteFilePath);
- local r_cst :: Run = parseResult.parseTree ;
- 
- local parseFailure :: IOToken =
-   printT ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
-          "Parsing of .test file \n   " ++ absoluteFilePath ++ "\n" ++
-          "failed.\n" ++ parseResult.parseErrors ++ "\n" ++
-          "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ,
-          text.io);
-
-
- r_cst.ioInput = text.io ;
- r_cst.testFileName = fileNameInFilePath(absoluteFilePath) ;
- r_cst.testFileDir = dirNameInFilePath(absoluteFilePath) ;
- 
- local testResult :: IOVal<Integer> = r_cst.ioResult ;
-
- local attribute msgAfter :: IOToken ;
- msgAfter = 
-   printT ((if   testResult.iovalue == 0
-           then "passed (rc == 0)."
-           else "failed (rc == " ++ toString(testResult.iovalue) ++ ").") ++
-         "\n" ,
-         testResult.io );
-
- return if   ! endsWith(".test", absoluteFilePath) || isDir.iovalue
-        then ioIn
-        else 
-        if   ! isF.iovalue 
-        then error ("\n\nFile \"" ++ absoluteFilePath ++ "\" not found.\n")
-        else
-        if   ! parseResult.parseSuccess 
-        then parseFailure
-        else msgAfter ;
-}
--}

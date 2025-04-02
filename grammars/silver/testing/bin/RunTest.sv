@@ -17,42 +17,42 @@ IO<TestingResults> ::= absoluteFilePath::String defaultVal::IO<TestingResults>
     skip  :: Boolean <- isFile(dirNameInFilePath(absoluteFilePath) ++ "/tests.skip");
 
     if  ! endsWith(".test", absoluteFilePath) || isDir || skip 
-        then ^defaultVal  -- nothing to do
+      then ^defaultVal  -- nothing to do
     else 
-        if  ! isF
-            then do {
-                print ("\n\nFile \"" ++ absoluteFilePath ++ "\" not found.\n"); 
-                exit(4);
-                return testingResults(999);
-            }
-        else 
-            do {
-                text  :: String  <- readFile(absoluteFilePath);
+      if  ! isF
+        then do {
+          print ("\n\nFile \"" ++ absoluteFilePath ++ "\" not found.\n"); 
+          exit(4);
+          return testingResults(999);
+        }
+      else 
+        do {
+          text  :: String  <- readFile(absoluteFilePath);
 
-                let parseResult :: ParseResult<Run> = parse(text, absoluteFilePath);
-                let r_cst :: Run = parseResult.parseTree;
+          let parseResult :: ParseResult<Run> = parse(text, absoluteFilePath);
+          let r_cst :: Run = parseResult.parseTree;
 
-                defaultTestResult :: TestingResults <- ^defaultVal;
+          defaultTestResult :: TestingResults <- ^defaultVal;
 
-                r_cst_result :: Integer <- decorate r_cst with {
-                    testFileName = fileNameInFilePath(absoluteFilePath) ;
-                    testFileDir = dirNameInFilePath(absoluteFilePath) ;
-                }.ioResult;
+          r_cst_result :: Integer <- decorate r_cst with {
+              testFileName = fileNameInFilePath(absoluteFilePath) ;
+              testFileDir = dirNameInFilePath(absoluteFilePath) ;
+          }.ioResult;
 
-                let testResult :: TestingResults = testingResults (r_cst_result);
-                let msgAfter :: TestingResults = testingResults (testResult.numFailed + 
-                                                    defaultTestResult.numFailed );
+          let testResult :: TestingResults = testingResults (r_cst_result);
+          let msgAfter :: TestingResults = testingResults (testResult.numFailed + 
+                                              defaultTestResult.numFailed );
 
-                if   ! parseResult.parseSuccess 
-                then do {
-                    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
-                    "Parsing of .test file \n   " ++ absoluteFilePath ++ "\n" ++
-                    "failed.\n" ++ parseResult.parseErrors ++ "\n" ++
-                    "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-                    return testingResults(defaultTestResult.numFailed + 1);
-                }
-                else pure(msgAfter);
-            };
+          if   ! parseResult.parseSuccess 
+          then do {
+            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
+            "Parsing of .test file \n   " ++ absoluteFilePath ++ "\n" ++
+            "failed.\n" ++ parseResult.parseErrors ++ "\n" ++
+            "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+            return testingResults(defaultTestResult.numFailed + 1);
+          }
+          else pure(msgAfter);
+        };
   };
 }
 
