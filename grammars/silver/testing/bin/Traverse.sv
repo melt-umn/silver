@@ -1,49 +1,53 @@
 grammar silver:testing:bin ;
 
 function traverseDirectoriesAndPerform
-IOVal<a> ::= startDir::String paths::[String] 
-                f::(IOVal<a> ::= String IOVal<a>) 
-                skipDir::(IOVal<Boolean> ::= String IOToken)
-                ioIn::IOVal<a>
+IO<a> ::= startDir::String paths::[String] 
+                f::(IO<a> ::= String IO<a>) 
+                skipDir::(IO<Boolean> ::= String)
+                defaultVal::IO<a> -- default value becomes f(head(path)), so need to have type IO<a>
+                --ioIn::IOVal<a>
 {
- return
-   if   null(paths)
-   then ioIn 
-   else traverseDirectoriesAndPerform (
-          startDir, newStrings.iovalue ++ tail(paths), f, skipDir, 
-          f ( head(paths), ioval(newStrings.io, ioIn.iovalue) )  ) ;
+  return
+    if null(paths)
+      then ^defaultVal
+      else do {
 
- local newStrings :: IOVal < [String] > 
-   = if   ! headIsDir.iovalue || skipIt.iovalue
-     then ioval ( headIsDir.io, [ ] )
-     else ioval ( dirContents.io,   -- add sorted list of dir contents to list
-                  sort ( prependAll ( head(paths), dirContents.iovalue ) ) ) ;
+        {-
+          Thought links were a bug, they seem not to be.  It maybe the 
+              size of the Java stack that was the problem.
+          local bashValueForTrue::Integer = 0 ;
+          local headIsLink_Bash::IOVal<Integer> 
+            = system("[ -L " ++ head(paths) ++ " ];", ioIn.io ); 
+          local headIsLink::IOVal<Boolean> 
+            = d ioval(headIsLink_Bash.io, headIsLink_Bash.iovalue == bashValueForTrue) ;
+          -} 
+        let headIsLink :: Boolean = false;   -- maybe add later.
 
- {- Thought links were a bug, they seem not to be.  It maybe the 
-    size of the Java stack that was the problem.
- local bashValueForTrue::Integer = 0 ;
- local headIsLink_Bash::IOVal<Integer> 
-   = system("[ -L " ++ head(paths) ++ " ];", ioIn.io ); 
- local headIsLink::IOVal<Boolean> 
-  = d ioval(headIsLink_Bash.io, headIsLink_Bash.iovalue == bashValueForTrue) ;
- -}
- local headIsLink::IOVal<Boolean> = ioval(ioIn.io, false) ;  -- maybe add later.
+        headIsDir :: Boolean <- isDirectory( head(paths) );
 
- local headIsDir::IOVal<Boolean> = isDirectoryT( head(paths), headIsLink.io );
+        dirContents :: [String] <- listContents ( head(paths) ) ;
 
- local skipIt::IOVal<Boolean> 
-  = if   endsWith("/generated",head(paths))
-    then ioval(headIsLink.io, true) 
-    else
-    if   headIsLink.iovalue 
-    then ioval(headIsLink.io, true) 
-    else
-    if   headIsDir.iovalue 
-    then skipDir(head(paths), headIsDir.io)
-    else ioval(headIsDir.io, false) ;
+        skipIt :: Boolean <-
+              if   endsWith("/generated", head(paths))
+              then pure(true)
+              else
+              if   headIsLink 
+              then pure(true)
+              else
+              if   headIsDir 
+              then skipDir(head(paths))
+              else pure(false);
 
- local dirContents::IOVal< [String] > = listContentsT ( head(paths),
-                                                       headIsDir.io ) ;
+        let newStrings :: [String] =
+              (if   ! headIsDir || skipIt
+                then []
+                else sort ( prependAll ( head(paths), dirContents ) ) );  -- add sorted list of dir contents to list
+
+        traverseDirectoriesAndPerform (
+          startDir, newStrings ++ tail(paths), f, skipDir, f ( head(paths), ^defaultVal )
+        );
+
+      };
 }
 
 function prependAll
