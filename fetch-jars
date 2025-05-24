@@ -60,9 +60,11 @@ if [[ -z $rev ]] && git rev-parse --is-inside-work-tree 1> /dev/null 2> /dev/nul
   for commit in $(git rev-list --topo-order HEAD "^$DEVELOP"); do
     echo "Looking for jars from past commit $commit"
     if has_jars "$commit"; then
-      echo "Found jars from past commit"
+      echo "Found jars from this commit"
       rev=$commit
       break
+    else
+      echo "No jars found from this commit"
     fi
   done
 fi
