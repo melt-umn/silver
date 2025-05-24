@@ -98,5 +98,13 @@ fun warnIfMultJarName [Message] ::= n1::Maybe<String>  n2::Maybe<String> =
           n1.fromJust ++ " and " ++ n2.fromJust)]
   else [];
 
+instance Semigroup AGDcl {
+  append = appendAGDcl;
+}
+
+instance Monoid AGDcl {
+  mempty = emptyAGDcl();
+}
+
 -- All AGDcls have their own file, or modification. None here.
 
