@@ -66,3 +66,17 @@ global bytefiletest::IO<ByteArray> = do {
 
 equalityTest(genericShow(deserializeBytes(evalIO(bytefiletest, unsafeIO()).iovalue).fromRight), genericShow(val1),
   String, core_tests);
+
+data WrapBA = wrapBA ByteArray;
+
+global val5 :: Either<String WrapBA> = map(wrapBA, serializeBytes(val1));
+global ser5 :: Either<String ByteArray> = serializeBytes(val5);
+global des5 :: Either<String WrapBA> = if ser5.isRight then deserializeBytes(ser5.fromRight) else left(ser5.fromLeft);
+global fin5 :: String =
+  case des5 of
+  | left(msg) -> msg
+  | right(wrapBA(b)) -> genericShow(deserializeBytes(b))
+  end;
+equalityTest(
+  genericShow(right(val1)), fin5,
+  String, core_tests);
