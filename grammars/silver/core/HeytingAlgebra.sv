@@ -85,3 +85,12 @@ Boolean ::= a::Boolean
 } foreign {
   "java": return "(!(boolean)%a%)";
 }
+
+instance HeytingAlgebra a => HeytingAlgebra (a ::= b) {
+  ff = \ _ -> ff;
+  tt = \ _ -> tt;
+  implies = \ p::(a ::= b) q::(a ::= b) -> \ x -> implies(p(x), q(x));
+  conj = \ p::(a ::= b) q::(a ::= b)  -> \ x -> conj(p(x), q(x));
+  disj = \ p::(a ::= b) q::(a ::= b)  -> \ x -> disj(p(x), q(x));
+  not = \ p::(a ::= b) -> \ x -> not(p(x));
+}
