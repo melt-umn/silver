@@ -30,14 +30,19 @@ aspect isIncluded on top::AGDcl of
 | functionDcl(_, n, _, _) -> isValueIncluded(_, fName)
 | aspectProductionDcl(_, _, n, _, _) -> isValueIncluded(_, n.lookupValue.fullName)
 | aspectFunctionDcl(_, _, n, _, _) -> isValueIncluded(_, n.lookupValue.fullName)
+| aspectDefaultProduction(_, _, _, ns, _) -> ns.namedSignature.outputElement.typerep.isIncluded
 | typeClassDcl(_, _, _, n, _, _, _, _) -> isTypeIncluded(_, fName)
 | instanceDcl(_, _, _, n, ty, _, _, _) ->
   isTypeIncluded(_, n.lookupType.fullName) &&
   ty.isIncluded
 | globalValueDclConcrete(_, _, n, _, _, _, _, _, _) -> isValueIncluded(_, fName)
+| shortFunctionDcl(_, n, _, _, _, _) -> isValueIncluded(_, fName)
 | dispatchSigDcl(_, n, _, _, _) -> isTypeIncluded(_, fName)
 | collectionAttributeDclSyn(_, _, n, _, _, _, _, _, _) -> isAttributeIncluded(_, fName)
 | collectionAttributeDclInh(_, _, n, _, _, _, _, _, _) -> isAttributeIncluded(_, fName)
+| flowtypeDcl(_, _, _, _, _) -> ff
+| flowtypeAttrDcl(_, _, _, _, _) -> ff
+| terminalDclDefault(_, _, _, _) -> ff
 | _ -> ff
 end;
 
@@ -45,12 +50,14 @@ functor attribute includeTrans ::= Decorated TransformStmts occurs on
   AGDcl,
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
+  AspectDefaultProductionSignature,
   ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem;
 propagate includeTrans on AGDcl,
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
+  AspectDefaultProductionSignature,
   ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem
-  excluding nonterminalDcl, defaultAttributionDcl, aspectProductionDcl, aspectFunctionDcl, instanceDcl;
+excluding nonterminalDcl, defaultAttributionDcl, errorAttributionDcl, aspectProductionDcl, aspectFunctionDcl, instanceDcl;
 
 aspect includeTrans on top::AGDcl of
 | nonterminalDcl(q, _, n, tl, nm, _) -> \ tr::Decorated TransformStmts ->
@@ -67,6 +74,7 @@ aspect includeTrans on top::AGDcl of
     qName(qualifyIfDiffGrammar(top.grammarName, nt.lookupType.fullName)),
     nttl.includeTrans(tr), ';')
 | defaultAttributionDcl(_, _, _, _) -> error("includeTrans should not be demanded on defaultAttributionDcl")
+| errorAttributionDcl(_, _, _, _, _) -> error("includeTrans should not be demanded on errorAttributionDcl")
 | aspectProductionDcl(_, _, n, s, b) -> \ tr::Decorated TransformStmts ->
   aspectProductionDcl('aspect', 'production',
     qName(qualifyIfDiffGrammar(n.lookupValue.fullName, top.grammarName)),

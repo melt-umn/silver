@@ -17,6 +17,20 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
 {
   top.grammarAst = i.unpackGrammarAst.fromRight;
   local g::Grammar = top.grammarAst;
+  g.config = top.config;
+  g.compiledGrammars = top.compiledGrammars;
+  g.grammarName = top.declaredName;
+  g.grammarDependencies = i.allGrammarDependencies;
+  g.env = toEnv(i.defs, i.occursDefs);
+  g.flowEnv = flowEnv(i.specDefs, i.refDefs, i.sharedRefs, foldr(consFlow, nilFlow(), i.flowDefs));
+
+  -- TODO: This is an unfortunate duplication from grammarRootSpec.
+  local coreGrammar::Decorated RootSpec = head(searchEnvTree("silver:core", top.compiledGrammars));
+  local coreEnv::Env =
+    if contains("silver:core", g.moduleNames) || g.grammarName == "silver:core"
+    then emptyEnv()
+    else toEnv(coreGrammar.defs, coreGrammar.occursDefs);
+  g.globalImports = occursEnv(g.importedOccursDefs, newScopeEnv(g.importedDefs, coreEnv));
 
   top.includeTransDcls := g.includeTransDcls;
 }
@@ -24,6 +38,7 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
 aspect production errorRootSpec
 top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
 {
+  top.grammarAst = nilGrammar();
   top.includeTransDcls := mempty;
 }
 
@@ -50,7 +65,7 @@ top::InterfaceItem ::=
 production grammarAstInterfaceItem
 top::InterfaceItem ::= ser::ByteArray
 {
-  top.isEqual = true;  -- TODO: May need to rebuild with --clean when included grammar is changed
+  top.isEqual = true;  -- Dirty included grammars are handled specially in the driver
   top.unpackGrammarAst := deserializeBytes(ser);
 }
 

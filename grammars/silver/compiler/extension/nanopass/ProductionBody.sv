@@ -58,6 +58,7 @@ aspect isIncluded on top::DefLHS of
 | lhsDefLHS(_) -> tt
 | localDefLHS(_) -> top.typerep.isIncluded
 | forwardDefLHS(_) -> tt
+| defaultLhsDefLHS(_) -> tt
 | childTransAttrDefLHS(_, attr) -> isAttributeIncluded(_, attr.attrDcl.fullName)
 | localTransAttrDefLHS(q, attr) ->
   q.lookupValue.typeScheme.monoType.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
@@ -65,15 +66,55 @@ aspect isIncluded on top::DefLHS of
 end;
 
 attribute includeTrans occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr, DefLHS, QNameAttrOccur;
-propagate includeTrans on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr, DefLHS, QNameAttrOccur
-  excluding synthesizedAttributeDef, inheritedAttributeDef, errorValueDef, localValueDef;
+propagate includeTrans on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
+  excluding synthesizedAttributeDef, inheritedAttributeDef, errorValueDef, localValueDef,
+  parserAttributeValueDef, termAttrValueValueDef,
+  synBaseColAttributeDef, synAppendColAttributeDef, inhBaseColAttributeDef, inhAppendColAttributeDef;
 aspect includeTrans on top::ProductionStmt of
 | synthesizedAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
   attributeDef(dl.includeTrans(tr), '.', attr.includeTrans(tr), '=', e.includeTrans(tr), ';')
 | inheritedAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
   attributeDef(dl.includeTrans(tr), '.', attr.includeTrans(tr), '=', e.includeTrans(tr), ';')
-| errorValueDef(val, e) -> \ tr::Decorated TransformStmts -> error("should not be demanded")
+| errorValueDef(val, e) -> error("should not be demanded")
 | localValueDef(val, e) -> \ tr::Decorated TransformStmts ->
   valueEq(^val, '=', e.includeTrans(tr), ';')
--- TODO: collections
+| parserAttributeValueDef(val, e) -> error("should not be demanded")
+| termAttrValueValueDef(val, e) -> error("should not be demanded")
+-- collections
+| baseCollectionValueDef(q, e) -> \ tr::Decorated TransformStmts ->
+  valContainsBase(^q, ':=', e.includeTrans(tr), ';')
+| appendCollectionValueDef(q, e) -> \ tr::Decorated TransformStmts ->
+  valContainsAppend(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)), '<-', e.includeTrans(tr), ';')
+| synBaseColAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
+  attrContainsBase(dl.includeTrans(tr), '.', attr.includeTrans(tr), ':=', e.includeTrans(tr), ';')
+| synAppendColAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
+  attrContainsAppend(dl.includeTrans(tr), '.', attr.includeTrans(tr), '<-', e.includeTrans(tr), ';')
+| inhBaseColAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
+  attrContainsBase(dl.includeTrans(tr), '.', attr.includeTrans(tr), ':=', e.includeTrans(tr), ';')
+| inhAppendColAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
+  attrContainsAppend(dl.includeTrans(tr), '.', attr.includeTrans(tr), '<-', e.includeTrans(tr), ';')
+end;
+aspect production collectionAttributeDclProd
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with' q::NameOrBOperator ';'
+{ propagate includeTrans; }
+aspect includeTrans on top::DefLHS of
+| errorDefLHS(_) -> error("should not be demanded")
+| childDefLHS(q) -> \ _ -> concreteDefLHS(^q)
+| lhsDefLHS(q) -> \ _ -> concreteDefLHS(^q)
+| localDefLHS(q) -> \ _ ->
+  concreteDefLHS(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+| forwardDefLHS(q) -> \ _ -> concreteDefLHS(^q)
+| defaultLhsDefLHS(q) -> \ _ -> concreteDefLHS(^q)
+| parserAttributeDefLHS(q) -> error("should not be demanded")
+| errorTransAttrDefLHS(q, attr) -> error("should not be demanded")
+| childTransAttrDefLHS(q, attr) -> \ tr::Decorated TransformStmts ->
+  transAttrDefLHS(^q, attr.includeTrans(tr))
+| localTransAttrDefLHS(q, attr) -> \ tr::Decorated TransformStmts ->
+  transAttrDefLHS(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)), attr.includeTrans(tr))
+end;
+aspect includeTrans on top::QNameAttrOccur of
+| qNameAttrOccur(at) -> \ tr::Decorated TransformStmts ->
+  if !top.attrFound || isAttributeIncluded(tr, top.attrDcl.fullName)
+  then ^top
+  else qNameAttrOccur(qName(top.attrDcl.fullName))
 end;

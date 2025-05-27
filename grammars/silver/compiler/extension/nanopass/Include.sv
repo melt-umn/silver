@@ -13,6 +13,8 @@ concrete production includeGrammar
 top::AGDcl ::= 'include' m::QName '{' t::TransformStmts '}'
 {
   top.unparse = "include " ++ m.unparse ++ " {" ++ t.unparse ++ "}";
+  propagate grammarName, env;
+  top.moduleNames := [m.name];
   
   forwards to
     case searchEnvTree(m.name, top.compiledGrammars) of
@@ -29,7 +31,7 @@ monoid attribute excludedAttributes :: ts:Set<String>;
 monoid attribute annotatedAttributes :: ts:Set<String>;
 
 propagate
-  grammarName, env,
+  grammarName, env, errors,
   excludedTypes, closedNonterminals, openedNonterminals, excludedValues, excludedAttributes, annotatedAttributes
   on TransformStmts, TransformStmt;
 

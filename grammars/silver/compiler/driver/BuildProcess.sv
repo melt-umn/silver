@@ -151,7 +151,7 @@ IO<[Maybe<RootSpec>]> ::=
  - Consumes a stream of parses, outputs a stream of new dependencies.
  - Typically used as a circular program with 'compileGrammars'
  -
- - @param triggered  A function returning a list of grammars that sould be triggered by a grammar
+ - @param triggered  A function returning a list of grammars that should be triggered by a grammar
  - @param n  Expected number of new inputs from rootStream
  - @param sofar  Set of grammars already seen, and should not be requested again
  - @param rootStream  Stream of found/not found info. Should not be used except to test presence
