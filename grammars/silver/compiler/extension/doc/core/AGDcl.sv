@@ -320,7 +320,7 @@ top::AGDcl ::= n::Name
 }
 
 aspect production errorAttributionDcl
-top::AGDcl ::= msg::[Message] @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs msg::[Message]
 {
   top.docForName = "";
   top.docUnparse = "";
