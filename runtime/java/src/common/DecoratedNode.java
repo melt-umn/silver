@@ -1,6 +1,8 @@
 package common;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
@@ -878,5 +880,116 @@ public class DecoratedNode implements Decorable, Typed {
 	
 	public final String toString() {
 		return getDebugID();
+	}
+
+	// Code Prober interface methods.
+	// These have certain names and signatures that Code Prober expects to call reflectively;
+	// otherwise these methods should not be used directly.
+	public int getNumChild() {
+		int res = 0;
+		for (int i = 0; i < self.getNumberOfChildren(); i++) {
+			if (self.isChildDecorable(i)) res++;
+		}
+		return res;
+	}
+	public DecoratedNode getChild(int idx) {
+		int i = 0;
+		while (!self.isChildDecorable(i)) i++;
+		for (int j = 0; j < idx; j++) {
+			i++;
+			while (!self.isChildDecorable(i)) i++;
+		}
+		return childDecorated(i);
+	}
+	public DecoratedNode getParent() {
+		if (parent instanceof TopNode || parent.self instanceof FunctionNode) {
+			return null;
+		}
+		return parent;
+	}
+  
+	private boolean hasLocs = false;
+	private int startLine = -1, startColumn = -1, endLine = -1, endColumn = -1;
+	private final void determineLocs() {
+		if (hasLocs) return; // Only determine once.
+		hasLocs = true;
+		silver.core.NLocation loc = null;
+		if(self != null) {
+			if(self instanceof silver.core.Alocation) {
+				loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+			} else if(self instanceof Tracked) {
+				NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+				if(maybeLoc instanceof silver.core.Pjust) {
+					loc = (silver.core.NLocation)maybeLoc.getChild(0);
+				}
+			}
+		}
+		if(loc != null) {
+			startLine = loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+			startColumn = loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+			endLine = loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+			endColumn = loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
+
+			// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
+			// Sometimes, the locations reported by origin tracking do not respect this,
+			// so we have to manually adjust the start and end lines/columns.
+			if(getNumChild() > 0) {
+				DecoratedNode firstChild = getChild(0);
+				firstChild.determineLocs();
+				if(startLine > firstChild.startLine) {
+					startLine = firstChild.startLine;
+					startColumn = firstChild.startColumn;
+				} else if(startLine == firstChild.startLine &&
+						startColumn > firstChild.startColumn) {
+					startColumn = firstChild.startColumn;
+				}
+				DecoratedNode lastChild = getChild(getNumChild() - 1);
+				lastChild.determineLocs();
+				if(endLine < lastChild.endLine) {
+					endLine = lastChild.endLine;
+					endColumn = lastChild.endColumn;
+				} else if(endLine == lastChild.endLine &&
+						endColumn < lastChild.endColumn) {
+					endColumn = lastChild.endColumn;
+				}
+			}
+		}
+	}
+	public int cpr_getStartLine() { determineLocs(); return startLine; }
+	public int cpr_getStartColumn() { determineLocs(); return startColumn; }
+	public int cpr_getEndLine() { determineLocs(); return endLine; }
+	public int cpr_getEndColumn() { determineLocs(); return endColumn; }
+
+	public String cpr_nodeLabel() {
+		return self.getName();
+	}
+  
+	public List<String> cpr_propertyListShow() {
+		List<String> properties = new ArrayList<>();
+		properties.add("l:show");
+		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			properties.add("l:" + self.getNameOfInhAttr(i));
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			properties.add("l:" + self.getNameOfSynAttr(i));
+		}
+		return properties;
+	}
+
+	public Object cpr_lInvoke(String propName) {
+		if (propName.equals("show")) {
+			return Util.genericShow(this);
+		}
+		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			if (propName.equals(self.getNameOfInhAttr(i))) {
+				return Util.genericShow(inherited(i));
+			}
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if (propName.equals(self.getNameOfSynAttr(i))) {
+				return Util.genericShow(synthesized(i));
+			}
+		}
+		throw new SilverInternalError("Unknown property '" + propName + "' for " + getDebugID());
 	}
 }
