@@ -117,6 +117,7 @@ ${g.initValues}
   local codeProberParseFn::String =
 	if hasCodeProberParse then s"""
 	public static common.DecoratedNode CodeProber_parse(String[] args) {
+		common.DecoratedNode.setCprMainFilePath(args[args.length - 1]);
 		common.Util.init();
 		${package}.Init.initAllStatics();
 		${package}.Init.init();

@@ -908,12 +908,21 @@ public class DecoratedNode implements Decorable, Typed {
 		return parent;
 	}
   
+	static private String cprMainFilePath = null;
+	public static void setCprMainFilePath(String path) {
+		cprMainFilePath = path;
+	}
+
 	private boolean hasLocs = false;
-	private int startLine = -1, startColumn = -1, endLine = -1, endColumn = -1;
+	private boolean isExternal = false;
+	private int startLine = 0, startColumn = 0, endLine = 0, endColumn = 0;
 	private final void determineLocs() {
 		if (hasLocs) return; // Only determine once.
 		hasLocs = true;
 		silver.core.NLocation loc = null;
+		if(cprMainFilePath == null) {
+			throw new SilverInternalError("Code Prober main file path not set!");
+		}
 		if(self != null) {
 			if(self instanceof silver.core.Alocation) {
 				loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
@@ -925,71 +934,137 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		}
 		if(loc != null) {
-			startLine = loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
-			startColumn = loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
-			endLine = loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
-			endColumn = loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
-
-			// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
-			// Sometimes, the locations reported by origin tracking do not respect this,
-			// so we have to manually adjust the start and end lines/columns.
-			if(getNumChild() > 0) {
-				DecoratedNode firstChild = getChild(0);
-				firstChild.determineLocs();
-				if(startLine > firstChild.startLine) {
-					startLine = firstChild.startLine;
-					startColumn = firstChild.startColumn;
-				} else if(startLine == firstChild.startLine &&
-						startColumn > firstChild.startColumn) {
-					startColumn = firstChild.startColumn;
+			String fileName = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+			if(fileName.equals(cprMainFilePath)) {
+				startLine = loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+				startColumn = loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+				endLine = loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+				endColumn = loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
+	
+				// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
+				// Sometimes, the locations reported by origin tracking do not respect this,
+				// so we have to manually adjust the start and end lines/columns.
+				if(getNumChild() > 0) {
+					DecoratedNode firstChild = getChild(0);
+					firstChild.determineLocs();
+					if(startLine > firstChild.startLine) {
+						startLine = firstChild.startLine;
+						startColumn = firstChild.startColumn;
+					} else if(startLine == firstChild.startLine &&
+							startColumn > firstChild.startColumn) {
+						startColumn = firstChild.startColumn;
+					}
+					DecoratedNode lastChild = getChild(getNumChild() - 1);
+					lastChild.determineLocs();
+					if(endLine < lastChild.endLine) {
+						endLine = lastChild.endLine;
+						endColumn = lastChild.endColumn;
+					} else if(endLine == lastChild.endLine &&
+							endColumn < lastChild.endColumn) {
+						endColumn = lastChild.endColumn;
+					}
 				}
-				DecoratedNode lastChild = getChild(getNumChild() - 1);
-				lastChild.determineLocs();
-				if(endLine < lastChild.endLine) {
-					endLine = lastChild.endLine;
-					endColumn = lastChild.endColumn;
-				} else if(endLine == lastChild.endLine &&
-						endColumn < lastChild.endColumn) {
-					endColumn = lastChild.endColumn;
-				}
+			} else {
+				isExternal = true;
 			}
 		}
 	}
+	public boolean cpr_isInsideExternalFile() { determineLocs(); return isExternal; }
 	public int cpr_getStartLine() { determineLocs(); return startLine; }
 	public int cpr_getStartColumn() { determineLocs(); return startColumn; }
 	public int cpr_getEndLine() { determineLocs(); return endLine; }
 	public int cpr_getEndColumn() { determineLocs(); return endColumn; }
 
+	public boolean cpr_nodeListVisible() {
+		// Hide nodes from external files when creating a probe
+		determineLocs();
+		return !isExternal;
+	}
+
 	public String cpr_nodeLabel() {
-		return self.getName();
+		String fullName = self.getName();
+		return fullName.substring(fullName.lastIndexOf(':') + 1);
 	}
   
 	public List<String> cpr_propertyListShow() {
 		List<String> properties = new ArrayList<>();
+		properties.add("l:grammar");
 		properties.add("l:show");
-		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
-			properties.add("l:" + self.getNameOfInhAttr(i));
+		if(self.hasForward()) {
+			properties.add("l:forward");
+		}
+		if(forwardParent != null) {
+			properties.add("l:forwardParent");
 		}
 		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
 			properties.add("l:" + self.getNameOfSynAttr(i));
+		}
+		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			properties.add("l:" + self.getNameOfInhAttr(i));
+		}
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			properties.add("l:" + self.getNameOfLocalAttr(i));
 		}
 		return properties;
 	}
 
 	public Object cpr_lInvoke(String propName) {
+		if (propName.equals("grammar")) {
+			String fullName = self.getName();
+			return fullName.substring(0, fullName.lastIndexOf(':'));
+		}
 		if (propName.equals("show")) {
-			return Util.genericShow(this);
+			return Util.genericShow(self);
+		}
+		if (propName.equals("forward")) {
+			return Util.makeCprInvokeResult(forward());
+		}
+		if (propName.equals("forwardParent")) {
+			return Util.makeCprInvokeResult(forwardParent);
 		}
 		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
 			if (propName.equals(self.getNameOfInhAttr(i))) {
-				return Util.genericShow(inherited(i));
+				return Util.makeCprInvokeResult(inherited(i));
 			}
 		}
 		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
 			if (propName.equals(self.getNameOfSynAttr(i))) {
-				return Util.genericShow(synthesized(i));
+				return Util.makeCprInvokeResult(synthesized(i));
+			}
+		}
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			if (propName.equals(self.getNameOfLocalAttr(i))) {
+				return Util.makeCprInvokeResult(local(i));
 			}
 		}
 		throw new SilverInternalError("Unknown property '" + propName + "' for " + getDebugID());
+	}
+
+	public Object[] cpr_describeParentConnection() {
+		String parentPropertyName = determineParentPropertyName();
+		System.err.println("DEBUG: " + getDebugID() + " parent property name: " + parentPropertyName);
+		if (parentPropertyName == null) {
+			return null;
+		} else {
+			return new Object[] { "l:" + parentPropertyName };
+		}
+	}
+	private String determineParentPropertyName() {
+		if(isProdForward) {
+			return "forward";
+		}
+		for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {
+			if (this == parent.localValues[i]) {
+				return parent.self.getNameOfLocalAttr(i);
+			}
+		}
+		// Translation attributes
+		for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
+			if (this == parent.synthesizedValues[i]) {
+				return parent.self.getNameOfSynAttr(i);
+			}
+		}
+		// TODO: Anonymous decoration sites?
+		return null;
 	}
 }

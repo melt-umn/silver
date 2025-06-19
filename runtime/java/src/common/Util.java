@@ -397,6 +397,23 @@ public final class Util {
 	}
 
 	/**
+	 * Attempt to reflectively call the showDoc function from silver:langutil:pp.
+	 * 
+	 * @param d  The Document to show
+	 * @return A string representation.
+	 */
+	public static StringCatter showDoc(Object d) {
+		try {
+			Method showDoc = Class.forName("silver.langutil.pp.PshowDoc")
+				.getMethod("invoke", OriginContext.class, Object.class, Object.class);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, 80, d);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new SilverInternalError("Failed to call silver:langutil:pp:showDoc on " + d + ": " + e.getMessage(), e);
+		}
+	}
+
+	/**
 	 * Attempt to use the improved genericPP from silver:langutil:reflect if that library is available;
 	 * else fall back to hackUnparse.
 	 * Note that we can't actually let the runtime/silver:core depend on that library,
@@ -417,6 +434,22 @@ public final class Util {
 		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			return hackyhackyUnparse(o);
 		}
+	}
+
+	/**
+	 * Turn the value of an attribute into a value that we can return to Code Prober.
+	 * Currently, this just stringifies anything that is not another DecoratedNode.
+	 */
+	public static Object makeCprInvokeResult(Object o) {
+		if(o instanceof DecoratedNode) {
+			return o;
+		}
+		// Render Document values as strings.
+		// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
+		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
+			return showDoc(o).toString();
+		}
+		return genericShow(o).toString();
 	}
 
 	/**
