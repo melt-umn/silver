@@ -628,6 +628,22 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
+	 * Evaluate an attribute that may be either synthesized or translation.
+	 * This is only used for debugging.
+	 * 
+	 * @param attribute The index of the attribute to evaluate.
+	 * @return The value of the attribute.
+	 */
+	public Object synthesizedOrTranslation(final int attribute) {
+		TransOccursInfo transOccurs = self.getTransOccurs(attribute);
+		if(transOccurs == null) {
+			return synthesized(attribute);
+		} else {
+			return translation(attribute, transOccurs.inhsAttribute, transOccurs.decSiteAttribute);
+		}
+	}
+
+	/**
 	 * Get the forwarded-to DecoratedNode.  Cached.  There is no need for an "AsIs" vs "Decorated"
 	 * variant of this function, since we always know it's a Node.
 	 * 
@@ -1052,7 +1068,7 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
 			if (propName.equals(self.getNameOfSynAttr(i))) {
-				return makeCprInvokeResult(synthesized(i));
+				return makeCprInvokeResult(synthesizedOrTranslation(i));
 			}
 		}
 		String[] annoNames = self.getAnnoNames();

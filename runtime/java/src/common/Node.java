@@ -107,6 +107,15 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The name of the synthesized attribute at this index
 	 */
 	public abstract String getNameOfSynAttr(final int index);
+
+	/**
+	 * Used for debugging, determine if a synthesized attribute is a translation attributes.
+	 * 
+	 * @param index The index of the synthesized attribute
+	 * @return The TransOccursInfo containing the auxillary inherited attribute occurence indices,
+	 *   or null if it is not a translation attribute.
+	 */
+	public abstract TransOccursInfo getTransOccurs(final int index);
 	
 	/**
 	 * When a production does not forward and lacks an equation for a synthesized attribute, this is consulted instead.

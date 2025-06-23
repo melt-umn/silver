@@ -41,6 +41,8 @@ public abstract class ${className} extends ${if quals.data then "common.DataNode
 	public static final String[] occurs_inh = new String[num_inh_attrs];
 	public static final String[] occurs_syn = new String[num_syn_attrs];
 
+	public static final common.TransOccursInfo[] occurs_trans = new common.TransOccursInfo[num_syn_attrs];
+
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
 	protected ${className}(${implode(", ",
@@ -72,6 +74,11 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 	@Override
 	public final int getNumberOfSynAttrs() {
 		return num_syn_attrs;
+	}
+
+	@Override
+	public final common.TransOccursInfo getTransOccurs(final int index) {
+		return occurs_trans[index];
 	}
 
 	@Override
