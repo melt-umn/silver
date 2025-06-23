@@ -939,32 +939,32 @@ public class DecoratedNode implements Decorable, Typed {
 				startColumn = loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
 				endLine = loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 				endColumn = loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
-	
-				// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
-				// Sometimes, the locations reported by origin tracking do not respect this,
-				// so we have to manually adjust the start and end lines/columns.
-				if(getNumChild() > 0) {
-					DecoratedNode firstChild = getChild(0);
-					firstChild.determineLocs();
-					if(startLine > firstChild.startLine) {
-						startLine = firstChild.startLine;
-						startColumn = firstChild.startColumn;
-					} else if(startLine == firstChild.startLine &&
-							startColumn > firstChild.startColumn) {
-						startColumn = firstChild.startColumn;
-					}
-					DecoratedNode lastChild = getChild(getNumChild() - 1);
-					lastChild.determineLocs();
-					if(endLine < lastChild.endLine) {
-						endLine = lastChild.endLine;
-						endColumn = lastChild.endColumn;
-					} else if(endLine == lastChild.endLine &&
-							endColumn < lastChild.endColumn) {
-						endColumn = lastChild.endColumn;
-					}
-				}
 			} else {
 				isExternal = true;
+			}
+
+			// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
+			// Sometimes, the locations reported by origin tracking do not respect this,
+			// so we have to manually adjust the start and end lines/columns.
+			if(getNumChild() > 0) {
+				DecoratedNode firstChild = getChild(0);
+				firstChild.determineLocs();
+				if(isExternal || startLine > firstChild.startLine) {
+					startLine = firstChild.startLine;
+					startColumn = firstChild.startColumn;
+				} else if(startLine == firstChild.startLine &&
+						startColumn > firstChild.startColumn) {
+					startColumn = firstChild.startColumn;
+				}
+				DecoratedNode lastChild = getChild(getNumChild() - 1);
+				lastChild.determineLocs();
+				if(isExternal || endLine < lastChild.endLine) {
+					endLine = lastChild.endLine;
+					endColumn = lastChild.endColumn;
+				} else if(endLine == lastChild.endLine &&
+						endColumn < lastChild.endColumn) {
+					endColumn = lastChild.endColumn;
+				}
 			}
 		}
 	}
