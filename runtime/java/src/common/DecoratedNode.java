@@ -20,11 +20,6 @@ import silver.core.NMaybe;
  * @see Node
  */
 public class DecoratedNode implements Decorable, Typed {
-	// TODO list:
-	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
-	// - Delete forwardValue (make it a local/production attribute)
-	// - merge inheritedAttributes into inheritedValues
-	
 	// Please note: the methods in this file have been refined to be quite small
 	// because the JVM makes inlining decisions on a per-method basis (of course!)
 	// So we try to keep the "slow paths" in a separate method, so the hot paths
@@ -47,6 +42,7 @@ public class DecoratedNode implements Decorable, Typed {
 	/**
 	 * The node that forwards to this one. (May be null)
 	 * Not final, because we may set this when forwarding to a decorated tree via sharing.
+	 * Usually the same as 'parent', but may differ due to sharing.
 	 */
 	protected DecoratedNode forwardParent;
 	/**
@@ -658,25 +654,10 @@ public class DecoratedNode implements Decorable, Typed {
 	private final DecoratedNode evalForward() {
 		try {
 			return self.evalForward(this).decorate(
-				parent, getForwardInheritedAttributes(), this, true);
+				this, self.getForwardInheritedAttributes(), this, true);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
-	}
-
-	private final Lazy[] getForwardInheritedAttributes() {
-		Lazy[] forwardInhs = self.getForwardInheritedAttributes();
-		if(forwardInhs == null) return null;
-		Lazy[] result = new Lazy[self.getNumberOfInhAttrs()];
-		for(int i = 0; i < result.length; i++) {
-			Lazy l = forwardInhs[i];
-			if (l != null) {
-				// The Lazys in self.getForwardInheritedAttributes expect this (forwarding) DecoratedNode as context,
-				// but will be passed the parent of this node instead.
-				result[i] = l.withContext(this);
-			}
-		}
-		return result;
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
