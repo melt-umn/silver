@@ -984,6 +984,28 @@ public class DecoratedNode implements Decorable, Typed {
 		String fullName = self.getName();
 		return fullName.substring(fullName.lastIndexOf(':') + 1);
 	}
+
+	public String cpr_astLabel() {
+		String pp = findPPOrUnparse();
+		if(pp == null) return null;
+		if(pp.length() > 20) {
+			pp = pp.substring(0, 17) + "...";
+		}
+		return pp;
+	}
+	private String findPPOrUnparse() {
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if(self.getNameOfSynAttr(i).equals("silver:langutil:pp")) {
+				return Util.showDoc(synthesized(i), 80).toString();
+			}
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if(self.getNameOfSynAttr(i).equals("silver:langutil:unparse")) {
+				return synthesized(i).toString();
+			}
+		}
+		return null;
+	}
   
 	public List<String> cpr_propertyListShow() {
 		List<String> properties = new ArrayList<>();
@@ -1013,7 +1035,16 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		return properties;
 	}
-  
+
+	public String cpr_lGetChildName(String name) {
+		for(int i = 0; i < self.getNumberOfChildren(); i++) {
+			if (name.equals(self.getChildName(i))) {
+				return self.getChildName(i);
+			}
+		}
+		return null;
+	}
+
 	public String cpr_lGetAspectName(String propName) {
 		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
 			if (propName.equals(self.getNameOfLocalAttr(i))) {
@@ -1090,7 +1121,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// Render Document values as strings.
 		// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
 		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
-			return Util.showDoc(o).toString();
+			return Util.showDoc(o, 80).toString();
 		}
 		return Util.genericShow(o).toString();
 	}

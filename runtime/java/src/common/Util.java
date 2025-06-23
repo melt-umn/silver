@@ -400,13 +400,14 @@ public final class Util {
 	 * Attempt to reflectively call the showDoc function from silver:langutil:pp.
 	 * 
 	 * @param d  The Document to show
+	 * @param width The desired max column width
 	 * @return A string representation.
 	 */
-	public static StringCatter showDoc(Object d) {
+	public static StringCatter showDoc(Object d, int width) {
 		try {
 			Method showDoc = Class.forName("silver.langutil.pp.PshowDoc")
 				.getMethod("invoke", OriginContext.class, Object.class, Object.class);
-			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, 80, d);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, width, d);
 		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
 		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			throw new SilverInternalError("Failed to call silver:langutil:pp:showDoc on " + d + ": " + e.getMessage(), e);
