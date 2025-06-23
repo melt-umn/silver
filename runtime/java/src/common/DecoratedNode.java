@@ -72,7 +72,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * @see #child(int)
 	 */
-	protected final Object[] childrenValues;
+	protected final DecoratedNode[] childrenValues;
 	/**
 	 * The cache of the forward node.
 	 * 
@@ -155,7 +155,7 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		
 		// create caches
-		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
+		this.childrenValues =    (cc > 0) ? new DecoratedNode[cc] : null;
 		this.inheritedValues =   (ic > 0) ? new Object[ic] : null;
 		this.synthesizedValues = (sc > 0) ? new Object[sc] : null;
 		this.localValues =       (lc > 0) ? new Object[lc] : null;
@@ -182,7 +182,7 @@ public class DecoratedNode implements Decorable, Typed {
 		this.forwardParent = null;
 		this.isProdForward = false;
 		
-		this.childrenValues = new Object[cc];
+		this.childrenValues = new DecoratedNode[cc];
 		this.inheritedValues = null;
 		this.synthesizedValues = null;
 		this.localValues = (lc > 0) ? new Object[lc] : null;
@@ -338,7 +338,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return The decorated value of the child.
 	 */
 	public DecoratedNode childDecorated(final int child) {
-		Object o = this.childrenValues[child]; 
+		DecoratedNode o = this.childrenValues[child]; 
 		if(o == null) {
 			o = createDecoratedChild(child);
 			
@@ -347,7 +347,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// CACHE : probably should not comment out child caching?
 			this.childrenValues[child] = o;
 		}
-		return (DecoratedNode)o;
+		return o;
 	}
 
 	/**
