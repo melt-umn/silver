@@ -612,17 +612,19 @@ public class DecoratedNode implements Decorable, Typed {
 		Lazy[] inhs = null;
 		if (inheritedAttributes != null && inheritedAttributes[inhsAttribute] != null) {
 			if (inheritedAttributes[inhsAttribute] instanceof TransInhs) {
-				inhs = ((TransInhs)inheritedAttributes[inhsAttribute]).inhs;
+				inhs = ((TransInhs)inheritedAttributes[inhsAttribute]).withContext(parent).inhs;
 			} else {
 				throw new SilverInternalError("Supplied trans inhs attribute not TransInhs!");
 			}
 		}
-		Lazy decSite = inheritedAttributes == null? null : inheritedAttributes[decSiteAttribute];
-		if(decSite == null && forwardParent != null && isProdForward && forwardParent.synthesizedValues[attribute] == null) {
+		Lazy decSite = null;
+		if(inheritedAttributes != null && inheritedAttributes[decSiteAttribute] != null) {
+			decSite = inheritedAttributes[decSiteAttribute].withContext(parent);
+		} else if(forwardParent != null && isProdForward && forwardParent.synthesizedValues[attribute] == null) {
 			decSite = (context) -> forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
 		}
 		// Decorate the tree that we computed earlier.
-		return d.decorate(parent, inhs, decSite);
+		return d.decorate(this, inhs, decSite);
 	}
 
 	/**
@@ -1066,7 +1068,6 @@ public class DecoratedNode implements Decorable, Typed {
 	* Currently, this just stringifies anything that is not another DecoratedNode.
 	*/
 	private static Object makeCprInvokeResult(Object o) {
-		System.err.println("DEBUG: makeCprInvokeResult " + o);
 		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
 			return o;
 		}
@@ -1087,32 +1088,26 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	}
 	private String determineParentPropertyName() {
-		System.err.println("DEBUG: determineParentPropertyName " + this + ", parent " + parent);
 		if(this == parent.forwardValue) {
-			System.err.println("found forward");
 			return "forward";
 		}
 		for(int i = 0; i < parent.self.getNumberOfChildren(); i++) {
 			if(this == parent.childrenValues[i]) {
-				System.err.println("found child " + parent.self.getChildName(i));
 				return self.getChildName(i);
 			}
 		}
 		for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {
 			if(this == parent.localValues[i]) {
-				System.err.println("found local " + parent.self.getNameOfLocalAttr(i));
 				return parent.self.getNameOfLocalAttr(i);
 			}
 		}
 		// Translation attributes
 		for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
 			if(this == parent.synthesizedValues[i]) {
-				System.err.println("found syn " + parent.self.getNameOfSynAttr(i));
 				return parent.self.getNameOfSynAttr(i);
 			}
 		}
 		// Our parent doesn't know about us, so we must have been anonymously decorated somewhere.
-		System.err.println("found nothing");
 		return null;
 	}
 }
