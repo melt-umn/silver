@@ -437,22 +437,6 @@ public final class Util {
 	}
 
 	/**
-	 * Turn the value of an attribute into a value that we can return to Code Prober.
-	 * Currently, this just stringifies anything that is not another DecoratedNode.
-	 */
-	public static Object makeCprInvokeResult(Object o) {
-		if(o instanceof DecoratedNode) {
-			return o;
-		}
-		// Render Document values as strings.
-		// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
-		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
-			return showDoc(o).toString();
-		}
-		return genericShow(o).toString();
-	}
-
-	/**
 	 * Calls a Copper parser, and returns a ParseResult<ROOT> object.
 	 *
 	 * @param parser The Copper parser to call

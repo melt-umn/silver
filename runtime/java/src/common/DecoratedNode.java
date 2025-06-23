@@ -996,16 +996,43 @@ public class DecoratedNode implements Decorable, Typed {
 		if(forwardParent != null) {
 			properties.add("l:forwardParent");
 		}
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			properties.add("l:" + self.getNameOfLocalAttr(i));
+		}
 		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
 			properties.add("l:" + self.getNameOfSynAttr(i));
 		}
 		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
 			properties.add("l:" + self.getNameOfInhAttr(i));
 		}
-		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
-			properties.add("l:" + self.getNameOfLocalAttr(i));
+		String[] annoNames = self.getAnnoNames();
+		for(int i = 0; i < annoNames.length; i++) {
+			properties.add("l:" + annoNames[i]);
 		}
 		return properties;
+	}
+  
+	public String cpr_lGetAspectName(String propName) {
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			if (propName.equals(self.getNameOfLocalAttr(i))) {
+				return getSourceFileName(self.getLocal(i));
+			}
+		}
+		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			if (propName.equals(self.getNameOfInhAttr(i))) {
+				return getSourceFileName(inheritedAttributes[i]);
+			}
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if (propName.equals(self.getNameOfSynAttr(i))) {
+				return getSourceFileName(self.getSynthesized(i));
+			}
+		}
+		return null;
+	}
+	private static String getSourceFileName(Lazy l) {
+		if(l == null) return null;
+		return l.getSourceLocation().synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
 	}
 
 	public Object cpr_lInvoke(String propName) {
@@ -1017,32 +1044,52 @@ public class DecoratedNode implements Decorable, Typed {
 			return Util.genericShow(self);
 		}
 		if (propName.equals("forward")) {
-			return Util.makeCprInvokeResult(forward());
+			return makeCprInvokeResult(forward());
 		}
 		if (propName.equals("forwardParent")) {
-			return Util.makeCprInvokeResult(forwardParent);
+			return makeCprInvokeResult(forwardParent);
+		}
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			if (propName.equals(self.getNameOfLocalAttr(i))) {
+				return makeCprInvokeResult(local(i));
+			}
 		}
 		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
 			if (propName.equals(self.getNameOfInhAttr(i))) {
-				return Util.makeCprInvokeResult(inherited(i));
+				return makeCprInvokeResult(inherited(i));
 			}
 		}
 		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
 			if (propName.equals(self.getNameOfSynAttr(i))) {
-				return Util.makeCprInvokeResult(synthesized(i));
+				return makeCprInvokeResult(synthesized(i));
 			}
 		}
-		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
-			if (propName.equals(self.getNameOfLocalAttr(i))) {
-				return Util.makeCprInvokeResult(local(i));
+		String[] annoNames = self.getAnnoNames();
+		for(int i = 0; i < annoNames.length; i++) {
+			if (propName.equals(annoNames[i])) {
+				return makeCprInvokeResult(self.getAnno(annoNames[i]));
 			}
 		}
 		throw new SilverInternalError("Unknown property '" + propName + "' for " + getDebugID());
 	}
+	/**
+	* Turn the value of an attribute into a value that we can return to Code Prober.
+	* Currently, this just stringifies anything that is not another DecoratedNode.
+	*/
+	private static Object makeCprInvokeResult(Object o) {
+		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
+			return o;
+		}
+		// Render Document values as strings.
+		// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
+		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
+			return Util.showDoc(o).toString();
+		}
+		return Util.genericShow(o).toString();
+	}
 
 	public Object[] cpr_describeParentConnection() {
 		String parentPropertyName = determineParentPropertyName();
-		System.err.println("DEBUG: " + getDebugID() + " parent property name: " + parentPropertyName);
 		if (parentPropertyName == null) {
 			return null;
 		} else {
@@ -1064,7 +1111,7 @@ public class DecoratedNode implements Decorable, Typed {
 				return parent.self.getNameOfSynAttr(i);
 			}
 		}
-		// TODO: Anonymous decoration sites?
+		// Our parent doesn't know about us, so we must have been anonymously decorated somewhere.
 		return null;
 	}
 }
