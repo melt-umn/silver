@@ -146,6 +146,14 @@ ${contexts.contextMemberDeclTrans}
     }
 
 	@Override
+	public String getChildName(final int index) {
+		switch(index) {
+${implode("", map(makeChildNameCase, namedSig.inputElements))}
+            default: return null;
+        }
+    }
+
+	@Override
 	public boolean isChildDecorable(final int index) {
 		switch(index) {
 ${implode("", map(makeChildDecorableCase(body.env, _), namedSig.inputElements))}

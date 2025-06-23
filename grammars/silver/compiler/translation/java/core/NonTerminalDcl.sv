@@ -140,6 +140,11 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
+		public String getChildName(final int child) {
+			return ref.getNode().getChildName(child);
+		}
+
+		@Override
 		public boolean isChildDecorable(final int child) {
 			return ref.getNode().isChildDecorable(child);
 		}

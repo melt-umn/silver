@@ -164,6 +164,13 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The number of children this Node has.
 	 */
 	public abstract int getNumberOfChildren();
+	
+	/**
+	 * Get the name of a child. Used for debugging.
+	 * 
+	 * @return The name of the child at the given index.
+	 */
+	public abstract String getChildName(final int child);
 
 	/**
 	 * Determine if the child should be automatically decorated.

@@ -977,6 +977,9 @@ public class DecoratedNode implements Decorable, Typed {
 		if(forwardParent != null) {
 			properties.add("l:forwardParent");
 		}
+		for(int i = 0; i < self.getNumberOfChildren(); i++) {
+			properties.add("l:" + self.getChildName(i));
+		}
 		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
 			properties.add("l:" + self.getNameOfLocalAttr(i));
 		}
@@ -1030,6 +1033,11 @@ public class DecoratedNode implements Decorable, Typed {
 		if (propName.equals("forwardParent")) {
 			return makeCprInvokeResult(forwardParent);
 		}
+		for(int i = 0; i < self.getNumberOfChildren(); i++) {
+			if (propName.equals(self.getChildName(i))) {
+				return makeCprInvokeResult(child(i));
+			}
+		}
 		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
 			if (propName.equals(self.getNameOfLocalAttr(i))) {
 				return makeCprInvokeResult(local(i));
@@ -1058,6 +1066,7 @@ public class DecoratedNode implements Decorable, Typed {
 	* Currently, this just stringifies anything that is not another DecoratedNode.
 	*/
 	private static Object makeCprInvokeResult(Object o) {
+		System.err.println("DEBUG: makeCprInvokeResult " + o);
 		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
 			return o;
 		}
@@ -1078,21 +1087,32 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 	}
 	private String determineParentPropertyName() {
-		if(isProdForward) {
+		System.err.println("DEBUG: determineParentPropertyName " + this + ", parent " + parent);
+		if(this == parent.forwardValue) {
+			System.err.println("found forward");
 			return "forward";
 		}
+		for(int i = 0; i < parent.self.getNumberOfChildren(); i++) {
+			if(this == parent.childrenValues[i]) {
+				System.err.println("found child " + parent.self.getChildName(i));
+				return self.getChildName(i);
+			}
+		}
 		for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {
-			if (this == parent.localValues[i]) {
+			if(this == parent.localValues[i]) {
+				System.err.println("found local " + parent.self.getNameOfLocalAttr(i));
 				return parent.self.getNameOfLocalAttr(i);
 			}
 		}
 		// Translation attributes
 		for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
-			if (this == parent.synthesizedValues[i]) {
+			if(this == parent.synthesizedValues[i]) {
+				System.err.println("found syn " + parent.self.getNameOfSynAttr(i));
 				return parent.self.getNameOfSynAttr(i);
 			}
 		}
 		// Our parent doesn't know about us, so we must have been anonymously decorated somewhere.
+		System.err.println("found nothing");
 		return null;
 	}
 }
