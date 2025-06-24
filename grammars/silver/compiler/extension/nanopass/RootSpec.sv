@@ -1,7 +1,17 @@
 grammar silver:compiler:extension:nanopass;
 
-attribute includeTransDcls occurs on RootSpec, Grammar, File;
-propagate includeTransDcls on Grammar, File;
+aspect production compilation
+top::Compilation ::= g::Grammars  r::Grammars  _ _ _
+{
+  local includingGrammars::[(String, String)] = flatMap(
+    \ root::Decorated RootSpec -> map(\ gn::String -> (gn, root.declaredName), root.includedGrammars),
+    grammarsRelevant);
+  allDirtyGrammars <- flatMap(lookupAll(_, includingGrammars), grammarsDependedUpon);
+}
+
+attribute includedGrammars, includeTransDcls occurs on RootSpec, Grammar, File;
+propagate includedGrammars, includeTransDcls on Grammar, File;
+propagate includedGrammars on RootSpec;
 
 synthesized attribute grammarAst::Grammar occurs on RootSpec;
 
@@ -42,13 +52,18 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.includeTransDcls := mempty;
 }
 
+monoid attribute hasIncludedGrammars :: Boolean with false, ||;
+attribute includedGrammars, hasIncludedGrammars occurs on InterfaceItems, InterfaceItem;
+
 monoid attribute unpackGrammarAst :: Either<String Grammar> with left("Missing grammarAst"), alt
   occurs on InterfaceItems, InterfaceItem;
-propagate unpackGrammarAst on InterfaceItems;
+
+propagate includedGrammars, hasIncludedGrammars, unpackGrammarAst on InterfaceItems;
 
 aspect production consInterfaceItem
 top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
+  top.interfaceErrors <- if !top.hasIncludedGrammars then ["Missing item includedGrammars"] else [];
   top.interfaceErrors <-
     case top.unpackGrammarAst of
     | left(e) -> [e]
@@ -59,7 +74,17 @@ top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 aspect default production
 top::InterfaceItem ::=
 {
+  top.includedGrammars := [];
+  top.hasIncludedGrammars := false;
   top.unpackGrammarAst := left("Missing grammarAst");
+}
+
+production includedGrammarsInterfaceItem
+top::InterfaceItem ::= val::[String]
+{
+  propagate isEqual;
+  top.includedGrammars <- val;
+  top.hasIncludedGrammars <- true;
 }
 
 production grammarAstInterfaceItem
@@ -72,6 +97,7 @@ top::InterfaceItem ::= ser::ByteArray
 aspect function packInterfaceItems
 InterfaceItems ::= r::Decorated RootSpec
 {
+  interfaceItems <- [includedGrammarsInterfaceItem(r.includedGrammars)];
   local ser::ByteArray =
     case serializeBytes(r.grammarAst) of
     | left(e) -> error("Error serializing grammar AST: " ++ e)

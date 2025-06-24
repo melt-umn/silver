@@ -41,8 +41,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- the initial list of grammar names from g that were recompiled
   top.initRecompiledGrammars = map((.declaredName), g.recompiledGrammars);
   -- the initial list of grammar names from g known to be in need of recompilation
-  top.initDirtyGrammars = nub(removeAll(top.initRecompiledGrammars,
-    flatMap((.dirtyGrammars), keepGrammars(grammarsDependedUpon, g.grammarList))));
+  top.initDirtyGrammars = nub(removeAll(top.initRecompiledGrammars, allDirtyGrammars));
   
   -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
   -- see all the other initially compiled grammars.
@@ -74,6 +73,9 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- Ditto the above, but rootspecs
   production grammarsRelevant :: [Decorated RootSpec] =
     keepGrammars(grammarsDependedUpon, g.grammarList);
+
+  production attribute allDirtyGrammars :: [String] with ++;
+  allDirtyGrammars := flatMap((.dirtyGrammars), grammarsRelevant);
   
   -- The grammars that we have recompiled, that need to be translated
   production grammarsToTranslate :: [Decorated RootSpec] = top.recompiledGrammars;

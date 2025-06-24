@@ -15,6 +15,7 @@ top::AGDcl ::= 'include' m::QName '{' t::TransformStmts '}'
   top.unparse = "include " ++ m.unparse ++ " {" ++ t.unparse ++ "}";
   propagate grammarName, env;
   top.moduleNames := [m.name];
+  top.includedGrammars := [m.name];
   
   forwards to
     case searchEnvTree(m.name, top.compiledGrammars) of
