@@ -215,7 +215,10 @@ public class DecoratedNode implements Decorable, Typed {
 	@Override
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy decSite) {
 		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
-		if (forwardParent == null) {
+		// Decoration has no effect if a tree already has a forward parent.
+		// Also, we may be miscellaneously decorated with nothing by runtime utilities, outside the
+		// usual chain of decoration sites; this should not cause the decorationSite to be replaced.
+		if (forwardParent == null && !(parent instanceof TopNode)) {
 			if (inhs != null) {
 				if (inheritedAttributes == null) {
 					inheritedAttributes = new Lazy[self.getNumberOfInhAttrs()];
@@ -1029,7 +1032,7 @@ public class DecoratedNode implements Decorable, Typed {
 		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
 			// Ignore auxillary inhs for translation attributes
 			if(self.getNameOfInhAttr(i) != null) {
-			properties.add("l:" + self.getNameOfInhAttr(i));
+				properties.add("l:" + self.getNameOfInhAttr(i));
 			}
 		}
 		String[] annoNames = self.getAnnoNames();
@@ -1055,9 +1058,9 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		}
 		if(inheritedAttributes != null) {
-		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
-			if (propName.equals(self.getNameOfInhAttr(i))) {
-				return getSourceFileName(inheritedAttributes[i]);
+			for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+				if (propName.equals(self.getNameOfInhAttr(i))) {
+					return getSourceFileName(inheritedAttributes[i]);
 				}
 			}
 		}
