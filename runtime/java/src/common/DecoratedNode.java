@@ -1018,7 +1018,7 @@ public class DecoratedNode implements Decorable, Typed {
 			properties.add("l:forwardParent");
 		}
 		for(int i = 0; i < self.getNumberOfChildren(); i++) {
-			properties.add("l:" + self.getChildName(i));
+			properties.add("l:" + self.getNameOfChild(i));
 		}
 		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
 			properties.add("l:" + self.getNameOfLocalAttr(i));
@@ -1041,8 +1041,8 @@ public class DecoratedNode implements Decorable, Typed {
 
 	public String cpr_lGetChildName(String name) {
 		for(int i = 0; i < self.getNumberOfChildren(); i++) {
-			if (name.equals(self.getChildName(i))) {
-				return self.getChildName(i);
+			if (name.equals(self.getNameOfChild(i))) {
+				return self.getNameOfChild(i);
 			}
 		}
 		return null;
@@ -1088,7 +1088,7 @@ public class DecoratedNode implements Decorable, Typed {
 			return makeCprInvokeResult(forwardParent);
 		}
 		for(int i = 0; i < self.getNumberOfChildren(); i++) {
-			if (propName.equals(self.getChildName(i))) {
+			if (propName.equals(self.getNameOfChild(i))) {
 				return makeCprInvokeResult(child(i));
 			}
 		}
@@ -1148,7 +1148,7 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		for(int i = 0; i < parent.self.getNumberOfChildren(); i++) {
 			if(this == parent.childrenValues[i]) {
-				return self.getChildName(i);
+				return self.getNameOfChild(i);
 			}
 		}
 		for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {

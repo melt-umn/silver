@@ -147,8 +147,8 @@ ${if quals.data then "" else s"""
 		}
 
 		@Override
-		public String getChildName(final int child) {
-			return ref.getNode().getChildName(child);
+		public String getNameOfChild(final int child) {
+			return ref.getNode().getNameOfChild(child);
 		}
 
 		@Override

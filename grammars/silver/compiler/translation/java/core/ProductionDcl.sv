@@ -146,7 +146,7 @@ ${contexts.contextMemberDeclTrans}
     }
 
 	@Override
-	public String getChildName(final int index) {
+	public String getNameOfChild(final int index) {
 		switch(index) {
 ${implode("", map(makeChildNameCase, namedSig.inputElements))}
             default: return null;

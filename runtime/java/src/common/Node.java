@@ -179,7 +179,7 @@ public abstract class Node implements Decorable, Typed {
 	 * 
 	 * @return The name of the child at the given index.
 	 */
-	public abstract String getChildName(final int child);
+	public abstract String getNameOfChild(final int child);
 
 	/**
 	 * Determine if the child should be automatically decorated.

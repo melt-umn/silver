@@ -137,7 +137,7 @@ ${whatSig.childDecls}
 ${contexts.contextMemberDeclTrans}
 
 	@Override
-	public String getChildName(final int index) {
+	public String getNameOfChild(final int index) {
 		switch(index) {
 ${implode("", map(makeChildNameCase, whatSig.inputElements))}
             default: return null;
