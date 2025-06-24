@@ -1027,7 +1027,10 @@ public class DecoratedNode implements Decorable, Typed {
 			properties.add("l:" + self.getNameOfSynAttr(i));
 		}
 		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			// Ignore auxillary inhs for translation attributes
+			if(self.getNameOfInhAttr(i) != null) {
 			properties.add("l:" + self.getNameOfInhAttr(i));
+			}
 		}
 		String[] annoNames = self.getAnnoNames();
 		for(int i = 0; i < annoNames.length; i++) {
@@ -1051,9 +1054,11 @@ public class DecoratedNode implements Decorable, Typed {
 				return getSourceFileName(self.getLocal(i));
 			}
 		}
+		if(inheritedAttributes != null) {
 		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
 			if (propName.equals(self.getNameOfInhAttr(i))) {
 				return getSourceFileName(inheritedAttributes[i]);
+				}
 			}
 		}
 		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
