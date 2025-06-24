@@ -1123,6 +1123,9 @@ public class DecoratedNode implements Decorable, Typed {
 		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
 			return Util.showDoc(o, 80).toString();
 		}
+		if(o instanceof ConsCell && o != ConsCell.nil && ((ConsCell)o).head().getClass().getSuperclass().getName().equals("silver.langutil.NMessage")) {
+			return CodeProberDiagnostic.fromMessageList((ConsCell)o);
+		}
 		return Util.genericShow(o).toString();
 	}
 
