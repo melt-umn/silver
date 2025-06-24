@@ -910,6 +910,8 @@ public class DecoratedNode implements Decorable, Typed {
 		return parent;
 	}
   
+	// This is set by the generated main class CodeProber_parse method,
+	// to determine if any extracted location is in the main file.
 	static private String cprMainFilePath = null;
 	public static void setCprMainFilePath(String path) {
 		cprMainFilePath = path;
@@ -1119,10 +1121,10 @@ public class DecoratedNode implements Decorable, Typed {
 		throw new SilverInternalError("Unknown property '" + propName + "' for " + getDebugID());
 	}
 	/**
-	* Turn the value of an attribute into a value that we can return to Code Prober.
-	* Currently, this just stringifies anything that is not another DecoratedNode.
+	* Turn the value of an attribute into a value understood by Code Prober.
 	*/
 	private static Object makeCprInvokeResult(Object o) {
+		// Decorated trees that have a fixed relationship to their parent can be recursively explored.
 		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
 			return o;
 		}
@@ -1131,9 +1133,11 @@ public class DecoratedNode implements Decorable, Typed {
 		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
 			return Util.showDoc(o, 80).toString();
 		}
+		// Lists of silver:langutil:Message are converted to diagnostic objects understood by Code Prober.
 		if(o instanceof ConsCell && o != ConsCell.nil && ((ConsCell)o).head().getClass().getSuperclass().getName().equals("silver.langutil.NMessage")) {
 			return CodeProberDiagnostic.fromMessageList((ConsCell)o);
 		}
+		// By default, just stringify it.
 		return Util.genericShow(o).toString();
 	}
 

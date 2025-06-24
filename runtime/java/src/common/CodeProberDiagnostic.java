@@ -5,6 +5,8 @@ import common.javainterop.ConsCellCollection;
 
 /**
  * Representation of silver:langutil:Message values when returned to CodeProber.
+ * 
+ * @author krame505
  */
 public class CodeProberDiagnostic {
     private final String humanReadable;
