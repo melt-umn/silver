@@ -1,9 +1,9 @@
 grammar silver:compiler:extension:nanopass;
 
 attribute includeTrans occurs on
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, PrimPatterns, PrimPattern;
 propagate includeTrans on
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, PrimPatterns, PrimPattern
 excluding
   errorReference, childReference, lhsReference, localReference, nondecLocalReference, forwardReference,
   lexicalLocalReference, lambdaParamReference, shortFunParamReference,
@@ -13,7 +13,8 @@ excluding
   annoUpdatePositionalErrorApplication, annoUpdateInvocation, annoUpdatePartialApplication,
   errorAccessHandler, terminalAccessHandler, synDecoratedAccessHandler, inhDecoratedAccessHandler,
   transDecoratedAccessHandler, annoAccessHandler, synDataAccessHandler, inhUndecoratedAccessErrorHandler,
-  transUndecoratedAccessErrorHandler, unknownDclAccessHandler;
+  transUndecoratedAccessErrorHandler, unknownDclAccessHandler,
+  prodPatternNormal, prodPatternGadt;
 
 aspect includeTrans on top::Expr of
 | errorReference(_, q) -> \ _ -> baseExpr(^q)
@@ -85,4 +86,22 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
   top.includeTrans = \ tr::Decorated TransformStmts -> annoExpr(
     qName(qualifyIfDiffGrammar(top.grammarName, qn.lookupAttribute.fullName)),
     '=', e.includeTrans(tr));
+}
+
+-- TODO: Translation on prim pattern extension means no case completeness check in transformed AST
+aspect production prodPatternNormal
+top::PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr
+{
+  top.includeTrans = \ tr::Decorated TransformStmts ->
+    prodPattern(
+      qName(qualifyIfDiffGrammar(top.grammarName, qn.lookupValue.fullName)),
+      '(', ^ns, ')', '->', e.includeTrans(tr));
+}
+aspect production prodPatternGadt
+top::PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr
+{
+  top.includeTrans = \ tr::Decorated TransformStmts ->
+    prodPattern(
+      qName(qualifyIfDiffGrammar(top.grammarName, qn.lookupValue.fullName)),
+      '(', ^ns, ')', '->', e.includeTrans(tr));
 }
