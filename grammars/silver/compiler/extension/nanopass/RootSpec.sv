@@ -83,8 +83,8 @@ production includedGrammarsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
   propagate isEqual;
-  top.includedGrammars <- val;
-  top.hasIncludedGrammars <- true;
+  top.includedGrammars := val;
+  top.hasIncludedGrammars := true;
 }
 
 production grammarAstInterfaceItem
