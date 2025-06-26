@@ -1044,6 +1044,21 @@ public class DecoratedNode implements Decorable, Typed {
 		return properties;
 	}
 
+	public List<String> cpr_extraAstReferences() {
+		List<String> properties = new ArrayList<>();
+		// Only display the forward and translation attributes in the tree view
+		if(self.hasForward()) {
+			properties.add("l:forward");
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if(self.getTransOccurs(i) != null) {
+				properties.add("l:" + self.getNameOfSynAttr(i));
+			}
+		}
+		return properties;
+
+	}
+
 	public String cpr_lGetChildName(String name) {
 		for(int i = 0; i < self.getNumberOfChildren(); i++) {
 			if (name.equals(self.getNameOfChild(i))) {
