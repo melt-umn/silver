@@ -1044,20 +1044,25 @@ public class DecoratedNode implements Decorable, Typed {
 		return properties;
 	}
 
-	public List<String> cpr_extraAstReferences() {
-		List<String> properties = new ArrayList<>();
-		// Only display the forward and translation attributes in the tree view
-		if(self.hasForward()) {
-			properties.add("l:forward");
-		}
-		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
-			if(self.getTransOccurs(i) != null) {
-				properties.add("l:" + self.getNameOfSynAttr(i));
-			}
-		}
-		return properties;
-
-	}
+	// Can show the forward/prod/translation attrs in rendered trees.
+	// Disabled for now as this makes the trees larger and hard to read.
+	// public List<String> cpr_extraAstReferences() {
+	// 	List<String> properties = new ArrayList<>();
+	// 	if(self.hasForward()) {
+	// 		properties.add("l:forward");
+	// 	}
+	// 	for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+	// 		if(self.getTransOccurs(i) != null) {
+	// 			properties.add("l:" + self.getNameOfSynAttr(i));
+	// 		}
+	// 	}
+	// 	for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+	// 		if(self.isLocalDecorable(i)) {
+	// 			properties.add("l:" + self.getNameOfLocalAttr(i));
+	// 		}
+	// 	}
+	// 	return properties;
+	// }
 
 	public String cpr_lGetChildName(String name) {
 		for(int i = 0; i < self.getNumberOfChildren(); i++) {
