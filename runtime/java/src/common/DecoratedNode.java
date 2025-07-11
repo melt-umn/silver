@@ -406,6 +406,16 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Slow path to eval a local, kept separate for inlining reasons.
 	 */
 	private final Object evalLocalAsIs(final int attribute) {
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_BEGIN", this, self.getNameOfLocalAttr(attribute), null, null});
+		}
+		Object res = doEvalLocalAsIs(attribute);
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_END", this, self.getNameOfLocalAttr(attribute), null, makeCprInvokeResult(res)});
+		}
+		return res;
+	}
+	private final Object doEvalLocalAsIs(final int attribute) {
 		try {
 			return self.getLocal(attribute).eval(this);
 		} catch(Throwable t) {
@@ -456,13 +466,18 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	private final DecoratedNode evalLocalDecorated(final int attribute) {
 		assert self.isLocalDecorable(attribute);
-		Decorable localAsIs = (Decorable)evalLocalAsIs(attribute);
-		Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
-		if(self.getLocalIsForward(attribute)) {
-			return localAsIs.decorate(this, inhs, this, false);
-		} else {
-			return localAsIs.decorate(this, inhs, self.getLocalDecSite(attribute));
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_BEGIN", this, self.getNameOfLocalAttr(attribute), null, null});
 		}
+		Decorable localAsIs = (Decorable)doEvalLocalAsIs(attribute);
+		Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
+		DecoratedNode res = self.getLocalIsForward(attribute)?
+			localAsIs.decorate(this, inhs, this, false) :
+			localAsIs.decorate(this, inhs, self.getLocalDecSite(attribute));
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_END", this, self.getNameOfLocalAttr(attribute), null, res});
+		}
+		return res;
 	}
 
 	/**
@@ -491,7 +506,11 @@ public class DecoratedNode implements Decorable, Typed {
 	
 	private final Object evalSyn(final int attribute) {
 		// TODO: Try to break this up into < 35 byte methods?
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_BEGIN", this, self.getNameOfSynAttr(attribute), null, null});
+		}
 		Lazy l = self.getSynthesized(attribute);
+		Object res = null;
 		if(l != null) {
 			try {
 				if(l instanceof CollectionAttribute) {
@@ -507,13 +526,13 @@ public class DecoratedNode implements Decorable, Typed {
 							prodAttr.getPieces().addAll(ntAttr.getPieces());
 					}
 				}
-				return l.eval(this);
+				res = l.eval(this);
 			} catch(Throwable t) {
 				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 			}
 		} else if(self.hasForward()) {
 			try {
-				return forward().synthesized(attribute);
+				res = forward().synthesized(attribute);
 			} catch(Throwable t) {
 				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' via forward in " + getDebugID(), t);
 			}
@@ -521,7 +540,7 @@ public class DecoratedNode implements Decorable, Typed {
 			l = self.getDefaultSynthesized(attribute);
 			if(l != null) {
 				try {
-					return l.eval(this);
+					res = l.eval(this);
 				} catch(Throwable t) {
 					throw new TraceException("While evaling default for syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 				}
@@ -529,6 +548,10 @@ public class DecoratedNode implements Decorable, Typed {
 				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());
 			}
 		}
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_END", this, self.getNameOfSynAttr(attribute), null, makeCprInvokeResult(res)});
+		}
+		return res;
 	}
 
 	/**
@@ -566,6 +589,9 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return The decorated value of the translation attribute.
 	 */
 	private final DecoratedNode evalTrans(final int attribute, final int inhsAttribute, final int decSiteAttribute) {
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_BEGIN", this, self.getNameOfSynAttr(attribute), null, null});
+		}
 		// Evaluate the synthesized attribute to get the tree to decorate, somehow.
 		// This is usually undecorated, but can be decorated already if we are getting it from the forward.
 		Lazy l = self.getSynthesized(attribute);
@@ -627,7 +653,11 @@ public class DecoratedNode implements Decorable, Typed {
 			decSite = (context) -> forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
 		}
 		// Decorate the tree that we computed earlier.
-		return d.decorate(this, inhs, decSite);
+		DecoratedNode res = d.decorate(this, inhs, decSite);
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_END", this, self.getNameOfSynAttr(attribute), null, res});
+		}
+		return res;
 	}
 
 	/**
@@ -673,12 +703,20 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Also to keep the fast path small and inlineable.
 	 */
 	private final DecoratedNode evalForward() {
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_BEGIN", this, "forward", null, null});
+		}
+		DecoratedNode res = null;
 		try {
-			return self.evalForward(this).decorate(
+			res = self.evalForward(this).decorate(
 				this, self.getForwardInheritedAttributes(), this, true);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_END", this, "forward", null, res});
+		}
+		return res;
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
@@ -713,23 +751,24 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_BEGIN", this, self.getNameOfInhAttr(attribute), null, null});
+		}
 		// We specifically have to check here for inheritedAttributes == null, because
 		// that's what happens when we don't supply any inherited attributes...
 		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
 		// (which could be null if *no inherited attributes occur at all* on this
 		// node), this could be the result of correctly compiled, but wrongly written user
 		// code.
-		if(inheritedAttributes != null && inheritedAttributes[attribute] != null)
-			return evalInhHere(attribute);
-		else
-			return evalInhViaDecSiteOrFwrd(attribute);
+		Object res = inheritedAttributes != null && inheritedAttributes[attribute] != null?
+			evalInhHere(attribute) : evalInhViaDecSiteOrFwrd(attribute);
+		if(cprTraceReciever != null) {
+			cprTraceReciever.accept(new Object[] {"COMPUTE_END", this, self.getNameOfInhAttr(attribute), null, makeCprInvokeResult(res)});
+		}
+		return res;
 	}
 	private final Object evalInhViaDecSiteOrFwrd(final int attribute) {
-		if(this.decorationSite != null) {
-			return evalInhViaDecSite(attribute);
-		} else {
-			return evalInhViaFwdP(attribute);
-		}
+		return this.decorationSite != null? evalInhViaDecSite(attribute) : evalInhViaFwdP(attribute);
 	}
 	private final Object evalInhViaDecSite(final int attribute) {
 		Lazy decSite = this.decorationSite;
@@ -1144,21 +1183,31 @@ public class DecoratedNode implements Decorable, Typed {
 	* Turn the value of an attribute into a value understood by Code Prober.
 	*/
 	private static Object makeCprInvokeResult(Object o) {
-		// Decorated trees that have a fixed relationship to their parent can be recursively explored.
+		Object res;
+
+		// If we have a trace receiver, we disable it temporarily to avoid tracing evaluation of pp attributes here
+		java.util.function.Consumer<Object[]> oldRecv = cprTraceReciever;
+		cprTraceReciever = null;
+
 		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
-			return o;
+			// Decorated trees that have a fixed relationship to their parent can be recursively explored.
+			res = o;
+		} else if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
+			// Render Document values as strings.
+			// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
+			res = Util.showDoc(o, 80).toString();
+		} else if(o instanceof ConsCell && o != ConsCell.nil && ((ConsCell)o).head().getClass().getSuperclass().getName().equals("silver.langutil.NMessage")) {
+			// Lists of silver:langutil:Message are converted to diagnostic objects understood by Code Prober.
+			res = CodeProberDiagnostic.fromMessageList((ConsCell)o);
+		} else {
+			// By default, just stringify it.
+			res = Util.genericShow(o).toString();
 		}
-		// Render Document values as strings.
-		// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
-		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
-			return Util.showDoc(o, 80).toString();
-		}
-		// Lists of silver:langutil:Message are converted to diagnostic objects understood by Code Prober.
-		if(o instanceof ConsCell && o != ConsCell.nil && ((ConsCell)o).head().getClass().getSuperclass().getName().equals("silver.langutil.NMessage")) {
-			return CodeProberDiagnostic.fromMessageList((ConsCell)o);
-		}
-		// By default, just stringify it.
-		return Util.genericShow(o).toString();
+
+		// Restore the trace receiver.
+		cprTraceReciever = oldRecv;
+
+		return res;
 	}
 
 	public Object[] cpr_describeParentConnection() {
@@ -1191,5 +1240,11 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		// Our parent doesn't know about us, so we must have been anonymously decorated somewhere.
 		return null;
+	}
+
+	private static java.util.function.Consumer<Object[]> cprTraceReciever = null;
+	public void cpr_setTraceReceiver(java.util.function.Consumer<Object[]> recv) {
+		System.err.println("Set trace on " + this);
+		cprTraceReciever = recv;
 	}
 }
