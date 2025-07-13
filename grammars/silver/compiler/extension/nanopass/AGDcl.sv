@@ -104,8 +104,8 @@ fun grammarNameOf String ::= fn::String =
   substring(0, lastIndexOf(":", fn), fn);
 fun qualifyIfDiffGrammar String ::= gn::String fn::String =
   if grammarNameOf(fn) == gn
-  then fn
-  else gn ++ ":" ++ fn;
+  then shortNameOf(fn)
+  else gn ++ ":" ++ shortNameOf(fn);
 
 fun isTypeIncluded Boolean ::= tr::Decorated TransformStmts fn::String =
   !ts:contains(fn, tr.excludedTypes);
