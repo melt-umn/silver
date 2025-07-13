@@ -70,7 +70,7 @@ equalityTest(genericShow(deserializeBytes(evalIO(bytefiletest, unsafeIO()).ioval
 data WrapBA = wrapBA ByteArray;
 
 global val5 :: Either<String WrapBA> = map(wrapBA, serializeBytes(val1));
-global ser5 :: Either<String ByteArray> = serializeBytes(val5);
+global ser5 :: Either<String ByteArray> = bind(val5, serializeBytes);
 global des5 :: Either<String WrapBA> = if ser5.isRight then deserializeBytes(ser5.fromRight) else left(ser5.fromLeft);
 global fin5 :: String =
   case des5 of
