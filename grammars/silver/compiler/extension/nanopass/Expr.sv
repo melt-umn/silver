@@ -1,9 +1,11 @@
 grammar silver:compiler:extension:nanopass;
 
 attribute includeTrans occurs on
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, PrimPatterns, PrimPattern;
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
+  LambdaRHS, LambdaRHSElem, AssignExpr, PrimPatterns, PrimPattern;
 propagate includeTrans on
-  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, PrimPatterns, PrimPattern
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs,
+  LambdaRHS, LambdaRHSElem, AssignExpr, PrimPatterns, PrimPattern
 excluding
   errorReference, childReference, lhsReference, localReference, nondecLocalReference, forwardReference,
   lexicalLocalReference, lambdaParamReference, shortFunParamReference,
@@ -29,21 +31,21 @@ aspect includeTrans on top::Expr of
 | actionChildReference(q) -> \ _ -> baseExpr(^q)
 | pluckTerminalReference(q) -> \ _ -> baseExpr(^q)
 | productionReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | functionReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | classMemberReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | globalValueReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | terminalIdReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | lexerClassReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | parserAttributeReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | termAttrValueReference(q) -> \ _ ->
-  baseExpr(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  baseExpr(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | errorApplication(e, es, anns) -> \ tr::Decorated TransformStmts ->
   application(e.includeTrans(tr), '(', es.includeTrans(tr), ',', anns.includeTrans(tr), ')')
 | functionInvocation(e, es, anns) -> \ tr::Decorated TransformStmts ->
@@ -84,7 +86,7 @@ aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.includeTrans = \ tr::Decorated TransformStmts -> annoExpr(
-    qName(qualifyIfDiffGrammar(top.grammarName, qn.lookupAttribute.fullName)),
+    ^qn, -- This is a QName, but it actually should be unqualified!
     '=', e.includeTrans(tr));
 }
 
@@ -94,7 +96,7 @@ top::PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr
 {
   top.includeTrans = \ tr::Decorated TransformStmts ->
     prodPattern(
-      qName(qualifyIfDiffGrammar(top.grammarName, qn.lookupValue.fullName)),
+      qName(unqualifyIfSameGrammar(top.grammarName, qn.lookupValue.fullName)),
       '(', ^ns, ')', '->', e.includeTrans(tr));
 }
 aspect production prodPatternGadt
@@ -102,6 +104,6 @@ top::PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr
 {
   top.includeTrans = \ tr::Decorated TransformStmts ->
     prodPattern(
-      qName(qualifyIfDiffGrammar(top.grammarName, qn.lookupValue.fullName)),
+      qName(unqualifyIfSameGrammar(top.grammarName, qn.lookupValue.fullName)),
       '(', ^ns, ')', '->', e.includeTrans(tr));
 }

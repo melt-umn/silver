@@ -6,17 +6,14 @@ propagate includedGrammars on AGDcls, AGDcl;
 monoid attribute includeTransDcls :: ([AGDcl] ::= Decorated TransformStmts) occurs on AGDcls, AGDcl;
 propagate includeTransDcls on AGDcls;
 
-aspect default production
-top::AGDcl ::=
-{
-  top.includeTransDcls := \ tr::Decorated TransformStmts ->
-    if top.isIncluded(tr) then [top.includeTrans(tr)] else [];
-}
-aspect production appendAGDcl
-top::AGDcl ::= h::AGDcl t::AGDcl
-{
-  propagate includeTransDcls;
-}
+aspect includeTransDcls on top::AGDcl using := of
+| appendAGDcl(h, t) -> append(h.includeTransDcls, t.includeTransDcls)
+| attributionDcl(_, at, attl, _, _, nt, nttl, _) -> transDclsWhenIncluded(top, _)
+| _ -> transDclsWhenIncluded(top, _)
+end;
+
+fun transDclsWhenIncluded [AGDcl] ::= top::Decorated AGDcl tr::Decorated TransformStmts =
+  if top.isIncluded(tr) then [top.includeTrans(tr)] else [];
 
 synthesized attribute isIncluded :: (Boolean ::= Decorated TransformStmts)
   occurs on AGDcl;
@@ -71,24 +68,24 @@ aspect includeTrans on top::AGDcl of
   else nonterminalDcl(^q, 'nonterminal', ^n, ^tl, ^nm, ';')
 | attributionDcl(_, at, attl, _, _, nt, nttl, _) -> \ tr::Decorated TransformStmts ->
   attributionDcl('attribute',
-    qName(qualifyIfDiffGrammar(top.grammarName, at.lookupAttribute.fullName)),
+    qName(unqualifyIfSameGrammar(top.grammarName, at.lookupAttribute.fullName)),
     attl.includeTrans(tr),
     'occurs', 'on',
-    qName(qualifyIfDiffGrammar(top.grammarName, nt.lookupType.fullName)),
+    qName(unqualifyIfSameGrammar(top.grammarName, nt.lookupType.fullName)),
     nttl.includeTrans(tr), ';')
 | defaultAttributionDcl(_, _, _, _) -> error("includeTrans should not be demanded on defaultAttributionDcl")
 | errorAttributionDcl(_, _, _, _, _) -> error("includeTrans should not be demanded on errorAttributionDcl")
 | aspectProductionDcl(_, _, n, s, b) -> \ tr::Decorated TransformStmts ->
   aspectProductionDcl('aspect', 'production',
-    qName(qualifyIfDiffGrammar(n.lookupValue.fullName, top.grammarName)),
+    qName(unqualifyIfSameGrammar(top.grammarName, n.lookupValue.fullName)),
     s.includeTrans(tr), b.includeTrans(tr))
 | aspectFunctionDcl(_, _, n, s, b) -> \ tr::Decorated TransformStmts ->
   aspectFunctionDcl('aspect', 'function',
-    qName(qualifyIfDiffGrammar(top.grammarName, n.lookupValue.fullName)),
+    qName(unqualifyIfSameGrammar(top.grammarName, n.lookupValue.fullName)),
     s.includeTrans(tr), b.includeTrans(tr))
 | instanceDcl(_, cl, _, n, ty, _, b, _) -> \ tr::Decorated TransformStmts ->
   instanceDcl('instance', cl.includeTrans(tr), '=>',
-    qName(qualifyIfDiffGrammar(top.grammarName, n.lookupType.fullName)).qNameType,
+    qName(unqualifyIfSameGrammar(top.grammarName, n.lookupType.fullName)).qNameType,
     ty.includeTrans(tr), '{', b.includeTrans(tr), '}')
 end;
 
@@ -102,10 +99,8 @@ fun shortNameOf String ::= fn::String =
   substring(lastIndexOf(":", fn) + 1, length(fn), fn);
 fun grammarNameOf String ::= fn::String =
   substring(0, lastIndexOf(":", fn), fn);
-fun qualifyIfDiffGrammar String ::= gn::String fn::String =
-  if grammarNameOf(fn) == gn
-  then shortNameOf(fn)
-  else gn ++ ":" ++ shortNameOf(fn);
+fun unqualifyIfSameGrammar String ::= gn::String fn::String =
+  if grammarNameOf(fn) == gn then shortNameOf(fn) else fn;
 
 fun isTypeIncluded Boolean ::= tr::Decorated TransformStmts fn::String =
   !ts:contains(fn, tr.excludedTypes);

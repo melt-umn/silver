@@ -16,6 +16,10 @@ top::AGDcl ::= 'include' m::QName '{' t::TransformStmts '}'
   propagate grammarName, env;
   top.moduleNames := [m.name];
   top.includedGrammars := [m.name];
+
+  t.includedGrammarName = m.name;
+
+  top.errors <- unsafeTracePrint([], forward.unparse ++ "\n\n");
   
   forwards to
     case searchEnvTree(m.name, top.compiledGrammars) of
@@ -23,6 +27,8 @@ top::AGDcl ::= 'include' m::QName '{' t::TransformStmts '}'
     | _ -> errorAGDcl([errFromOrigin(m, s"Grammar ${m.name} not found")])
     end;
 }
+
+inherited attribute includedGrammarName :: String;
 
 monoid attribute excludedTypes :: ts:Set<String>;
 monoid attribute closedNonterminals :: ts:Set<String>;
@@ -36,7 +42,7 @@ propagate
   excludedTypes, closedNonterminals, openedNonterminals, excludedValues, excludedAttributes, annotatedAttributes
   on TransformStmts, TransformStmt;
 
-nonterminal TransformStmts with grammarName, env, unparse, errors,
+nonterminal TransformStmts with grammarName, includedGrammarName, env, unparse, errors,
   excludedTypes, closedNonterminals, openedNonterminals, excludedValues, excludedAttributes, annotatedAttributes;
 
 concrete production consTransformStmt

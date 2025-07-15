@@ -84,7 +84,7 @@ aspect includeTrans on top::ProductionStmt of
 | baseCollectionValueDef(q, e) -> \ tr::Decorated TransformStmts ->
   valContainsBase(^q, ':=', e.includeTrans(tr), ';')
 | appendCollectionValueDef(q, e) -> \ tr::Decorated TransformStmts ->
-  valContainsAppend(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)), '<-', e.includeTrans(tr), ';')
+  valContainsAppend(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)), '<-', e.includeTrans(tr), ';')
 | synBaseColAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
   attrContainsBase(dl.includeTrans(tr), '.', attr.includeTrans(tr), ':=', e.includeTrans(tr), ';')
 | synAppendColAttributeDef(dl, attr, e) -> \ tr::Decorated TransformStmts ->
@@ -102,7 +102,7 @@ aspect includeTrans on top::DefLHS of
 | childDefLHS(q) -> \ _ -> concreteDefLHS(^q)
 | lhsDefLHS(q) -> \ _ -> concreteDefLHS(^q)
 | localDefLHS(q) -> \ _ ->
-  concreteDefLHS(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)))
+  concreteDefLHS(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)))
 | forwardDefLHS(q) -> \ _ -> concreteDefLHS(^q)
 | defaultLhsDefLHS(q) -> \ _ -> concreteDefLHS(^q)
 | parserAttributeDefLHS(q) -> error("should not be demanded")
@@ -110,7 +110,7 @@ aspect includeTrans on top::DefLHS of
 | childTransAttrDefLHS(q, attr) -> \ tr::Decorated TransformStmts ->
   transAttrDefLHS(^q, attr.includeTrans(tr))
 | localTransAttrDefLHS(q, attr) -> \ tr::Decorated TransformStmts ->
-  transAttrDefLHS(qName(qualifyIfDiffGrammar(top.grammarName, q.lookupValue.fullName)), attr.includeTrans(tr))
+  transAttrDefLHS(qName(unqualifyIfSameGrammar(top.grammarName, q.lookupValue.fullName)), attr.includeTrans(tr))
 end;
 aspect includeTrans on top::QNameAttrOccur of
 | qNameAttrOccur(at) -> \ tr::Decorated TransformStmts ->
