@@ -14,6 +14,7 @@ function translate
 Expr ::= ast::AST
 {
   ast.givenLocation = getParsedOriginLocationOrFallback(ambientOrigin());
+  ast.invocationOrigin = ambientOrigin();
   return ast.translation;
 }
 
@@ -21,6 +22,7 @@ function translatePattern
 Pattern ::= ast::AST
 {
   ast.givenLocation = getParsedOriginLocationOrFallback(ambientOrigin());
+  ast.invocationOrigin = ambientOrigin();
   return ast.patternTranslation;
 }
 
@@ -28,22 +30,25 @@ synthesized attribute translation<a>::a;
 synthesized attribute patternTranslation<a>::a;
 synthesized attribute foundLocation::Maybe<Location>;
 inherited attribute givenLocation::Location;
+inherited attribute invocationOrigin::AmbientOriginNT;
 
-flowtype translation {givenLocation} on AST, ASTs, NamedASTs, NamedAST;
-flowtype patternTranslation {givenLocation} on AST, ASTs;
+flowtype translation {givenLocation, invocationOrigin} on AST, ASTs, NamedASTs, NamedAST;
+flowtype patternTranslation {givenLocation, invocationOrigin} on AST, ASTs;
 flowtype foundLocation {} on ASTs, NamedASTs, NamedAST;
 
 propagate givenLocation on AST, ASTs, NamedASTs, NamedAST excluding nonterminalAST;
+propagate invocationOrigin on AST, ASTs, NamedASTs, NamedAST;
 
-attribute givenLocation, translation<Expr>, patternTranslation<Pattern> occurs on AST;
+attribute givenLocation, invocationOrigin, translation<Expr>, patternTranslation<Pattern> occurs on AST;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
-  production givenLocation::Location =
-    fromMaybe(top.givenLocation, alt(getParsedOriginLocation(top), alt(children.foundLocation, annotations.foundLocation)));
-  attachNote logicalLocationNote(givenLocation);  -- In case the quoted language doesn't use origins
-  
+  production foundLocation::Maybe<Location> =
+    alt(getParsedOriginLocation(top), alt(children.foundLocation, annotations.foundLocation));
+  production givenLocation::Location = fromMaybe(top.givenLocation, foundLocation);
+  attachNote maybeLogicalLocationNote(alt(foundLocation, getParsedOriginLocation(top.invocationOrigin)));
+
   production attribute antiquoteTranslation::Maybe<Expr> with orElse;
   antiquoteTranslation := nothing();
   
@@ -83,7 +88,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   antiquoteTranslation <-
     do {
       -- (antiquote production name, antiquote expr AST, rest AST)
-      antiquote::(String, AST, Decorated AST with {givenLocation}) <-
+      antiquote::(String, AST, Decorated AST with {givenLocation, invocationOrigin}) <-
         case children of
         | consAST(
             nonterminalAST(p, consAST(a, _), _),
@@ -181,6 +186,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   local locationAST::AST = reflect(location);
   locationAST.givenLocation = top.givenLocation;
+  locationAST.invocationOrigin = top.invocationOrigin;
 
   top.translation = Silver_Expr {
     terminal(
@@ -268,7 +274,7 @@ top::AST ::= x::a
     end;
 }
 
-attribute givenLocation, translation<[Expr]>, patternTranslation<PatternList>, foundLocation occurs on ASTs;
+attribute givenLocation, translation<[Expr]>, patternTranslation<PatternList>, foundLocation, invocationOrigin occurs on ASTs;
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
@@ -296,7 +302,7 @@ top::ASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<[(String, Expr)]>, foundLocation occurs on NamedASTs;
+attribute givenLocation, translation<[(String, Expr)]>, foundLocation, invocationOrigin occurs on NamedASTs;
 
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
@@ -312,7 +318,7 @@ top::NamedASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<(String, Expr)>, foundLocation occurs on NamedAST;
+attribute givenLocation, translation<(String, Expr)>, foundLocation, invocationOrigin occurs on NamedAST;
 
 aspect production namedAST
 top::NamedAST ::= n::String v::AST

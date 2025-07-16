@@ -35,7 +35,9 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
           false,
           ml.matchRuleList);
 
-  local loc::Location = getParsedOriginLocationOrFallback(ambientOrigin());
+  local loc::Location = fromMaybe(
+    txtLoc("<unknown location>"),
+    getParsedOriginLocation(ambientOrigin()));
   nondecorated local basicFailure::Expr =
     mkStrFunctionInvocation("silver:core:error",
       [stringConst(terminal(String_t, 

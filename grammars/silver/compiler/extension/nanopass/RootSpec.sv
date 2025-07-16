@@ -91,6 +91,9 @@ production grammarAstInterfaceItem
 top::InterfaceItem ::= ser::ByteArray
 {
   top.isEqual = true;  -- Dirty included grammars are handled specially in the driver
+
+  -- TODO: The deserialized AST lacks origin info, so non-clean builds will not
+  -- have location info when reporting errors in the included declarations.
   top.unpackGrammarAst := deserializeBytes(ser);
 }
 

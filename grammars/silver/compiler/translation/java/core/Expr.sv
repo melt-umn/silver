@@ -852,7 +852,9 @@ String ::= e::Decorated Expr
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
   local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
-  local loc::Location = getParsedOriginLocationOrFallback(e);
+  local loc::Location = fromMaybe(
+    txtLoc("<unknown location>"),
+    getParsedOriginLocation(ambientOrigin()));
   local fileName::String =
     case searchEnvTree(e.grammarName, e.compiledGrammars) of
     | r :: _ -> r.grammarSource
