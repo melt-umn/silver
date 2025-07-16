@@ -3,10 +3,9 @@ grammar silver:compiler:extension:nanopass;
 aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  _ _ _
 {
-  local includingGrammars::[(String, String)] = flatMap(
+  astDependentGrammars <- flatMap(
     \ root::Decorated RootSpec -> map(\ gn::String -> (gn, root.declaredName), root.includedGrammars),
     grammarsRelevant);
-  allDirtyGrammars <- flatMap(lookupAll(_, includingGrammars), grammarsDependedUpon);
 }
 
 attribute includedGrammars, includeTransDcls occurs on RootSpec, Grammar, File;

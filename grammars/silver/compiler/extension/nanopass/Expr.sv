@@ -18,6 +18,7 @@ excluding
   transUndecoratedAccessErrorHandler, unknownDclAccessHandler,
   prodPatternNormal, prodPatternGadt;
 
+-- All these dispatch impl prods get translated back to the dispatching prod:
 aspect includeTrans on top::Expr of
 | errorReference(_, q) -> \ _ -> baseExpr(^q)
 | childReference(q) -> \ _ -> baseExpr(^q)

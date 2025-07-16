@@ -19,7 +19,7 @@ top::AGDcl ::= 'include' m::QName '{' t::TransformStmts '}'
 
   t.includedGrammarName = m.name;
 
-  top.errors <- unsafeTracePrint([], forward.unparse ++ "\n\n");
+  --top.errors <- unsafeTracePrint([], forward.unparse ++ "\n\n");
   
   forwards to
     case searchEnvTree(m.name, top.compiledGrammars) of

@@ -3,6 +3,7 @@ grammar silver:compiler:driver:util;
 import silver:compiler:definition:core only jarName, grammarErrors;
 import silver:util:treemap as map;
 import silver:util:cmdargs;
+import silver:compiler:analysis:warnings:flow only warnMissingInh;
 
 synthesized attribute initRecompiledGrammars::[String];
 synthesized attribute initDirtyGrammars::[String];
@@ -41,7 +42,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- the initial list of grammar names from g that were recompiled
   top.initRecompiledGrammars = map((.declaredName), g.recompiledGrammars);
   -- the initial list of grammar names from g known to be in need of recompilation
-  top.initDirtyGrammars = nub(removeAll(top.initRecompiledGrammars, allDirtyGrammars));
+  top.initDirtyGrammars = nub(removeAll(top.initRecompiledGrammars,
+    flatMap((.dirtyGrammars), grammarsRelevant)));
   
   -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
   -- see all the other initially compiled grammars.
@@ -54,12 +56,27 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- between grammars, the initially-compiled grammar may see an outdated interface file.
   -- See https://github.com/melt-umn/silver/issues/673
 
-  g.dependentGrammars = flatMap(
+  -- All pairs of grammars (a, b) where b should be rebuilt if the interface of a changes.
+  g.ifcDependentGrammars = flatMap(
     \ r::Decorated RootSpec -> map(\ g::String -> (g, r.declaredName), r.allGrammarDependencies),
     grammarsRelevant);
   -- See above comments.
   -- Assumption: if a grammar has an up-to-date interface file, then its dependencies are unchanged.
-  r.dependentGrammars = g.dependentGrammars;
+  r.ifcDependentGrammars = g.ifcDependentGrammars;
+
+  -- All pairs of grammars (a, b) where b should be rebuilt if the AST of a changes in any way.
+  production attribute astDependentGrammars :: [(String, String)] with ++;
+  astDependentGrammars := [];
+  g.astDependentGrammars = astDependentGrammars;
+  r.astDependentGrammars = astDependentGrammars;
+
+  -- If we are running the flow analysis, then we need to consider any change to a dependency
+  -- as cause for a rebuild, since we ignore flow defs when comparing interface files.
+  -- This also avoids a circularity issue: computing whether an interface file
+  -- changed depends on error checking, which depends on computed flow types when
+  -- the flow analysis is enabled, which depends on which grammars were compiled.
+  astDependentGrammars <-
+    if a.warnMissingInh then g.ifcDependentGrammars else [];
 
   g.config = a;
   r.config = a;
@@ -73,9 +90,6 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- Ditto the above, but rootspecs
   production grammarsRelevant :: [Decorated RootSpec] =
     keepGrammars(grammarsDependedUpon, g.grammarList);
-
-  production attribute allDirtyGrammars :: [String] with ++;
-  allDirtyGrammars := flatMap((.dirtyGrammars), grammarsRelevant);
   
   -- The grammars that we have recompiled, that need to be translated
   production grammarsToTranslate :: [Decorated RootSpec] = top.recompiledGrammars;
@@ -90,11 +104,12 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 }
 
 nonterminal Grammars with
-  config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars,
+  config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, ifcDependentGrammars, astDependentGrammars,
   grammarList, dirtyGrammars, recompiledGrammars, jarName, includedJars;
 
 propagate
-  config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars, includedJars
+  config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName,
+  ifcDependentGrammars, astDependentGrammars, includedJars
   on Grammars;
 
 abstract production consGrammars
