@@ -13,16 +13,24 @@ concrete production includeGrammar
 top::AGDcl ::= 'include' m::QName '{' t::TransformStmts '}'
 {
   top.unparse = "include " ++ m.unparse ++ " {" ++ t.unparse ++ "}";
-  propagate grammarName, env;
+  propagate grammarName;
   top.moduleNames := [m.name];
   top.includedGrammars := [m.name];
-
+  
+  -- This is a hack to pass the grammar name for nonterminals that don't have grammarName.
   t.includedGrammarName = m.name;
+
+  local rs::[Decorated RootSpec] = searchEnvTree(m.name, top.compiledGrammars);
+
+  -- t sees the environment of the included grammar
+  t.env = toEnv(flatMap((.defs), rs), flatMap((.occursDefs), rs));
+
+  top.errors <- t.errors;
 
   --top.errors <- unsafeTracePrint([], forward.unparse ++ "\n\n");
   
   forwards to
-    case searchEnvTree(m.name, top.compiledGrammars) of
+    case rs of
     | r :: _ -> foldr(appendAGDcl, emptyAGDcl(), r.includeTransDcls(t))
     | _ -> errorAGDcl([errFromOrigin(m, s"Grammar ${m.name} not found")])
     end;
