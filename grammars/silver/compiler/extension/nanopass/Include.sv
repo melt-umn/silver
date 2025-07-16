@@ -105,9 +105,9 @@ nonterminal NtNames with env, unparse, names, errors, closeErrors, openErrors;
 propagate env, errors, closeErrors, openErrors on NtNames;
 
 concrete production consNtName
-top::NtNames ::= n::QNameType ns::NtNames
+top::NtNames ::= n::QNameType ',' ns::NtNames
 {
-  top.unparse = n.name ++ ", " ++ ns.unparse;
+  top.unparse = n.unparse ++ ", " ++ ns.unparse;
   top.names = n.lookupType.fullName :: ns.names;
   top.errors <- n.lookupType.errors;
   top.closeErrors <-
@@ -118,6 +118,12 @@ top::NtNames ::= n::QNameType ns::NtNames
     if n.lookupType.found && !n.lookupType.dcl.isClosed
     then [errFromOrigin(n, s"Nonterminal ${n.name} is already open")]
     else [];
+}
+concrete production oneNtName
+top::NtNames ::= n::QNameType
+{
+  top.unparse = n.unparse;
+  forwards to consNtName(@n, ',', nilNtName());
 }
 concrete production nilNtName
 top::NtNames ::=
@@ -130,11 +136,17 @@ nonterminal ProdNames with env, unparse, names, errors;
 propagate env, errors on ProdNames;
 
 concrete production consProdName
-top::ProdNames ::= n::QName ns::ProdNames
+top::ProdNames ::= n::QName ',' ns::ProdNames
 {
-  top.unparse = n.name ++ ", " ++ ns.unparse;
+  top.unparse = n.unparse ++ ", " ++ ns.unparse;
   top.names = n.lookupValue.fullName :: ns.names;
   top.errors <- n.lookupValue.errors;
+}
+concrete production oneProdName
+top::ProdNames ::= n::QName
+{
+  top.unparse = n.unparse;
+  forwards to consProdName(@n, ',', nilProdName());
 }
 concrete production nilProdName
 top::ProdNames ::=
@@ -148,15 +160,21 @@ nonterminal AttrNames with env, unparse, names, errors, annotateErrors;
 propagate env, errors, annotateErrors on AttrNames;
 
 concrete production consAttrName
-top::AttrNames ::= n::QName ns::AttrNames
+top::AttrNames ::= n::QName ',' ns::AttrNames
 {
-  top.unparse = n.name ++ ", " ++ ns.unparse;
+  top.unparse = n.unparse ++ ", " ++ ns.unparse;
   top.names = n.lookupAttribute.fullName :: ns.names;
   top.errors <- n.lookupAttribute.errors;
   top.annotateErrors <-
     if n.lookupAttribute.found && n.lookupAttribute.dcl.isAnnotation
     then [errFromOrigin(n, s"${n.name} is already an annotation")]
     else [];
+}
+concrete production oneAttrName
+top::AttrNames ::= n::QName
+{
+  top.unparse = n.unparse;
+  forwards to consAttrName(@n, ',', nilAttrName());
 }
 concrete production nilAttrName
 top::AttrNames ::=
