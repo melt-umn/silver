@@ -105,6 +105,7 @@ top::TransformStmt ::= 'annotate' 'attributes' ns::AttrNames ';'
 {
   top.unparse = "annotate attributes " ++ ns.unparse ++ ";";
   top.annotatedAttributes <- ts:fromList(ns.names);
+  top.errors <- [wrnFromOrigin(top, "Annotating attributes is not yet implemented")];
 }
 
 monoid attribute closeErrors :: [Message];
