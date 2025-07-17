@@ -4,11 +4,11 @@ import silver:compiler:definition:core only jarName, grammarErrors;
 import silver:util:treemap as map;
 import silver:util:cmdargs;
 import silver:compiler:analysis:warnings:flow only warnMissingInh;
+import silver:compiler:driver only doClean;
 
-synthesized attribute initRecompiledGrammars::[String];
 synthesized attribute initDirtyGrammars::[String];
 
-data nonterminal Compilation with postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initRecompiledGrammars, initDirtyGrammars;
+data nonterminal Compilation with postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initDirtyGrammars;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
@@ -35,15 +35,16 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   top.grammarList = g.grammarList;
   -- the list of rootspecs coming out of r
   top.reGrammarList = r.grammarList;
-  -- all compiled rootspecs from g and r
-  top.allGrammars = g.grammarList ++ r.grammarList;
-    -- the list of re-compiled rootspecs from g and r
-  top.recompiledGrammars := keepGrammars(grammarsDependedUpon, g.recompiledGrammars) ++ r.grammarList;
-  -- the initial list of grammar names from g that were recompiled
-  top.initRecompiledGrammars = map((.declaredName), g.recompiledGrammars);
+  -- the list of rootspecs from g and r, excluding grammars from g that were later recompiled in r
+  top.allGrammars = r.grammarList ++ excludeGrammars(rGrammarNames, g.grammarList);
+  -- the list of re-compiled rootspecs from g and r
+  top.recompiledGrammars :=
+    excludeGrammars(rGrammarNames, keepGrammars(grammarsDependedUpon, g.recompiledGrammars)) ++
+    r.grammarList;
   -- the initial list of grammar names from g known to be in need of recompilation
-  top.initDirtyGrammars = nub(removeAll(top.initRecompiledGrammars,
-    flatMap((.dirtyGrammars), grammarsRelevant)));
+  top.initDirtyGrammars =
+    if a.doClean then []  -- In a clean build, there are no stale interface files in g, so no need to recheck.
+    else nub(flatMap((.dirtyGrammars), grammarsRelevant));
   
   -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
   -- see all the other initially compiled grammars.
@@ -52,9 +53,10 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- we are forced to start with the interface files that we are going to
   -- recheck in the .compiledGrammars for the recheck.
   r.compiledGrammars = g.compiledGrammars;
-  -- Since we never compile a grammar more than once, this means in case of mutual dependencies
-  -- between grammars, the initially-compiled grammar may see an outdated interface file.
-  -- See https://github.com/melt-umn/silver/issues/673
+  -- Note that if a grammar's interface changes in g, then grammars depending on
+  -- it that were compiled first in g may see an old interface file.
+  -- However, these grammars will be re-compiled in r, replacing those rootspecs
+  -- prior to type checking and translation.
 
   -- All pairs of grammars (a, b) where b should be rebuilt if the interface of a changes.
   g.ifcDependentGrammars = flatMap(
@@ -95,10 +97,6 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   production grammarsToTranslate :: [Decorated RootSpec] = top.recompiledGrammars;
 
   local rGrammarNames :: [String] = map((.declaredName), r.grammarList);
-  -- All grammars from g and r, excluding interface files from r that were later recompiled
-  production allLatestGrammars :: [Decorated RootSpec] =
-    r.grammarList ++
-    filter(\ rs::Decorated RootSpec -> !contains(rs.declaredName, rGrammarNames), g.grammarList);
 
   top.postOps := [];
 }
@@ -135,4 +133,12 @@ top::Grammars ::=
  -}
 fun keepGrammars [Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec] =
   filter(\ r::Decorated RootSpec -> contains(r.declaredName, keep), d);
+
+{--
+ - Exclude only a selected set of grammars.
+ - @param exclude  The set of grammars to exclude
+ - @param d  The list of grammars to filter
+ -}
+fun excludeGrammars [Decorated RootSpec] ::= exclude::[String] d::[Decorated RootSpec] =
+  filter(\ r::Decorated RootSpec -> !contains(r.declaredName, exclude), d);
 

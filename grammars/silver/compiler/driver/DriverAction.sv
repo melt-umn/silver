@@ -24,7 +24,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 {
   top.postOps <- [printAllParsingErrors(top.allGrammars)];
   top.postOps <- if a.noBindingChecking then [] else
-    [printAllBindingErrors(top.allGrammars)]; 
+    [printAllBindingErrors(top.allGrammars)];
   top.postOps <- [touchIfaces(r.grammarList, benv.silverGen)];
 }
 

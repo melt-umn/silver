@@ -118,15 +118,16 @@ IO<Compilation> ::=
 
     -- There is a second circularity here where we use unit.reGrammarList
     -- to supply the second parameter to unit.
-    reRootStream :: [Maybe<RootSpec>] <-
-      unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, a.doClean, true));
+    reRootStream :: [Maybe<RootSpec>] <- unsafeInterleaveIO(do {
+      eprintln("Re-Compiling Dependent Grammars.");
+      compileGrammars(svParser, benv, reGrammarStream, a.doClean, true);
+    });
     
     let reGrammarStream :: [String] =
       unit.initDirtyGrammars ++
       eatGrammars(
         (.dirtyGrammars), length(unit.initDirtyGrammars),
-        unit.initRecompiledGrammars ++ unit.initDirtyGrammars,
-        reRootStream, unit.reGrammarList);
+        unit.initDirtyGrammars, reRootStream, unit.reGrammarList);
 
     return unit;
   };
