@@ -22,7 +22,7 @@ nonterminal RootSpec with
   ifcDependentGrammars, astDependentGrammars,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, dirtyGrammars, recompiledGrammars,
+  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, cachedGrammars, dirtyGrammars, recompiledGrammars,
   parsingErrors, allFileErrors, jarName, generateLocation, jarSource, serInterface, includedJars;
 
 flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, ifcDependentGrammars, astDependentGrammars};
@@ -50,6 +50,11 @@ synthesized attribute grammarTime :: Integer;
  - The modification time of any source file that may have affected the interface of this grammar.
  -}
 synthesized attribute interfaceTime :: Integer;
+
+{--
+ - Grammars that were not (yet) recompiled
+ -}
+monoid attribute cachedGrammars :: [String];
 
 {--
  - Grammars that must be recompiled, due to (potential) changes in an interface
@@ -133,6 +138,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.generateLocation = just(generateLocation);
   top.jarSource = nothing();
   top.interfaceTime = foldr(max, grammarTime, map((.grammarTime), rootSpecs));
+  top.cachedGrammars := [];
   local allDependentGrammars :: [(String, String)] = 
     top.astDependentGrammars ++
     if oldInterface == just(newInterface)
@@ -179,6 +185,8 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
   top.grammarTime = i.maybeGrammarTime.fromJust;
   top.interfaceTime = i.maybeInterfaceTime.fromJust;
   top.generateLocation = generateLocation;
+
+  top.cachedGrammars := if jarSource.isJust then [] else [top.declaredName];
 
   -- Libraries dependencies may have been rebuilt more recently than this grammar,
   -- without directly triggering a rebuild of this grammar:
@@ -233,6 +241,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.generateLocation = just(generateLocation);
   top.jarSource = nothing();
   
+  top.cachedGrammars := [];
   top.dirtyGrammars := [];
   top.recompiledGrammars := [];
 

@@ -2,9 +2,10 @@ grammar silver:compiler:driver:util;
 
 import silver:compiler:definition:core only jarName, grammarErrors;
 import silver:util:treemap as map;
+import silver:util:treeset as set;
+import silver:util:graph as g;
 import silver:util:cmdargs;
 import silver:compiler:analysis:warnings:flow only warnMissingInh;
-import silver:compiler:driver only doClean;
 
 synthesized attribute initDirtyGrammars::[String];
 
@@ -42,9 +43,11 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
     excludeGrammars(rGrammarNames, keepGrammars(grammarsDependedUpon, g.recompiledGrammars)) ++
     r.grammarList;
   -- the initial list of grammar names from g known to be in need of recompilation
-  top.initDirtyGrammars =
-    if a.doClean then []  -- In a clean build, there are no stale interface files in g, so no need to recheck.
-    else nub(flatMap((.dirtyGrammars), grammarsRelevant));
+  top.initDirtyGrammars = set:toList(set:intersect(
+    -- grammars from g that we think are dirty
+    flatMap(compose(set:fromList, (.dirtyGrammars)), grammarsRelevant),
+    -- grammars that are from (or depend on) an interface file, and thus may be dirty
+    flatMap(g:edgesFrom(_, g:transitiveClosure(g:add(g.ifcDependentGrammars, g:empty()))), g.cachedGrammars)));
   
   -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
   -- see all the other initially compiled grammars.
@@ -53,9 +56,10 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- we are forced to start with the interface files that we are going to
   -- recheck in the .compiledGrammars for the recheck.
   r.compiledGrammars = g.compiledGrammars;
-  -- Note that if a grammar's interface changes in g, then grammars depending on
-  -- it that were compiled first in g may see an old interface file.
-  -- However, these grammars will be re-compiled in r, replacing those rootspecs
+  -- Note that if a grammar wasn't initially recompiled in g, then grammars depending on
+  -- it in g will see its old interface file.
+  -- If we later decide that the grammar needs to be recompiled in r,
+  -- then those grammars depending on it may be re-compiled again, replacing those rootspecs
   -- prior to type checking and translation.
 
   -- All pairs of grammars (a, b) where b should be rebuilt if the interface of a changes.
@@ -103,10 +107,10 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 
 nonterminal Grammars with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, ifcDependentGrammars, astDependentGrammars,
-  grammarList, dirtyGrammars, recompiledGrammars, jarName, includedJars;
+  grammarList, cachedGrammars, dirtyGrammars, recompiledGrammars, jarName, includedJars;
 
 propagate
-  config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName,
+  config, productionFlowGraphs, grammarFlowTypes, cachedGrammars, dirtyGrammars, recompiledGrammars, jarName,
   ifcDependentGrammars, astDependentGrammars, includedJars
   on Grammars;
 
