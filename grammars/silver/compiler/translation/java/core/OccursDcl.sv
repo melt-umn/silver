@@ -33,6 +33,11 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
       s"public static final int ${head(occursCheck).attrOccursIndexName}_dec_site = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n" ++
       s"public static final int ${head(occursCheck).attrOccursIndexName}_inhs = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n"
     else "";
+  top.setupInh <-
+    if at.lookupAttribute.dcl.isTranslation then
+      s"\t\t${makeNTName(ntfn)}.occurs_trans[${head(occursCheck).attrGlobalOccursInitIndex}] = " ++
+      s"new common.TransOccursInfo(${head(occursCheck).attrOccursIndexName}_inhs, ${head(occursCheck).attrOccursIndexName}_dec_site);\n"
+    else "";
 }
 
 aspect production errorAttributionDcl

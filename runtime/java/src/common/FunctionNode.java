@@ -66,6 +66,11 @@ public abstract class FunctionNode extends Node {
 	}
 
 	@Override
+	public final TransOccursInfo getTransOccurs(final int index) {
+		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested index " + index + ")");
+	}
+
+	@Override
 	public final Lazy getDefaultSynthesized(int index) {
 		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested default for index " + index + ")");
 	}
