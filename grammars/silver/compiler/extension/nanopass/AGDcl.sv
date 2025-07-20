@@ -22,6 +22,7 @@ aspect isIncluded on top::AGDcl of
 | annotationDcl(_, n, _, _, _, _) -> isAttributeIncluded(_, fName)
 | attributeDclInh(_, _, n, _, _, _, _) -> isAttributeIncluded(_, fName)
 | attributeDclSyn(_, _, n, _, _, _, _) -> isAttributeIncluded(_, fName)
+| translationPassDcl(_, _, _, _, _, _) -> ff
 | attributeDclTrans(_, _, n, _, _, _, _) -> isAttributeIncluded(_, fName)
 | attributionDcl(_, at, _, _, _, nt, _, _) ->
   isAttributeIncluded(_, at.lookupAttribute.fullName) &&

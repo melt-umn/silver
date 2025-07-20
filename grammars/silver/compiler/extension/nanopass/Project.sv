@@ -26,3 +26,4 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:modification:copper_mda;
 imports silver:compiler:modification:ffi;
 imports silver:compiler:modification:primitivepattern;
+imports silver:compiler:metatranslation;
