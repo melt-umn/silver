@@ -144,7 +144,7 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
     if oldInterface == just(newInterface)
     then []  -- Grammars that depend only on the interface of this grammar don't need to be re-translated
     else top.ifcDependentGrammars;
-  top.dirtyGrammars := remove(grammarName, lookupAll(grammarName, allDependentGrammars));
+  top.dirtyGrammars := nub(remove(grammarName, lookupAll(grammarName, allDependentGrammars)));
   -- Useful for debugging:
   {-top.dirtyGrammars <- unsafeTracePrint([],
     if oldInterface == just(newInterface)
