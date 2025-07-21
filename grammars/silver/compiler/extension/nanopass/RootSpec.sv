@@ -24,7 +24,13 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
 aspect production interfaceRootSpec
 top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource::Maybe<String>
 {
-  top.grammarAst = i.unpackGrammarAst.fromRight;
+  top.grammarAst =
+    case deserializeBytes(i.unpackGrammarAst.fromJust) of
+    | left(e) -> error("Error deserializing grammar AST: " ++ e)
+    | right(g) -> g
+    end;
+  -- TODO: The deserialized AST lacks origin info, so non-clean builds will not
+  -- have location info when reporting errors in the included declarations.
   local g::Grammar = top.grammarAst;
   g.config = top.config;
   g.compiledGrammars = top.compiledGrammars;
@@ -54,7 +60,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
 monoid attribute hasIncludedGrammars :: Boolean with false, ||;
 attribute includedGrammars, hasIncludedGrammars occurs on InterfaceItems, InterfaceItem;
 
-monoid attribute unpackGrammarAst :: Either<String Grammar> with left("Missing grammarAst"), alt
+monoid attribute unpackGrammarAst :: Maybe<ByteArray> with empty, alt
   occurs on InterfaceItems, InterfaceItem;
 
 propagate includedGrammars, hasIncludedGrammars, unpackGrammarAst on InterfaceItems;
@@ -63,11 +69,7 @@ aspect production consInterfaceItem
 top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
   top.interfaceErrors <- if !top.hasIncludedGrammars then ["Missing item includedGrammars"] else [];
-  top.interfaceErrors <-
-    case top.unpackGrammarAst of
-    | left(e) -> [e]
-    | right(_) -> []
-    end;
+  top.interfaceErrors <- if !top.unpackGrammarAst.isJust then ["Missing item grammarAst"] else [];
 }
 
 aspect default production
@@ -75,7 +77,7 @@ top::InterfaceItem ::=
 {
   top.includedGrammars := [];
   top.hasIncludedGrammars := false;
-  top.unpackGrammarAst := left("Missing grammarAst");
+  top.unpackGrammarAst := empty;
 }
 
 production includedGrammarsInterfaceItem
@@ -91,9 +93,7 @@ top::InterfaceItem ::= ser::ByteArray
 {
   top.isEqual = true;  -- Dirty included grammars are handled specially in the driver
 
-  -- TODO: The deserialized AST lacks origin info, so non-clean builds will not
-  -- have location info when reporting errors in the included declarations.
-  top.unpackGrammarAst := deserializeBytes(ser);
+  top.unpackGrammarAst := just(ser);
 }
 
 aspect function packInterfaceItems
