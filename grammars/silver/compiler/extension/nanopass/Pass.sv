@@ -86,8 +86,12 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName target::String
       case getOccursDcl(attr.lookupAttribute.dcl.fullName, input.typerep.typeName, top.env) of
       | dcl :: _ -> Silver_Expr { @$name{input.elementName}.$QName{^attr} }
       -- TODO: Currently, we don't do any special error checking in case
-      -- the attribute doesn't occur on a nonterminal child; we just get a type error.
-      | [] -> Silver_Expr { $name{input.elementName} }
+      -- the attribute doesn't occur on a nonterminal child when it should;
+      -- we just get a type error.
+      | [] ->
+        if isDecorable(input.typerep, top.env)
+        then Silver_Expr { @$name{input.elementName} }
+        else Silver_Expr { $name{input.elementName} }
       end,
       top.frame.signature.inputElements);
   local annotations :: [Pair<String Expr>] =
