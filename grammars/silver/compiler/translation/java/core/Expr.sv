@@ -553,12 +553,16 @@ top::Expr ::= '@' e::Expr
     | just(decSite) when top.alwaysDecorated ->
       case e.flowVertexInfo of
       | just(transAttrVertexType(rhsVertexType(sigName), transAttr)) ->
-        case lookup(sigName, zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)) of
-        | just(ty) when getOccursDcl(transAttr, ty.typeName, top.env) matches occDcl :: _ ->
+        -- Need to lookup the prod dcl and get it's signature, since sigName from the flowVertexInfo
+        -- may not match the one from top.frame.signature if we are in an aspect.
+        case getValueDcl(top.frame.fullName, top.env) of
+        | prdDcl :: _
+            when getOccursDcl(transAttr, lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep.typeName, top.env)
+            matches occDcl :: _ ->
           s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
           s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
           s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
-        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
+        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName ++ ": " ++ genericShow(zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)))
         end
       | just(transAttrVertexType(localVertexType(fName), transAttr)) ->
         case getValueDcl(fName, top.env) of
