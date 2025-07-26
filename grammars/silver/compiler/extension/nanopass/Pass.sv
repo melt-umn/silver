@@ -138,16 +138,21 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName target::String
   local prodShortName::String = shortNameOf(top.frame.fullName);
   local targetProd::String = target ++ ":" ++ prodShortName;
 
+  local exportedBySourceProd::Boolean =
+    isExportedBy(top.grammarName, [top.frame.sourceGrammar], top.compiledGrammars);
   local inputs :: [Expr] = 
     map(\ input::NamedSignatureElement ->
       case getOccursDcl(attr.lookupAttribute.dcl.fullName, input.typerep.typeName, top.env) of
       | dcl :: _ -> Silver_Expr { @$name{input.elementName}.$QName{^attr} }
       -- TODO: Currently, we don't do any special error checking in case
       -- the attribute doesn't occur on a nonterminal child when it should;
-      -- we just get a type error.
+      -- we just get a type error when the child of the target prod has a 
+      -- different (target NT) type.
       | [] ->
         if isDecorable(input.typerep, top.env)
-        then Silver_Expr { @$name{input.elementName} }
+        then if exportedBySourceProd
+          then Silver_Expr { @$name{input.elementName} }
+          else Silver_Expr { ^$name{input.elementName} }
         else Silver_Expr { $name{input.elementName} }
       end,
       top.frame.signature.inputElements);
