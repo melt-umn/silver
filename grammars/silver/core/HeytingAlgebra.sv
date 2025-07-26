@@ -94,3 +94,6 @@ instance HeytingAlgebra a => HeytingAlgebra (a ::= b) {
   disj = \ p::(a ::= b) q::(a ::= b)  -> \ x -> disj(p(x), q(x));
   not = \ p::(a ::= b) -> \ x -> not(p(x));
 }
+
+fun all HeytingAlgebra a => a ::= l::[a] = foldr(conj, tt, l);
+fun any HeytingAlgebra a => a ::= l::[a] = foldr(disj, ff, l);
