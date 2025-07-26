@@ -1,11 +1,68 @@
 grammar silver:compiler:extension:nanopass;
 
+import silver:util:treemap as tm;
+
 terminal Pass_t 'pass' lexer classes {KEYWORD};
+terminal From_t 'from' lexer classes {KEYWORD};
 
 concrete production translationPassDcl
-top::AGDcl ::= 'translation' 'pass' a::Name 'to' target::QName ';'
+top::AGDcl ::= 'translation' 'pass' a::Name 'from' source::QName 'to' target::QName ';'
 {
-  top.unparse = "translation pass " ++ a.unparse ++ " to " ++ target.unparse ++ ";";
+  top.unparse = "translation pass " ++ a.unparse ++ " from " ++ source.unparse ++ " to " ++ target.unparse ++ ";";
+  forwards to translationPassExcludingDcl($1, $2, ^a, 'from', ^source, 'to', ^target, 'excluding', prodNameListNil(), ';');
+}
+
+concrete production translationPassExcludingDcl
+top::AGDcl ::= 'translation' 'pass' a::Name 'from' source::QName 'to' target::QName 'excluding' excl::ProdNameList ';'
+{
+  top.unparse = "translation pass " ++ a.unparse ++ " from " ++ source.unparse ++ " to " ++ target.unparse ++ " excluding " ++ excl.unparse ++ ";";
+  top.moduleNames := [];
+
+  top.errors <-
+    if null(searchEnvTree(source.name, top.compiledGrammars))
+    then [errFromOrigin(source, "Source grammar '" ++ source.name ++ "' not found.")]
+    else [];
+
+  local passAttrDcl::AGDcl = 
+    translationPassAttrDcl($1, $2, 'attribute', @a, 'to', @target, ';');
+  top.defs := passAttrDcl.defs;  -- Avoiding circularity
+  
+  -- All non-data nonterminals declared in both the source and target grammars
+  local transNTs::[String] =
+    filterMap(\ i::EnvItem<TypeDclInfo> ->
+      case i.dcl of
+      | ntDcl(fn, _, false, _, _) when
+          getTypeDcl(target.name ++ ":" ++ shortNameOf(fn), top.env) matches _ :: _ -> just(fn)
+      | _ -> nothing()
+      end,
+      flatMap((.typeList), flatMap((.defs), searchEnvTree(source.name, top.compiledGrammars))));
+
+  local occursDcls::AGDcl =
+    foldr(appendAGDcl, emptyAGDcl(),
+      map(\ nt::String -> Silver_AGDcl { attribute $Name{^a} occurs on $name{nt}; }, transNTs));
+  top.occursDefs := occursDcls.occursDefs;  -- Avoiding circularity
+
+  excl.env = top.env;
+
+  -- All productions of transNTs declared in both the source and target grammars
+  local transProds::[ValueDclInfo] =
+    filter(
+      \ d::ValueDclInfo -> 
+        !d.hasForward && !contains(d.fullName, excl.names) &&
+        !null(getValueDcl(target.name ++ ":" ++ shortNameOf(d.fullName), top.env)),
+      flatMap(getKnownProds(_, top.env), transNTs));
+  
+  local propagateDcls::AGDcl =
+    foldr(appendAGDcl, emptyAGDcl(),
+      map(propagateAspectDcl(_, attrNameListOne(elemNotShared(), qNameId(^a))), transProds));
+
+  forwards to appendAGDcl(@passAttrDcl, appendAGDcl(@occursDcls, @propagateDcls));
+}
+
+concrete production translationPassAttrDcl
+top::AGDcl ::= 'translation' 'pass' 'attribute' a::Name 'to' target::QName ';'
+{
+  top.unparse = "translation pass attribute " ++ a.unparse ++ " to " ++ target.unparse ++ ";";
   top.moduleNames := [];
 
   production fName :: String = top.grammarName ++ ":" ++ a.name;
@@ -17,7 +74,7 @@ top::AGDcl ::= 'translation' 'pass' a::Name 'to' target::QName ';'
     if null(searchEnvTree(target.name, top.compiledGrammars))
     then [errFromOrigin(target, "Target grammar '" ++ target.name ++ "' not found.")]
     else [];
-  
+
   forwards to
     defsAGDcl(
       [attrDef(defaultEnvItem(passDcl(fName, target.name, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
