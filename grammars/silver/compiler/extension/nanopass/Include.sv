@@ -105,7 +105,6 @@ top::TransformStmt ::= 'annotate' 'attributes' ns::AttrNames ';'
 {
   top.unparse = "annotate attributes " ++ ns.unparse ++ ";";
   top.annotatedAttributes <- ts:fromList(ns.names);
-  top.errors <- [wrnFromOrigin(top, "Annotating attributes is not yet implemented")];
 }
 
 monoid attribute closeErrors :: [Message];
@@ -175,8 +174,11 @@ top::AttrNames ::= n::QName ',' ns::AttrNames
   top.names = n.lookupAttribute.fullName :: ns.names;
   top.errors <- n.lookupAttribute.errors;
   top.annotateErrors <-
-    if n.lookupAttribute.found && n.lookupAttribute.dcl.isAnnotation
+    if !n.lookupAttribute.found then []
+    else if n.lookupAttribute.dcl.isAnnotation
     then [errFromOrigin(n, s"${n.name} is already an annotation")]
+    else if n.lookupAttribute.dcl.isTranslation
+    then [errFromOrigin(n, s"${n.name} is a translation attribute and cannot be annotated")]
     else [];
 }
 concrete production oneAttrName

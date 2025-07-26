@@ -35,22 +35,28 @@ aspect isIncluded on top::ProductionStmt of
 | forwardsTo(_, _, _, _) -> tt
 | forwardingWith(_, _, _, _, _, _) -> tt
 | synthesizedAttributeDef(dl, attr, _) ->
-  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
+  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName) &&
+  !isAttributeAnnotated(_, attr.attrDcl.fullName)
 | inheritedAttributeDef(dl, attr, _) ->
-  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
+  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName) &&
+  !isAttributeAnnotated(_, attr.attrDcl.fullName)
 | localValueDef(q, _) -> q.lookupValue.typeScheme.monoType.isIncluded
 -- collections
 | collectionAttributeDclProd(_, _, _, _, te, _, _, _) -> te.isIncluded
 | baseCollectionValueDef(q, _) -> q.lookupValue.typeScheme.monoType.isIncluded
 | appendCollectionValueDef(q, _) -> q.lookupValue.typeScheme.monoType.isIncluded
 | synBaseColAttributeDef(dl, attr, _) ->
-  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
+  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName) &&
+  !isAttributeAnnotated(_, attr.attrDcl.fullName)
 | synAppendColAttributeDef(dl, attr, _) ->
-  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
+  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName) &&
+  !isAttributeAnnotated(_, attr.attrDcl.fullName)
 | inhBaseColAttributeDef(dl, attr, _) ->
-  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
+  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName) &&
+  !isAttributeAnnotated(_, attr.attrDcl.fullName)
 | inhAppendColAttributeDef(dl, attr, _) ->
-  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName)
+  dl.isIncluded && isAttributeIncluded(_, attr.attrDcl.fullName) &&
+  !isAttributeAnnotated(_, attr.attrDcl.fullName)
 | _ -> ff
 end;
 aspect isIncluded on top::DefLHS of

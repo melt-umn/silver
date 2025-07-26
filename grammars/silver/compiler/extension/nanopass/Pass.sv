@@ -157,19 +157,19 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName target::String
       end,
       top.frame.signature.inputElements);
   local annotations :: [Pair<String Expr>] =
-    -- TODO: Support annotated attributes
-    map(
-      makeAnnoArg(top.frame.signature.outputElement.elementName, _),
-      top.frame.signature.namedInputElements);
+    case getValueDcl(targetProd, top.env) of
+    | dcl :: _ -> map(
+        makeAnnoArg(top.frame.signature.outputElement.elementName, _),
+        dcl.namedSignature.namedInputElements)
+    | _ -> []
+    end;
   nondecorated local result::Expr =
     mkFullFunctionInvocation(baseExpr(qName(targetProd)), inputs, annotations);
 
   forwards to propagateImpl(includeShared, attr,
-    case getValueDcl(targetProd, top.env) of
-    | dcl :: _ ->
-      Silver_ProductionStmt {
-        $name{top.frame.signature.outputElement.elementName}.$QName{^attr} = $Expr{result};
-      }
-    | [] -> errorProductionStmt([errFromOrigin(attr, s"Production '${prodShortName}' not found in target grammar '${target}' of pass '${attr.lookupAttribute.fullName}'")])
-    end);
+    if null(getValueDcl(targetProd, top.env))
+    then errorProductionStmt([errFromOrigin(attr, s"Production '${prodShortName}' not found in target grammar '${target}' of pass '${attr.lookupAttribute.fullName}'")])
+    else Silver_ProductionStmt {
+      $name{top.frame.signature.outputElement.elementName}.$QName{^attr} = $Expr{result};
+    });
 }

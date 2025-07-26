@@ -27,18 +27,22 @@ aspect isIncluded on top::AGDcl of
 | attributeDclTrans(_, _, n, _, _, _, _) -> isAttributeIncluded(_, fName)
 | attributionDcl(_, at, _, _, _, nt, _, _) ->
   isAttributeIncluded(_, at.lookupAttribute.fullName) &&
-  isTypeIncluded(_, nt.lookupType.fullName)
-| productionDcl(_, _, n, _, _, _) -> isValueIncluded(_, fName)
-| functionDcl(_, n, _, _) -> isValueIncluded(_, fName)
-| aspectProductionDcl(_, _, n, _, _) -> isValueIncluded(_, n.lookupValue.fullName)
-| aspectFunctionDcl(_, _, n, _, _) -> isValueIncluded(_, n.lookupValue.fullName)
+  isTypeIncluded(_, nt.lookupType.fullName) &&
+  ((\ _ -> nt.lookupType.dcl.sourceGrammar == top.grammarName) ||
+   !isAttributeAnnotated(_, at.lookupAttribute.fullName))
+| productionDcl(_, _, n, _, _, _) -> isValueIncluded(_, fName) && namedSig.typeScheme.isIncluded
+| functionDcl(_, n, _, _) -> isValueIncluded(_, fName) && namedSig.typeScheme.isIncluded
+| aspectProductionDcl(_, _, n, _, _) ->
+  isValueIncluded(_, n.lookupValue.fullName) && n.lookupValue.typeScheme.isIncluded
+| aspectFunctionDcl(_, _, n, _, _) ->
+  isValueIncluded(_, n.lookupValue.fullName) && n.lookupValue.typeScheme.isIncluded
 | aspectDefaultProduction(_, _, _, ns, _) -> ns.namedSignature.outputElement.typerep.isIncluded
 | typeClassDcl(_, _, _, n, _, _, _, _) -> isTypeIncluded(_, fName)
 | instanceDcl(_, _, _, n, ty, _, _, _) ->
-  isTypeIncluded(_, n.lookupType.fullName) &&
-  ty.isIncluded
-| globalValueDclConcrete(_, _, n, _, _, _, _, _, _) -> isValueIncluded(_, fName)
-| shortFunctionDcl(_, n, _, _, _, _) -> isValueIncluded(_, fName)
+  isTypeIncluded(_, n.lookupType.fullName) && ty.isIncluded
+| globalValueDclConcrete(_, n, _, _, _, _, _, e, _) ->
+  isValueIncluded(_, fName) && e.frame.signature.typeScheme.isIncluded
+| shortFunctionDcl(_, n, _, _, _, _) -> isValueIncluded(_, fName) && namedSig.typeScheme.isIncluded
 | dispatchSigDcl(_, n, _, _, _) -> isTypeIncluded(_, fName)
 | collectionAttributeDclSyn(_, _, n, _, _, _, _, _, _) -> isAttributeIncluded(_, fName)
 | collectionAttributeDclInh(_, _, n, _, _, _, _, _, _) -> isAttributeIncluded(_, fName)
@@ -53,13 +57,20 @@ functor attribute includeTrans ::= Decorated TransformStmts occurs on
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
   AspectDefaultProductionSignature,
-  ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem;
+  ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem,
+  NameOrBOperator;
 propagate includeTrans on AGDcl,
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem,
   AspectDefaultProductionSignature,
-  ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem
-excluding nonterminalDcl, defaultAttributionDcl, errorAttributionDcl, aspectProductionDcl, aspectFunctionDcl, instanceDcl;
+  ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem,
+  NameOrBOperator
+excluding
+  nonterminalDcl,
+  attributeDclInh, attributeDclSyn, collectionAttributeDclSyn, collectionAttributeDclInh, monoidAttributeDcl,
+  defaultAttributionDcl, errorAttributionDcl,
+  aspectProductionDcl, aspectFunctionDcl, instanceDcl,
+  defsAGDcl;
 
 aspect includeTrans on top::AGDcl of
 | nonterminalDcl(q, _, n, tl, nm, _) -> \ tr::Decorated TransformStmts ->
@@ -68,6 +79,26 @@ aspect includeTrans on top::AGDcl of
   else if ts:contains(fName, tr.openedNonterminals) && q.closed
   then nonterminalDcl(q.removeClosed, 'nonterminal', ^n, ^tl, ^nm, ';')
   else nonterminalDcl(^q, 'nonterminal', ^n, ^tl, ^nm, ';')
+| attributeDclInh(_, _, n, tl, _, te, _) -> \ tr::Decorated TransformStmts ->
+  if ts:contains(fName, tr.annotatedAttributes)
+  then annotationDcl('annotation', qNameId(^n), ^tl, '::', te.prevTypeTrans, ';')
+  else attributeDclInh('inherited', 'attribute', ^n, ^tl, '::', te.includeTrans(tr), ';')
+| attributeDclSyn(_, _, n, tl, _, te, _) -> \ tr::Decorated TransformStmts ->
+  if ts:contains(fName, tr.annotatedAttributes)
+  then annotationDcl('annotation', qNameId(^n), ^tl, '::', te.prevTypeTrans, ';')
+  else attributeDclSyn('synthesized', 'attribute', ^n, ^tl, '::', te.includeTrans(tr), ';')
+| collectionAttributeDclSyn(_, _, n, tl, _, te, _, q, _) -> \ tr::Decorated TransformStmts ->
+  if ts:contains(fName, tr.annotatedAttributes)
+  then annotationDcl('annotation', qNameId(^n), ^tl, '::', te.prevTypeTrans, ';')
+  else collectionAttributeDclSyn('synthesized', 'attribute', ^n, ^tl, '::', te.includeTrans(tr), 'with', q.includeTrans(tr), ';')
+| collectionAttributeDclInh(_, _, n, tl, _, te, _, q, _) -> \ tr::Decorated TransformStmts ->
+  if ts:contains(fName, tr.annotatedAttributes)
+  then annotationDcl('annotation', qNameId(^n), ^tl, '::', te.prevTypeTrans, ';')
+  else collectionAttributeDclInh('inherited', 'attribute', ^n, ^tl, '::', te.includeTrans(tr), 'with', q.includeTrans(tr), ';')
+| monoidAttributeDcl(_, _, n, tl, _, te, _, e, _, q, _) -> \ tr::Decorated TransformStmts ->
+  if ts:contains(fName, tr.annotatedAttributes)
+  then annotationDcl('annotation', qNameId(^n), ^tl, '::', te.prevTypeTrans, ';')
+  else monoidAttributeDcl('monoid', 'attribute', ^n, ^tl, '::', te.includeTrans(tr), 'with', e.includeTrans(tr), ',', q.includeTrans(tr), ';')
 | attributionDcl(_, at, attl, _, _, nt, nttl, _) -> \ tr::Decorated TransformStmts ->
   attributionDcl('attribute',
     qName(unqualifyIfSameGrammar(top.grammarName, at.lookupAttribute.fullName)),
@@ -89,6 +120,7 @@ aspect includeTrans on top::AGDcl of
   instanceDcl('instance', cl.includeTrans(tr), '=>',
     qName(unqualifyIfSameGrammar(top.grammarName, n.lookupType.fullName)).qNameType,
     ty.includeTrans(tr), '{', b.includeTrans(tr), '}')
+| defsAGDcl(_) -> \ _-> errorAGDcl([errFromOrigin(top, "Unsupported construct in included grammar")])
 end;
 
 functor attribute removeClosed occurs on NTDeclQualifiers;
@@ -110,3 +142,5 @@ fun isValueIncluded Boolean ::= tr::Decorated TransformStmts fn::String =
   !ts:contains(fn, tr.excludedValues);
 fun isAttributeIncluded Boolean ::= tr::Decorated TransformStmts fn::String =
   !ts:contains(fn, tr.excludedAttributes);
+fun isAttributeAnnotated Boolean ::= tr::Decorated TransformStmts fn::String =
+  ts:contains(fn, tr.annotatedAttributes);

@@ -26,6 +26,20 @@ aspect includeTrans on top::TypeExpr of
     tl.includeTrans(tr))
 end;
 
+-- Replicate the type expression, fully qualifying names to refer to the same type as in the same pass.
+functor attribute prevTypeTrans occurs on
+  TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs;
+propagate prevTypeTrans on
+  TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs, NamedTypeExprs
+  excluding nominalTypeExpr, aliasAppTypeExpr;
+
+aspect prevTypeTrans on top::TypeExpr of
+| nominalTypeExpr(n) ->
+  nominalTypeExpr(qName(n.lookupType.fullName).qNameType)
+| aliasAppTypeExpr(n, tl) ->
+  appTypeExpr(nominalTypeExpr(qName(n.lookupType.fullName).qNameType), tl.prevTypeTrans)
+end;
+
 -- Annoyingly, Type appears in the AST in few places.
 -- It would be nice to get rid of all this:
 attribute includeTrans occurs on
