@@ -631,6 +631,22 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
+	 * Evaluate a translation attribute without statically knowing the auxiliary inh indicies.
+	 * This is the slow path, used only in a corner case where the translation attribute occurrence
+	 * is an optional export.
+	 * 
+	 * @param attribute The index of the attribute to evaluate.
+	 * @return The value of the attribute.
+	 */
+	public DecoratedNode translation(final int attribute) {
+		TransOccursInfo transOccurs = self.getTransOccurs(attribute);
+		if(transOccurs == null) {
+			throw new SilverInternalError("TransOccursInfo missing for " + self.getNameOfSynAttr(attribute) + " in " + getDebugID());
+		}
+		return translation(attribute, transOccurs.inhsAttribute, transOccurs.decSiteAttribute);
+	}
+
+	/**
 	 * Evaluate an attribute that may be either synthesized or translation.
 	 * This is only used for debugging.
 	 * 

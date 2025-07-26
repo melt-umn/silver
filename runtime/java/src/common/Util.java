@@ -112,6 +112,16 @@ public final class Util {
 	}
 
 	/**
+	 * Construct a Lazy that evaluates a Lazy and gets a decorated child from the result.
+	 */
+	public static Lazy wrapDecSiteAccessorChildDecorated(final Lazy parentLazy, final int child) {
+		if(parentLazy == null) {
+			return null;
+		}
+		return (context) -> ((DecoratedNode)parentLazy.eval(context)).childDecorated(child);
+	}
+
+	/**
 	 * Used by the 'error("wat")' syntax in Silver.
 	 *
 	 * @param o the "wat"
