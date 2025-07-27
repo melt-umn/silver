@@ -58,6 +58,11 @@
             "default": true,
             "description": "Enable the modular well-definedness analysis"
           },
+          "silver.excludeGrammars": {
+            "type": "array",
+            "default": [],
+            "description": "Grammars to exclude from being built"
+          },
           "silver.jvmArgs": {
             "type": "string",
             "default": "-Xmx6G -Xss20M",
