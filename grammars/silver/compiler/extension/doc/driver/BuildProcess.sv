@@ -105,7 +105,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
       end), specs));
 
   top.run = do { println(report); return 0; };
-  top.order = 5;
+  top.order = 3;
 }
 
 
@@ -117,7 +117,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputL
     traverse_(writeSpec(_, outputLoc), specs);
     return 0;
   };
-  top.order = 4;
+  top.order = 2;
 }
 
 function writeSpec

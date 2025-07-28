@@ -63,5 +63,5 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       } else buildGrammar;
     };
 
-  top.order = 5;
+  top.order = 3;
 }

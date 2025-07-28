@@ -5,18 +5,19 @@ grammar silver:compiler:driver;
  - Negative = configuration/installation error
  - 1-19 = command line/start up error
  - 20+ = Normal use error (errors in spec)
- - 127 = "abnormal" success (e.g. printed version string, quit now)
+ - 127 = "abnormal" success, ant shouldn't run (e.g. printed version string, quit now)
  - 0 = success of course
  -}
 
 {- Orders:
  - 0: parsing errors (also flow graph emitting)
- - 1: binding errors
- - 3: interfaces and classes
- - 4: doc
- - 5: copper_mda
+ - 1: semantic errors
+ - 2: docs, refactor
+ - 3: copper_mda, report undoc
+ - 4: exit if no translation needed
+ - 5: java, interfaces
  - 6: buildxml
- - 7: impide
+ - 7: copper
  -}
 
 aspect production compilation
@@ -32,7 +33,7 @@ abstract production touchIfaces
 top::DriverAction ::= r::[Decorated RootSpec] genPath::String
 {
   top.run = do { touchFiles(map(sviPath(_, genPath), r)); return 0; };
-  top.order = 3;
+  top.order = 5;
 }
 fun sviPath String ::= r::Decorated RootSpec genPath::String =
   genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi";
