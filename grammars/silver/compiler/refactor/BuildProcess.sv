@@ -61,9 +61,9 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
   top.run = do {
     eprintln("Applying Refactoring.");
     traverse_(refactorSpec, specs);
-    return 0;
+    return 127;  -- Terminate after refactoring is complete
   };
-  top.order = 4;
+  top.order = 2;
 }
 
 fun refactorSpec IO<()> ::= r::Decorated RootSpec =

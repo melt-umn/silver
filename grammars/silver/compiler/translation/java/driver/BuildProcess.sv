@@ -108,18 +108,19 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdAr
   -- Seed flow deps with {config}
   keepFiles <- if false then error(genericShow(a)) else [];
 
-  top.postOps <-
-    [genBuild(buildXmlLocation, buildXml)] ++
-    (if a.noJavaGeneration then []
-     else [genJava(a, benv.silverGen, keepFiles, grammarsToTranslate)]);
+  top.postOps <- [
+    exitIfNoTranslation(a.noJavaGeneration, outputFile, g.grammarList, grammarsToTranslate),
+    genJava(benv.silverGen, keepFiles, grammarsToTranslate),
+    genBuild(buildXmlLocation, buildXml)
+  ];
 
   -- From here on, it's all build.xml stuff:
 
-  -- Presently, copper, copper_mda, and impide all contribute new targets into build.xml:
+  -- Presently, unused?
   production attribute extraTopLevelDecls :: [String] with ++;
   extraTopLevelDecls := [];
 
-  -- Presently, impide and copper_mda introduce a new top-level goal:
+  -- Presently, unused?
   production attribute extraDistDeps :: [String] with ++;
   extraDistDeps := if a.noJavaGeneration then [] else ["jars"];
   
@@ -228,15 +229,30 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "</project>\n";
 }
 
+abstract production exitIfNoTranslation
+top::DriverAction ::= noJavaGeneration::Boolean  jarFile::String  specs::[Decorated RootSpec]  toTranslate::[Decorated RootSpec]
+{
+  top.run = if noJavaGeneration then pure(127) else do {
+    jarFileTime <- fileTime(jarFile);
+    if null(toTranslate) && jarFileTime > foldr(max, 0, map((.grammarTime), specs))
+      then do {
+        eprintln("Jar file " ++ jarFile ++ " is up to date.");
+        return 127;
+      }
+      else pure(0);
+  };
+  top.order = 4;
+}
+
 abstract production genJava
-top::DriverAction ::= a::Decorated CmdArgs  silverGen::String  keepFiles::[String]  specs::[Decorated RootSpec]
+top::DriverAction ::= silverGen::String  keepFiles::[String]  specs::[Decorated RootSpec]
 {
   top.run = do {
     eprintln("Generating Translation.");
     traverse_(writeSpec(silverGen, keepFiles, _), specs);
     return 0;
   };
-  top.order = 4;
+  top.order = 5;
 }
 
 abstract production genBuild
