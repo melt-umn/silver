@@ -108,11 +108,12 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdAr
   -- Seed flow deps with {config}
   keepFiles <- if false then error(genericShow(a)) else [];
 
-  top.postOps <- [
-    exitIfNoTranslation(a.noJavaGeneration, outputFile, g.grammarList, grammarsToTranslate),
-    genJava(benv.silverGen, keepFiles, grammarsToTranslate),
-    genBuild(buildXmlLocation, buildXml)
-  ];
+  top.postOps <- 
+    checkJarUpToDate(a.noJavaGeneration, outputFile, g.grammarList, grammarsToTranslate) ::
+    if a.noJavaGeneration then [] else [
+      genJava(benv.silverGen, keepFiles, grammarsToTranslate),
+      genBuild(buildXmlLocation, buildXml)
+    ];
 
   -- From here on, it's all build.xml stuff:
 
@@ -229,7 +230,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "</project>\n";
 }
 
-abstract production exitIfNoTranslation
+abstract production checkJarUpToDate
 top::DriverAction ::= noJavaGeneration::Boolean  jarFile::String  specs::[Decorated RootSpec]  toTranslate::[Decorated RootSpec]
 {
   top.run = if noJavaGeneration then pure(127) else do {
@@ -241,7 +242,7 @@ top::DriverAction ::= noJavaGeneration::Boolean  jarFile::String  specs::[Decora
       }
       else pure(0);
   };
-  top.order = 4;
+  top.order = 8;
 }
 
 abstract production genJava
