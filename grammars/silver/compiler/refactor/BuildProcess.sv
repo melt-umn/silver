@@ -16,7 +16,7 @@ top::CmdArgs ::= rest::CmdArgs
 {
   top.doRefactor = true;
   top.doClean = true;
-  top.noBindingChecking = true;
+  top.noSemanticAnalysis = true;
   top.noJavaGeneration = true;
   forwards to @rest;
 }

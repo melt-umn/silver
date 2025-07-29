@@ -13,19 +13,20 @@ grammar silver:compiler:driver;
  - 0: parsing errors (also flow graph emitting)
  - 1: semantic errors
  - 2: docs, refactor
- - 3: copper_mda, report undoc
- - 4: exit if no translation needed
+ - 3: report undoc
+ - 4: copper_mda
  - 5: java, interfaces
  - 6: buildxml
  - 7: copper
+ - 8: check if ant should run
  -}
 
 aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decorated CmdArgs  benv::BuildEnv
 {
   top.postOps <- [printAllParsingErrors(top.allGrammars)];
-  top.postOps <- if a.noBindingChecking then [] else
-    [printAllBindingErrors(top.allGrammars)];
+  top.postOps <- if a.noSemanticAnalysis then [] else
+    [printAllSemanticErrors(top.allGrammars)];
   top.postOps <- [touchIfaces(r.grammarList, benv.silverGen)];
 }
 
@@ -38,7 +39,7 @@ top::DriverAction ::= r::[Decorated RootSpec] genPath::String
 fun sviPath String ::= r::Decorated RootSpec genPath::String =
   genPath ++ "src/" ++ grammarToPath(r.declaredName) ++ "Silver.svi";
 
-abstract production printAllBindingErrors
+abstract production printAllSemanticErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
   -- Force printing of status before doing error checks
@@ -47,10 +48,10 @@ top::DriverAction ::= specs::[Decorated RootSpec]
     forward.run;
   };
 
-  forwards to printAllBindingErrorsHelp(specs);
+  forwards to printAllSemanticErrorsHelp(specs);
 }
 
-abstract production printAllBindingErrorsHelp
+abstract production printAllSemanticErrorsHelp
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
   top.run =
@@ -60,7 +61,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
         unless(null(spec.grammarErrors),
           eprintln("Errors for " ++ spec.declaredName ++ "\n" ++ flatMap(renderMessages(spec.grammarSource, _), spec.grammarErrors)));
         let containsErrors :: Boolean = grammarContainsErrors(spec.grammarErrors, spec.config.warnError);
-        recurse :: Integer <- printAllBindingErrorsHelp(rest).run;
+        recurse :: Integer <- printAllSemanticErrorsHelp(rest).run;
         return if containsErrors || recurse != 0 then 20 else 0;
       }
     end;
