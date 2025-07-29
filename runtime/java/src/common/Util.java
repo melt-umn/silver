@@ -448,6 +448,23 @@ public final class Util {
 	}
 
 	/**
+	 * Attempt to reflectively call the showOriginInfoChain function from silver:langutil.
+	 * 
+	 * @param o  The object to show the origin of
+	 * @return A string representation.
+	 */
+	public static StringCatter showOriginInfoChain(Object o) {
+		try {
+			Method showDoc = Class.forName("silver.langutil.PshowOriginInfoChain")
+				.getMethod("invoke", OriginContext.class, Object.class);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, o);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new SilverInternalError("Failed to call silver:langutil:showOriginInfoChain on " + o + ": " + e.getMessage(), e);
+		}
+	}
+
+	/**
 	 * Calls a Copper parser, and returns a ParseResult<ROOT> object.
 	 *
 	 * @param parser The Copper parser to call

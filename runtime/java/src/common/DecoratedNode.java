@@ -1032,6 +1032,7 @@ public class DecoratedNode implements Decorable, Typed {
 		List<String> properties = new ArrayList<>();
 		properties.add("l:grammar");
 		properties.add("l:show");
+		properties.add("l:origin");
 		if(self.hasForward()) {
 			properties.add("l:forward");
 		}
@@ -1121,6 +1122,9 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		if (propName.equals("show")) {
 			return Util.genericShow(self);
+		}
+		if (propName.equals("origin")) {
+			return Util.showOriginInfoChain(self);
 		}
 		if (propName.equals("forward")) {
 			return makeCprInvokeResult(forward());
