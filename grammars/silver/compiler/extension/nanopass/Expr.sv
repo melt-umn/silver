@@ -108,3 +108,14 @@ top::PrimPattern ::= @qn::QName @ns::VarBinders @e::Expr
       qName(unqualifyIfSameGrammar(top.grammarName, qn.lookupValue.fullName)),
       '(', ^ns, ')', '->', e.includeTrans(tr));
 }
+
+monoid attribute mentionedAttrs::[String] occurs on
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
+  LambdaRHS, LambdaRHSElem, AssignExpr, PrimPatterns, PrimPattern, QNameAttrOccur;
+propagate mentionedAttrs on
+  Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
+  LambdaRHS, LambdaRHSElem, AssignExpr, PrimPatterns, PrimPattern;
+
+aspect mentionedAttrs on top::QNameAttrOccur using := of
+| qNameAttrOccur(at) -> if top.found && !top.attrDcl.isAnnotation then [top.attrDcl.fullName] else []
+end;
