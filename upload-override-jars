@@ -10,7 +10,7 @@ cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 # fi
 
 branch_name="$(git rev-parse --abbrev-ref HEAD)"
-encoded_branch_name="$(curl -Gso /dev/null -w %{url_effective} --data-urlencode $branch_name "" | cut -c 3-)"
+encoded_branch_name="$(python3 -c 'import urllib.parse, sys; print(urllib.parse.quote_plus(sys.argv[1]))' "$branch_name")"
 commit_hash="$(git rev-parse HEAD)"
 
 # If your username on the your development machine doesn't match your username
