@@ -913,17 +913,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	private boolean isChildTree(int idx) {
-		if(self.isChildDecorable(idx)) return true;
-		Object o = self.getChild(idx);
-		if(o instanceof DataNode) {
-			// For nodes with locations, only include data nonterminal children if they have locations,
-			// to avoid polluting node selection with lost of locationless nodes.
-			if(self instanceof silver.core.Alocation || self instanceof Tracked) {
-				return o instanceof silver.core.Alocation || o instanceof Tracked;
-			}
-			return true;
-		}
-		return false;
+		return self.isChildDecorable(idx) || self.getChild(idx) instanceof DataNode;
 	}
 
 	// Data nonterminal trees have TopNode as their parent in the AST,
@@ -1014,7 +1004,12 @@ public class DecoratedNode implements Decorable, Typed {
 	public boolean cpr_nodeListVisible() {
 		// Hide nodes from external files when creating a probe
 		determineLocs();
-		return !isExternal;
+		if (isExternal) return false;
+		if (self instanceof DataNode && !(self instanceof silver.core.Alocation || self instanceof Tracked)) {
+			// Hide data nonterminal nodes without locations
+			return false;
+		}
+		return true;
 	}
 
 	public String cpr_nodeLabel() {
