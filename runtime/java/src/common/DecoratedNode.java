@@ -51,10 +51,11 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * <p> May be actual parent. Or production this is a local in. Or just a production that
 	 * called 'decorate' to create this one.
+	 * Effectively final, except it may be overridden by the CodeProber interface for data nonterminals.
 	 * 
 	 * @see TopNode
 	 */
-	protected final DecoratedNode parent;
+	protected DecoratedNode parent;
 	/**
 	 * Is this the forward for the production of forwardParent?
 	 * This is true for normal forwarding, where there will be syn copy equations,
@@ -887,22 +888,53 @@ public class DecoratedNode implements Decorable, Typed {
 	// Code Prober interface methods.
 	// These have certain names and signatures that Code Prober expects to call reflectively;
 	// otherwise these methods should not be used directly.
+
+	// Children that should appear in the Code Prober tree view.
+	// Currently, just decorable and data nonterminal children.
 	public int getNumChild() {
 		int res = 0;
 		for (int i = 0; i < self.getNumberOfChildren(); i++) {
-			if (self.isChildDecorable(i)) res++;
+			if (isChildTree(i)) res++;
 		}
 		return res;
 	}
 	public DecoratedNode getChild(int idx) {
 		int i = 0;
-		while (!self.isChildDecorable(i)) i++;
+		while (!isChildTree(i)) i++;
 		for (int j = 0; j < idx; j++) {
 			i++;
-			while (!self.isChildDecorable(i)) i++;
+			while (!isChildTree(i)) i++;
 		}
-		return childDecorated(i);
+		if (self.getChild(i) instanceof DataNode) {
+			return decorateDataNode((DataNode)self.getChild(i));
+		} else {
+			return childDecorated(i);
+		}
 	}
+
+	private boolean isChildTree(int idx) {
+		if(self.isChildDecorable(idx)) return true;
+		Object o = self.getChild(idx);
+		if(o instanceof DataNode) {
+			// For nodes with locations, only include data nonterminal children if they have locations,
+			// to avoid polluting node selection with lost of locationless nodes.
+			if(self instanceof silver.core.Alocation || self instanceof Tracked) {
+				return o instanceof silver.core.Alocation || o instanceof Tracked;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	// Data nonterminal trees have TopNode as their parent in the AST,
+	// however we need a proper parent for CodeProber to create a node locator.
+	// So here we override the parent of the tree to be the first tree that demands it.
+	private DecoratedNode decorateDataNode(DataNode d) {
+		DecoratedNode dn = d.decorate();
+		if(dn.parent == TopNode.singleton) dn.parent = this;
+		return dn;
+	}
+
 	public DecoratedNode getParent() {
 		if (parent instanceof TopNode || parent.self instanceof FunctionNode) {
 			return null;
@@ -1143,7 +1175,7 @@ public class DecoratedNode implements Decorable, Typed {
 	/**
 	* Turn the value of an attribute into a value understood by Code Prober.
 	*/
-	private static Object makeCprInvokeResult(Object o) {
+	private Object makeCprInvokeResult(Object o) {
 		// Decorated trees that have a fixed relationship to their parent can be recursively explored.
 		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
 			return o;
@@ -1156,6 +1188,10 @@ public class DecoratedNode implements Decorable, Typed {
 		// Lists of silver:langutil:Message are converted to diagnostic objects understood by Code Prober.
 		if(o instanceof ConsCell && o != ConsCell.nil && ((ConsCell)o).head().getClass().getSuperclass().getName().equals("silver.langutil.NMessage")) {
 			return CodeProberDiagnostic.fromMessageList((ConsCell)o);
+		}
+		// Data nonterminal trees are explorable like decorated trees
+		if(o instanceof DataNode) {
+			return decorateDataNode((DataNode)o);
 		}
 		// By default, just stringify it.
 		return Util.genericShow(o).toString();
@@ -1187,6 +1223,35 @@ public class DecoratedNode implements Decorable, Typed {
 		for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
 			if(this == parent.synthesizedValues[i]) {
 				return parent.self.getNameOfSynAttr(i);
+			}
+		}
+		// Data nonterminal trees may appear in any position where they were initially demanded
+		if (self instanceof DataNode) {
+			for(int i = 0; i < parent.self.getNumberOfChildren(); i++) {
+				if(self == parent.self.getChild(i)) {
+					return parent.self.getNameOfChild(i);
+				}
+			}
+			for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {
+				if(self == parent.localValues[i]) {
+					return parent.self.getNameOfLocalAttr(i);
+				}
+			}
+			for(int i = 0; i < parent.self.getNumberOfInhAttrs(); i++) {
+				if(self == parent.inheritedValues[i]) {
+					return parent.self.getNameOfInhAttr(i);
+				}
+			}
+			for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
+				if(self == parent.synthesizedValues[i]) {
+					return parent.self.getNameOfSynAttr(i);
+				}
+			}
+			String[] annoNames = self.getAnnoNames();
+			for(int i = 0; i < annoNames.length; i++) {
+				if (self == parent.self.getAnno(annoNames[i])) {
+					return annoNames[i];
+				}
 			}
 		}
 		// Our parent doesn't know about us, so we must have been anonymously decorated somewhere.
