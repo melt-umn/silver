@@ -947,16 +947,26 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		return parent;
 	}
-  
+
 	// This is set by the generated main class CodeProber_parse method,
 	// to determine if any extracted location is in the main file.
 	static private String cprMainFilePath = null;
-	public static void setCprMainFilePath(String path) {
+	static public void setCprMainFilePath(String path) {
 		cprMainFilePath = path;
 	}
 
+	public void setIsInMainFile(boolean isInMainFile) {
+		this.isInMainFile = isInMainFile;
+		this.isInMainFileSet = true;
+		int nc = getNumChild();
+		for(int i = 0; i < nc; i++) {
+			getChild(i).setIsInMainFile(isInMainFile);
+		}
+	}
+
 	private boolean hasLocs = false;
-	private boolean isExternal = false;
+	private boolean isInMainFile = false;
+	private boolean isInMainFileSet = false;
 	private int startLine = 0, startColumn = 0, endLine = 0, endColumn = 0;
 	private final void determineLocs() {
 		if (hasLocs) return; // Only determine once.
@@ -977,13 +987,14 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		if(loc != null) {
 			String fileName = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-			if(fileName.equals(cprMainFilePath)) {
+			if(!isInMainFileSet) {
+				isInMainFile = cprMainFilePath.equals(fileName);
+			}
+			if(isInMainFile) {
 				startLine = loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
 				startColumn = loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
 				endLine = loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 				endColumn = loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
-			} else {
-				isExternal = true;
 			}
 
 			// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
@@ -992,7 +1003,7 @@ public class DecoratedNode implements Decorable, Typed {
 			if(getNumChild() > 0) {
 				DecoratedNode firstChild = getChild(0);
 				firstChild.determineLocs();
-				if(isExternal || startLine > firstChild.startLine) {
+				if(!isInMainFile || startLine > firstChild.startLine) {
 					startLine = firstChild.startLine;
 					startColumn = firstChild.startColumn;
 				} else if(startLine == firstChild.startLine &&
@@ -1001,7 +1012,7 @@ public class DecoratedNode implements Decorable, Typed {
 				}
 				DecoratedNode lastChild = getChild(getNumChild() - 1);
 				lastChild.determineLocs();
-				if(isExternal || endLine < lastChild.endLine) {
+				if(!isInMainFile || endLine < lastChild.endLine) {
 					endLine = lastChild.endLine;
 					endColumn = lastChild.endColumn;
 				} else if(endLine == lastChild.endLine &&
@@ -1011,17 +1022,21 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		}
 	}
-	public boolean cpr_isInsideExternalFile() { determineLocs(); return isExternal; }
+	public boolean cpr_isInsideExternalFile() { determineLocs(); return !isInMainFile; }
 	public int cpr_getStartLine() { determineLocs(); return startLine; }
 	public int cpr_getStartColumn() { determineLocs(); return startColumn; }
 	public int cpr_getEndLine() { determineLocs(); return endLine; }
 	public int cpr_getEndColumn() { determineLocs(); return endColumn; }
 
+	private boolean hasLocInfo() {
+		return self instanceof silver.core.Alocation || self instanceof Tracked;
+	}
+
 	public boolean cpr_nodeListVisible() {
 		// Hide nodes from external files when creating a probe
 		determineLocs();
-		if (isExternal) return false;
-		if (self instanceof DataNode && !(self instanceof silver.core.Alocation || self instanceof Tracked)) {
+		if (!isInMainFile) return false;
+		if (!hasLocInfo()) {
 			// Hide data nonterminal nodes without locations
 			return false;
 		}

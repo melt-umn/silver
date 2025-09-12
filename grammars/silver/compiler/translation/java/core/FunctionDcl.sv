@@ -33,10 +33,14 @@ top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
     appTypes(
       functionType(1, []),
         [appType(listCtrType(), stringType()),
-          appType(nonterminalType("silver:core:IO", [starKind()], false, false), decoratedType(freshType(), freshInhSet()))]);
+          appType(nonterminalType("silver:core:IO", [starKind()], false, false), freshType())]);
+  nondecorated local codeProberParseResType::Type = head(namedSig.outputElement.typerep.argTypes);
+  local codeProberParseValidType::Boolean =
+	!unify(namedSig.typerep, codeProberParseType).failure &&
+	(codeProberParseResType.isDecorated || codeProberParseResType.isData);
   top.errors <-
-    if id.name == "codeProberParse" && unify(namedSig.typerep, codeProberParseType).failure
-	  then [errFromOrigin(top, "codeProberParse function must have type signature (IO<Decorated a> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
+    if id.name == "codeProberParse" && !codeProberParseValidType
+	  then [errFromOrigin(top, "codeProberParse function must have type signature (IO<a> ::= [String]), where a is Decorated or a data nonterminal. Instead it has type " ++ prettyType(namedSig.typerep))]
 	  else [];
 }
 
