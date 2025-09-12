@@ -7,3 +7,4 @@ parser svParse::File {
 }
 
 fun main IO<Integer> ::= args::[String] = cmdLineRun(args, svParse);
+fun codeProberParse IO<Compilation> ::= args::[String] = codeProberRun(args, svParse);
