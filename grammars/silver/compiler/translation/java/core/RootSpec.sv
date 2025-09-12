@@ -113,6 +113,8 @@ ${g.initValues}
 		System.exit(1);""";
 
   local hasCodeProberParse::Boolean = !null(getValueDcl("codeProberParse", g.env));
+  local isCodeProberParseRetData::Boolean =
+    head(head(getValueDcl("codeProberParse", g.env)).typeScheme.typerep.outputType.argTypes).isData;
 
   local codeProberParseFn::String =
 	if hasCodeProberParse then s"""
@@ -126,7 +128,10 @@ ${g.initValues}
 
 		silver.core.NIOVal rv = silver.core.PevalIO.invoke(common.OriginContext.ENTRY_CONTEXT, ${package}.PcodeProberParse.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args)), common.IOToken.singleton);
 		rv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
-		return rv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal);
+		return ${
+		  if isCodeProberParseRetData
+		  then "((common.DataNode)rv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal)).decorate()"
+		  else "rv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal)"};
 	}""" else "";
 
   top.genFiles <- if hasMain || hasCodeProberParse then [("Main.java", s"""
