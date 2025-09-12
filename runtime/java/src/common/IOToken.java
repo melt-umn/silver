@@ -455,4 +455,15 @@ public final class IOToken implements Typed {
 	public TypeRep getType() {
 		return new BaseTypeRep("silver:core:IO");
 	}
+
+	public IOToken setTreeIsInMainFile(final Object x, final boolean b) {
+		if(x instanceof DecoratedNode) {
+			((DecoratedNode)x).setIsInMainFile(b);
+			return this;
+		} else if(x instanceof DataNode) {
+			((DataNode)x).decorate().setIsInMainFile(b);
+			return this;
+		}
+		return this;
+	}
 }
