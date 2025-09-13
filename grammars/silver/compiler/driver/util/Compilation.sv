@@ -9,8 +9,10 @@ import silver:compiler:analysis:warnings:flow only warnMissingInh;
 
 synthesized attribute initDirtyGrammars::[String];
 
-data nonterminal Compilation with postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initDirtyGrammars;
+data nonterminal Compilation with
+  initialChecks, postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initDirtyGrammars;
 
+synthesized attribute initialChecks :: IOErrorable<()> with applyFirst;
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
 synthesized attribute reGrammarList :: [Decorated RootSpec];
@@ -102,6 +104,10 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 
   local rGrammarNames :: [String] = map((.declaredName), r.grammarList);
 
+  -- Initial checks that should be performed on grammars from g, prior to computing defs/errors
+  top.initialChecks := pure(());
+
+  -- Actions to be performed after the initial build (check errors, generate translation, etc.)
   top.postOps := [];
 }
 

@@ -1,11 +1,23 @@
 grammar silver:compiler:extension:nanopass;
 
+import silver:util:graph as g;
+
 aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  _ _ _
 {
-  astDependentGrammars <- flatMap(
+  production allGrammarIncludes::[(String, String)] = flatMap(
     \ root::Decorated RootSpec -> map(\ gn::String -> (gn, root.declaredName), root.includedGrammars),
     grammarsRelevant);
+  astDependentGrammars <- allGrammarIncludes;
+
+  local includeGraph::g:Graph<String> =
+    g:transitiveClosure(g:add(allGrammarIncludes, g:empty()));
+  local cycleEdges::[(String, String)] =
+    filter(\ edge::(String, String) -> g:contains((edge.2, edge.1), includeGraph), allGrammarIncludes);
+  top.initialChecks <-
+    unless(null(cycleEdges),
+      throwRunError(1, "Cycle(s) detected in included grammars:\n" ++
+        flatMap(\ edge::(String, String) -> s"\t${edge.1} -> ${edge.2}\n", cycleEdges)));
 }
 
 attribute includedGrammars, includeTransDcls occurs on RootSpec, Grammar, File;

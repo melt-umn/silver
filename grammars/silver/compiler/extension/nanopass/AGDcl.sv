@@ -3,6 +3,11 @@ grammar silver:compiler:extension:nanopass;
 monoid attribute includedGrammars :: [String] occurs on AGDcls, AGDcl;
 propagate includedGrammars on AGDcls, AGDcl;
 
+aspect includedGrammars on top::AGDcl using := of
+| attributionDcl(_, _, _, _, _, _, _, _) -> []
+| propagateOnOneNTDcl(_, _, _) -> []
+end;
+
 monoid attribute includeTransDcls :: ([AGDcl] ::= Decorated TransformStmts) occurs on AGDcls, AGDcl;
 propagate includeTransDcls on AGDcls;
 

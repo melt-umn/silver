@@ -80,6 +80,7 @@ IOErrorable<Compilation> ::=
       removeAll(map((.declaredName), buildrun.grammarList), a.buildGrammars);
     when_(!null(missingGrammars),
       throwRunError(1, "The specified grammar(s) " ++ implode(", ", missingGrammars) ++ " could not be found.\n"));
+    buildrun.initialChecks;
 
     return buildrun;
   };
@@ -175,17 +176,6 @@ function eatGrammars
     else
       newDeps ++ eatGrammars(triggered, n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
-
-annotation code::Integer;
-annotation errMsg::String;
-
-data RunError = runError
-  with code, errMsg;
-
--- A common return type for IO functions. Does IO and returns error or whatever.
-type IOErrorable<a> = EitherT<RunError IO a>;
-
-fun throwRunError IOErrorable<a> ::= c::Integer m::String = throwError(runError(code=c, errMsg=m));
 
 function getJarVersion
 IOVal<String> ::= i::IOToken
