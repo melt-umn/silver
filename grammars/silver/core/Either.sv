@@ -180,6 +180,11 @@ instance Monad m => Alt EitherT<e m _> {
     });
 }
 
+instance MonadFix m => MonadFix EitherT<e m _> {
+  mfix = \ f::(EitherT<e m a> ::= a) ->
+    eitherT(mfix(\ res::Either<e a> -> f(res.fromRight).run));
+}
+
 instance MonadTrans EitherT<e _ _> {
   lift = \ x::m<a> -> eitherT(map(right, x));
 }
