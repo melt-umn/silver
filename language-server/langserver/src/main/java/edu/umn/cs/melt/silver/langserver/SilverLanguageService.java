@@ -87,9 +87,11 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     public void didOpen(DidOpenTextDocumentParams params) {
         // System.err.println("Opened " + params);
         String uri = params.getTextDocument().getUri();
-        fileContents.put(uri, params.getTextDocument().getText());
-        fileVersions.put(uri, params.getTextDocument().getVersion());
-        savedVersions.put(uri, params.getTextDocument().getVersion());
+        synchronized (this) {
+            fileContents.put(uri, params.getTextDocument().getText());
+            fileVersions.put(uri, params.getTextDocument().getVersion());
+            savedVersions.put(uri, params.getTextDocument().getVersion());
+        }
         triggerBuild();
     }
 
@@ -97,9 +99,11 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     public void didChange(DidChangeTextDocumentParams params) {
         // System.err.println("Changed " + params);
         String uri = params.getTextDocument().getUri();
-        for (TextDocumentContentChangeEvent change : params.getContentChanges()) {
-            fileContents.put(uri, change.getText());
-            fileVersions.put(uri, params.getTextDocument().getVersion());
+        synchronized (this) {
+            for (TextDocumentContentChangeEvent change : params.getContentChanges()) {
+                fileContents.put(uri, change.getText());
+                fileVersions.put(uri, params.getTextDocument().getVersion());
+            }
         }
     }
 
@@ -107,9 +111,11 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     public void didClose(DidCloseTextDocumentParams params) {
         // System.err.println("Closed " + params);
         String uri = params.getTextDocument().getUri();
-        fileContents.remove(uri);
-        fileVersions.remove(uri);
-        savedVersions.remove(uri);
+        synchronized (this) {
+            fileContents.remove(uri);
+            fileVersions.remove(uri);
+            savedVersions.remove(uri);
+        }
     }
 
     @Override
@@ -119,7 +125,9 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         if (!fileVersions.containsKey(uri)) {
             throw new IllegalStateException("File saved before it was changed");
         }
-        savedVersions.put(uri, fileVersions.get(uri));
+        synchronized (this) {
+            savedVersions.put(uri, fileVersions.get(uri));
+        }
         triggerBuild();
     }
 
