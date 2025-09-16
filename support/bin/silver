@@ -45,5 +45,10 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
+set +e
 # shellcheck disable=SC2086
 java $SVJVM_FLAGS -jar "$SILVER" "${SV_ARGS[@]}" && ant
+
+# Intercept exit code 127 meaning success, but ant should not be run
+CODE=$?
+[ $CODE -eq 127 ] || exit $CODE

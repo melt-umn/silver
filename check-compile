@@ -15,5 +15,9 @@ export GRAMMAR_PATH="../grammars"
 mkdir -p build
 cd build
 
+set +e
 time java "${JVM_ARGS[@]}" $BUILDGRAMMAR
 
+# Intercept exit code 127 meaning success, but ant should not be run
+CODE=$?
+[ $CODE -eq 127 ] || exit $CODE
