@@ -37,7 +37,7 @@ public interface Decorable {
 		final boolean prodFwrd);
 
 	/**
-	 * A convenience method unused by generate Silver code, but useful when working with
+	 * A convenience method unused by generated Silver code, but useful when working with
 	 * the Silver runtime from Java.
 	 * 
 	 * @return  A node decorated with no inherited attributes, without a parent.

@@ -35,3 +35,6 @@ tutorials/**/output.c
 
 # Useful spot to stash your experiments
 sandbox
+
+# Codeprober workspace states
+.cpr/
