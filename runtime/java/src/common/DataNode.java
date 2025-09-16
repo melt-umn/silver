@@ -53,7 +53,7 @@ public abstract class DataNode extends Node {
 	 * We might still need to produce a DecoratedNode in polymorphic contexts with synthesized occurs-on constraints.
 	 * 
 	 * @param inhs The inherited attributes supplied, should always be null.
-	 * @param transInhs The inherited attributes supplied on translation attributes, should always be null.
+	 * @param decSite The decoration site site where this tree is shared, should always be null.
 	 * @return The "decorated" form of this DataNode.
 	 */
 	@Override

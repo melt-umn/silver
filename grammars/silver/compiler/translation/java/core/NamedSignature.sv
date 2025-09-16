@@ -316,6 +316,11 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
+function makeChildNameCase
+String ::= n::NamedSignatureElement
+{
+  return s"\t\t\tcase i_${n.elementName}: return \"${n.elementName}\";\n";
+}
 function makeChildDecorableCase
 String ::= env::Env n::NamedSignatureElement
 {
