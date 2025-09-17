@@ -1,6 +1,6 @@
 grammar silver:compiler:driver;
 
-attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, noStdlib, searchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, noStdlib, searchPath, outName, buildGrammars, silverHomeOption, noSemanticAnalysis occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: [String];
@@ -18,7 +18,7 @@ synthesized attribute noStdlib :: Boolean;
 
 synthesized attribute buildGrammars :: [String];
 
-synthesized attribute noBindingChecking :: Boolean;
+synthesized attribute noSemanticAnalysis :: Boolean;
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -31,7 +31,7 @@ top::CmdArgs ::= l::[String]
   top.genLocation = [];
   top.silverHomeOption = [];
   top.buildGrammars = l;
-  top.noBindingChecking = false;
+  top.noSemanticAnalysis = false;
   top.forceOrigins = false;
   top.noOrigins = false;
   top.noRedex = false;
@@ -110,10 +110,10 @@ top::CmdArgs ::= rest::CmdArgs
   top.noStdlib = true;
   forwards to @rest;
 }
-abstract production nobindingFlag
+abstract production dontAnalyzeFlag
 top::CmdArgs ::= rest::CmdArgs
 {
-  top.noBindingChecking = true;
+  top.noSemanticAnalysis = true;
   forwards to @rest;
 }
 
@@ -149,7 +149,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
         flagParser=flag(cleanFlag))
     , flagSpec(name="--dont-analyze", paramString=nothing(),
         help="", -- TODO
-        flagParser=flag(nobindingFlag))
+        flagParser=flag(dontAnalyzeFlag))
     , flagSpec(name="--warn-error", paramString=nothing(),
         help="treat warnings as errors",
         flagParser=flag(warnErrorFlag))

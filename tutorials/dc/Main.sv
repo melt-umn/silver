@@ -57,5 +57,11 @@ IO<Integer> ::= largs::[String]
   };
 }
 
-
-
+fun codeProberParse IO<Decorated Root> ::= args::[String] = do {
+  when_(null(args), fail("Invalid arguments to codeProberParse"));
+  let fileName = last(args);
+  content <- readFile(fileName);
+  let result = parse(content, fileName);
+  when_(!result.parseSuccess, fail(result.parseErrors));
+  return decorate result.parseTree.ast_Root with {};
+};
