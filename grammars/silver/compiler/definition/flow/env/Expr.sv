@@ -116,7 +116,7 @@ top::Expr ::= @q::QName
 aspect production lhsReference
 top::Expr ::= @q::QName
 {
-  -- Always a decorable type, so just check how it's being used:
+  -- Always a nonterminal type, but check if it's decorated in case it's a data NT:
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   top.flowDeps <-
     if top.finalType.isDecorated
@@ -148,20 +148,19 @@ top::Expr ::= @q::QName
   -- Never decorated - just the equation vertex.
   top.flowDeps <- [localEqVertex(q.lookupValue.fullName)];
   top.flowVertexInfo = nothing();
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [holeEq(top.frame.fullName, top.typerep.typeName, top.typerep.isNonterminal, v, top.flowDeps)]
+    | nothing() -> []
+    end;
 }
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
-  -- Again, always a decorable type.
+  -- Always a non-data nonterminal type.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps <- forwardEqVertex() ::
-    if top.finalType.isDecorated
-    then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
-    else [];
-  top.flowVertexInfo =
-    if top.finalType.isDecorated
-    then just(forwardVertexType)
-    else nothing();
+  top.flowDeps <- forwardEqVertex() :: map(forwardVertexType.inhVertex, fromMaybe([], refSet));
+  top.flowVertexInfo = just(forwardVertexType);
 }
 aspect production forwardParentReference
 top::Expr ::= 'forwardParent'
@@ -212,6 +211,12 @@ aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
+  top.flowDefs <-
+    case e, top.decSiteVertexInfo of
+    | productionReference(_), _ -> []
+    | _, just(v) -> [holeEq(top.frame.fullName, top.typerep.typeName, top.typerep.isNonterminal, v, top.flowDeps)]
+    | _, _ -> []
+    end;
   es.appProd =
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
@@ -345,10 +350,22 @@ top::AppExpr ::= e::Expr
     | _ -> "err"
     end;
   top.flowDefs <-
-    case e.decSiteVertexInfo of
-    | just(subtermVertexType(parent, prodName, sigName)) ->
-      [subtermDecEq(top.frame.fullName, parent, prodName, e.finalType.typeName, sigName)]
-    | _ -> []
+    case e.decSiteVertexInfo, top.appProd of
+    | just(subtermVertexType(parent, prodName, sigName)), just(ns) ->
+      [subtermDecEq(
+        top.frame.fullName, ns.outputElement.typerep.typeName, parent,
+        prodName, e.finalType.typeName, sigName)]
+    | _, _ -> []
+    end;
+  top.flowDefs <-
+    case top.decSiteVertexInfo, top.appProd of
+    | just(parent), just(ns) when !sigIsShared && !isDecorable(top.appExprTyperep, top.env) ->
+      -- Capture the equation dependencies for non-decorable children
+      [holeEq(
+        top.frame.fullName, top.appExprTyperep.typeName, false,
+        subtermVertexType(parent, ns.fullName, sigName),
+        e.flowDeps)]
+    | _, _ -> []
     end;
   e.decSiteVertexInfo =
     case top.decSiteVertexInfo, top.appProd of
@@ -437,6 +454,11 @@ top::Expr ::= e::Expr '.' 'forward'
     | just(vertex) -> vertex.fwdVertex :: vertex.eqVertex
     | nothing() -> e.flowDeps
     end;
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [holeEq(top.frame.fullName, top.typerep.typeName, top.typerep.isNonterminal, v, top.flowDeps)]
+    | nothing() -> []
+    end;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.appDecSiteVertexInfo = nothing();
@@ -454,6 +476,11 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | nothing() -> e.flowDeps
     end;
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [holeEq(top.frame.fullName, top.typerep.typeName, top.typerep.isNonterminal, v, top.flowDeps)]
+    | nothing() -> []
+    end;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
@@ -462,6 +489,11 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
     case e.flowVertexInfo of
     | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | nothing() -> e.flowDeps
+    end;
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [holeEq(top.frame.fullName, top.typerep.typeName, top.typerep.isNonterminal, v, top.flowDeps)]
+    | nothing() -> []
     end;
 }
 aspect production transDecoratedAccessHandler
@@ -498,7 +530,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- N.B. 'inh.flowDefs' will emit 'localInhEq's for this anonymous flow vertex.
   local eTy::Type = e.finalType;
   top.flowDefs <-
-    [anonEq(top.frame.fullName, inh.decorationVertex, eTy.typeName, eTy.isNonterminal, getParsedOriginLocationOrFallback(top), e.flowDeps)];
+    [anonEq(top.frame.fullName, inh.decorationVertex, getParsedOriginLocationOrFallback(top), e.flowDeps)];
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
@@ -693,9 +725,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.flowDefs <-
     case e.flowVertexInfo of
     | just(vertex) -> []
-    | nothing() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, getParsedOriginLocationOrFallback(top), e.flowDeps)]
+    | nothing() ->
+      -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
+      [anonEq(top.frame.fullName, anonName, getParsedOriginLocationOrFallback(top), e.flowDeps),
+       holeEq(top.frame.fullName, eTy.typeName, eTy.isNonterminal, anonVertexType(anonName), [])]
     end;
-  -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 
   e.decSiteVertexInfo = nothing();
   pr.decSiteVertexInfo = top.decSiteVertexInfo;

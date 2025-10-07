@@ -281,7 +281,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
  - @param prod  the full name of the production
  - @param fName  the name of the local/production attribute
  - @param typeName  the full name of the type, or empty string if not a decorable type!
- - @param isNT  true if the type is a nonterminal
+ - @param isNT  true if the type is a nonterminal  TODO unused?
  - @param isFwrd  true if this is a forward production attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
@@ -369,13 +369,11 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
  -
  - @param prod  the full name of the production
  - @param fName  the generated anonymous name for this decoration site
- - @param typeName  the full name of the type (usually a nonterminal, but may be a decorable type var)
- - @param isNT  true if the type is a nonterminal
  - @param deps  the dependencies of this equation on other flow graph elements
  - (no contributions are possible)
  -}
 abstract production anonEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  loc::Location  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  loc::Location  deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
@@ -431,18 +429,50 @@ data PatternVarProjection
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.
- - Like patternRuleEq, this is only used in creating stitch points.
+ - Also add the equation vertex dependencies on subterm vertices.
+ - Other vertex types get their eq deps from a top-level localEq, fwdEq or synEq,
+ - which also handles suspect edges.
  -
  - @param prod     the full name of the production
+ - @param parentNt the LHS nonterminal of termProd
  - @param parent   the flow vertex of the enclosing production call
  - @param termProd the applied production (or dispatch signature)
+ - @param nt       the RHS nonterminal of sigName
  - @param sigName  the name of the child under which this term appears
  -}
 abstract production subtermDecEq
-top::FlowDef ::= prod::String  parent::VertexType  termProd::String  nt::String  sigName::String
+top::FlowDef ::= prod::String  parentNt::String parent::VertexType  termProd::String  nt::String  sigName::String
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = [];
+  top.flowEdges =
+    case parent of
+    | subtermVertexType(_, _, _) ->
+        map(\ v -> (v, subtermEqVertex(parent, termProd, sigName)), parent.eqVertex)
+    | _ -> []
+    end;
+}
+
+{--
+ - An unknown tree that has a decoration site, e.g. a higher-order attribute access.
+ - Also add the equation vertex dependencies on subterm vertices.
+ - Other vertex types get their eq deps from a top-level localEq, fwdEq or synEq,
+ - which also handles suspect edges.
+ -
+ - @param prod  the full name of the production
+ - @param typeName  the full name of the type (usually a nonterminal, but may be a decorable type var)
+ - @param isNT  true if the type is a nonterminal
+ - @param vt    the decoration site vertex type, for which the stitch point is created
+ - @param deps  the dependencies of the defining expression on other flow graph elements
+ -}
+abstract production holeEq
+top::FlowDef ::= prod::String  typeName::String  isNt::Boolean  vt::VertexType  deps::[FlowVertex]
+{
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges =
+    case vt of
+    | subtermVertexType(_, _, _) -> flatMap(\ v1 -> map(\ v2 -> (v1, v2), deps), vt.eqVertex)
+    | _ -> []
+    end;
 }
 
 {--
@@ -492,7 +522,7 @@ fun collectAnonOrigin [Pair<String  Location>] ::= f::[FlowDef] =
   foldr(collectAnonOriginItem, [], f);
 fun collectAnonOriginItem [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>] =
   case f of
-  | anonEq(_, fN, _, _, l, _) ->
+  | anonEq(_, fN, l, _) ->
       -- Small hack to improve error messages. Ignore anonEq's that come from patterns
       if startsWith("__scrutinee", fN)
       then rest

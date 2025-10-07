@@ -61,7 +61,7 @@ top::VertexType ::= sigName::String
   top.synVertex = rhsSynVertex(sigName, _);
   top.inhVertex = rhsInhVertex(sigName, _);
   top.fwdVertex = rhsSynVertex(sigName, "forward");
-  top.eqVertex = [];
+  top.eqVertex = [rhsEqVertex(sigName)];
 }
 
 {--
@@ -150,5 +150,5 @@ top::VertexType ::= parent::VertexType prodName::String sigName::String
   top.synVertex = subtermSynVertex(parent, prodName, sigName, _);
   top.inhVertex = subtermInhVertex(parent, prodName, sigName, _);
   top.fwdVertex = subtermSynVertex(parent, prodName, sigName, "forward");
-  top.eqVertex = [];
+  top.eqVertex = [subtermEqVertex(parent, prodName, sigName)];
 }

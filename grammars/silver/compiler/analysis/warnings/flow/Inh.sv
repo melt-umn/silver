@@ -82,6 +82,9 @@ fun checkEqDeps
   -- A dependency on an LHS.SYN can be checked locally, but we do not do so here.
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
+  -- A dependency on an RHS is always assumed to exist locally.
+  -- These vertices only exist for tile stitch points.
+  | rhsEqVertex(_) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
   | rhsInhVertex(sigName, attrName) ->
       checkInhEq(prodName, rhsVertexType(sigName), attrName, config, prodGraphs, flowEnv, realEnv)

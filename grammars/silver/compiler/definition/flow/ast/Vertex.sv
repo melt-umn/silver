@@ -24,6 +24,14 @@ data FlowVertex =
 | lhsInhVertex attrName::String
 
 {--
+- A vertex representing an element of the signature RHS.
+- This has no direct dependencies, but is needed to record dependencies on RHS values for tile stitch points.
+-
+- @param sigName  the name given to a signature nonterminal.
+-}
+| rhsEqVertex sigName::String
+
+{--
 - A vertex representing a synthesized attribute on an element of the signature RHS.
 -
 - @param sigName  the name given to a signature nonterminal.
@@ -94,6 +102,16 @@ data FlowVertex =
  - @param attrName  the full name of the attribute on that element
  -}
 | anonInhVertex fName::String  attrName::String
+
+{--
+ - A vertex corresponding to a sub-term of an expression with a known decoration site.
+ - e.g. 'local foo::Foo = bar(baz(@x), y.trans);', we need to capture the dependencies of y.trans
+ -
+ - @param parent  the decoration site of the enclosing term
+ - @param prodName  the full name of the applied production
+ - @param sigName  the name given to the corresponding child
+ -}
+| subtermEqVertex parent::VertexType prodName::String sigName::String
 
 {--
  - A vertex corresponding to a synthesized attribute on a sub-term of an expression with a known decoration site.
