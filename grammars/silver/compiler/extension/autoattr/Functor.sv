@@ -16,7 +16,31 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(functorDcl(fName, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
+      [attrDef(defaultEnvItem(functorDcl(fName, nothing(), sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
+}
+
+concrete production functorParamsAttributeDcl
+top::AGDcl ::= 'functor' 'attribute' a::Name '::=' params::TypeExprs ';'
+{
+  top.unparse = "functor attribute " ++ a.unparse ++ ";";
+  top.moduleNames := [];
+  propagate env, flowEnv, grammarName;
+
+  production attribute fName :: String;
+  fName = top.grammarName ++ ":" ++ a.name;
+
+  top.errors <-
+    if length(getAttrDclAll(fName, top.env)) > 1
+    then [errFromOrigin(a, "Attribute '" ++ fName ++ "' is already bound.")]
+    else [];
+  top.errors <-
+    if params.missingCount > 0
+    then [errFromOrigin(params, "Missing type is not permitted in functor attribute parameters")]
+    else [];
+
+  forwards to
+    defsAGDcl(
+      [attrDef(defaultEnvItem(functorDcl(fName, just(params.types), sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
 }
 
 abstract production functorAttributionDcl implements AttributionDcl
@@ -50,7 +74,7 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateFunctor implements Propagate
-top::ProductionStmt ::= includeShared::Boolean @attr::QName
+top::ProductionStmt ::= includeShared::Boolean @attr::QName params::Maybe<[Type]>
 {
   top.unparse = s"propagate ${if includeShared then "@" else ""}{attr.unparse};";
   
@@ -58,12 +82,16 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
   -- occuring on the LHS but this should be caught by the forward errors.  
   
   -- Generate the arguments for the constructor
+  local paramsNames :: Maybe<[(Name, Type)]> = 
+    map(\ ts::[Type] -> map(\ t::Type -> (name(s"__p${toString(genInt())}"), t), ts), params);
   local inputs :: [Expr] = 
-    map(makeArg(top.env, attr, _), top.frame.signature.inputElements);
+    map(makeArg(top.env, attr, paramsNames, _), top.frame.signature.inputElements);
   local annotations :: [Pair<String Expr>] = 
     map(
       makeAnnoArg(top.frame.signature.outputElement.elementName, _),
       top.frame.signature.namedInputElements);
+  nondecorated local result::Expr =
+    mkFullFunctionInvocation(baseExpr(qName(top.frame.fullName)), inputs, annotations);
 
   -- Construct an attribute def and call with the generated arguments
   forwards to
@@ -72,7 +100,13 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
       '.',
       qNameAttrOccur(^attr),
       '=',
-      mkFullFunctionInvocation(baseExpr(qName(top.frame.fullName)), inputs, annotations),
+      case paramsNames of
+      | just(ps) -> lambdap(
+        foldr(lambdaRHSCons, lambdaRHSNil(),
+          map(\ p::(Name, Type) -> lambdaRHSElemIdTy(p.1, '::', typerepTypeExpr(p.2)), ps)),
+        result)
+      | nothing() -> result
+      end,
       ';');
 }
 
@@ -84,7 +118,7 @@ top::ProductionStmt ::= includeShared::Boolean @attr::QName
  - @return Either this the child, or accessing `attrName` on the child
  -}
 function makeArg
-Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
+Expr ::= env::Env attrName::Decorated QName params::Maybe<[(Name, Type)]> input::NamedSignatureElement
 {
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
@@ -94,7 +128,13 @@ Expr ::= env::Env attrName::Decorated QName input::NamedSignatureElement
   
   return
     if validTypeHead && attrOccursOnHead
-    then Silver_Expr { $name{input.elementName}.$QName{^attrName} }
+    then
+      case params of
+      | just(ps) -> mkFunctionInvocation(
+          Silver_Expr { $name{input.elementName}.$QName{^attrName} },
+          map(\ p::(Name, Type) -> Silver_Expr { $Name{p.1} }, ps))
+      | nothing() -> Silver_Expr { $name{input.elementName}.$QName{^attrName} }
+      end
     else if inputDecorable
     then Silver_Expr { silver:core:new($name{input.elementName}) }
     else Silver_Expr { $name{input.elementName} };

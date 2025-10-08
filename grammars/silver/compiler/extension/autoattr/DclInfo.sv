@@ -20,13 +20,17 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 }
 
 abstract production functorDcl
-top::AttributeDclInfo ::= fn::String
+top::AttributeDclInfo ::= fn::String params::Maybe<[Type]>
 {
   top.fullName = fn;
   propagate compareKey, isEqual;
 
   production tyVar::TyVar = freshTyVar(starKind());
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  top.typeScheme = polyType([tyVar],
+    case params of
+    | just(tys) -> appTypes(functionType(length(tys), []), tys ++ [varType(tyVar)])
+    | nothing() -> varType(tyVar)
+    end);
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
@@ -34,7 +38,7 @@ top::AttributeDclInfo ::= fn::String
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = functorAttributionDcl;
-  top.propagateDispatcher = propagateFunctor;
+  top.propagateDispatcher = propagateFunctor(params);
 }
 
 abstract production monoidDcl

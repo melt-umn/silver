@@ -19,6 +19,16 @@ top::AGDcl ::= 'functor' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
       makeOccursDclsHelp(qNameWithTL(qNameId(^a), botlNone()), qs.qnames));
 }
 
+concrete production functorParamsAttributeDclMultiple
+top::AGDcl ::= 'functor' 'attribute' a::Name '::=' params::TypeExprs 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "functor attribute " ++ a.name ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      functorParamsAttributeDcl($1, $2, @a, $4, @params, $9),
+      makeOccursDclsHelp(qNameWithTL(qNameId(^a), botlNone()), qs.qnames));
+}
+
 concrete production monoidAttributeDclMultiple
 top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' e::Expr ',' q::NameOrBOperator 'occurs' 'on' qs::QNames ';'
 {

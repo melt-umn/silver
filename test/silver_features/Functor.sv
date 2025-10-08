@@ -9,8 +9,13 @@ annotation functorTestAnno::Integer;
 functor attribute functorSyn2 occurs on FunctorTestNT, FunctorTestNT2;
 propagate functorSyn2 on FunctorTestNT, FunctorTestNT2;
 
+functor attribute functorWithParams ::= Integer occurs on FunctorTestNT, FunctorTestNT2;
+propagate functorWithParams on FunctorTestNT, FunctorTestNT2 excluding nilFTNT;
+
 nonterminal FunctorTestNT with functorSyn, functorTestAnno;
 nonterminal FunctorTestNT2 with functorSyn, functorTestAnno;
+
+derive Eq on FunctorTestNT, FunctorTestNT2;
 
 abstract production consFTNT
 top::FunctorTestNT ::= h::FunctorTestNT  t::FunctorTestNT
@@ -28,6 +33,7 @@ abstract production nilFTNT
 top::FunctorTestNT ::= i::Integer
 {
   top.functorSyn = nilFTNT(10, functorTestAnno=123); -- test non-propagate
+  top.functorWithParams = \ j -> nilFTNT(i + j, functorTestAnno=top.functorTestAnno);
 }
 
 abstract production forwardingFTNT
@@ -112,3 +118,29 @@ equalityTest(ftnt3().functorSyn, 42, Integer, silver_tests);
 wrongCode "expects 1 type variables, but 2 were provided" {
   nonterminal Foo23 with functorSyn<Integer Boolean>;
 }
+
+equalityTest(functorValue.functorWithParams(10),
+  consFTNT(
+    consFTNT2(
+      nilFTNT2("a", functorTestAnno=1),
+      nilFTNT(11, functorTestAnno=2),
+      functorTestAnno=3),
+    consFTNT2(
+      nilFTNT2("b", functorTestAnno=4),
+      nilFTNT(12, functorTestAnno=5),
+      functorTestAnno=6),
+    functorTestAnno=7),
+  FunctorTestNT, silver_tests);
+
+equalityTest(functorValue2.functorWithParams(10),
+  consFTNT(
+    consFTNT2(
+      nilFTNT2("a", functorTestAnno=1),
+      nilFTNT(11, functorTestAnno=2),
+      functorTestAnno=3),
+    consFTNT2(
+      nilFTNT2("b", functorTestAnno=4),
+      nilFTNT(52, functorTestAnno=5),
+      functorTestAnno=5),
+    functorTestAnno=6),
+  FunctorTestNT, silver_tests);

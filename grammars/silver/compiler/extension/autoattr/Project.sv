@@ -9,6 +9,7 @@ imports silver:compiler:definition:flow:env;
 imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:modification:collection;
 imports silver:compiler:modification:let_fix;
+imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:extension:patternmatching;
 imports silver:compiler:metatranslation;
 
