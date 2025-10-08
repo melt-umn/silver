@@ -12,3 +12,4 @@ grammar silver:core;
 class HeytingAlgebra a => BooleanAlgebra a {}
 
 instance BooleanAlgebra Boolean {}
+instance BooleanAlgebra a => BooleanAlgebra (a ::= b) {}

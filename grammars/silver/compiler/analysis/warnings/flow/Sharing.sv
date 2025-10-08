@@ -30,7 +30,7 @@ top::Expr ::=  '@' e::Expr
     case e.flowVertexInfo of
     | just(v) when
         top.config.warnSharing &&
-        !isExportedBy(top.grammarName, vertexGrammars(v, top.frame, top.env), top.compiledGrammars) ->
+        !isExportedBy(top.grammarName, vertexGrammars(top.env, top.frame.fullName, v), top.compiledGrammars) ->
       [mwdaWrnFromOrigin(top, s"Orphaned sharing of ${v.vertexPP} in production ${top.frame.fullName}.")]
     | _ -> []
     end;
@@ -83,22 +83,22 @@ top::AppExpr ::= e::Expr
     | just(v) when
         top.config.warnSharing &&
         sigIsShared && isForwardParam &&
-        !isExportedBy(top.grammarName, vertexGrammars(v, top.frame, top.env), top.compiledGrammars) ->
+        !isExportedBy(top.grammarName, vertexGrammars(top.env, top.frame.fullName, v), top.compiledGrammars) ->
       [mwdaWrnFromOrigin(top, s"Orphaned sharing of ${v.vertexPP} in production ${top.frame.fullName}.")]
     | _ -> []
     end;
 }
 
 -- Grammars that can validly share a vertex
-fun vertexGrammars [String] ::= v::VertexType frame::BlockContext env::Env =
+fun vertexGrammars [String] ::= env::Env prod::String v::VertexType =
   case v of
-  | rhsVertexType(_) -> [frame.sourceGrammar]
+  | rhsVertexType(_) -> [substring(0, lastIndexOf(":", prod), prod)]
   | localVertexType(fName) when getValueDcl(fName, env) matches valDcl :: _ -> [valDcl.sourceGrammar]
-  | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
-    frame.sourceGrammar ::
-    case lookup(sigName, zip(frame.signature.inputNames, frame.signature.inputTypes)) of
-    | just(t) when getOccursDcl(transAttr, t.typeName, env) matches dcl :: _ ->
-      [dcl.sourceGrammar]
+  | transAttrVertexType(rhsVertexType(sigName), transAttr)
+      when getValueDcl(prod, env) matches prdDcl :: _ ->
+    prdDcl.sourceGrammar ::
+    case getOccursDcl(transAttr, lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep.typeName, env) of
+    | dcl :: _ -> [dcl.sourceGrammar]
     | _ -> []
     end
   | transAttrVertexType(localVertexType(fName), transAttr)

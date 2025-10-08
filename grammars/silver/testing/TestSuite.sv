@@ -15,6 +15,8 @@ synthesized attribute numFailed :: Integer ;
 synthesized attribute ioOut :: IOToken ;
 inherited attribute ioIn :: IOToken ;
 
+flowtype Test = ioOut {ioIn};
+
 aspect default production
 t::Test ::=
 {

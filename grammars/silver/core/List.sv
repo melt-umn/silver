@@ -527,11 +527,6 @@ fun powerSet [[a]] ::= xs::[a] =
   end;
 
 
--- Boolean list operations
-fun all Boolean ::= l::[Boolean] = foldr(\ a::Boolean b::Boolean -> a && b, true, l);
-
-fun any Boolean ::= l::[Boolean] = foldr(\ a::Boolean b::Boolean -> a || b, false, l);
-
 --------------------------------------------------------------------------------
 
 function nil

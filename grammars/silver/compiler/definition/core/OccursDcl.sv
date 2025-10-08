@@ -145,14 +145,15 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
     else [];
 }
 
-abstract production errorAttributionDcl
-top::AGDcl ::= msg::[Message] @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production errorAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs msg::[Message]
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.occursDefs := [];
   top.errors <- msg;
   
   nttl.initialEnv = top.env;
+  at.env = top.env;
   attl.env = nttl.envBindingTyVars;
   nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
@@ -183,9 +184,6 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  -- Note: we are supplying (the wrong) env to attl, nt, nttl here (and then re-decorating them after dispatching.)
-  -- This is needed to permit computing flow defs on this production.
-  propagate env;
   
   -- Workaround for circular dependency due to dispatching on env:
   -- Nothing used to build the env namespaces on which we dispatch can depend on
@@ -196,11 +194,15 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   -- nonterminals, productions, attributes, etc.)
   top.defs := [];
   top.moduleNames := [];
+
+  at.env = top.env;
+  nt.env = top.env;
+  local fwrdProd::AttributionDcl =
+    if at.lookupAttribute.found
+    then at.lookupAttribute.dcl.attributionDispatcher
+    else errorAttributionDcl(at.lookupAttribute.errors);
   
-  forwards to
-    if !at.lookupAttribute.found
-    then errorAttributionDcl(at.lookupAttribute.errors, at, @attl, @nt, @nttl)
-    else at.lookupAttribute.dcl.attributionDispatcher(^at, ^attl, ^nt, ^nttl);
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 concrete production annotateDcl

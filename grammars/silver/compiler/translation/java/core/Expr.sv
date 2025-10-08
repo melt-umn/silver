@@ -467,7 +467,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   local decSite::String =
     case top.decSiteVertexInfo of
     | just(decSite) when top.alwaysDecorated ->
-        s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)}"
+        refDecSiteTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)
     | _ -> "(common.Lazy)null"
     end;
   top.translation = s"((common.Decorable)${e.translation})" ++ 
@@ -553,19 +553,23 @@ top::Expr ::= '@' e::Expr
     | just(decSite) when top.alwaysDecorated ->
       case e.flowVertexInfo of
       | just(transAttrVertexType(rhsVertexType(sigName), transAttr)) ->
-        case lookup(sigName, zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)) of
-        | just(ty) when getOccursDcl(transAttr, ty.typeName, top.env) matches occDcl :: _ ->
+        -- Need to lookup the prod dcl and get it's signature, since sigName from the flowVertexInfo
+        -- may not match the one from top.frame.signature if we are in an aspect.
+        case getValueDcl(top.frame.fullName, top.env) of
+        | prdDcl :: _
+            when getOccursDcl(transAttr, lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep.typeName, top.env)
+            matches occDcl :: _ ->
           s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
           s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
-          s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
-        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName)
+          s"${refDecSiteTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
+        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName ++ ": " ++ genericShow(zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)))
         end
       | just(transAttrVertexType(localVertexType(fName), transAttr)) ->
         case getValueDcl(fName, top.env) of
         | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, top.env) matches occDcl :: _ ->
           s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
           s"\t\t${top.frame.className}.localInheritedAttributes[${dcl.attrOccursIndex}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
-          s"(context) -> ${refAccessTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
+          s"${refDecSiteTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
         | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
         end
       | _ -> ""
@@ -852,7 +856,9 @@ String ::= e::Decorated Expr
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
   local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
-  local loc::Location = getParsedOriginLocationOrFallback(e);
+  local loc::Location = fromMaybe(
+    txtLoc("<unknown location>"),
+    getParsedOriginLocation(ambientOrigin()));
   local fileName::String =
     case searchEnvTree(e.grammarName, e.compiledGrammars) of
     | r :: _ -> r.grammarSource

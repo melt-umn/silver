@@ -553,6 +553,11 @@ public final class Reflection {
 		} else if(x instanceof Boolean) {
 			if ((boolean)x) o.writeByte(3); // type tag/value for true
 			else o.writeByte(2); // type tag/value for false
+		} else if(x instanceof byte[]) {
+			o.writeByte(9); // type tag for byte array
+			int len = ((byte[])x).length;
+			o.writeInt(len); // store length of byte array
+			o.write((byte[])x); // store byte array
 		} else if(x instanceof DecoratedNode) {
 			throw new NativeSerializationException("Cannot serialize DecoratedNodes (prod " + x.toString() + ")");
 		} else {
@@ -668,6 +673,11 @@ public final class Reflection {
 			return true;
 		} else if (typeId == 2) { // bool primitive
 			return false;
+		} else if (typeId == 9) { // byte array primitive
+			int length = i.readInt();
+			byte[] bytes = new byte[length];
+			i.readFully(bytes);
+			return bytes;
 		} else {
 			throw new NativeSerializationException("Unknown type id (" + Integer.toString(typeId) + ")");
 		}

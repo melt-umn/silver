@@ -130,6 +130,13 @@ public final class RTTIManager {
 			}
 			return synOccursIndices.get(attrName);
 		}
+
+		public final Lazy getTransDecSite(String attrName) {
+			if (!hasSyn(attrName)) {
+				return null;
+			}
+			return (context) -> context.translation(getSynOccursIndex(attrName));
+		}
 	}
 
 }

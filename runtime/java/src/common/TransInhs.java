@@ -32,7 +32,7 @@ public class TransInhs implements Lazy {
     public TransInhs withContext(final DecoratedNode context) {
         TransInhs result = new TransInhs(inhs.length);
         for(int i = 0; i < inhs.length; i++) {
-            result.inhs[i] = inhs[i].withContext(context);
+            result.inhs[i] = inhs[i] == null? null : inhs[i].withContext(context);
         }
         return result;
     }

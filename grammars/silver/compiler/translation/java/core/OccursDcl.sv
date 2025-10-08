@@ -41,7 +41,7 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
 }
 
 aspect production errorAttributionDcl
-top::AGDcl ::= msg::[Message] @at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs msg::[Message]
 {
   top.setupInh := error("Internal compiler error: translation not defined in the presence of errors");
   top.valueWeaving := error("Internal compiler error: translation not defined in the presence of errors");

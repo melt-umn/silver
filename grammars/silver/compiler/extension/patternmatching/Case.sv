@@ -78,6 +78,10 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
+
+  local loc::Location = fromMaybe(
+    txtLoc("<unknown location>"),
+    getParsedOriginLocation(ambientOrigin()));
   
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
@@ -85,7 +89,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(es.rawExprs, ml.matchRuleList, true,
       mkStrFunctionInvocation("silver:core:error",
         [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ ":" ++ getParsedOriginLocationOrFallback(top).unparse ++ "\\n\""))]),
+          "\"Error: pattern match failed at " ++ top.grammarName ++ ":" ++ loc.unparse ++ "\\n\""))]),
       freshType());
 }
 

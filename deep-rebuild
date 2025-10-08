@@ -13,6 +13,7 @@ export SILVER_HOME=$PWD
 trap 'echo -e "\a"' EXIT
 
 mkdir -p build
+rm -f build/*
 
 if [ -d generated/bin/common ]; then
  # oh man, let's make sure stale runtimes aren't causing us serious problems here

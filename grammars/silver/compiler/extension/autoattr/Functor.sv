@@ -76,7 +76,7 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
 abstract production propagateFunctor implements Propagate
 top::ProductionStmt ::= includeShared::Boolean @attr::QName params::Maybe<[Type]>
 {
-  top.unparse = s"propagate ${if includeShared then "@" else ""}{attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  

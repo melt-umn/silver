@@ -1,0 +1,29 @@
+grammar silver:compiler:extension:nanopass;
+
+imports silver:util:treeset as ts;
+imports silver:reflect;
+
+imports silver:compiler:driver:util;
+imports silver:compiler:definition:core;
+imports silver:compiler:definition:env;
+imports silver:compiler:definition:type;
+imports silver:compiler:definition:type:syntax hiding Arrow_t;
+imports silver:compiler:definition:flow:syntax;
+imports silver:compiler:definition:flow:env;
+imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:concrete_syntax;
+imports silver:compiler:analysis:typechecking:core;
+imports silver:compiler:analysis:uniqueness;
+imports silver:compiler:extension:autoattr;
+imports silver:compiler:extension:patternmatching;
+imports silver:compiler:modification:list;
+imports silver:compiler:modification:let_fix;
+imports silver:compiler:modification:lambda_fn hiding Arrow_t;
+imports silver:compiler:modification:collection;
+imports silver:compiler:modification:defaultattr;
+imports silver:compiler:modification:concisefunctions;
+imports silver:compiler:modification:copper;
+imports silver:compiler:modification:copper_mda;
+imports silver:compiler:modification:ffi;
+imports silver:compiler:modification:primitivepattern;
+imports silver:compiler:metatranslation;

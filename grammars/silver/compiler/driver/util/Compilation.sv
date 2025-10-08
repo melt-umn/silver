@@ -2,13 +2,17 @@ grammar silver:compiler:driver:util;
 
 import silver:compiler:definition:core only jarName, grammarErrors;
 import silver:util:treemap as map;
+import silver:util:treeset as set;
+import silver:util:graph as g;
 import silver:util:cmdargs;
+import silver:compiler:analysis:warnings:flow only warnMissingInh;
 
-synthesized attribute initRecompiledGrammars::[String];
 synthesized attribute initDirtyGrammars::[String];
 
-data nonterminal Compilation with postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initRecompiledGrammars, initDirtyGrammars;
+data nonterminal Compilation with
+  initialChecks, postOps, grammarList, reGrammarList, allGrammars, recompiledGrammars, initDirtyGrammars;
 
+synthesized attribute initialChecks :: IOErrorable<()> with applyFirst;
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
 synthesized attribute reGrammarList :: [Decorated RootSpec];
@@ -34,15 +38,18 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   top.grammarList = g.grammarList;
   -- the list of rootspecs coming out of r
   top.reGrammarList = r.grammarList;
-  -- all compiled rootspecs from g and r
-  top.allGrammars = g.grammarList ++ r.grammarList;
-    -- the list of re-compiled rootspecs from g and r
-  top.recompiledGrammars := keepGrammars(grammarsDependedUpon, g.recompiledGrammars) ++ r.grammarList;
-  -- the initial list of grammar names from g that were recompiled
-  top.initRecompiledGrammars = map((.declaredName), g.recompiledGrammars);
+  -- the list of rootspecs from g and r, excluding grammars from g that were later recompiled in r
+  top.allGrammars = r.grammarList ++ excludeGrammars(rGrammarNames, g.grammarList);
+  -- the list of re-compiled rootspecs from g and r
+  top.recompiledGrammars :=
+    excludeGrammars(rGrammarNames, keepGrammars(grammarsDependedUpon, g.recompiledGrammars)) ++
+    r.grammarList;
   -- the initial list of grammar names from g known to be in need of recompilation
-  top.initDirtyGrammars = nub(removeAll(top.initRecompiledGrammars,
-    flatMap((.dirtyGrammars), keepGrammars(grammarsDependedUpon, g.grammarList))));
+  top.initDirtyGrammars = set:toList(set:intersect(
+    -- grammars from g that we think are dirty
+    flatMap(compose(set:fromList, (.dirtyGrammars)), grammarsRelevant),
+    -- grammars that are from (or depend on) an interface file, and thus may be dirty
+    flatMap(g:edgesFrom(_, g:transitiveClosure(g:add(g.ifcDependentGrammars, g:empty()))), g.cachedGrammars)));
   
   -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
   -- see all the other initially compiled grammars.
@@ -51,16 +58,33 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- we are forced to start with the interface files that we are going to
   -- recheck in the .compiledGrammars for the recheck.
   r.compiledGrammars = g.compiledGrammars;
-  -- Since we never compile a grammar more than once, this means in case of mutual dependencies
-  -- between grammars, the initially-compiled grammar may see an outdated interface file.
-  -- See https://github.com/melt-umn/silver/issues/673
+  -- Note that if a grammar wasn't initially recompiled in g, then grammars depending on
+  -- it in g will see its old interface file.
+  -- If we later decide that the grammar needs to be recompiled in r,
+  -- then those grammars depending on it may be re-compiled again, replacing those rootspecs
+  -- prior to type checking and translation.
 
-  g.dependentGrammars = flatMap(
+  -- All pairs of grammars (a, b) where b should be rebuilt if the interface of a changes.
+  g.ifcDependentGrammars = flatMap(
     \ r::Decorated RootSpec -> map(\ g::String -> (g, r.declaredName), r.allGrammarDependencies),
     grammarsRelevant);
   -- See above comments.
   -- Assumption: if a grammar has an up-to-date interface file, then its dependencies are unchanged.
-  r.dependentGrammars = g.dependentGrammars;
+  r.ifcDependentGrammars = g.ifcDependentGrammars;
+
+  -- All pairs of grammars (a, b) where b should be rebuilt if the AST of a changes in any way.
+  production attribute astDependentGrammars :: [(String, String)] with ++;
+  astDependentGrammars := [];
+  g.astDependentGrammars = astDependentGrammars;
+  r.astDependentGrammars = astDependentGrammars;
+
+  -- If we are running the flow analysis, then we need to consider any change to a dependency
+  -- as cause for a rebuild, since we ignore flow defs when comparing interface files.
+  -- This also avoids a circularity issue: computing whether an interface file
+  -- changed depends on error checking, which depends on computed flow types when
+  -- the flow analysis is enabled, which depends on which grammars were compiled.
+  astDependentGrammars <-
+    if a.warnMissingInh then g.ifcDependentGrammars else [];
 
   g.config = a;
   r.config = a;
@@ -79,20 +103,21 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   production grammarsToTranslate :: [Decorated RootSpec] = top.recompiledGrammars;
 
   local rGrammarNames :: [String] = map((.declaredName), r.grammarList);
-  -- All grammars from g and r, excluding interface files from r that were later recompiled
-  production allLatestGrammars :: [Decorated RootSpec] =
-    r.grammarList ++
-    filter(\ rs::Decorated RootSpec -> !contains(rs.declaredName, rGrammarNames), g.grammarList);
 
+  -- Initial checks that should be performed on grammars from g, prior to computing defs/errors
+  top.initialChecks := pure(());
+
+  -- Actions to be performed after the initial build (check errors, generate translation, etc.)
   top.postOps := [];
 }
 
 nonterminal Grammars with
-  config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars,
-  grammarList, dirtyGrammars, recompiledGrammars, jarName, includedJars;
+  config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, ifcDependentGrammars, astDependentGrammars,
+  grammarList, cachedGrammars, dirtyGrammars, recompiledGrammars, jarName, includedJars;
 
 propagate
-  config, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars, includedJars
+  config, productionFlowGraphs, grammarFlowTypes, cachedGrammars, dirtyGrammars, recompiledGrammars, jarName,
+  ifcDependentGrammars, astDependentGrammars, includedJars
   on Grammars;
 
 abstract production consGrammars
@@ -118,4 +143,12 @@ top::Grammars ::=
  -}
 fun keepGrammars [Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec] =
   filter(\ r::Decorated RootSpec -> contains(r.declaredName, keep), d);
+
+{--
+ - Exclude only a selected set of grammars.
+ - @param exclude  The set of grammars to exclude
+ - @param d  The list of grammars to filter
+ -}
+fun excludeGrammars [Decorated RootSpec] ::= exclude::[String] d::[Decorated RootSpec] =
+  filter(\ r::Decorated RootSpec -> !contains(r.declaredName, exclude), d);
 

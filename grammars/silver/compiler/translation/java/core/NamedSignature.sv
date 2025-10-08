@@ -331,36 +331,47 @@ String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::Named
 {
   return
     case lookupRefDecSite(prodName, rhsVertexType(n.elementName), flowEnv) of
-    | [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
+    | [v] -> s"\t\t\tcase i_${n.elementName}: return ${refDecSiteTranslation(env, flowEnv, lhsNtName, v)};\n"
     | _ -> ""
     end;
 }
 
--- Translation of accessing a tree that is shared in a position corresponding to some flow vertex type.
-fun refAccessTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
+-- Translation of Lazy to access a tree that is shared in a position corresponding to some flow vertex type.
+-- May be null if no decoration site exists for the given vertex type.
+fun refDecSiteTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
+  case refDecSiteTranslationHelp(env, flowEnv, lhsNtName, v) of
+  | left(lazyTrans) -> lazyTrans
+  | right(accessTrans) -> s"(context) -> ${accessTrans}"
+  end;
+
+-- Helper for the above.
+-- Returns either left(translation as a Lazy object) or right(translation as an access from context).
+fun refDecSiteTranslationHelp Either<String String> ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
   case v of
   | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
   | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
   | localVertexType(fName) ->
     case getValueDcl(fName, env) of
-    | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
+    | dcl :: _ -> right(s"context.localDecorated(${dcl.attrOccursIndex})")
     | [] -> error("Couldn't find decl for local " ++ fName)
     end
   | transAttrVertexType(lhsVertexType_real(), transAttr) ->
-    let transIndexName::String =
-      case getOccursDcl(transAttr, lhsNtName, env) of
-      | h :: _ -> h.attrGlobalOccursInitIndex
-      | [] -> error(s"Trans attr ${transAttr} occurs on ${lhsNtName} dcl not found!")
-      end
-    in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
+    case getOccursDcl(transAttr, lhsNtName, env) of
+    | h :: _ -> right(s"context.translation(${h.attrGlobalOccursInitIndex}, ${h.attrGlobalOccursInitIndex}_inhs, ${h.attrGlobalOccursInitIndex}_dec_site)")
+    -- If a translation attribute occurrence is defined in an optionally exported grammar,
+    -- then we must resolve the occurrence dynamically.
+    | [] -> left(s"common.RTTIManager.getNonterminalton(\"${lhsNtName}\").getTransDecSite(\"${transAttr}\")")
     end
   | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
-  | forwardVertexType_real() -> s"context.forward()"
+  | forwardVertexType_real() -> right(s"context.forward()")
   | forwardParentVertexType() -> error("forward parent shouldn't be a ref decoration site")
   | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
   | subtermVertexType(parent, prodName, sigName) ->
     -- prodName is either a production or dispatch signature name
-    s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
+    case refDecSiteTranslationHelp(env, flowEnv, lhsNtName, parent) of
+    | right(parentAccess) -> right(s"${parentAccess}.childDecorated(${makeProdName(prodName)}.i_${sigName})")
+    | left(parentLazy) -> left(s"common.Util.wrapDecSiteAccessorChildDecorated(${parentLazy}, ${makeProdName(prodName)}.i_${sigName})")
+    end
   end;
 
 function makeAnnoAssign

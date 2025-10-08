@@ -112,6 +112,16 @@ public final class Util {
 	}
 
 	/**
+	 * Construct a Lazy that evaluates a Lazy and gets a decorated child from the result.
+	 */
+	public static Lazy wrapDecSiteAccessorChildDecorated(final Lazy parentLazy, final int child) {
+		if(parentLazy == null) {
+			return null;
+		}
+		return (context) -> ((DecoratedNode)parentLazy.eval(context)).childDecorated(child);
+	}
+
+	/**
 	 * Used by the 'error("wat")' syntax in Silver.
 	 *
 	 * @param o the "wat"
@@ -434,6 +444,23 @@ public final class Util {
 		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
 		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			return hackyhackyUnparse(o);
+		}
+	}
+
+	/**
+	 * Attempt to reflectively call the showOriginInfoChain function from silver:langutil.
+	 * 
+	 * @param o  The object to show the origin of
+	 * @return A string representation.
+	 */
+	public static StringCatter showOriginInfoChain(Object o) {
+		try {
+			Method showDoc = Class.forName("silver.langutil.PshowOriginInfoChain")
+				.getMethod("invoke", OriginContext.class, Object.class);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, o);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new SilverInternalError("Failed to call silver:langutil:showOriginInfoChain on " + o + ": " + e.getMessage(), e);
 		}
 	}
 

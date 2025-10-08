@@ -125,10 +125,25 @@ top::OriginNote ::= string::String
   top.notepp = just(s"debug ${string}");
 }
 
-abstract production logicalLocationNote
-top::OriginNote ::= loc::Location
+abstract production maybeLogicalLocationNote
+top::OriginNote ::= mLoc::Maybe<Location>
 {
-  top.notepp = just(s"logical ${loc.filename}:${toString(loc.line)}:${toString(loc.column)}");
+  top.notepp = just(
+    case mLoc of
+    | just(l) -> s"logical ${l.filename}:${toString(l.line)}:${toString(l.column)}"
+    | nothing() -> "logical location missing"
+    end);
+}
+global logicalLocationNote :: (OriginNote ::= Location) = compose(maybeLogicalLocationNote, just);
+
+abstract production logicalLocationFromOriginNote
+top::OriginNote ::= x::a
+{
+  top.notepp =
+    case getParsedOriginLocationFromChain(getOriginInfoChain(x)) of
+    | just(l) -> just(s"logical origin at ${l.filename}:${toString(l.line)}:${toString(l.column)}")
+    | nothing() -> just(s"logical origin missing")
+    end;
 }
 
 @{-
@@ -184,7 +199,8 @@ fun getParsedOriginLocationFromChain Maybe<Location> ::= chain::[OriginInfo] =
 fun getParsedOriginLocation_findLogicalLocationNote Maybe<Location> ::= notes::[OriginNote] =
   case notes of
   | [] -> nothing()
-  | logicalLocationNote(l)::_ -> just(l)
+  | maybeLogicalLocationNote(ml)::_ -> ml
+  | logicalLocationFromOriginNote(x)::_ -> getParsedOriginLocation(x)
   | x::r -> getParsedOriginLocation_findLogicalLocationNote(r)
   end;
 

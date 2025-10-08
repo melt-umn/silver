@@ -80,6 +80,7 @@ IOErrorable<Compilation> ::=
       removeAll(map((.declaredName), buildrun.grammarList), a.buildGrammars);
     when_(!null(missingGrammars),
       throwRunError(1, "The specified grammar(s) " ++ implode(", ", missingGrammars) ++ " could not be found.\n"));
+    buildrun.initialChecks;
 
     return buildrun;
   };
@@ -118,15 +119,16 @@ IO<Compilation> ::=
 
     -- There is a second circularity here where we use unit.reGrammarList
     -- to supply the second parameter to unit.
-    reRootStream :: [Maybe<RootSpec>] <-
-      unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, a.doClean, true));
+    reRootStream :: [Maybe<RootSpec>] <- unsafeInterleaveIO(do {
+      eprintln("Re-Compiling Dependent Grammars.");
+      compileGrammars(svParser, benv, reGrammarStream, a.doClean, true);
+    });
     
     let reGrammarStream :: [String] =
       unit.initDirtyGrammars ++
       eatGrammars(
         (.dirtyGrammars), length(unit.initDirtyGrammars),
-        unit.initRecompiledGrammars ++ unit.initDirtyGrammars,
-        reRootStream, unit.reGrammarList);
+        unit.initDirtyGrammars, reRootStream, unit.reGrammarList);
 
     return unit;
   };
@@ -151,7 +153,7 @@ IO<[Maybe<RootSpec>]> ::=
  - Consumes a stream of parses, outputs a stream of new dependencies.
  - Typically used as a circular program with 'compileGrammars'
  -
- - @param triggered  A function returning a list of grammars that sould be triggered by a grammar
+ - @param triggered  A function returning a list of grammars that should be triggered by a grammar
  - @param n  Expected number of new inputs from rootStream
  - @param sofar  Set of grammars already seen, and should not be requested again
  - @param rootStream  Stream of found/not found info. Should not be used except to test presence
@@ -174,17 +176,6 @@ function eatGrammars
     else
       newDeps ++ eatGrammars(triggered, n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
-
-annotation code::Integer;
-annotation errMsg::String;
-
-data RunError = runError
-  with code, errMsg;
-
--- A common return type for IO functions. Does IO and returns error or whatever.
-type IOErrorable<a> = EitherT<RunError IO a>;
-
-fun throwRunError IOErrorable<a> ::= c::Integer m::String = throwError(runError(code=c, errMsg=m));
 
 function getJarVersion
 IOVal<String> ::= i::IOToken

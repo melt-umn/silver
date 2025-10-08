@@ -10,7 +10,6 @@ import silver:compiler:definition:flow:ast only nilFlow, consFlow, FlowDef;
 
 import silver:compiler:definition:core only jarName;
 
-import silver:compiler:analysis:warnings:flow only warnMissingInh;
 import silver:compiler:analysis:uniqueness;
 
 {--
@@ -20,22 +19,27 @@ nonterminal RootSpec with
   -- compiler-wide inherited attributes
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- driver-specific inherited attributes
-  dependentGrammars,
+  ifcDependentGrammars, astDependentGrammars,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, dirtyGrammars, recompiledGrammars,
+  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, cachedGrammars, dirtyGrammars, recompiledGrammars,
   parsingErrors, allFileErrors, jarName, generateLocation, jarSource, serInterface, includedJars;
 
-flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
+flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, ifcDependentGrammars, astDependentGrammars};
 
 propagate
   productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGrammars, condBuild, defs, occursDefs, includedJars
   on RootSpec;
 
 {--
- - Grammars (a, b) where b depends on a
+ - Grammars (a, b) where b depends on *the interface* of a
  -}
-inherited attribute dependentGrammars :: [(String, String)];
+inherited attribute ifcDependentGrammars :: [(String, String)];
+
+{--
+ - Grammars (a, b) where b depends on *the AST* of a
+ -}
+inherited attribute astDependentGrammars :: [(String, String)];
 
 {--
  - The modification time of the source .sv files of this grammar.
@@ -46,6 +50,11 @@ synthesized attribute grammarTime :: Integer;
  - The modification time of any source file that may have affected the interface of this grammar.
  -}
 synthesized attribute interfaceTime :: Integer;
+
+{--
+ - Grammars that were not (yet) recompiled
+ -}
+monoid attribute cachedGrammars :: [String];
 
 {--
  - Grammars that must be recompiled, due to (potential) changes in an interface
@@ -129,23 +138,18 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.generateLocation = just(generateLocation);
   top.jarSource = nothing();
   top.interfaceTime = foldr(max, grammarTime, map((.grammarTime), rootSpecs));
-  top.dirtyGrammars :=
-    -- If the interface file is unchanged and we aren't running the flow analysis,
-    -- we don't need to rebuild the dependent grammars.
-    -- If we are running the flow analysis, then we unconditionally rebuild all
-    -- dependent grammars to propagate changes in flow deps, since we ignore flow
-    -- defs when comparing interface files.
-    -- This also avoids a circularity issue: computing whether an interface file
-    -- changed depends on error checking, which depends on computed flow types when
-    -- the flow analysis is enabled, which depends on which grammars were compiled.
-    if !top.config.warnMissingInh && oldInterface == just(newInterface)
-    then []  -- Dependent grammars don't need to be re-translated
-    else lookupAll(grammarName, top.dependentGrammars);
+  top.cachedGrammars := [];
+  local allDependentGrammars :: [(String, String)] = 
+    top.astDependentGrammars ++
+    if oldInterface == just(newInterface)
+    then []  -- Grammars that depend only on the interface of this grammar don't need to be re-translated
+    else top.ifcDependentGrammars;
+  top.dirtyGrammars := nub(remove(grammarName, lookupAll(grammarName, allDependentGrammars)));
   -- Useful for debugging:
   {-top.dirtyGrammars <- unsafeTracePrint([],
     if oldInterface == just(newInterface)
     then s"Interface for ${grammarName} unchanged\n"
-    else s"Interface for ${grammarName} changed\nDependent grammars: ${implode(", ", lookupAll(grammarName, top.dependentGrammars))}\n");-}
+    else s"Interface for ${grammarName} changed\nDependent grammars: ${implode(", ", lookupAll(grammarName, allDependentGrammars))}\n");-}
 
   top.recompiledGrammars := [top];
 
@@ -182,11 +186,13 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
   top.interfaceTime = i.maybeInterfaceTime.fromJust;
   top.generateLocation = generateLocation;
 
+  top.cachedGrammars := if jarSource.isJust then [] else [top.declaredName];
+
   -- Libraries dependencies may have been rebuilt more recently than this grammar,
   -- without directly triggering a rebuild of this grammar:
   top.dirtyGrammars := do {
     guard(jarSource.isJust);
-    g :: String <- lookupAll(top.declaredName, top.dependentGrammars);
+    g :: String <- lookupAll(top.declaredName, top.ifcDependentGrammars);
     r :: Decorated RootSpec <- searchEnvTree(g, top.compiledGrammars);
     guard(!r.jarSource.isJust && top.interfaceTime > r.interfaceTime);
     return g;
@@ -194,7 +200,7 @@ top::RootSpec ::= i::InterfaceItems  generateLocation::Maybe<String>  jarSource:
   {-
   top.dirtyGrammars <- if !jarSource.isJust then [] else unsafeTracePrint([],
     s"Dirty grammars for ${top.declaredName} (${toString(top.interfaceTime)}): ${implode(", ", do {
-    g :: String <- lookupAll(top.declaredName, top.dependentGrammars);
+    g :: String <- lookupAll(top.declaredName, top.ifcDependentGrammars);
     r :: Decorated RootSpec <- searchEnvTree(g, top.compiledGrammars);
     guard(!r.jarSource.isJust && top.interfaceTime > r.interfaceTime);
     return g ++ s" (${toString(r.interfaceTime)})";
@@ -235,6 +241,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.generateLocation = just(generateLocation);
   top.jarSource = nothing();
   
+  top.cachedGrammars := [];
   top.dirtyGrammars := [];
   top.recompiledGrammars := [];
 

@@ -632,6 +632,22 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
+	 * Evaluate a translation attribute without statically knowing the auxiliary inh indices.
+	 * This is the slow path, used only in a corner case where the translation attribute occurrence
+	 * is an optional export.
+	 * 
+	 * @param attribute The index of the attribute to evaluate.
+	 * @return The value of the attribute.
+	 */
+	public DecoratedNode translation(final int attribute) {
+		TransOccursInfo transOccurs = self.getTransOccurs(attribute);
+		if(transOccurs == null) {
+			throw new SilverInternalError("TransOccursInfo missing for " + self.getNameOfSynAttr(attribute) + " in " + getDebugID());
+		}
+		return translation(attribute, transOccurs.inhsAttribute, transOccurs.decSiteAttribute);
+	}
+
+	/**
 	 * Evaluate an attribute that may be either synthesized or translation.
 	 * This is only used for debugging.
 	 * 
@@ -1058,6 +1074,7 @@ public class DecoratedNode implements Decorable, Typed {
 		List<String> properties = new ArrayList<>();
 		properties.add("l:grammar");
 		properties.add("l:show");
+		properties.add("l:origin");
 		if(self.hasForward()) {
 			properties.add("l:forward");
 		}
@@ -1147,6 +1164,9 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		if (propName.equals("show")) {
 			return Util.genericShow(self);
+		}
+		if (propName.equals("origin")) {
+			return Util.showOriginInfoChain(self);
 		}
 		if (propName.equals("forward")) {
 			return makeCprInvokeResult(forward());

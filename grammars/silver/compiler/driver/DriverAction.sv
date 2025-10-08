@@ -26,7 +26,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 {
   top.postOps <- [printAllParsingErrors(top.allGrammars)];
   top.postOps <- if a.noSemanticAnalysis then [] else
-    [printAllSemanticErrors(top.allGrammars)]; 
+    [printAllSemanticErrors(top.allGrammars)];
   top.postOps <- [touchIfaces(r.grammarList, benv.silverGen)];
 }
 

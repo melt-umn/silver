@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ConfigurationItem;
@@ -51,7 +52,6 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 
 import common.SilverCopperParser;
 import edu.umn.cs.melt.lsp4jutil.CopperParserNodeFactory;
@@ -306,15 +306,25 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
                 throw new IllegalStateException("Build requested when parser has not been loaded");
             }
 
-            // Check the config for whether the MWDA is enabled
+            // Check the config for build-related settings
             ConfigurationItem enableMWDAConfigItem = new ConfigurationItem();
             enableMWDAConfigItem.setSection("silver.enableMWDA");
-            ConfigurationParams configParams = new ConfigurationParams(List.of(enableMWDAConfigItem));
+            ConfigurationItem excludeGrammarsConfigItem = new ConfigurationItem();
+            excludeGrammarsConfigItem.setSection("silver.excludeGrammars");
+            ConfigurationParams configParams = new ConfigurationParams(List.of(
+                enableMWDAConfigItem, excludeGrammarsConfigItem));
             boolean enableMWDA = mwdaEnabled;
+            List<String> excludedGrammars = List.of();
             try {
                 Object configMWDAGet = client.configuration(configParams).get().get(0);
                 if (configMWDAGet != null && !((JsonElement)configMWDAGet).isJsonNull()) {
-                    enableMWDA = ((JsonPrimitive)configMWDAGet).getAsBoolean();
+                    enableMWDA = ((JsonElement)configMWDAGet).getAsBoolean();
+                }
+                Object configExcludeGrammarsGet = client.configuration(configParams).get().get(1);
+                if (configExcludeGrammarsGet != null && !((JsonElement)configExcludeGrammarsGet).isJsonNull()) {
+                    excludedGrammars =
+                        StreamSupport.stream(((JsonElement)configExcludeGrammarsGet).getAsJsonArray().spliterator(), false)
+                        .map(JsonElement::getAsString).collect(Collectors.toList());
                 }
             } catch (InterruptedException | ExecutionException e) {
                 // Ignore, getting the settings sometimes fails when a build is triggered during initialization
@@ -327,9 +337,16 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
             }
             mwdaEnabled = enableMWDA;
             cleanRequested = false;
-    
+
+            Set<String> includedBuildGrammars = buildGrammars;
+            if (!excludedGrammars.isEmpty()) {
+                includedBuildGrammars = new HashSet<>(buildGrammars);
+                System.err.println("Excluding grammars: " + excludedGrammars);
+                includedBuildGrammars.removeAll(excludedGrammars);
+            }
+
             SilverCompiler.getInstance().build(
-                parserFn, grammarDirs, buildGrammars, cleanBuild, enableMWDA,
+                parserFn, grammarDirs, includedBuildGrammars, cleanBuild, enableMWDA,
                 (String uri, List<Diagnostic> diagnostics) ->
                     client.publishDiagnostics(new PublishDiagnosticsParams(uri, diagnostics, buildVersions.get(uri))));
             synchronized (this) {

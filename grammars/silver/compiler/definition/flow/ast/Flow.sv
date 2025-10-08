@@ -458,7 +458,7 @@ abstract production refDecSiteEq
 top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType  alwaysDec::Boolean
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = [];  -- Added as fixed edges duing flow graph computation, when we know all inh attributes on nt.
+  top.flowEdges = [];  -- Added as fixed edges during flow graph computation, when we know all inh attributes on nt.
   top.refPossibleDecSiteContribs := [(s"${prod}:${ref.vertexName}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
 }

@@ -491,9 +491,9 @@ fun nonterminalStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  vertexTy
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, realEnv) of
       | at :: _ when at.isSynthesized && at.isTranslation ->
-        [nonterminalStitchPoint(
-          at.typeScheme.typeName,
-          transAttrVertexType(vertexType, o.attrOccurring))]
+        nonterminalStitchPoints(
+          realEnv, at.typeScheme.typeName,
+          transAttrVertexType(vertexType, o.attrOccurring))
       | _ -> []
       end,
     getAttrOccursOn(nt, realEnv));
