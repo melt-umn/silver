@@ -647,24 +647,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 aspect production lexicalLocalReference
 top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 {
-  -- Because of the auto-undecorate behavior, we need to check for the case
-  -- where `t` should be equivalent to `^t` and report accoringly.
-  
-  -- If we:
-  -- 1. Have a flow vertex
-  -- 2. Are a decorated type
-  -- 3. Used as undecorated type
-  -- Then: Suppress `fd` and report just `fi.eq`
-
-  top.flowDeps := 
-    case fi of
-    | just(vertex) ->
-        if performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated &&
-           !top.finalType.isDecorated
-        then vertex.eqVertex -- we're a `t` emulating `^t`
-        else fd -- we're passing along our vertex-ness to the outer expression
-    | nothing() -> fd -- we're actually being used as a ref-set-taking decorated var
-    end;
+  top.flowDeps := fd;
   top.flowVertexInfo = fi;
 
   top.lexicalLocalDecSites <- [(q.lookupValue.fullName, top.decSiteVertexInfo)];
