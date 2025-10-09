@@ -2,7 +2,7 @@ grammar silver:compiler:definition:flow:driver;
 
 import silver:compiler:definition:type only isNonterminal, typerep;
 
-data nonterminal ProductionGraph with stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes;
+data nonterminal ProductionGraph with stitchedGraph, prod, lhsNt, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes;
 
 -- TODO: future me note: these are good candidates to be "static attributes" maybe?
 {--
@@ -11,10 +11,6 @@ data nonterminal ProductionGraph with stitchedGraph, prod, lhsNt, transitiveClos
  - Either just a new graph, or nothing if no new edges were added.
  -}
 synthesized attribute stitchedGraph :: (Maybe<ProductionGraph> ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
-{--
- - Just compute the transitive closure of the edge set
- -}
-synthesized attribute transitiveClosure :: ProductionGraph;
 {--
  - Edge mapper
  -}
@@ -63,16 +59,10 @@ top::ProductionGraph ::=
           filter(edgeIsNew(_, graph),
             flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), stitchPoints))
     in let repaired :: g:Graph<FlowVertex> =
-             repairClosure(newEdges, graph)
+             g:repairClosure(newEdges, graph)
     in if null(newEdges) then nothing() else
          just(productionGraph(prod, lhsNt, flowTypeVertexes, repaired, suspectEdges, stitchPoints))
     end end;
-  
-  top.transitiveClosure =
-    let transitiveClosure :: g:Graph<FlowVertex> =
-          transitiveClose(graph)
-    in
-      productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
   top.edgeMap = g:edgesFrom(_, graph);
   top.suspectEdgeMap = lookupAll(_, suspectEdges);
@@ -82,7 +72,7 @@ top::ProductionGraph ::=
     let newEdges :: [(FlowVertex, FlowVertex)] =
           flatMap(findAdmissibleEdges(_, graph, findFlowType(lhsNt, flowTypes)), suspectEdges)
     in let repaired :: g:Graph<FlowVertex> =
-             repairClosure(newEdges, graph)
+             g:repairClosure(newEdges, graph)
     in if null(newEdges) then nothing() else
          just(productionGraph(prod, lhsNt, flowTypeVertexes, repaired, suspectEdges, stitchPoints))
     end end;
@@ -212,7 +202,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);
 
-  return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+  return productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
 }
 
 {--
@@ -257,7 +247,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
 
   local g :: ProductionGraph =
-    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
 
   return fromMaybe(g, updateGraph(g, prodEnv, ntEnv));
 }
@@ -294,7 +284,7 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
   
   local g :: ProductionGraph =
-    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
 
   return fromMaybe(g, updateGraph(g, prodEnv, ntEnv));
 }
@@ -337,7 +327,7 @@ function constructDefaultProductionGraph
     filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
 
   local g :: ProductionGraph =
-    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
   
   -- Optimization: omit the default graph if there are no default equations for the NT.
   return if null(defs) then [] else [g];
@@ -373,7 +363,7 @@ function constructPhantomProductionGraph
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   local g::ProductionGraph =
-    productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+    productionGraph("Phantom for " ++ nt, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
   
   -- Optimization: omit the phantom graph if there are no extension syns for the NT.
   return if null(extSyns) then [] else [g];
@@ -427,7 +417,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(fixedEdges);
 
-  return productionGraph("Tile for " ++ prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+  return productionGraph("Tile for " ++ prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
 }
 
 {--
@@ -456,7 +446,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
-  return productionGraph("Tile for " ++ dispatch, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+  return productionGraph("Tile for " ++ dispatch, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints);
 }
 
 fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =

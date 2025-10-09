@@ -61,17 +61,5 @@ fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
   | _ -> false
   end;
 
-fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] = g:add(l, g:empty());
-
-fun extendFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)]  g::g:Graph<FlowVertex> =
-  g:add(l, g);
-
-fun transitiveClose
-g:Graph<FlowVertex> ::=
-  graph::g:Graph<FlowVertex> = g:transitiveClosure(graph);
-
-fun repairClosure
-g:Graph<FlowVertex> ::=
-  newEdges::[(FlowVertex, FlowVertex)]
-  graph::g:Graph<FlowVertex> = g:repairClosure(newEdges, graph);
-
+fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =
+  g:transitiveClosure(g:add(l, g:empty()));
