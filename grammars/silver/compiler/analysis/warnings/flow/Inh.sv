@@ -113,9 +113,12 @@ fun checkEqDeps
         else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
       end
   | anonSynVertex(fName, attrName) -> []
+  -- A dependency on an argument to a production call.  This always has an expression.
+  | subtermEqVertex(parent, termProdName, sigName) -> []
   -- A dependency on a projected equation in another production.
   | subtermInhVertex(parent, termProdName, sigName, attrName) ->
       checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, prodGraphs, flowEnv, realEnv)
+  -- We can assume that the other production has all its SYN equations.
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
 

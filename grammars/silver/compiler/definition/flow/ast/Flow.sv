@@ -77,8 +77,8 @@ monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 {-- lookup dec site to find places that a shared reference to this tree are *unconditionally* decorated. -}
 monoid attribute refDecSiteContribs :: [(String, VertexType)];
 
-{-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}
-monoid attribute sigShareContribs :: [(String, String, VertexType)];
+{-- lookup (prod, sig) to find source production and child name where sig was previously decorated -}
+monoid attribute sigShareContribs :: [(String, String, String)];
 
 attribute
   synTreeContribs, inhTreeContribs, defTreeContribs,
@@ -500,15 +500,14 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
  - @param nt         the full name of the nonterminal
  - @param sigName    the name of the shared child in prod
  - @param sourceProd the full name of the (dispatching) production that forwarded to prod
- - @param source     the vertex type of the shared tree supplied by sourceProd as the shared child
- - @param parent     the vertex type of where prod is decorated in sourceProd - should always be forward or a forward prod attr.
+ - @param sourceSigName the name of the child of sourceProd that was shared under prod
  -}
 abstract production sigShareSite
-top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType parent::VertexType
+top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String sourceSigName::String
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];
-  top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, source)];
+  top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, sourceSigName)];
 }
 
 --

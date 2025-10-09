@@ -403,12 +403,12 @@ top::AppExpr ::= e::Expr
     end;
   top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd, e.flowVertexInfo of
-    | just(parent), just(ns), just(v) when sigIsShared ->
+    | just(parent), just(ns), just(rhsVertexType(sourceSigName)) when sigIsShared ->
       refDecSiteEq(
-        top.frame.fullName, e.finalType.typeName, v,
+        top.frame.fullName, e.finalType.typeName, rhsVertexType(sourceSigName),
         subtermVertexType(parent, ns.fullName, sigName), top.alwaysDecorated) ::
       if inputSigIsShared then []
-      else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v, parent)]
+      else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, sourceSigName)]
     | _, _, _ -> []
     end;
 }

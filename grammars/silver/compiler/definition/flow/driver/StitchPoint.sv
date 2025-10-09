@@ -79,39 +79,43 @@ fun projectInh
 abstract production tileStitchPoint
 top::StitchPoint ::= 
   prod::String -- production being constructed
-  parent::VertexType -- the decoration site of this tree
+  childType::VertexType -- the child tree vertex type in the current production
+  parentType::VertexType -- the parent tree vertex type in the current production
   sigName::String -- the name of this child in 'prod'
   syns::[String] -- all syns on the lhs NT of 'prod'
   inhs::[String] -- all inhs on the NT of 'sigName' in 'prod'
 {
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     let prodGraph::ProductionGraph = findProductionGraph("Tile for " ++ prod, prodGraphs) in
-      flatMap(projectTileSyn(parent, prod, prodGraph, _), syns) ++
-      flatMap(projectTileInh(parent, prod, prodGraph, sigName, _), inhs)
+      flatMap(projectTileSyn(childType, parentType, prodGraph, _), syns) ++
+      flatMap(projectTileInh(childType, parentType, prodGraph, sigName, _), inhs)
     end;
 }
 
 fun projectTileSyn
-[(FlowVertex, FlowVertex)] ::= parent::VertexType prodName::String prod::ProductionGraph attr::String =
-  map(pair(fst=parent.synVertex(attr), snd=_),
-    flatMap(fromSigVertex(parent, prodName, _),
+[(FlowVertex, FlowVertex)] ::=
+  childType::VertexType parentType::VertexType prod::ProductionGraph attr::String =
+  map(pair(fst=parentType.synVertex(attr), snd=_),
+    flatMap(fromSigVertex(childType, parentType, _),
       -- Deps of this vertex in that other production
       set:toList(prod.edgeMap(lhsSynVertex(attr)))));
 
 fun projectTileInh
-[(FlowVertex, FlowVertex)] ::= parent::VertexType prodName::String prod::ProductionGraph sigName::String attr::String =
-  map(pair(fst=subtermInhVertex(parent, prodName, sigName, attr), snd=_),
-    flatMap(fromSigVertex(parent, prodName, _),
+[(FlowVertex, FlowVertex)] ::=
+  childType::VertexType parentType::VertexType prod::ProductionGraph sigName::String attr::String =
+  map(pair(fst=childType.inhVertex(attr), snd=_),
+    flatMap(fromSigVertex(childType, parentType, _),
       -- Deps of this vertex in that other production
       set:toList(prod.edgeMap(rhsInhVertex(sigName, attr)))));
 
-fun fromSigVertex [FlowVertex] ::= parent::VertexType prodName::String v::FlowVertex =
+fun fromSigVertex
+[FlowVertex] ::= childType::VertexType parentType::VertexType v::FlowVertex =
   case v of
-  | lhsSynVertex(attr) -> [parent.synVertex(attr)]
-  | lhsInhVertex(attr) -> [parent.inhVertex(attr)]
-  | rhsEqVertex(sig) -> [subtermEqVertex(parent, prodName, sig)]
-  | rhsSynVertex(sig, attr) -> [subtermSynVertex(parent, prodName, sig, attr)]
-  | rhsInhVertex(sig, attr) -> [subtermInhVertex(parent, prodName, sig, attr)]
+  | lhsSynVertex(attr) -> [parentType.synVertex(attr)]
+  | lhsInhVertex(attr) -> [parentType.inhVertex(attr)]
+  | rhsEqVertex(_) -> childType.eqVertex
+  | rhsSynVertex(_, attr) -> [childType.synVertex(attr)]
+  | rhsInhVertex(_, attr) -> [childType.inhVertex(attr)]
   | _ -> []
   end;
 
