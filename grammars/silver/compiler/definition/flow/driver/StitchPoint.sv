@@ -42,12 +42,12 @@ top::StitchPoint ::=
   prod::String -- pattern match on this production
   sourceType::VertexType -- the pattern Variable vertex type
   targetType::VertexType -- the scruntinee vertex type
-  prodType::VertexType -- a rhsVertex of 'prod'
-  attrs::[String] -- all inhs on the NT type of prodType/sourceType
+  sigName::String -- the name of this child in 'prod'
+  attrs::[String] -- all inhs on the NT type of sigName/sourceType
 {
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     flatMap(
-      projectInh(_, sourceType, targetType, prodType, findProductionGraph(prod, prodGraphs)),
+      projectInh(_, sourceType, targetType, sigName, findProductionGraph(prod, prodGraphs)),
       attrs);
 }
 
@@ -56,8 +56,8 @@ top::StitchPoint ::=
  - @param attr  An inherited attribute
  - @param sourceType  "pattern variable" vertex type
  - @param targetType  "scrutinee" vertex type
- - @param prodType  the "child" vertex type...
- - @param prod  ...of this production (prodType in here, others in original prod graph)
+ - @param sigName     the child name...
+ - @param prod  ...of this production (sigName in here, others in original prod graph)
  - @return edges from 'sourceType.inhVertex(attr)' to 'targetType.inhVertex(??)'
  -}
 fun projectInh
@@ -65,7 +65,7 @@ fun projectInh
   attr::String
   sourceType::VertexType
   targetType::VertexType
-  prodType::VertexType
+  sigName::String
   prod::ProductionGraph =
   map(pair(fst=sourceType.inhVertex(attr), snd=_),
     -- Turn into inh vertexes (in this production) on targetType
@@ -73,7 +73,7 @@ fun projectInh
       -- Filter down to just LHS Inh in that production, (string names)
       filterLhsInh(
         -- Deps of this vertex in that other production
-        set:toList(prod.edgeMap(prodType.inhVertex(attr))))));
+        set:toList(prod.edgeMap(rhsInhVertex(sigName, attr))))));
 
 
 abstract production tileStitchPoint

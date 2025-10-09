@@ -577,7 +577,7 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
   case var of
   | patternVarProjection(child, typeName, patternVar) -> 
       projectionStitchPoint(
-        matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
+        matchProd, anonVertexType(patternVar), scrutinee, child,
         getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
       nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
