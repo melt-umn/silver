@@ -102,10 +102,10 @@ fun makeNtFlow String ::= nt::String  e::Pair<String String> =
 fun generateDotGraph String ::= specs::[ProductionGraph] =
   case specs of
   | [] -> ""
-  | productionGraph(prod, _, _, graph, suspect, _) :: t ->
-      "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
-      implode("", map(makeDotArrow(prod, _, ""), g:toList(graph))) ++
-      implode("", map(makeDotArrow(prod, _, " [style=dotted]"), suspect)) ++
+  | h :: t ->
+      "subgraph \"cluster:" ++ h.prod ++ "\" {\n" ++ 
+      implode("", map(makeDotArrow(h.prod, _, ""), g:toList(h.graph))) ++
+      implode("", map(makeDotArrow(h.prod, _, " [style=dotted]"), h.suspectEdges)) ++
       "}\n" ++
       generateDotGraph(t)
   end;

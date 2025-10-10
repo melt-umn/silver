@@ -37,7 +37,6 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
     -- Add in phantom, default, tile and dispatch graphs
     flatMap(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts) ++
     flatMap(constructDefaultProductionGraph(_, allFlowEnv, allRealEnv), allNts) ++
-    map(constructTileGraph(_, allFlowEnv, allRealEnv), allProds) ++
     map(constructDispatchGraph(_, allFlowEnv, allRealEnv), allDispatchSigs);
   
   local initialFT :: EnvTree<FlowType> =
