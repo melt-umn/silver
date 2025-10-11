@@ -497,7 +497,7 @@ fun addDefEqs
         else []) ++
     addDefEqs(prod, nt, tail(syns), flowEnv);
 {--
- - Introduce edges for inherited attributes on shared references to their decoration sites.
+ - Introduce edges for inh/syn attributes on shared references to/from their decoration sites.
  -}
  fun addSharingEqs [(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv realEnv::Env d::FlowDef =
    case d of
@@ -512,7 +512,10 @@ fun addDefEqs
           -- There is an override equation, so the attribute isn't supplied through sharing
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
-        getInhAndInhOnTransAttrsOn(nt, realEnv))
+        getInhAndInhOnTransAttrsOn(nt, realEnv)) ++
+      map(
+        \ attr::String -> (decSite.synVertex(attr), ref.synVertex(attr)),
+        getSynAttrsOn(nt, realEnv))
    | _ -> []
    end;
 
@@ -572,9 +575,9 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
 fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecEq(prodName, parentNt, parent, termProdName, nt, sigName) ->
+    | subtermDecEq(_, parentNt, parent, termProdName, nt, sigName) ->
         [tileStitchPoint(
-          termProdName, subtermVertexType(parent, prodName, sigName), parent, sigName,
+          termProdName, subtermVertexType(parent, termProdName, sigName), parent, sigName,
           getSynAttrsOn(parentNt, realEnv),
           getInhAndInhOnTransAttrsOn(nt, realEnv))]
     | _ -> []
