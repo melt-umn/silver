@@ -68,6 +68,7 @@ top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph
     writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}");
     writeFile("flow-deps-tile.dot", "digraph flow {\n" ++ generateTileDotGraph(prodGraph) ++ "}");
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
+    writeFile("stitch-points.txt", generateStitchPointsDump(prodGraph));
     return 0;
   };
 
@@ -150,4 +151,23 @@ aspect dotName on FlowVertex of
   parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
 | subtermInhVertex(parent, prodName, sigName, attrName) ->
   parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
+end;
+
+fun generateStitchPointsDump String ::= specs::[ProductionGraph] =
+  flatMap(dumpGraphStitchPoints, specs);
+
+fun dumpGraphStitchPoints String ::= g::ProductionGraph =
+  s"${g.prod}\n${flatMap((.showStitchPoint), g.stitchPoints)}" ++
+  (if null(g.sigNtStitchPoints) then ""
+   else s"from signature nts\n${flatMap((.showStitchPoint), g.sigNtStitchPoints)}") ++
+  "\n";
+
+synthesized attribute showStitchPoint :: String occurs on StitchPoint;
+aspect showStitchPoint on StitchPoint of
+| nonterminalStitchPoint(nt, vertexType) ->
+  s"\tnonterminal ${nt} at ${vertexType.vertexName}\n"
+| projectionStitchPoint(prod, sourceType, targetType, sigName, attrs) ->
+  s"\tprojection ${prod}@${sigName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
+| tileStitchPoint(prod, childType, parentType, sigName, syns, inhs) ->
+  s"\ttile ${prod}@${sigName} at ${childType.vertexName}, ${parentType.vertexName}\n\t\tsyns ${implode(", ", syns)}\n\t\tinhs ${implode(", ", inhs)}\n"
 end;
