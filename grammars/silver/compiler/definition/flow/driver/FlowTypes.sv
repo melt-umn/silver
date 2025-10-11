@@ -19,9 +19,12 @@ type NtName = String;
 function computeInitialFlowTypes
 EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
 {
-  -- We don't care what flow specs reference what
+  -- We don't care what flow specs reference what.
+  -- Also, exclude specs for 'decorate' which isn't a real attribute.
   local dropRefs::[(String, String, [String])] =
-    map(\ d::(String, String, [String], [String]) -> (d.1, d.2, d.3), specDefs);
+    filterMap(\ d::(String, String, [String], [String]) ->
+      if d.2 == "decorate" then nothing() else just((d.1, d.2, d.3)),
+      specDefs);
 
   local specs :: [(NtName, [(String, [String])])] =
     ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, dropRefs)));
