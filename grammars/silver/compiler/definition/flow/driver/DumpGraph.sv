@@ -66,6 +66,7 @@ top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph
     eprintln("Generating flow graphs");
     writeFile("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}");
     writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}");
+    writeFile("flow-deps-tile.dot", "digraph flow {\n" ++ generateTileDotGraph(prodGraph) ++ "}");
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
     return 0;
   };
@@ -110,6 +111,16 @@ fun generateDotGraph String ::= specs::[ProductionGraph] =
       generateDotGraph(t)
   end;
 
+fun generateTileDotGraph String ::= specs::[ProductionGraph] =
+  case specs of
+  | [] -> ""
+  | h :: t ->
+      "subgraph \"cluster:" ++ h.prod ++ "\" {\n" ++ 
+      implode("", map(makeDotArrow(h.prod, _, ""), g:toList(h.tileGraph))) ++
+      "}\n" ++
+      generateDotGraph(t)
+  end;
+
 -- "production/flowvertex" -> "production/flowvertex"
 fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String =
   "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\"" ++ style ++ ";\n";
@@ -121,66 +132,22 @@ fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String 
  -}
 synthesized attribute dotName :: String occurs on FlowVertex;
 
-aspect production lhsSynVertex
-top::FlowVertex ::= attrName::String
-{
-  top.dotName = attrName;
-}
-aspect production lhsInhVertex
-top::FlowVertex ::= attrName::String
-{
-  top.dotName = attrName;
-}
-aspect production rhsSynVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.dotName = sigName ++ "/" ++ attrName;
-}
-aspect production rhsInhVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.dotName = sigName ++ "/" ++ attrName;
-}
-aspect production localEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.dotName = fName;
-}
-aspect production localSynVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production localInhVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production anonEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.dotName = fName;
-}
-aspect production anonSynVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production anonInhVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production subtermSynVertex
-top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
-{
-  top.dotName = parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
-}
-aspect production subtermInhVertex
-top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
-{
-  top.dotName = parent.inhVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
-}
-
-
-
+aspect dotName on FlowVertex of
+| lhsSynVertex(attrName) -> attrName
+| lhsInhVertex(attrName) -> attrName
+| rhsEqVertex(sigName) -> sigName
+| rhsSynVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
+| rhsInhVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
+| localEqVertex(fName) -> fName
+| localSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| localInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| anonEqVertex(fName) -> fName
+| anonSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| anonInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| subtermEqVertex(parent, prodName, sigName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName).dotName  -- Hack!
+| subtermSynVertex(parent, prodName, sigName, attrName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
+| subtermInhVertex(parent, prodName, sigName, attrName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
+end;
