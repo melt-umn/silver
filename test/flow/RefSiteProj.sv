@@ -175,10 +175,23 @@ top::RSExpr ::= e::RSExpr
 }
 
 warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
-production uselessOverrideExceedsFT
+production uselessOverrideStillExceedsFT
 top::RSExpr ::= e::RSExpr
 {
-  e.env1 = top.env1;
+  e.env1 = top.env2;
+  local e1::RSExpr = @e;
+  e1.env1 = top.env1; -- Override equation has no effect on deps of e1.env1
+
+  top.errors1 = e1.errors1;
+  top.errors2 = false;
+}
+}
+
+warnCode "flow:env1 on child e may exceed a flow type with hidden transitive dependencies on flow:env1; on some reference to this tree, this attribute may be expected to depend only on flow:env2" {
+production uselessOverrideHiddenTransDep
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;  -- Hidden transitive dependency
   local e1::RSExpr = @e;
   e1.env1 = top.env2;
 
