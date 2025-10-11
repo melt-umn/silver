@@ -214,7 +214,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
   top.flowDefs <-
     case e, top.decSiteVertexInfo of
     | productionReference(_), _ -> []
-    | _, just(v) -> [holeEq(top.frame.fullName, top.typerep.typeName, top.typerep.isNonterminal, v, top.flowDeps)]
+    | _, just(v) -> [holeEq(top.frame.fullName, top.finalType.typeName, top.finalType.isNonterminal, v, top.flowDeps)]
     | _, _ -> []
     end;
   es.appProd =

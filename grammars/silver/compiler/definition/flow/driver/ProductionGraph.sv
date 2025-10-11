@@ -78,7 +78,8 @@ top::ProductionGraph ::=
         g:repairClosure(newTileEdges, top.tileGraph)
     in
       -- Invariant: should only ever be new edges in the tile graph when there are in the main graph
-      if null(newEdges) then if !null(newTileEdges) then error("newTileEdges") else nothing()
+      if null(newEdges)
+      then if !null(newTileEdges) then error("newTileEdges") else nothing()  -- TODO remove this sanity check for performance
       else just(top(graph=repaired, tileGraph=repairedTile))
     end end end;
 
@@ -196,7 +197,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
 
   -- locals and forward.
   local stitchPoints :: [StitchPoint] =
-    localStitchPoints(realEnv, nt, defs) ++
+    localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(flowEnv, realEnv, defs) ++
     sigSharingStitchPoints(flowEnv, realEnv, nt, defs) ++
@@ -272,7 +273,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
     flatMap(rhsStitchPoints(realEnv, _), ns.inputElements) ++
-    localStitchPoints(realEnv, error("functions shouldn't have a forwarding equation?"), defs) ++
+    localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
 
@@ -312,7 +313,7 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
 
   -- There can still be anonEq, but there's no RHS anymore
   local stitchPoints :: [StitchPoint] =
-    localStitchPoints(realEnv, error("global expressions shouldn't have a forwarding equation?"), defs) ++
+    localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
@@ -354,7 +355,7 @@ function constructDefaultProductionGraph
   -- However, we do behave like phantom graphs and create an LHS stitch point!
   local stitchPoints :: [StitchPoint] =
     nonterminalStitchPoints(realEnv, nt, lhsVertexType) ++ 
-    localStitchPoints(realEnv, error("default production shouldn't have a forwarding equation?"), defs) ++
+    localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
@@ -538,7 +539,7 @@ fun nonterminalStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  vertexTy
       | _ -> []
       end,
     getAttrOccursOn(nt, realEnv));
-fun localStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ds::[FlowDef] =
+fun localStitchPoints [StitchPoint] ::= realEnv::Env  ds::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
     -- Add stitch points for holes that are nonterminal types
@@ -578,7 +579,7 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env 
     | subtermDecEq(_, parentNt, parent, termProdName, nt, sigName) ->
         [tileStitchPoint(
           termProdName, subtermVertexType(parent, termProdName, sigName), parent, sigName,
-          getSynAttrsOn(parentNt, realEnv),
+          [],  -- syn eqs from the forward parent don't affect the syn deps here
           getInhAndInhOnTransAttrsOn(nt, realEnv))]
     | _ -> []
     end,
@@ -598,10 +599,9 @@ fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  nt:
 -- deps for child of prod, from dispatch sig that prod implements
 fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ie::NamedSignatureElement  dispatch::String se::NamedSignatureElement =
   if ie.typerep.isNonterminal
-  -- projectionStitchPoint is okay here, see comment on sigSharingStitchPoints.
   then [tileStitchPoint(
     dispatch, rhsVertexType(ie.elementName), lhsVertexType, se.elementName,
-    getSynAttrsOn(nt, realEnv), -- TODO: Should we be stitching syn deps here?
+    [],  -- syn eqs from the forward parent don't affect the syn deps here
     getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
   else [];
 -- deps for dispatch sig, from prods that implement it

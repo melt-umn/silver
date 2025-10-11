@@ -453,7 +453,7 @@ top::FlowDef ::= prod::String  parentNt::String parent::VertexType  termProd::St
 }
 
 {--
- - An unknown tree that has a decoration site, e.g. a higher-order attribute access.
+ - An unknown tree that has a decoration site, e.g. a higher-order attribute access or new(ref).
  - Also add the equation vertex dependencies on subterm vertices.
  - Other vertex types get their eq deps from a top-level localEq, fwdEq or synEq,
  - which also handles suspect edges.
