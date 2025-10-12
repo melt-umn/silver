@@ -77,9 +77,8 @@ top::ProductionGraph ::=
       repairedTile :: g:Graph<FlowVertex> =
         g:repairClosure(newTileEdges, top.tileGraph)
     in
-      -- Invariant: should only ever be new edges in the tile graph when there are in the main graph
-      if null(newEdges)
-      then if !null(newTileEdges) then error("newTileEdges") else nothing()  -- TODO remove this sanity check for performance
+      if null(newEdges) && null(newTileEdges)
+      then nothing()
       else just(top(graph=repaired, tileGraph=repairedTile))
     end end end;
 
