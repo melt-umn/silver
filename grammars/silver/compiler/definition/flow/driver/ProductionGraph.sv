@@ -567,7 +567,7 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
   case var of
   | patternVarProjection(child, typeName, patternVar) -> 
       projectionStitchPoint(
-        matchProd, anonVertexType(patternVar), scrutinee, child,
+        matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
         getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
       nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
@@ -575,11 +575,16 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
 fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecEq(_, parentNt, parent, termProdName, nt, sigName) ->
+    | subtermDecEq(_, parentNt, parent, termProdName, children) ->
         [tileStitchPoint(
-          termProdName, subtermVertexType(parent, termProdName, sigName), parent, sigName,
-          [],  -- syn eqs from the forward parent don't affect the syn deps here
-          getInhAndInhOnTransAttrsOn(nt, realEnv))]
+          termProdName, parent,
+          map(\ cNt::(String, Maybe<String>) ->
+            (cNt.1, subtermVertexType(parent, termProdName, cNt.1)),
+            children),
+          getSynAttrsOn(parentNt, realEnv),
+          filterMap(\ cNt::(String, Maybe<String>) ->
+            map(\ nt -> (cNt.1, getInhAndInhOnTransAttrsOn(nt, realEnv)), cNt.2),
+            children))]
     | _ -> []
     end,
     defs);
@@ -587,20 +592,18 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env 
 fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  nt::NtName  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | sigShareSite(_, sigNt, sigName, sourceProd, sourceSigName) ->
-        [tileStitchPoint(
-          sourceProd, rhsVertexType(sigName), lhsVertexType, sourceSigName,
-          getSynAttrsOn(nt, realEnv),
-          getInhAndInhOnTransAttrsOn(sigNt, realEnv))]
+    | sigShareSite(_, sigNt, sigName, sourceProd, vt) ->
+        [projectionStitchPoint(
+          sourceProd, rhsVertexType(sigName), lhsVertexType, vt,
+          getInhAndInhOnTransAttrsOn(nt, realEnv))]
     | _ -> []
     end,
     defs);
 -- deps for child of prod, from dispatch sig that prod implements
 fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ie::NamedSignatureElement  dispatch::String se::NamedSignatureElement =
-  if ie.typerep.isNonterminal
-  then [tileStitchPoint(
-    dispatch, rhsVertexType(ie.elementName), lhsVertexType, se.elementName,
-    [],  -- syn eqs from the forward parent don't affect the syn deps here
+  if ie.elementShared || ie.typerep.isNonterminal
+  then [projectionStitchPoint(
+    dispatch, rhsVertexType(ie.elementName), lhsVertexType, rhsVertexType(se.elementName),
     getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
   else [];
 -- deps for dispatch sig, from prods that implement it
@@ -608,15 +611,18 @@ fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispa
   flatMap(\ d::FlowDef ->
     case d of
     | implFlowDef(_, prod, _) when getValueDcl(prod, realEnv) matches dcl :: _ ->
-      flatMap(\ ie::NamedSignatureElement ->
-        if ie.elementDclType.isNonterminal  -- Dispatch sigs can't have occurs-on constraints
-        then [tileStitchPoint(
-          prod, rhsVertexType(ie.elementName), lhsVertexType,
-          head(drop(positionOf(ie.elementName, dispatch.inputNames), dcl.namedSignature.inputNames)),
+        [tileStitchPoint(
+          prod, lhsVertexType,
+          zipWith(
+            \ pSigName::String dSigName::String -> (pSigName, rhsVertexType(dSigName)),
+            dcl.namedSignature.inputNames, dispatch.inputNames),
           getSynAttrsOn(dispatch.outputElement.typerep.typeName, realEnv),
-          getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
-        else [],
-        dispatch.inputElements)
+          filterMap(\ ie::NamedSignatureElement ->
+            if ie.elementShared || ie.typerep.isNonterminal
+            then just((ie.elementName, getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv)))
+            else nothing(),
+            -- TODO: when the impl prod has extra children, need to introduce nonterminal stitch points for them?
+            take(length(dispatch.inputElements), dcl.namedSignature.inputElements)))]
     | _ -> []
     end,
     defs);

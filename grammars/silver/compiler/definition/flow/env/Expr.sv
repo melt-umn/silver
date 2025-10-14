@@ -195,6 +195,22 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   e.decSiteVertexInfo = if true then nothing() else top.decSiteVertexInfo;
   e.alwaysDecorated = false && top.alwaysDecorated;
   e.dispatchFlowDeps = [] ++ if false then top.dispatchFlowDeps else [];
+
+  top.flowDefs <-
+    case es.appProd, top.decSiteVertexInfo of
+    | just(ns), just(v) ->
+        [subtermDecEq(
+          top.frame.fullName, ns.outputElement.typerep.typeName,
+          v, ns.fullName,
+          map(\ ie::NamedSignatureElement ->
+            (ie.elementName,
+             if ie.elementShared || ie.typerep.isNonterminal
+             then just(ie.typerep.typeName)
+             else nothing()),
+            ns.inputElements))]
+    | _, just(v) -> [holeEq(top.frame.fullName, top.finalType.typeName, top.finalType.isNonterminal, v, top.flowDeps)]
+    | _, _ -> []
+    end;
 }
 
 aspect production errorApplication
@@ -211,12 +227,6 @@ aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.flowVertexInfo = top.decSiteVertexInfo;
-  top.flowDefs <-
-    case e, top.decSiteVertexInfo of
-    | productionReference(_), _ -> []
-    | _, just(v) -> [holeEq(top.frame.fullName, top.finalType.typeName, top.finalType.isNonterminal, v, top.flowDeps)]
-    | _, _ -> []
-    end;
   es.appProd =
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
@@ -350,14 +360,6 @@ top::AppExpr ::= e::Expr
     | _ -> "err"
     end;
   top.flowDefs <-
-    case e.decSiteVertexInfo, top.appProd of
-    | just(subtermVertexType(parent, prodName, sigName)), just(ns) ->
-      [subtermDecEq(
-        top.frame.fullName, ns.outputElement.typerep.typeName, parent,
-        prodName, e.finalType.typeName, sigName)]
-    | _, _ -> []
-    end;
-  top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd of
     | just(parent), just(ns) when !sigIsShared && !isDecorable(top.appExprTyperep, top.env) ->
       -- Capture the equation dependencies for non-decorable children
@@ -403,12 +405,12 @@ top::AppExpr ::= e::Expr
     end;
   top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd, e.flowVertexInfo of
-    | just(parent), just(ns), just(rhsVertexType(sourceSigName)) when sigIsShared ->
+    | just(parent), just(ns), just(v) when sigIsShared ->
       refDecSiteEq(
-        top.frame.fullName, e.finalType.typeName, rhsVertexType(sourceSigName),
+        top.frame.fullName, e.finalType.typeName, v,
         subtermVertexType(parent, ns.fullName, sigName), top.alwaysDecorated) ::
       if inputSigIsShared then []
-      else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, sourceSigName)]
+      else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v)]
     | _, _, _ -> []
     end;
 }

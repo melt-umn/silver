@@ -34,7 +34,7 @@ top::StitchPoint ::= nt::String  vertexType::VertexType
  - @param prod  The production (or dispatch signature) we're projecting
  - @param sourceType  The "vertexType" of this stitchPoint
  - @param targetType  The "vertexType" of where this stitchPoint should proxy to
- - @param sigName     The child in the other production to use
+ - @param prodType    The "vertexType" of 'prod' (e.g. rhsVertex("rhs1", _))
  - @param attrs  The attributes we want to project to LHS inhs
  -}
 abstract production projectionStitchPoint
@@ -42,12 +42,12 @@ top::StitchPoint ::=
   prod::String -- pattern match on this production
   sourceType::VertexType -- the pattern Variable vertex type
   targetType::VertexType -- the scruntinee vertex type
-  sigName::String -- the name of this child in 'prod'
+  prodType::VertexType -- a vertex type of 'prod'
   attrs::[String] -- all inhs on the NT type of sigName/sourceType
 {
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     flatMap(
-      projectInh(_, sourceType, targetType, sigName, findProductionGraph(prod, prodGraphs)),
+      projectInh(_, sourceType, targetType, prodType, findProductionGraph(prod, prodGraphs)),
       attrs);
 }
 
@@ -65,7 +65,7 @@ fun projectInh
   attr::String
   sourceType::VertexType
   targetType::VertexType
-  sigName::String
+  prodType::VertexType
   prod::ProductionGraph =
   map(pair(fst=sourceType.inhVertex(attr), snd=_),
     -- Turn into inh vertexes (in this production) on targetType
@@ -73,7 +73,7 @@ fun projectInh
       -- Filter down to just LHS Inh in that production, (string names)
       filterLhsInh(
         -- Deps of this vertex in that other production
-        set:toList(prod.edgeMap(rhsInhVertex(sigName, attr))))));
+        set:toList(prod.edgeMap(prodType.inhVertex(attr))))));
 
 
 {--
@@ -81,56 +81,59 @@ fun projectInh
  - with all synthesized attributes on 'LHS' as 'syns'
  - and all inherited attributes on 'RHS1' as 'inhs'.
  -
- - Finds all edges for each 'inhs' from 'sigName' (here, "rhs1") and 'syns' from LHS
+ - Finds all edges for inhs from RHS for each 'childInhs' (here, "rhs1") and 'syns' from LHS
  - to LHS INH/RHS SYN/RHS EQ in the production 'prod'.
  -
  - @param prod  The production (or dispatch signature) we're projecting
- - @param childType  The "vertexType" of this stitchPoint
- - @param parentType The "vertexType" of where this stitchPoint should proxy to
- - @param sigName    The child in the other production to use
+ - @param parentType The decoration site of the tree being constructed
+ - @param childTypes  A map from children in prod to the corresponding vertex types in the current production
  - @param syns  The LHS syns we want to project
- - @param inhs  The RHS inhs we want to project
+ - @param childInhs  The RHS inhs we want to project for each child
  -}
 abstract production tileStitchPoint
 top::StitchPoint ::= 
   prod::String -- production being constructed
-  childType::VertexType -- the child tree vertex type in the current production
   parentType::VertexType -- the parent tree vertex type in the current production
-  sigName::String -- the name of this child in 'prod'
+  childTypes::[(String, VertexType)] -- map from child names in 'prod' to vertex types in the current production
   syns::[String] -- all syns on the lhs NT of 'prod'
-  inhs::[String] -- all inhs on the NT of 'sigName' in 'prod'
+  childInhs::[(String, [String])] -- all inhs on the NT of each 'sigName' in 'prod'
 {
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     let prodGraph::ProductionGraph = findProductionGraph(prod, prodGraphs) in
-      flatMap(projectTileSyn(childType, parentType, prodGraph, _), syns) ++
-      flatMap(projectTileInh(childType, parentType, prodGraph, sigName, _), inhs)
+      flatMap(projectTileSyn(parentType, childTypes, prodGraph, _), syns) ++
+      flatMap(\ ci::(String, [String]) ->
+        flatMap(projectTileInh(parentType, childTypes, prodGraph, ci.1, _), ci.2),
+        childInhs)
     end;
 }
 
 fun projectTileSyn
 [(FlowVertex, FlowVertex)] ::=
-  childType::VertexType parentType::VertexType prod::ProductionGraph attr::String =
+  parentType::VertexType childTypes::[(String, VertexType)] prod::ProductionGraph attr::String =
   map(pair(fst=parentType.synVertex(attr), snd=_),
-    flatMap(fromSigVertex(childType, parentType, _),
+    flatMap(fromSigVertex(prod.prod, parentType, childTypes, _),
       -- Deps of this vertex in that other production
       set:toList(prod.tileEdgeMap(lhsSynVertex(attr)))));
 
 fun projectTileInh
 [(FlowVertex, FlowVertex)] ::=
-  childType::VertexType parentType::VertexType prod::ProductionGraph sigName::String attr::String =
-  map(pair(fst=childType.inhVertex(attr), snd=_),
-    flatMap(fromSigVertex(childType, parentType, _),
+  parentType::VertexType childTypes::[(String, VertexType)] prod::ProductionGraph sigName::String attr::String =
+  map(pair(fst=lookup(sigName, childTypes).fromJust.inhVertex(attr), snd=_),
+    flatMap(fromSigVertex(prod.prod, parentType, childTypes, _),
       -- Deps of this vertex in that other production
       set:toList(prod.tileEdgeMap(rhsInhVertex(sigName, attr)))));
 
 fun fromSigVertex
-[FlowVertex] ::= childType::VertexType parentType::VertexType v::FlowVertex =
+[FlowVertex] ::= prodName::String parentType::VertexType childTypes::[(String, VertexType)] v::FlowVertex =
   case v of
   | lhsSynVertex(attr) -> [parentType.synVertex(attr)]
   | lhsInhVertex(attr) -> [parentType.inhVertex(attr)]
-  | rhsEqVertex(_) -> childType.eqVertex
-  | rhsSynVertex(_, attr) -> [childType.synVertex(attr)]
-  | rhsInhVertex(_, attr) -> [childType.inhVertex(attr)]
+  | rhsEqVertex(sigName) when lookup(sigName, childTypes) matches just(vt) ->
+      vt.eqVertex
+  | rhsSynVertex(sigName, attr) when lookup(sigName, childTypes) matches just(vt) ->
+      [vt.synVertex(attr)]
+  | rhsInhVertex(sigName, attr) when lookup(sigName, childTypes) matches just(vt) ->
+      [vt.inhVertex(attr)]
   | _ -> []
   end;
 

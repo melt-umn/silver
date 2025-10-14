@@ -166,8 +166,11 @@ synthesized attribute showStitchPoint :: String occurs on StitchPoint;
 aspect showStitchPoint on StitchPoint of
 | nonterminalStitchPoint(nt, vertexType) ->
   s"\tnonterminal ${nt} at ${vertexType.vertexName}\n"
-| projectionStitchPoint(prod, sourceType, targetType, sigName, attrs) ->
-  s"\tprojection ${prod}@${sigName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
-| tileStitchPoint(prod, childType, parentType, sigName, syns, inhs) ->
-  s"\ttile ${prod}@${sigName} at ${childType.vertexName}, ${parentType.vertexName}\n\t\tsyns ${implode(", ", syns)}\n\t\tinhs ${implode(", ", inhs)}\n"
+| projectionStitchPoint(prod, sourceType, targetType, prodType, attrs) ->
+  s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
+| tileStitchPoint(prod, parentType, childTypes, syns, childInhs) ->
+  s"\ttile ${prod} at ${parentType.vertexName}\n" ++
+  s"\t\tchildren ${implode(", ", map(\ c::(String, VertexType) -> s"${c.1} -> ${c.2.vertexName}", childTypes))}\n" ++
+  s"\t\tsyns ${implode(", ", syns)}\n" ++
+  flatMap(\ ci::(String, [String]) -> s"\t\t${ci.1} inhs ${implode(", ", ci.2)}\n", childInhs)
 end;

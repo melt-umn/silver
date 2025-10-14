@@ -87,7 +87,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
           projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
-        product(map(\ site::(String, String) -> recurse(site.1, rhsVertexType(site.2)),
+        product(unzipWith(recurse,
           -- places where this child was decorated in a production forwarding to this one,
           -- or in a dispatch signature that this production implements
           lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
@@ -184,7 +184,7 @@ State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
               getImplementingProds(prodOrSig, flowEnv))))
         -- Via signature/dispatch sharing
         | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
-          map(sum, sequence(map(\ site::(String, String) -> recurse(site.1, rhsVertexType(site.2)),
+          map(sum, sequence(unzipWith(recurse,
             -- places where this child was decorated in a production forwarding to this one,
             -- or in a dispatch signature that this production implements
             lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv))))

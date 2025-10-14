@@ -77,8 +77,8 @@ monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 {-- lookup dec site to find places that a shared reference to this tree are *unconditionally* decorated. -}
 monoid attribute refDecSiteContribs :: [(String, VertexType)];
 
-{-- lookup (prod, sig) to find source production and child name where sig was previously decorated -}
-monoid attribute sigShareContribs :: [(String, String, String)];
+{-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}
+monoid attribute sigShareContribs :: [(String, String, VertexType)];
 
 attribute
   synTreeContribs, inhTreeContribs, defTreeContribs,
@@ -437,17 +437,19 @@ data PatternVarProjection
  - @param parentNt the LHS nonterminal of termProd
  - @param parent   the flow vertex of the enclosing production call
  - @param termProd the applied production (or dispatch signature)
- - @param nt       the RHS nonterminal of sigName
- - @param sigName  the name of the child under which this term appears
+ - @param children the children of termProd, with their signature names and (maybe) nonterminal names
  -}
 abstract production subtermDecEq
-top::FlowDef ::= prod::String  parentNt::String parent::VertexType  termProd::String  nt::String  sigName::String
+top::FlowDef ::= prod::String  parentNt::String  parent::VertexType  termProd::String  children::[(String, Maybe<String>)]
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
     case parent of
-    | subtermVertexType(_, _, _) ->
-        map(\ v -> (v, subtermEqVertex(parent, termProd, sigName)), parent.eqVertex)
+    | subtermVertexType(_, _, _) -> flatMap(\ v ->
+        map(\ c::(String, Maybe<String>) ->
+          (v, subtermEqVertex(parent, termProd, c.1)),
+          children),
+        parent.eqVertex)
     | _ -> []
     end;
 }
@@ -500,14 +502,15 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
  - @param nt         the full name of the nonterminal
  - @param sigName    the name of the shared child in prod
  - @param sourceProd the full name of the (dispatching) production that forwarded to prod
- - @param sourceSigName the name of the child of sourceProd that was shared under prod
+ - @param source     the vertex type of the shared tree supplied by sourceProd as the shared child
  -}
 abstract production sigShareSite
-top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String sourceSigName::String
+top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType
+
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];
-  top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, sourceSigName)];
+  top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, source)];
 }
 
 --

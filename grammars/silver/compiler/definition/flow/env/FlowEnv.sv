@@ -33,7 +33,7 @@ synthesized attribute refTree :: EnvTree<[String]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
 synthesized attribute refDecSiteTree :: EnvTree<VertexType>;
-synthesized attribute sigShareTree :: EnvTree<(String, String)>;
+synthesized attribute sigShareTree :: EnvTree<(String, VertexType)>;
 synthesized attribute localInhTree ::EnvTree<FlowDef>;
 synthesized attribute localTree :: EnvTree<FlowDef>;
 synthesized attribute nonSuspectTree :: EnvTree<[String]>;
@@ -107,10 +107,10 @@ fun lookupRefDecSite [VertexType] ::= prod::String v::VertexType e::FlowEnv =
   searchEnvTree(s"${prod}:${v.vertexName}", e.refDecSiteTree);
 
 -- places where this child was decorated in a production forwarding to this one
-fun lookupSigShareSites [(String, String)] ::= prod::String sigName::String e::FlowEnv =
+fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
   searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
 
-fun lookupAllSigShareSites [(String, String)] ::= prod::String sigName::String e::FlowEnv realEnv::Env =
+fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv realEnv::Env =
   -- places where this child was decorated in a production forwarding to this one
   lookupSigShareSites(prod, sigName, e) ++
   -- or in a dispatch signature that this production implements
@@ -155,11 +155,10 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   case vt of
   | rhsVertexType(sigName) ->
       length(lookupInh(prodName, sigName, attrName, flowEnv)) +
-      let sites :: [(String, String)] =
+      let sites :: [(String, VertexType)] =
         lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)
       in
-        if !null(sites) && all(map(\ site::(String, String) ->
-          vertexHasInhEq(site.1, rhsVertexType(site.2), attrName, flowEnv), sites))
+        if !null(sites) && all(unzipWith(vertexHasInhEq(_, _, attrName, flowEnv), sites))
         then 1 else 0
       end
   | localVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
