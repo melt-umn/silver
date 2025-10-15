@@ -64,11 +64,11 @@ top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph
 {
   top.run = do {
     eprintln("Generating flow graphs");
-    writeFile("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}");
-    writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}");
-    writeFile("flow-deps-tile.dot", "digraph flow {\n" ++ generateTileDotGraph(prodGraph) ++ "}");
-    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
     writeFile("stitch-points.txt", generateStitchPointsDump(prodGraph));
+    writeDotGraphs("flow-deps-direct.dot", prodGraph);
+    writeDotGraphs("flow-deps-transitive.dot", finalGraph);
+    writeTileDotGraphs("flow-deps-tile.dot", prodGraph);
+    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
     return 0;
   };
 
@@ -101,26 +101,28 @@ String ::= nt::String  attr::String
 fun makeNtFlow String ::= nt::String  e::Pair<String String> =
   "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
 
-fun generateDotGraph String ::= specs::[ProductionGraph] =
-  case specs of
-  | [] -> ""
-  | h :: t ->
-      "subgraph \"cluster:" ++ h.prod ++ "\" {\n" ++ 
-      implode("", map(makeDotArrow(h.prod, _, ""), g:toList(h.graph))) ++
-      implode("", map(makeDotArrow(h.prod, _, " [style=dotted]"), h.suspectEdges)) ++
-      "}\n" ++
-      generateDotGraph(t)
-  end;
+fun writeDotGraphs IO<Unit> ::= fileName::String specs::[ProductionGraph] = do {
+  writeFile(fileName, "digraph flow {\n");
+  traverse_(\ spec::ProductionGraph ->
+    appendFile(fileName,
+      "subgraph \"cluster:" ++ spec.prod ++ "\" {\n" ++ 
+      implode("", map(makeDotArrow(spec.prod, _, ""), g:toList(spec.graph))) ++
+      implode("", map(makeDotArrow(spec.prod, _, " [style=dotted]"), spec.suspectEdges)) ++
+      "}\n"),
+    specs);
+  appendFile(fileName, "}\n");
+};
 
-fun generateTileDotGraph String ::= specs::[ProductionGraph] =
-  case specs of
-  | [] -> ""
-  | h :: t ->
-      "subgraph \"cluster:" ++ h.prod ++ "\" {\n" ++ 
-      implode("", map(makeDotArrow(h.prod, _, ""), g:toList(h.tileGraph))) ++
-      "}\n" ++
-      generateDotGraph(t)
-  end;
+fun writeTileDotGraphs IO<Unit> ::= fileName::String specs::[ProductionGraph] = do {
+  writeFile(fileName, "digraph flow {\n");
+  traverse_(\ spec::ProductionGraph ->
+    appendFile(fileName,
+      "subgraph \"cluster:" ++ spec.prod ++ "\" {\n" ++ 
+      implode("", map(makeDotArrow(spec.prod, _, ""), g:toList(spec.tileGraph))) ++
+      "}\n"),
+    specs);
+  appendFile(fileName, "}\n");
+};
 
 -- "production/flowvertex" -> "production/flowvertex"
 fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String =
