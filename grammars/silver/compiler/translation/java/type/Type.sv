@@ -165,7 +165,7 @@ aspect production inhSetType
 top::Type ::= inhs::[String]
 {
   top.transClassType = error("Demanded translation of InhSet type");
-  top.transTypeRep = error("Demanded TypeRep translation of InhSet type");
+  top.transTypeRep = s"new common.BaseTypeRep(\"{${implode(", ", inhs)}}\")";
   top.transTypeName = substitute(":", "_", implode("_", inhs));
 }
 
