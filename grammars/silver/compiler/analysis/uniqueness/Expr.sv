@@ -2,7 +2,7 @@ grammar silver:compiler:analysis:uniqueness;
 
 attribute sharedRefs occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
 propagate sharedRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern
-  excluding ifThenElse, matchPrimitiveReal, consPattern;
+  excluding ifThenElse, matchPrimitiveReal, consPattern, letp;
 
 aspect production decorationSiteExpr
 top::Expr ::=  '@' e::Expr
@@ -113,4 +113,16 @@ aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern _ ps::PrimPatterns
 {
   top.sharedRefs := unionMutuallyExclusiveRefs(p.sharedRefs, ps.sharedRefs);
+}
+
+aspect production letp
+top::Expr ::= la::AssignExpr  e::Expr
+{
+  top.sharedRefs := e.sharedRefs;
+}
+
+aspect production lexicalLocalReference
+top::Expr ::= @q::QName _ _ sr::[(String, SharedRefSite)]
+{
+  top.sharedRefs <- sr;
 }

@@ -359,7 +359,7 @@ top::Pattern ::= '_'
 aspect production varPattern
 top::Pattern ::= v::Name
 {
-  top.ruleDefs <- [lexicalLocalDef(top.grammarName, v.nameLoc, v.name, top.scrutineeType, nothing(), [])];
+  top.ruleDefs <- [lexicalLocalDef(top.grammarName, v.nameLoc, v.name, top.scrutineeType, nothing(), [], [])];
   top.transform = varASTPattern(v.name);
 }
 
