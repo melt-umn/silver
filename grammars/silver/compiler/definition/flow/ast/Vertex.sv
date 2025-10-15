@@ -138,7 +138,37 @@ data FlowVertex =
 | subtermInhVertex parent::VertexType prodName::String sigName::String  attrName::String
 ;
 
-derive Eq, Ord on FlowVertex;
+attribute vertexName occurs on FlowVertex;
+aspect vertexName on FlowVertex of
+| lhsSynVertex(attrName) -> attrName
+| lhsInhVertex(attrName) -> attrName
+| rhsEqVertex(sigName) -> sigName
+| rhsSynVertex(sigName, attrName) -> s"${sigName}.${attrName}"
+| rhsInhVertex(sigName, attrName) -> s"${sigName}.${attrName}"
+| localEqVertex(fName) -> fName
+| localSynVertex(fName, attrName) -> s"${fName}.${attrName}"
+| localInhVertex(fName, attrName) -> s"${fName}.${attrName}"
+| anonEqVertex(fName) -> fName
+| anonSynVertex(fName, attrName) -> s"${fName}.${attrName}"
+| anonInhVertex(fName, attrName) -> s"${fName}.${attrName}"
+| subtermEqVertex(parent, prodName, sigName) ->
+    s"${parent.vertexName}[${prodName}:${sigName}]"
+| subtermSynVertex(parent, prodName, sigName, attrName) ->
+    s"${parent.vertexName}[${prodName}:${sigName}].${attrName}"
+| subtermInhVertex(parent, prodName, sigName, attrName) ->
+    s"${parent.vertexName}[${prodName}:${sigName}].${attrName}"
+end;
+
+--derive Eq, Ord on FlowVertex;
+
+-- More efficient equality and ordering by just comparing vertex names:
+instance Eq FlowVertex {
+  eq = \ v1::FlowVertex v2::FlowVertex -> v1.vertexName == v2.vertexName;
+}
+
+instance Ord FlowVertex {
+  compare = \ v1::FlowVertex v2::FlowVertex -> compare(v1.vertexName, v2.vertexName);
+}
 
 
 -- The forward equation for this production. We do not care to distinguish it.
