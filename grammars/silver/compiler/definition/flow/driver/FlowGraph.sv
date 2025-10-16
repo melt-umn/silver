@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:flow:driver;
 
+import silver:util:idcache as i;
+
 type FlowType = g:Graph<String>;
 
 function findFlowType
@@ -21,7 +23,7 @@ function expandGraph
 {
   -- look up each vertex, uniq it down.
   local initial :: set:Set<FlowVertex> =
-    set:add(v, foldr(set:union, set:empty(), map(e.edgeMap, v)));
+    set:add(v, foldr(set:union, set:emptyWith(compareVertexId), map(e.edgeMap, v)));
 
   return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
 }
@@ -62,4 +64,14 @@ fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
   end;
 
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =
-  g:transitiveClosure(g:add(l, g:empty()));
+  g:transitiveClosure(g:add(l, g:emptyWith(compareVertexId)));
+
+
+global vertexCache::i:IdCache<FlowVertex> = i:empty();
+synthesized attribute vertexId::Integer occurs on FlowVertex;
+aspect default production
+top::FlowVertex ::=
+{ top.vertexId = i:lookup(top, vertexCache); }
+
+fun compareVertexId Integer ::= a::FlowVertex b::FlowVertex =
+  a.vertexId - b.vertexId;
