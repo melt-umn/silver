@@ -4,6 +4,7 @@ grammar silver:util;
 imports silver:util:cmdargs;
 imports silver:util:deque;
 imports silver:util:graph;
+imports silver:util:idcache;
 imports silver:util:random;
 imports silver:util:subprocess;
 imports silver:util:treemap;

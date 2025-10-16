@@ -150,6 +150,7 @@ top::FlowDef ::= nt::String  prod::String
  -
  - @param dispatchSig  The full name of the dispatch signature that is implemented
  - @param prod         The full name of the production
+ - @param sigNames     The names of the RHS elements in the production
  -}
 abstract production implFlowDef
 top::FlowDef ::= dispatchSig::String  prod::String  sigNames::[String]

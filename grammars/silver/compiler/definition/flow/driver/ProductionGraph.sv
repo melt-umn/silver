@@ -3,8 +3,9 @@ grammar silver:compiler:definition:flow:driver;
 import silver:compiler:definition:type only isNonterminal, typerep;
 
 data nonterminal ProductionGraph with
-  prod, lhsNt, flowTypeVertexes, graph, tileGraph, suspectEdges, stitchPoints, sigNtStitchPoints,
-  stitchedGraph, edgeMap, tileEdgeMap, suspectEdgeMap, cullSuspect;
+  prod, lhsNt, flowTypeVertexes, graph, tileGraph, suspectEdges,
+  stitchPoints, sigNtStitchPoints,
+  stitchedGraph, tileEdges, edgeMap, suspectEdgeMap, cullSuspect;
 
 -- The full name of this production
 -- This is, apparently, only used to look up production by name
@@ -35,18 +36,21 @@ annotation stitchPoints::[StitchPoint];
 -- Stitch points that arise from signature nonterminals, only used in graph and not tileGraph.
 annotation sigNtStitchPoints::[StitchPoint];
 
--- TODO: future me note: these are good candidates to be "static attributes" maybe?
 {--
  - Given a set of flow types, stitches those edges into the graph for
  - all stitch points (i.e. children, locals, forward).
  - Either just a new graph, or nothing if no new edges were added.
  -}
 synthesized attribute stitchedGraph :: (Maybe<ProductionGraph> ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
+
+{--
+ - All edges between LHS and RHS vertices of the tile graph.
+ -}
+synthesized attribute tileEdges :: [(FlowVertex, FlowVertex)];
 {--
  - Edge mapper
  -}
 synthesized attribute edgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
-synthesized attribute tileEdgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
 synthesized attribute suspectEdgeMap :: ([FlowVertex] ::= FlowVertex);
 
 synthesized attribute cullSuspect :: (Maybe<ProductionGraph> ::= EnvTree<FlowType>);
@@ -68,7 +72,7 @@ top::ProductionGraph ::=
         flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), top.sigNtStitchPoints)
     in let
       newEdges :: [(FlowVertex, FlowVertex)] =
-        filter(edgeIsNew(_, top.graph), edges ++ sigEdges),
+        filter(edgeIsNew(_, top.graph), filter(notRhsEqDep, edges) ++ sigEdges),
       newTileEdges :: [(FlowVertex, FlowVertex)] =
         filter(edgeIsNew(_, top.tileGraph), edges)  -- sigEdges not included in tileGraph
     in let
@@ -82,8 +86,9 @@ top::ProductionGraph ::=
       else just(top(graph=repaired, tileGraph=repairedTile))
     end end end;
 
+  top.tileEdges = filter(isSigEdge, g:toList(top.tileGraph));
+
   top.edgeMap = g:edgesFrom(_, top.graph);
-  top.tileEdgeMap = g:edgesFrom(_, top.tileGraph);
   top.suspectEdgeMap = lookupAll(_, top.suspectEdges);
   
   top.cullSuspect = \ flowTypes::EnvTree<FlowType> ->
@@ -198,7 +203,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local stitchPoints :: [StitchPoint] =
     localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(flowEnv, realEnv, defs) ++
+    subtermDecSiteStitchPoints(defs) ++
     sigSharingStitchPoints(flowEnv, realEnv, nt, defs) ++
     case dcl.implementedSignature of
     | just(sig) -> concat(zipWith(
@@ -222,7 +227,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
   
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(fixedEdges);
+    createFlowGraph(filter(notRhsEqDep, fixedEdges));  -- deps on RHS.EQ don't matter in the regular graph
   local initialTileGraph :: g:Graph<FlowVertex> =
     g:repairClosure(suspectEdges, initialGraph);
 
@@ -262,9 +267,10 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
     flatMap((.suspectFlowEdges), defs);
     
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(fixedEdges);
+    createFlowGraph(filter(notRhsEqDep, fixedEdges)); -- deps on RHS.EQ don't matter in the regular graph
+  -- TODO: functions shouldn't have a tile graphUpdated
   local initialTileGraph :: g:Graph<FlowVertex> =
-    g:repairClosure(suspectEdges, initialGraph);
+    createFlowGraph(suspectEdges ++ fixedEdges); -- suspect edges included in tile graph initially
 
   -- Just included as regular stitch points.
   local sigNtStitchPoints :: [StitchPoint] = [];
@@ -274,7 +280,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
     flatMap(rhsStitchPoints(realEnv, _), ns.inputElements) ++
     localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(flowEnv, realEnv, defs);
+    subtermDecSiteStitchPoints(defs);
 
   local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
 
@@ -428,8 +434,8 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
   local nt :: NtName = ns.outputElement.typerep.typeName;
   local defs :: [FlowDef] = getGraphContribsFor(dispatch, flowEnv);
 
-  -- The graph has no normal edges, only projection stitch points!
-  local normalEdges :: [(FlowVertex, FlowVertex)] = [];
+  local normalEdges :: [(FlowVertex, FlowVertex)] =
+    flatMap(addDispatchEqs(flowEnv, realEnv, ns, _), defs);
 
   local stitchPoints :: [StitchPoint] =
     sigSharingStitchPoints(flowEnv, realEnv, nt, defs) ++  -- where this dispatch is applied
@@ -448,6 +454,25 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 
 fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
   (lhsSynVertex(at), forwardEqVertex());
+
+fun notRhsEqDep Boolean ::= e::(FlowVertex, FlowVertex) =
+  case e of
+  | (_, rhsEqVertex(_)) -> false
+  | _ -> true
+  end;
+
+fun isSigEdge Boolean ::= edge::(FlowVertex, FlowVertex) =
+  edge.1.isSigVertex && edge.2.isSigVertex;
+
+synthesized attribute isSigVertex :: Boolean occurs on FlowVertex;
+aspect isSigVertex on FlowVertex of
+| lhsSynVertex(_) -> true
+| lhsInhVertex(_) -> true
+| rhsEqVertex(_) -> true
+| rhsSynVertex(_, _) -> true
+| rhsInhVertex(_, _) -> true
+| _ -> false
+end;
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
@@ -518,6 +543,24 @@ fun addDefEqs
         getSynAttrsOn(nt, realEnv))
    | _ -> []
    end;
+{--
+ - Introduce edges between lhs/rhs syn/inh and subterm vertices with tile deps.
+ -}
+fun addDispatchEqs
+[(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv realEnv::Env dispatch::NamedSignature d::FlowDef =
+  case d of
+  | implFlowDef(_, prod, sigNames) -> concat(zipWith(
+      \ ie::NamedSignatureElement sigName::String ->
+        (rhsEqVertex(ie.elementName), subtermEqVertex(lhsVertexType, prod, sigName)) ::
+        map(\ attr::String ->
+          (subtermSynVertex(lhsVertexType, prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
+          getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
+        map(\ attr::String ->
+          (rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType, prod, sigName, attr)),
+          getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv)),
+      dispatch.inputElements, sigNames))
+  | _ -> []
+  end;
 
 ---- End helpers for fixing up graphs ------------------------------------------
 
@@ -572,19 +615,11 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
       nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
   end;
 -- deps for subterm vertex of applied prod
-fun subtermDecSiteStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  defs::[FlowDef] =
+fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
     | subtermDecEq(_, parentNt, parent, termProdName, children) ->
-        [tileStitchPoint(
-          termProdName, parent,
-          map(\ cNt::(String, Maybe<String>) ->
-            (cNt.1, subtermVertexType(parent, termProdName, cNt.1)),
-            children),
-          getSynAttrsOn(parentNt, realEnv),
-          filterMap(\ cNt::(String, Maybe<String>) ->
-            map(\ nt -> (cNt.1, getInhAndInhOnTransAttrsOn(nt, realEnv)), cNt.2),
-            children))]
+        [tileStitchPoint(termProdName, parent)]
     | _ -> []
     end,
     defs);
@@ -610,19 +645,9 @@ fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ie::N
 fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | implFlowDef(_, prod, _) when getValueDcl(prod, realEnv) matches dcl :: _ ->
-        [tileStitchPoint(
-          prod, lhsVertexType,
-          zipWith(
-            \ pSigName::String dSigName::String -> (pSigName, rhsVertexType(dSigName)),
-            dcl.namedSignature.inputNames, dispatch.inputNames),
-          getSynAttrsOn(dispatch.outputElement.typerep.typeName, realEnv),
-          filterMap(\ ie::NamedSignatureElement ->
-            if ie.elementShared || ie.typerep.isNonterminal
-            then just((ie.elementName, getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv)))
-            else nothing(),
-            -- TODO: when the impl prod has extra children, need to introduce nonterminal stitch points for them?
-            take(length(dispatch.inputElements), dcl.namedSignature.inputElements)))]
+    | implFlowDef(_, prod, sigNames) ->
+        -- TODO: when the impl prod has extra children, need to introduce nonterminal stitch points for them?
+        [tileStitchPoint(prod, lhsVertexType)]
     | _ -> []
     end,
     defs);

@@ -73,7 +73,8 @@ fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
 };
 
 {--
- - Update a production graph using the current flow types.
+ - Update a production graph using the current flow types and graphs,
+ - including tile graphs and stitch points.
  -}
 production updateProdGraph
 top::InferState<Boolean> ::= prod::ProdName

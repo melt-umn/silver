@@ -87,54 +87,35 @@ fun projectInh
  - @param prod  The production (or dispatch signature) we're projecting
  - @param parentType The decoration site of the tree being constructed
  - @param childTypes  A map from children in prod to the corresponding vertex types in the current production
- - @param syns  The LHS syns we want to project
- - @param childInhs  The RHS inhs we want to project for each child
  -}
 abstract production tileStitchPoint
 top::StitchPoint ::= 
   prod::String -- production being constructed
   parentType::VertexType -- the parent tree vertex type in the current production
-  childTypes::[(String, VertexType)] -- map from child names in 'prod' to vertex types in the current production
-  syns::[String] -- all syns on the lhs NT of 'prod'
-  childInhs::[(String, [String])] -- all inhs on the NT of each 'sigName' in 'prod'
 {
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
-    let prodGraph::ProductionGraph = findProductionGraph(prod, prodGraphs) in
-      flatMap(projectTileSyn(parentType, childTypes, prodGraph, _), syns) ++
-      flatMap(\ ci::(String, [String]) ->
-        flatMap(projectTileInh(parentType, childTypes, prodGraph, ci.1, _), ci.2),
-        childInhs)
-    end;
+    unsafeTracePrint(
+    map(fromSigEdge(prod, parentType, _),
+      findProductionGraph(prod, prodGraphs).tileEdges),
+    s"Stitching tile ${prod} at ${parentType.vertexName}\n");
 }
 
-fun projectTileSyn
-[(FlowVertex, FlowVertex)] ::=
-  parentType::VertexType childTypes::[(String, VertexType)] prod::ProductionGraph attr::String =
-  map(pair(fst=parentType.synVertex(attr), snd=_),
-    flatMap(fromSigVertex(prod.prod, parentType, childTypes, _),
-      -- Deps of this vertex in that other production
-      set:toList(prod.tileEdgeMap(lhsSynVertex(attr)))));
-
-fun projectTileInh
-[(FlowVertex, FlowVertex)] ::=
-  parentType::VertexType childTypes::[(String, VertexType)] prod::ProductionGraph sigName::String attr::String =
-  map(pair(fst=lookup(sigName, childTypes).fromJust.inhVertex(attr), snd=_),
-    flatMap(fromSigVertex(prod.prod, parentType, childTypes, _),
-      -- Deps of this vertex in that other production
-      set:toList(prod.tileEdgeMap(rhsInhVertex(sigName, attr)))));
+fun fromSigEdge
+(FlowVertex, FlowVertex) ::= prodName::String parentType::VertexType e::(FlowVertex, FlowVertex) =
+  (fromSigVertex(prodName, parentType, e.1), fromSigVertex(prodName, parentType, e.2));
 
 fun fromSigVertex
-[FlowVertex] ::= prodName::String parentType::VertexType childTypes::[(String, VertexType)] v::FlowVertex =
+FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   case v of
-  | lhsSynVertex(attr) -> [parentType.synVertex(attr)]
-  | lhsInhVertex(attr) -> [parentType.inhVertex(attr)]
-  | rhsEqVertex(sigName) when lookup(sigName, childTypes) matches just(vt) ->
-      vt.eqVertex
-  | rhsSynVertex(sigName, attr) when lookup(sigName, childTypes) matches just(vt) ->
-      [vt.synVertex(attr)]
-  | rhsInhVertex(sigName, attr) when lookup(sigName, childTypes) matches just(vt) ->
-      [vt.inhVertex(attr)]
-  | _ -> []
+  | lhsSynVertex(attr) -> parentType.synVertex(attr)
+  | lhsInhVertex(attr) -> parentType.inhVertex(attr)
+  | rhsEqVertex(sigName) ->
+    subtermEqVertex(parentType, prodName, sigName)
+  | rhsSynVertex(sigName, attr) ->
+    subtermSynVertex(parentType, prodName, sigName, attr)
+  | rhsInhVertex(sigName, attr) ->
+    subtermInhVertex(parentType, prodName, sigName, attr)
+  | _ -> error("Unexpected non-signature vertex in tileEdges: " ++ v.dotName)
   end;
 
 
