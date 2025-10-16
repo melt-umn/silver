@@ -204,7 +204,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(defs) ++
-    sigSharingStitchPoints(flowEnv, realEnv, nt, defs) ++
+    sigSharingStitchPoints(realEnv, defs) ++
     case dcl.implementedSignature of
     | just(sig) -> concat(zipWith(
         implementedSigStitchPoints(realEnv, nt, _, sig.fullName, _),
@@ -438,7 +438,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
     flatMap(addDispatchEqs(flowEnv, realEnv, ns, _), defs);
 
   local stitchPoints :: [StitchPoint] =
-    sigSharingStitchPoints(flowEnv, realEnv, nt, defs) ++  -- where this dispatch is applied
+    sigSharingStitchPoints(realEnv, defs) ++  -- where this dispatch is applied
     dispatchStitchPoints(flowEnv, realEnv, ns, defs);  -- impls of this dispatch
   local sigNtStitchPoints :: [StitchPoint] = [];
 
@@ -624,13 +624,13 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =
     end,
     defs);
 -- deps for prod/dispatch sig, from prods that forwarded to it
-fun sigSharingStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  nt::NtName  defs::[FlowDef] =
+fun sigSharingStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
     | sigShareSite(_, sigNt, sigName, sourceProd, vt) ->
         [projectionStitchPoint(
           sourceProd, rhsVertexType(sigName), lhsVertexType, vt,
-          getInhAndInhOnTransAttrsOn(nt, realEnv))]
+          getInhAndInhOnTransAttrsOn(sigNt, realEnv))]
     | _ -> []
     end,
     defs);
