@@ -116,8 +116,9 @@ fun checkEqDeps
   -- A dependency on an argument to a production call.  This always has an expression.
   | subtermEqVertex(parent, termProdName, sigName) -> []
   -- A dependency on a projected equation in another production.
-  | subtermInhVertex(parent, termProdName, sigName, attrName) ->
-      checkInhEq(prodName, subtermVertexType(parent, termProdName, sigName), attrName, config, prodGraphs, flowEnv, realEnv)
+  -- We only depend on these vertices via sharing, and projected transitive dependencies
+  -- will be checked at the sharing site by resolveInhEq, so no need to check here.
+  | subtermInhVertex(parent, termProdName, sigName, attrName) -> []
   -- We can assume that the other production has all its SYN equations.
   | subtermSynVertex(parent, termProdName, sigName, attrName) -> []
   end;
