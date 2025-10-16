@@ -36,7 +36,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
     case d.implementsSig of
     | just(dSig) when
         isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) ->
-      [implFlowDef(dSig.fullName, fName, namedSig.inputNames)]
+      [implFlowDef(dSig.fullName, fName, namedSig.inputNames,
+        filterMap(\ ie::NamedSignatureElement ->
+          if ie.typerep.isNonterminal
+          then just((ie.elementName, ie.typerep.typeName))
+          else nothing(),
+          drop(length(dSig.inputElements), namedSig.inputElements)))]
     | _ -> []
     end;
 

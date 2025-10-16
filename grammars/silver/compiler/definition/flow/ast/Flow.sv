@@ -151,9 +151,10 @@ top::FlowDef ::= nt::String  prod::String
  - @param dispatchSig  The full name of the dispatch signature that is implemented
  - @param prod         The full name of the production
  - @param sigNames     The names of the RHS elements in the production
+ - @param extraSigNts  Extra nonterminal children that do not correspond to the dispatch signature, and their types
  -}
 abstract production implFlowDef
-top::FlowDef ::= dispatchSig::String  prod::String  sigNames::[String]
+top::FlowDef ::= dispatchSig::String  prod::String  sigNames::[String]  extraSigNts::[(String, String)]
 {
   top.implTreeContribs := [(dispatchSig, prod, sigNames)];
   top.prodGraphContribs := [(dispatchSig, top)];

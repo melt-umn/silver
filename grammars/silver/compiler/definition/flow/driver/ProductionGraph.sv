@@ -549,7 +549,7 @@ fun addDefEqs
 fun addDispatchEqs
 [(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv realEnv::Env dispatch::NamedSignature d::FlowDef =
   case d of
-  | implFlowDef(_, prod, sigNames) -> concat(zipWith(
+  | implFlowDef(_, prod, sigNames, _) -> concat(zipWith(
       \ ie::NamedSignatureElement sigName::String ->
         (rhsEqVertex(ie.elementName), subtermEqVertex(lhsVertexType, prod, sigName)) ::
         map(\ attr::String ->
@@ -645,9 +645,11 @@ fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ie::N
 fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature  defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | implFlowDef(_, prod, sigNames) ->
-        -- TODO: when the impl prod has extra children, need to introduce nonterminal stitch points for them?
-        [tileStitchPoint(prod, lhsVertexType)]
+    | implFlowDef(_, prod, sigNames, extraSigNts) ->
+        tileStitchPoint(prod, lhsVertexType) ::
+        concat(unzipWith(\ sigName::String nt::String ->
+          nonterminalStitchPoints(realEnv, nt, subtermVertexType(lhsVertexType, prod, sigName)),
+          extraSigNts))
     | _ -> []
     end,
     defs);
