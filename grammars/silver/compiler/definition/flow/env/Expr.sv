@@ -226,7 +226,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =
     case e of
     | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
@@ -297,7 +296,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  top.flowVertexInfo = top.decSiteVertexInfo;
   es.appProd =
     case e, e.finalType of
     | productionReference(q), _ -> just(q.lookupValue.dcl.namedSignature)
@@ -359,10 +357,19 @@ top::AppExpr ::= e::Expr
     | just(ns) when sigIndex < length(ns.inputNames) -> head(drop(sigIndex, ns.inputNames))
     | _ -> "err"
     end;
+
+  -- Capture the equation dependencies for non-decorable children.
+  -- Additional optimization: if the expression is a "boring" tree literal with no flow
+  -- dependencies or sharing, just treat it as a hole.
+  -- Using the flow type is less precise than a tile stitch point, but this
+  -- avoids a massive blowup in the size of the flow graph when constructing
+  -- large trees.
   top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd of
-    | just(parent), just(ns) when !sigIsShared && !isDecorable(top.appExprTyperep, top.env) ->
-      -- Capture the equation dependencies for non-decorable children
+    | just(parent), just(ns) when
+        !sigIsShared &&
+        (!isDecorable(top.appExprTyperep, top.env) ||
+         (null(e.flowDeps) && null(e.sharedRefs))) ->
       [holeEq(
         top.frame.fullName, top.appExprTyperep.typeName, false,
         subtermVertexType(parent, ns.fullName, sigName),
@@ -371,12 +378,13 @@ top::AppExpr ::= e::Expr
     end;
   e.decSiteVertexInfo =
     case top.decSiteVertexInfo, top.appProd of
-    | just(parent), just(ns)
-        when isDecorable(
+    | just(parent), just(ns) when
+        isDecorable(
           if sigIsShared
           then top.appExprTyperep.decoratedType
           else top.appExprTyperep,
-          top.env) ->
+          top.env) &&
+        !(null(e.flowDeps) && null(e.sharedRefs)) ->
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
     end;
@@ -679,7 +687,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 {
   top.flowDeps := fd;
   top.flowVertexInfo = fi;
