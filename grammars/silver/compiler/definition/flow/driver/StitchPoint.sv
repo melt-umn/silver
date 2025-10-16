@@ -94,10 +94,8 @@ top::StitchPoint ::=
   parentType::VertexType -- the parent tree vertex type in the current production
 {
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
-    unsafeTracePrint(
     map(fromSigEdge(prod, parentType, _),
-      findProductionGraph(prod, prodGraphs).tileEdges),
-    s"Stitching tile ${prod} at ${parentType.vertexName}\n");
+      findProductionGraph(prod, prodGraphs).tileEdges);
 }
 
 fun fromSigEdge
