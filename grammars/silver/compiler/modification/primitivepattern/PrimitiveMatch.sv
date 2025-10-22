@@ -33,6 +33,11 @@ tracked nonterminal PrimPattern with
   unparse, errors, freeVars,
   downSubst, upSubst, downSubst2, upSubst2, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
+flowtype PrimPattern = decorate {
+  env, config, compiledGrammars, grammarName, frame, originRules, finalSubst, downSubst,
+  flowEnv, dispatchFlowDeps, decSiteVertexInfo, appDecSiteVertexInfo, alwaysDecorated,
+  scrutineeType, returnType
+};
 
 inherited attribute scrutineeType :: Type;
 inherited attribute returnType :: Type;

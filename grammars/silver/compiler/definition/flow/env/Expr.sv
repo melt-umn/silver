@@ -74,7 +74,9 @@ attribute flowVertexInfo occurs on Expr;
  -}
 inherited attribute dispatchFlowDeps :: [FlowVertex];
 
-flowtype flowVertexInfo {forward} on Expr;
+flowtype Expr =
+  flowVertexInfo {forward}, flowDeps {forward}, flowDefs {forward, alwaysDecorated},
+  lexicalLocalDecSites {forward}, lexicalLocalAlwaysDecorated {forward, alwaysDecorated};
 
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding

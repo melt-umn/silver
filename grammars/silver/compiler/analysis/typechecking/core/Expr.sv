@@ -5,7 +5,7 @@ import silver:compiler:definition:flow:env;
 attribute upSubst, downSubst, upSubst2, downSubst2, finalSubst occurs on
   Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
-flowtype Expr = upSubst {forward}, finalType {forward};
+flowtype Expr = upSubst {forward}, upSubst2 {forward, downSubst2}, finalType {forward};
 
 propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
