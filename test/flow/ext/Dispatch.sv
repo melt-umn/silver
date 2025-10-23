@@ -1,6 +1,6 @@
 grammar flow:ext;
 
-warnCode "Inherited override equation for flow:env2 has excess dependencies" {
+warnCode "Inherited override equation for flow:env2 on child e has excess dependencies" {
 production extDispatchInhExceedsHost implements DispatchOp2
 top::UDExpr ::= e::UDExpr
 {
