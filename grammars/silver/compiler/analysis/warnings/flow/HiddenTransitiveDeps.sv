@@ -133,6 +133,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       head(drop(sigPos, dispatchSig.inputElements)).elementName,
       dl.inhAttrName);
     return set:fromList(flatMap(fromDispatchSigVertex(dispatchSig, ns, _),
+      rhsEqVertex(sigName) ::  -- TODO: Workaround: the rhs inh vertex should depend on the rhs eq vertex already!
       set:toList(findProductionGraph(dispatchSig.fullName, myGraphs).tileEdgeMap(dispatchVertex))));
   };
 
