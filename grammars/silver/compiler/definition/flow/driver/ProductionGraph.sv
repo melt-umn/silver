@@ -231,7 +231,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(filter(notRhsEqDep, fixedEdges));  -- deps on RHS.EQ don't matter in the regular graph
   local initialTileGraph :: g:Graph<FlowVertex> =
-    g:repairClosure(suspectEdges, initialGraph);
+    createFlowGraph(suspectEdges ++ fixedEdges);
 
   return productionGraph(
     prod=prod, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
@@ -270,7 +270,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
     
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(filter(notRhsEqDep, fixedEdges)); -- deps on RHS.EQ don't matter in the regular graph
-  -- TODO: functions shouldn't have a tile graphUpdated
+  -- TODO: functions shouldn't have a tile graph
   local initialTileGraph :: g:Graph<FlowVertex> =
     createFlowGraph(suspectEdges ++ fixedEdges); -- suspect edges included in tile graph initially
 
@@ -533,6 +533,7 @@ fun addDefEqs
         | localVertexType(fName) -> !isForwardProdAttr(prod, fName, flowEnv)
         | _ -> true
         end ->
+      lift2(pair(fst=_, snd=_), decSite.eqVertex, ref.eqVertex) ++
       filterMap(
         \ attr::String ->
           if vertexHasInhEq(prod, ref, attr, flowEnv)
@@ -555,6 +556,7 @@ fun addDispatchEqs
   | implFlowDef(_, prod, sigNames, _) -> concat(zipWith(
       \ ie::NamedSignatureElement sigName::String ->
         (rhsEqVertex(ie.elementName), subtermEqVertex(lhsVertexType, prod, sigName)) ::
+        (subtermEqVertex(lhsVertexType, prod, sigName), rhsEqVertex(ie.elementName)) ::
         map(\ attr::String ->
           (subtermSynVertex(lhsVertexType, prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
           "forward" :: getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
