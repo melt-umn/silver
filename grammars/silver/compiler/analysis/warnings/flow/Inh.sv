@@ -236,7 +236,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  production myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] =
     expandGraph(e.flowDeps, top.frame.flowGraph);
@@ -257,12 +257,12 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  production myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local transitiveDeps :: [FlowVertex] = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
-  local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
+  production lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
 
   -- problem = lhsinh deps - fwd flow type - this inh attribute
   local lhsInhExceedsForwardFlowType :: [String] = 
@@ -273,92 +273,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
           lhsInhDeps,
           inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
-  -- Make sure we aren't introducing any hidden transitive dependencies.
-
-  local vertexHasHideableEq :: (Boolean ::= VertexType String) =
-    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
-
-  local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case filter(
-      vertexHasHideableEq(_, attr.attrDcl.fullName),
-      lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
-    | [] -> nothing()
-    | vs -> just(onlyLhsInh(expandGraph(
-        dl.defLHSVertex.eqVertex ++
-        map(\ v::VertexType -> v.inhVertex(attr.attrDcl.fullName), vs),
-        top.frame.flowGraph)))
-    end;
-
-  local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case dl.defLHSVertex of
-    | transAttrVertexType(v, transAttr) ->
-      case filter(
-        vertexHasHideableEq(_, dl.inhAttrName),
-        lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
-      | [] -> nothing()
-      | vs -> just(onlyLhsInh(expandGraph(
-          v.eqVertex ++
-          map(\ v::VertexType -> v.inhVertex(dl.inhAttrName), vs),
-          top.frame.flowGraph)))
-      end
-    | _ -> nothing()
-    end;
-
-  -- problem = lhsinh deps - inh deps on dec site
-  local lhsInhExceedsRefDecSiteDeps :: [String] =
-    case refDecSiteInhDepsLhsInh of
-    | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
-    | _ -> []
-    end;
-
-  local lhsInhExceedsTransBaseRefDecSiteDeps :: [String] =
-    case transBaseRefDecSiteInhDepsLhsInh of
-    | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
-    | _ -> []
-    end;
-  
-  -- Extension productions that implement a dispatch signature
-
-  local ns :: NamedSignature =  -- top.frame.signature might have aspect sig names that don't match the flow env
-    case getValueDcl(top.frame.fullName, top.env) of
-    | dcl :: _ -> dcl.namedSignature
-    | _ -> error("didn't find a decl for prod " ++ top.frame.fullName)
-    end;
-  local implementedSig :: Maybe<NamedSignature> =
-    case getValueDcl(top.frame.fullName, top.env) of
-    | dcl :: _ -> dcl.implementedSignature
-    | _ -> nothing()
-    end;
-  local dispatchHostSigInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case implementedSig of
-    | just(dispatchSig) ->
-      case dl.defLHSVertex of
-      | rhsVertexType(sigName)
-          when lookupSignatureInputElem(sigName, ns).elementShared ->
-        just(onlyLhsInh(expandGraph(
-          [rhsInhVertex(
-            head(drop(positionOf(sigName, ns.inputNames), dispatchSig.inputNames)),
-            attr.attrDcl.fullName)],
-          findProductionGraph(dispatchSig.fullName, myGraphs))))
-      | transAttrVertexType(rhsVertexType(sigName), transAttr)
-          when lookupSignatureInputElem(sigName, ns).elementShared ->
-        just(onlyLhsInh(expandGraph(
-          [rhsInhVertex(
-            head(drop(positionOf(sigName, ns.inputNames), dispatchSig.inputNames)),
-            transAttr ++ "." ++ attr.attrDcl.fullName)],
-          findProductionGraph(dispatchSig.fullName, myGraphs))))
-      | _ -> nothing()
-      end
-    | _ -> nothing()
-    end;
-
-  -- problem = lhsinh deps - inh deps on host implementation prods
-  local lhsInhExceedsDispatchHostSigInhDeps :: [String] =
-    case dispatchHostSigInhDepsLhsInh of
-    | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
-    | _ -> []
-    end;
-
   top.errors <-
     if top.config.warnMissingInh
     then checkAllEqDeps(transitiveDeps, e.flowDefs, top.config, top.frame.fullName, myGraphs, top.flowEnv, top.env)
@@ -367,54 +281,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
     then [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
-  top.errors <-
-    if top.config.warnMissingInh && !null(lhsInhExceedsRefDecSiteDeps)
-    then
-      [mwdaWrnFromOrigin(top,
-        s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
-        s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsRefDecSiteDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(refDecSiteInhDepsLhsInh.fromJust)}" ++
-        s" (from ${implode(", ", map((.vertexPP), lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)))})")]
-    else [];
-  top.errors <-
-    case dl.defLHSVertex of
-    | transAttrVertexType(v, transAttr)
-        when top.config.warnMissingInh && !null(lhsInhExceedsTransBaseRefDecSiteDeps) ->
-      [mwdaWrnFromOrigin(top,
-        s"Inherited override equation for ${transAttr}.${attr.attrDcl.fullName} on ${v.vertexPP} may exceed a flow type " ++
-        s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsTransBaseRefDecSiteDeps)}; " ++
-        s"on some reference to this tree, this attribute may be expected to depend ${depListStr(transBaseRefDecSiteInhDepsLhsInh.fromJust)}" ++
-        s" (from ${implode(", ", map((.vertexPP), lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)))})")]
-    | _ -> []
-    end;
-  top.errors <-
-    case implementedSig of
-    | just(sig) when top.config.warnMissingInh && !null(lhsInhExceedsDispatchHostSigInhDeps) ->
-      [mwdaWrnFromOrigin(top,
-        s"Inherited override equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} may exceed a flow type " ++
-        s"with hidden transitive dependencies on ${implode(", ", lhsInhExceedsDispatchHostSigInhDeps)}; " ++
-        s"in a production that dispatched to this one, this attribute may be expected to depend ${depListStr(dispatchHostSigInhDepsLhsInh.fromJust)}" ++
-        s" (from ${sig.fullName})")]
-    | _ -> []
-    end;
 }
-
-fun depListStr String ::= deps::set:Set<String> =
-  case set:toList(deps) of
-  | [] -> "on no left-side inherited attributes"
-  | deps -> "only on " ++ implode(", ", deps)
-  end;
-
-fun vertexHasPossibleInhEq Boolean ::= v::VertexType env::Env =
-  case v of
-  | subtermVertexType(_, prodName, sigName) ->
-      case getTypeDcl(prodName, env), getValueDcl(prodName, env) of
-      | dcl :: _, _ -> !lookupSignatureInputElem(sigName, dcl.dispatchSignature).elementShared
-      | _, dcl :: _ -> !lookupSignatureInputElem(sigName, dcl.namedSignature).elementShared
-      | _, _ -> false
-      end
-  | _ -> true
-  end;
 
 ----- WARNING TODO BEGIN MASSIVE COPY & PASTE SESSION
 aspect production synBaseColAttributeDef

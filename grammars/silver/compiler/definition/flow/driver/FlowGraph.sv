@@ -29,6 +29,10 @@ function expandGraph
 }
 fun onlyLhsInh set:Set<String> ::= s::[FlowVertex] = set:add(filterLhsInh(s), set:empty());
 
+fun expandTileGraphSigDeps
+set:Set<FlowVertex> ::= v::[FlowVertex] g::ProductionGraph =
+  set:filter((.isSigVertex), set:add(v, flatMap(g.tileEdgeMap, v)));
+
 -- suspect edges are not in the standard graph, so iteratively add them
 -- call like expandSuspectEdges(p.edges.toList, p.edges, p)
 function expandSuspectEdges

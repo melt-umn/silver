@@ -1,5 +1,7 @@
 grammar flow;
 
+imports flow:ext;
+
 nonterminal RSExpr with env1, env2, errors1, errors2;
 flowtype RSExpr = errors1 {env1}, errors2 {env1, env2};
 
@@ -159,8 +161,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
-production remoteExceedsOverride
+production remoteExceedsOverrideOk
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
@@ -171,7 +172,6 @@ top::RSExpr ::= e::RSExpr
 
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
-}
 }
 
 warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
@@ -187,20 +187,18 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "flow:env1 on child e may exceed a flow type with hidden transitive dependencies on flow:env1; on some reference to this tree, this attribute may be expected to depend only on flow:env2" {
-production uselessOverrideHiddenTransDep
+production uselessOverrideNotHiddenTransDep
 top::RSExpr ::= e::RSExpr
 {
-  e.env1 = top.env1;  -- Hidden transitive dependency
+  e.env1 = top.env1;
   local e1::RSExpr = @e;
   e1.env1 = top.env2;
 
   top.errors1 = e1.errors1;
   top.errors2 = false;
 }
-}
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
+warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
 production uselessOverrideWithinFT
 top::RSExpr ::= e::RSExpr
 {
@@ -213,7 +211,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
+warnCode "the implicit copy equation for flow:errors1 (due to forwarding) would exceed the attribute's flow type with dependencies on flow:env2" {
 production fwrdDecSiteExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -222,7 +220,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
+warnCode "the implicit copy equation for flow:errors1 (due to forwarding) would exceed the attribute's flow type with dependencies on flow:env2" {
 production projExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -232,7 +230,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
+warnCode "the implicit copy equation for flow:errors1 (due to forwarding) would exceed the attribute's flow type with dependencies on flow:env2" {
 production condDecExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -250,13 +248,13 @@ top::RSExpr ::= e::RSExpr
     if top.env1 == [] then copy12From2(@e) else base();
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
-production overrideNotInRefSet
+warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to local" {
+production noReverseSharing
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
   e.env2 = top.env2;
-  local e1::Expr = @e;
+  local e1::RSExpr = @e;  -- No equation for e1.env1
   e1.env2 = [];
   top.errors1 = e1.errors1;
   top.errors2 = e1.errors2;
@@ -313,8 +311,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = e.errors2;
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
-production anonDecOverrideExceedsFT
+production anonDecUselessOverrideOk
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = [];
@@ -322,7 +319,6 @@ top::RSExpr ::= e::RSExpr
   local d::Decorated RSExpr with {env2} = decorate @e with {env2 = top.env2;};
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
-}
 }
 
 production projChain

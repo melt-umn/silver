@@ -5,7 +5,7 @@ import silver:compiler:definition:type only isNonterminal, typerep;
 data nonterminal ProductionGraph with
   prod, lhsNt, flowTypeVertexes, graph, tileGraph, suspectEdges,
   stitchPoints, sigNtStitchPoints,
-  stitchedGraph, tileEdges, edgeMap, suspectEdgeMap, cullSuspect;
+  stitchedGraph, tileEdges, edgeMap, tileEdgeMap, suspectEdgeMap, cullSuspect;
 
 -- The full name of this production
 -- This is, apparently, only used to look up production by name
@@ -51,6 +51,7 @@ synthesized attribute tileEdges :: [(FlowVertex, FlowVertex)];
  - Edge mapper
  -}
 synthesized attribute edgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
+synthesized attribute tileEdgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
 synthesized attribute suspectEdgeMap :: ([FlowVertex] ::= FlowVertex);
 
 synthesized attribute cullSuspect :: (Maybe<ProductionGraph> ::= EnvTree<FlowType>);
@@ -89,6 +90,7 @@ top::ProductionGraph ::=
   top.tileEdges = filter(isSigEdge, g:toList(top.tileGraph));
 
   top.edgeMap = g:edgesFrom(_, top.graph);
+  top.tileEdgeMap = g:edgesFrom(_, top.tileGraph);
   top.suspectEdgeMap = lookupAll(_, top.suspectEdges);
   
   top.cullSuspect = \ flowTypes::EnvTree<FlowType> ->
@@ -535,12 +537,13 @@ fun addDefEqs
         \ attr::String ->
           if vertexHasInhEq(prod, ref, attr, flowEnv)
           -- There is an override equation, so the attribute isn't supplied through sharing
+          -- TODO: Need reverse dep when the attr occurrence exports the equation.
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv)) ++
       map(
         \ attr::String -> (decSite.synVertex(attr), ref.synVertex(attr)),
-        getSynAttrsOn(nt, realEnv))
+        "forward" :: getSynAttrsOn(nt, realEnv))
    | _ -> []
    end;
 {--
@@ -554,9 +557,13 @@ fun addDispatchEqs
         (rhsEqVertex(ie.elementName), subtermEqVertex(lhsVertexType, prod, sigName)) ::
         map(\ attr::String ->
           (subtermSynVertex(lhsVertexType, prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
-          getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
-        map(\ attr::String ->
-          (rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType, prod, sigName, attr)),
+          "forward" :: getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
+        flatMap(\ attr::String ->
+          -- TODO: Suppress the dep on the inh attribute if there is an override equation at this production?
+          [(rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType, prod, sigName, attr)),
+          -- We always include the subterm -> RHS inh dep, because we are trying to determine
+          -- what RHS inh are allowable deps in dispatch impl override eqs.
+           (subtermInhVertex(lhsVertexType, prod, sigName, attr), rhsInhVertex(ie.elementName, attr))],
           getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv)),
       dispatch.inputElements, sigNames))
   | _ -> []

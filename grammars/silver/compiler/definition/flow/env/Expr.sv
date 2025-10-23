@@ -191,12 +191,16 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate flowEnv;
   e.appDecSiteVertexInfo = top.decSiteVertexInfo;
-  -- Seed flow graphs with deps on top for decSiteVertexInfo, alwaysDecorated, dispatchFlowDeps
-  -- needed to avoid hidden transitive deps for override eqs in curriedDispatchApplication.
-  -- TODO: Perhaps possible to infer this by changing how projection stitch points work?
-  e.decSiteVertexInfo = if true then nothing() else top.decSiteVertexInfo;
-  e.alwaysDecorated = false && top.alwaysDecorated;
-  e.dispatchFlowDeps = [] ++ if false then top.dispatchFlowDeps else [];
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = false;
+  e.dispatchFlowDeps = [];
+
+  es.appProd =
+    case e, e.finalType of
+    | productionReference(q), _ -> just(q.lookupValue.dcl.namedSignature)
+    | _, dispatchType(ns) -> just(ns)
+    | _, _ -> nothing()
+    end;
 
   top.flowDefs <-
     case es.appProd, top.decSiteVertexInfo of
@@ -220,7 +224,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
-  es.appProd = nothing();
   es.appIndexOffset = 0;
   es.dispatchFlowDeps = [];
 }
@@ -228,11 +231,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  es.appProd =
-    case e of
-    | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
-    | _ -> nothing()
-    end;
   es.appIndexOffset =
     case e of
     | productionReference(q) when q.lookupValue.dcl.implementedSignature matches just(dSig) ->
@@ -250,11 +248,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production partialApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  es.appProd =
-    case e of
-    | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
-    | _ -> nothing()
-    end;
   es.appIndexOffset =
     case e of
     | productionReference(q) when q.lookupValue.dcl.implementedSignature matches just(dSig) ->
@@ -271,11 +264,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production curriedDispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  es.appProd =
-    case e of
-    | productionReference(q) -> just(q.lookupValue.dcl.namedSignature)
-    | _ -> nothing()
-    end;
   es.appIndexOffset = 0;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
@@ -298,12 +286,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  es.appProd =
-    case e, e.finalType of
-    | productionReference(q), _ -> just(q.lookupValue.dcl.namedSignature)
-    | _, dispatchType(ns) -> just(ns)
-    | _, _ -> error("dispatchApplication: unexpected type")
-    end;
   es.appIndexOffset = 0;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
@@ -315,7 +297,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
-  es.appProd = nothing();
   es.appIndexOffset = 0;
   es.dispatchFlowDeps = [];
 }
@@ -325,7 +306,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
-  es.appProd = nothing();
   es.appIndexOffset = 0;
   es.dispatchFlowDeps = [];
 }
@@ -335,7 +315,6 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   es.decSiteVertexInfo = nothing();
   es.alwaysDecorated = false;
-  es.appProd = nothing();
   es.appIndexOffset = 0;
   es.dispatchFlowDeps = [];
 }
