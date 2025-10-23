@@ -26,8 +26,10 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
         lhsSynVertex(attr.attrDcl.fullName)))));
   };
 
+  local sigNames::[String] =
+    take(length(fromMaybe(ns, implementedSig).inputNames), ns.inputNames);
   local tileSigDeps::set:Set<FlowVertex> =
-    expandTileGraphSigDeps(e.flowDeps, top.frame.flowGraph);
+    expandTileGraphSigDeps(e.flowDeps, sigNames, top.frame.flowGraph);
 
   -- problem = lhsinh deps - inh deps on host implementation prods
   local tileSigDepsExceedsDispatchHostSigDeps :: [FlowVertex] =
@@ -137,8 +139,10 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       set:toList(findProductionGraph(dispatchSig.fullName, myGraphs).tileEdgeMap(dispatchVertex))));
   };
 
+  local sigNames::[String] =
+    take(length(fromMaybe(ns, implementedSig).inputNames), ns.inputNames);
   local tileSigDeps::set:Set<FlowVertex> =
-    expandTileGraphSigDeps(e.flowDeps, top.frame.flowGraph);
+    expandTileGraphSigDeps(e.flowDeps, sigNames, top.frame.flowGraph);
 
   -- problem = lhsinh deps - inh deps on host implementation prods
   local tileSigDepsExceedsDispatchHostSigDeps :: [FlowVertex] =
