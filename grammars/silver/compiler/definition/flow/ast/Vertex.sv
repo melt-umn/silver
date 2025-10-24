@@ -142,17 +142,17 @@ attribute vertexName occurs on FlowVertex;
 aspect vertexName on FlowVertex of
 | lhsSynVertex(attrName) -> attrName
 | lhsInhVertex(attrName) -> attrName
-| rhsEqVertex(sigName) -> sigName
+| rhsEqVertex(sigName) -> sigName ++ "!"
 | rhsSynVertex(sigName, attrName) -> s"${sigName}.${attrName}"
 | rhsInhVertex(sigName, attrName) -> s"${sigName}.${attrName}"
-| localEqVertex(fName) -> fName
+| localEqVertex(fName) -> fName ++ "!"
 | localSynVertex(fName, attrName) -> s"${fName}.${attrName}"
 | localInhVertex(fName, attrName) -> s"${fName}.${attrName}"
-| anonEqVertex(fName) -> fName
+| anonEqVertex(fName) -> fName ++ "!"
 | anonSynVertex(fName, attrName) -> s"${fName}.${attrName}"
 | anonInhVertex(fName, attrName) -> s"${fName}.${attrName}"
 | subtermEqVertex(parent, prodName, sigName) ->
-    s"${parent.vertexName}[${prodName}:${sigName}]"
+    s"${parent.vertexName}[${prodName}:${sigName}]!"
 | subtermSynVertex(parent, prodName, sigName, attrName) ->
     s"${parent.vertexName}[${prodName}:${sigName}].${attrName}"
 | subtermInhVertex(parent, prodName, sigName, attrName) ->

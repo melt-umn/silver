@@ -138,17 +138,17 @@ synthesized attribute dotName :: String occurs on FlowVertex;
 aspect dotName on FlowVertex of
 | lhsSynVertex(attrName) -> attrName
 | lhsInhVertex(attrName) -> attrName
-| rhsEqVertex(sigName) -> sigName
+| rhsEqVertex(sigName) -> sigName ++ "!"
 | rhsSynVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
 | rhsInhVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
-| localEqVertex(fName) -> fName
+| localEqVertex(fName) -> fName ++ "!"
 | localSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | localInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
-| anonEqVertex(fName) -> fName
+| anonEqVertex(fName) -> fName ++ "!"
 | anonSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | anonInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | subtermEqVertex(parent, prodName, sigName) ->
-  parent.synVertex(prodName ++ "@" ++ sigName).dotName  -- Hack!
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "!").dotName  -- Hack!
 | subtermSynVertex(parent, prodName, sigName, attrName) ->
   parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
 | subtermInhVertex(parent, prodName, sigName, attrName) ->
