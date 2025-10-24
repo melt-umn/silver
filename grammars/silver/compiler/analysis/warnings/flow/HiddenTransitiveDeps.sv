@@ -60,11 +60,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    if isExportedBy(top.grammarName, [attr.attrDcl.sourceGrammar], top.compiledGrammars)
-    then nothing()
-    else case filter(
-      vertexHasHideableEq(_, attr.attrDcl.fullName),
-      lookupRefPossibleDecSites(top.frame.fullName, dl.defLHSVertex, top.flowEnv)) of
+    case filter(vertexHasHideableEq(_, attr.attrDcl.fullName), dl.defLHSDecSites) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.eqVertex ++
@@ -74,14 +70,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case dl.defLHSVertex of
-    | transAttrVertexType(v, transAttr)
-        when !isExportedBy(
-          top.grammarName,
-          [attr.attrDcl.sourceGrammar, substring(0, lastIndexOf(":", transAttr), transAttr)],
-          top.compiledGrammars) ->
-      case filter(
-        vertexHasHideableEq(_, dl.inhAttrName),
-        lookupRefPossibleDecSites(top.frame.fullName, v, top.flowEnv)) of
+    | transAttrVertexType(v, transAttr) ->
+      case filter(vertexHasHideableEq(_, dl.inhAttrName), dl.defLHSTransBaseDecSites) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.eqVertex ++

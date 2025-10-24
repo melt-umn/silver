@@ -138,11 +138,19 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 -- The flow vertex type corresponding to attributes on this DefLHS
 synthesized attribute defLHSVertex::VertexType occurs on DefLHS;
 
+-- Dependencies of the attribute supplied where this tree is shared
+synthesized attribute defLHSDecSites::[VertexType] occurs on DefLHS;
+
+-- Dependencies of the attribute supplied where the base of this translation attribute LHS is shared
+synthesized attribute defLHSTransBaseDecSites::[VertexType] occurs on DefLHS;
+
 -- The constructor for inherited equations on this DefLHS
 synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS;
 
 -- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
 synthesized attribute inhAttrName::String occurs on DefLHS;
+
+flowtype DefLHS = defLHSDecSites {grammarName, frame, env, flowEnv};
 
 aspect default production
 top::DefLHS ::=
@@ -150,12 +158,20 @@ top::DefLHS ::=
   top.defLHSVertex = localVertexType("bogus:lhs:vertex");
   top.defLHSInhEq = [];
   top.inhAttrName = "";
+  top.defLHSDecSites =
+    lookupRefPossibleDecSites(top.frame.fullName, top.defLHSVertex, top.flowEnv);
+  top.defLHSTransBaseDecSites = error("Not a trans attr inh def LHS");
 }
 aspect production childDefLHS
 top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = rhsVertexType(q.lookupValue.fullName);
-  top.defLHSInhEq = [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.defLHSInhEq =
+    [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _,
+      -- Only record override deps if the equation will be visible everywhere that the sharing site is visible
+      if isExportedBy(top.grammarName, [top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars)
+      then top.defLHSDecSites
+      else [])];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production lhsDefLHS
@@ -169,7 +185,11 @@ aspect production localDefLHS
 top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = localVertexType(q.lookupValue.fullName);
-  top.defLHSInhEq = [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  top.defLHSInhEq =
+    [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _,
+      if isExportedBy(top.grammarName, [top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars)
+      then top.defLHSDecSites
+      else [])];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production forwardDefLHS
@@ -183,15 +203,29 @@ aspect production childTransAttrDefLHS
 top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.defLHSVertex = transAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
-  top.defLHSInhEq = [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  local isExportedByOccurs::Boolean =
+    isExportedBy(top.grammarName, [attr.dcl.sourceGrammar, top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars);
+  top.defLHSInhEq =
+    [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
+      if isExportedByOccurs then top.defLHSTransBaseDecSites else [],
+      if isExportedByOccurs then top.defLHSDecSites else [])];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+  top.defLHSTransBaseDecSites =
+    lookupRefPossibleDecSites(top.frame.fullName, rhsVertexType(q.lookupValue.fullName), top.flowEnv);
 }
 aspect production localTransAttrDefLHS
 top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.defLHSVertex = transAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
-  top.defLHSInhEq = [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _)];
+  local isExportedByOccurs::Boolean =
+    isExportedBy(top.grammarName, [attr.dcl.sourceGrammar, top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars);
+  top.defLHSInhEq =
+    [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
+      if isExportedByOccurs then top.defLHSTransBaseDecSites else [],
+      if isExportedByOccurs then top.defLHSDecSites else [])];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+  top.defLHSTransBaseDecSites =
+    lookupRefPossibleDecSites(top.frame.fullName, localVertexType(q.lookupValue.fullName), top.flowEnv);
 }
 
 aspect production errorValueDef

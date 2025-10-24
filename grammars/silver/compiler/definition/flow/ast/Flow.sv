@@ -218,14 +218,17 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
  - @param sigName  the name of the RHS element
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param decSites  sharing sites for which this is an override equation
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production inhEq
-top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]  decSites::[VertexType]
 {
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=rhsInhVertex(sigName, attr), snd=_), deps);
+  top.flowEdges = cartProd(
+    rhsInhVertex(sigName, attr) :: map(\ v::VertexType -> v.inhVertex(attr), decSites),
+    deps);
 }
 
 {--
@@ -303,16 +306,18 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  i
  - @param fName  the name of the local/production attribute
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param decSites  sharing sites for which this is an override equation
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localInhEq
-top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]  decSites::[VertexType]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=localInhVertex(fName, attr), snd=_), deps);
+  top.flowEdges = cartProd(
+    localInhVertex(fName, attr) :: map(\ v::VertexType -> v.inhVertex(attr), decSites),
+    deps);
 }
-
 {--
  - The definition of an inherited attribute for a translation attribute
  - on an rhs signature element in a production.
@@ -322,13 +327,20 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - @param transAttr  the full name of the translation attribute
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param baseDecSites  sharing sites for sigName, for which this is an override equation
+ - @param transDecSites  sharing sites for sigName.transAttr, for which this is an override equation
  -}
 abstract production transInhEq
 top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String  deps::[FlowVertex]
+  baseDecSites::[VertexType]  transDecSites::[VertexType]
 {
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=rhsInhVertex(sigName, s"${transAttr}.${attr}"), snd=_), deps);
+  top.flowEdges = cartProd(
+    rhsInhVertex(sigName, s"${transAttr}.${attr}") ::
+    map(\ v::VertexType -> v.inhVertex(s"${transAttr}.${attr}"), baseDecSites) ++
+    map(\ v::VertexType -> v.inhVertex(attr), transDecSites),
+    deps);
 }
 
 {--
@@ -340,13 +352,20 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
  - @param transAttr  the full name of the translation attribute
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param baseDecSites  sharing sites for fName, for which this is an override equation
+ - @param transDecSites  sharing sites for fName.transAttr, for which this is an override equation
  -}
 abstract production localTransInhEq
 top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  deps::[FlowVertex]
+  baseDecSites::[VertexType]  transDecSites::[VertexType]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=localSynVertex(fName, s"${transAttr}.${attr}"), snd=_), deps);
+  top.flowEdges = cartProd(
+    localInhVertex(fName, s"${transAttr}.${attr}") ::
+    map(\ v::VertexType -> v.inhVertex(s"${transAttr}.${attr}"), baseDecSites) ++
+    map(\ v::VertexType -> v.inhVertex(attr), transDecSites),
+    deps);
 }
 
 {--

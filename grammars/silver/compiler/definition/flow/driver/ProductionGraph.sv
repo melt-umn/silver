@@ -533,12 +533,12 @@ fun addDefEqs
         | localVertexType(fName) -> !isForwardProdAttr(prod, fName, flowEnv)
         | _ -> true
         end ->
-      lift2(pair(fst=_, snd=_), decSite.eqVertex, ref.eqVertex) ++
+      cartProd(decSite.eqVertex, ref.eqVertex) ++
       filterMap(
         \ attr::String ->
           if vertexHasInhEq(prod, ref, attr, flowEnv)
-          -- There is an override equation, so the attribute isn't supplied through sharing
-          -- TODO: Need reverse dep when the attr occurrence exports the equation.
+          -- There is an override equation, so the attribute isn't supplied through sharing.
+          -- Note that the reverse equation is introduced by the override eq.
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv)) ++
@@ -561,7 +561,6 @@ fun addDispatchEqs
           (subtermSynVertex(lhsVertexType, prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
           "forward" :: getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
         flatMap(\ attr::String ->
-          -- TODO: Suppress the dep on the inh attribute if there is an override equation at this production?
           [(rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType, prod, sigName, attr)),
           -- We always include the subterm -> RHS inh dep, because we are trying to determine
           -- what RHS inh are allowable deps in dispatch impl override eqs.
