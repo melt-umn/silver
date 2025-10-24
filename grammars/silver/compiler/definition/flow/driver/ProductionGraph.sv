@@ -180,9 +180,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     normalEdges ++
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
-     else -- This first pair is used sometimes as an alias:
-          (lhsSynVertex("forward"), forwardEqVertex()) ::
-          addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
+     else addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs);
@@ -221,8 +219,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     else [];
   
   local flowTypeVertexesOverall :: [FlowVertex] =
-    (if nonForwarding then [] else [forwardEqVertex()]) ++
-      map(lhsSynVertex, syns);
+    map(lhsSynVertex, (if nonForwarding then [] else ["forward"]) ++ syns);
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
   
   local flowTypeVertexes :: [FlowVertex] =
@@ -397,17 +394,15 @@ function constructPhantomProductionGraph
   -- Those syns that are not part of the host, and so should have edges to fwdeq
   local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);
 
-  -- The phantom edges: ext syn -> fwd.eq
+  -- The phantom edges: ext syn -> fwd
   local phantomEdges :: [(FlowVertex, FlowVertex)] =
-    -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
-    (lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
   local stitchPoints :: [StitchPoint] = nonterminalStitchPoints(realEnv, nt, lhsVertexType);
   local sigNtStitchPoints :: [StitchPoint] = [];
     
-  local flowTypeVertexes :: [FlowVertex] = [forwardEqVertex()] ++ map(lhsSynVertex, syns);
+  local flowTypeVertexes :: [FlowVertex] = map(lhsSynVertex, syns);
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
@@ -455,7 +450,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 }
 
 fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
-  (lhsSynVertex(at), forwardEqVertex());
+  (lhsSynVertex(at), lhsSynVertex("forward"));
 
 fun notRhsEqDep Boolean ::= e::(FlowVertex, FlowVertex) =
   case e of
@@ -486,7 +481,7 @@ fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] fl
   if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
     then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
-          (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
+          (lhsSynVertex(head(syns)), forwardEqVertex)] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.
@@ -626,7 +621,7 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
 fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecEq(_, parentNt, parent, termProdName, children) ->
+    | subtermDecEq(_, parent, termProdName, _) ->
         [tileStitchPoint(termProdName, parent)]
     | _ -> []
     end,

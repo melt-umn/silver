@@ -28,12 +28,6 @@ synthesized attribute eqVertex :: [FlowVertex];
 global lhsVertexType :: VertexType = lhsVertexType_real();
 global forwardVertexType :: VertexType = forwardVertexType_real();
 
--- implementation detail, do no use outside this file.
-global forwardEqVertex_singleton :: FlowVertex = localEqVertex("forward");
--- forwardEqVertex() == localEqVertex("forward")
--- we consider lhsSynVertex("forward") also equivalent, actually.
-
-
 {--
  - Represents the vertexes for a production lhs. You can use lhsVertexType instead of this production directly.
  -}
@@ -45,7 +39,7 @@ top::VertexType ::=
   top.isInhDefVertex = false;
   top.synVertex = lhsSynVertex;
   top.inhVertex = lhsInhVertex;
-  top.fwdVertex = forwardEqVertex_singleton;
+  top.fwdVertex = forwardEqVertex;
   top.eqVertex = [];
 }
 
@@ -106,7 +100,7 @@ top::VertexType ::=
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
   top.fwdVertex = forwardSynVertex("forward");
-  top.eqVertex = [forwardEqVertex_singleton];
+  top.eqVertex = [forwardEqVertex];
 }
 
 abstract production forwardParentVertexType

@@ -236,16 +236,19 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
  -
  - @param prod  the full name of the production
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param outerDeps the dependencies of the top-level node constructed by this equation
  - CONTRIBUTIONS ARE *NOT* repeat *NOT* POSSIBLE
  -}
 abstract production fwdEq
-top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
+top::FlowDef ::= prod::String  deps::[FlowVertex]  outerDeps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.fwdTreeContribs := [(prod, top)];
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=forwardEqVertex(), snd=_), deps);
-  top.flowEdges = if mayAffectFlowType then edges else [];
-  top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
+  local ftEdges :: [(FlowVertex, FlowVertex)] = cartProd([lhsSynVertex("forward")], deps);
+  top.flowEdges =
+    cartProd([forwardEqVertex], outerDeps) ++
+    if mayAffectFlowType then ftEdges else [];
+  top.suspectFlowEdges = if mayAffectFlowType then [] else ftEdges;
 }
 
 {--
@@ -450,29 +453,21 @@ data PatternVarProjection
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.
- - Also add the equation vertex dependencies on subterm vertices.
- - Other vertex types get their eq deps from a top-level localEq, fwdEq or synEq,
- - which also handles suspect edges.
+ - Also add the equation vertex dependencies.
  -
  - @param prod     the full name of the production
- - @param parentNt the LHS nonterminal of termProd
  - @param parent   the flow vertex of the enclosing production call
  - @param termProd the applied production (or dispatch signature)
- - @param children the children of termProd, with their signature names and (maybe) nonterminal names
+ - @param childDeps the children of termProd, with their signature names and outerFlowDeps
  -}
 abstract production subtermDecEq
-top::FlowDef ::= prod::String  parentNt::String  parent::VertexType  termProd::String  children::[(String, Maybe<String>)]
+top::FlowDef ::= prod::String  parent::VertexType  termProd::String  childDeps::[(String, [FlowVertex])]
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
-    case parent of
-    | subtermVertexType(_, _, _) -> flatMap(\ v ->
-        map(\ c::(String, Maybe<String>) ->
-          (v, subtermEqVertex(parent, termProd, c.1)),
-          children),
-        parent.eqVertex)
-    | _ -> []
-    end;
+    flatMap(\ c::(String, [FlowVertex]) ->
+      cartProd([subtermEqVertex(parent, termProd, c.1)], c.2),
+      childDeps);
 }
 
 {--

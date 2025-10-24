@@ -14,6 +14,16 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = false;
 }
 
+production copy2
+top::RSExpr ::= e::RSExpr
+{
+  e.env1 = top.env1;
+  e.env2 = top.env2;
+
+  top.errors1 = false;
+  top.errors2 = e.errors2;
+}
+
 production copy12
 top::RSExpr ::= e::RSExpr
 {
@@ -428,5 +438,19 @@ top::RSExpr ::= e::RSExpr
     let e1::RSExpr = copy12(@e)
     in fork(e1, e1)
     end;
+}
+}
+
+production forwardOuterDepsOk
+top::RSExpr ::= e::RSExpr
+{
+  forwards to copy2(if null(top.env2) then base() else @e);
+}
+
+warnCode "In production flow:forwardSubtreeEqTransDepExceedsFT, the implicit copy equation for flow:errors1 (due to forwarding) would exceed the attribute's flow type with dependencies on flow:env2" {
+production forwardSubtreeEqTransDepExceedsFT
+top::RSExpr ::= e::RSExpr
+{
+  forwards to copy12(if null(top.env2) then base() else @e);
 }
 }

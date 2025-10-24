@@ -172,7 +172,7 @@ instance Ord FlowVertex {
 
 
 -- The forward equation for this production. We do not care to distinguish it.
-fun forwardEqVertex FlowVertex ::= = localEqVertex("forward");
+global forwardEqVertex :: FlowVertex = localEqVertex("forward");
 
 -- An attribute on the forward node for this production
 fun forwardSynVertex FlowVertex ::= attrName::String = localSynVertex("forward", attrName);
