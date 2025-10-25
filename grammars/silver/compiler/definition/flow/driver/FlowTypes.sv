@@ -99,7 +99,7 @@ top::InferState<()> ::= prod::ProdName
   local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.1);
   local currentFlowType :: FlowType = findFlowType(graph.lhsNt, top.stateIn.2);
   local newFlowType :: FlowType = g:add(
-    flatMap(expandVertexFilterTo(_, graph), graph.flowTypeVertexes),
+    flatMap(expandVertexFilterTo(_, graph), map(lhsSynVertex, graph.flowTypeAttrs)),
     currentFlowType);
   top.stateOut = (top.stateIn.1, rtm:update(graph.lhsNt, [newFlowType], top.stateIn.2));
   top.stateVal = ();

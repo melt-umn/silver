@@ -3,7 +3,7 @@ grammar silver:compiler:definition:flow:driver;
 import silver:compiler:definition:type only isNonterminal, typerep;
 
 data nonterminal ProductionGraph with
-  prod, lhsNt, flowTypeVertexes, graph, tileGraph, suspectEdges,
+  prod, lhsNt, flowTypeAttrs, graph, tileGraph, suspectEdges,
   stitchPoints, sigNtStitchPoints,
   stitchedGraph, tileEdges, edgeMap, tileEdgeMap, suspectEdgeMap, cullSuspect;
 
@@ -15,10 +15,10 @@ annotation prod::String;
 -- Only used by solveFlowTypes()
 annotation lhsNt::String;
 
--- The vertexes that we are inferring the flow types of.
+-- The attributes that we are inferring the flow types of.
 -- (Syns and optionally fwd, minus those that are specified.)
 -- Used in solveFlowTypes
-annotation flowTypeVertexes::[FlowVertex];
+annotation flowTypeAttrs::[String];
 -- I'd prefer this not exist, but...
 
 -- The edges within this production
@@ -217,13 +217,12 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     -- that could have actually forwarded to this one and introducing tile stitch points.
     then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType())
     else [];
-  
-  local flowTypeVertexesOverall :: [FlowVertex] =
-    map(lhsSynVertex, (if nonForwarding then [] else ["forward"]) ++ syns);
+
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
   
-  local flowTypeVertexes :: [FlowVertex] =
-    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
+  local flowTypeAttrs :: [String] =
+    filter(!contains(_, flowTypeSpecs),
+      (if nonForwarding then [] else ["forward"]) ++ syns);
   
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(filter(notRhsEqDep, fixedEdges));  -- deps on RHS.EQ don't matter in the regular graph
@@ -231,7 +230,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     createFlowGraph(suspectEdges ++ fixedEdges);
 
   return productionGraph(
-    prod=prod, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
+    prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialTileGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 }
@@ -281,10 +280,10 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(defs);
 
-  local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
+  local flowTypeAttrs :: [String] = []; -- Not used as part of inference.
 
   local g :: ProductionGraph = productionGraph(
-    prod=prod, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
+    prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialTileGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 
@@ -321,10 +320,10 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
     patternStitchPoints(realEnv, defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
-  local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
+  local flowTypeAttrs :: [String] = []; -- Not used as part of inference.
   
   local g :: ProductionGraph = productionGraph(
-    prod=prod, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
+    prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 
@@ -363,14 +362,12 @@ function constructDefaultProductionGraph
     patternStitchPoints(realEnv, defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
-  local flowTypeVertexesOverall :: [FlowVertex] = map(lhsSynVertex, syns);
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
-  
-  local flowTypeVertexes :: [FlowVertex] =
-    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
+  local flowTypeAttrs :: [String] =
+    filter(!contains(_, flowTypeSpecs), syns);
 
   local g :: ProductionGraph = productionGraph(
-    prod=prod, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
+    prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
   
@@ -402,12 +399,12 @@ function constructPhantomProductionGraph
   local stitchPoints :: [StitchPoint] = nonterminalStitchPoints(realEnv, nt, lhsVertexType);
   local sigNtStitchPoints :: [StitchPoint] = [];
     
-  local flowTypeVertexes :: [FlowVertex] = map(lhsSynVertex, syns);
+  local flowTypeAttrs :: [String] = syns;
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(phantomEdges);
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   local g :: ProductionGraph = productionGraph(
-    prod="Phantom for " ++ nt, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
+    prod="Phantom for " ++ nt, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
   
@@ -439,12 +436,12 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
     dispatchStitchPoints(flowEnv, realEnv, ns, defs);  -- impls of this dispatch
   local sigNtStitchPoints :: [StitchPoint] = [];
 
-  local flowTypeVertexes :: [FlowVertex] = [];  -- Doesn't (directly) affect flow types
+  local flowTypeAttrs :: [String] = [];  -- Doesn't (directly) affect flow types
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   return productionGraph(
-    prod=dispatch, lhsNt=nt, flowTypeVertexes=flowTypeVertexes,
+    prod=dispatch, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 }
