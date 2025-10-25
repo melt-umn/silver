@@ -692,9 +692,15 @@ fun prodGraphToEnv Pair<String ProductionGraph> ::= p::ProductionGraph = (p.prod
 function findAdmissibleEdges
 [(FlowVertex, FlowVertex)] ::= edge::(FlowVertex, FlowVertex)  graph::g:Graph<FlowVertex>  ft::FlowType
 {
+  local edgeSyn::String =
+    case edge.1 of
+    | lhsSynVertex(at) -> at
+    | v -> error("Suspect edge source vertex is not lhsSynVertex: " ++ v.vertexName)
+    end;
+
   -- The current flow type of the edge's source vertex (which is always a thing in the flow type)
   local currentDeps :: set:Set<String> =
-    g:edgesFrom(edge.fst.flowTypeName, ft);
+    g:edgesFrom(edgeSyn, ft);
   
   local targetNotSource :: set:Set<FlowVertex> = 
     set:difference(

@@ -99,16 +99,15 @@ top::InferState<()> ::= prod::ProdName
   local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.1);
   local currentFlowType :: FlowType = findFlowType(graph.lhsNt, top.stateIn.2);
   local newFlowType :: FlowType = g:add(
-    flatMap(expandVertexFilterTo(_, graph), map(lhsSynVertex, graph.flowTypeAttrs)),
+    flatMap(expandVertexFilterTo(_, graph), graph.flowTypeAttrs),
     currentFlowType);
   top.stateOut = (top.stateIn.1, rtm:update(graph.lhsNt, [newFlowType], top.stateIn.2));
   top.stateVal = ();
 }
 
--- Expand 'ver' using 'graph', then filter down to just those in 'inhs'
-fun expandVertexFilterTo [(String, String)] ::= ver::FlowVertex  graph::ProductionGraph =
-  map(pair(fst=ver.flowTypeName, snd=_),
-    filterLhsInh(set:toList(graph.edgeMap(ver))));
+-- Expand 'lhsSynVertex(syn)' using 'graph', then filter down to just those in 'inhs'
+fun expandVertexFilterTo [(String, String)] ::= syn::String  graph::ProductionGraph =
+  map(pair(fst=syn, snd=_), filterLhsInh(set:toList(graph.edgeMap(lhsSynVertex(syn)))));
 
 {--
  - Filters vertexes down to just the names of inherited attributes on the LHS
@@ -126,13 +125,3 @@ fun collectInhs [String] ::= f::FlowVertex =
   | lhsInhVertex(a) -> [a]
   | _ -> []
   end;
-
-
-{--
- - Flow type lookup names for vertices
- -}
-synthesized attribute flowTypeName :: String occurs on FlowVertex;
-aspect flowTypeName on top::FlowVertex of
-| lhsSynVertex(attrName) -> attrName
-| _ -> error("Shouldn't be solving for FT on non-LHS SYN vertex: " ++ top.vertexName)
-end;
