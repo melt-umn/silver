@@ -19,6 +19,9 @@ flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, do
 flowtype decorate {forward} on ProductionBody;
 flowtype decorate {forward, originRules} on ProductionStmts, ProductionStmt;
 
+flowtype defs {forward} on ProductionBody, ProductionStmts, ProductionStmt;
+flowtype productionAttributes {forward} on ProductionBody, ProductionStmts, ProductionStmt;
+
 tracked nonterminal DefLHS with 
   config, grammarName, env, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
 
