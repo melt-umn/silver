@@ -13,13 +13,12 @@ concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
   top.unparse = "\timplicit " ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -49,21 +48,16 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
-global partialDefaultAttributeDef::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr ->
-    attributeDef(newUnique(dl), '.', newUnique(attr), '=', e, ';');
-
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\timplicit" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -82,12 +76,12 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   attr.attrFor = dl.typerep;
 
   forwards to
-           (if null(merrors)
-            then if attr.found
-                 then attr.attrDcl.attrDefDispatcher
-                      --if not found, let the normal dispatcher handle it
-                 else partialDefaultAttributeDef
-            else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+          if null(merrors)
+          then if attr.found
+               then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
+                    --if not found, let the normal dispatcher handle it
+               else attributeDef(^dl, '.', ^attr, '=', @e, ';')
+          else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -98,13 +92,12 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 {
   e.downSubst = top.downSubst;
   top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -123,12 +116,12 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   attr.attrFor = dl.typerep;
 
   forwards to
-           (if null(merrors)
-            then if attr.found
-                 then attr.attrDcl.attrDefDispatcher
-                      --if not found, let the normal dispatcher handle it
-                 else partialDefaultAttributeDef
-            else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+          if null(merrors)
+          then if attr.found
+               then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
+                    --if not found, let the normal dispatcher handle it
+               else attributeDef(^dl, '.', ^attr, '=', @e, ';')
+          else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
@@ -138,13 +131,12 @@ concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv;
 
   top.productionAttributes := [];
   top.defs := [];
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -160,16 +152,16 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
                 "Unrestricted equations can only be used for attributes " ++
                 "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit")];
   forwards to
-            (if attr.found
-             then case attr.attrDcl of
-                  | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _)
-                  | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _)
-                  | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, _, _, _)
-                  | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, _, _, _)
-                  | _ -> partialDefaultAttributeDef
-                  end
-                 --if not found, let the normal dispatcher handle it
-             else partialDefaultAttributeDef)(dl, attr, e);
+          if attr.found
+          then case attr.attrDcl of
+               | restrictedSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
+               | restrictedInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
+               | implicitSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
+               | implicitInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
+               | _ -> attributeDef(^dl, '.', ^attr, '=', @e, ';')
+               end
+          --if not found, let the normal dispatcher handle it
+          else attributeDef(^dl, '.', ^attr, '=', @e, ';');
 }
 
 
@@ -178,137 +170,154 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
 
 --take a list of unallowed attributes and generate error messages for them
-function buildExplicitAttrErrors
-[Message] ::= l::[Decorated QNameAttrOccur]
-{
-  return case l of
-         | [] -> []
-         | a::t ->
-           errFromOrigin(a, "Attributes accessed in restricted equations must be restricted; " ++
-                     a.name ++ " is not")::buildExplicitAttrErrors(t)
-         end;
-}
+fun buildExplicitAttrErrors [Message] ::= l::[Decorated QNameAttrOccur] =
+  case l of
+  | [] -> []
+  | a::t ->
+    errFromOrigin(a, "Attributes accessed in restricted equations must be restricted; " ++
+              a.name ++ " is not")::buildExplicitAttrErrors(t)
+  end;
 
 
 
 --productions for error checking on restricted attributes
-abstract production restrictedSynAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production restrictedSynAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   e.downSubst = top.downSubst;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
+  e.dispatchFlowDeps = [];
   e.isRoot = true;
 
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
   forwards to
-    (if null(merrors)
-     then synthesizedAttributeDef(_, _, _)
-     else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+    if null(merrors)
+    then synthesizedAttributeDef(dl, attr, @e)
+    else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
-abstract production restrictedInhAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production restrictedInhAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst;
 
   e.downSubst = top.downSubst;
+  e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
+  e.dispatchFlowDeps = [];
   e.isRoot = true;
 
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
   forwards to
-    (if null(merrors)
-     then inheritedAttributeDef(_, _, _)
-     else errorAttributeDef(merrors, _, _, _))(dl, attr, e);
+    if null(merrors)
+    then inheritedAttributeDef(dl, attr, @e)
+    else errorAttributeDef(dl, attr, @e, merrors);
 }
 
 
 
 
 --productions for error checking on implicit attributes
-abstract production implicitSynAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production implicitSynAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
-  e.alwaysDecorated = false;
-  e.isRoot = true;
-
-  e.expectedMonad = attr.typerep;
+  local checkE::Expr = ^e;
+  checkE.grammarName = top.grammarName;
+  checkE.compiledGrammars = top.compiledGrammars;
+  checkE.config = top.config;
+  checkE.frame = top.frame;
+  checkE.env = top.env;
+  checkE.flowEnv = top.flowEnv;
+  checkE.downSubst = top.downSubst;
+  checkE.mDownSubst = top.downSubst;
+  checkE.finalSubst = checkE.mUpSubst;
+  checkE.decSiteVertexInfo = nothing();
+  checkE.alwaysDecorated = false;
+  checkE.appDecSiteVertexInfo = nothing();
+  checkE.dispatchFlowDeps = [];
+  checkE.isRoot = true;
+  checkE.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
-  forwards to
-         (if null(e.merrors)
-          then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-               then synthesizedAttributeDef(_, _, e.monadRewritten)
-               else synthesizedAttributeDef(_, _, Silver_Expr {
-                                                    $Expr {monadReturn()}
-                                                        ($Expr {e.monadRewritten})
-                                                  })
-          else errorAttributeDef(e.merrors, _, _, e.monadRewritten))(dl, attr);
+  local fwrdProd::AttributeDef = 
+     if !null(checkE.merrors)
+     then errorAttributeDef(checkE.merrors)
+     else if  fst(monadsMatch(attr.typerep, checkE.mtyperep, checkE.mUpSubst))
+     then transformExprAttributeDef(synthesizedAttributeDef, checkE.monadRewritten)
+     else transformExprAttributeDef(synthesizedAttributeDef,
+       Silver_Expr {
+       $Expr {monadReturn()}
+            ($Expr {checkE.monadRewritten})
+       });
+
+  forwards to fwrdProd(dl, attr, @e);
 }
 
 
-abstract production implicitInhAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS attr::Decorated! QNameAttrOccur e::Expr
+abstract production implicitInhAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';');
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
-  e.alwaysDecorated = false;
-  e.isRoot = true;
-
-  e.expectedMonad = attr.typerep;
+  local checkE::Expr = ^e;
+  checkE.grammarName = top.grammarName;
+  checkE.compiledGrammars = top.compiledGrammars;
+  checkE.config = top.config;
+  checkE.frame = top.frame;
+  checkE.env = top.env;
+  checkE.flowEnv = top.flowEnv;
+  checkE.downSubst = top.downSubst;
+  checkE.mDownSubst = top.downSubst;
+  checkE.finalSubst = checkE.mUpSubst;
+  checkE.decSiteVertexInfo = nothing();
+  checkE.alwaysDecorated = false;
+  checkE.appDecSiteVertexInfo = nothing();
+  checkE.dispatchFlowDeps = [];
+  checkE.isRoot = true;
+  checkE.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
   top.forwardExpr := [];
   top.returnExpr := [];
-  top.undecorateExpr := [];
 
-  forwards to
-         (if null(e.merrors)
-          then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-               then inheritedAttributeDef(_, _, e.monadRewritten)
-               else inheritedAttributeDef(_, _, Silver_Expr {
-                                                  $Expr {monadReturn()}
-                                                      ($Expr {e.monadRewritten})
-                                                })
-          else errorAttributeDef(e.merrors, _, _, e.monadRewritten))(dl, attr);
+  local fwrdProd::AttributeDef = 
+     if !null(checkE.merrors)
+     then errorAttributeDef(checkE.merrors)
+     else if  fst(monadsMatch(attr.typerep, checkE.mtyperep, checkE.mUpSubst))
+     then transformExprAttributeDef(inheritedAttributeDef, checkE.monadRewritten)
+     else transformExprAttributeDef(inheritedAttributeDef,
+       Silver_Expr {
+       $Expr {monadReturn()}
+            ($Expr {checkE.monadRewritten})
+       });
+
+  forwards to fwrdProd(dl, attr, @e);
 }
 

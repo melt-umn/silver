@@ -5,7 +5,7 @@ attribute lexicalTypeVariables, lexicalTyVarKinds occurs on ProductionSignature,
 flowtype lexicalTypeVariables {decorate} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(ns.lexicalTypeVariables);

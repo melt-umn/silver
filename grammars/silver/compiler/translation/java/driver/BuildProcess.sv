@@ -8,14 +8,13 @@ import silver:compiler:definition:core;
 
 import silver:util:cmdargs;
 
-import silver:reflect:nativeserialize;
-
 synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
 synthesized attribute relativeJar :: Boolean occurs on CmdArgs;
 synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
 -- TODO: Should this be a Maybe?
 synthesized attribute buildXmlLocation :: [String] occurs on CmdArgs;
+synthesized attribute jarImplVersion :: String occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
@@ -25,6 +24,7 @@ top::CmdArgs ::= _
   top.relativeJar = false;
   top.includeRTJars = [];
   top.buildXmlLocation = [];
+  top.jarImplVersion = "";
 }
 abstract production dontTranslateFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -56,6 +56,12 @@ top::CmdArgs ::= s::String rest::CmdArgs
   top.buildXmlLocation = s :: forward.buildXmlLocation;
   forwards to @rest;
 }
+abstract production jarImplVersionFlag
+top::CmdArgs ::= s::String rest::CmdArgs
+{
+  top.jarImplVersion = s;
+  forwards to @rest;
+}
 
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -76,12 +82,15 @@ Either<String  Decorated CmdArgs> ::= args::[String]
                help="links to an additional JAR",
                flagParser=option(includeRTJarFlag))
            , flagSpec(name="--build-xml-location", paramString=nothing(),
-               help="sets the path the Ant build.xml will be saved to. Used by Eclipse",
+               help="sets the path the Ant build.xml will be saved to",
                flagParser=option(buildXmlFlag))
+           , flagSpec(name="--jar-impl-version", paramString=nothing(),
+               help="set the Implementation-Version header in the JAR's manifest",
+               flagParser=option(jarImplVersionFlag))
            ];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  buildGrammars::[String]  a::Decorated CmdArgs  benv::BuildEnv
 {
   -- Main class, jar name, etc. are based on the first specified grammar.
   local buildGrammar::String = head(buildGrammars);
@@ -90,59 +99,65 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
   -- for Silver to put this file elsewhere than the local directory.
   -- e.g. --build-xml-location /path/to/workspace/project/build.xml
   local buildXmlLocation :: String =
-    if null(top.config.buildXmlLocation) then "build.xml"
-    else head(top.config.buildXmlLocation);
+    if null(a.buildXmlLocation) then "build.xml"
+    else head(a.buildXmlLocation);
   
   production attribute keepFiles :: [String] with ++;
   keepFiles := [];
 
   -- Seed flow deps with {config}
-  keepFiles <- if false then error(genericShow(top.config)) else [];
+  keepFiles <- if false then error(genericShow(a)) else [];
 
-  top.postOps <-
-    [genBuild(buildXmlLocation, buildXml)] ++
-    (if top.config.noJavaGeneration then []
-     else [genJava(top.config, benv.silverGen, keepFiles, grammarsToTranslate)]);
+  top.postOps <- 
+    checkJarUpToDate(a.noJavaGeneration, outputFile, g.grammarList, grammarsToTranslate) ::
+    if a.noJavaGeneration then [] else [
+      genJava(benv.silverGen, keepFiles, grammarsToTranslate),
+      genBuild(buildXmlLocation, buildXml)
+    ];
 
   -- From here on, it's all build.xml stuff:
 
-  -- Presently, copper, copper_mda, and impide all contribute new targets into build.xml:
+  -- Presently, unused?
   production attribute extraTopLevelDecls :: [String] with ++;
   extraTopLevelDecls := [];
 
-  -- Presently, impide and copper_mda introduce a new top-level goal:
+  -- Presently, unused?
   production attribute extraDistDeps :: [String] with ++;
-  extraDistDeps := if top.config.noJavaGeneration then [] else ["jars"];
+  extraDistDeps := if a.noJavaGeneration then [] else ["jars"];
   
   -- Presently, unused?
   production attribute extraJarsDeps :: [String] with ++;
   extraJarsDeps := ["grammars"];
 
-  -- Presently, copper and copper_mda
+  -- Presently, unused?
   production attribute extraGrammarsDeps :: [String] with ++;
   extraGrammarsDeps := ["init"];
   
   production attribute classpathCompiler :: [String] with ++;
-  classpathCompiler := ["${sh}/jars/commonmark-0.17.1.jar"];
+  classpathCompiler := [];
   
   production attribute classpathRuntime :: [String] with ++;
-  classpathRuntime := ["${sh}/jars/commonmark-0.17.1.jar", "${sh}/jars/SilverRuntime.jar"];
+  classpathRuntime := [];
   
-  -- The --XRTjar hack
-  classpathRuntime <- top.config.includeRTJars;
+  -- The --include-jar flag
+  classpathRuntime <- a.includeRTJars;
+
+  classpathRuntime <- nub(g.includedJars);  -- TODO: include in classpathCompiler too?
+
+  local jarImplVersion :: String = if a.jarImplVersion == "" then "${TIME}" else a.jarImplVersion;
 
   production attribute extraManifestAttributes :: [String] with ++;
   extraManifestAttributes := [
     "<attribute name='Built-By' value='${user.name}' />",
-    "<attribute name='Implementation-Version' value='${TIME}' />",
+    "<attribute name='Implementation-Version' value='" ++ jarImplVersion ++ "' />",
     "<attribute name='Main-Class' value='" ++ makeName(buildGrammar) ++ ".Main' />"]; -- TODO: we "should" make main depend on whether there is a main...
 
   extraManifestAttributes <-
-    if top.config.buildSingleJar then []
+    if a.buildSingleJar then []
     else ["<attribute name='Class-Path' value='${man.classpath}' />"];
   
   local attribute outputFile :: String;
-  outputFile = if !null(top.config.outName) then head(top.config.outName)
+  outputFile = if !null(a.outName) then head(a.outName)
     else (if g.jarName.isJust then g.jarName.fromJust else makeName(buildGrammar)) ++ ".jar";
 
   local attribute buildXml :: String;
@@ -183,7 +198,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 -- Uncondintionally compute this, but it's included conditionally as a manifest attribute
 "    <pathconvert refid='lib.classpath' pathsep=' ' property='man.classpath'>\n" ++
 (
- if top.config.relativeJar then
+ if a.relativeJar then
 -- Removes all paths from the classpath. This means we expect to find all these
 -- jars in the same directory as this jar.
 "      <flattenmapper />\n"
@@ -195,18 +210,19 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "    </pathconvert>\n" ++
 "    <jar destfile='" ++ outputFile ++ "' zip64Mode='as-needed'>\n" ++
     flatMap(includeClassFiles, grammarsRelevant) ++
+    flatMap(includeInterfaceFiles, grammarsRelevant) ++
 "      <manifest>\n" ++
 "        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
 "      </manifest>\n" ++
 
 -- If we're building a single jar, then include the runtimes TODO: this method kinda sucks
-    (if top.config.buildSingleJar then implode("", map(zipfileset, classpathRuntime)) else "") ++
+    (if a.buildSingleJar then implode("", map(zipfileset, classpathRuntime)) else "") ++
  
 "    </jar>\n" ++
 "  </target>\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
-"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>\n" ++
+"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false' release='11'>\n" ++
 "      <compilerarg value=\"-Xlint:unchecked\" />\n" ++
     flatMap(includeJavaFiles, grammarsDependedUpon) ++
 "    </javac>\n" ++
@@ -214,15 +230,30 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "</project>\n";
 }
 
+abstract production checkJarUpToDate
+top::DriverAction ::= noJavaGeneration::Boolean  jarFile::String  specs::[Decorated RootSpec]  toTranslate::[Decorated RootSpec]
+{
+  top.run = if noJavaGeneration then pure(127) else do {
+    jarFileTime <- fileTime(jarFile);
+    if null(toTranslate) && jarFileTime > foldr(max, 0, map((.grammarTime), specs))
+      then do {
+        eprintln("Jar file " ++ jarFile ++ " is up to date.");
+        return 127;
+      }
+      else pure(0);
+  };
+  top.order = 8;
+}
+
 abstract production genJava
-top::DriverAction ::= a::Decorated CmdArgs  silverGen::String  keepFiles::[String]  specs::[Decorated RootSpec]
+top::DriverAction ::= silverGen::String  keepFiles::[String]  specs::[Decorated RootSpec]
 {
   top.run = do {
     eprintln("Generating Translation.");
     traverse_(writeSpec(silverGen, keepFiles, _), specs);
     return 0;
   };
-  top.order = 4;
+  top.order = 5;
 }
 
 abstract production genBuild
@@ -258,24 +289,18 @@ IO<()> ::= silverGen::String keepFiles::[String] r::Decorated RootSpec
   };
 }
 
-function zipfileset
-String ::= s::String
-{
-  return "      <zipfileset src='" ++ s ++ "' excludes='META-INF/*' />\n";
-}
-function pathLocation
-String ::= s::String
-{
-  return "    <pathelement location='" ++ s ++ "' />\n";
-}
-function includeJavaFiles
-String ::= gram::String
-{
-  return s"      <include name='${grammarToPath(gram)}*.java' />\n";
-}
-function includeClassFiles
-String ::= gram::Decorated RootSpec
-{
-  return s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
-}
-
+fun zipfileset String ::= s::String =
+  "      <zipfileset src='" ++ s ++ "' excludes='META-INF/*' />\n";
+fun pathLocation String ::= s::String = "    <pathelement location='" ++ s ++ "' />\n";
+fun includeJavaFiles String ::= gram::String =
+  s"      <include name='${grammarToPath(gram)}*.java' />\n";
+fun includeClassFiles String ::= gram::Decorated RootSpec =
+  case gram.generateLocation of
+  | just(g) -> s"      <fileset dir='${g}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n"
+  | nothing() -> ""
+  end;
+fun includeInterfaceFiles String ::= gram::Decorated RootSpec =
+  case gram.generateLocation of
+  | just(g) -> s"      <fileset dir='${g}src/' includes='${grammarToPath(gram.declaredName)}Silver.svi' />\n"
+  | nothing() -> ""
+  end;

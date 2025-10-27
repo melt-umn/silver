@@ -13,7 +13,7 @@ f1::Foo ::= f2::Foo
   f2.bar = "asdf";
   
   production attribute f3 :: Foo;
-  f3 = foo(f1);
+  f3 = foo(^f1);
   -- local's inh
   f3.bar = "lkjkj";
 }
@@ -62,7 +62,7 @@ top::Foo ::= a::Foo b::Decorated Foo e::Integer
   a.bar = "";
   
   production attribute c :: Foo;
-  c = a;
+  c = ^a;
   c.bar = "";
   
   production attribute d :: Decorated Foo;

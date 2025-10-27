@@ -38,13 +38,10 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
     end;
 }
 
-function findSpec
-[ParserSpec] ::= n::String s::[ParserSpec]
-{
-  return if null(s) then []
-         else if n == head(s).fullName then [head(s)]
-         else findSpec(n, tail(s));
-}
+fun findSpec [ParserSpec] ::= n::String s::[ParserSpec] =
+  if null(s) then []
+  else if n == head(s).fullName then [head(s)]
+  else findSpec(n, tail(s));
 
 tracked nonterminal MdaSpec with sourceGrammar, fullName, compiledGrammars,cstAst;
 

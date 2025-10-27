@@ -25,8 +25,8 @@ function eqB
 attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  production z::a = x;
-  production w::a = z;
+  production z::a = ^x;
+  production w::a = ^z;
   w.compareTo = y;
   return w.isEqual;
 }
@@ -199,6 +199,10 @@ equalityTest(
   | ocPolyWrap(thing) -> thing.prodName
   end, "blah", String, silver_tests);
 
+
+wrongCode "Could not find an instance for attribute silver_features:prodNameIn occurs on Decorated silver_features:OCThing with {}; an undecorated type is expected here (arising from the use of ocPolyWrap)" {
+global ocPolyWrapDecorated::OCPolyWrap = ocPolyWrap(decorate ocThing() with {});
+}
 
 nonterminal OCWrapDec<a> with prodName;
 

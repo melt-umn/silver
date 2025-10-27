@@ -1,7 +1,7 @@
 grammar silver_features;
 
 strategy attribute elimPlusZero =
-  bottomUp(try(rule on SExpr of addSExpr(e, constSExpr(0)) -> e end));
+  bottomUp(try(rule on SExpr of addSExpr(e, constSExpr(0)) -> ^e end));
 
 nonterminal SExpr with elimPlusZero;
 
@@ -55,7 +55,7 @@ equalityTest(
 
 partial strategy attribute removeLastStmt =
     rule on SStmt of
-    | seqSStmt(s, assignSStmt(_, _)) -> s
+    | seqSStmt(s, assignSStmt(_, _)) -> ^s
     end <+
     seqSStmt(id, removeLastStmt)
   occurs on SStmt, SExpr;
@@ -107,7 +107,7 @@ inherited attribute target::String occurs on SStmt, SExpr;
 strategy attribute incTargetConsts =
   allTopDown(
     rule on top::SStmt of
-    | assignSStmt(n, _) when n == top.target -> top
+    | assignSStmt(n, _) when n == top.target ->  ^top
     end <* incConsts)
   occurs on SStmt, SExpr;
 propagate target, incTargetConsts on SStmt, SExpr;
@@ -169,6 +169,53 @@ partial strategy attribute onlySExpr = rule on SExpr of constSExpr(i) -> constSE
   occurs on SExpr;
 propagate onlySExpr on SExpr;
 equalityTest(assignSStmt("a", constSExpr(42)).onlySStmt, just(assignSStmt("a", constSExpr(43))), Maybe<SStmt>, silver_tests);
+
+strategy attribute elim42 =
+  someTopDown(rule on SExpr of constSExpr(42) -> constSExpr(0) end)
+  < elimPlusZero + incConsts
+  occurs on SStmt, SExpr;
+propagate elim42 on SStmt, SExpr;
+
+equalityTest(
+  addSExpr(constSExpr(1), constSExpr(2)).elim42,
+  addSExpr(constSExpr(2), constSExpr(3)),
+  SExpr, silver_tests);
+equalityTest(
+  addSExpr(constSExpr(1), constSExpr(42)).elim42,
+  constSExpr(1),
+  SExpr, silver_tests);
+
+strategy attribute elimIfIdOrInc =
+  if someTopDown(idSExpr(id))
+  then elimPlusZero
+  else incConsts
+  occurs on SStmt, SExpr;
+propagate elimIfIdOrInc on SStmt, SExpr;
+
+equalityTest(
+  addSExpr(constSExpr(2), constSExpr(0)).elimIfIdOrInc,
+  addSExpr(constSExpr(3), constSExpr(1)),
+  SExpr, silver_tests);
+equalityTest(
+  addSExpr(idSExpr("a"), constSExpr(0)).elimIfIdOrInc,
+  idSExpr("a"),
+  SExpr, silver_tests);
+
+strategy attribute incIfId =
+  if someTopDown(idSExpr(id))
+  then incConsts
+  end
+  occurs on SStmt, SExpr;
+propagate incIfId on SStmt, SExpr;
+
+equalityTest(
+  addSExpr(constSExpr(0), constSExpr(2)).incIfId,
+  addSExpr(constSExpr(0), constSExpr(2)),
+  SExpr, silver_tests);
+equalityTest(
+  addSExpr(constSExpr(0), idSExpr("a")).incIfId,
+  addSExpr(constSExpr(1), idSExpr("a")),
+  SExpr, silver_tests);
 
 -- Negative tests
 inherited attribute badInh<a>::a;

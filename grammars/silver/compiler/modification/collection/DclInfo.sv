@@ -5,11 +5,11 @@ attribute operation, baseDefDispatcher, appendDefDispatcher occurs on ValueDclIn
 
 synthesized attribute isCollection::Boolean;
 
-synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr);
-synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr);
+synthesized attribute attrBaseDefDispatcher :: AttributeDef;
+synthesized attribute attrAppendDefDispatcher :: AttributeDef;
 
-synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr);
-synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated! QName  Expr);
+synthesized attribute baseDefDispatcher :: ValueDef;
+synthesized attribute appendDefDispatcher :: ValueDef;
 
 aspect default production
 top::AttributeDclInfo ::=
@@ -17,8 +17,8 @@ top::AttributeDclInfo ::=
   top.isCollection = false;
   top.operation = error("Internal compiler error: must be defined for all collection attribute declarations");
   
-  top.attrBaseDefDispatcher = nonCollectionAttrBaseDefError;
-  top.attrAppendDefDispatcher = nonCollectionAttrAppendDefError;
+  top.attrBaseDefDispatcher = nonCollectionErrorBaseAttributeDef;
+  top.attrAppendDefDispatcher = nonCollectionErrorAppendAttributeDef;
 }
 
 aspect default production
@@ -41,15 +41,15 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
     top.typeScheme == top.compareTo.typeScheme &&
     o.isEqual;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
   top.isSynthesized = true;
   top.isCollection = true;
-  top.operation = o;
+  top.operation = ^o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
-  top.attrDefDispatcher = collectionAttrDefError;
+  top.attrDefDispatcher = collectionErrorRegularAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef;
@@ -66,15 +66,15 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
     top.typeScheme == top.compareTo.typeScheme &&
     o.isEqual;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
   top.isInherited = true;
   top.isCollection = true;
-  top.operation = o;
+  top.operation = ^o;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.undecoratedAccessHandler = inhUndecoratedAccessErrorHandler;
   top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
-  top.attrDefDispatcher = collectionAttrDefError;
+  top.attrDefDispatcher = collectionErrorRegularAttributeDef;
   top.attributionDispatcher = defaultAttributionDcl;
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef;
@@ -87,8 +87,8 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   top.fullName = fn;
   propagate compareTo, isEqual;
 
-  top.typeScheme = monoType(ty);
-  top.operation = o;
+  top.typeScheme = monoType(^ty);
+  top.operation = ^o;
   
   top.refDispatcher = localReference;
   top.defDispatcher = errorColNormalValueDef;
@@ -97,40 +97,18 @@ top::ValueDclInfo ::= fn::String ty::Type o::Operation
   top.baseDefDispatcher = baseCollectionValueDef;
   top.appendDefDispatcher = appendCollectionValueDef;
   
-  top.substitutedDclInfo = localCollectionDcl(fn, performRenaming(ty, top.givenSubstitution), o, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.substitutedDclInfo = localCollectionDcl(fn, performRenaming(^ty, top.givenSubstitution), ^o, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
   
   -- TODO: attrOccursIndex
   -- We shouldn't be forwarding here
-  forwards to localDcl(fn,ty,false,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
+  forwards to localDcl(fn,@ty,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
 }
-
-global nonCollectionAttrBaseDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-    errorAttributeDef([errFromOrigin(ambientOrigin(), "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
-
-global nonCollectionAttrAppendDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-    errorAttributeDef([errFromOrigin(ambientOrigin(), "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e);
-
-global collectionAttrDefError::(ProductionStmt ::= Decorated! DefLHS  Decorated! QNameAttrOccur  Expr) =
-  \ dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr ->
-    errorAttributeDef([errFromOrigin(ambientOrigin(), attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e);
-
 
 -- Defs
-function synColDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
-{
-  return attrDef(defaultEnvItem(synCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
-}
-function inhColDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
-{
-  return attrDef(defaultEnvItem(inhCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
-}
-function localColDef
-Def ::= sg::String sl::Location fn::String ty::Type o::Operation
-{
-  return valueDef(defaultEnvItem(localCollectionDcl(fn,ty,o,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun synColDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation =
+  attrDef(defaultEnvItem(synCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
+fun inhColDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation =
+  attrDef(defaultEnvItem(inhCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
+fun localColDef Def ::= sg::String sl::Location fn::String ty::Type o::Operation =
+  valueDef(defaultEnvItem(localCollectionDcl(fn,ty,o,sourceGrammar=sg,sourceLocation=sl)));
 

@@ -11,19 +11,31 @@ top::Expr ::= params::LambdaRHS e::Expr
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
-  top.monadRewritten = lambdap(params, e.monadRewritten);
+  top.monadRewritten = lambdap(^params, e.monadRewritten);
 }
 
 
 
 aspect production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
   top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
-                     then [baseExpr(new(q))]
+                     then [baseExpr(^q)]
                      else [];
-  top.monadRewritten = baseExpr(new(q));
+  top.monadRewritten = baseExpr(^q);
+}
+
+aspect production shortFunParamReference
+top::Expr ::= @q::QName
+{
+  top.merrors := [];
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.monoType;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(^q)]
+                     else [];
+  top.monadRewritten = baseExpr(^q);
 }

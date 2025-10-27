@@ -1,6 +1,5 @@
 grammar silver:compiler:translation:java:type;
 
-import silver:compiler:definition:env;
 import silver:compiler:definition:core only QNameAttrOccur, QName, qNameAttrOccur;
 
 -- Translation of *solved* contexts, not *constraint* contexts
@@ -47,7 +46,7 @@ top::Context ::= fn::String t::Type
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
   top.transContext = resolvedDcl.transContext;
   
-  top.transContextMemberName = makeConstraintDictName(fn, t, top.boundVariables);
+  top.transContextMemberName = makeConstraintDictName(fn, ^t, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(fn);
   top.transContextSuperAccessor = s"""
 	public final ${top.transType} ${top.transContextSuperAccessorName}() {
@@ -65,7 +64,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   top.transContext = resolvedDcl.attrOccursIndex;
   top.transContextDummyInit = "0";
   
-  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextMemberName = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
   top.transContextSuperAccessor = s"""
 	public final ${top.transType} ${top.transContextSuperAccessorName}() {
@@ -83,7 +82,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.transContext = resolvedDcl.attrOccursIndex;
   top.transContextDummyInit = "0";
   
-  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextMemberName = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
   top.transContextSuperAccessor = s"""
 	public final ${top.transType} ${top.transContextSuperAccessorName}() {
@@ -98,7 +97,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   -- This doesn't actually encode any runtime information, for now...
   top.transType = "Object";
   top.transContext = "null";
-  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextMemberName = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
   top.transContextSuperAccessor = s"""
 	public final ${top.transType} ${top.transContextSuperAccessorName}() {
@@ -132,7 +131,7 @@ ${makeTyVarDecls(5, t.freeVariables)}
 				}
 			}).getType()""";
   
-  top.transContextMemberName = makeTypeableName(t, top.boundVariables);
+  top.transContextMemberName = makeTypeableName(^t, top.boundVariables);
   top.transContextSuperAccessorName = "getType";
   top.transContextSuperAccessor = s"""
 	public final common.TypeRep getType() {
@@ -147,7 +146,7 @@ top::Context ::= i1::Type i2::Type
   -- This doesn't actually encode any runtime information, for now...
   top.transType = "Object";
   top.transContext = "null";
-  top.transContextMemberName = makeInhSubsetName(i1, i2, top.boundVariables);
+  top.transContextMemberName = makeInhSubsetName(^i1, ^i2, top.boundVariables);
   top.transContextSuperAccessorName = "getInhSubset";
   top.transContextSuperAccessor = s"""
 	public final Object getInhSubset() {
@@ -174,17 +173,17 @@ attribute transContext occurs on InstDclInfo;
 aspect production instDcl
 top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type definedMembers::[String]
 {
-  top.transContext = s"new ${makeInstanceName(top.sourceGrammar, fn, ty)}(${implode(", ", top.transContextDeps)})";
+  top.transContext = s"new ${makeInstanceName(top.sourceGrammar, fn, ^ty)}(${implode(", ", top.transContextDeps)})";
 }
 aspect production instConstraintDcl
 top::InstDclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
-  top.transContext = makeConstraintDictName(fntc, ty, tvs);
+  top.transContext = makeConstraintDictName(fntc, ^ty, tvs);
 }
 aspect production sigConstraintDcl
 top::InstDclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
-  top.transContext = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeConstraintDictName(fntc, ty, ns.freeVariables)}";
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeConstraintDictName(fntc, ^ty, ns.freeVariables)}";
 }
 aspect production currentInstDcl
 top::InstDclInfo ::= fntc::String ty::Type
@@ -200,12 +199,12 @@ top::InstDclInfo ::= fntc::String baseDcl::InstDclInfo
 aspect production typeableInstConstraintDcl
 top::InstDclInfo ::= ty::Type tvs::[TyVar]
 {
-  top.transContext = makeTypeableName(ty, tvs);
+  top.transContext = makeTypeableName(^ty, tvs);
 }
 aspect production typeableSigConstraintDcl
 top::InstDclInfo ::= ty::Type ns::NamedSignature
 {
-  top.transContext = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeTypeableName(ty, ns.freeVariables)}"; 
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeTypeableName(^ty, ns.freeVariables)}"; 
 }
 aspect production typeableSuperDcl
 top::InstDclInfo ::= baseDcl::InstDclInfo
@@ -258,8 +257,4 @@ String ::= i1::Type i2::Type tvs::[TyVar]
   return s"inhSubset_${i1.transTypeName}_${i2.transTypeName}";
 }
 
-function makeInstanceSuperAccessorName
-String ::= s::String
-{
-  return "getSuper_" ++ substitute(":", "_", s);
-}
+fun makeInstanceSuperAccessorName String ::= s::String = "getSuper_" ++ substitute(":", "_", s);

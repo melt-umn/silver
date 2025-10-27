@@ -18,15 +18,18 @@ tracked nonterminal ExprLHSExpr with
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr =
-  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config},
-  decorate {forward, alwaysDecorated};
+  forward {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, compiledGrammars, config, decSiteVertexInfo, appDecSiteVertexInfo, dispatchFlowDeps},
+  decorate {forward, alwaysDecorated, originRules},
+  errors {forward}, typerep {forward};
 
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
 flowtype decorate {grammarName, env, frame, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
-flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype errors {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config} on Exprs;
+flowtype errors {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
+flowtype errors {grammarName, env, frame, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
   excluding terminalAccessHandler;
@@ -79,7 +82,7 @@ top::Expr ::= '(' e::Expr ')'
 {
   top.unparse = "(" ++ e.unparse ++ ")";
   
-  forwards to e;
+  forwards to @e;
 }
 
 concrete production baseExpr
@@ -99,9 +102,8 @@ top::Expr ::= q::QName
 }
 
 abstract production errorReference
-top::Expr ::= msg::[Message]  q::Decorated! QName
+top::Expr ::= msg::[Message]  @q::QName
 {
-  undecorates to errorExpr(msg);  -- TODO: Should this be baseExpr?
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -109,60 +111,66 @@ top::Expr ::= msg::[Message]  q::Decorated! QName
   top.typerep = errorType();
 }
 
--- TODO: We should separate this out, even, to be "nonterminal/decorable" and "as-is"
-abstract production childReference
-top::Expr ::= q::Decorated! QName
+dispatch Reference = Expr ::= @q::QName;
+
+abstract production childReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
+                then q.lookupValue.typeScheme.asDecoratedType
                 else q.lookupValue.typeScheme.monoType;
 }
 
-abstract production lhsReference
-top::Expr ::= q::Decorated! QName
+abstract production lhsReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  -- An (non-data) LHS is *always* a decorated (nonterminal) type.
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
-abstract production localReference
-top::Expr ::= q::Decorated! QName
+abstract production localReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
-                then q.lookupValue.typeScheme.asNtOrDecType
-                else q.lookupValue.typeScheme.monoType;
+  top.typerep =
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
+    then q.lookupValue.typeScheme.asDecoratedType
+    else q.lookupValue.typeScheme.monoType;
 }
 
-abstract production forwardReference
-top::Expr ::= q::Decorated! QName
+abstract production nondecLocalReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
+  top.typerep = q.lookupValue.typeScheme.monoType;
+}
+
+abstract production forwardReference implements Reference
+top::Expr ::= @q::QName
+{
+  top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
+  
+  -- An LHS (and thus, forward) is *always* a decorated (nonterminal) type.
+  top.typerep = q.lookupValue.typeScheme.asDecoratedType;
 }
 
 -- Note here that production and function *references* are distinguished.
 -- Later on, we do *not* distinguish for application.
 
-abstract production productionReference
-top::Expr ::= q::Decorated! QName
+abstract production productionReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -178,10 +186,9 @@ top::Expr ::= q::Decorated! QName
   contexts.compiledGrammars = top.compiledGrammars;
 }
 
-abstract production functionReference
-top::Expr ::= q::Decorated! QName
+abstract production functionReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -197,10 +204,9 @@ top::Expr ::= q::Decorated! QName
   contexts.compiledGrammars = top.compiledGrammars;
 }
 
-abstract production classMemberReference
-top::Expr ::= q::Decorated! QName
+abstract production classMemberReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -229,10 +235,9 @@ top::Expr ::= q::Decorated! QName
   contexts.compiledGrammars = top.compiledGrammars;
 }
 
-abstract production globalValueReference
-top::Expr ::= q::Decorated! QName
+abstract production globalValueReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -261,6 +266,18 @@ top::Expr ::= q::'forward'
   forwards to baseExpr(qName("forward"));
 }
 
+concrete production forwardParentReference
+top::Expr ::= 'forwardParent'
+{
+  top.unparse = "forwardParent";
+
+  top.typerep = top.frame.signature.outputElement.typerep.asDecoratedType;
+  top.errors <-
+    if !any(map((.elementShared), top.frame.signature.inputElements))
+    then [errFromOrigin(top, "This production has no shared children, and thus is not known to be the target of forwarding.")]
+    else [];
+}
+
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
@@ -278,20 +295,31 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
+  -- TODO: These should maybe be supplied after forwarding?
   es.appExprTypereps = reverse(correctNumTypes);
   es.appExprApplied = e.unparse;
   anns.appExprApplied = e.unparse;
-  anns.remainingFuncAnnotations = t.namedTypes;
+  anns.remainingFuncAnnotations =
+    if t.isNonterminal
+    then map(
+      \ e::NamedSignatureElement -> (e.elementShortName, e.typerep),
+      annotationsForNonterminal(^t, top.env))
+    else t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
   
   top.errors <- 
     if !t.isApplicable
     then []
     else if length(t.inputTypes) > es.appExprSize
-    then [errFromOrigin(top, "Too few arguments provided to function '" ++ e.unparse ++ "'")]
-    else if length(t.inputTypes) < es.appExprSize
-    then [errFromOrigin(top, "Too many arguments provided to function '" ++ e.unparse ++ "'")]
+    then [errFromOrigin(es, "Too few arguments provided to function '" ++ e.unparse ++ "'")]
+    else if length(t.inputTypes) < es.appExprSize && case t.outputType of dispatchType(_) -> false | _ -> true end
+    then [errFromOrigin(es, "Too many arguments provided to function '" ++ e.unparse ++ "'")]
     else [];
+
+  top.errors <-
+    if t.isNonterminal || null(anns.missingAnnotations) then []
+    else [errFromOrigin(anns, "Missing named parameters for function '" ++ e.unparse ++ "': "
+      ++ implode(", ", map(fst, anns.missingAnnotations)))];
 
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
@@ -314,10 +342,11 @@ top::Expr ::= e::Expr '(' ')'
   forwards to application(@e, $2, emptyAppExprs(), ',', emptyAnnoAppExprs(), $3);
 }
 
-abstract production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+dispatch Application = Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs;
+
+abstract production errorApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   top.errors <-
@@ -332,23 +361,26 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
 -- Note that this applies to both function and productions.
 -- We don't distinguish anymore at this point. A production reference
 -- becomes a function, effectively.
-abstract production functionApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production functionApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
 
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
   forwards to
     (if es.isPartial || anns.isPartial
      then partialApplication
-     else functionInvocation)(e, es, anns);
+     else
+       case t.outputType of
+       | dispatchType(_) when es.appExprSize > length(t.inputTypes) -> curriedDispatchApplication
+       | _ -> functionInvocation
+       end)(e, es, anns);
 }
 
-abstract production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production functionInvocation implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -356,10 +388,9 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
   top.typerep = ety.outputType;
 }
 
-abstract production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+abstract production partialApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  undecorates to application(e, '(', es, ',', anns, ')');
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -368,6 +399,83 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
     appTypes(
       functionType(length(es.missingTypereps) + length(anns.partialAnnoTypereps), map(fst, anns.missingAnnotations)),
       es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
+}
+
+-- Dispatch productions with extra arguments are partially curried,
+-- e.g. lexicalLocalReference has type (Reference ::= Maybe<VertexType> [FlowVertex]).
+-- This exists to permit all arguments to be supplied directly,
+-- e.g. lexicalLocalReference(q, fi, fd) instead of lexicalLocalReference(fi, fd)(q).
+abstract production curriedDispatchApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
+
+  -- TODO: args are being (unavoidably?) re-decorated here.
+  production extraArgs :: AppExprs =
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, drop(es.appExprSize - length(t.inputTypes), es.rawExprs)));
+  production dispatchArgs :: AppExprs =
+    foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
+      map(presentAppExpr, take(es.appExprSize - length(t.inputTypes), es.rawExprs)));
+
+  forwards to application(
+    application(@e, '(', @extraArgs, ',', emptyAnnoAppExprs(), ')'),
+    '(', @dispatchArgs, ',', ^anns, ')');
+}
+
+abstract production dispatchApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  top.typerep = performSubstitution(e.typerep, e.upSubst).outputType;
+}
+
+abstract production annoUpdateApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  local prod::Application =
+    if es.appExprSize > 0
+    then annoUpdatePositionalErrorApplication
+    else if anns.isPartial
+    then annoUpdatePartialApplication
+    else annoUpdateInvocation;
+
+  forwards to prod(e, es, anns);
+}
+
+abstract production annoUpdatePositionalErrorApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  top.errors <-
+    [errFromOrigin(top, s"Unexpected positional arguments for annotation update of nonterminal ${prettyType(e.finalType)}.")];
+
+  top.typerep = e.typerep;
+}
+
+abstract production annoUpdateInvocation implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  top.typerep = e.typerep;
+}
+
+abstract production annoUpdatePartialApplication implements Application
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
+{
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+
+  top.typerep =
+    appTypes(
+      functionType(length(anns.partialAnnoTypereps), []),
+      anns.partialAnnoTypereps ++ [e.typerep]);
 }
 
 concrete production noteAttachment
@@ -402,7 +510,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
-  q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
+  q.attrFor = if eTy.isDecorated then eTy.decoratedType else ^eTy;
   
   -- Note: we're first consulting the TYPE of the LHS.
   forwards to eTy.accessHandler(e, q);
@@ -414,10 +522,11 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   -- terminalAccessHandler
 }
 
-abstract production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+dispatch Access = Expr ::= @e::Expr @q::QNameAttrOccur;
+
+abstract production errorAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = errorType();
@@ -430,10 +539,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
       end;
 }
 
-abstract production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production terminalAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- NO use of q.errors, as that become nonsensical here.
@@ -455,10 +563,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
     else errorType();
 }
 
-abstract production undecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production undecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
@@ -470,10 +577,9 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
-abstract production dataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production dataAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is data, here we dispatch based on the kind of attribute.
@@ -489,9 +595,8 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= e::Expr  @q::QNameAttrOccur target::Access
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   e.isRoot = false;
@@ -499,28 +604,28 @@ top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::E
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q);
 }
-function accessBounceDecorate
-Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Decorated! Expr  q::Decorated! QNameAttrOccur
+production accessBounceDecorate implements Access
+Expr ::= @e::Expr @q::QNameAttrOccur target::Access
 {
-  return accessBouncer(target, decorateExprWithEmpty('decorate', @e, 'with', '{', '}'), q);
+  forwards to
+    accessBouncer(decorateExprWithEmpty('decorate', @e, 'with', '{', '}'), q, target);
 }
 -- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
-function accessBounceUndecorate
-Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur) e::Decorated! Expr  q::Decorated! QNameAttrOccur
+production accessBounceUndecorate implements Access
+Expr ::= @e::Expr @q::QNameAttrOccur target::Access
 {
-  return accessBouncer(target,
+  forwards to accessBouncer(
     application(
       baseExpr(qName("silver:core:getTermThatWasDecorated")), '(',
       oneAppExprs(
         presentAppExpr(@e)), ',',
       emptyAnnoAppExprs(), ')'),
-    q);
+    q, target);
 }
 
-abstract production decoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production decoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
@@ -532,37 +637,33 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   -- unknownDclAccessHandler  -- unknown attribute error raised already.
 }
 
-abstract production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production synDecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
 }
 
-abstract production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production inhDecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
 }
 
-abstract production transDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production transDecoratedAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 }
 
-abstract production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production annoAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   production index :: Integer =
@@ -571,41 +672,37 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
   top.typerep = q.typerep;
 }
 
-abstract production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production synDataAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
 
   top.typerep = q.typerep;
 }
 
-abstract production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production inhUndecoratedAccessErrorHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep;
 
   top.errors <- [errFromOrigin(top, s"Cannot access inherited attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
 
-abstract production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production transUndecoratedAccessErrorHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
-  top.typerep = q.typerep.asNtOrDecType;
+  top.typerep = q.typerep.asDecoratedType;
 
   top.errors <- [errFromOrigin(top, s"Cannot access translation attribute ${q.attrDcl.fullName} from an undecorated type")];
 }
 
-abstract production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+abstract production unknownDclAccessHandler implements Access
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
-  undecorates to access(e, '.', q);
   top.unparse = e.unparse ++ "." ++ q.unparse;
 
   top.typerep = errorType();
@@ -626,23 +723,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
   production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
-  production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
+  production ntType::Type = if eType.isDecorated then eType.decoratedType else @eType;
 
-  -- TODO: This _could_ be uniqueDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
-  top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
+  top.typerep = decoratedType(^ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
-  inh.decoratingnt = ntType;
+  inh.decoratingnt = ^ntType;
   inh.allSuppliedInhs = inh.suppliedInhs;
-}
-
-concrete production decorationSiteExpr
-top::Expr ::= '@' e::Expr
-{
-  top.unparse = s"@${e.unparse}";
-
-  top.typerep = e.typerep.decoratedType;
-  e.isRoot = false;
 }
 
 abstract production exprInhsEmpty
@@ -690,6 +777,23 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
   top.suppliedInhs = if q.attrFound then [q.attrDcl.fullName] else [];
   
   q.attrFor = top.decoratingnt;
+}
+
+concrete production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.unparse = s"@${e.unparse}";
+
+  top.typerep = e.typerep.decoratedType;
+  e.isRoot = false;
+}
+
+concrete production undecExpr
+top::Expr ::= '^' e::Expr
+{
+  top.unparse = s"^${e.unparse}";
+
+  forwards to Silver_Expr { silver:core:new($Expr{@e}) };
 }
 
 concrete production trueConst
@@ -894,13 +998,14 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 concrete production terminalFunction
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
 {
-  local locExpr :: Expr = Silver_Expr {
-    silver:core:fromMaybe(
-      silver:core:bogusLoc(),
-      silver:core:getParsedOriginLocation(silver:core:ambientOrigin()))
-  };
+  nondecorated local locExpr::Expr =
+    Silver_Expr {
+      silver:core:fromMaybe(
+        silver:core:bogusLoc(),
+        silver:core:getParsedOriginLocation(silver:core:ambientOrigin()))
+    };
 
-  forwards to terminalConstructor($1, $2, t, $4, e, ',', locExpr, $6);
+  forwards to terminalConstructor($1, $2, @t, $4, @e, ',', locExpr, $6);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.
@@ -920,7 +1025,7 @@ top::Exprs ::= e::Expr
   top.unparse = e.unparse;
 
   top.exprs := [e];
-  top.rawExprs := [e];
+  top.rawExprs := [^e];
 
   e.isRoot = false;
 }
@@ -930,7 +1035,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.unparse = e1.unparse ++ ", " ++ e2.unparse;
 
   top.exprs := [e1] ++ e2.exprs;
-  top.rawExprs := [e1] ++ e2.rawExprs;
+  top.rawExprs := [^e1] ++ e2.rawExprs;
 
   e1.isRoot = false;
 }
@@ -946,12 +1051,25 @@ tracked nonterminal AppExprs with
 flowtype AppExprs =
   decorate {
     config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied, originRules,
-    downSubst, finalSubst, flowEnv
+    downSubst, finalSubst, flowEnv, appIndexOffset, dispatchFlowDeps
+  },
+  errors {
+    config, grammarName, env, frame, compiledGrammars, appExprTypereps, appExprApplied,
+    downSubst, finalSubst, flowEnv, decSiteVertexInfo, dispatchFlowDeps, appProd, appIndexOffset
   };
 
 tracked nonterminal AppExpr with
   config, grammarName, env, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, originRules;
+flowtype AppExpr =
+  decorate {
+    config, grammarName, env, frame, compiledGrammars, appExprIndex, appExprTyperep, appExprApplied, originRules,
+    downSubst, finalSubst, flowEnv, appIndexOffset, dispatchFlowDeps
+  },
+  errors {
+    config, grammarName, env, frame, compiledGrammars, appExprIndex, appExprTyperep, appExprApplied,
+    downSubst, finalSubst, flowEnv, decSiteVertexInfo, dispatchFlowDeps, appProd, appIndexOffset
+  };
 
 propagate config, grammarName, env, freeVars, frame, compiledGrammars, errors, originRules on AppExprs, AppExpr;
 propagate appExprApplied, exprs, rawExprs on AppExprs;
@@ -986,7 +1104,7 @@ top::AppExpr ::= e::Expr
   top.isPartial = false;
   top.missingTypereps = [];
   
-  top.rawExprs := [e];
+  top.rawExprs := [^e];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
 
@@ -1064,6 +1182,10 @@ flowtype decorate {
     grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config,
     appExprApplied, remainingFuncAnnotations, funcAnnotations
   } on AnnoAppExprs, AnnoExpr;
+flowtype errors {
+    grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config,
+    appExprApplied, remainingFuncAnnotations, funcAnnotations
+  } on AnnoAppExprs, AnnoExpr;
 
 propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, appExprApplied, originRules
   on AnnoAppExprs, AnnoExpr;
@@ -1138,10 +1260,6 @@ top::AnnoAppExprs ::= e::AnnoExpr
 
   top.isPartial = e.isPartial;
   top.appExprSize = 1;
-  top.errors <-
-    if null(top.missingAnnotations) then []
-    else [errFromOrigin(top, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
-      ++ implode(", ", map(fst, top.missingAnnotations)))];
 
   e.remainingFuncAnnotations = top.remainingFuncAnnotations;
   top.missingAnnotations = e.missingAnnotations;
@@ -1158,10 +1276,6 @@ top::AnnoAppExprs ::=
 
   top.isPartial = false;
   top.appExprSize = 0;
-  top.errors <-
-    if null(top.missingAnnotations) then []
-    else [errFromOrigin(top, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
-      ++ implode(", ", map(fst, top.missingAnnotations)))];
 
   top.missingAnnotations = top.remainingFuncAnnotations;
   
@@ -1170,14 +1284,10 @@ top::AnnoAppExprs ::=
   top.annoIndexSupplied = [];
 }
 
-function reorderedAnnoAppExprs
-[Decorated Expr] ::= d::Decorated AnnoAppExprs
-{
-  -- This is an annoyingly poor quality implementation
-  return map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
-}
-function reorderedLte
-Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }
+fun reorderedAnnoAppExprs [Decorated Expr] ::= d::Decorated AnnoAppExprs =
+  map(snd, sortBy(reorderedLte, zip(d.annoIndexSupplied, d.exprs)));
+fun reorderedLte Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) =
+  l.fst <= r.fst;
 
 function extractNamedArg
 (Maybe<(String, Type)>, [(String, Type)]) ::= n::String  l::[(String, Type)]
@@ -1190,46 +1300,30 @@ function extractNamedArg
   else (recurse.fst, head(l) :: recurse.snd);
 }
 
-function findNamedArgType
-Integer ::= s::String l::[(String, Type)] z::Integer
-{
-  return if null(l) then -1
-  else if s == head(l).fst then z
-  else findNamedArgType(s, tail(l), z+1);
-}
+fun findNamedArgType Integer ::= s::String l::[(String, Type)] z::Integer =
+  if null(l) then -1
+else if s == head(l).fst then z
+else findNamedArgType(s, tail(l), z+1);
 
 
 {--
  - Utility for other modules to create function invocations.
  - This makes no assumptions, use it any way you wish!
  -}
-function mkStrFunctionInvocation
-Expr ::= e::String  es::[Expr]
-{
-  return mkFullFunctionInvocation(baseExpr(qName(e)), es, []);
-}
-function mkFunctionInvocation
-Expr ::= e::Expr  es::[Expr]
-{
-  return mkFullFunctionInvocation(e, es, []);
-}
-function mkFullFunctionInvocation
-Expr ::= e::Expr  es::[Expr]  ans::[Pair<String Expr>]
-{
-  return application(e, '(',
+fun mkStrFunctionInvocation Expr ::= e::String  es::[Expr] =
+  mkFullFunctionInvocation(baseExpr(qName(e)), es, []);
+fun mkFunctionInvocation Expr ::= e::Expr  es::[Expr] = mkFullFunctionInvocation(e, es, []);
+fun mkFullFunctionInvocation Expr ::= e::Expr  es::[Expr]  ans::[Pair<String Expr>] =
+  application(e, '(',
     foldl(snocAppExprs(_, ',', _), emptyAppExprs(),
       map(presentAppExpr, es)),
     ',',
     foldl(snocAnnoAppExprs(_, ',', _), emptyAnnoAppExprs(),
       map(mkAnnoExpr, ans)),
     ')');
-}
 -- Internal helper function
-function mkAnnoExpr
-AnnoExpr ::= p::Pair<String Expr>
-{
-  return annoExpr(qName(p.fst), '=', presentAppExpr(p.snd));
-}
+fun mkAnnoExpr AnnoExpr ::= p::Pair<String Expr> =
+  annoExpr(qName(p.fst), '=', presentAppExpr(p.snd));
 
 {--
  - Note on the use of the 'decorated here' (@) operator with already-decorated expressions:

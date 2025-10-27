@@ -22,8 +22,8 @@ s::Stmt ::= body::Stmt cond::Expr
         while (! cond) { body }
      -}
     seq(
-      body,
-      while(notOp(cond), block(body))
+      @body,
+      while(notOp(@cond), block(^body))
     );
 }
 

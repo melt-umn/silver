@@ -63,11 +63,7 @@ IOToken ::= s::String i::IOToken
 @{--
   - Like printT, but adds a trailing newline automatically.
   -}
-function printlnT
-IOToken ::= str::String  ioIn::IOToken
-{
-  return printT(str ++ "\n", ioIn);
-}
+fun printlnT IOToken ::= str::String  ioIn::IOToken = printT(str ++ "\n", ioIn);
 
 @{--
   - Like printT, but for stderr.
@@ -83,11 +79,7 @@ IOToken ::= str::String  ioIn::IOToken
 @{--
   - Like eprintT, but adds a trailing newline automatically.
   -}
-function eprintlnT
-IOToken ::= str::String  ioIn::IOToken
-{
-  return eprintT(str ++ "\n", ioIn);
-}
+fun eprintlnT IOToken ::= str::String  ioIn::IOToken = eprintT(str ++ "\n", ioIn);
 
 @{--
  - Read a line from standard input.
@@ -280,6 +272,52 @@ IOVal<String> ::= s::String i::IOToken
   return error("Not Yet Implemented: readFileT");
 } foreign {
   "java" : return "%i%.readFile(%s%)";
+}
+
+@{--
+  - Checks if a file is a jar file.
+  -
+  - @param s  The file to query.
+  - @param i  The "before" world-state token.
+  - @return  true if if the file is a jar file.  false otherwise.
+  -}
+function isJarFileT
+IOVal<Boolean> ::= s::String i::IOToken
+{
+  return error("Not Yet Implemented: isJarFileT");
+} foreign {
+  "java" : return "%i%.isJarFile(%s%)";
+}
+
+@{--
+  - Checks if a jar file contains an entry.
+  -
+  - @param jar  The jar file to query.
+  - @param entry  The entry to check for.
+  - @param i  The "before" world-state token.
+  - @return  true if if the jar file contains the entry.  false otherwise.
+  -}
+function jarContainsEntryT
+IOVal<Boolean> ::= jar::String entry::String i::IOToken
+{
+  return error("Not Yet Implemented: jarContainsEntryT");
+} foreign {
+  "java" : return "%i%.jarContainsEntry(%jar%, %entry%)";
+}
+
+@{-
+  - Reads a binary entry from a jar file.
+  - @param jar  The jar file to read from.
+  - @param entry  The entry to read.
+  - @param i  The "before" world-state token.
+  - @return  The contents of the entry.  May throw a java IO exception, which cannot be caught by Silver.
+  -}
+function readBinaryJarEntryT
+IOVal<ByteArray> ::= jar::String entry::String i::IOToken
+{
+  return error("Not Yet Implemented: readBinaryJarEntryT");
+} foreign {
+  "java" : return "%i%.readByteJarEntry(%jar%, %entry%)";
 }
 
 @{--

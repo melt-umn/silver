@@ -7,7 +7,7 @@ top::AGDcl ::= 'partial' 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';
 {
   top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
   e.givenGenName = a.name;
-  forwards to strategyAttributeDcl(false, a, [], [], e.ast);
+  forwards to strategyAttributeDcl(false, @a, [], [], e.ast);
 }
 
 concrete production totalStrategyAttributeDcl
@@ -15,7 +15,7 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';'
 {
   top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
   e.givenGenName = a.name;
-  forwards to strategyAttributeDcl(true, a, [], [], e.ast);
+  forwards to strategyAttributeDcl(true, @a, [], [], e.ast);
 }
 
 closed tracked nonterminal StrategyExpr_c with givenGenName, unparse, ast<StrategyExpr>;
@@ -45,6 +45,29 @@ concrete productions top::StrategyExpr_c
   s1.givenGenName = top.givenGenName ++ "_left";
   s2.givenGenName = top.givenGenName ++ "_right";
 }
+| s1::StrategyExpr_c '<' s2::StrategyExpr_c '+' s3::StrategyExpr_c
+{
+  top.unparse = s"(${s1.unparse} < ${s2.unparse} + ${s3.unparse})";
+  top.ast = guardedChoice(s1.ast, s2.ast, s3.ast, genName=top.givenGenName);
+  s1.givenGenName = top.givenGenName ++ "_cond";
+  s2.givenGenName = top.givenGenName ++ "_then";
+  s3.givenGenName = top.givenGenName ++ "_else";
+}
+| 'if' s1::StrategyExpr_c 'then' s2::StrategyExpr_c 'else' s3::StrategyExpr_c
+{
+  top.unparse = s"if ${s1.unparse} then ${s2.unparse} else ${s3.unparse}";
+  top.ast = ifThenElseComb(s1.ast, s2.ast, s3.ast, genName=top.givenGenName);
+  s1.givenGenName = top.givenGenName ++ "_cond";
+  s2.givenGenName = top.givenGenName ++ "_then";
+  s3.givenGenName = top.givenGenName ++ "_else";
+}
+| 'if' s1::StrategyExpr_c 'then' s2::StrategyExpr_c 'end'
+{
+  top.unparse = s"if ${s1.unparse} then ${s2.unparse} end";
+  top.ast = ifThenEndComb(s1.ast, s2.ast, genName=top.givenGenName);
+  s1.givenGenName = top.givenGenName ++ "_cond";
+  s2.givenGenName = top.givenGenName ++ "_then";
+}
 | 'all' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"all(${s.unparse})";
@@ -73,18 +96,18 @@ concrete productions top::StrategyExpr_c
 | 'rec' n::Name Arrow_t s::StrategyExpr_c
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
-  top.ast = recComb(n, s.ast, genName=top.givenGenName);
+  top.ast = recComb(^n, s.ast, genName=top.givenGenName);
   s.givenGenName = top.givenGenName;
 }
 | 'rule' 'on' id::Name '::' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ id.unparse ++ "::" ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(id, ty, ml, genName=top.givenGenName);
+  top.ast = rewriteRule(^id, ^ty, ^ml, genName=top.givenGenName);
 }
 | 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(name("top"), ty, ml, genName=top.givenGenName);
+  top.ast = rewriteRule(name("top"), ^ty, ^ml, genName=top.givenGenName);
 }
 | id::StrategyQName
 {
@@ -101,6 +124,12 @@ concrete productions top::StrategyExpr_c
 {
   top.unparse = s"printTerm";
   top.ast = printTerm(genName=top.givenGenName);
+}
+| 'when' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"when(${s.unparse})";
+  top.ast = whenS(s.ast, genName=top.givenGenName);
+  s.givenGenName = top.givenGenName ++ "_when_arg";
 }
 | 'try' '(' s::StrategyExpr_c ')'
 {

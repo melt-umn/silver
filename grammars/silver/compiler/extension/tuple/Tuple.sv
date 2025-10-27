@@ -18,7 +18,7 @@ tracked nonterminal TupleList with unparse, translation;
 
 -- used to convert the comma-separated list of expressions 
 -- that make up the tuple into a pair expression:
-synthesized attribute translation :: Expr;
+translation attribute translation :: Expr;
 
 concrete production emptyTuple
 top::Expr ::= '(' ')'
@@ -39,7 +39,7 @@ top::Expr ::= '(' tl::TupleList ')'
   -- isn't instantiated into a chain of pairs until upSubst is applied) 
   top.typerep = tupleType(performSubstitution(forward.typerep, forward.upSubst).tupleElems);
   
-  forwards to tl.translation;
+  forwards to @tl.translation;
 }
 
 -- selects tuple element at index a
@@ -48,7 +48,10 @@ top::Expr ::= tuple::Expr '.' a::IntConst
 {
 
   -- Forward gets the substitution context of the tuple
-  propagate grammarName, config, compiledGrammars, frame, env, flowEnv, downSubst, upSubst, finalSubst, freeVars, originRules;
+  propagate grammarName, config, compiledGrammars, frame, env, flowEnv, downSubst, upSubst, finalSubst, freeVars;
+  tuple.decSiteVertexInfo = nothing();
+  tuple.appDecSiteVertexInfo = nothing();
+  tuple.dispatchFlowDeps = [];
   tuple.isRoot = false;
 
   local accessIndex::Integer = toInteger(a.lexeme);
@@ -59,7 +62,7 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   local len::Integer = length(ty.tupleElems);
   
   forwards to if (accessIndex > len || accessIndex < 1) then
-      errorExpr([errFromOrigin(top, "Invalid tuple selector index.")])
+      errorExpr(tuple.errors ++ [errFromOrigin(top, "Invalid tuple selector index.")])
     -- @ prevents exponential type checking
     else select(@tuple, 1, accessIndex, len);
 
@@ -86,7 +89,7 @@ concrete production tupleList_2Elements
 top::TupleList ::= fst::Expr ',' snd::Expr
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{@fst}, snd=$Expr{@snd}) };
 }
 
 -- There are more than two elements in the tuple
@@ -94,5 +97,5 @@ concrete production tupleList_nElements
 top::TupleList ::= fst::Expr ',' snd::TupleList
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd.translation}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{@fst}, snd=$Expr{@snd.translation}) };
 }

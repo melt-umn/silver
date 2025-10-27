@@ -131,26 +131,10 @@ instance Ord Boolean {
   gt = gtBoolean;
   gte = gteBoolean;
 }
-function ltBoolean
-Boolean ::= x::Boolean y::Boolean
-{
-  return x == false && y == true;
-}
-function lteBoolean
-Boolean ::= x::Boolean y::Boolean
-{
-  return x != true || y != false;
-}
-function gtBoolean
-Boolean ::= x::Boolean y::Boolean
-{
-  return x == true && y == false;
-}
-function gteBoolean
-Boolean ::= x::Boolean y::Boolean
-{
-  return x != true || y != false;
-}
+fun ltBoolean Boolean ::= x::Boolean y::Boolean = x == false && y == true;
+fun lteBoolean Boolean ::= x::Boolean y::Boolean = x != true || y != false;
+fun gtBoolean Boolean ::= x::Boolean y::Boolean = x == true && y == false;
+fun gteBoolean Boolean ::= x::Boolean y::Boolean = x != true || y != false;
 
 instance Ord String {
   compare = compareString;

@@ -1,7 +1,7 @@
 grammar silver:compiler:translation:java:core;
 
 aspect production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   local ntfn :: String = nt.lookupType.fullName;
   local occursType :: String = if at.lookupAttribute.dcl.isSynthesized then "syn" else "inh";
@@ -33,10 +33,15 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
       s"public static final int ${head(occursCheck).attrOccursIndexName}_dec_site = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n" ++
       s"public static final int ${head(occursCheck).attrOccursIndexName}_inhs = ${makeName(ntgrammar)}.Init.count_inh__ON__${ntname}++;\n"
     else "";
+  top.setupInh <-
+    if at.lookupAttribute.dcl.isTranslation then
+      s"\t\t${makeNTName(ntfn)}.occurs_trans[${head(occursCheck).attrGlobalOccursInitIndex}] = " ++
+      s"new common.TransOccursInfo(${head(occursCheck).attrOccursIndexName}_inhs, ${head(occursCheck).attrOccursIndexName}_dec_site);\n"
+    else "";
 }
 
 aspect production errorAttributionDcl
-top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs msg::[Message]
 {
   top.setupInh := error("Internal compiler error: translation not defined in the presence of errors");
   top.valueWeaving := error("Internal compiler error: translation not defined in the presence of errors");

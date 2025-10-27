@@ -2,7 +2,7 @@
   "name": "silverlsp",
   "displayName": "Silver LSP",
   "description": "Plugin for Silver Language Server Protocol support",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "engines": {
     "vscode": "^1.67.0"
   },
@@ -58,6 +58,11 @@
             "default": true,
             "description": "Enable the modular well-definedness analysis"
           },
+          "silver.excludeGrammars": {
+            "type": "array",
+            "default": [],
+            "description": "Grammars to exclude from being built"
+          },
           "silver.jvmArgs": {
             "type": "string",
             "default": "-Xmx6G -Xss20M",
@@ -65,7 +70,7 @@
           },
           "silver.compilerJar": {
             "type": "string",
-            "description": "Path to the jar containing an alternate version of the Silver compiler. This can be a relative path from the first workspace folder."
+            "description": "Path to the jar containing an alternate version of the Silver compiler. This can be a relative path from the first workspace folder. Multiple jars can be specified by separating them with a colon (':')."
           },
           "silver.parserName": {
             "type": "string",
@@ -103,7 +108,7 @@
     "@vscode/test-electron": "^2.1.3",
     "eslint": "^8.14.0",
     "glob": "^8.0.1",
-    "mocha": "^9.2.2",
+    "mocha": "^11.1.0",
     "typescript": "^4.6.4"
   }
 }

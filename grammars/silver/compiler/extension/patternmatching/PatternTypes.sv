@@ -5,9 +5,9 @@ import silver:compiler:modification:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-tracked nonterminal Pattern with config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
+tracked nonterminal Pattern with config, grammarName, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
 flowtype Pattern = unparse {};
-propagate config, frame, env, errors on Pattern;
+propagate config, grammarName, frame, env, errors on Pattern;
 
 {--
  - The names of all var patterns in the pattern.
@@ -73,7 +73,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ (if ps.count > 0 && nps.count > 0 then ", " else "") ++ nps.unparse ++ ")";
 
-  local parms :: Integer = prod.lookupValue.typeScheme.arity;
+  local parms :: Integer = length(prod.lookupValue.dcl.namedSignature.inputElements);
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
@@ -92,19 +92,22 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.isPrimitivePattern = false;
   top.isBoolPattern = false;
   top.isListPattern = false;
-  top.patternTypeName = prod.lookupValue.typeScheme.typerep.outputType.baseType.typeName;
+  top.patternTypeName =
+    if prod.lookupValue.found
+    then prod.lookupValue.dcl.namedSignature.outputElement.typerep.typeName
+    else "";
 }
 
 concrete production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(), ')');
+  forwards to prodAppPattern_named(@prod, '(', @ps, ',', namedPatternList_nil(), ')');
 }
 
 concrete production propAppPattern_onlyNamed
 top::Pattern ::= prod::QName '(' nps::NamedPatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', patternList_nil(), ',', nps, ')');
+  forwards to prodAppPattern_named(@prod, '(', patternList_nil(), ',', @nps, ')');
 }
 
 {--
@@ -147,7 +150,7 @@ top::Pattern ::= v::Name
     else [];
   top.errors <-
     case getValueDcl(v.name, top.env) of
-    | prodDcl(_,_) :: _ ->
+    | prodDcl(_,_,_) :: _ ->
       [errFromOrigin(v, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
     | _ -> []
     end;
@@ -201,7 +204,7 @@ concrete production nestedPatterns
 top::Pattern ::= '(' p::Pattern ')'
 {
   top.unparse = s"(${p.unparse})";
-  forwards to p;
+  forwards to @p;
 }
 
 --------------------------------------------------------------------------------
@@ -323,12 +326,12 @@ aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.asListPattern = 
-    consListPattern(p, '::', nilListPattern('[', ']'));
+    consListPattern(^p, '::', nilListPattern('[', ']'));
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.asListPattern = consListPattern(p, '::', ps1.asListPattern);
+  top.asListPattern = consListPattern(^p, '::', ps1.asListPattern);
 }
 aspect production patternList_nil
 top::PatternList ::=
@@ -338,8 +341,8 @@ top::PatternList ::=
 
 synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
 
-tracked nonterminal NamedPatternList with config, unparse, count, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
-propagate config, frame, env, errors on NamedPatternList;
+tracked nonterminal NamedPatternList with config, grammarName, unparse, count, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+propagate config, grammarName, frame, env, errors on NamedPatternList;
 
 concrete production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
@@ -374,8 +377,8 @@ top::NamedPatternList ::=
   top.namedPatternList = [];
 }
 
-tracked nonterminal NamedPattern with config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
-propagate config, frame, env, patternVarEnv, errors on NamedPattern;
+tracked nonterminal NamedPattern with config, grammarName, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
+propagate config, grammarName, frame, env, patternVarEnv, errors on NamedPattern;
 
 concrete production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern
@@ -396,13 +399,10 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
 }
 
 --helper function for building patternLists from lists of patterns
-function buildPatternList
-PatternList ::= plst::[Pattern] loc::Location
-{
-  return case plst of
-         | [] -> patternList_nil()
-         | h::t ->
-           patternList_more(h, ',', buildPatternList(t, loc))
-         end;
-}
+fun buildPatternList PatternList ::= plst::[Pattern] loc::Location =
+  case plst of
+  | [] -> patternList_nil()
+  | h::t ->
+    patternList_more(h, ',', buildPatternList(t, loc))
+  end;
 

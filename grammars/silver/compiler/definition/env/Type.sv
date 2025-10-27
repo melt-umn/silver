@@ -57,12 +57,6 @@ top::Type ::= te::Type _
   top.typeName = te.typeName;
 }
 
-aspect production uniqueDecoratedType
-top::Type ::= te::Type _
-{
-  top.typeName = te.typeName;
-}
-
 aspect production varType
 top::Type ::= tv::TyVar
 {
@@ -73,6 +67,12 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.typeName = tv.typeName;
+}
+
+aspect production dispatchType
+top::Type ::= ns::NamedSignature
+{
+  top.typeName = ns.fullName;
 }
 
 attribute typeName occurs on TyVar;

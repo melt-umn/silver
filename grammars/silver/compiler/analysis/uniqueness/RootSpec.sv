@@ -1,35 +1,35 @@
 grammar silver:compiler:analysis:uniqueness;
 
-monoid attribute hasUniqueRefs::Boolean with false, ||;
+monoid attribute hasSharedRefs::Boolean with false, ||;
 
-attribute uniqueRefs, hasUniqueRefs occurs on InterfaceItems, InterfaceItem;
-propagate uniqueRefs, hasUniqueRefs on InterfaceItems, InterfaceItem;
+attribute sharedRefs, hasSharedRefs occurs on InterfaceItems, InterfaceItem;
+propagate sharedRefs, hasSharedRefs on InterfaceItems, InterfaceItem;
 
 aspect production consInterfaceItem
 top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.interfaceErrors <- if !top.hasUniqueRefs then ["Missing item uniqueRefs"] else [];
+  top.interfaceErrors <- if !top.hasSharedRefs then ["Missing item sharedRefs"] else [];
 }
 
 aspect default production
 top::InterfaceItem ::=
 {
-  propagate uniqueRefs, hasUniqueRefs;
+  propagate sharedRefs, hasSharedRefs;
 }
 
-abstract production uniqueRefs
-top::InterfaceItem ::= val::[(String, UniqueRefSite)]
+abstract production sharedRefs
+top::InterfaceItem ::= val::[(String, SharedRefSite)]
 {
   propagate isEqual;
-  top.uniqueRefs <- val;
-  top.hasUniqueRefs <- true;
+  top.sharedRefs <- val;
+  top.hasSharedRefs <- true;
 }
 
 aspect function packInterfaceItems
 InterfaceItems ::= r::Decorated RootSpec
 {
-  interfaceItems <- [uniqueRefs(r.uniqueRefs)];
+  interfaceItems <- [sharedRefs(r.sharedRefs)];
 }
 
-attribute uniqueRefs occurs on RootSpec;
-propagate uniqueRefs on RootSpec;
+attribute sharedRefs occurs on RootSpec;
+propagate sharedRefs on RootSpec;

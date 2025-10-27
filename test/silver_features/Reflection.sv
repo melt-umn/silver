@@ -2,6 +2,7 @@
 import silver:reflect;
 import silver:langutil;
 import silver:langutil:pp;
+import silver:langutil:reflect:serialize;
 
 function lessHackyUnparse
 String ::= x::a
@@ -174,7 +175,7 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT 
 function reifySkolem
 runtimeTypeable a => Either<String a> ::= x::AST
 {
-  return reify(x);
+  return reify(^x);
 }
 
 wrongCode "runtimeTypeable" {

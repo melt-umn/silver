@@ -30,45 +30,14 @@ top::AGDcl ::= 'biequality' 'attribute' synPartial::Name ',' syn::Name 'with' in
        attrDef(defaultEnvItem(biequalityDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.nameLoc)))]);
 }
 
-abstract production biequalityInhAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production propagateBiequalitySynPartial implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @synPartial::QName inh::String syn::String
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
-  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  top.moduleNames := [];
-
-  propagate grammarName, env, flowEnv;
-  
-  forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then attl
-      else
-        botlSome(
-          bTypeList(
-            '<',
-            typeListSingle(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  tl)
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end),
-            '>')),
-      nt, nttl);
-}
-
-abstract production propagateBiequalitySynPartial
-top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
-{
-  undecorates to propagateOneAttr(synPartial);
   top.unparse = s"propagate ${synPartial.unparse};";
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(synPartial)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^synPartial} =
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
@@ -87,24 +56,29 @@ top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
               trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$qName{syn} },
+                  if !null(getOccursDcl(syn, ie.typerep.typeName, top.env))
+                  then Silver_Expr { $name{ie.elementName}.$name{syn} }
+                  else if isDecorable(ie.typerep, top.env)
+                  then Silver_Expr {
+                    silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))
+                  }
+                  else Silver_Expr {
+                    silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"})
+                  },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;
     };
 }
 
-abstract production propagateBiequalitySyn
-top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
+abstract production propagateBiequalitySyn implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String synPartial::String
 {
-  undecorates to propagateOneAttr(syn);
   top.unparse = s"propagate ${syn.unparse};";
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^syn} =
         $name{top.frame.signature.outputElement.elementName}.$qName{synPartial} ||
         $name{top.frame.signature.outputElement.elementName}.$qName{inh}.$qName{synPartial};
     };

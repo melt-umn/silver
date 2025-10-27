@@ -17,7 +17,7 @@ abstract production dumpFlowGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpFlowGraph = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -34,11 +34,11 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  a::Decorated CmdArgs  benv::BuildEnv
 {
   top.postOps <-
-    if top.config.dumpFlowGraph
-    then [dumpFlowGraphAction(prodGraph, finalGraphs, unList(rtm:toList(flowTypes)))]
+    if a.dumpFlowGraph
+    then [dumpFlowGraphAction(prodGraph, rtm:values(finalGraphEnv), unList(rtm:toList(flowTypes)))]
     else [];
 }
 
@@ -88,27 +88,19 @@ String ::= flowTypes::[Pair<String [FlowType]>]
        generateFlowDotGraph(tail(flowTypes));
 }
 
-function expandLabels
-[String] ::= l::[Pair<String String>]
-{
-  return if null(l) then [] else head(l).fst :: head(l).snd :: expandLabels(tail(l));
-}
+fun expandLabels [String] ::= l::[Pair<String String>] =
+  if null(l) then [] else head(l).fst :: head(l).snd :: expandLabels(tail(l));
 function makeLabelDcls
 String ::= nt::String  attr::String
 {
   local a :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
   return "\"" ++ nt ++ "/" ++ attr ++ "\"[label=\"" ++ a ++ "\"];\n";
 }
-function makeNtFlow
-String ::= nt::String  e::Pair<String String>
-{
-  return "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
-}
+fun makeNtFlow String ::= nt::String  e::Pair<String String> =
+  "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
 
-function generateDotGraph
-String ::= specs::[ProductionGraph]
-{
-  return case specs of
+fun generateDotGraph String ::= specs::[ProductionGraph] =
+  case specs of
   | [] -> ""
   | productionGraph(prod, _, _, graph, suspect, _) :: t ->
       "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
@@ -117,14 +109,10 @@ String ::= specs::[ProductionGraph]
       "}\n" ++
       generateDotGraph(t)
   end;
-}
 
 -- "production/flowvertex" -> "production/flowvertex"
-function makeDotArrow
-String ::= p::String e::Pair<FlowVertex FlowVertex> style::String
-{
-  return "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\"" ++ style ++ ";\n";
-}
+fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String =
+  "\"" ++ p ++ "/" ++ e.fst.dotName ++ "\" -> \"" ++ p ++ "/" ++ e.snd.dotName ++ "\"" ++ style ++ ";\n";
 
 
 

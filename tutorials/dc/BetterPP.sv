@@ -27,14 +27,11 @@ inherited attribute leftOrRight :: String occurs on Expr ;
    "right".  Otherwise "none".   
 -}
 
-function wrapInParens
-Boolean ::= enclosingPrecedence::Integer thisPrecedence::Integer
-            thisPosition::String opAssociativity::String
-{
- return enclosingPrecedence > thisPrecedence ||
-       (enclosingPrecedence == thisPrecedence &&
-        thisPosition != opAssociativity) ;
-}
+fun wrapInParens Boolean ::= enclosingPrecedence::Integer thisPrecedence::Integer
+                thisPosition::String opAssociativity::String =
+        enclosingPrecedence > thisPrecedence ||
+               (enclosingPrecedence == thisPrecedence &&
+                thisPosition != opAssociativity);
 
 aspect production root
 r::Root ::= e::Expr

@@ -8,6 +8,7 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:modification:copper_mda;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:modification:collection;
+imports silver:compiler:modification:concisefunctions;
 
 @@{- @warning INTENDED TO BE INTERFERED WITH like .pp. -}
 synthesized attribute docUnparse::String occurs on AGDcl;
@@ -23,6 +24,15 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
 
+aspect production shortFunctionDcl
+top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
+{
+  top.docForName = id.name;
+  top.docUnparse = "`fun " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
 aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
@@ -32,8 +42,17 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.docs := []; -- Not considered to need docs
 }
 
+aspect production dispatchSigDcl
+top::AGDcl ::= 'dispatch' id::Name '=' ns::ProductionSignature ';'
+{
+  top.docForName = id.name;
+  top.docUnparse = "`dispatch " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
+  top.docDcls := [(id.name, docDclInfo(id.name, sourceLocation=id.nameLoc, sourceGrammar=top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   top.docForName = id.name;
   top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`)";
@@ -212,7 +231,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 
 
 aspect production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.docForName = "";
   top.docUnparse = "";
@@ -303,7 +322,7 @@ top::AGDcl ::= n::Name
 }
 
 aspect production errorAttributionDcl
-top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs msg::[Message]
 {
   top.docForName = "";
   top.docUnparse = "";

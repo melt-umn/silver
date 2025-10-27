@@ -10,11 +10,7 @@ abstract production deque
 top::Deque<a> ::= ln::Integer l::[a] rn::Integer r::[a]
 {}
 
-function empty
-Deque<a> ::=
-{
-  return deque(0, [], 0, []);
-}
+fun empty Deque<a> ::= = deque(0, [], 0, []);
 
 function cons
 Deque<a> ::= e::a q::Deque<a>
@@ -71,7 +67,7 @@ function reverse
 Deque<a> ::= q::Deque<a>
 {
   return case q of deque(ln,l,rn,r) -> deque(rn,r,ln,l) end;
-} 
+}
 
 function check
 Deque<a> ::= lenf::Integer f::[a] lenr::Integer r::[a]

@@ -62,11 +62,7 @@ top::Message ::= l::Location m::String
   top.severity = 2;
 }
 
-function errFromOrigin
-Message ::= a::a m::String
-{
-  return err(getParsedOriginLocationOrFallback(a), m);
-}
+fun errFromOrigin Message ::= a::a m::String = err(getParsedOriginLocationOrFallback(a), m);
 
 @{--
  - A warning that is not required to halt compilation before translation
@@ -80,11 +76,7 @@ top::Message ::= l::Location m::String
   top.severity = 1;
 }
 
-function wrnFromOrigin
-Message ::= a::a m::String
-{
-  return wrn(getParsedOriginLocationOrFallback(a), m);
-}
+fun wrnFromOrigin Message ::= a::a m::String = wrn(getParsedOriginLocationOrFallback(a), m);
 
 @{--
  - An informational message that does not halt compilation, but is usually
@@ -98,11 +90,7 @@ top::Message ::= l::Location m::String
   top.severity = 0;
 }
 
-function infoFromOrigin
-Message ::= a::a m::String
-{
-  return info(getParsedOriginLocationOrFallback(a), m);
-}
+fun infoFromOrigin Message ::= a::a m::String = info(getParsedOriginLocationOrFallback(a), m);
 
 @{--
  - A group of messages.
@@ -111,7 +99,14 @@ abstract production nested
 top::Message ::= l::Location m::String others::[Message]
 {
   top.where = l;
-  top.message = s"${m}\n${messagesToString(others)}";
+  local chain::[OriginInfo] = getOriginInfoChain(top);
+  top.message =
+    if null(chain) || originatesInExt(tail(chain)).isJust
+    -- If the message originates in extension-generated code,
+    -- then the nested messages likely do as well.
+    -- Suppress the origins errors from nested messages to avoid making diagnostics unreadable.
+    then s"${m}\n${messagesToStringNoOriginsCheck(others)}"
+    else s"${m}\n${messagesToString(others)}";
   top.noLocOutput = s"${top.message}\n";
   top.severity = foldr(max, 0, map((.severity), others));
 }
@@ -162,17 +157,17 @@ String ::= m::Message
 @{--
  - Returns a list of strings, ready to be printed to the command line.
  -}
-function messagesToString
-String ::= msgs::[Message]
-{
-  return implode("\n", map(showMessage, sortBy(messageLte, msgs)));
-}
+fun messagesToString String ::= msgs::[Message] =
+  implode("\n", map(showMessage, sortBy(messageLte, msgs)));
+
+@{--
+ - Returns a list of strings, without doing the check for an origin in extension-generated code.
+ - This is useful for pretty-printing error productions to avoid a circularity.
+ -}
+fun messagesToStringNoOriginsCheck String ::= msgs::[Message] =
+  implode("\n", map((.output), sortBy(messageLte, msgs)));
 
 -- for use with sortBy
 -- not an instance of Eq/Ord for now, does it really make sense to compare messages for equality?
-function messageLte
-Boolean ::= m1::Message m2::Message
-{
-  return m1.where <= m2.where;
-}
+fun messageLte Boolean ::= m1::Message m2::Message = m1.where <= m2.where;
 

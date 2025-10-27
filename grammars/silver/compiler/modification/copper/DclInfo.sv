@@ -17,13 +17,12 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS;
-  top.transDefLHSDispatcher = \ q::Decorated! QName  _ ->
-    parserAttributeDefLHS(q);
+  top.transDefLHSDispatcher = parserAttributeTransAttrDefLHS;
 }
 
 {--
@@ -74,7 +73,7 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
   top.refDispatcher = termAttrValueReference;
   top.defDispatcher = termAttrValueValueDef;
@@ -91,13 +90,12 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
   top.refDispatcher = actionChildReference;
   top.defDispatcher = errorValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS; -- TODO: specialize this
-  top.transDefLHSDispatcher = \ q::Decorated! QName  _ ->
-    parserAttributeDefLHS(q);
+  top.transDefLHSDispatcher = parserAttributeTransAttrDefLHS;
 }
 
 {--
@@ -109,12 +107,11 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
   -- TODO: use specialized ones that give better errors messages!
   top.refDispatcher = parserAttributeReference;
   top.defDispatcher = parserAttributeValueDef;
   top.defLHSDispatcher = parserAttributeDefLHS;
-  top.transDefLHSDispatcher = \ q::Decorated! QName  _ ->
-    parserAttributeDefLHS(q);
+  top.transDefLHSDispatcher = parserAttributeTransAttrDefLHS;
 }

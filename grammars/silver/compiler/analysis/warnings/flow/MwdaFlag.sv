@@ -16,7 +16,8 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnEqdef = true;
   top.warnOrphaned = true;
   top.warnFwd = true;
-  forwards to rest;
+  top.warnSharing = true;
+  forwards to @rest;
 }
 
 -- Also add these under --warn-all
@@ -28,6 +29,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnEqdef = true;
   top.warnOrphaned = true;
   top.warnFwd = true;
+  top.warnSharing = true;
 }
 
 aspect function parseArgs
@@ -39,24 +41,15 @@ Either<String  Decorated CmdArgs> ::= args::[String]
       flagParser=flag(mwdaFlag))];
 }
 
-function mwdaWrn
-Message ::= config::Decorated CmdArgs l::Location m::String
-{
-  return
-    if config.errorMwda
-    then err(l, m)
-    else wrn(l, m);
-}
+fun mwdaWrn Message ::= config::Decorated CmdArgs l::Location m::String =
+  if config.errorMwda
+  then err(l, m)
+  else wrn(l, m);
 
-function mwdaWrnFromOrigin
+fun mwdaWrnFromOrigin
 attribute config occurs on a =>
-Message ::= a::Decorated a with {config}  m::String
-{
-  return mwdaWrn(a.config, getParsedOriginLocationOrFallback(a), m);
-}
+Message ::= a::Decorated a with {config}  m::String =
+  mwdaWrn(a.config, getParsedOriginLocationOrFallback(a), m);
 
-function mwdaWrnAmbientOrigin
-Message ::= config::Decorated CmdArgs  m::String
-{
-  return mwdaWrn(config, getParsedOriginLocationOrFallback(ambientOrigin()), m);
-}
+fun mwdaWrnAmbientOrigin Message ::= config::Decorated CmdArgs  m::String =
+  mwdaWrn(config, getParsedOriginLocationOrFallback(ambientOrigin()), m);

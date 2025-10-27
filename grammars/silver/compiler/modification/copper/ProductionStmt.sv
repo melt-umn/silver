@@ -46,6 +46,7 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
     else [];
 
   thread downSubst, upSubst on top, e, tyCk, top;
+  propagate downSubst2, upSubst2;
 
 
 
@@ -72,6 +73,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   e.isRoot = true;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
+  propagate downSubst2, upSubst2;
   
   errCheck1 = check(e.typerep, stringType());
   top.errors <-
@@ -86,10 +88,9 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   -- TODO see ugly hack in ActionCode.sv
 }
 
-abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production parserAttributeValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
@@ -103,6 +104,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
+  propagate downSubst2, upSubst2;
 
   e.originRules = [];
   e.isRoot = true;
@@ -133,6 +135,7 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
   lexeme.isRoot = false;
 
   thread downSubst, upSubst on top, lexeme, errCheck1, top;
+  propagate downSubst2, upSubst2;
 
   errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
@@ -160,6 +163,7 @@ top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr 
   loc.isRoot = false;
 
   thread downSubst, upSubst on top, loc, errCheck1, top;
+  propagate downSubst2, upSubst2;
 
   errCheck1 = check(loc.typerep, nonterminalType("silver:core:Location", [], true, false));
   top.errors <-
@@ -186,6 +190,7 @@ top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
   stmts.downSubst = top.downSubst;
   stmts.originRules = [];
   top.upSubst = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
+  top.upSubst2 = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
   -- Of course, this means do not use top.finalSubst here!
 }
 
@@ -210,14 +215,17 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, condition, errCheck1, top;
+  thread downSubst2, upSubst2 on top, condition, top;
 
-  condition.finalSubst = condition.upSubst;
+  condition.finalSubst = top.finalSubst;
   
   th.downSubst = top.downSubst;
-  th.finalSubst = th.upSubst;
+  th.downSubst2 = th.upSubst;
+  th.finalSubst = th.upSubst2;
   
   el.downSubst = top.downSubst;
-  el.finalSubst = el.upSubst;
+  el.downSubst2 = el.upSubst;
+  el.finalSubst = el.upSubst2;
 
   errCheck1 = check(condition.typerep, boolType());
   top.errors <-
@@ -230,14 +238,13 @@ concrete production ifStmt
 top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
 {
   top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse;
-  forwards to ifElseStmt($1, $2, condition, $4, th, 'else', blockStmt('{', productionStmtsNil(), '}'));
+  forwards to ifElseStmt($1, $2, @condition, $4, @th, 'else', blockStmt('{', productionStmtsNil(), '}'));
 }
 
 
-abstract production parserAttributeDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production parserAttributeDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = false;
@@ -254,10 +261,15 @@ top::DefLHS ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
-abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production parserAttributeTransAttrDefLHS implements TransAttrDefLHS
+top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
-  undecorates to valueEq(val, '=', e, ';');
+  forwards to parserAttributeDefLHS(q);
+}
+
+abstract production termAttrValueValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
+{
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
@@ -279,6 +291,7 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
+  propagate downSubst2, upSubst2;
 
   e.originRules = [];
   e.isRoot = true;

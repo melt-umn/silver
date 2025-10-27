@@ -1,6 +1,6 @@
 grammar silver:compiler:driver;
 
-attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, searchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, noStdlib, searchPath, outName, buildGrammars, silverHomeOption, noSemanticAnalysis occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: [String];
@@ -14,10 +14,11 @@ synthesized attribute forceOrigins :: Boolean;
 synthesized attribute noOrigins :: Boolean;
 synthesized attribute noRedex :: Boolean;
 synthesized attribute tracingOrigins :: Boolean;
+synthesized attribute noStdlib :: Boolean;
 
 synthesized attribute buildGrammars :: [String];
 
-synthesized attribute noBindingChecking :: Boolean;
+synthesized attribute noSemanticAnalysis :: Boolean;
 
 aspect production endCmdArgs
 top::CmdArgs ::= l::[String]
@@ -30,11 +31,12 @@ top::CmdArgs ::= l::[String]
   top.genLocation = [];
   top.silverHomeOption = [];
   top.buildGrammars = l;
-  top.noBindingChecking = false;
+  top.noSemanticAnalysis = false;
   top.forceOrigins = false;
   top.noOrigins = false;
   top.noRedex = false;
   top.tracingOrigins = false;
+  top.noStdlib = false;
 }
 abstract production versionFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -102,10 +104,16 @@ top::CmdArgs ::= s::String rest::CmdArgs
   top.silverHomeOption = s :: forward.silverHomeOption;
   forwards to @rest;
 }
-abstract production nobindingFlag
+abstract production noStdlibFlag
 top::CmdArgs ::= rest::CmdArgs
 {
-  top.noBindingChecking = true;
+  top.noStdlib = true;
+  forwards to @rest;
+}
+abstract production dontAnalyzeFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.noSemanticAnalysis = true;
   forwards to @rest;
 }
 
@@ -141,7 +149,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
         flagParser=flag(cleanFlag))
     , flagSpec(name="--dont-analyze", paramString=nothing(),
         help="", -- TODO
-        flagParser=flag(nobindingFlag))
+        flagParser=flag(dontAnalyzeFlag))
     , flagSpec(name="--warn-error", paramString=nothing(),
         help="treat warnings as errors",
         flagParser=flag(warnErrorFlag))
@@ -157,6 +165,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
     , flagSpec(name="--tracing-origins", paramString=nothing(),
         help="attach source locations as origin notes to trace control flow",
         flagParser=flag(tracingOriginsFlag))
+    , flagSpec(name="--no-stdlib", paramString=nothing(),
+        help="do not automatically include the pre-compiled standard library",
+        flagParser=flag(noStdlibFlag))
     ];
   
   local usage :: String = 
@@ -181,20 +192,14 @@ Either<String  Decorated CmdArgs> ::= args::[String]
          else right(cmdArgs);
 }
 
-function parseArgsOrError
-Decorated CmdArgs ::= args::[String]
-{
-  return
-    case parseArgs(args) of
-    | left(msg) -> error("Failed to parse args: " ++ msg)
-    | right(a) -> a
-    end;
-}
+fun parseArgsOrError Decorated CmdArgs ::= args::[String] =
+  case parseArgs(args) of
+  | left(msg) -> error("Failed to parse args: " ++ msg)
+  | right(a) -> a
+  end;
 
-function determineBuildEnv
-IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
-{
-  return do {
+fun determineBuildEnv IOErrorable<BuildEnv> ::= a::Decorated CmdArgs =
+  do {
     benv :: BuildEnv <- lift(do {
       -- Let's locally set up and verify the environment
       envSH :: String <- envVar("SILVER_HOME");
@@ -212,7 +217,7 @@ IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
         fromArgsAndEnv(
           -- TODO: maybe we should use the java platform separator here?
           derivedSH, envSG, explode(":", envGP), explode(":", envSHG),
-          a.silverHomeOption, a.genLocation, a.searchPath);
+          a.silverHomeOption, a.genLocation, a.searchPath, a.noStdlib);
     });
 
     -- Let's do some checks on the environment
@@ -221,14 +226,15 @@ IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
 
     return benv;
   };
-}
 
-function checkEnvironment
-IO<[String]> ::= benv::BuildEnv
-{
-  return do {
+fun checkEnvironment IO<[String]> ::= benv::BuildEnv =
+  do {
     isGenDir :: Boolean <- isDirectory(benv.silverGen);
-    isGramDir :: Boolean <- isDirectory(benv.defaultGrammarPath);
+    missingGrammarPath :: [String] <- filterM(\ f -> do {
+        isDir :: Boolean <- isDirectory(f);
+        isJar :: Boolean <- isJarFile(f);
+        return !(isDir || isJar);
+      }, benv.grammarPath);
 
     return
       if benv.silverHome == "/" -- because we called 'endWithSlash' on empty string
@@ -237,20 +243,16 @@ IO<[String]> ::= benv::BuildEnv
           then if benv.silverGen == benv.defaultSilverGen
           then ["Missing SILVER_GEN or -G <path>.\nThis should have been inferable, but " ++ benv.silverGen ++ " is not a directory.\n"]
           else ["Supplied SILVER_GEN location " ++ benv.silverGen ++ " is not a directory.\n"]
-      else if !isGramDir
-      then ["Missing standard library grammars: tried " ++ benv.defaultGrammarPath ++ " but this did not exist.\n"]
+      else if !null(missingGrammarPath)
+      then ["Failed to find include dirs or jars in grammar path: " ++ implode(", ", missingGrammarPath)]
       else [];
-      -- TODO: We should probably check everything in grammarPath?
-      -- TODO: Maybe look for 'core' specifically?
   };
-}
 
-function checkPreBuild
+fun checkPreBuild
 IO<[String]> ::=
   benv::BuildEnv
-  buildGrammars::[String]
-{
-  return pure(
+  buildGrammars::[String] =
+  pure(
     if null(buildGrammars) then ["No grammar(s) to build were specified.\n"]
     else flatMap(\ buildGrammar::String ->
       if indexOf("/", buildGrammar) != -1 -- basic sanity check
@@ -259,8 +261,6 @@ IO<[String]> ::=
       then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
       else [],
       buildGrammars));
-  -- TODO: presently, we check whether we find this grammar elsewhere. Maybe it should be here? not sure.
-}
 
 -- This code has to live in the generated jar for the program, as putting it in the
 -- standard library may someday return the location of the standard library jar instead

@@ -43,7 +43,7 @@ top::Expr ::= params::LambdaRHS e::Expr
       top.grammarName, getParsedOriginLocationOrFallback(params), params.lexicalTyVarKinds,
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
-  propagate downSubst, upSubst, finalSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2, finalSubst;
   
   params.env = newScopeEnv(sigDefs, top.env);
   params.givenLambdaParamIndex = 0;
@@ -54,15 +54,15 @@ top::Expr ::= params::LambdaRHS e::Expr
 }
 
 
-nonterminal LambdaRHS with 
+tracked nonterminal LambdaRHS with 
   givenLambdaParamIndex, givenLambdaId, env, grammarName, flowEnv, 
   lambdaBoundVars, lambdaDefs, lexicalTypeVariables, lexicalTyVarKinds, 
-  inputElements, unparse, elementCount;
+  inputElements, unparse, elementCount, errors;
 
-nonterminal LambdaRHSElem with 
+tracked nonterminal LambdaRHSElem with 
   givenLambdaParamIndex, givenLambdaId, grammarName, deterministicCount, env, 
   flowEnv, lambdaBoundVars, lambdaDefs, unparse, lexicalTypeVariables, 
-  inputElements, lexicalTyVarKinds;
+  inputElements, lexicalTyVarKinds, errors;
 
 
 monoid attribute lambdaDefs::[Def];
@@ -80,7 +80,7 @@ flowtype lambdaBoundVars {} on LambdaRHS;
 flowtype lambdaBoundVars {deterministicCount} on LambdaRHSElem;
 
 propagate lambdaDefs, lambdaBoundVars on LambdaRHS;
-propagate flowEnv, env, grammarName, givenLambdaId, lexicalTyVarKinds on LambdaRHS, LambdaRHSElem;
+propagate flowEnv, env, grammarName, givenLambdaId, lexicalTyVarKinds, errors on LambdaRHS, LambdaRHSElem;
 propagate lexicalTypeVariables on LambdaRHS, LambdaRHSElem excluding lambdaRHSCons;
 
 
@@ -129,9 +129,10 @@ top::LambdaRHSElem ::= id::Name '::' t::TypeExpr
                                     top.givenLambdaId, top.givenLambdaParamIndex)];
   top.lambdaBoundVars := [id.name];
 
-  top.inputElements = [namedSignatureElement(id.name, t.typerep)];
+  top.inputElements = [namedSignatureElement(id.name, t.typerep, false)];
   
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+
 }
 
 {--
@@ -179,15 +180,14 @@ top::LambdaRHSElem ::= '_'
 }
 
 
-abstract production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+abstract production lambdaParamReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   propagate errors;
   top.freeVars := ts:fromList([q.name]);
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2;
 }

@@ -4,6 +4,7 @@ import silver:util:treeset as ts;
 
 terminal DisambiguationFailure_t 'disambiguationFailure' lexer classes {KEYWORD, RESERVED};
 
+-- TODO: This can be a foreign function, no need to have it as syntax.
 concrete production failureTerminalIdExpr
 top::Expr ::= 'disambiguationFailure'
 {
@@ -15,13 +16,12 @@ top::Expr ::= 'disambiguationFailure'
   top.translation = "(-1)";
   top.lazyTranslation = top.translation;
 
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }
 
-abstract production actionChildReference
-top::Expr ::= q::Decorated! QName
+abstract production actionChildReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -32,13 +32,12 @@ top::Expr ::= q::Decorated! QName
   top.translation = "((" ++ top.typerep.transType ++ ")((common.Node)RESULTfinal).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
   top.lazyTranslation = top.translation; -- never, but okay!
 
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }
 
-abstract production pluckTerminalReference
-top::Expr ::= q::Decorated! QName
+abstract production pluckTerminalReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -50,17 +49,16 @@ top::Expr ::= q::Decorated! QName
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   top.lazyTranslation = top.translation; -- never, but okay!
   
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }
 
 -- TODO: Distinct from pluckTerminalReference (since this can occur in any action block and
 -- reference any terminal), but maybe it shouldn't be?  These productions do almost the same
 -- thing.  Also having type classes would let us use a more specific type than generic TerminalId,
 -- and pluckTerminalReference wouldn't need to cheat with a fresh type.
-abstract production terminalIdReference
-top::Expr ::= q::Decorated! QName
+abstract production terminalIdReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -73,13 +71,12 @@ top::Expr ::= q::Decorated! QName
   top.translation = s"Terminals.${makeCopperName(q.lookupValue.fullName)}.num()";
   top.lazyTranslation = top.translation; -- never, but okay!
 
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }
 
-abstract production lexerClassReference
-top::Expr ::= q::Decorated! QName
+abstract production lexerClassReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -93,13 +90,12 @@ top::Expr ::= q::Decorated! QName
   top.translation = makeCopperName(q.lookupValue.fullName);
   top.lazyTranslation = top.translation; -- never, but okay!
   
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }
 
-abstract production parserAttributeReference
-top::Expr ::= q::Decorated! QName
+abstract production parserAttributeReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -113,13 +109,12 @@ top::Expr ::= q::Decorated! QName
     s"""(${makeCopperName(q.lookupValue.fullName)} == null? (${top.typerep.transType})common.Util.error("Uninitialized parser attribute ${q.name}") : ${makeCopperName(q.lookupValue.fullName)})""";
   top.lazyTranslation = top.translation; -- never, but okay!
 
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }
 
-abstract production termAttrValueReference
-top::Expr ::= q::Decorated! QName
+abstract production termAttrValueReference implements Reference
+top::Expr ::= @q::QName
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
 
@@ -137,5 +132,5 @@ top::Expr ::= q::Decorated! QName
     error("unknown actionTerminalReference " ++ q.name); -- should never be called, but here for safety
   top.lazyTranslation = top.translation; -- never, but okay!
 
-  top.upSubst = top.downSubst;
+  propagate upSubst, upSubst2;
 }

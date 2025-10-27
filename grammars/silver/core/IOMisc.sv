@@ -59,11 +59,7 @@ Float ::=
  - @return val, unchanged.
  - @warning see @link[unsafeIO]
  -}
-function unsafeTracePrint
-a ::= val::a str::String
-{
-  return unsafeTrace(val, printT(str, unsafeIO()));
-}
+fun unsafeTracePrint a ::= val::a str::String = unsafeTrace(val, printT(str, unsafeIO()));
 
 @{--
  - Print a stringification of a value when it is demanded by the Silver runtime.
@@ -73,11 +69,7 @@ a ::= val::a str::String
  - @return  val, unchanged.
  - @warning see @link[unsafeIO]
  -}
-function unsafeTraceDump
-a ::= val::a
-{
-  return unsafeTrace(val, printlnT(genericShow(val), unsafeIO()));
-}
+fun unsafeTraceDump a ::= val::a = unsafeTrace(val, printlnT(genericShow(val), unsafeIO()));
 
 
 

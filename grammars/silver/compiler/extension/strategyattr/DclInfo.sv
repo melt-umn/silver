@@ -30,10 +30,16 @@ top::AttributeDclInfo ::=
   containsErrors::Boolean liftedStrategyNames::[String]
   givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>]
   partialRefs::[String] totalRefs::[String] containsTraversal::Boolean
-  e::StrategyExpr
+  eAST::AST
 {
   top.fullName = fn;
-  propagate compareKey, isEqual;
+  propagate compareKey;
+  top.isEqual =
+    case top.compareTo of
+    | strategyDcl(ofn, oIsTotal, _, _, _, _, _, _, _, _) ->
+      fn == ofn && isTotal == oIsTotal && top.strategyExpr == top.compareTo.strategyExpr
+    | _ -> false
+    end;
 
   production tyVar::TyVar = freshTyVar(starKind());
   top.typeScheme = polyType([tyVar],
@@ -44,7 +50,7 @@ top::AttributeDclInfo ::=
   top.isStrategy = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attrDefDispatcher = synthesizedAttributeDef; -- Allow normal syn equations
   top.attributionDispatcher = strategyAttributionDcl;
@@ -58,5 +64,5 @@ top::AttributeDclInfo ::=
   top.partialRefs := partialRefs;
   top.totalRefs := totalRefs;
   top.containsTraversal := containsTraversal;
-  top.strategyExpr = e;
+  top.strategyExpr = reifyUnchecked(^eAST);
 }

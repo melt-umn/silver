@@ -10,11 +10,8 @@ terminal WarnCode_kwd 'warnCode' lexer classes {KEYWORD};
 terminal NoWarnCode_kwd 'noWarnCode' lexer classes {KEYWORD};
 terminal WrongFlowCode_kwd 'wrongFlowCode' lexer classes {KEYWORD};
 
-function containsMessage
-Boolean ::= text::String severity::Integer msgs::[Message]
-{
-  return any(map((\x::Message -> x.severity==severity && indexOf(text, x.output)!=-1), msgs));
-}
+fun containsMessage Boolean ::= text::String severity::Integer msgs::[Message] =
+  any(map((\x::Message -> x.severity==severity && indexOf(text, x.output)!=-1), msgs));
 
 concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
@@ -44,7 +41,7 @@ top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
     then [errFromOrigin(top, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
-  forwards to makeAppendAGDclOfAGDcls(ags);
+  forwards to makeAppendAGDclOfAGDcls(^ags);
   -- Forward to the decls so that we can use the stuff declared with warnings in other tests
 }
 
@@ -74,7 +71,7 @@ top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
     then [errFromOrigin(top, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
     else [];
 
-  forwards to makeAppendAGDclOfAGDcls(ags);
+  forwards to makeAppendAGDclOfAGDcls(^ags);
   -- Forward to the decls so that we can use the stuff declared without warnings in other tests
 }
 
@@ -90,7 +87,7 @@ top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
     else [];
   
   -- These need to be passed up for the flow analysis to work:
-  propagate defs, flowDefs, uniqueRefs;
+  propagate defs, flowDefs, sharedRefs;
   
   forwards to emptyAGDcl();
 }

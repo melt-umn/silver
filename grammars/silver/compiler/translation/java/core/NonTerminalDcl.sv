@@ -8,12 +8,12 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local inhVar :: String = "count_inh__ON__" ++ id.name;
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
-  local ntty::Type = nonterminalType(fName, map((.kindrep), tl.types), quals.data, quals.tracked);
+  nondecorated local ntty::Type = nonterminalType(fName, map((.kindrep), tl.types), quals.data, isThisTracked);
   local myAnnos :: [NamedSignatureElement] =
     annotationsForNonterminal(ntty, top.env);
 
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
-  local wantsTracking :: Boolean = typeWantsTracking(ntty, top.config, top.env);
+  local wantsTracking :: Boolean = ntty.isTracked;
 
   top.initProd := s"\t\tcommon.RTTIManager.registerNonterminal(${className}.nonterminalton);\n\n";
   top.initWeaving := s"""
@@ -41,6 +41,8 @@ public abstract class ${className} extends ${if quals.data then "common.DataNode
 	public static final String[] occurs_inh = new String[num_inh_attrs];
 	public static final String[] occurs_syn = new String[num_syn_attrs];
 
+	public static final common.TransOccursInfo[] occurs_trans = new common.TransOccursInfo[num_syn_attrs];
+
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
 	protected ${className}(${implode(", ",
@@ -66,9 +68,17 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 	}
 
+    @Override
+    public abstract ${className} updateAnnos(final Object[] annos);
+
 	@Override
 	public final int getNumberOfSynAttrs() {
 		return num_syn_attrs;
+	}
+
+	@Override
+	public final common.TransOccursInfo getTransOccurs(final int index) {
+		return occurs_trans[index];
 	}
 
 	@Override
@@ -104,10 +114,14 @@ ${if quals.data then "" else s"""
 			)});
 			this.ref = ref;
 		}
+		@Override
+		public DecorationSiteWrapper updateAnnos(Object[] annos) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never have annotations updated!");
+		}
 
 		@Override
-		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs) {
-			return ref.decorate(parent, inhs);
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs, final common.Lazy decSite) {
+			return ref.decorate(parent, inhs, decSite);
 		}
 
 		@Override
@@ -130,6 +144,16 @@ ${if quals.data then "" else s"""
 		@Override
 		public int getNumberOfChildren() {
 			return ref.getNode().getNumberOfChildren();
+		}
+
+		@Override
+		public String getNameOfChild(final int child) {
+			return ref.getNode().getNameOfChild(child);
+		}
+
+		@Override
+		public boolean isChildDecorable(final int child) {
+			return ref.getNode().isChildDecorable(child);
 		}
 
 		@Override
@@ -161,6 +185,11 @@ ${if quals.data then "" else s"""
 
 		@Override
 		public int getNumberOfLocalAttrs() {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
+		}
+
+		@Override
+		public boolean isLocalDecorable(final int child) {
 			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be directly decorated!");
 		}
 

@@ -124,20 +124,11 @@ derive Eq, Ord on FlowVertex;
 
 
 -- The forward equation for this production. We do not care to distinguish it.
-function forwardEqVertex
-FlowVertex ::=
-{
-  return localEqVertex("forward");
-}
+fun forwardEqVertex FlowVertex ::= = localEqVertex("forward");
 
 -- An attribute on the forward node for this production
-function forwardSynVertex
-FlowVertex ::= attrName::String
-{
-  return localSynVertex("forward", attrName);
-}
-function forwardInhVertex
-FlowVertex ::= attrName::String
-{
-  return localInhVertex("forward", attrName);
-}
+fun forwardSynVertex FlowVertex ::= attrName::String = localSynVertex("forward", attrName);
+fun forwardInhVertex FlowVertex ::= attrName::String = localInhVertex("forward", attrName);
+
+-- An attribute on the production that forwarded to this one
+fun forwardParentSynVertex FlowVertex ::= attrName::String = localSynVertex("forwardParent", attrName);

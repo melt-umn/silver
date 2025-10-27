@@ -5,12 +5,13 @@ import silver:compiler:definition:concrete_syntax;
 import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
+import silver:compiler:modification:concisefunctions;
 
-attribute flowDefs, refDefs, specDefs, flowEnv occurs on Root, AGDcls, AGDcl, Grammar;
-flowtype flowDefs {decorate} on Root, AGDcls, AGDcl, Grammar;
-flowtype refDefs {decorate} on Root, AGDcls, AGDcl, Grammar;
-flowtype specDefs {decorate} on Root, AGDcls, AGDcl, Grammar;
-propagate flowDefs, refDefs, specDefs, flowEnv on Root, AGDcls, AGDcl, Grammar;
+attribute flowDefs, refDefs, specDefs, flowEnv occurs on File, AGDcls, AGDcl, Grammar;
+flowtype flowDefs {decorate} on File, AGDcls, AGDcl, Grammar;
+flowtype refDefs {decorate} on File, AGDcls, AGDcl, Grammar;
+flowtype specDefs {decorate} on File, AGDcls, AGDcl, Grammar;
+propagate flowDefs, refDefs, specDefs, flowEnv on File, AGDcls, AGDcl, Grammar;
 
 aspect default production
 top::AGDcl ::=
@@ -25,16 +26,6 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
 {
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
-}
-aspect production defaultConstraintClassBodyItem
-top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
-{
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
-}
-aspect production instanceBodyItem
-top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
-{
-  e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
+  e.dispatchFlowDeps = [];
 }

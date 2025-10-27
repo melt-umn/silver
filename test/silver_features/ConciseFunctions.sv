@@ -52,3 +52,7 @@ fun getInhKey2 {inhKey} subset i => String ::= x::Decorated TestBinding with i =
 fun getVal2 {inhKey} subset i, attribute val i occurs on a => Integer ::= thing::Decorated a with i = thing.val;
 
 equalityTest(getInhKey2(bnd), "key", String, silver_tests);
+
+wrongCode "Expected result type is Integer, but the expression has type Float." {
+  fun badRet Integer ::= s::String = 3.14;
+}

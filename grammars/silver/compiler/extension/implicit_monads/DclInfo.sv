@@ -8,14 +8,14 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from synDcl
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attributionDispatcher = defaultAttributionDcl;
 
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = true;
   top.isInherited = false;
@@ -36,7 +36,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = false;
   top.isInherited = true;
@@ -52,14 +52,14 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
   --copied from synDcl
   top.decoratedAccessHandler = synDecoratedAccessHandler;
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler);
   top.dataAccessHandler = synDataAccessHandler;
   top.attributionDispatcher = defaultAttributionDcl;
 
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = true;
   top.isInherited = false;
@@ -80,7 +80,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.fullName = fn;
   propagate compareKey;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
 
   top.isSynthesized = false;
   top.isInherited = true;
@@ -91,32 +91,20 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 
 
 
-function restrictedSynDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(restrictedSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun restrictedSynDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(restrictedSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 
 
-function restrictedInhDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(restrictedInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun restrictedInhDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(restrictedInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 
 
 
 
-function implicitSynDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(implicitSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun implicitSynDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(implicitSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 
 
-function implicitInhDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return attrDef(defaultEnvItem(implicitInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
-}
+fun implicitInhDef Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type =
+  attrDef(defaultEnvItem(implicitInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 

@@ -22,7 +22,7 @@ top::NameOrBOperator ::= e::Expr
 {
   top.unparse = e.unparse;
 
-  top.operation = functionOperation(e, e.translation, false);
+  top.operation = functionOperation(^e, e.translation, false);
 
   top.errors := e.errors;
   
@@ -31,8 +31,9 @@ top::NameOrBOperator ::= e::Expr
   
   e.downSubst = emptySubst();
   checkOperationType.downSubst = e.upSubst;
-  checkOperationType.finalSubst = checkOperationType.upSubst;
-  e.finalSubst = checkOperationType.finalSubst;
+  e.downSubst2 = checkOperationType.upSubst;
+  e.finalSubst = e.upSubst2;
+  checkOperationType.finalSubst = e.finalSubst;
   
   top.errors <-
     if !checkOperationType.typeerror then []
@@ -51,6 +52,8 @@ top::NameOrBOperator ::= e::Expr
   e.isRoot = false;
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
+  e.dispatchFlowDeps = [];
 }
 
 concrete production plusplusOperator
@@ -159,9 +162,9 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  q.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
-  q.env = top.env;
   
   top.defs := [synColDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep, q.operation)];
   
@@ -186,9 +189,9 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  q.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
-  q.env = top.env;
 
   top.defs := [inhColDef(top.grammarName, a.nameLoc, fName, tl.freeVariables, te.typerep, q.operation)];
   
@@ -218,16 +221,15 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   q.operatorForType = te.typerep;
   top.errors <- q.errors;
  
-  forwards to productionAttributeDcl($1, $2, a, $4, te, $8);
+  forwards to productionAttributeDcl($1, $2, @a, $4, @te, $8);
 }
 
 --- The use semantics ----------------------------------------------------------
 
 -- ERROR ON VALUE DEFS:
-abstract production errorCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production errorCollectionValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valContainsBase(val, ':=', e, ';');
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
   top.errors := e.errors;
 
@@ -235,10 +237,9 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
   forwards to errorValueDef(val, @e);
 }
-abstract production errorColNormalValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production errorColNormalValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';');
   -- Override to just e.errors since we don't want the standard error message about val cannot be assigned to.
   top.errors := e.errors;
 
@@ -249,33 +250,55 @@ top::ProductionStmt ::= val::Decorated! QName  e::Expr
 
 -- NON-ERRORS for PRODUCTIONS
 
-abstract production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production baseCollectionValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valContainsBase(val, ':=', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
   forwards to localValueDef(val, @e);
 }
-abstract production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated! QName  e::Expr
+abstract production appendCollectionValueDef implements ValueDef
+top::ProductionStmt ::= @val::QName e::Expr
 {
-  undecorates to valContainsAppend(val, '<-', e, ';');
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- TODO: We override the translation, so this probably shouldn't be a forwarding production...
   forwards to localValueDef(val, @e);
 }
 
+-- ERROR ON ATTR DEFS
+abstract production nonCollectionErrorBaseAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
+  forwards to errorAttributeDef(
+    dl, attr, @e,
+    [errFromOrigin(top, "The ':=' operator can only be used for collections. " ++ dl.unparse ++ "." ++ attr.unparse ++ " is not a collection.")]);
+}
+
+abstract production nonCollectionErrorAppendAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
+  forwards to errorAttributeDef(
+    dl, attr, @e,
+    [errFromOrigin(top, "The '<-' operator can only be used for collections. " ++ dl.unparse ++ "." ++ attr.unparse ++ " is not a collection.")]);
+}
+
+abstract production collectionErrorRegularAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
+  forwards to errorAttributeDef(
+    dl, attr, @e,
+    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")]);
+}
+
 -- NON-ERRORS for SYN ATTRS
 
-abstract production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+abstract production synBaseColAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -291,12 +314,11 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
-abstract production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+abstract production synAppendColAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -315,12 +337,11 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
 
 -- NON-ERRORS for INHERITED ATTRS
 
-abstract production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+abstract production inhBaseColAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -336,12 +357,11 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     then [errFromOrigin(top, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
 }
-abstract production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
+abstract production inhAppendColAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';');
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
-  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
+  propagate config, grammarName, compiledGrammars, frame, env, downSubst2, upSubst2, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -378,8 +398,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e)
-    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e);
+    then errorAttributeDef(dl, attr, @e, dl.errors ++ attr.errors)
+    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, @e);
 }
 
 concrete production attrContainsBase
@@ -397,8 +417,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 
   forwards to
     if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e)
-    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e);
+    then errorAttributeDef(dl, attr, @e, dl.errors ++ attr.errors)
+    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, @e);
 }
 
 concrete production valContainsAppend
@@ -414,8 +434,8 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   
   forwards to
     if null(val.lookupValue.dcls)
-    then errorValueDef(val, e)
-    else val.lookupValue.dcl.appendDefDispatcher(val, e);
+    then errorValueDef(val, @e)
+    else val.lookupValue.dcl.appendDefDispatcher(val, @e);
 }
 
 concrete production valContainsBase
@@ -431,7 +451,7 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   
   forwards to
     if null(val.lookupValue.dcls)
-    then errorValueDef(val, e)
-    else val.lookupValue.dcl.baseDefDispatcher(val, e);
+    then errorValueDef(val, @e)
+    else val.lookupValue.dcl.baseDefDispatcher(val, @e);
 }
 

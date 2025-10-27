@@ -21,3 +21,4 @@ imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:modification:let_fix;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper;
+imports silver:compiler:modification:concisefunctions;

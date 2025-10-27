@@ -44,7 +44,7 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
-  top.qNameType = qNameTypeCons(id, ':', qn.qNameType);
+  top.qNameType = qNameTypeCons(^id, ':', qn.qNameType);
   top.nameLoc = qn.nameLoc;
   
   top.lookupValue = customLookup("value", getValueDcl(top.name, top.env), top.name);
@@ -111,13 +111,11 @@ top::QNameLookup<a> ::= msg::[Message]
   top.errors := msg;
 }
 
-function printPossibilities
+fun printPossibilities
 attribute fullName {} occurs on a,
 annotation sourceLocation occurs on a =>
-String ::= lst::[a]
-{
-  return implode("\n", map(dclinfo2possibility, lst));
-}
+String ::= lst::[a] =
+  implode("\n", map(dclinfo2possibility, lst));
 function dclinfo2possibility
 attribute fullName {} occurs on a,
 annotation sourceLocation occurs on a =>
@@ -225,7 +223,7 @@ top::QNameAttrOccur ::= at::QName
     -- If more than one attribute on the same _short name_ occurs, raise ambiguity
     else if length(attrs) > 1 then
       [errFromOrigin(at, "Ambiguous reference to attribute occurring on '" ++ prettyType(top.attrFor) ++ "'. Possibilities are:\n" ++ printPossibilities(attrs))]
-    -- If this same attribute has multiple occurences (must be due to orphaned occurs)
+    -- If this same attribute has multiple occurrences (must be due to orphaned occurs)
     else []; {-if length(dcls) > 1 then
       [errFromOrigin(at, "There are erroneously multiple attribute occurrences for '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(dcls))]
     else [];-}
@@ -240,9 +238,9 @@ top::QNameAttrOccur ::= at::QName
   requiredContexts.env = top.env;
   
   top.typerep = if top.found then determineAttributeType(head(dcls), top.attrFor) else errorType();
-  top.dcl = resolvedDcl;
+  top.dcl = ^resolvedDcl;
   top.attrDcl = if top.found then head(attrs) else
-    -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
+    -- Workaround fix for proper error reporting - apparently there are some places where this is still demanded.
     if at.lookupAttribute.found then at.lookupAttribute.dcl else
     error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ at.nameLoc.unparse);
 }
@@ -252,10 +250,7 @@ top::QNameAttrOccur ::= at::QName
  - `occ` is a mapped list of occurrence declarations for the corresponding attribute
  - we return only those `at` which have a non-empty element in `occ`
  -}
-function zipFilterDcls
-[AttributeDclInfo] ::= at::[AttributeDclInfo]  occ::[[OccursDclInfo]]
-{
-  return if null(at) then []
-  else if null(head(occ)) then zipFilterDcls(tail(at), tail(occ))
-  else head(at) :: zipFilterDcls(tail(at), tail(occ));
-}
+fun zipFilterDcls [AttributeDclInfo] ::= at::[AttributeDclInfo]  occ::[[OccursDclInfo]] =
+  if null(at) then []
+else if null(head(occ)) then zipFilterDcls(tail(at), tail(occ))
+else head(at) :: zipFilterDcls(tail(at), tail(occ));

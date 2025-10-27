@@ -122,7 +122,7 @@ top::VarBinder ::= n::Name
   -- variables into concrete types! and type variables in a production are
   -- NOT automatically decorated!)
   -- Also, don't attempt to decorate already-decorated types.
-  local ty :: Type =
+  nondecorated local ty::Type =
     if isDecorable(top.bindingType, top.env) && !top.bindingType.isDecorated
     then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
@@ -134,7 +134,7 @@ top::VarBinder ::= n::Name
   -- (in the env above its okay, since that must always be consulted with the current substitution,
   -- but here we're rendering the translation. it's the end of the line.)
   production finalTy :: Type = performSubstitution(ty, top.finalSubst);
-  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production refSet::Maybe<[String]> = getMaxRefSet(^finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   
@@ -148,7 +148,7 @@ top::VarBinder ::= n::Name
 
   -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
   -- and the correct value is computed based on how this gets used.
-  -- (e.g. if 'new'
+  -- TODO: Could this be simplified by using subtermVertexType instead of an anon vertex here?
   local vt :: Maybe<VertexType> =
     if isDecorable(top.bindingType, top.env)
     then just(anonVertexType(fName))
@@ -158,8 +158,7 @@ top::VarBinder ::= n::Name
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
-  -- Unique refs are forbidden in the scrutinee.
-  top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps, [])];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps)];
   top.boundNames <- [n.name];
 
   top.translation = 
@@ -189,7 +188,7 @@ top::VarBinder ::= n::Name
   -- this would allow us to match 'left' and 'right' on a Pair, for example, but error on Either
   top.errors <- 
     case getValueDcl(n.name, top.env) of
-    | prodDcl(_,_) :: _ -> [errFromOrigin(top, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
+    | prodDcl(_,_,_) :: _ -> [errFromOrigin(top, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
     | _ -> []
     end;
 }

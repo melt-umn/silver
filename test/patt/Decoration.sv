@@ -26,16 +26,16 @@ function beta
 LCE ::= e::LCE
 {
   return case e of 
-           lcUnit() -> e
-         | lcAbs(v, e1) -> e
+           lcUnit() -> ^e
+         | lcAbs(v, e1) -> ^e
          | lcApp(lcAbs(v, e1), e2) -> betaContrived(e1)  -- subst is easy when you don't have variables!! hahaha!
-         | lcApp(e1, e2) -> beta(lcApp(beta(e1), e2))
+         | lcApp(e1, e2) -> beta(lcApp(beta(^e1), ^e2))
          end;
 }
 function betaContrived
 LCE ::= e::Decorated LCE
 {
-  return beta(new(e));
+  return beta(^e);
 }
 
 equalityTest ( (beta(lcUnit() )).value, true, Boolean, pat_tests ) ;

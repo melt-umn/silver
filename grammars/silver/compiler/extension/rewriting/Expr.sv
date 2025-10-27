@@ -1,14 +1,11 @@
 grammar silver:compiler:extension:rewriting;
 
--- Environment mapping variables that were defined on the rule LHS to Booleans indicating whether
--- the variable was explicitly (i.e. not implicitly) decorated in the pattern.
-inherited attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
-propagate boundVars on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
+-- Environment containing just the vars locally bound in the rule.
+inherited attribute ruleEnv::Env occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
+propagate @ruleEnv on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
   excluding letp, prodPatternNormal, prodPatternGadt;
 
 attribute transform<ASTExpr> occurs on Expr;
-
-synthesized attribute decRuleExprs::[(String, Decorated Expr with {decorate, decSiteVertexInfo, boundVars})] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
 
 aspect default production
 top::Expr ::=
@@ -18,116 +15,70 @@ top::Expr ::=
       -- Constrain the type of the wrapped expression to the type that was inferred here,
       -- to allow for any type class constraints to be resolved in the translation.
       silver:rewrite:anyASTExpr(
-        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(top.finalType)} = $Expr{top}
+        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(top.finalType)} = $Expr{^top}
         in rewrite_rule_anyAST_val__
         end)
     });
-  top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName _ _ _
+top::Expr ::= @q::QName _ _
 {
-  -- In regular pattern matching nonterminal values are always effectively decorated, but we are
-  -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
-  -- referenced as decorated we must seperately handle the cases of when it was already decorated
-  -- or was decorated implicitly (in which case we need to explicitly decorate it here.)  The same
-  -- problem exists when dealing with implicit undecoration.
   top.transform =
-    case lookup(q.name, top.boundVars) of
-    | just(bindingIsDecorated) ->
-      -- The variable is bound in the rule
-      if top.finalType.isDecorated && !bindingIsDecorated
-      then
-        -- We want the decorated version, but the bound value is undecorated
-        applyASTExpr(
-          antiquoteASTExpr(
-            Silver_Expr {
-              silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(top.finalType.decoratedType)} ->
-                  $Expr{
-                    decorateExprWithEmpty(
-                      'decorate', Silver_Expr { e }, 'with', '{', '}')})
-            }),
-          consASTExpr(varASTExpr(q.name), nilASTExpr()),
-          nilNamedASTExpr())
-      else if isDecorable(top.finalType, top.env) && bindingIsDecorated
-      -- We want the undecorated version, but the bound value is decorated
-      then
-        applyASTExpr(
-          antiquoteASTExpr(
-            Silver_Expr {
-              silver:rewrite:anyASTExpr(silver:core:new)
-            }),
-          consASTExpr(varASTExpr(q.name), nilASTExpr()),
-          nilNamedASTExpr())
-      -- Both (or neither) the bound value/desired type is a decorated nonterminal - just return the value
-      else varASTExpr(q.name)
-    | nothing() ->
-      -- The variable is bound in an enclosing let/match
-      -- Explicitly undecorate the variable, if appropriate for the final expected type
-      if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-      else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) })
+    case getValueDcl(q.name, top.ruleEnv) of
+    -- The variable is bound in the rule pattern or a let expression in the RHS
+    | _ :: _ -> varASTExpr(q.name)
+    -- The variable is bound in an enclosing let/match
+    | _ -> antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) })
     end;
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
+}
+
+aspect production nondecLocalReference
+top::Expr ::= @q::QName
+{
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
-  top.transform =
-    -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !top.finalType.isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($QName{^q}) });
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.transform =
     case e, es of
     | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
 
-    -- Special cases for efficiency, and workaround for type inference issues.
-    -- TODO: This doesn't work as expected when these operators are overloaded.
-    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2)) ->
+    -- Special cases for efficiency.
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2)) 
+        when e1.finalType.isPrimitive ->
       case q.lookupValue.fullName of
       | "silver:core:conj" -> andASTExpr(e1.transform, e2.transform)
       | "silver:core:disj" -> orASTExpr(e1.transform, e2.transform)
@@ -145,7 +96,8 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
       | "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
       | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
       end
-    | classMemberReference(q), oneAppExprs(presentAppExpr(e)) ->
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e)) 
+        when e.finalType.isPrimitive ->
       case q.lookupValue.fullName of
       | "silver:core:not" -> notASTExpr(e.transform)
       | "silver:core:negate" -> negASTExpr(e.transform)
@@ -156,13 +108,28 @@ top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAp
       | "silver:core:length" -> lengthASTExpr(e.transform)
       | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
       end
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e)) 
+        when e.finalType matches appType(listCtrType(), _) ->
+      case q.lookupValue.fullName of
+      | "silver:core:length" -> lengthASTExpr(e.transform)
+      | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
+      end
 
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
 }
 
+synthesized attribute isPrimitive::Boolean occurs on Type;
+aspect isPrimitive on Type of
+| intType() -> true
+| floatType() -> true
+| boolType() -> true
+| stringType() -> true
+| _ -> false
+end;
+
 aspect production partialApplication
-top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
+top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
 }
@@ -172,10 +139,10 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -190,7 +157,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -204,7 +171,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -218,7 +185,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production synDataAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -232,7 +199,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -247,19 +214,19 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
     case e of
-    -- Special cases to avoid introducing a reference and causing flow errors.
+    -- Special case to avoid taking a reference and causing flow errors.
     | decorateExprWith(_, eUndec, _, _, inh, _) ->
       applyASTExpr(
         antiquoteASTExpr(
@@ -281,19 +248,6 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           }),
         consASTExpr(eUndec.transform, inh.transform),
         nilNamedASTExpr())
-    | lexicalLocalReference(qn, _, _, _) when
-        case lookup(qn.name, top.boundVars) of
-        | just(bindingIsDecorated) -> !bindingIsDecorated
-        | nothing() -> false
-        end -> 
-      applyASTExpr(
-        antiquoteASTExpr(
-          Silver_Expr {
-            silver:rewrite:anyASTExpr(
-              \ e::$TypeExpr{typerepTypeExpr(e.finalType.decoratedType)} -> e.$qName{q.name})
-          }),
-        consASTExpr(varASTExpr(qn.name), nilASTExpr()),
-        nilNamedASTExpr())
     | _ ->
       applyASTExpr(
         antiquoteASTExpr(
@@ -307,14 +261,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -329,14 +283,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production inhUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -351,14 +305,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production transUndecoratedAccessErrorHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -373,14 +327,14 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 }
 
 aspect production unknownDclAccessHandler
-top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
+top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
-  local finalTy::Type =
+  nondecorated local finalTy::Type =
     case e.finalType of
     | decoratedType(nt, varType(_)) ->
-      decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
+      decoratedType(^nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
     end;
   top.transform =
@@ -458,7 +412,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
       name(paramName), '::',
       typerepTypeExpr(e.finalType));
   top.bodyExprInhTransform =
-    exprInh(lhs, '=', baseExpr(qName(paramName)), ';');
+    exprInh(^lhs, '=', baseExpr(qName(paramName)), ';');
 }
 
 aspect production trueConst
@@ -507,7 +461,6 @@ aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.transform = ifThenElseASTExpr(e1.transform, e2.transform, e3.transform);
-  top.decRuleExprs = e1.decRuleExprs ++ e2.decRuleExprs ++ e3.decRuleExprs;
 }
 
 -- Extensions
@@ -535,8 +488,8 @@ aspect production fullList
 top::Expr ::= '[' es::Exprs ']'
 {
   -- TODO: Consider refactoring listtrans on Exprs to decorate the expressions here
-  -- before forwarding via unique references.
-  local decEs::Exprs = es;
+  -- before forwarding via translation attributes.
+  local decEs::Exprs = ^es;
   decEs.downSubst = top.downSubst;
   decEs.finalSubst = top.finalSubst;
   decEs.frame = top.frame;
@@ -545,8 +498,7 @@ top::Expr ::= '[' es::Exprs ']'
   decEs.grammarName = top.grammarName;
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
-  decEs.boundVars = top.boundVars;
-  decEs.originRules = top.originRules;
+  decEs.ruleEnv = top.ruleEnv;
 
   top.transform = listASTExpr(decEs.transform);
 }
@@ -557,7 +509,7 @@ top::Expr ::= '[' es::Exprs ']'
 aspect production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
 {
-  local decEs::Exprs = es;
+  local decEs::Exprs = ^es;
   decEs.downSubst = top.downSubst;
   decEs.finalSubst = top.finalSubst;
   decEs.frame = top.frame;
@@ -566,8 +518,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
   decEs.grammarName = top.grammarName;
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
-  decEs.boundVars = top.boundVars;
-  decEs.originRules = top.originRules;
+  decEs.ruleEnv = top.ruleEnv;
   
   top.transform =
     applyASTExpr(
@@ -579,7 +530,7 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
                 decEs.lambdaParams,
                 caseExpr_c(
                   'case', decEs.lambdaParamRefs, 'of',
-                  o, ml, 'end'))})
+                  o, ^ml, 'end'))})
         }),
       decEs.transform,
       nilNamedASTExpr());
@@ -590,21 +541,17 @@ aspect production letp
 top::Expr ::= la::AssignExpr e::Expr
 {
   top.transform = letASTExpr(la.transform, e.transform);
-  top.decRuleExprs = la.decRuleExprs ++ e.decRuleExprs;
   
-  la.boundVars = top.boundVars;
-  e.boundVars = top.boundVars ++ la.varBindings;
+  la.ruleEnv = top.ruleEnv;
+  e.ruleEnv = newScopeEnv(la.defs, top.ruleEnv);
 }
 
 attribute transform<NamedASTExprs> occurs on AssignExpr;
-attribute varBindings occurs on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.transform = appendNamedASTExprs(a1.transform, a2.transform);
-  top.varBindings = a1.varBindings ++ a2.varBindings;
-  top.decRuleExprs = a1.decRuleExprs ++ a2.decRuleExprs;
 }
 
 aspect production assignExpr
@@ -612,23 +559,6 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.transform =
     consNamedASTExpr(namedASTExpr(id.name, e.transform), nilNamedASTExpr());
-  
-  -- If this is a generated pattern variable binding, figure out whether the corresponding
-  -- primitive pattern variable was implictly decorated.
-  local isDecorated::Boolean =
-    case e of
-    | lexicalLocalReference(qn, _, _, _) ->
-      fromMaybe(e.finalType.isDecorated, lookup(qn.name, top.boundVars))
-    | _ -> e.finalType.isDecorated
-    end;
-  top.varBindings = [(id.name, isDecorated)];
-  top.decRuleExprs = e.decRuleExprs;
-}
-
-aspect production matchPrimitiveReal
-top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
-{
-  top.decRuleExprs = e.decRuleExprs ++ pr.decRuleExprs ++ f.decRuleExprs;
 }
 
 -- TODO: Support for lambdas capturing rule LHS variables

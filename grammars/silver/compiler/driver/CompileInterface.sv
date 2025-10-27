@@ -1,7 +1,6 @@
 grammar silver:compiler:driver;
 
-import silver:reflect;
-import silver:reflect:nativeserialize;
+imports silver:reflect;
 
 {--
  - Find an interface file, if it exists, and can be deserialized.
@@ -22,7 +21,7 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]
     -- IO Step 2: Let's say so, and parse it
     lift(eprintln("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]"));
     text :: ByteArray <- lift(readBinaryFile(file));
-    let ir :: Either<String InterfaceItems> = nativeDeserialize(text);
+    let ir :: Either<String InterfaceItems> = deserializeBytes(text);
 
     -- IO Step 3: Perhaps complain it failed to deserialize
     case ir of
@@ -40,7 +39,7 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]
           "\n\tRecovering by parsing grammar...."));
         empty;
       }
-    | right(i) -> pure(interfaceRootSpec(i, gen))
+    | right(i) -> pure(interfaceRootSpec(i, just(gen), nothing()))
     end;
   };
 }
@@ -48,15 +47,11 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]
 {--
  - Takes a grammar name (already converted to a path) and searches for Silver.svi
  -}
-function findInterfaceLocation
-MaybeT<IO String> ::= gramPath::String searchPaths::[String]
-{
-  return
-    case searchPaths of
-    | [] -> empty
-    | h :: t -> do {
-        exists :: Boolean <- lift(isFile(h ++ "src/" ++ gramPath ++ "Silver.svi"));
-        if exists then pure(h) else findInterfaceLocation(gramPath, t);
-      }
-    end;
-}
+fun findInterfaceLocation MaybeT<IO String> ::= gramPath::String searchPaths::[String] =
+  case searchPaths of
+  | [] -> empty
+  | h :: t -> do {
+      exists :: Boolean <- lift(isFile(h ++ "src/" ++ gramPath ++ "Silver.svi"));
+      if exists then pure(h) else findInterfaceLocation(gramPath, t);
+    }
+  end;

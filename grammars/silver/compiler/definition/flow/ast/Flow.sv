@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:flow:ast;
 
 
+
 {--
  - Info for constructing production flow graphs.
  - Follows Figure 5.12 (p138, pdf p154 of Kaminski's PhD)
@@ -10,70 +11,86 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-data nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, refPossibleDecSiteContribs, refDecSiteContribs;
-data nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, refPossibleDecSiteContribs, refDecSiteContribs;
+data nonterminal FlowDef with flowEdges, suspectFlowEdges;
+data nonterminal FlowDefs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
  - Also decides whether to add a forward or default equation while computing flow types. -}
-monoid attribute synTreeContribs :: [Pair<String FlowDef>];
+monoid attribute synTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, sig, attribute) to find inherited equation
  - Used to ensure a necessary rhs.inh equation exists. -}
-monoid attribute inhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute inhTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (nonterminal, attribute) to find default syn equations
  - Used to obtain default equation dependencies, when it exists. -}
-monoid attribute defTreeContribs :: [Pair<String FlowDef>];
+monoid attribute defTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production) to find forward equations.
  - Decides whether default or forward equations should be added. -}
-monoid attribute fwdTreeContribs :: [Pair<String FlowDef>];
+monoid attribute fwdTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, attr) to find forward INHERITED equations
  - Used to ensure equations for inherited attributes exist for all inh of a fwd. -}
-monoid attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute fwdInhTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, local, attr) to find local INHERITED equations.
  - ONLY used to check whether an equation exists. -}
-monoid attribute localInhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute localInhTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (production, local) to find the local equation -}
-monoid attribute localTreeContribs :: [Pair<String FlowDef>];
+monoid attribute localTreeContribs :: [(String, FlowDef)];
 
 {-- lookup (nonterminal) to find all non-forwarding production.
  - ONLY used to determine all productions that need an equation for a new attribute. -}
-monoid attribute prodTreeContribs :: [Pair<String FlowDef>];
+monoid attribute prodTreeContribs :: [(String, String)];
+
+{-- lookup (dispatch) to find all host implementation productions and their signatures. -}
+monoid attribute implTreeContribs :: [(String, String, [String])];
 
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
     affect it)  These FlowDefs MUST have a flowEdges for this production. -}
-monoid attribute prodGraphContribs :: [Pair<String FlowDef>];
+monoid attribute prodGraphContribs :: [(String, FlowDef)];
 
 {-- Edge lists from equations
  - ONLY used to extract edges for a production graph from production-internal flowDefs. -}
-synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
+synthesized attribute flowEdges :: [(FlowVertex, FlowVertex)];
 
 {-- Like flowEdges, but these edges originate from equations that are not
  - allowed to affect their OWN flow type.  We must still track them because
  - they may affect others' flow types.
  - (e.g.  extsyn = hostsyn; hostsyn = hostinh; need to reflect extsyn's dep on hostinh) -}
-synthesized attribute suspectFlowEdges :: [Pair<FlowVertex FlowVertex>];
+synthesized attribute suspectFlowEdges :: [(FlowVertex, FlowVertex)];
 
 {-- A list of extension syn attr occurrences, subject to ft lower bounds. -}
-monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
+monoid attribute hostSynTreeContribs :: [(String, FlowDef)];
 
 {-- A list of attributes for a production that are non-suspect -}
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
-{-- lookup dec site to find places that a unique reference to this ref site *might be* decorated.
- - This includes e.g. unique reference sites that appear in an if/else branch. -}
+{-- lookup dec site to find places that a shared reference to this tree *might be* decorated.
+ - This includes e.g. sharing sites that appear in an if/else branch. -}
 monoid attribute refPossibleDecSiteContribs :: [(String, VertexType)];
 
-{-- lookup dec site to find places that a unique reference to this ref site are *unconditionally* decorated. -}
+{-- lookup dec site to find places that a shared reference to this tree are *unconditionally* decorated. -}
 monoid attribute refDecSiteContribs :: [(String, VertexType)];
 
-propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, refPossibleDecSiteContribs, refDecSiteContribs
+{-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}
+monoid attribute sigShareContribs :: [(String, String, VertexType)];
+
+attribute
+  synTreeContribs, inhTreeContribs, defTreeContribs,
+  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
+  prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
+  occurs on FlowDefs, FlowDef;
+propagate
+  synTreeContribs, inhTreeContribs, defTreeContribs,
+  fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
+  prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -99,6 +116,7 @@ top::FlowDef ::=
   top.fwdTreeContribs := [];
   top.fwdInhTreeContribs := [];
   top.prodTreeContribs := [];
+  top.implTreeContribs := [];
   top.localInhTreeContribs := [];
   top.localTreeContribs := [];
   top.hostSynTreeContribs := [];
@@ -106,6 +124,7 @@ top::FlowDef ::=
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
   top.refPossibleDecSiteContribs := [];
   top.refDecSiteContribs := [];
+  top.sigShareContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -119,8 +138,24 @@ top::FlowDef ::=
 abstract production prodFlowDef
 top::FlowDef ::= nt::String  prod::String
 {
-  top.prodTreeContribs := [(nt, top)];
+  top.prodTreeContribs := [(nt, prod)];
   top.prodGraphContribs := [];
+  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
+}
+
+{--
+ - Declaration of a host implementation production for a dispatch signature.
+ - This has the signature names too, since we need those in resolving dec sites,
+ - and the prod might not be in the regular env if it is from an optional grammar.
+ -
+ - @param dispatchSig  The full name of the dispatch signature that is implemented
+ - @param prod         The full name of the production
+ -}
+abstract production implFlowDef
+top::FlowDef ::= dispatchSig::String  prod::String  sigNames::[String]
+{
+  top.implTreeContribs := [(dispatchSig, prod, sigNames)];
+  top.prodGraphContribs := [(dispatchSig, top)];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
 
@@ -152,7 +187,7 @@ abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs := [(crossnames(nt, attr), top)];
-  top.prodGraphContribs := []; -- defaults don't show up in the prod graph!!
+  top.prodGraphContribs := [(nt ++ ":default", top)];
   top.flowEdges = map(pair(fst=lhsSynVertex(attr), snd=_), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
 
@@ -169,7 +204,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
 {
   top.synTreeContribs := [(crossnames(prod, attr), top)];
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(fst=lhsSynVertex(attr), snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=lhsSynVertex(attr), snd=_), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -203,7 +238,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.fwdTreeContribs := [(prod, top)];
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(fst=forwardEqVertex(), snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=forwardEqVertex(), snd=_), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -307,7 +342,7 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
 abstract production localTransInhEq
 top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  deps::[FlowVertex]
 {
-  top.inhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
+  top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = map(pair(fst=localSynVertex(fName, s"${transAttr}.${attr}"), snd=_), deps);
 }
@@ -324,7 +359,7 @@ abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(fst=src, snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=src, snd=_), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -391,10 +426,8 @@ top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[
   top.flowEdges = [];
 }
 
-nonterminal PatternVarProjection;
-abstract production patternVarProjection
-top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
-{}
+data PatternVarProjection
+  = patternVarProjection child::String  typeName::String  patternVar::String;
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.
@@ -402,110 +435,63 @@ top::PatternVarProjection ::= child::String  typeName::String  patternVar::Strin
  -
  - @param prod     the full name of the production
  - @param parent   the flow vertex of the enclosing production call
- - @param termProd the applied production
+ - @param termProd the applied production (or dispatch signature)
  - @param sigName  the name of the child under which this term appears
  -}
 abstract production subtermDecEq
-top::FlowDef ::= prod::String  parent::VertexType  termProd::String  sigName::String
+top::FlowDef ::= prod::String  parent::VertexType  termProd::String  nt::String  sigName::String
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];
 }
 
 {--
- - A unique reference to a child that is elsewhere decorated with additional inherited attributes.
+ - A tree that is elsewhere decorated with additional inherited attributes.
  -
  - @param prod      the full name of the production
- - @param sigName   the name of the child
- - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
+ - @param nt        the full name of the nonterminal
+ - @param ref       the vertex type of the shared tree
  - @param decSite   the vertex type that is supplying the attributes
- - @param attrs     the inherited attributes that are being supplied
+ - @param alwaysDec is this decoration unconditional (as opposed to e.g. sharing in an if/else branch)
  -}
-abstract production childRefDecSiteEq
-top::FlowDef ::= prod::String  sigName::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
+abstract production refDecSiteEq
+top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType  alwaysDec::Boolean
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(\ attr::String -> (rhsInhVertex(sigName, attr), decSite.inhVertex(attr)), attrs);
-  top.refPossibleDecSiteContribs := [(s"${prod}:${sigName}", decSite)];
+  top.flowEdges = [];  -- Added as fixed edges during flow graph computation, when we know all inh attributes on nt.
+  top.refPossibleDecSiteContribs := [(s"${prod}:${ref.vertexName}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
 }
 
 {--
- - A unique reference to a local/production attribute that is elsewhere decorated with additional inherited attributes.
+ - A tree that is shared in the application of a production/dispatch signature
  -
- - @param prod      the full name of the production
- - @param fName     the full name of the local/production attribute
- - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
- - @param decSite   the vertex type that is supplying the attributes
- - @param attrs     the inherited attributes that are being supplied
+ - @param prod       the full name of the production/dispatch signature
+ - @param nt         the full name of the nonterminal
+ - @param sigName    the name of the shared child in prod
+ - @param sourceProd the full name of the (dispatching) production that forwarded to prod
+ - @param source     the vertex type of the shared tree supplied by sourceProd as the shared child
+ - @param parent     the vertex type of where prod is decorated in sourceProd - should always be forward or a forward prod attr.
  -}
-abstract production localRefDecSiteEq
-top::FlowDef ::= prod::String  fName::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
+abstract production sigShareSite
+top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType parent::VertexType
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(\ attr::String -> (localInhVertex(fName, attr), decSite.inhVertex(attr)), attrs);
-  top.refPossibleDecSiteContribs := [(fName, decSite)];
-  top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
-}
-
-{--
- - A unique reference to a translation attribute on a child that is elsewhere decorated with additional inherited attributes.
- -
- - @param prod      the full name of the production
- - @param sigName   the name of the child
- - @param transAttr the name of the translation attribute
- - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
- - @param decSite   the vertex type that is supplying the attributes
- - @param attrs     the inherited attributes that are being supplied
- -}
-abstract production childTransRefDecSiteEq
-top::FlowDef ::= prod::String  sigName::String  transAttr::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
-{
-  top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(\ attr::String -> (rhsInhVertex(sigName, s"${transAttr}.${attr}"), decSite.inhVertex(attr)), attrs);
-  top.refPossibleDecSiteContribs := [(s"${prod}:${sigName}.${transAttr}", decSite)];
-  top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
-}
-
-{--
- - A unique reference to a translation attribute on a local/production attribute that is elsewhere decorated with additional inherited attributes.
- -
- - @param prod      the full name of the production
- - @param fName     the full name of the local/production attribute
- - @param transAttr the name of the translation attribute
- - @param alwaysDec is this decoration uncondtional (as opposed to e.g. a unique reference appearing in an if/else branch)
- - @param decSite   the vertex type that is supplying the attributes
- - @param attrs     the inherited attributes that are being supplied
- -}
-abstract production localTransRefDecSiteEq
-top::FlowDef ::= prod::String  fName::String  transAttr::String  alwaysDec::Boolean  decSite::VertexType  attrs::[String]
-{
-  top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(\ attr::String -> (localInhVertex(fName, s"${transAttr}.${attr}"), decSite.inhVertex(attr)), attrs);
-  top.refPossibleDecSiteContribs := [(s"${fName}.${transAttr}", decSite)];
-  top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
+  top.flowEdges = [];
+  top.sigShareContribs := [(crossnames(prod, sigName), sourceProd, source)];
 }
 
 --
 
-function crossnames
-String ::= a::String b::String
-{
-  return a ++ " @ " ++ b;
-}
+fun crossnames String ::= a::String b::String = a ++ " @ " ++ b;
 
 --
 
 -- Used to get better error messages
-function collectAnonOrigin
-[Pair<String  Location>] ::= f::[FlowDef]
-{
-  return foldr(collectAnonOriginItem, [], f);
-}
-function collectAnonOriginItem
-[Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>]
-{
-  return case f of
+fun collectAnonOrigin [Pair<String  Location>] ::= f::[FlowDef] =
+  foldr(collectAnonOriginItem, [], f);
+fun collectAnonOriginItem [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>] =
+  case f of
   | anonEq(_, fN, _, _, l, _) ->
       -- Small hack to improve error messages. Ignore anonEq's that come from patterns
       if startsWith("__scrutinee", fN)
@@ -513,4 +499,3 @@ function collectAnonOriginItem
       else (fN, l) :: rest
   | _ -> rest
   end;
-}

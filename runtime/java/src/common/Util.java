@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
+import java.util.jar.JarInputStream;
+import java.util.jar.Attributes.Name;
 
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
@@ -107,6 +109,16 @@ public final class Util {
 			result[idx[i]] = val[i];
 		}
 		return result;
+	}
+
+	/**
+	 * Construct a Lazy that evaluates a Lazy and gets a decorated child from the result.
+	 */
+	public static Lazy wrapDecSiteAccessorChildDecorated(final Lazy parentLazy, final int child) {
+		if(parentLazy == null) {
+			return null;
+		}
+		return (context) -> ((DecoratedNode)parentLazy.eval(context)).childDecorated(child);
 	}
 
 	/**
@@ -395,6 +407,24 @@ public final class Util {
 	}
 
 	/**
+	 * Attempt to reflectively call the showDoc function from silver:langutil:pp.
+	 * 
+	 * @param d  The Document to show
+	 * @param width The desired max column width
+	 * @return A string representation.
+	 */
+	public static StringCatter showDoc(Object d, int width) {
+		try {
+			Method showDoc = Class.forName("silver.langutil.pp.PshowDoc")
+				.getMethod("invoke", OriginContext.class, Object.class, Object.class);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, width, d);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new SilverInternalError("Failed to call silver:langutil:pp:showDoc on " + d + ": " + e.getMessage(), e);
+		}
+	}
+
+	/**
 	 * Attempt to use the improved genericPP from silver:langutil:reflect if that library is available;
 	 * else fall back to hackUnparse.
 	 * Note that we can't actually let the runtime/silver:core depend on that library,
@@ -414,6 +444,23 @@ public final class Util {
 		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
 		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			return hackyhackyUnparse(o);
+		}
+	}
+
+	/**
+	 * Attempt to reflectively call the showOriginInfoChain function from silver:langutil.
+	 * 
+	 * @param o  The object to show the origin of
+	 * @return A string representation.
+	 */
+	public static StringCatter showOriginInfoChain(Object o) {
+		try {
+			Method showDoc = Class.forName("silver.langutil.PshowOriginInfoChain")
+				.getMethod("invoke", OriginContext.class, Object.class);
+			return (StringCatter)showDoc.invoke(null, OriginContext.FFI_CONTEXT, o);
+		} catch(ClassNotFoundException | NoSuchMethodException | SecurityException |
+		        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			throw new SilverInternalError("Failed to call silver:langutil:showOriginInfoChain on " + o + ": " + e.getMessage(), e);
 		}
 	}
 
@@ -503,6 +550,16 @@ public final class Util {
 		// HOME/jars/file.jar to HOME
 		File home = new File(jarLocation).getParentFile().getParentFile();
 		return new StringCatter(home.getPath());
+	}
+
+	public static StringCatter getJarVersion(Class<?> clazz) {
+		try {
+			URI jarLocation = clazz.getProtectionDomain().getCodeSource().getLocation().toURI();
+			JarInputStream file = new JarInputStream(new FileInputStream(new File(jarLocation)));
+			return new StringCatter(file.getManifest().getMainAttributes().getValue(Name.IMPLEMENTATION_VERSION));
+		} catch (Throwable t) {
+			throw new RuntimeException("Failed to get jar version.", t);
+		}
 	}
 	
 	public static ConsCell bitSetToList(BitSet b) {

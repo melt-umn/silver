@@ -19,7 +19,7 @@ Boolean ::= x::a y::a
   return x.isEqual;
 }
 
-warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env1 but this equation appears to be missing." {
+warnCode "Equation requires inherited attribute flow:env1 be supplied to child x of production flow:isEqualBad" {
 function isEqualBad
 attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo, env1} occurs on a =>
@@ -105,7 +105,7 @@ top::Expr ::= x::a
   top.value = x.value;
 }
 
-warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env2 but this equation appears to be missing." {
+warnCode "Access of synthesized attribute value on x requires missing inherited attribute(s) flow:env2 to be supplied to child x of production flow:valueThing1Bad" {
 production valueThing1Bad
 attribute env1 occurs on a,
 attribute value {env1, env2} occurs on a =>
@@ -128,7 +128,7 @@ top::Expr ::= x::a
   top.value = x.value;
 }
 
-warnCode "Access of syn attribute value on x requires missing inherited attributes flow:env2 to be supplied" {
+warnCode "Access of synthesized attribute value on x requires missing inherited attribute(s) flow:env2 to be supplied to child x of production flow:valueThing2Bad" {
 production valueThing2Bad
 attribute env1 occurs on a,
 attribute env2 occurs on a,
@@ -141,7 +141,7 @@ top::Expr ::= x::a
 }
 }
 
-warnCode "Access of value from Decorated a with b requires an unbounded set of inherited attributes" {
+warnCode "Access of value from Decorated a with {} requires an unbounded set of inherited attributes" {
 production valueThing3Bad
 attribute value i occurs on a =>
 top::Expr ::= x::a
@@ -236,11 +236,12 @@ Integer ::= e::Expr
 -- value missing a flowtype
 nonterminal Expr2 with env1, value;
 
-wrongCode "Ambiguous type variable a (arising from the use of getValuePoly) prevents the constraint attribute flow:value a occurs on flow:Expr2 from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for flow:value on flow:Expr2" {
+-- TODO: this defaults to the empty set now instead of raising an error. Is that desirable?
+--wrongCode "Ambiguous type variable a (arising from the use of getValuePoly) prevents the constraint attribute flow:value a occurs on flow:Expr2 from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for flow:value on flow:Expr2" {
 function getValueExpr2
 Integer ::= e::Expr2
 {
   e.env1 = [];
   return getValuePoly(e);
 }
-}
+--}

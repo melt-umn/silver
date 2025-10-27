@@ -7,7 +7,7 @@ abstract production warnAllFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   -- This prod should be aspected to turn on all relevant warning flags
-  forwards to rest;
+  forwards to @rest;
 }
 
 aspect function parseArgs

@@ -79,7 +79,7 @@ instance MonadFix IO {
 function runIO
 IOToken ::= st::IO<a> ioIn::IOToken
 {
-  return evalIO(st, ioIn).io;
+  return evalIO(^st, ioIn).io;
 }
 
 function evalIO
@@ -92,7 +92,7 @@ IOVal<a> ::= st::IO<a> ioIn::IOToken
 function unsafeEvalIO
 a ::= st::IO<a>
 {
-  local res::IOVal<a> = evalIO(st, unsafeIO());
+  local res::IOVal<a> = evalIO(^st, unsafeIO());
   return unsafeTrace(res.iovalue, res.io);
 }
 
@@ -134,17 +134,11 @@ top::IO<Unit> ::= s::String
   top.stateVal = unit();
 }
 
-function println
-IO<Unit> ::= str::String
-{ return stateIOUnit(printlnT(str, _)); }
+fun println IO<Unit> ::= str::String = stateIOUnit(printlnT(str, _));
 
-function eprint
-IO<Unit> ::= str::String
-{ return stateIOUnit(eprintT(str, _)); }
+fun eprint IO<Unit> ::= str::String = stateIOUnit(eprintT(str, _));
 
-function eprintln
-IO<Unit> ::= str::String
-{ return stateIOUnit(eprintlnT(str, _)); }
+fun eprintln IO<Unit> ::= str::String = stateIOUnit(eprintlnT(str, _));
 
 abstract production readLineStdin
 top::IO<Maybe<String>> ::=
@@ -246,6 +240,30 @@ top::IO<ByteArray> ::= s::String
   top.stateVal = res.iovalue;
 }
 
+abstract production isJarFile
+top::IO<Boolean> ::= s::String
+{
+  local res::IOVal<Boolean> = isJarFileT(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
+abstract production jarContainsEntry
+top::IO<Boolean> ::= jar::String entry::String
+{
+  local res::IOVal<Boolean> = jarContainsEntryT(jar, entry, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
+abstract production readBinaryJarEntry
+top::IO<ByteArray> ::= jar::String entry::String
+{
+  local res::IOVal<ByteArray> = readBinaryJarEntryT(jar, entry, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
 abstract production cwd
 top::IO<String> ::=
 {
@@ -262,10 +280,18 @@ top::IO<String> ::= s::String
   top.stateVal = res.iovalue;
 }
 
+@{-
+ - Returns a list of files in a directory.
+ -
+ - This is implemented in terms of `java.io.File.list()`, which does **not**
+ - guarantee any particular order of files that it returns. Most operating
+ - systems do not either, and POSIX does not require that Unix-like operating
+ - systems do.
+ -}
 abstract production listContents
-top::IO<[String]> ::= s::String
+top::IO<[String]> ::= path::String
 {
-  local res::IOVal<[String]> = listContentsT(s, top.stateIn);
+  local res::IOVal<[String]> = listContentsT(path, top.stateIn);
   top.stateOut = res.io;
   top.stateVal = res.iovalue;
 }

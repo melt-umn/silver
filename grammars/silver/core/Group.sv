@@ -14,15 +14,11 @@ class Monoid g => Group g {
 @{- Computes the integer exponent of some group (treating the semigroup as
   - multiplication, as is standard in algebra).
   -}
-function power
-Group g => g ::= x::g  n::Integer
-{
-  return
-    if n < 0 then
-      invert(powerHelper(x, -n))
-    else
-      powerHelper(x, n);
-}
+fun power Group g => g ::= x::g  n::Integer =
+  if n < 0 then
+    invert(powerHelper(x, -n))
+  else
+    powerHelper(x, n);
 
 @{- @hide -}
 function powerHelper

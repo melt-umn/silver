@@ -21,13 +21,13 @@ abstract production dumpDepGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpDepGraph = true;
-  forwards to rest;
+  forwards to @rest;
 }
 abstract production dumpExportGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpExportGraph = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -43,10 +43,10 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   -- not omitting from descriptions deliberately!
 }
 aspect production compilation
-top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  a::Decorated CmdArgs  benv::BuildEnv
 {
-  top.postOps <- if top.config.dumpDepGraph then [dumpDepGraphAction(g.grammarList)] else [];
-  top.postOps <- if top.config.dumpExportGraph then [dumpExportGraphAction(g.grammarList)] else [];
+  top.postOps <- if a.dumpDepGraph then [dumpDepGraphAction(g.grammarList)] else [];
+  top.postOps <- if a.dumpExportGraph then [dumpExportGraphAction(g.grammarList)] else [];
 }
 
 abstract production dumpDepGraphAction
@@ -73,35 +73,25 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   top.order = 0;
 }
 
-function generateDotGraph
-String ::= specs::[Decorated RootSpec]
-{
-  return case specs of
+fun generateDotGraph String ::= specs::[Decorated RootSpec] =
+  case specs of
   | [] -> ""
   | h::t ->
       "\"" ++ h.declaredName ++ "\"[label=\"" ++ h.declaredName ++ "\"];\n" ++
       implode("", map(makeDotArrow(h.declaredName, _), h.moduleNames)) ++
       generateDotGraph(t)
   end;
-}
 
-function generateDotExportGraph
-String ::= specs::[Decorated RootSpec]
-{
-  return case specs of
+fun generateDotExportGraph String ::= specs::[Decorated RootSpec] =
+  case specs of
   | [] -> ""
   | h::t ->
       "\"" ++ h.declaredName ++ "\"[label=\"" ++ h.declaredName ++ "\"];\n" ++
       implode("", map(makeDotArrow(h.declaredName, _), computeOptionalDeps([h.declaredName], h.compiledGrammars))) ++
       generateDotExportGraph(t)
   end;
-}
 
-function makeDotArrow
-String ::= f::String t::String
-{
-  -- A heuristic to try to make the graph more readable...
-  return if t == "silver:core" then "" 
+fun makeDotArrow String ::= f::String t::String =
+  if t == "silver:core" then "" 
   else "\"" ++ f ++ "\" -> \"" ++ t ++ "\";\n";
-}
 

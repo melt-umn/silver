@@ -269,6 +269,15 @@ wrongCode "{silver_features:env1, :env2} is not a subset of {silver_features:env
   global dBad :: [String] = getEnv1Cycle(decorate mkDExpr() with {env1 = [];}, decorate mkDExpr() with {env1 = []; env2 = [];});
 }
 
+global u1 :: DExpr = new(d1);
+global u2 :: DExpr = ^d2;
+global u3 :: DExpr = ^decorate mkDExpr() with {};
+
+-- tests demand of attribute silver:compiler:translation:java:type:transTypeRep
+-- on silver:compiler:definition:type:inhSetType
+nonterminal InhSetNT<(i::InhSet)>;
+production inhSetNT top::InhSetNT<{env1}> ::= {}
+
 function getEnv1ChainedAmb
 {env1} subset i1, i1 subset i2 => [String] ::= x::Decorated DExpr with i2
 {

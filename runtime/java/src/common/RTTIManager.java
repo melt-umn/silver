@@ -93,6 +93,7 @@ public final class RTTIManager {
 		public abstract int getChildCount();
 		public abstract int getAnnoCount();
 		
+		public abstract String[] getChildNames();
 		public abstract String[] getChildTypes();
 		public abstract Lazy[][] getChildInheritedAttributes(); // Originally for autocopy, not currently used
 	}
@@ -128,6 +129,13 @@ public final class RTTIManager {
 				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
 			}
 			return synOccursIndices.get(attrName);
+		}
+
+		public final Lazy getTransDecSite(String attrName) {
+			if (!hasSyn(attrName)) {
+				return null;
+			}
+			return (context) -> context.translation(getSynOccursIndex(attrName));
 		}
 	}
 

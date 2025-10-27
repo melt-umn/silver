@@ -26,13 +26,6 @@ top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignat
   
   local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, ns.lexicalTyVarKinds, ns.lexicalTypeVariables);
 
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local myFlowGraph :: ProductionGraph = 
-    constructDefaultProductionGraph(ns.namedSignature, body.flowDefs, top.env, myProds, myFlow);
-
   ns.env = newScopeEnv(sigDefs, top.env);
 
   body.env = newScopeEnv(ns.defs, ns.env);
@@ -55,9 +48,9 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
   top.unparse = lhs.unparse ++ "::" ++ te.unparse ++ " ::=";
   top.defs := [defaultLhsDef(top.grammarName, lhs.nameLoc, lhs.name, te.typerep)];
   top.namedSignature =
-    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName,
+    namedSignature(top.grammarName ++ ":" ++ te.typerep.typeName ++ ":default",
       nilContext(), nilNamedSignatureElement(),
-      namedSignatureElement(lhs.name, te.typerep),
+      namedSignatureElement(lhs.name, te.typerep, false),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
   propagate config, grammarName, env, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds, flowEnv;
@@ -83,18 +76,15 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
   sigNames = [lhs.name];
 }
 
-function defaultLhsDef
-Def ::= sg::String sl::Location fn::String ty::Type
-{
-  return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
+fun defaultLhsDef Def ::= sg::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 abstract production defaultLhsDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
   propagate isEqual;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
   top.refDispatcher = lhsReference;
   top.defDispatcher = errorValueDef; -- TODO: be smarter about the error message
@@ -102,10 +92,9 @@ top::ValueDclInfo ::= fn::String ty::Type
   top.transDefLHSDispatcher = errorTransAttrDefLHS;
 }
 
-abstract production defaultLhsDefLHS
-top::DefLHS ::= q::Decorated! QName
+abstract production defaultLhsDefLHS implements BaseDefLHS
+top::DefLHS ::= @q::QName
 {
-  undecorates to concreteDefLHS(q);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;

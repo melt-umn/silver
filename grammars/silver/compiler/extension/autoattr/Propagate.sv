@@ -1,36 +1,36 @@
 grammar silver:compiler:extension:autoattr;
 
 concrete production propagateOnNTListExcludingDcl_c
-top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'excluding' ps::ProdNameList ';'
+top::AGDcl ::= 'propagate' attrs::AttrNameList 'on' nts::NameList 'excluding' ps::ProdNameList ';'
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} excluding ${ps.unparse};";
   propagate env;
   
   top.errors <- ps.errors;
-  forwards to propagateOnNTListDcl(attrs, nts, ps);
+  forwards to propagateOnNTListDcl(@attrs, @nts, @ps);
 }
 
 concrete production propagateOnNTListDcl_c
-top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList ';'
+top::AGDcl ::= 'propagate' attrs::AttrNameList 'on' nts::NameList ';'
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse};";
   
   forwards to
-    propagateOnNTListDcl(attrs, nts, prodNameListNil());
+    propagateOnNTListDcl(@attrs, @nts, prodNameListNil());
 }
 
 abstract production propagateOnNTListDcl
-top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
+top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} excluding ${ps.unparse};";
   
   forwards to
     case nts of
-    | nameListOne(n) -> propagateOnOneNTDcl(attrs, n, ps)
+    | nameListOne(n) -> propagateOnOneNTDcl(@attrs, ^n, @ps)
     | nameListCons(n, _, rest) ->
       appendAGDcl(
-        propagateOnOneNTDcl(attrs, n, ps),
-        propagateOnNTListDcl(attrs, rest, ps))
+        propagateOnOneNTDcl(@attrs, ^n, @ps),
+        propagateOnNTListDcl(^attrs, ^rest, ^ps))
     end;
 }
 
@@ -39,7 +39,7 @@ top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
 -- always the case (see options and closed nonterminals.)
 -- For such productions the attribute must still be explicitly propagated.
 abstract production propagateOnOneNTDcl
-top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
+top::AGDcl ::= attrs::AttrNameList nt::QName ps::ProdNameList
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nt.unparse} excluding ${ps.unparse};";
   propagate env;
@@ -55,10 +55,10 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
     filter(
       \ d::ValueDclInfo -> !d.hasForward && !contains(d.fullName, ps.names),
       getKnownProds(nt.lookupType.fullName, top.env));
-  local dcl::AGDcl =
+  nondecorated local dcl::AGDcl =
     foldr(
       appendAGDcl, emptyAGDcl(),
-      map(propagateAspectDcl(_, attrs), includedProds));
+      map(propagateAspectDcl(_, ^attrs), includedProds));
   
   forwards to
     if !null(nt.lookupType.errors)
@@ -67,7 +67,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
 }
 
 abstract production propagateAspectDcl
-top::AGDcl ::= d::ValueDclInfo attrs::NameList
+top::AGDcl ::= d::ValueDclInfo attrs::AttrNameList
 {
   top.errors :=
     if null(forward.errors)
@@ -83,7 +83,7 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
       aspectProductionSignature(
         aspectProductionLHSFull(
           name(d.namedSignature.outputElement.elementName),
-          d.namedSignature.outputElement.typerep),
+          d.namedSignature.outputElement.elementDclType),
         '::=',
         foldr(
           aspectRHSElemCons(_, _),
@@ -91,19 +91,20 @@ top::AGDcl ::= d::ValueDclInfo attrs::NameList
           map(
             \ ie::NamedSignatureElement ->
               aspectRHSElemFull(
+                ie.elementShared,
                 name(ie.elementName),
-                freshenType(ie.typerep, ie.typerep.freeVariables)),
+                freshenType(ie.elementDclType, ie.typerep.freeVariables)),
             d.namedSignature.inputElements))),
       productionBody(
         '{',
         productionStmtsSnoc(
           productionStmtsNil(),
-          propagateAttrList('propagate', attrs, ';')),
+          propagateAttrList('propagate', @attrs, ';')),
         '}'));
 }
 
 concrete production propagateAttrList
-top::ProductionStmt ::= 'propagate' ns::NameList ';'
+top::ProductionStmt ::= 'propagate' ns::AttrNameList ';'
 {
   top.unparse = s"propagate ${ns.unparse};";
   
@@ -111,18 +112,18 @@ top::ProductionStmt ::= 'propagate' ns::NameList ';'
   -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
-    | nameListOne(n) -> propagateOneAttr(n)
-    | nameListCons(n, _, rest) ->
+    | attrNameListOne(ms, n) -> propagateOneAttr(^ms, ^n)
+    | attrNameListCons(ms, n, _, rest) ->
       productionStmtAppend(
-        propagateOneAttr(n),
-        propagateAttrList($1, rest, $3))
+        propagateOneAttr(^ms, ^n),
+        propagateAttrList($1, ^rest, $3))
     end;
 }
 
 abstract production propagateOneAttr
-top::ProductionStmt ::= attr::QName
+top::ProductionStmt ::= ms::MaybeShared attr::QName
 {
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${ms.unparse}${attr.unparse};";
   propagate env;
 
   -- We make an exception to permit propagated equations in places that would otherwise be orphaned.
@@ -139,20 +140,42 @@ top::ProductionStmt ::= attr::QName
   forwards to
     if !null(attr.lookupAttribute.errors)
     then errorProductionStmt(attr.lookupAttribute.errors)
-    else attr.lookupAttribute.dcl.propagateDispatcher(attr);
+    else attr.lookupAttribute.dcl.propagateDispatcher(ms.isShared, attr);
 }
 
-abstract production propagateError
-top::ProductionStmt ::= attr::Decorated! QName
+dispatch Propagate = ProductionStmt ::= includeShared::Boolean @attr::QName;
+
+abstract production propagateError implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
   forwards to
     errorProductionStmt(
       [errFromOrigin(attr, s"Attribute ${attr.name} cannot be propagated")]);
 }
 
+abstract production propagateImpl implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName impl::ProductionStmt
+{
+  forwards to @impl;
+}
 
--- Need a seperate nonterminal since this can be empty and needs env to check errors
+tracked nonterminal AttrNameList with config, grammarName, unparse, errors, env;
+propagate config, grammarName, env, errors on AttrNameList;
+
+concrete production attrNameListOne
+top::AttrNameList ::= ms::MaybeShared n::QName
+{
+  top.unparse = ms.unparse ++ n.unparse;
+  top.errors <- n.lookupAttribute.errors;
+}
+
+concrete production attrNameListCons
+top::AttrNameList ::= ms::MaybeShared h::QName ',' t::AttrNameList
+{
+  top.unparse = ms.unparse ++ h.unparse ++ ", " ++ t.unparse;
+  top.errors <- h.lookupAttribute.errors;
+}
+
 tracked nonterminal ProdNameList with config, grammarName, env, unparse, names, errors;
 propagate config, grammarName, env, errors on ProdNameList;
 
@@ -173,7 +196,7 @@ top::ProdNameList ::= n::QName
     if n.lookupValue.found
     then
       case n.lookupValue.dcl of
-      | prodDcl(_, _) -> []
+      | prodDcl(_, _, _) -> []
       | _ -> [errFromOrigin(n, n.name ++ " is not a production")]
       end
     else [];
@@ -189,7 +212,7 @@ top::ProdNameList ::= h::QName ',' t::ProdNameList
     if h.lookupValue.found
     then
       case h.lookupValue.dcl of
-      | prodDcl(_, _) -> []
+      | prodDcl(_, _, _) -> []
       | _ -> [errFromOrigin(h, h.name ++ " is not a production")]
       end
     else [];

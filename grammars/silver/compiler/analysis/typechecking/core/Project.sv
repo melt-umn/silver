@@ -9,6 +9,9 @@ imports silver:compiler:definition:type;
 {-- The initial and resulting substitution contexts -}
 threaded attribute downSubst, upSubst :: Substitution;
 
+{-- Second pass, used only to resolve unspecialized type vars -}
+threaded attribute downSubst2, upSubst2 :: Substitution;
+
 {-- The complete, final substitution context -}
 inherited attribute finalSubst :: Substitution;
 

@@ -7,4 +7,3 @@ SRC=..  # cheating a bit. Current directory should be 'hello'
 GRAMMAR=hello
 
 silver -I $SRC $@ $GRAMMAR
-

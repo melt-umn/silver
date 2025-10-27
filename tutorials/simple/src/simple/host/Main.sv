@@ -23,9 +23,6 @@ parser parse :: simple:concretesyntax:Root {
   simple:terminals;
 } 
 
-function main 
-IOVal<Integer> ::= args::[String] io_in::IOToken
-{
-  return ioval(driver(args, io_in, parse), 0);
-}
-
+fun main
+IOVal<Integer> ::= args::[String] io_in::IOToken =
+  ioval(driver(args, io_in, parse), 0);

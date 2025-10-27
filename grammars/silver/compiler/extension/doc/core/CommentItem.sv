@@ -12,13 +12,10 @@ items for the list of CommentItems that
 AGDcl is given
 -}
 
-function sanitizeAnchor
-String ::= n::String
-{
-  return substitute(" ", "_", substitute("[", "_", substitute("]", "_", 
+fun sanitizeAnchor String ::= n::String =
+  substitute(" ", "_", substitute("[", "_", substitute("]", "_", 
        substitute("<", "_", substitute(">", "_", substitute("(", "_", 
        substitute(")", "_", n)))))));
-}
 
 function makeStub
 String ::= forName::String docUnparse::String grammarName::String
@@ -60,8 +57,5 @@ top::CommentItem ::= forName::String docUnparse::String grammarName::String
   top.undocNames = [forName];
 }
 
-function mkUndocumentedItem
-CommentItem ::= f::String t::Decorated AGDcl
-{
-  return undocumentedItem(f, t.docUnparse, t.grammarName);
-}
+fun mkUndocumentedItem CommentItem ::= f::String t::Decorated AGDcl =
+  undocumentedItem(f, t.docUnparse, t.grammarName);

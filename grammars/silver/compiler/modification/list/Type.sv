@@ -9,7 +9,7 @@ top::Type ::= el::Type
   propagate substitution, substituted, flatRenamed, boundVariables;
   top.typepp = "[" ++ el.typepp ++ "]";
 
-  forwards to appType(listCtrType(), el);
+  forwards to appType(listCtrType(), @el);
 }
 
 abstract production listCtrType

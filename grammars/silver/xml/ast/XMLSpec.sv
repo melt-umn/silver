@@ -28,8 +28,8 @@ synthesized attribute xmlUnparse :: String;
 abstract production xmlDocument
 top::XMLDocument ::= xmlDTD::XMLDocumentType elements::XMLNodeList
 {
-   top.xmlDTD = xmlDTD;
-   top.xmlSubNodes = elements;
+   top.xmlDTD = ^xmlDTD;
+   top.xmlSubNodes = ^elements;
    top.xmlText = xmlDTD.xmlText ++ elements.xmlText;
    top.xmlUnparse = xmlDTD.xmlUnparse ++ elements.xmlUnparse;
 }
@@ -40,7 +40,7 @@ abstract production xmlDocumentType
 top::XMLDocumentType ::= xmlDTDName::String entities::XMLNodeList
 {
    top.xmlName = xmlDTDName;
-   top.xmlSubNodes = entities;
+   top.xmlSubNodes = ^entities;
    top.xmlText = xmlDTDName ++ entities.xmlText;
    top.xmlUnparse = "<!DOCTYPE " ++ xmlDTDName ++ ">\n"; -- Yeah, does entities ever exist here?
 }
@@ -59,7 +59,7 @@ top::XMLDocumentType ::=
 abstract production xmlNodeListCons
 top::XMLNodeList ::= h::XMLNode t::XMLNodeList
 {
-   top.xmlSubNodeList = h :: t.xmlSubNodeList;
+   top.xmlSubNodeList = ^h :: t.xmlSubNodeList;
    top.xmlText = h.xmlText ++ t.xmlText;
    top.xmlUnparse = h.xmlUnparse ++ t.xmlUnparse;
 }
@@ -79,7 +79,7 @@ top::XMLNode ::= name::String attributes::[XMLAttribute] elements::XMLNodeList
 {
    top.xmlName = name;
    top.xmlAttributes = attributes;
-   top.xmlSubNodes = elements;
+   top.xmlSubNodes = ^elements;
    top.xmlText = elements.xmlText;
    top.xmlUnparse = "<" ++ name ++ " " ++ implode(" ", map(xmlUnparseAttr, attributes)) ++ ">" ++ elements.xmlUnparse ++ "</" ++ name ++ ">";
 }

@@ -1,10 +1,13 @@
 grammar silver:compiler:extension:strategyattr;
 
 abstract production strategyAttributeDcl
-top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>] e::StrategyExpr
+top::AGDcl ::=
+  isTotal::Boolean a::Name
+  recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>]
+  e::StrategyExpr
 {
   top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
-  propagate grammarName, config, env, flowEnv;
+  propagate grammarName, config, flowEnv;
 
   top.occursDefs := [];
   top.specDefs := [];
@@ -29,37 +32,48 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
-  e.recVarTotalNoEnvEnv = recVarTotalEnv;
   e.outerAttr = a.name;
   e.isOutermost = true;
-  
-  local fwrd::AGDcl =
+
+  -- Component strategies that are lifted for the translation of e.
+  -- This does not depend on e.env
+  local liftedStrategyDecls::AGDcl =
     foldr(
-      appendAGDcl,
-      defsAGDcl(
-        [attrDef(
-           defaultEnvItem(
-             strategyDcl(
-               fName, isTotal,
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, e,
-               sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]),
+      appendAGDcl, emptyAGDcl(),
       map(
         \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
-            d.snd.isTotalNoEnv, name(d.fst), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd)),
+            d.snd.isTotalInf, name(d.fst),
+            d.snd.recVarNameEnv, d.snd.recVarTotalEnv,
+            new(d.snd)),
         e.liftedStrategies));
   
-  -- Uncomment for debugging
-  --forwards to unsafeTrace(fwrd, printT(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
-
-  forwards to fwrd;
+  -- Supply e with the environment containing the lifted strategy declarations,
+  -- for error checking purposes.
+  e.env = newScopeEnv(liftedStrategyDecls.defs, top.env);
+  
+  nondecorated local fwrd::AGDcl =
+    defsAGDcl(
+      [attrDef(
+          defaultEnvItem(
+            strategyDcl(
+              fName, isTotal,
+              !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv,
+              e.partialRefs, e.totalRefs, e.containsTraversal, reflect(^e),
+              sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))]);
+  
+  forwards to appendAGDcl(@liftedStrategyDecls,
+    -- Uncomment for debugging
+    --unsafeTrace(fwrd, eprintT((if isTotal then "total" else "partial") ++ " " ++ a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()))
+    fwrd
+  );
 }
 
-abstract production strategyAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production strategyAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
-  propagate grammarName, env, flowEnv;
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  top.moduleNames := [];
 
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -82,46 +96,39 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
-  local atOccursDcl::AGDcl =
-    defaultAttributionDcl(
-      at,
-      botlSome(
-        bTypeList(
-          '<',
-          typeListSingle(
-            case nttl of
-            | botlSome(tl) -> 
-              appTypeExpr(
-                nominalTypeExpr(nt.qNameType),
-                tl)
-            | botlNone() -> nominalTypeExpr(nt.qNameType)
-            end),
-          '>')),
-      nt, nttl);
-
   forwards to
-    if null(at.lookupAttribute.dcl.liftedStrategyNames) then @atOccursDcl
-    else
-      appendAGDcl(
-        @atOccursDcl,
-        foldr1(
-          appendAGDcl,
-          map(
-            \ n::String ->
-              attributionDcl(
-                'attribute', qName(n), attl, 'occurs', 'on', nt, nttl, ';'),
-            at.lookupAttribute.dcl.liftedStrategyNames)));
+    extraDclsAttributionDcl(
+      @at, @attl, @nt, @nttl,
+      altParamAttributionDcl(
+        defaultAttributionDcl,
+        botlSome(
+          bTypeList(
+            '<',
+            typeListSingle(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType),
+                  ^tl)
+              | botlNone() -> nominalTypeExpr(nt.qNameType)
+              end),
+            '>'))),
+      foldr(appendAGDcl, emptyAGDcl(),
+        map(
+          \ n::String ->
+            attributionDcl(
+              'attribute', qName(n), ^attl, 'occurs', 'on', ^nt, ^nttl, ';'),
+          at.lookupAttribute.dcl.liftedStrategyNames)));
 }
 
 {--
  - Propagate a strategy attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateStrategy
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateStrategy implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse}";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;
   production e::StrategyExpr = attr.lookupAttribute.dcl.strategyExpr;
@@ -154,27 +161,30 @@ top::ProductionStmt ::= attr::Decorated! QName
       -- Check for errors in this or inlined strategy expressions that would be reported on the attribute definition
       attr.lookupAttribute.dcl.containsErrors ||
       any(map((.containsErrors), flatMap(getAttrDcl(_, top.env), attr.lookupAttribute.dcl.partialRefs))) ||
-      -- Check for total strategy ref occurs errors that would already be reported on the occurence
+      -- Check for total strategy ref occurs errors that would already be reported on the occurrence
       (!null(getOccursDcl(attr.lookupAttribute.fullName, top.frame.signature.outputElement.typerep.typeName, top.env)) &&
        any(map(null, map(getOccursDcl(_, top.frame.signature.outputElement.typerep.typeName, top.env), attr.lookupAttribute.dcl.totalRefs))))
     then []
     else forward.errors;
-  
-  local fwrd::ProductionStmt =
-    foldr(
-      productionStmtAppend(_, _),
-      attributeDef(
-        concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
-        '.',
-        qNameAttrOccur(new(attr)),
-        '=',
-        if isTotal then e2.totalTranslation else e2.partialTranslation,
-        ';'),
-      map(
-        \ n::String -> propagateOneAttr(qName(n)),
-        attr.lookupAttribute.dcl.liftedStrategyNames));
+
+  local liftedProdStmts::ProductionStmt = e2.liftedProdStmts;
+  local fwrd::ProductionStmt = productionStmtAppend(
+    @liftedProdStmts,
+    attributeDef(
+      concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
+      '.',
+      qNameAttrOccur(^attr),
+      '=',
+      if isTotal then e2.totalTranslation else e2.partialTranslation,
+      ';') ++
+    flatMap(
+      \ n::String -> propagateOneAttr(if includeShared then elemShared('@') else elemNotShared(), qName(n)),
+      attr.lookupAttribute.dcl.liftedStrategyNames));
+  -- defs from here are ignored due to circular dependency workaround in propagateOneAttr
+  forward.env = newScopeEnv(liftedProdStmts.defs ++ liftedProdStmts.productionAttributes, top.env);
   
   -- Uncomment for debugging
-  --forwards to unsafeTrace(fwrd, printT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
-  forwards to fwrd;
+  --top.errors <- unsafeTrace([], eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.unparse ++ ";\n\n", unsafeIO()));
+  --top.errors <- unsafeTrace([], eprintT(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";" ++ e2.liftedProdStmts.unparse ++ "\n\n", unsafeIO()));
+  forwards to propagateImpl(includeShared, attr, @fwrd);
 }

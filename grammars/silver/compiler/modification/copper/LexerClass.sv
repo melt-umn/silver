@@ -9,7 +9,7 @@ terminal IdLexerClassDcl_t '' lexer classes {IDENTIFIER, lsp:Class, lsp:Declarat
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
 {
-  forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(), $4);
+  forwards to lexerClassDecl($1, $2, @id, lexerClassModifiersNone(), $4);
 } action {
   insert semantic token IdLexerClassDcl_t at id.nameLoc;
 }

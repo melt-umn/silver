@@ -31,7 +31,7 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 import com.google.gson.JsonObject;
 
 import edu.umn.cs.melt.lsp4jutil.Util;
-import silver.compiler.definition.core.NRoot;
+import silver.compiler.definition.core.NFile;
 
 public class SilverLanguageServer implements LanguageServer, LanguageClientAware {
     private SilverLanguageService service;
@@ -78,13 +78,14 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         // Load the specified parser
         boolean loadedParser = false;
         try {
-            service.setParserFactory(Util.loadCopperParserFactory(loader, parserName, NRoot.class));
+            service.setParserFactory(Util.loadCopperParserFactory(loader, parserName, NFile.class));
             loadedParser = true;
         } catch (SecurityException | ReflectiveOperationException e) {
             client.showMessage(new MessageParams(MessageType.Error, "Error loading parser " + parserName + " from jar: " + e.toString()));
         }
 
         // Set up the Silver standard library grammars folder
+        // TODO: Include the standard lib interface files and load them here instead.
         Path silverGrammars;
         try {
             silverGrammars = Files.createTempDirectory("silver_grammars");

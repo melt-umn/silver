@@ -5,6 +5,9 @@ imports silver:rewrite;
 imports silver:langutil;
 imports silver:langutil:pp;
 
+-- Not used here, but make sure it gets included in the artifact:
+import silver:regex:concrete_syntax only;
+
 synthesized attribute altPP::Document;
 synthesized attribute seqPP::Document;
 synthesized attribute basePP::Document;
@@ -105,7 +108,7 @@ top::Regex ::= r::Regex
   top.altPP = top.seqPP;
   top.seqPP = top.basePP;
   top.basePP = pp"${r.basePP}+";
-  forwards to seq(r, star(r));
+  forwards to seq(@r, star(^r));
 }
 
 abstract production opt
@@ -115,7 +118,7 @@ top::Regex ::= r::Regex
   top.altPP = top.seqPP;
   top.seqPP = top.basePP;
   top.basePP = pp"${r.basePP}?";
-  forwards to alt(r, epsilon());
+  forwards to alt(@r, epsilon());
 }
 
 ------------------------------------------------
@@ -124,38 +127,26 @@ top::Regex ::= r::Regex
  - Returns a regex that matches a string literal.
  - (i.e. no interpretation of special characters.)
  -}
-function regexLiteral
-Regex ::= s::String
-{
-  return
-    if s == "" then epsilon()
-    else foldr1(seq, map(char, stringToChars(s)));
-}
+fun regexLiteral Regex ::= s::String =
+  if s == "" then epsilon()
+  else foldr1(seq, map(char, stringToChars(s)));
 
-function escapeRegexChar
-Document ::= char::String
-{
-  return
-    case char of
-    | "+" -> pp"\\+"
-    | "*" -> pp"\\*"
-    | "?" -> pp"\\?"
-    | "|" -> pp"\\|"
-    | "[" -> pp"\\["
-    | "(" -> pp"\\("
-    | ")" -> pp"\\)"
-    | "." -> pp"\\."
-    | _ -> text(escapeString(char))
-    end;
-}
+fun escapeRegexChar Document ::= char::String =
+  case char of
+  | "+" -> pp"\\+"
+  | "*" -> pp"\\*"
+  | "?" -> pp"\\?"
+  | "|" -> pp"\\|"
+  | "[" -> pp"\\["
+  | "(" -> pp"\\("
+  | ")" -> pp"\\)"
+  | "." -> pp"\\."
+  | _ -> text(escapeString(char))
+  end;
 
-function escapeRegexClassChar
-Document ::= char::String
-{
-  return
-    case char of
-    | "-" -> pp"\\-"
-    | "]" -> pp"\\]"
-    | _ -> text(escapeString(char))
-    end;
-}
+fun escapeRegexClassChar Document ::= char::String =
+  case char of
+  | "-" -> pp"\\-"
+  | "]" -> pp"\\]"
+  | _ -> text(escapeString(char))
+  end;

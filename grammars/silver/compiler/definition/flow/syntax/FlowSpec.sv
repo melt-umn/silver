@@ -42,7 +42,7 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
   top.errors := nts.errors;
   top.specDefs := nts.specDefs;
   
-  nts.flowSpecSpec = new(attr);
+  nts.flowSpecSpec = ^attr;
 }
 
 
@@ -178,7 +178,7 @@ top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 
 tracked nonterminal FlowSpecInh with config, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward}, errors {forward};
+flowtype FlowSpecInh = forward {grammarName, env, flowEnv}, decorate {forward, onNt}, inhList {decorate}, errors {decorate};
 
 propagate config, grammarName, errors, env, flowEnv on FlowSpecInh;
 
@@ -197,25 +197,24 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
 }
 
 concrete production flowSpecTrans
-top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::QNameAttrOccur
+top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::FlowSpecInh
 {
   top.unparse = s"${transSyn.unparse}.${inh.unparse}";
   top.inhList :=
-    if transSyn.attrFound && inh.attrFound
-    then [s"${transSyn.attrDcl.fullName}.${inh.attrDcl.fullName}"]
+    if transSyn.attrFound
+    then map(\ i -> s"${transSyn.attrDcl.fullName}.${i}", filter(notTransAttr, inh.inhList))
     else [];
-  top.refList := [];
+  top.refList := [];  -- TODO: An (erroneous) cycle in translation attr occurrences could lead to a crash here.
 
   transSyn.attrFor = top.onNt;
-  inh.attrFor = transSyn.typerep;
+  inh.onNt = transSyn.typerep;
 
   top.errors <-
     if !transSyn.found || transSyn.attrDcl.isSynthesized && transSyn.attrDcl.isTranslation then []
     else [errFromOrigin(transSyn, transSyn.name ++ " is not a translation attribute and so cannot be within a flow type")];
-  top.errors <-
-    if !inh.found || inh.attrDcl.isInherited then []
-    else [errFromOrigin(inh, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
 }
+
+fun notTransAttr Boolean ::= a::String = indexOf(".", a) == -1;
 
 {--
  - Inherit a flow spec from another flow spec.

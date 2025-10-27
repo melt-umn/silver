@@ -39,7 +39,7 @@ top::Module ::= need::[String]
                 compiledGrammars::EnvTree<Decorated RootSpec>
                 grammarDependencies::[String]
                 asPrepend::String
-                onlyFilter::[String]
+                onlyFilter::Maybe<[String]>
                 hidingFilter::[String]
                 withRenames::[Pair<String String>]
 {
@@ -49,22 +49,22 @@ top::Module ::= need::[String]
     moduleExportedDefs(compiledGrammars, grammarDependencies, need, seen);
   
   local defs :: Defs = foldr(consDefs, nilDefs(), med.defs);
-  defs.filterItems = onlyFilter;
+  defs.filterItems = onlyFilter.fromJust;
 
   local defs_after_only :: Defs =
-    if null(onlyFilter) then defs else defs.filterOnly;
+    if !onlyFilter.isJust then ^defs else defs.filterOnly;
   defs_after_only.filterItems = hidingFilter;
 
   local defs_after_hiding :: Defs =
-    if null(hidingFilter) then defs_after_only else defs_after_only.filterHiding;
+    if null(hidingFilter) then ^defs_after_only else defs_after_only.filterHiding;
   defs_after_hiding.withRenames = withRenames;
 
   local defs_after_renames :: Defs =
-    if null(withRenames) then defs_after_hiding else defs_after_hiding.renamed;
+    if null(withRenames) then ^defs_after_hiding else defs_after_hiding.renamed;
   defs_after_renames.pfx = asPrepend ++ ":";
 
   local defs_after_prepend :: Defs =
-    if asPrepend == "" then defs_after_renames else defs_after_renames.prepended;
+    if asPrepend == "" then ^defs_after_renames else defs_after_renames.prepended;
 
   top.defs := defs_after_prepend.defs;
   top.occursDefs := med.occursDefs;
@@ -113,16 +113,13 @@ top::ModuleExportedDefs ::= compiledGrammars::EnvTree<Decorated RootSpec> gramma
     if null(rs) then [errFromOrigin(ambientOrigin(), "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
 }
 
-function triggeredGrammars
-[String] ::= grammarDependencies::[String]  trig::[[String]]
-{
-  return if null(trig) then
+fun triggeredGrammars [String] ::= grammarDependencies::[String]  trig::[[String]] =
+  if null(trig) then
     []
   else if contains(head(tail(head(trig))), grammarDependencies) then 
     head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
   else
     triggeredGrammars(grammarDependencies, tail(trig));
-}
 
 --------------
 -- ImportStmts
@@ -243,7 +240,7 @@ top::ModuleName ::= pkg::QName
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", nothing(), [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -262,7 +259,7 @@ top::ModuleExpr ::= pkg::QName
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", nothing(), [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -278,7 +275,7 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], wc.envMaps);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", nothing(), [], wc.envMaps);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -294,7 +291,23 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", just(ns.names), [], []);
+  
+  top.errors := m.errors;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.nameLoc;
+}
+
+concrete production moduleOnlyNothing
+top::ModuleExpr ::= pkg::QName 'only'
+{
+  top.unparse = pkg.unparse ++ " only ";
+  top.moduleNames := [pkg.name];
+
+  production attribute m :: Module;
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", just([]), [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -310,7 +323,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], wc.envMaps);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", just(ns.names), [], wc.envMaps);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -326,7 +339,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, []);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", nothing(), ns.names, []);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -342,7 +355,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
   top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
-  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, wc.envMaps);
+  m = module([pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", nothing(), ns.names, wc.envMaps);
   
   top.errors := m.errors;
   top.defs := m.defs;
@@ -358,7 +371,7 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
   top.moduleNames := [pkg1.name];
 
   production attribute m :: Module;
-  m = module([pkg1.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, pkg2.name, [], [], []);
+  m = module([pkg1.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, pkg2.name, nothing(), [], []);
   
   top.errors := m.errors;
   top.defs := m.defs;

@@ -1,6 +1,6 @@
 grammar silver:core;
 
-nonterminal State<s a> with stateIn<s>, stateOut<s>, stateVal<a>;
+closed nonterminal State<s a> with stateIn<s>, stateOut<s>, stateVal<a>;
 
 inherited attribute stateIn<s>::s;
 synthesized attribute stateOut<s>::s;
@@ -86,5 +86,5 @@ Pair<s a> ::= st::State<s a> initialState::s
 function evalState
 a ::= st::State<s a> initialState::s
 {
-  return runState(st, initialState).snd;
+  return runState(^st, initialState).snd;
 }

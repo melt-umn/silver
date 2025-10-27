@@ -3,7 +3,7 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:driver;
 
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   local className :: String = "P" ++ id.name;
 
@@ -20,7 +20,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local fnnt :: String = makeNTName(ntName);
   local isData :: Boolean = namedSig.outputElement.typerep.isData;
-  local wantsTracking :: Boolean = typeWantsTracking(namedSig.outputElement.typerep, top.config, top.env);
+  local wantsTracking :: Boolean = namedSig.outputElement.typerep.isTracked;
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
@@ -31,9 +31,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local undecChild :: (String ::= NamedSignatureElement) =
     \ x::NamedSignatureElement ->
       if x.typerep.isDecorated
-      then if isDecorable(x.typerep, body.env)
-        then error("Production " ++ fName ++ " has a decorable decorated child but no 'undecorates to'.")  -- TODO: Remove this when this becomes a uniqueness analysis warning 
-        else s"context.childDecoratedLazy(i_${x.elementName})"
+      then s"context.childDecoratedLazy(i_${x.elementName})"
       else if isDecorable(x.typerep, body.env)
       then s"context.childUndecoratedLazy(i_${x.elementName})"
       else s"child_${x.elementName}";
@@ -51,6 +49,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local copyAnno :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> s"anno_${makeIdName(x.elementName)}");
+
+  local updateAnno :: (String ::= Integer NamedSignatureElement) =
+    (\i::Integer x::NamedSignatureElement ->
+      s"annos[${toString(i)}] != null? annos[${toString(i)}] : anno_${makeIdName(x.elementName)}");
+
+  local getChildNames :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> s"\"${x.elementName}\"");
 
   local getChildTypes :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> case x.typerep of
@@ -74,6 +79,7 @@ public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}
 
+    public static final String childNames[] = {${implode(",", map(getChildNames, namedSig.inputElements))}};
     public static final String childTypes[] = {${implode(",", map(getChildTypes, namedSig.inputElements))}};
 
     public static final int num_local_attrs = Init.${localVar};
@@ -82,6 +88,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[] synthesizedAttributes = new common.Lazy[${fnnt}.num_syn_attrs];
     public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(namedSig.inputElements))}][];
 
+    public static final boolean[] localDecorable = new boolean[num_local_attrs];
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -103,9 +110,7 @@ ${namedSig.childStatic}
         super(${implode(", ",
         	(if wantsTracking then ["origin"] else []) ++
         	(if isData then []
-             else if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
-		     then ["true"]
-		     else ["isUniqueInvocation"]) ++
+             else ["isUniqueInvocation"]) ++
         	map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
@@ -126,6 +131,35 @@ ${contexts.contextInitTrans}
 ${namedSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
+
+    @Override
+    public final ${className} updateAnnos(final Object[] annos) {
+        assert !isUnique;
+        if (annos == null) return this;
+        assert annos.length == ${toString(length(namedSig.namedInputElements))};
+        return new ${className}(${implode(", ",
+            -- A node with updated annotations has the same origin as the original node.
+            (if wantsTracking then ["this.origin"] else []) ++
+            namedSig.contextRefElems ++
+            map(copyChild, namedSig.inputElements) ++
+            unzipWith(updateAnno, enumerate(namedSig.namedInputElements)))});
+    }
+
+	@Override
+	public String getNameOfChild(final int index) {
+		switch(index) {
+${implode("", map(makeChildNameCase, namedSig.inputElements))}
+            default: return null;
+        }
+    }
+
+	@Override
+	public boolean isChildDecorable(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecorableCase(body.env, _), namedSig.inputElements))}
+            default: return false;
+        }
+    }
 
 	@Override
 	public Object getChild(final int index) {
@@ -176,19 +210,16 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 ${if isData then "" else s"""
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if !null(body.undecorateExpr)
-          then s"return (common.Node)${head(body.undecorateExpr).translation};"
+        ${if any(map((.elementShared), namedSig.inputElements))
+          then "return context.getForwardParent().undecorate();"
           else if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
-            -- A production node with no special undecoration behavior has the same origin as the
-            -- original node when implicitly undecorated.
+            -- An implicitly undecorated production node has the same origin as the original node.
             -- This will be overidden by duplicate when calling new().
             (if wantsTracking then ["this.origin"] else []) ++
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-          -- TODO: Consider if all decorable children are directly undecorable.
-          -- This must avoid forcing children that are thunks, and probably also should be cached.
           else "return this;"}
     }
 
@@ -216,6 +247,11 @@ ${if isData then "" else s"""
     public boolean getLocalIsForward(final int key) {
         return localIsForward[key];
     }"""}
+
+    @Override
+    public boolean isLocalDecorable(final int key) {
+        return localDecorable[key];
+    }
 
     @Override
     public common.Lazy getLocal(final int key) {
@@ -311,11 +347,12 @@ ${body.translation}
         public String getName(){ return "${fName}"; }
         public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
-        public String getTypeUnparse() { return "${escapeString(ns.unparse)}"; }
+        public String getTypeUnparse() { return "${escapeString(namedSig.typeScheme.typepp)}"; }
         public int getChildCount() { return ${toString(length(namedSig.inputElements))}; }
         public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
+        public String[] getChildNames() { return ${className}.childNames; }
         public String[] getChildTypes() { return ${className}.childTypes; }
         public common.Lazy[][] getChildInheritedAttributes() { return ${className}.childInheritedAttributes; }
     }
@@ -336,8 +373,10 @@ ${contexts.contextInitTrans}
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
             return new ${className}(
               ${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++
-              map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++
-              unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+                -- If this prod implements a dispatch signature, then it *can* have shared children when invoked.
+                (if d.implementsSig.isJust then "true" else "false") ::
+                map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++
+                unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
 		
         @Override
@@ -366,7 +405,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
         }
         return new ${className}(
             ${implode(", ",
-                "oi" ::
+                "oi" :: "isUnique" ::
                 namedSig.contextRefElems ++
                 map(dupChild, namedSig.inputElements) ++
                 map(copyAnno, namedSig.namedInputElements))});
@@ -376,7 +415,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     public ${fnnt} updateOriginInfo(silver.core.NOriginInfo oi) {
         return new ${className}(
             ${implode(", ",
-                "oi" ::
+                "oi" :: "isUnique" ::
                 namedSig.contextRefElems ++
                 map(copyChild, namedSig.inputElements) ++
                 map(copyAnno, namedSig.namedInputElements))});

@@ -1,6 +1,8 @@
 package common;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 
 import common.exceptions.MissingDefinitionException;
 import common.exceptions.SilverException;
@@ -18,11 +20,6 @@ import silver.core.NMaybe;
  * @see Node
  */
 public class DecoratedNode implements Decorable, Typed {
-	// TODO list:
-	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
-	// - Delete forwardValue (make it a local/production attribute)
-	// - merge inheritedAttributes into inheritedValues
-	
 	// Please note: the methods in this file have been refined to be quite small
 	// because the JVM makes inlining decisions on a per-method basis (of course!)
 	// So we try to keep the "slow paths" in a separate method, so the hot paths
@@ -44,7 +41,8 @@ public class DecoratedNode implements Decorable, Typed {
 	protected final Node self;
 	/**
 	 * The node that forwards to this one. (May be null)
-	 * Not final, because we may set this when forwarding to a decorated tree via a unique reference.
+	 * Not final, because we may set this when forwarding to a decorated tree via sharing.
+	 * Usually the same as 'parent', but may differ due to sharing.
 	 */
 	protected DecoratedNode forwardParent;
 	/**
@@ -53,10 +51,11 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * <p> May be actual parent. Or production this is a local in. Or just a production that
 	 * called 'decorate' to create this one.
+	 * Effectively final, except it may be overridden by the CodeProber interface for data nonterminals.
 	 * 
 	 * @see TopNode
 	 */
-	protected final DecoratedNode parent;
+	protected DecoratedNode parent;
 	/**
 	 * Is this the forward for the production of forwardParent?
 	 * This is true for normal forwarding, where there will be syn copy equations,
@@ -70,7 +69,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * @see #child(int)
 	 */
-	protected final Object[] childrenValues;
+	protected final DecoratedNode[] childrenValues;
 	/**
 	 * The cache of the forward node.
 	 * 
@@ -102,27 +101,16 @@ public class DecoratedNode implements Decorable, Typed {
 	protected Lazy[] inheritedAttributes;
 
 	/**
+	 * A place where this tree will be decorated with additional inherited attributes.
+	 * Decoration can be forced by evaluating this with context 'parent'.
+	 */
+	protected Lazy decorationSite;
+
+	/**
 	 * A cache of the values of local attributes on this node. (incl. locals and prod)
 	 */
 	protected final Object[] localValues;
 
-	/**
-	 * Track whether a decorated child has already been created, for sanity checking.
-	 * This may be true when childrenValues[i] == null, because of how unique references are translated.
-	 */
-	protected final boolean[] childCreated;
-	/**
-	 * Track whether a decorated local has already been created, for sanity checking.
-	 * This may be true when localValues[i] == null, because of how unique references are translated.
-	 */
-	protected final boolean[] localCreated;
-	/**
-	 * Track whether a decorated translation attribute has already been created, for sanity checking.
-	 * This may be true when synthesizedValues[i] == null, because of how unique references are translated.
-	 */
-	protected final boolean[] transCreated;
-
-	
 	/**
 	 * Construct a decorated form of a Node. Called only via Node.
 	 * 
@@ -145,12 +133,14 @@ public class DecoratedNode implements Decorable, Typed {
 			final int cc, final int ic, final int sc, final int lc,
 			final Node self, final DecoratedNode parent,
 			final Lazy[] inhs,
-			final DecoratedNode forwardParent, final boolean isProdForward) {
+			final DecoratedNode forwardParent, final boolean isProdForward,
+			final Lazy decorationSite) {
 		this.self = self;
 		this.parent = parent;
 		this.originCtx = parent!=null?parent.originCtx:null;
 		this.forwardParent = forwardParent;
 		this.isProdForward = isProdForward;
+		this.decorationSite = decorationSite;
 
 		if(inhs != null && inhs.length < ic) {
 			// TODO: Due to the implementation of inherited occurs-on constraints, we might
@@ -162,13 +152,10 @@ public class DecoratedNode implements Decorable, Typed {
 		}
 		
 		// create caches
-		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
+		this.childrenValues =    (cc > 0) ? new DecoratedNode[cc] : null;
 		this.inheritedValues =   (ic > 0) ? new Object[ic] : null;
 		this.synthesizedValues = (sc > 0) ? new Object[sc] : null;
 		this.localValues =       (lc > 0) ? new Object[lc] : null;
-		this.childCreated =      (cc > 0) ? new boolean[cc] : null;
-		this.localCreated =      (lc > 0) ? new boolean[lc] : null;
-		this.transCreated =      (sc > 0) ? new boolean[sc] : null;
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
@@ -192,13 +179,10 @@ public class DecoratedNode implements Decorable, Typed {
 		this.forwardParent = null;
 		this.isProdForward = false;
 		
-		this.childrenValues = new Object[cc];
+		this.childrenValues = new DecoratedNode[cc];
 		this.inheritedValues = null;
 		this.synthesizedValues = null;
 		this.localValues = (lc > 0) ? new Object[lc] : null;
-		this.childCreated = new boolean[cc];
-		this.localCreated = (lc > 0) ? new boolean[lc] : null;
-		this.transCreated = null;
 	}
 	
 	// STATS: Uncomment to enable statistics
@@ -220,35 +204,53 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
-	 * Decorate this (unique decorated) node with additional inherited attributes.
+	 * Decorate this (decorated) node with additional inherited attributes.
 	 * This has no effect if the node already has a forward parent.
 	 * 
 	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param decSite An accessor for where this DecoratedNode will be supplied with additional inherited attributes.
 	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'.
 	 */
 	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final Lazy decSite) {
 		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
-		if (forwardParent == null) {
+		// Decoration has no effect if a tree already has a forward parent.
+		// Also, we may be miscellaneously decorated with nothing by runtime utilities, outside the
+		// usual chain of decoration sites; this should not cause the decorationSite to be replaced.
+		if (forwardParent == null && !(parent instanceof TopNode)) {
 			if (inhs != null) {
 				if (inheritedAttributes == null) {
 					inheritedAttributes = new Lazy[self.getNumberOfInhAttrs()];
 				} else {
 					inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
 				}
-				for(int i = 0; i < inhs.length; i++) {
-					final int attribute = i;
-					if(inhs[attribute] != null && inheritedAttributes[attribute] == null) {
-						inheritedAttributes[attribute] = inhs[attribute].withContext(parent);
-					}
+				copyInhOverrides(parent, inheritedAttributes, inhs);
+			}
+			// It's okay if we override the old decorationSite here if it wasn't null,
+			// that just means something else is directly demanding what would have been
+			// forced by the current decorationSite, first.
+			decorationSite = decSite != null? decSite.withContext(parent) : null;
+		}
+		return this;
+	}
+
+	private void copyInhOverrides(final DecoratedNode parent, final Lazy[] inhs, final Lazy[] newInhs) {
+		// Arrays can differ in length if a tree is shared in a polymorphic decoration site.
+		// The new inh array should never be larger than the original one.
+		assert inhs.length >= newInhs.length;
+		for(int i = 0; i < newInhs.length; i++) {
+			if(newInhs[i] != null) {
+				Lazy newInh = newInhs[i].withContext(parent);
+				if(inhs[i] == null) {
+					inhs[i] = newInh;
+				} else if (inhs[i] instanceof TransInhs) {
+					assert newInhs[i] instanceof TransInhs;
+					copyInhOverrides(parent, ((TransInhs)inhs[i]).inhs, ((TransInhs)newInh).inhs);
 				}
 			}
 		}
-		return this;
 	}
 
 	/**
@@ -257,8 +259,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
 	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @param prodFwrd  Is this the forward for fwdParent's prod?  False for forward prod attributes.
 	 * @return A DecoratedNode with the attributes supplied.
@@ -266,7 +266,7 @@ public class DecoratedNode implements Decorable, Typed {
 	@Override
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode fwdParent, final boolean prodFwrd) {
 		if (forwardParent == null) {
-			decorate(parent, inhs);
+			decorate(parent, inhs, null);
 			forwardParent = fwdParent;
 			isProdForward = prodFwrd;
 		}
@@ -277,12 +277,42 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Accessor function to access the originally-decorated Node.
 	 * The Node returned by this function must never be decorated - 
 	 * e.g. for use by origin tracking or for debugging purposes.
-	 * One should typically use {@link undecorate} instead to avoid duplicating any unique children.
+	 * One should typically use {@link undecorate} instead to avoid duplicating any shared children.
 	 * 
 	 * @return The {@link Node} this decorates.
 	 */
 	public final Node getNode() {
 		return self;
+	}
+
+	/**
+	 * Accessor function to access the tree that forwarded to this one.
+	 * This is currently only used in undecorating productions with shared children.
+	 * 
+	 * @return The parent of this DecoratedNode.
+	 */
+	public final DecoratedNode getForwardParent() {
+		if (forwardParent == null) {
+			throw new SilverInternalError("Attempted to access forwardParent of " + getDebugID() + ", which is not a forward tree.");
+		}
+		return forwardParent;
+	}
+
+	/**
+	 * Returns the child of this DecoratedNode, decorating it if needed.
+	 * 
+	 * This may be useful for debugging/reflection but is not used in the translation;
+	 * prefer calling childAsIs/childDecorated directly for performance.
+	 * 
+	 * @param child The number of the child to obtain.
+	 * @return The value of the child.
+	 */
+	public Object child(final int child) {
+		if(self.isChildDecorable(child)) {
+			return childDecorated(child);
+		} else {
+			return childAsIs(child);
+		}
 	}
 
 	/**
@@ -308,47 +338,46 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return The decorated value of the child.
 	 */
 	public DecoratedNode childDecorated(final int child) {
-		Object o = this.childrenValues[child]; 
+		DecoratedNode o = this.childrenValues[child]; 
 		if(o == null) {
-			o = obtainDecoratedChild(child);
+			o = createDecoratedChild(child);
 			
 			assert(o != null);
 
 			// CACHE : probably should not comment out child caching?
 			this.childrenValues[child] = o;
 		}
-		return (DecoratedNode)o;
-	}
-
-	/**
-	 * Create or retrieve the DecoratedNode for a child.
-	 * Separate function to keep {@link #childDecorated} small and inlineable.
-	 * This is, after all, the "slow path."
-	 */
-	private final DecoratedNode obtainDecoratedChild(final int child) { 
-		Lazy decSite = self.getChildDecSite(child);
-		if(decSite == null) {
-			return createDecoratedChild(child);
-		} else {
-			return (DecoratedNode)decSite.eval(this);
-		}
+		return o;
 	}
 
 	/**
 	 * Create the DecoratedNode for a child.
-	 * This can also be called directly in the translation of taking a unique reference.
 	 * Invariant: should never be called more than once for a child!
 	 * 
 	 * @param child The number of the child to create.
 	 * @return The decorated value of the child.
 	 */
-	public final DecoratedNode createDecoratedChild(final int child) {
-		if(childCreated[child]) {
-			throw new SilverInternalError("Decorated child " + child + " created more than once in " + getDebugID());
+	private final DecoratedNode createDecoratedChild(final int child) {
+		assert self.isChildDecorable(child);
+		return ((Decorable)self.getChild(child)).decorate(
+			this, self.getChildInheritedAttributes(child), self.getChildDecSite(child));
+	}
+
+	/**
+	 * Returns the value of a local, decorating it if needed.
+	 * 
+	 * This may be useful for debugging/reflection but is not used in the translation;
+	 * prefer calling localAsIs/localDecorated directly for performance.
+	 * 
+	 * @param attribute The index of the local to obtain.
+	 * @return The value of the local.
+	 */
+	public Object local(final int attribute) {
+		if(self.isLocalDecorable(attribute)) {
+			return localDecorated(attribute);
+		} else {
+			return localAsIs(attribute);
 		}
-		DecoratedNode result = ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
-		childCreated[child] = true;
-		return result;
 	}
 
 	/**
@@ -408,7 +437,7 @@ public class DecoratedNode implements Decorable, Typed {
 	public DecoratedNode localDecorated(final int attribute) {
 		Object o = this.localValues[attribute];
 		if(o == null) {
-			o = obtainDecoratedLocal(attribute);
+			o = evalLocalDecorated(attribute);
 			
 			assert(o != null);
 
@@ -420,39 +449,21 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
-	 * Another case of keeping the slow paths out of here, so it can be inlined.
-	 */
-	private final DecoratedNode obtainDecoratedLocal(final int attribute) { 
-		Lazy decSite = self.getLocalDecSite(attribute);
-		if(decSite == null) {
-			return evalLocalDecorated(attribute);
-		} else {
-			return (DecoratedNode)decSite.eval(this);
-		}
-	}
-
-	/**
 	 * Evaluate a local and decorate it.
-	 * This can also be called directly in the translation of taking a unique reference.
 	 * Invariant: should never be called more than once for a local!
 	 * 
 	 * @param attribute The index of the local to obtain.
 	 * @return The decorated value of the local.
 	 */
-	public final DecoratedNode evalLocalDecorated(final int attribute) {
-		if(localCreated[attribute]) {
-			throw new SilverInternalError("Decorated local '" + self.getNameOfLocalAttr(attribute) + "' created more than once in " + getDebugID());
-		}
+	private final DecoratedNode evalLocalDecorated(final int attribute) {
+		assert self.isLocalDecorable(attribute);
 		Decorable localAsIs = (Decorable)evalLocalAsIs(attribute);
 		Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
-		DecoratedNode result;
 		if(self.getLocalIsForward(attribute)) {
-			result = localAsIs.decorate(this, inhs, this, false);
+			return localAsIs.decorate(this, inhs, this, false);
 		} else {
-			result = localAsIs.decorate(this, inhs);
+			return localAsIs.decorate(this, inhs, self.getLocalDecSite(attribute));
 		}
-		localCreated[attribute] = true;
-		return result;
 	}
 
 	/**
@@ -526,6 +537,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Evaluate it as a synthesized attribute, then decorate it.
 	 * 
 	 * @param attribute The index of the attribute.
+	 * @param inhsAttribute The index of the TransInhs supplying the attribute's inherited attributes
 	 * @param decSiteAttribute The index of the attribute's decoration site attribute
 	 * @return The value of the attribute.
 	 */
@@ -535,7 +547,7 @@ public class DecoratedNode implements Decorable, Typed {
 		
 		DecoratedNode o = (DecoratedNode)this.synthesizedValues[attribute];
 		if(o == null) {
-			o = obtainDecoratedTrans(attribute, inhsAttribute, decSiteAttribute);
+			o = evalTrans(attribute, inhsAttribute, decSiteAttribute);
 			
 			assert(o != null);
 
@@ -545,29 +557,18 @@ public class DecoratedNode implements Decorable, Typed {
 		return o;
 	}
 
-	private final DecoratedNode obtainDecoratedTrans(final int attribute, final int inhsAttribute, final int decSiteAttribute) { 
-		Lazy decSite = inheritedAttributes == null? null : inheritedAttributes[decSiteAttribute];
-		if(decSite != null) {
-			return (DecoratedNode)decSite.eval(parent);
-		} else if(forwardParent != null && isProdForward) {
-			return forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
-		} else {
-			return evalTrans(attribute, inhsAttribute);
-		}
-	}
-
 	/**
 	 * Evaluate a translation attribute and decorate it.
-	 * This can also be called directly in the translation of taking a unique reference.
 	 * Invariant: should never be called more than once for an attribute!
 	 * 
 	 * @param attribute The index of the translation attribute to obtain.
+	 * @param inhsAttribute The index of the TransInhs supplying the attribute's inherited attributes
+	 * @param decSiteAttribute The index of the attribute's decoration site attribute
 	 * @return The decorated value of the translation attribute.
 	 */
-	public final DecoratedNode evalTrans(final int attribute, final int inhsAttribute) {
-		if(transCreated[attribute]) {
-			throw new SilverInternalError("Decorated translation attribute " + self.getNameOfSynAttr(attribute) + " created more than once!");
-		}
+	private final DecoratedNode evalTrans(final int attribute, final int inhsAttribute, final int decSiteAttribute) {
+		// Evaluate the synthesized attribute to get the tree to decorate, somehow.
+		// This is usually undecorated, but can be decorated already if we are getting it from the forward.
 		Lazy l = self.getSynthesized(attribute);
 		Decorable d;
 		if(l != null) {
@@ -578,7 +579,7 @@ public class DecoratedNode implements Decorable, Typed {
 			}
 		} else if(self.hasForward()) {
 			try {
-				d = forward().evalTrans(attribute, inhsAttribute);
+				d = forward().translation(attribute, inhsAttribute, decSiteAttribute);
 			} catch(Throwable t) {
 				throw new TraceException("While evaling trans '" + self.getNameOfSynAttr(attribute) + "' via forward in " + getDebugID(), t);
 			}
@@ -594,17 +595,72 @@ public class DecoratedNode implements Decorable, Typed {
 				throw new MissingDefinitionException("Translation attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());
 			}
 		}
+		// Since the decoration site and direct inh equations for the translation attribute tree
+		// are passed down to this tree as inherited attributes, we need to ensure that
+		// any decoration sites for *this* tree are forced before looking at the inherited
+		// attributes here.
+		while(this.decorationSite != null) {
+			Lazy decSite = this.decorationSite;
+			this.decorationSite = null;
+			Object decSiteTree;
+			try {
+				decSiteTree = decSite.eval(parent);
+			} catch (Throwable t) {
+				throw new TraceException("While evaling decoration of trans '" + self.getNameOfSynAttr(attribute) + "' via decoration site of " + getDebugID() + " in " + parent.getDebugID(), t);
+			}
+			if(this != decSiteTree) {
+				throw new SilverInternalError("Decoration site for " + getDebugID() + " returned a different tree: " + decSiteTree.toString());
+			}
+		}
+		// Get the direct inherited attributes and decoration site for the translation attribute tree.
 		Lazy[] inhs = null;
 		if (inheritedAttributes != null && inheritedAttributes[inhsAttribute] != null) {
 			if (inheritedAttributes[inhsAttribute] instanceof TransInhs) {
-				inhs = ((TransInhs)inheritedAttributes[inhsAttribute]).inhs;
+				inhs = ((TransInhs)inheritedAttributes[inhsAttribute]).withContext(parent).inhs;
 			} else {
 				throw new SilverInternalError("Supplied trans inhs attribute not TransInhs!");
 			}
 		}
-		DecoratedNode result = d.decorate(parent, inhs);
-		transCreated[attribute] = true;
-		return result;
+		Lazy decSite = null;
+		if(inheritedAttributes != null && inheritedAttributes[decSiteAttribute] != null) {
+			decSite = inheritedAttributes[decSiteAttribute].withContext(parent);
+		} else if(forwardParent != null && isProdForward && forwardParent.synthesizedValues[attribute] == null) {
+			decSite = (context) -> forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
+		}
+		// Decorate the tree that we computed earlier.
+		return d.decorate(this, inhs, decSite);
+	}
+
+	/**
+	 * Evaluate a translation attribute without statically knowing the auxiliary inh indices.
+	 * This is the slow path, used only in a corner case where the translation attribute occurrence
+	 * is an optional export.
+	 * 
+	 * @param attribute The index of the attribute to evaluate.
+	 * @return The value of the attribute.
+	 */
+	public DecoratedNode translation(final int attribute) {
+		TransOccursInfo transOccurs = self.getTransOccurs(attribute);
+		if(transOccurs == null) {
+			throw new SilverInternalError("TransOccursInfo missing for " + self.getNameOfSynAttr(attribute) + " in " + getDebugID());
+		}
+		return translation(attribute, transOccurs.inhsAttribute, transOccurs.decSiteAttribute);
+	}
+
+	/**
+	 * Evaluate an attribute that may be either synthesized or translation.
+	 * This is only used for debugging.
+	 * 
+	 * @param attribute The index of the attribute to evaluate.
+	 * @return The value of the attribute.
+	 */
+	public Object synthesizedOrTranslation(final int attribute) {
+		TransOccursInfo transOccurs = self.getTransOccurs(attribute);
+		if(transOccurs == null) {
+			return synthesized(attribute);
+		} else {
+			return translation(attribute, transOccurs.inhsAttribute, transOccurs.decSiteAttribute);
+		}
 	}
 
 	/**
@@ -636,25 +692,10 @@ public class DecoratedNode implements Decorable, Typed {
 	private final DecoratedNode evalForward() {
 		try {
 			return self.evalForward(this).decorate(
-				parent, getForwardInheritedAttributes(), this, true);
+				this, self.getForwardInheritedAttributes(), this, true);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
-	}
-
-	private final Lazy[] getForwardInheritedAttributes() {
-		Lazy[] forwardInhs = self.getForwardInheritedAttributes();
-		if(forwardInhs == null) return null;
-		Lazy[] result = new Lazy[self.getNumberOfInhAttrs()];
-		for(int i = 0; i < result.length; i++) {
-			Lazy l = forwardInhs[i];
-			if (l != null) {
-				// The Lazys in self.getForwardInheritedAttributes expect this (forwarding) DecoratedNode as context,
-				// but will be passed the parent of this node instead.
-				result[i] = l.withContext(this);
-			}
-		}
-		return result;
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
@@ -698,7 +739,28 @@ public class DecoratedNode implements Decorable, Typed {
 		if(inheritedAttributes != null && inheritedAttributes[attribute] != null)
 			return evalInhHere(attribute);
 		else
+			return evalInhViaDecSiteOrFwrd(attribute);
+	}
+	private final Object evalInhViaDecSiteOrFwrd(final int attribute) {
+		if(this.decorationSite != null) {
+			return evalInhViaDecSite(attribute);
+		} else {
 			return evalInhViaFwdP(attribute);
+		}
+	}
+	private final Object evalInhViaDecSite(final int attribute) {
+		Lazy decSite = this.decorationSite;
+		this.decorationSite = null;
+		Object decSiteTree;
+		try {
+			decSiteTree = decSite.eval(parent);
+		} catch (Throwable t) {
+			throw new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' via decoration site of " + getDebugID() + " in " + parent.getDebugID(), t);
+		}
+		if(this != decSiteTree) {
+			throw new SilverInternalError("Decoration site for " + getDebugID() + " returned a different tree: " + decSiteTree.toString());
+		}
+		return evalInhSomehow(attribute);
 	}
 	private final Object evalInhViaFwdP(final int attribute) {
 		try {
@@ -746,6 +808,13 @@ public class DecoratedNode implements Decorable, Typed {
 		// childAsIs does not store in the childrenValues array, so...
 		// Straight up use whatever thunk (or not!) is in the node.
 		return self.getChildLazy(child);
+	}
+	public final Object localLazy(final int index) {
+		if(localValues[index] != null)
+			return localValues[index];
+		
+		return new Thunk<Object>(() -> this.local(index));
+	
 	}
 	public final Object localDecoratedLazy(final int index) {
 		if(localValues[index] != null)
@@ -830,5 +899,392 @@ public class DecoratedNode implements Decorable, Typed {
 	
 	public final String toString() {
 		return getDebugID();
+	}
+
+	// Code Prober interface methods.
+	// These have certain names and signatures that Code Prober expects to call reflectively;
+	// otherwise these methods should not be used directly.
+
+	// Children that should appear in the Code Prober tree view.
+	// Currently, just decorable and data nonterminal children.
+	public int getNumChild() {
+		int res = 0;
+		for (int i = 0; i < self.getNumberOfChildren(); i++) {
+			if (isChildTree(i)) res++;
+		}
+		return res;
+	}
+	public DecoratedNode getChild(int idx) {
+		int i = 0;
+		while (!isChildTree(i)) i++;
+		for (int j = 0; j < idx; j++) {
+			i++;
+			while (!isChildTree(i)) i++;
+		}
+		if (self.getChild(i) instanceof DataNode) {
+			return decorateDataNode((DataNode)self.getChild(i));
+		} else {
+			return childDecorated(i);
+		}
+	}
+
+	private boolean isChildTree(int idx) {
+		return self.isChildDecorable(idx) || self.getChild(idx) instanceof DataNode;
+	}
+
+	// Data nonterminal trees have TopNode as their parent in the AST,
+	// however we need a proper parent for CodeProber to create a node locator.
+	// So here we override the parent of the tree to be the first tree that demands it.
+	private DecoratedNode decorateDataNode(DataNode d) {
+		DecoratedNode dn = d.decorate();
+		if(dn.parent == TopNode.singleton) dn.parent = this;
+		return dn;
+	}
+
+	public DecoratedNode getParent() {
+		if (parent instanceof TopNode || parent.self instanceof FunctionNode) {
+			return null;
+		}
+		return parent;
+	}
+
+	// This is set by the generated main class CodeProber_parse method,
+	// to determine if any extracted location is in the main file.
+	static private String cprMainFilePath = null;
+	static public void setCprMainFilePath(String path) {
+		cprMainFilePath = path;
+	}
+
+	public void setIsInMainFile(boolean isInMainFile) {
+		this.isInMainFile = isInMainFile;
+		this.isInMainFileSet = true;
+		int nc = getNumChild();
+		for(int i = 0; i < nc; i++) {
+			getChild(i).setIsInMainFile(isInMainFile);
+		}
+	}
+
+	private boolean hasLocs = false;
+	private boolean isInMainFile = false;
+	private boolean isInMainFileSet = false;
+	private int startLine = 0, startColumn = 0, endLine = 0, endColumn = 0;
+	private final void determineLocs() {
+		if (hasLocs) return; // Only determine once.
+		hasLocs = true;
+		silver.core.NLocation loc = null;
+		if(cprMainFilePath == null) {
+			throw new SilverInternalError("Code Prober main file path not set!");
+		}
+		if(self != null) {
+			if(self instanceof silver.core.Alocation) {
+				loc = ((silver.core.Alocation)self).getAnno_silver_core_location();
+			} else if(self instanceof Tracked) {
+				NMaybe maybeLoc = silver.core.PgetParsedOriginLocation.invoke(OriginContext.FFI_CONTEXT, self);
+				if(maybeLoc instanceof silver.core.Pjust) {
+					loc = (silver.core.NLocation)maybeLoc.getChild(0);
+				}
+			}
+		}
+		if(loc != null) {
+			String fileName = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+			if(!isInMainFileSet) {
+				isInMainFile = cprMainFilePath.equals(fileName);
+			}
+			if(isInMainFile) {
+				startLine = loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+				startColumn = loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+				endLine = loc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+				endColumn = loc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
+			}
+
+			// Code Prober expects the start/end ranges of a parent node to include the ranges of its children.
+			// Sometimes, the locations reported by origin tracking do not respect this,
+			// so we have to manually adjust the start and end lines/columns.
+			if(getNumChild() > 0) {
+				DecoratedNode firstChild = getChild(0);
+				firstChild.determineLocs();
+				if(!isInMainFile || startLine > firstChild.startLine) {
+					startLine = firstChild.startLine;
+					startColumn = firstChild.startColumn;
+				} else if(startLine == firstChild.startLine &&
+						startColumn > firstChild.startColumn) {
+					startColumn = firstChild.startColumn;
+				}
+				DecoratedNode lastChild = getChild(getNumChild() - 1);
+				lastChild.determineLocs();
+				if(!isInMainFile || endLine < lastChild.endLine) {
+					endLine = lastChild.endLine;
+					endColumn = lastChild.endColumn;
+				} else if(endLine == lastChild.endLine &&
+						endColumn < lastChild.endColumn) {
+					endColumn = lastChild.endColumn;
+				}
+			}
+		}
+	}
+	public boolean cpr_isInsideExternalFile() { determineLocs(); return !isInMainFile; }
+	public int cpr_getStartLine() { determineLocs(); return startLine; }
+	public int cpr_getStartColumn() { determineLocs(); return startColumn; }
+	public int cpr_getEndLine() { determineLocs(); return endLine; }
+	public int cpr_getEndColumn() { determineLocs(); return endColumn; }
+
+	private boolean hasLocInfo() {
+		return self instanceof silver.core.Alocation || self instanceof Tracked;
+	}
+
+	public boolean cpr_nodeListVisible() {
+		// Hide nodes from external files when creating a probe
+		determineLocs();
+		if (!isInMainFile) return false;
+		if (!hasLocInfo()) {
+			// Hide data nonterminal nodes without locations
+			return false;
+		}
+		return true;
+	}
+
+	public String cpr_nodeLabel() {
+		String fullName = self.getName();
+		return fullName.substring(fullName.lastIndexOf(':') + 1);
+	}
+
+	public String cpr_astLabel() {
+		String pp = findPPOrUnparse();
+		if(pp == null) return null;
+		if(pp.length() > 20) {
+			pp = pp.substring(0, 17) + "...";
+		}
+		return pp;
+	}
+	private String findPPOrUnparse() {
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if(self.getNameOfSynAttr(i).equals("silver:langutil:pp")) {
+				return Util.showDoc(synthesized(i), 80).toString();
+			}
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if(self.getNameOfSynAttr(i).equals("silver:langutil:unparse")) {
+				return synthesized(i).toString();
+			}
+		}
+		return null;
+	}
+  
+	public List<String> cpr_propertyListShow() {
+		List<String> properties = new ArrayList<>();
+		properties.add("l:grammar");
+		properties.add("l:show");
+		properties.add("l:origin");
+		if(self.hasForward()) {
+			properties.add("l:forward");
+		}
+		if(forwardParent != null) {
+			properties.add("l:forwardParent");
+		}
+		for(int i = 0; i < self.getNumberOfChildren(); i++) {
+			properties.add("l:" + self.getNameOfChild(i));
+		}
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			properties.add("l:" + self.getNameOfLocalAttr(i));
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			properties.add("l:" + self.getNameOfSynAttr(i));
+		}
+		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			// Ignore auxillary inhs for translation attributes
+			if(self.getNameOfInhAttr(i) != null) {
+				properties.add("l:" + self.getNameOfInhAttr(i));
+			}
+		}
+		String[] annoNames = self.getAnnoNames();
+		for(int i = 0; i < annoNames.length; i++) {
+			properties.add("l:" + annoNames[i]);
+		}
+		return properties;
+	}
+
+	// Can show the forward/prod/translation attrs in rendered trees.
+	// Disabled for now as this makes the trees larger and hard to read.
+	// public List<String> cpr_extraAstReferences() {
+	// 	List<String> properties = new ArrayList<>();
+	// 	if(self.hasForward()) {
+	// 		properties.add("l:forward");
+	// 	}
+	// 	for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+	// 		if(self.getTransOccurs(i) != null) {
+	// 			properties.add("l:" + self.getNameOfSynAttr(i));
+	// 		}
+	// 	}
+	// 	for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+	// 		if(self.isLocalDecorable(i)) {
+	// 			properties.add("l:" + self.getNameOfLocalAttr(i));
+	// 		}
+	// 	}
+	// 	return properties;
+	// }
+
+	public String cpr_lGetChildName(String name) {
+		for(int i = 0; i < self.getNumberOfChildren(); i++) {
+			if (name.equals(self.getNameOfChild(i))) {
+				return self.getNameOfChild(i);
+			}
+		}
+		return null;
+	}
+
+	public String cpr_lGetAspectName(String propName) {
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			if (propName.equals(self.getNameOfLocalAttr(i))) {
+				return getSourceFileName(self.getLocal(i));
+			}
+		}
+		if(inheritedAttributes != null) {
+			for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+				if (propName.equals(self.getNameOfInhAttr(i))) {
+					return getSourceFileName(inheritedAttributes[i]);
+				}
+			}
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if (propName.equals(self.getNameOfSynAttr(i))) {
+				return getSourceFileName(self.getSynthesized(i));
+			}
+		}
+		return null;
+	}
+	private static String getSourceFileName(Lazy l) {
+		if(l == null) return null;
+		return l.getSourceLocation().synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+	}
+
+	public Object cpr_lInvoke(String propName) {
+		if (propName.equals("grammar")) {
+			String fullName = self.getName();
+			return fullName.substring(0, fullName.lastIndexOf(':'));
+		}
+		if (propName.equals("show")) {
+			return Util.genericShow(self);
+		}
+		if (propName.equals("origin")) {
+			return Util.showOriginInfoChain(self);
+		}
+		if (propName.equals("forward")) {
+			return makeCprInvokeResult(forward());
+		}
+		if (propName.equals("forwardParent")) {
+			return makeCprInvokeResult(forwardParent);
+		}
+		for(int i = 0; i < self.getNumberOfChildren(); i++) {
+			if (propName.equals(self.getNameOfChild(i))) {
+				return makeCprInvokeResult(child(i));
+			}
+		}
+		for(int i = 0; i < self.getNumberOfLocalAttrs(); i++) {
+			if (propName.equals(self.getNameOfLocalAttr(i))) {
+				return makeCprInvokeResult(local(i));
+			}
+		}
+		for(int i = 0; i < self.getNumberOfInhAttrs(); i++) {
+			if (propName.equals(self.getNameOfInhAttr(i))) {
+				return makeCprInvokeResult(inherited(i));
+			}
+		}
+		for(int i = 0; i < self.getNumberOfSynAttrs(); i++) {
+			if (propName.equals(self.getNameOfSynAttr(i))) {
+				return makeCprInvokeResult(synthesizedOrTranslation(i));
+			}
+		}
+		String[] annoNames = self.getAnnoNames();
+		for(int i = 0; i < annoNames.length; i++) {
+			if (propName.equals(annoNames[i])) {
+				return makeCprInvokeResult(self.getAnno(annoNames[i]));
+			}
+		}
+		throw new SilverInternalError("Unknown property '" + propName + "' for " + getDebugID());
+	}
+	/**
+	* Turn the value of an attribute into a value understood by Code Prober.
+	*/
+	private Object makeCprInvokeResult(Object o) {
+		// Decorated trees that have a fixed relationship to their parent can be recursively explored.
+		if(o instanceof DecoratedNode && ((DecoratedNode)o).determineParentPropertyName() != null) {
+			return o;
+		}
+		// Render Document values as strings.
+		// This (annoyingly) must be done with reflection to avoid depending on silver:langutil.
+		if(o.getClass().getSuperclass().getName().equals("silver.langutil.pp.NDocument") ) {
+			return Util.showDoc(o, 80).toString();
+		}
+		// Lists of silver:langutil:Message are converted to diagnostic objects understood by Code Prober.
+		if(o instanceof ConsCell && o != ConsCell.nil && ((ConsCell)o).head().getClass().getSuperclass().getName().equals("silver.langutil.NMessage")) {
+			return CodeProberDiagnostic.fromMessageList((ConsCell)o);
+		}
+		// Data nonterminal trees are explorable like decorated trees
+		if(o instanceof DataNode) {
+			return decorateDataNode((DataNode)o);
+		}
+		// By default, just stringify it.
+		return Util.genericShow(o).toString();
+	}
+
+	public Object[] cpr_describeParentConnection() {
+		String parentPropertyName = determineParentPropertyName();
+		if (parentPropertyName == null) {
+			return null;
+		} else {
+			return new Object[] { "l:" + parentPropertyName };
+		}
+	}
+	private String determineParentPropertyName() {
+		if(this == parent.forwardValue) {
+			return "forward";
+		}
+		for(int i = 0; i < parent.self.getNumberOfChildren(); i++) {
+			if(this == parent.childrenValues[i]) {
+				return self.getNameOfChild(i);
+			}
+		}
+		for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {
+			if(this == parent.localValues[i]) {
+				return parent.self.getNameOfLocalAttr(i);
+			}
+		}
+		// Translation attributes
+		for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
+			if(this == parent.synthesizedValues[i]) {
+				return parent.self.getNameOfSynAttr(i);
+			}
+		}
+		// Data nonterminal trees may appear in any position where they were initially demanded
+		if (self instanceof DataNode) {
+			for(int i = 0; i < parent.self.getNumberOfChildren(); i++) {
+				if(self == parent.self.getChild(i)) {
+					return parent.self.getNameOfChild(i);
+				}
+			}
+			for(int i = 0; i < parent.self.getNumberOfLocalAttrs(); i++) {
+				if(self == parent.localValues[i]) {
+					return parent.self.getNameOfLocalAttr(i);
+				}
+			}
+			for(int i = 0; i < parent.self.getNumberOfInhAttrs(); i++) {
+				if(self == parent.inheritedValues[i]) {
+					return parent.self.getNameOfInhAttr(i);
+				}
+			}
+			for(int i = 0; i < parent.self.getNumberOfSynAttrs(); i++) {
+				if(self == parent.synthesizedValues[i]) {
+					return parent.self.getNameOfSynAttr(i);
+				}
+			}
+			String[] annoNames = self.getAnnoNames();
+			for(int i = 0; i < annoNames.length; i++) {
+				if (self == parent.self.getAnno(annoNames[i])) {
+					return annoNames[i];
+				}
+			}
+		}
+		// Our parent doesn't know about us, so we must have been anonymously decorated somewhere.
+		return null;
 	}
 }

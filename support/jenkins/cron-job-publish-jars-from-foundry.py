@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# This runs on coldpress (or any other machine with UMN NFS).
+# This runs on cs-arabica (or any other machine with UMN NFS).
 #
 # */10 * * * * /lhome/gitbot/cron-job-publish-jars-from-foundry.py
 #
@@ -23,12 +23,17 @@ dont_delete = ["copper", "downloads", "melt-artifacts"]
 
 files = [
     "CopperCompiler.jar",
-    "SilverRuntime.jar",
+    "CopperRuntime.jar",
     "commonmark-0.17.1.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_ableC.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_all.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_base.jar",
     "silver-latest.tar.gz",
+    "silver.core.jar",
+    "silver.util.jar",
+    "silver.langutil.jar",
+    "silver.rewrite.jar",
+    "silver.regex.jar",
     "silver.compiler.composed.Default.jar",
     "silver-langserver-launcher.jar",
     "silverlsp-latest.vsix",
@@ -44,7 +49,7 @@ if SLACK_WEBHOOK_URL is None:
             #
             # 1. Be a collaborator on the corresponding Slack app.
             # 2. Go to https://api.slack.com/apps/A01F6CM5X46/install-on-team?
-            # 3. SSH to coldpress
+            # 3. SSH to cs-arabica
             # 4. sudo -u gitbot vim /lhome/gitbot/cron-job-publish-jars-from-foundry-slack-webhook-url.txt
             # 5. Hit Copy on the appropriate webhook from the Slack page from step 2
             # 6. Paste it into the file

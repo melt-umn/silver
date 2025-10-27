@@ -6,7 +6,6 @@ melt.setProperties(overrideJars: true)
 
 melt.trynode('silver') {
   def WS = pwd()
-  def SILVER_GEN = "${WS}/generated"
   def newenv = silver.getSilverEnv(WS)
 
   stage("Build") {
@@ -14,6 +13,9 @@ melt.trynode('silver') {
     melt.clearGenerated()
 
     checkout scm
+
+    // Fetch tags, so that we can obtain the Silver version when building the compiler jar
+    sh "git fetch --tags"
 
     // Bootstrap logic to obtain jars
     if (params.OVERRIDE_JARS != 'no') {
@@ -33,9 +35,7 @@ melt.trynode('silver') {
         sh "cp ${source}/* jars/"
       }
     } else {
-      // We start by obtaining normal jars, but we potentially overwrite them:
-      // (This is the least annoying way to go about this...)
-      sh "./fetch-jars"
+      def foundJars = false
       if (env.BRANCH_NAME == 'develop') {
         // For 'develop', detect pull request merges, and grab jars from the merged branch
         String branch = getMergedBranch()
@@ -46,6 +46,7 @@ melt.trynode('silver') {
             try {
               copyArtifacts(projectName: branchJob, selector: lastSuccessful())
               melt.annotate("Jars from merged branch.")
+              foundJars = true
             } catch (hudson.AbortException exc1) {
               // That's okay. We prefer this approach to using 'optional: true' because it
               // lets us know whether it happened or not. The annotation only gets set when it does.
@@ -58,15 +59,21 @@ melt.trynode('silver') {
           // If the last build has artifacts, use those.
           copyArtifacts(projectName: env.JOB_NAME, selector: lastCompleted())
           melt.annotate("Jars from branch (prev).")
+          foundJars = true
         } catch (hudson.AbortException exc2) {
           try {
             // If there is a last successful build, use those.
             copyArtifacts(projectName: env.JOB_NAME, selector: lastSuccessful())
             melt.annotate("Jars from branch (successful).")
+            foundJars = true
           } catch (hudson.AbortException exc3) {
             // That's okay. We tried. We'll stick with fetch-jars
           }
         }
+      }
+      if (!foundJars) {
+        // Fall back to using fetch-jars
+        sh "./fetch-jars"
       }
     }
     // If requested, go download the latest Copper jars and use them instead of the archived/provided ones
@@ -98,7 +105,7 @@ melt.trynode('silver') {
   }
 
   stage("Modular Analyses") {
-    sh "./self-compile --clean --mwda --dont-translate"
+    sh "./check-compile --clean --mwda"
   }
 
   // Avoid deadlock condition from all executor slots being filled with builds
@@ -117,7 +124,7 @@ melt.trynode('silver') {
     // Build test driver
     withEnv (newenv) {
       dir ("${WS}/test") {
-        sh "silver --clean silver:testing:bin"
+        sh "silver --clean -I ${WS}/grammars silver:testing:bin"
       }
     }
 
@@ -146,10 +153,10 @@ melt.trynode('silver') {
 
     def tasks = [:]
     tasks << github_projects.collectEntries { t ->
-      [(t): { melt.buildProject(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
+      [(t): { melt.buildProject(t, [SILVER_BASE: WS]) }]
     }
     tasks << specific_jobs.collectEntries { t ->
-      [(t): { melt.buildJob(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
+      [(t): { melt.buildJob(t, [SILVER_BASE: WS]) }]
     }
 
     // Do downstream integration testing

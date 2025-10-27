@@ -2,11 +2,8 @@ grammar silver:compiler:extension:easyterminal;
 
 import silver:compiler:definition:env;
 
-function getTerminalRegexDclAll
-[TypeDclInfo] ::= search::String e::Env
-{
-  return searchEnv(search, e.terminalTree);
-}
+fun getTerminalRegexDclAll [TypeDclInfo] ::= search::String e::Env =
+  searchEnv(search, e.terminalTree);
 
 synthesized attribute terminalTree :: [EnvTree<TypeDclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
@@ -19,11 +16,8 @@ function filterAndConvertTermDcls
          end;
 }
 
-function buildTerminalTree
-EnvTree<TypeDclInfo> ::= eis::[EnvItem<TypeDclInfo>]
-{
-  return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
-}
+fun buildTerminalTree EnvTree<TypeDclInfo> ::= eis::[EnvItem<TypeDclInfo>] =
+  directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 
 aspect production emptyEnv
 top::Env ::=

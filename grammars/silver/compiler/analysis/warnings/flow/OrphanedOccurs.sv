@@ -11,7 +11,7 @@ abstract production warnOrphanedFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnOrphaned = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]

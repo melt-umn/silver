@@ -61,11 +61,8 @@ equalityTest ( show(20, doc4), "{poiu asdf lkjh }", String, core_tests ) ;
 equalityTest ( show(10, doc4), "{poiu\n   asdf\n   lkjh\n   }", String, core_tests ) ;
 
 -- TODO: This is an example of how to do formatting for argument lists to functions. It should be moved into the standard library.
-function args
-Document ::= d1::Document ds::[Document] dm::Document d2::Document
-{
-  return cat(cat(d1, box(ppConcat(intersperse(cat(dm, group(line())), ds)))), d2);
-}
+fun args Document ::= d1::Document ds::[Document] dm::Document d2::Document =
+  cat(cat(d1, box(ppConcat(intersperse(cat(dm, group(line())), ds)))), d2);
 
 global doc5 :: Document =
   cat(text("int decl"), args(text("("), [text("int arg1"), text("int arg2"), text("int arg3"), text("int arg4")], text(","), text(")")));
@@ -75,11 +72,8 @@ equalityTest ( "\n" ++ show(80, doc5), "\nint decl(int arg1, int arg2, int arg3,
 equalityTest ( "\n" ++ show(20, doc5), "\nint decl(int arg1, int arg2,\n         int arg3, int arg4)", String, core_tests ) ;
 equalityTest ( "\n" ++ show(30, doc5), "\nint decl(int arg1, int arg2, int arg3,\n         int arg4)", String, core_tests ) ;
 
-function sexp
-Document ::= s::String d::[Document]
-{
-  return cat(cat(text("(" ++ s ++ " "), args(notext(), d, notext(), notext())), text(")"));
-}
+fun sexp Document ::= s::String d::[Document] =
+  cat(cat(text("(" ++ s ++ " "), args(notext(), d, notext(), notext())), text(")"));
 
 global doc6 :: Document = 
   sexp("cons", [sexp("list", [text("foo"), text("bar"), text("baz")]),
@@ -92,20 +86,17 @@ equalityTest ( "\n" ++ show(25, doc6), "\n(cons (list foo bar baz) (cons (hello 
 equalityTest ( "\n" ++ show(80, doc6), "\n(cons (list foo bar baz) (cons (hello world) (more qwerty)))", String, core_tests ) ;
 
 global doc7 :: Document =
-  group(ppConcat([text(" 1234567890"), realLine(), text(" 1234567890"), line(), text("1234567890")]));
+  group(ppConcat([text(" 1234567890"), realLine(), group(ppConcat([text(" 1234567890"), line(), text("1234567890")]))]));
 
 equalityTest ( "\n" ++ show(22, doc7), "\n 1234567890\n 1234567890 1234567890", String, core_tests ) ;
 equalityTest ( "\n" ++ show(21, doc7), "\n 1234567890\n 1234567890\n1234567890", String, core_tests ) ;
 
 -- TODO: This is an example of how to do formatting for statement lists. It should be moved into the standard library.
-function dgroup
-Document ::= d1::Document n::Integer ds::[Document] d2::Document
-{
+fun dgroup Document ::= d1::Document n::Integer ds::[Document] d2::Document =
   -- care: the first line should be INSIDE the nest,
   -- the second line should be OUTSIDE the next
   -- both should be in the same group.
-  return cat(cat(d1, group(cat(nest(n, cat(line(),foldr(cat, notext(), intersperse(line(), ds)))), line()))), d2);
-}
+  cat(cat(d1, group(cat(nest(n, cat(line(),foldr(cat, notext(), intersperse(line(), ds)))), line()))), d2);
 
 global doc8 :: Document =
   cat(text("int main() "), dgroup(text("{"), 3, [text("stm1;"),text("stm2;"),text("stm3;"),text("stm4;"),text("stm5;")], text("}")));
@@ -120,14 +111,11 @@ equalityTest ( "\n" ++ show(20, doc9), "\nint main() {\n   stm0;\n   int main() 
 equalityTest ( "\n" ++ show(60, doc9), "\nint main() {\n   stm0;\n   int main() { stm1; stm2; stm3; stm4; stm5; }\n   stm6;\n   stm7;\n}", String, core_tests ) ;
 
 -- TODO: This is an example of how to do formatting for single statement indenting. It should be moved into the standard library.
-function ifstmt
-Document ::= d1::Document n::Integer d2::Document
-{
+fun ifstmt Document ::= d1::Document n::Integer d2::Document =
   -- d1 d2
   -- d1
   --   d2
-  return cat(d1, nest(n, cat(group(line()), d2)));
-}
+  cat(d1, nest(n, cat(group(line()), d2)));
 
 global doc10 :: Document =
   cat(text("int main() "), dgroup(text("{"), 3, [text("stm0;"),ifstmt(text("if(a boolean condition)"), 3, text("stm1;")),ifstmt(text("if(another boolean)"), 3, text("stm2;")), text("stm3;")], text("}")));
@@ -151,4 +139,8 @@ equalityTest ( pp"abc\ndef", cat(cat(text("abc"), realLine()), text("def")), Doc
 equalityTest ( pp"""abc
 def""", cat(cat(text("abc"), realLine()), text("def")), Document, core_tests );
 
-equalityTest ( show(0, pp"abc${123} ${just(3.14)}"), "abc123 just(3.14)", String, core_tests );
+equalityTest ( show(100, group(cat(line(), cat(realLine(), text(";"))))), "\n\n;", String, core_tests );
+
+equalityTest ( show(100, group(group(pp"a" ++ line() ++ pp"b") ++ realLine() ++ group(pp"c" ++ line() ++ pp"d"))), "a b\nc d", String, core_tests );
+equalityTest ( show(100, group(group(pp"a" ++ realLine() ++ pp"b") ++ line() ++ group(pp"c" ++ line() ++ pp"d"))), "a\nb\nc d", String, core_tests );
+equalityTest ( show(100, group(group(pp"a" ++ line() ++ pp"b") ++ line() ++ group(pp"c" ++ realLine() ++ pp"d"))), "a b\nc\nd", String, core_tests );

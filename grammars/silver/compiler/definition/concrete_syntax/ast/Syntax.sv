@@ -152,8 +152,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.cstNormalize :=
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
-       else [ syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds),
-                exportedProds, exportedLayoutTerms, modifiers,
+       else [ syntaxNonterminal(^t, foldr(consSyntax, nilSyntax(), myProds),
+                exportedProds, exportedLayoutTerms, ^modifiers,
                 location=top.location, sourceGrammar=top.sourceGrammar)
             ]
     end;
@@ -197,7 +197,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.dominatingTerminalContribs :=
     map(pair(fst=n, snd=_), flatMap((.memberTerminals), modifiers.submits_)) ++
     map(pair(fst=_, snd=top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
-  top.terminalRegex = regex;
+  top.terminalRegex = ^regex;
 
   -- left(terminal name) or right(string prefix)
   production pfx::[String] = searchEnvTree(n, top.prefixesForTerminals);
@@ -208,13 +208,13 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.cstNormalize :=
     case modifiers.prefixSeperatorToApply of
     | just(sep) ->
-        [ syntaxTerminal(n, seq(regex, regexLiteral(sep)), modifiers,
+        [ syntaxTerminal(n, seq(^regex, regexLiteral(sep)), ^modifiers,
             location=top.location, sourceGrammar=top.sourceGrammar)
         ]
-    | nothing() -> [top]
+    | nothing() -> [^top]
     end;
 
-  local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
+  local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(^regex)), modifiers.prettyName);
   top.prettyNamesAccum := [(prettyName, n)];
   local disambiguatedPrettyName :: String =
     case length(tm:lookup(prettyName, top.prettyNames)) of
@@ -268,7 +268,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
-  top.cstProds := [(ns.outputElement.typerep.typeName, top)];
+  top.cstProds := [(ns.outputElement.typerep.typeName, ^top)];
   top.cstNormalize := [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
@@ -324,13 +324,10 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     ];
 }
 
-function fetchChildren
-String ::= i::Integer  ns::[NamedSignatureElement]
-{
-  return if null(ns) then ""
+fun fetchChildren String ::= i::Integer  ns::[NamedSignatureElement] =
+  if null(ns) then ""
   else if null(tail(ns)) then "_children[" ++ toString(i) ++ "]"
   else "_children[" ++ toString(i) ++ "], " ++ fetchChildren(i + 1, tail(ns));
-}
 
 function insertLocationAnnotation
 String ::= ns::NamedSignature
@@ -344,25 +341,18 @@ String ::= ns::NamedSignature
 }
 
 
-function lookupStrings
-[[a]] ::= t::[String] e::EnvTree<a>
-{
-  return map(searchEnvTree(_, e), t);
-}
-function checkRHS
-[String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]]
-{
-  return if null(rhs) then []
-         else (if length(head(refs)) == 1 then
-                case head(head(refs)) of
-                | syntaxNonterminal(_,_,_,_,_) -> []
-                | syntaxTerminal(_,_,_) -> []
-                | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
-                end
-              else ["Terminal " ++ head(rhs).typeName ++ " was referenced but " ++
-                    "this grammar was not included in this parser. (Referenced from RHS of " ++ pn ++ ")"])
-              ++ checkRHS(pn, tail(rhs), tail(refs));
-}
+fun lookupStrings [[a]] ::= t::[String] e::EnvTree<a> = map(searchEnvTree(_, e), t);
+fun checkRHS [String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]] =
+  if null(rhs) then []
+  else (if length(head(refs)) == 1 then
+         case head(head(refs)) of
+         | syntaxNonterminal(_,_,_,_,_) -> []
+         | syntaxTerminal(_,_,_) -> []
+         | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
+         end
+       else ["Terminal " ++ head(rhs).typeName ++ " was referenced but " ++
+             "this grammar was not included in this parser. (Referenced from RHS of " ++ pn ++ ")"])
+       ++ checkRHS(pn, tail(rhs), tail(refs));
 
 {--
  - A lexer class. Copper doesn't take these, so we'll have to translate away
@@ -384,7 +374,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.domContribs = modifiers.dominates_;
   top.subContribs = modifiers.submits_;
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [^top];
   top.superClassContribs := modifiers.superClassContribs;
   top.disambiguationClasses := modifiers.disambiguationClasses;
 
@@ -418,7 +408,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [^top];
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));
@@ -446,7 +436,7 @@ top::SyntaxDcl ::= n::String acode::String
     if !null(searchEnvTree(n, top.cstEnv)) then []
     else ["Parser attribute " ++ n ++ " was referenced but this grammar was not included in this parser."];
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [^top];
 
   top.parserAttributeAspectContribs := [(n, acode)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
@@ -475,7 +465,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
             "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
     zip(terms, trefs));
 
-  top.cstNormalize := [top];
+  top.cstNormalize := [^top];
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));

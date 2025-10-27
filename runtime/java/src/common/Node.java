@@ -21,6 +21,14 @@ public abstract class Node implements Decorable, Typed {
 	}
 
 	// Common manipulators of Node objects.
+
+	/**
+	 * Update the annotations on this node.
+	 * 
+	 * @param annos An array of new annotation values, or null for any annotations to be unchanged.
+	 * @return A node with the same children and the new annotation values.
+	 */
+	public abstract Node updateAnnos(final Object[] annos);
 	
 	/**
 	 * The normal way of decorating a node. 
@@ -28,18 +36,17 @@ public abstract class Node implements Decorable, Typed {
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transInhs A map from trans (syn) attribute indexes, to maps from inh attribute indexes to Lazys that define them. 
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param decSite An accessor for where this DecoratedNode will be supplied with additional inherited attributes.
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
 	public DecoratedNode decorate(
-		final DecoratedNode parent, final Lazy[] inhs) {
+		final DecoratedNode parent, final Lazy[] inhs, final Lazy decSite) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, null, false);
+				                 this, parent, inhs, null, false, decSite);
 	}
 
 	/**
@@ -48,8 +55,6 @@ public abstract class Node implements Decorable, Typed {
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
 	 * @param inhs Overrides for inherited attributes that should not be computed via forwarding.
-	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @param transInhs Overrides for inherited attributes on translation attributes that should not be computed via forwarding.
 	 *   These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create.
 	 *   We will pass inherited attribute access requests to this node.
@@ -64,7 +69,7 @@ public abstract class Node implements Decorable, Typed {
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, inhs, fwdParent, isProdForward);
+                                 this, parent, inhs, fwdParent, isProdForward, null);
 	}
 
 	private Node undecoratedValue = null;
@@ -102,6 +107,15 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The name of the synthesized attribute at this index
 	 */
 	public abstract String getNameOfSynAttr(final int index);
+
+	/**
+	 * Used for debugging, determine if a synthesized attribute is a translation attributes.
+	 * 
+	 * @param index The index of the synthesized attribute
+	 * @return The TransOccursInfo containing the auxillary inherited attribute occurence indices,
+	 *   or null if it is not a translation attribute.
+	 */
+	public abstract TransOccursInfo getTransOccurs(final int index);
 	
 	/**
 	 * When a production does not forward and lacks an equation for a synthesized attribute, this is consulted instead.
@@ -159,6 +173,21 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The number of children this Node has.
 	 */
 	public abstract int getNumberOfChildren();
+	
+	/**
+	 * Get the name of a child. Used for debugging.
+	 * 
+	 * @return The name of the child at the given index.
+	 */
+	public abstract String getNameOfChild(final int child);
+
+	/**
+	 * Determine if the child should be automatically decorated.
+	 * 
+	 * @param child A number in the range <code>0 - getNumberOfChildren()</code>
+	 * @return True if the child has a decorable type in the signature.
+	 */
+	public abstract boolean isChildDecorable(final int child);
 
 	/**
 	 * Access a (raw) child of this Node.
@@ -196,6 +225,14 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The number of local and production attributes that occur on this <b>production</b>
 	 */
 	public abstract int getNumberOfLocalAttrs();
+
+	/**
+	 * Determine if the local should be automatically decorated.
+	 * 
+	 * @param index The index of a local or production attribute on this Node
+	 * @return True if the local is declared with a decorable type.
+	 */
+	public abstract boolean isLocalDecorable(final int index);
 	
 	/**
 	 * Used for debugging, stack traces especially.
@@ -206,7 +243,7 @@ public abstract class Node implements Decorable, Typed {
 	public abstract String getNameOfLocalAttr(final int index);
 
 	/**
-	 * @param name The index of a local or production attribute on this Node
+	 * @param index The index of a local or production attribute on this Node
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getLocal(final int index);
@@ -227,7 +264,7 @@ public abstract class Node implements Decorable, Typed {
 	public abstract boolean getLocalIsForward(final int index);
 
 	/**
-	 * @param key The index for a local, to retrieve inherited attributes for.
+	 * @param index The index for a local, to retrieve inherited attributes for.
 	 * @return An array containing the inherited attributes supplied to that local 
 	 */
 	public abstract Lazy[] getLocalInheritedAttributes(final int index);

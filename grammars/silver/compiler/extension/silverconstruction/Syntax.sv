@@ -12,42 +12,42 @@ concrete production quoteAGDcl
 top::Expr ::= 'Silver_AGDcl' '{' ast::AGDcl '}'
 {
   top.unparse = s"Silver_AGDcl " ++ substitute("\n"," ", "{${ast.unparse}}");
-  forwards to translate(reflect(new(ast)));
+  forwards to translate(reflect(^ast));
 }
 
 concrete production quoteProductionStmt
 top::Expr ::= 'Silver_ProductionStmt' '{' ast::ProductionStmt '}'
 {
   top.unparse = s"Silver_ProductionStmt" ++ substitute("\n"," ", "{${ast.unparse}}");
-  forwards to translate(reflect(new(ast)));
+  forwards to translate(reflect(^ast));
 }
 
 concrete production quoteExpr
 top::Expr ::= 'Silver_Expr' '{' ast::Expr '}'
 {
   top.unparse = s"Silver_Expr {${ast.unparse}}";
-  forwards to translate(reflect(new(ast)));
+  forwards to translate(reflect(^ast));
 }
 
 concrete production quoteExprInh
 top::Expr ::= 'Silver_ExprInh' '{' ast::ExprInh '}'
 {
   top.unparse = s"Silver_ExprInh {${ast.unparse}}";
-  forwards to translate(reflect(new(ast)));
+  forwards to translate(reflect(^ast));
 }
 
 concrete production quotePattern
 top::Expr ::= 'Silver_Pattern' '{' ast::Pattern '}'
 {
   top.unparse = s"Silver_Pattern {${ast.unparse}}";
-  forwards to translate(reflect(new(ast)));
+  forwards to translate(reflect(^ast));
 }
 
 concrete production quoteTypeExpr
 top::Expr ::= 'Silver_TypeExpr' '{' ast::TypeExpr '}'
 {
   top.unparse = s"Silver_TypeExpr {${ast.unparse}}";
-  forwards to translate(reflect(new(ast)));
+  forwards to translate(reflect(^ast));
 }
 
 concrete production antiquoteExpr
@@ -91,6 +91,17 @@ top::Pattern ::= '$Pattern' '{' e::Expr '}'
   forwards to
     errorPattern(
       [errFromOrigin(top, "$Pattern should not occur outside of quoted Silver literal")]);
+}
+
+concrete production antiquoteFunctionSignature
+top::FunctionSignature ::= '$FunctionSignature' '{' e::Expr '}'
+{
+  top.unparse = s"$$FunctionSignature{${e.unparse}}";
+  forwards to
+    functionSignatureNoCL(
+      functionLHS(
+        errorTypeExpr([errFromOrigin(top, "$FunctionSignature should not occur outside of quoted Silver literal")])),
+      '::=', productionRHSNil());
 }
 
 concrete production antiquoteProductionRHS

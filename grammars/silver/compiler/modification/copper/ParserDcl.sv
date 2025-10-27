@@ -32,9 +32,9 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   production namedSig :: NamedSignature =
     namedSignature(fName, nilContext(),
       foldNamedSignatureElements([
-        namedSignatureElement("stringToParse", stringType()),
-        namedSignatureElement("filenameToReport", stringType())]),
-      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], true, false), t.typerep)),
+        namedSignatureElement("stringToParse", stringType(), false),
+        namedSignatureElement("filenameToReport", stringType(), false)]),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], true, false), t.typerep), false),
       nilNamedSignatureElement());
 
   production spec :: ParserSpec =
@@ -43,7 +43,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       sourceGrammar=top.grammarName, location=n.nameLoc);
   spec.compiledGrammars = top.compiledGrammars;
 
-  top.parserSpecs := [spec]; -- Note that this is undecorated.
+  top.parserSpecs := [^spec]; -- Note that this is undecorated.
 }
 
 tracked nonterminal ParserComponents with config, env, flowEnv, grammarName, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;

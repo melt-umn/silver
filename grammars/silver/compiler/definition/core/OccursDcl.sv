@@ -1,9 +1,10 @@
 grammar silver:compiler:definition:core;
 
-abstract production defaultAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
-{
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';'); 
+dispatch AttributionDcl = AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs;
+
+abstract production defaultAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{ 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
@@ -31,6 +32,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     else [];
   
   nttl.initialEnv = top.env;
+  at.env = top.env;
   attl.env = nttl.envBindingTyVars;
   nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
@@ -95,7 +97,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   
   -- Apply the nonterminal type to the type variables.
   -- NOT .monoType so we do something sensible if someone does "occurs on TypeAlias<a>" or something.
-  production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
+  nondecorated production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
   
   -- This renames the vars from the environment
   -- at's env types -> type params containing local skolem vars  (vars -> types)
@@ -105,7 +107,7 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   local rewrite_to :: Substitution = zipVarsIntoSubstitution(nttl.freeVariables, tyVars);
   
   -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
-  production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
+  nondecorated production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
   production occursCheck :: [OccursDclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
@@ -113,6 +115,13 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
   top.errors <-
     if length(occursCheck) > 1
     then [errFromOrigin(at, "Attribute '" ++ at.name ++ "' already occurs on '" ++ nt.name ++ "'.")]
+    else [];
+
+  -- Make sure that no two annotations with the same short name (but different full names) can be declared on the same nonterminal
+  local snat :: String = last(explode(":", at.name)); -- short name of annotation
+  top.errors <-
+    if at.lookupAttribute.dcl.isAnnotation && length(filter((.isAnnotation), getOccursDclBySN(snat, nt.lookupType.fullName, top.env))) > 1
+    then [errFromOrigin(at, "Annotation with the same short name '" ++ snat ++ "' already occurs on '" ++ nt.name ++ "'.")]
     else [];
 
   top.errors <-
@@ -136,15 +145,15 @@ top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::
     else [];
 }
 
-abstract production errorAttributionDcl
-top::AGDcl ::= msg::[Message] at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production errorAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs msg::[Message]
 {
-  undecorates to errorAGDcl(msg); 
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.occursDefs := [];
   top.errors <- msg;
   
   nttl.initialEnv = top.env;
+  at.env = top.env;
   attl.env = nttl.envBindingTyVars;
   nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
@@ -175,7 +184,6 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  propagate env;
   
   -- Workaround for circular dependency due to dispatching on env:
   -- Nothing used to build the env namespaces on which we dispatch can depend on
@@ -186,16 +194,34 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   -- nonterminals, productions, attributes, etc.)
   top.defs := [];
   top.moduleNames := [];
+
+  at.env = top.env;
+  nt.env = top.env;
+  local fwrdProd::AttributionDcl =
+    if at.lookupAttribute.found
+    then at.lookupAttribute.dcl.attributionDispatcher
+    else errorAttributionDcl(at.lookupAttribute.errors);
   
-  forwards to
-    if !at.lookupAttribute.found
-    then errorAttributionDcl(at.lookupAttribute.errors, at, attl, nt, nttl)
-    else at.lookupAttribute.dcl.attributionDispatcher(at, attl, nt, nttl);
+  forwards to fwrdProd(@at, @attl, @nt, @nttl);
 }
 
 concrete production annotateDcl
 top::AGDcl ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
-  forwards to attributionDcl('attribute', at, attl, $4, $5, nt, nttl, $8);
+  forwards to attributionDcl('attribute', @at, @attl, $4, $5, @nt, @nttl, $8);
 }
 
+-- Utility productions for extensions to inject extra declarations besides the occurs-on.
+production extraDclsAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs prod::AttributionDcl extraDcls::AGDcl
+{
+  forwards to appendAGDcl(prod(@at, @attl, @nt, @nttl), @extraDcls);
+}
+abstract production altParamAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs prod::AttributionDcl newAttl::BracketedOptTypeExprs
+{
+  attl.env = nttl.envBindingTyVars;
+  attl.flowEnv = top.flowEnv;
+  attl.grammarName = top.grammarName;
+  forwards to prod(@at, @newAttl, @nt, @nttl);
+}

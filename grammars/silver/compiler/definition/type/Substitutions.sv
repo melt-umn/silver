@@ -34,48 +34,26 @@ top::Substitution ::= sublst::[Pair<TyVar Type>] errs::[String]
   top.failure = true;
 }
 
-function emptySubst
-Substitution ::=
-{
-  return goodSubst([]);
-}
-function errorSubst
-Substitution ::= e::String
-{
-  return badSubst([], [e]);
-}
-function subst
-Substitution ::= tv::TyVar te::Type
-{
-  return goodSubst([(tv,te)]);
-}
-function composeSubst
-Substitution ::= s1::Substitution s2::Substitution
-{
-  return case s1, s2 of
+fun emptySubst Substitution ::= = goodSubst([]);
+fun errorSubst Substitution ::= e::String = badSubst([], [e]);
+fun subst Substitution ::= tv::TyVar te::Type = goodSubst([(tv,te)]);
+fun composeSubst Substitution ::= s1::Substitution s2::Substitution =
+  case s1, s2 of
   | goodSubst(s1l), goodSubst(s2l) ->  goodSubst(s1l ++ s2l)
   | goodSubst(s1l), badSubst(s2l, s2e) ->  badSubst(s1l ++ s2l, s2e)
   | badSubst(s1l, s1e), goodSubst(s2l) ->  badSubst(s1l ++ s2l, s1e)
   | badSubst(s1l, s1e), badSubst(s2l, s2e) ->  badSubst(s1l ++ s2l, s1e ++ s2e)
   end;
-}
 
-function ignoreFailure
-Substitution ::= s::Substitution
-{
-  return case s of
+fun ignoreFailure Substitution ::= s::Substitution =
+  case s of
   | goodSubst(_) -> s
   | badSubst(sl,_) -> goodSubst(sl)
   end;
-}
 
 --------------------------------------------------------------------------------
 
-function findSubst
-Maybe<Type> ::= tv::TyVar s::Substitution
-{
-  return lookup(tv, s.substList);
-}
+fun findSubst Maybe<Type> ::= tv::TyVar s::Substitution = lookup(tv, s.substList);
 
 --------------------------------------------------------------------------------
 
@@ -87,7 +65,7 @@ functor attribute flatRenamed occurs on Context, Type;
 
 propagate substitution on Context, Type;
 propagate substituted, flatRenamed on Context, Type
-  excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType, ntOrDecType;
+  excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType;
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
@@ -127,11 +105,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else new(top);
+    else ^top;
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else new(top);
+    else ^top;
 }
 
 aspect production skolemType
@@ -161,25 +139,11 @@ top::Type ::= tv::TyVar
   top.substituted =
     if partialsubst.isJust
     then performSubstitution(partialsubst.fromJust, top.substitution)
-    else new(top);
+    else ^top;
   top.flatRenamed =
     if partialsubst.isJust
     then partialsubst.fromJust
-    else new(top);
-}
-
-aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
-{
-  -- We rely very carefully on eliminating ourselves once we've specialized!
-  -- Note: we're matching on hidden.subsituted, not just hidden. Important!
-  top.substituted =
-    case hidden.substituted of
-    | varType(_) -> ntOrDecType(nt.substituted, inhs.substituted, hidden.substituted)
-    | _          -> hidden.substituted
-    end;
-  -- For a renaming, we don't need to specialize.
-  propagate substitution, flatRenamed;
+    else ^top;
 }
 
 --------------------------------------------------------------------------------
@@ -198,11 +162,7 @@ Type ::= te::Type s::Substitution
   return te.substituted;
 }
 
-function mapSubst
-[Type] ::= tes::[Type] s::Substitution
-{
-  return map(performSubstitution(_, s), tes);
-}
+fun mapSubst [Type] ::= tes::[Type] s::Substitution = map(performSubstitution(_, s), tes);
 
 ----
 
@@ -220,67 +180,36 @@ Type ::= te::Type s::Substitution
   return te.flatRenamed;
 }
 
-function mapRenameSubst
-[Type] ::= tes::[Type] s::Substitution
-{
-  return map(performRenaming(_, s), tes);
-}
+fun mapRenameSubst [Type] ::= tes::[Type] s::Substitution = map(performRenaming(_, s), tes);
 
 --------------------------------------------------------------------------------
 
 -- Generate fresh type vars with the same kinds as tvs
-function freshTyVars
-[TyVar] ::= tvs::[TyVar]
-{
-  return map(freshTyVar, map((.kind), tvs));
-}
+fun freshTyVars [TyVar] ::= tvs::[TyVar] = map(freshTyVar, map((.kind), tvs));
 
-function zipVarsIntoSubstitution
-Substitution ::= original::[TyVar] sub::[TyVar]
-{
-  -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
-  return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), varType(head(sub))),
-                zipVarsIntoSubstitution(tail(original), tail(sub)));
-}
+fun zipVarsIntoSubstitution Substitution ::= original::[TyVar] sub::[TyVar] =
+  if null(original) || null(sub) then emptySubst()
+  else composeSubst(subst(head(original), varType(head(sub))),
+         zipVarsIntoSubstitution(tail(original), tail(sub)));
 
-function zipVarsIntoSkolemizedSubstitution
-Substitution ::= original::[TyVar] sub::[TyVar]
-{
-  -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
-  return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), skolemType(head(sub))),
-                zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
-}
+fun zipVarsIntoSkolemizedSubstitution Substitution ::= original::[TyVar] sub::[TyVar] =
+  if null(original) || null(sub) then emptySubst()
+  else composeSubst(subst(head(original), skolemType(head(sub))),
+         zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
 
 
-function zipVarsAndTypesIntoSubstitution
-Substitution ::= original::[TyVar] sub::[Type]
-{
-  return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), head(sub)),
-                zipVarsAndTypesIntoSubstitution(tail(original), tail(sub)));
-}
+fun zipVarsAndTypesIntoSubstitution Substitution ::= original::[TyVar] sub::[Type] =
+  if null(original) || null(sub) then emptySubst()
+  else composeSubst(subst(head(original), head(sub)),
+         zipVarsAndTypesIntoSubstitution(tail(original), tail(sub)));
 
-function freshenType
-Type ::= te::Type tvs::[TyVar]
-{
-  return freshenTypeWith(te, tvs, freshTyVars(tvs));
-}
+fun freshenType Type ::= te::Type tvs::[TyVar] = freshenTypeWith(te, tvs, freshTyVars(tvs));
 
-function freshenContextWith
-Context ::= c::Context tvs::[TyVar] ntvs::[TyVar]
-{
-  -- Freshening just straight replaces variables, not deeply substituting them.
-  return performContextRenaming(c, zipVarsIntoSubstitution(tvs, ntvs));
-}
+fun freshenContextWith Context ::= c::Context tvs::[TyVar] ntvs::[TyVar] =
+  performContextRenaming(c, zipVarsIntoSubstitution(tvs, ntvs));
 
-function freshenTypeWith
-Type ::= te::Type tvs::[TyVar] ntvs::[TyVar]
-{
-  -- Freshening just straight replaces variables, not deeply substituting them.
-  return performRenaming(te, zipVarsIntoSubstitution(tvs, ntvs));
-}
+fun freshenTypeWith Type ::= te::Type tvs::[TyVar] ntvs::[TyVar] =
+  performRenaming(te, zipVarsIntoSubstitution(tvs, ntvs));
 
 function errorSubstitution
 Substitution ::= t::Type

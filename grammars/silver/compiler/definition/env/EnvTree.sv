@@ -10,45 +10,22 @@ type EnvTree<a> = rtm:Map<String a>;
 {--
  - Look up function for maps.
  -}
-function searchEnvTree
-[a] ::= search::String et::EnvTree<a>
-{
-  return rtm:lookup(search, et);
-}
+fun searchEnvTree [a] ::= search::String et::EnvTree<a> = rtm:lookup(search, et);
 
 {--
  - Standard environment constructor for a map.
  - Obey's EnvItem's rules for what names should appear for each item.
  -}
-function buildTree
-EnvTree<a> ::= eis::[EnvItem<a>]
-{
-  return directBuildTree(flatMap((.envContribs), eis));
-}
+fun buildTree EnvTree<a> ::= eis::[EnvItem<a>] = directBuildTree(flatMap((.envContribs), eis));
 
 {--
  - Arbitrary environment constructor for a map.
  -}
-function directBuildTree
-EnvTree<a> ::= eis::[Pair<String a>]
-{
-  return rtm:add(eis, rtm:empty());
-}
+fun directBuildTree EnvTree<a> ::= eis::[Pair<String a>] = rtm:add(eis, rtm:empty());
 
-function emptyEnvTree
-EnvTree<a> ::=
-{
-  return directBuildTree([]);
-}
+fun emptyEnvTree EnvTree<a> ::= = directBuildTree([]);
 
-function appendEnvTree
-EnvTree<a> ::= e1::EnvTree<a> e2::EnvTree<a>
-{
-  return rtm:add(rtm:toList(e1), e2);
-}
+fun appendEnvTree EnvTree<a> ::= e1::EnvTree<a> e2::EnvTree<a> = rtm:add(rtm:toList(e1), e2);
 
-function consEnvTree
-EnvTree<a> ::= eis::[EnvItem<a>] et::EnvTree<a>
-{
-  return rtm:add(flatMap((.envContribs), eis), et);
-}
+fun consEnvTree EnvTree<a> ::= eis::[EnvItem<a>] et::EnvTree<a> =
+  rtm:add(flatMap((.envContribs), eis), et);

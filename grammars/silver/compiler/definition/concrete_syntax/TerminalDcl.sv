@@ -53,7 +53,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 concrete production terminalDclKwdModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr ';'
 {
-  forwards to terminalDclDefault(t, id, r, terminalModifiersNone());
+  forwards to terminalDclDefault(@t, @id, @r, terminalModifiersNone());
 } action {
   insert semantic token IdTypeDcl_t at id.nameLoc;
 }
@@ -61,7 +61,7 @@ top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr ';'
 concrete production terminalDclAllModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::TerminalModifiers ';'
 {
-  forwards to terminalDclDefault(t, id, r, tm);
+  forwards to terminalDclDefault(@t, @id, @r, @tm);
 } action {
   insert semantic token IdTypeDcl_t at id.nameLoc;
 }
@@ -89,7 +89,7 @@ abstract production regExpr
 top::RegExpr ::= r::abs:Regex
 {
   top.unparse = "/" ++ show(80, r.pp) ++ "/";
-  top.terminalRegExprSpec = r;
+  top.terminalRegExprSpec = ^r;
   top.easyName = nothing();
 }
 

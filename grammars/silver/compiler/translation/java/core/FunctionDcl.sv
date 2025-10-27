@@ -3,6 +3,47 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:modification:ffi only ioForeignType; -- for main type check only
 import silver:compiler:modification:list only listCtrType;
 
+import silver:compiler:modification:concisefunctions;
+
+aspect production shortFunctionDcl
+top::AGDcl ::= 'fun' id::Name ns::FunctionSignature '=' e::Expr ';'
+{
+  -- For main functions which return IOVal<Integer>
+  local attribute typeIOValFailed::Boolean = unify(namedSig.typerep,
+    appTypes(
+      functionType(2, []),
+        [appType(listCtrType(), stringType()),
+          ioForeignType,
+          appType(nonterminalType("silver:core:IOVal", [starKind()], true, false), intType())])).failure;
+
+  -- For main functions which return IO<Integer>
+  local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
+    appTypes(
+      functionType(1, []),
+        [appType(listCtrType(), stringType()),
+          appType(nonterminalType("silver:core:IO", [starKind()], false, false), intType())])).failure;
+
+  top.errors <-
+    if id.name == "main" && typeIOValFailed && typeIOMonadFailed -- Neither legal main function type used
+      then [errFromOrigin(top, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++
+        "or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
+      else [];
+
+  nondecorated local codeProberParseType::Type =
+    appTypes(
+      functionType(1, []),
+        [appType(listCtrType(), stringType()),
+          appType(nonterminalType("silver:core:IO", [starKind()], false, false), freshType())]);
+  nondecorated local codeProberParseResType::Type = head(namedSig.outputElement.typerep.argTypes);
+  local codeProberParseValidType::Boolean =
+	!unify(namedSig.typerep, codeProberParseType).failure &&
+	(codeProberParseResType.isDecorated || codeProberParseResType.isData);
+  top.errors <-
+    if id.name == "codeProberParse" && !codeProberParseValidType
+	  then [errFromOrigin(top, "codeProberParse function must have type signature (IO<a> ::= [String]), where a is Decorated or a data nonterminal. Instead it has type " ++ prettyType(namedSig.typerep))]
+	  else [];
+}
+
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
@@ -24,10 +65,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 """;
 
   top.genFiles :=
-    [(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))] ++
-    if id.name == "main" 
-	then [("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
-    else [];
+    [(s"P${id.name}.java", generateFunctionClassString(body.env, top.flowEnv, top.grammarName, id.name, namedSig, funBody))];
 
   -- For main functions which return IOVal<Integer>
   local attribute typeIOValFailed::Boolean = unify(namedSig.typerep,
@@ -79,6 +117,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 
 	public static final common.Lazy[][] childInheritedAttributes = new common.Lazy[${toString(length(whatSig.inputElements))}][];
 
+    public static final boolean[] localDecorable = new boolean[num_local_attrs];
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[] localDecSites = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
@@ -100,6 +139,22 @@ ${contexts.contextInitTrans}
 ${whatSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
+
+	@Override
+	public String getNameOfChild(final int index) {
+		switch(index) {
+${implode("", map(makeChildNameCase, whatSig.inputElements))}
+            default: return null;
+        }
+    }
+
+	@Override
+	public boolean isChildDecorable(final int index) {
+		switch(index) {
+${implode("", map(makeChildDecorableCase(env, _), whatSig.inputElements))}
+            default: return false;
+        }
+    }
 
 	@Override
 	public Object getChild(final int index) {
@@ -140,6 +195,11 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
 	public common.Lazy[] getChildInheritedAttributes(final int key) {
 ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOccurs, "childInhContextTypeVars", "childInheritedAttributes", _), whatSig.inhOccursContextTypes)}
 		return childInheritedAttributes[key];
+	}
+
+	@Override
+	public boolean isLocalDecorable(final int key) {
+		return localDecorable[key];
 	}
 
 	@Override
@@ -212,53 +272,3 @@ ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
 	};
 }""";
 }
-
-function generateMainClassString
-String ::= whatGrammar::String isIOValReturn::Boolean
-{
-  local attribute package :: String;
-  package = makeName(whatGrammar);
-
-  -- Code used if main function return type is IOVal<Integer>
-  local attribute invocationIOVal::String = package ++ 
-    ".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton)";
-	
-  -- Code used if main function return type is IO<Integer>
-  local attribute invokationEvalIO::String = 
-    "silver.core.PevalIO.invoke(common.OriginContext.ENTRY_CONTEXT, " ++ package ++ 
-    ".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args)), common.IOToken.singleton)";
-
-  return s"""
-package ${package};
-
-import silver.core.*;
-
-public class Main {
-	public static void main(String[] args) {
-		common.Util.init();
-		${package}.Init.initAllStatics();
-		${package}.Init.init();
-		${package}.Init.postInit();
-
-		try {
-			common.Node rv = (common.Node) ${if isIOValReturn then invocationIOVal else invokationEvalIO};
-			common.DecoratedNode drv = rv.decorate();
-			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
-			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
-		} catch(Throwable t) {
-			Throwable rt = common.exceptions.SilverException.getRootCause(t);
-			if(rt instanceof common.exceptions.SilverExit)
-				System.exit(((common.exceptions.SilverExit)rt).getExitCode());
-			common.Util.printStackCauses(t);
-		}
-	}
-	public static common.ConsCell cvargs(String[] args) {
-		common.ConsCell result = common.ConsCell.nil;
-		for(int i = args.length - 1; i >= 0; i--) {
-			result = new common.ConsCell(new common.StringCatter(args[i]), result);
-		}
-		return result;
-	}
-}""";
-}
-

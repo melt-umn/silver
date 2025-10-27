@@ -20,6 +20,7 @@ synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
 synthesized attribute isClosed :: Boolean;
+synthesized attribute dispatchSignature :: NamedSignature;
 
 -- instances
 inherited attribute givenInstanceType :: Type;
@@ -29,6 +30,9 @@ synthesized attribute definedMembers :: [String];
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
+synthesized attribute implementedSignature :: Maybe<NamedSignature>;
+synthesized attribute isShared :: Boolean;
+synthesized attribute isNondec :: Boolean;
 synthesized attribute hasForward :: Boolean;
 
 -- occurs
@@ -50,7 +54,7 @@ inherited attribute givenSubstitution :: Substitution;
 
 closed nonterminal ValueDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+  typeScheme, namedSignature, implementedSignature, isShared, isNondec, hasForward, substitutedDclInfo, givenSubstitution;
 propagate isEqual on ValueDclInfo excluding globalValueDcl, classMemberDcl;
 
 aspect default production
@@ -58,6 +62,9 @@ top::ValueDclInfo ::=
 {
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
+  top.implementedSignature = nothing();
+  top.isShared = false;
+  top.isNondec = false;
   top.hasForward = false;
   
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
@@ -65,49 +72,82 @@ top::ValueDclInfo ::=
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::ValueDclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type isShared::Boolean
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
+  top.isShared = isShared;
 }
 abstract production lhsDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 }
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::ValueDclInfo ::= fn::String ty::Type isForward::Boolean
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
-  top.hasForward = isForward;
-  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), isForward, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.substitutedDclInfo = localDcl( fn, performRenaming(^ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+}
+abstract production nondecLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = monoType(^ty);
+  
+  top.isNondec = true;
+  top.substitutedDclInfo = nondecLocalDcl( fn, performRenaming(^ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+}
+abstract production forwardLocalDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = monoType(^ty);
+  
+  top.hasForward = true;
+  top.substitutedDclInfo = forwardLocalDcl( fn, performRenaming(^ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
 top::ValueDclInfo ::= ty::Type
 {
   top.fullName = "forward";
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
   
-  top.substitutedDclInfo = forwardDcl( performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
+  top.substitutedDclInfo = forwardDcl( performRenaming(^ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::ValueDclInfo ::= ns::NamedSignature hasForward::Boolean
+top::ValueDclInfo ::= ns::NamedSignature dispatch::Maybe<NamedSignature> hasForward::Boolean
 {
   top.fullName = ns.fullName;
   
   top.namedSignature = ns;
-  top.typeScheme = ns.typeScheme;
+  top.typeScheme =
+    case dispatch of
+    | nothing() -> ns.typeScheme
+    | just(dSig) ->
+      if length(ns.inputElements) == length(dSig.inputElements)
+      then monoType(dispatchType(dSig))
+      else (if null(ns.contexts) then polyType else constraintType(_, ns.contexts, _))(
+        ns.freeVariables,
+        appTypes(
+          functionType(length(ns.inputElements) - length(dSig.inputElements), []),
+          drop(length(dSig.inputElements), ns.inputTypes) ++
+        [dispatchType(dSig)]))
+    end;
+  top.implementedSignature = dispatch;
   top.hasForward = hasForward;
 }
 abstract production funDcl
@@ -123,7 +163,7 @@ abstract production classMemberDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] ty::Type
 {
   top.fullName = fn;
-  top.typeScheme = constraintType(bound, clsHead :: contexts, ty);
+  top.typeScheme = constraintType(bound, ^clsHead :: contexts, ^ty);
 
   top.isEqual =
     case top.compareTo of
@@ -135,7 +175,7 @@ abstract production globalValueDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.fullName = fn;
-  top.typeScheme = constraintType(bound, contexts, ty);
+  top.typeScheme = constraintType(bound, contexts, ^ty);
 
   top.isEqual =
     case top.compareTo of
@@ -153,7 +193,8 @@ top::ValueDclInfo ::= fn::String
 
 closed nonterminal TypeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts, isClosed;
+  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases,
+  isClass, classMembers, givenInstanceType, superContexts, isClosed, dispatchSignature;
 propagate isEqual, compareTo on TypeDclInfo excluding typeAliasDcl, clsDcl;
 
 aspect default production
@@ -167,6 +208,7 @@ top::TypeDclInfo ::=
   top.classMembers = [];
   top.superContexts = [];
   top.isClosed = false;
+  top.dispatchSignature = bogusNamedSignature();
 }
 
 abstract production ntDcl
@@ -212,7 +254,7 @@ top::TypeDclInfo ::= fn::String mentionedAliases::[String] bound::[TyVar] ty::Ty
   top.isType = null(bound);
   top.isTypeAlias = true;
   top.mentionedAliases := mentionedAliases;
-  top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
+  top.typeScheme = if null(bound) then monoType(^ty) else polyType(bound, ^ty);
   top.kindrep = foldr(arrowKind, ty.kindrep, map((.kind), bound)); 
 }
 abstract production clsDcl
@@ -222,7 +264,7 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   top.isEqual =
     case top.compareTo of
     | clsDcl(fn2, s2, tv2, k2, m2) ->
-      fn == fn2 && new(k) == new(k2) &&
+      fn == fn2 && ^k == ^k2 &&
       supers == map(performContextRenaming(_, subst(tv2, skolemType(tv))), s2) &&
       members == m2
     | _ -> false
@@ -230,12 +272,21 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   
   -- These are in the type namespace but shouldn't actually be used as such,
   -- this is only used to report the kind.
-  top.typeScheme = monoType(varType(freshTyVar(k)));
+  top.typeScheme = monoType(varType(freshTyVar(^k)));
   top.isClass = true;
   
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);
   top.superContexts = map(performContextRenaming(_, tvSubst), supers);
   top.classMembers = members;
+}
+abstract production dispatchDcl
+top::TypeDclInfo ::= ns::NamedSignature
+{
+  top.fullName = ns.fullName;
+
+  top.typeScheme = monoType(dispatchType(ns));
+  top.dispatchSignature = ns;
+  top.isType = true;
 }
 
 closed nonterminal AttributeDclInfo with
@@ -262,7 +313,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
   top.isSynthesized = true;
 }
 abstract production inhDcl
@@ -270,7 +321,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
   top.isInherited = true;
 }
 abstract production transDcl
@@ -278,7 +329,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
   top.isSynthesized = true;
   top.isTranslation = true;
 }
@@ -287,7 +338,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType(bound, ty);
+  top.typeScheme = polyType(bound, ^ty);
   top.isAnnotation = true;
 }
 
@@ -325,8 +376,8 @@ top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
     case top.compareTo of
     | occursDcl(fnnt2, fnat2, ntty2, atty2) ->
       fnnt == fnnt2 && fnat == fnat2 &&
-      polyType(ntty.freeVariables, ntty) == polyType(ntty2.freeVariables, ntty2) &&
-      polyType(ntty.freeVariables, atty) == polyType(ntty2.freeVariables, atty2)
+      polyType(ntty.freeVariables, ^ntty) == polyType(ntty2.freeVariables, ^ntty2) &&
+      polyType(ntty.freeVariables, ^atty) == polyType(ntty2.freeVariables, ^atty2)
     | _ -> false
     end;
   
@@ -336,12 +387,12 @@ top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
   
   -- Here we use givenNonterminalType to find the attribute type:
-  local subst :: Substitution = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+  local subst :: Substitution = unifyDirectional(^ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
 
   top.typeScheme =
     if subst.failure
-    then polyType(atty.freeVariables, atty) -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
-    else monoType(performRenaming(atty, subst));
+    then polyType(atty.freeVariables, ^atty) -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
+    else monoType(performRenaming(^atty, subst));
   
   top.attrOccurring = fnat;
 }
@@ -352,7 +403,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
   
-  top.typeScheme = monoType(atty);
+  top.typeScheme = monoType(^atty);
   
   ntty.boundVariables = tvs;
 }
@@ -362,7 +413,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
   
-  top.typeScheme = monoType(atty);
+  top.typeScheme = monoType(^atty);
   
   ntty.boundVariables = ns.freeVariables;
 }
@@ -372,7 +423,7 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
   top.fullName = baseDcl.typeScheme.typerep.typeName;
   top.attrOccurring = fnat;
   
-  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, ^atty);
 }
 
 abstract production annoInstanceDcl
@@ -386,12 +437,12 @@ top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
   
   -- Here we use givenNonterminalType to find the attribute type:
-  local subst :: Substitution = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+  local subst :: Substitution = unifyDirectional(^ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
 
   top.typeScheme =
     if subst.failure
-    then polyType(atty.freeVariables, atty) -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
-    else monoType(performRenaming(atty, subst));
+    then polyType(atty.freeVariables, ^atty) -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
+    else monoType(performRenaming(^atty, subst));
   
   top.attrOccurring = fnat;
 
@@ -405,7 +456,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
   top.attrOccurring = fnat;
   top.isAnnotation = true;
   
-  top.typeScheme = monoType(atty);
+  top.typeScheme = monoType(^atty);
   
   ntty.boundVariables = tvs;
 }
@@ -416,7 +467,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
   top.attrOccurring = fnat;
   top.isAnnotation = true;
   
-  top.typeScheme = monoType(atty);
+  top.typeScheme = monoType(^atty);
   
   ntty.boundVariables = ns.freeVariables;
 }
@@ -427,7 +478,7 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
   top.attrOccurring = fnat;
   top.isAnnotation = true;
   
-  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, ^atty);
 }
 
 nonterminal InstDclInfo with
@@ -452,7 +503,7 @@ top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type defi
 {
   top.fullName = fn;
   
-  top.typeScheme = constraintType(bound, contexts, ty);
+  top.typeScheme = constraintType(bound, contexts, ^ty);
 
   top.isTypeError := any(map((.isTypeError), contexts));
   top.definedMembers = definedMembers;
@@ -462,21 +513,21 @@ top::InstDclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
   top.fullName = fntc;
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 }
 abstract production sigConstraintDcl
 top::InstDclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
   top.fullName = fntc;
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 }
 abstract production currentInstDcl
 top::InstDclInfo ::= fntc::String ty::Type
 {
   top.fullName = fntc;
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 }
 abstract production instSuperDcl
 top::InstDclInfo ::= fntc::String baseDcl::InstDclInfo
@@ -492,14 +543,14 @@ top::InstDclInfo ::= ty::Type tvs::[TyVar]
 {
   top.fullName = "typeable";
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 }
 abstract production typeableSigConstraintDcl
 top::InstDclInfo ::= ty::Type ns::NamedSignature
 {
   top.fullName = "typeable";
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(^ty);
 }
 abstract production typeableSuperDcl
 top::InstDclInfo ::= baseDcl::InstDclInfo
@@ -515,23 +566,23 @@ top::InstDclInfo ::= i1::Type i2::Type tvs::[TyVar]
 {
   top.fullName = "subset";
   
-  top.typeScheme = monoType(i1);
-  top.typerep2 = i2;
+  top.typeScheme = monoType(^i1);
+  top.typerep2 = ^i2;
 }
 abstract production inhSubsetSigConstraintDcl
 top::InstDclInfo ::= i1::Type i2::Type ns::NamedSignature
 {
   top.fullName = "subset";
   
-  top.typeScheme = monoType(i1);
-  top.typerep2 = i2;
+  top.typeScheme = monoType(^i1);
+  top.typerep2 = ^i2;
 }
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
 Type ::= occursDclInfo::OccursDclInfo ntty::Type
 {
-  occursDclInfo.givenNonterminalType = ntty;
+  occursDclInfo.givenNonterminalType = ^ntty;
   return occursDclInfo.typeScheme.typerep;
 }
 

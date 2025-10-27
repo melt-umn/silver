@@ -145,11 +145,7 @@ Assumptions we make about initial Syntax:
 1. All type parameter lists are the appropriate length. (Silver type checking)
 -}
 
-function makeCopperName
-String ::= str::String
-{
-  return makeIdName(str);
-}
+fun makeCopperName String ::= str::String = makeIdName(str);
 
 -- Compute an environment containg the layout for a given list of items
 function buildLayoutEnv

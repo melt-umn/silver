@@ -19,74 +19,69 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
       [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.nameLoc)))]);
 }
 
-abstract production destructAttributionDcl
-top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+abstract production destructAttributionDcl implements AttributionDcl
+top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';');
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
-  propagate grammarName, env, flowEnv;
+  nondecorated local newAttl::BracketedOptTypeExprs =
+    case attl.types of
+    | [] ->
+      botlSome(
+        bTypeList(
+          '<',
+          typeListCons(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType),
+                ^tl)
+            | botlNone() -> nominalTypeExpr(nt.qNameType)
+            end,
+            typeListSingle(
+              typerepTypeExpr(inhSetType([])))),
+          '>'))
+    | [i] ->
+      botlSome(
+        bTypeList(
+          '<',
+          typeListCons(
+            case nttl of
+            | botlSome(tl) -> 
+              appTypeExpr(
+                nominalTypeExpr(nt.qNameType),
+                ^tl)
+            | botlNone() -> nominalTypeExpr(nt.qNameType)
+            end,
+            typeListSingle(
+              typerepTypeExpr(i))),
+          '>'))
+    | _ -> ^attl
+    end;
   
-  forwards to
-    defaultAttributionDcl(
-      at,
-      case attl.types of
-      | [] ->
-        botlSome(
-          bTypeList(
-            '<',
-            typeListCons(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  tl)
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end,
-              typeListSingle(
-                typerepTypeExpr(inhSetType([])))),
-            '>'))
-      | [i] ->
-        botlSome(
-          bTypeList(
-            '<',
-            typeListCons(
-              case nttl of
-              | botlSome(tl) -> 
-                appTypeExpr(
-                  nominalTypeExpr(nt.qNameType),
-                  tl)
-              | botlNone() -> nominalTypeExpr(nt.qNameType)
-              end,
-              typeListSingle(
-                typerepTypeExpr(i))),
-            '>'))
-      | _ -> attl
-      end,
-      nt, nttl);
+  forwards to altParamAttributionDcl(@at, @attl, @nt, @nttl, defaultAttributionDcl, newAttl);
 }
 
 {--
  - Propagate a destruct inherited attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateDestruct
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateDestruct implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse};";
   
   local numChildren::Integer = length(top.frame.signature.inputElements);
   forwards to
     foldr(
       productionStmtAppend(_, _),
-      errorProductionStmt([]), -- No emptyProductionStmt?
+      emptyProductionStmt(),
       map(
         \ ie::Pair<Integer NamedSignatureElement> ->
           Silver_ProductionStmt {
-            $name{ie.snd.elementName}.$QName{new(attr)} =
-              case $name{top.frame.signature.outputElement.elementName}.$QName{new(attr)} of
+            $name{ie.snd.elementName}.$QName{^attr} =
+              case $name{top.frame.signature.outputElement.elementName}.$QName{^attr} of
               | $Pattern{
                   prodAppPattern(
                     qName(top.frame.signature.fullName),
@@ -108,7 +103,9 @@ top::ProductionStmt ::= attr::Decorated! QName
           },
         filter(
           \ ie::Pair<Integer NamedSignatureElement> ->
-            !null(getOccursDcl(attr.lookupAttribute.dcl.fullName, ie.snd.typerep.typeName, top.env)),
+            isDecorable(ie.2.elementDclType, top.env) &&
+            !null(getOccursDcl(attr.lookupAttribute.dcl.fullName, ie.snd.typerep.typeName, top.env)) &&
+            (includeShared || !ie.2.elementShared),
           zip(range(0, numChildren), top.frame.signature.inputElements))));
 }
 

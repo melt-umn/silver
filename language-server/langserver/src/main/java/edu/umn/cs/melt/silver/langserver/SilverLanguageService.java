@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ConfigurationItem;
@@ -51,13 +52,12 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
 
 import common.SilverCopperParser;
 import edu.umn.cs.melt.lsp4jutil.CopperParserNodeFactory;
 import edu.umn.cs.melt.lsp4jutil.CopperSemanticTokenEncoder;
 import edu.umn.cs.melt.lsp4jutil.Util;
-import silver.compiler.definition.core.NRoot;
+import silver.compiler.definition.core.NFile;
 
 /**
  * Implementation of LSP text document and workspace services for Silver.
@@ -87,9 +87,11 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     public void didOpen(DidOpenTextDocumentParams params) {
         // System.err.println("Opened " + params);
         String uri = params.getTextDocument().getUri();
-        fileContents.put(uri, params.getTextDocument().getText());
-        fileVersions.put(uri, params.getTextDocument().getVersion());
-        savedVersions.put(uri, params.getTextDocument().getVersion());
+        synchronized (this) {
+            fileContents.put(uri, params.getTextDocument().getText());
+            fileVersions.put(uri, params.getTextDocument().getVersion());
+            savedVersions.put(uri, params.getTextDocument().getVersion());
+        }
         triggerBuild();
     }
 
@@ -97,9 +99,11 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     public void didChange(DidChangeTextDocumentParams params) {
         // System.err.println("Changed " + params);
         String uri = params.getTextDocument().getUri();
-        for (TextDocumentContentChangeEvent change : params.getContentChanges()) {
-            fileContents.put(uri, change.getText());
-            fileVersions.put(uri, params.getTextDocument().getVersion());
+        synchronized (this) {
+            for (TextDocumentContentChangeEvent change : params.getContentChanges()) {
+                fileContents.put(uri, change.getText());
+                fileVersions.put(uri, params.getTextDocument().getVersion());
+            }
         }
     }
 
@@ -107,9 +111,11 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     public void didClose(DidCloseTextDocumentParams params) {
         // System.err.println("Closed " + params);
         String uri = params.getTextDocument().getUri();
-        fileContents.remove(uri);
-        fileVersions.remove(uri);
-        savedVersions.remove(uri);
+        synchronized (this) {
+            fileContents.remove(uri);
+            fileVersions.remove(uri);
+            savedVersions.remove(uri);
+        }
     }
 
     @Override
@@ -119,7 +125,9 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         if (!fileVersions.containsKey(uri)) {
             throw new IllegalStateException("File saved before it was changed");
         }
-        savedVersions.put(uri, fileVersions.get(uri));
+        synchronized (this) {
+            savedVersions.put(uri, fileVersions.get(uri));
+        }
         triggerBuild();
     }
 
@@ -214,7 +222,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     private CopperSemanticTokenEncoder semanticTokenEncoder = null;
     private CopperParserNodeFactory parserFn = null;
-    public void setParserFactory(Supplier<SilverCopperParser<NRoot>> parserFactory) {
+    public void setParserFactory(Supplier<SilverCopperParser<NFile>> parserFactory) {
         semanticTokenEncoder = new CopperSemanticTokenEncoder(parserFactory, tokenTypes, tokenModifiers);
         parserFn = new CopperParserNodeFactory(parserFactory);
     }
@@ -298,15 +306,25 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
                 throw new IllegalStateException("Build requested when parser has not been loaded");
             }
 
-            // Check the config for whether the MWDA is enabled
+            // Check the config for build-related settings
             ConfigurationItem enableMWDAConfigItem = new ConfigurationItem();
             enableMWDAConfigItem.setSection("silver.enableMWDA");
-            ConfigurationParams configParams = new ConfigurationParams(List.of(enableMWDAConfigItem));
+            ConfigurationItem excludeGrammarsConfigItem = new ConfigurationItem();
+            excludeGrammarsConfigItem.setSection("silver.excludeGrammars");
+            ConfigurationParams configParams = new ConfigurationParams(List.of(
+                enableMWDAConfigItem, excludeGrammarsConfigItem));
             boolean enableMWDA = mwdaEnabled;
+            List<String> excludedGrammars = List.of();
             try {
                 Object configMWDAGet = client.configuration(configParams).get().get(0);
                 if (configMWDAGet != null && !((JsonElement)configMWDAGet).isJsonNull()) {
-                    enableMWDA = ((JsonPrimitive)configMWDAGet).getAsBoolean();
+                    enableMWDA = ((JsonElement)configMWDAGet).getAsBoolean();
+                }
+                Object configExcludeGrammarsGet = client.configuration(configParams).get().get(1);
+                if (configExcludeGrammarsGet != null && !((JsonElement)configExcludeGrammarsGet).isJsonNull()) {
+                    excludedGrammars =
+                        StreamSupport.stream(((JsonElement)configExcludeGrammarsGet).getAsJsonArray().spliterator(), false)
+                        .map(JsonElement::getAsString).collect(Collectors.toList());
                 }
             } catch (InterruptedException | ExecutionException e) {
                 // Ignore, getting the settings sometimes fails when a build is triggered during initialization
@@ -319,9 +337,16 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
             }
             mwdaEnabled = enableMWDA;
             cleanRequested = false;
-    
+
+            Set<String> includedBuildGrammars = buildGrammars;
+            if (!excludedGrammars.isEmpty()) {
+                includedBuildGrammars = new HashSet<>(buildGrammars);
+                System.err.println("Excluding grammars: " + excludedGrammars);
+                includedBuildGrammars.removeAll(excludedGrammars);
+            }
+
             SilverCompiler.getInstance().build(
-                parserFn, grammarDirs, buildGrammars, cleanBuild, enableMWDA,
+                parserFn, grammarDirs, includedBuildGrammars, cleanBuild, enableMWDA,
                 (String uri, List<Diagnostic> diagnostics) ->
                     client.publishDiagnostics(new PublishDiagnosticsParams(uri, diagnostics, buildVersions.get(uri))));
             synchronized (this) {

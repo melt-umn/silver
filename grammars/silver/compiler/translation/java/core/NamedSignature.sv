@@ -114,7 +114,7 @@ aspect default production
 top::Context ::=
 {
   top.contextRuntimeResolveFailure = s"""
-			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${prettyContext(top)} cannot be resolved at runtime");
+			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${prettyContext(^top)} cannot be resolved at runtime");
 			final ${top.transType} ${top.transContextMemberName} = ${top.transContextDummyInit};
 """;
   top.contextRuntimeResolve := top.contextRuntimeResolveFailure;
@@ -123,26 +123,26 @@ top::Context ::=
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, t, top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(fn, t, top.boundVariables);
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, ^t, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(fn, ^t, top.boundVariables);
 }
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
-  top.contextInhOccurs <- [(ntty, attr)];
+  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ^ntty, top.boundVariables);
+  top.contextInhOccurs <- [(^ntty, attr)];
   top.inhOccursIndexDecls <-
     s"\tpublic static final int ${makeIdName(attr)}__ON__${ntty.transTypeName} = count_inh__ON__${ntty.transTypeName}++;\n";
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, ^ntty, top.typeChildrenIn) of
     | just(child) -> s"""
-			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
-			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
+			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
+			if (${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getInhOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt.getInhOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -151,16 +151,16 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 aspect production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
-  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, ^ntty, top.typeChildrenIn) of
     | just(child) -> s"""
-			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
-			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
+			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
+			if (${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt == null) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
 			}
-			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getSynOccursIndex("${attr}");
+			final int ${makeConstraintDictName(attr, ^ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}_nt.getSynOccursIndex("${attr}");
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -169,15 +169,15 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 aspect production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
-  top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, ^ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ^ntty, top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    case lookupBy(typeNameEq, ^ntty, top.typeChildrenIn) of
     | just(child) -> s"""
 			if (!${child} instanceof makeAnnoName(${attr})) {
 				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " does not have annotation ${attr}.");
 			}
-			final ${top.transType} ${makeConstraintDictName(attr, ntty, top.boundVariables)} = null;
+			final ${top.transType} ${makeConstraintDictName(attr, ^ntty, top.boundVariables)} = null;
 """
     | nothing() -> top.contextRuntimeResolveFailure
     end;
@@ -186,11 +186,11 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(t, top.boundVariables)}";
-  top.contextRefElem = makeTypeableName(t, top.boundVariables);
+  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(^t, top.boundVariables)}";
+  top.contextRefElem = makeTypeableName(^t, top.boundVariables);
   top.contextRuntimeResolve :=
-    case lookupBy(typeNameEq, t, top.typeChildrenIn) of
-    | just(child) -> s"\t\t\tfinal ${top.transType} ${makeTypeableName(t, top.boundVariables)} = common.Reflection.getType(${child});\n"
+    case lookupBy(typeNameEq, ^t, top.typeChildrenIn) of
+    | just(child) -> s"\t\t\tfinal ${top.transType} ${makeTypeableName(^t, top.boundVariables)} = common.Reflection.getType(${child});\n"
     | nothing() -> top.contextRuntimeResolveFailure
     end;
 }
@@ -198,9 +198,9 @@ top::Context ::= t::Type
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)}";
-  top.contextRefElem = makeInhSubsetName(i1, i2, top.boundVariables);
-  top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)} = null;";
+  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(^i1, ^i2, top.boundVariables)}";
+  top.contextRefElem = makeInhSubsetName(^i1, ^i2, top.boundVariables);
+  top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(^i1, ^i2, top.boundVariables)} = null;";
 }
 
 aspect production typeErrorContext
@@ -240,35 +240,35 @@ top::NamedSignatureElements ::=
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
 aspect production namedSignatureElement
-top::NamedSignatureElement ::= n::String ty::Type
+top::NamedSignatureElement ::= n::String ty::Type shared::Boolean
 {
   top.childSigElem = "final Object c_" ++ n;
   top.childRefElem = "c_" ++ n;
   top.childDeclElem =
 s"""private Object child_${n};
-  public final ${ty.transType} getChild_${n}() {
-    final ${ty.transType} result = common.Util.<${ty.transType}>demand(child_${n});
+  public final ${top.typerep.transType} getChild_${n}() {
+    final ${top.typerep.transType} result = common.Util.<${top.typerep.transType}>demand(child_${n});
     child_${n} = result;
     return result;
   }
 """;
 
-  local ntType::Type = if ty.isDecorated then ty.decoratedType else ty;
+  local ntType::Type = if ty.isDecorated then ty.decoratedType else ^ty;
   ntType.boundVariables = ty.boundVariables;
 
   top.childTypeVarElem =
-    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, ^ty, top.sigInhOccurs).isJust
     then s"type_${ntType.transTypeName}"
     else "-1";
   
   top.childStaticElem =
-    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, ^ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
-    else if ty.isNonterminal && !ty.isData || ty.isUniqueDecorated && ntType.isNonterminal
+    else if ty.isNonterminal && !ty.isData
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
-  top.typeChildren := [(ty, top.childRefElem)];
+  top.typeChildren := [(^ty, top.childRefElem)];
   
   -- annos are full names:
   
@@ -295,25 +295,16 @@ s"""if (name.equals("${n}")) {
 		} else """;
 }
 
-function makeIndexDcls
-String ::= i::Integer s::[NamedSignatureElement]
-{
-  return if null(s) then ""
+fun makeIndexDcls String ::= i::Integer s::[NamedSignatureElement] =
+  if null(s) then ""
   else s"\tpublic static final int i_${head(s).elementName} = ${toString(i)};\n" ++ makeIndexDcls(i+1, tail(s));
-}
 
-function unpackChildren
-[String] ::= i::Integer  ns::[NamedSignatureElement]
-{
-  return if null(ns) then []
+fun unpackChildren [String] ::= i::Integer  ns::[NamedSignatureElement] =
+  if null(ns) then []
   else (s"children[${toString(i)}]") :: unpackChildren(i + 1, tail(ns));
-}
-function unpackAnnotations
-[String] ::= i::Integer  ns::[NamedSignatureElement]
-{
-  return if null(ns) then []
+fun unpackAnnotations [String] ::= i::Integer  ns::[NamedSignatureElement] =
+  if null(ns) then []
   else (s"annotations[${toString(i)}]") :: unpackAnnotations(i + 1, tail(ns));
-}
 
 function makeChildAccessCase
 String ::= n::NamedSignatureElement
@@ -325,42 +316,63 @@ String ::= n::NamedSignatureElement
 {
   return s"\t\t\tcase i_${n.elementName}: return child_${n.elementName};\n";
 }
+function makeChildNameCase
+String ::= n::NamedSignatureElement
+{
+  return s"\t\t\tcase i_${n.elementName}: return \"${n.elementName}\";\n";
+}
+function makeChildDecorableCase
+String ::= env::Env n::NamedSignatureElement
+{
+  return s"\t\t\tcase i_${n.elementName}: return ${toString(isDecorable(n.typerep, env) || n.elementShared)};\n";
+}
 function makeChildDecSiteAccessCase
 String ::= env::Env flowEnv::FlowEnv lhsNtName::String prodName::String n::NamedSignatureElement
 {
   return
-    case lookupUniqueRefs(prodName, n.elementName, flowEnv), lookupRefDecSite(prodName, n.elementName, flowEnv) of
-    | [u], [v] -> s"\t\t\tcase i_${n.elementName}: return (context) -> ${refAccessTranslation(env, flowEnv, lhsNtName, v)};\n"
-    | _, _ -> ""
+    case lookupRefDecSite(prodName, rhsVertexType(n.elementName), flowEnv) of
+    | [v] -> s"\t\t\tcase i_${n.elementName}: return ${refDecSiteTranslation(env, flowEnv, lhsNtName, v)};\n"
+    | _ -> ""
     end;
 }
-function refAccessTranslation
-String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType
-{
-  return
-    case v of
-    | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
-    | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
-    | localVertexType(fName) ->
-      case getValueDcl(fName, env) of
-      | dcl :: _ -> s"context.localDecorated(${dcl.attrOccursIndex})"
-      | [] -> error("Couldn't find decl for local " ++ fName)
-      end
-    | transAttrVertexType(lhsVertexType_real(), transAttr) ->
-      let transIndexName::String =
-        case getOccursDcl(transAttr, lhsNtName, env) of
-        | h :: _ -> h.attrGlobalOccursInitIndex
-        | [] -> error(s"Trans attr ${transAttr} occurs on ${lhsNtName} dcl not found!")
-        end
-      in s"context.translation(${transIndexName}, ${transIndexName}_inhs, ${transIndexName}_dec_site)"
-      end
-    | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
-    | forwardVertexType_real() -> s"context.forward()"
-    | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
-    | subtermVertexType(parent, prodName, sigName) ->
-      s"${refAccessTranslation(env, flowEnv, lhsNtName, parent)}.childDecorated(${makeProdName(prodName)}.i_${sigName})"
-    end;
-}
+
+-- Translation of Lazy to access a tree that is shared in a position corresponding to some flow vertex type.
+-- May be null if no decoration site exists for the given vertex type.
+fun refDecSiteTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
+  case refDecSiteTranslationHelp(env, flowEnv, lhsNtName, v) of
+  | left(lazyTrans) -> lazyTrans
+  | right(accessTrans) -> s"(context) -> ${accessTrans}"
+  end;
+
+-- Helper for the above.
+-- Returns either left(translation as a Lazy object) or right(translation as an access from context).
+fun refDecSiteTranslationHelp Either<String String> ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
+  case v of
+  | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
+  | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
+  | localVertexType(fName) ->
+    case getValueDcl(fName, env) of
+    | dcl :: _ -> right(s"context.localDecorated(${dcl.attrOccursIndex})")
+    | [] -> error("Couldn't find decl for local " ++ fName)
+    end
+  | transAttrVertexType(lhsVertexType_real(), transAttr) ->
+    case getOccursDcl(transAttr, lhsNtName, env) of
+    | h :: _ -> right(s"context.translation(${h.attrGlobalOccursInitIndex}, ${h.attrGlobalOccursInitIndex}_inhs, ${h.attrGlobalOccursInitIndex}_dec_site)")
+    -- If a translation attribute occurrence is defined in an optionally exported grammar,
+    -- then we must resolve the occurrence dynamically.
+    | [] -> left(s"common.RTTIManager.getNonterminalton(\"${lhsNtName}\").getTransDecSite(\"${transAttr}\")")
+    end
+  | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
+  | forwardVertexType_real() -> right(s"context.forward()")
+  | forwardParentVertexType() -> error("forward parent shouldn't be a ref decoration site")
+  | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
+  | subtermVertexType(parent, prodName, sigName) ->
+    -- prodName is either a production or dispatch signature name
+    case refDecSiteTranslationHelp(env, flowEnv, lhsNtName, parent) of
+    | right(parentAccess) -> right(s"${parentAccess}.childDecorated(${makeProdName(prodName)}.i_${sigName})")
+    | left(parentLazy) -> left(s"common.Util.wrapDecSiteAccessorChildDecorated(${parentLazy}, ${makeProdName(prodName)}.i_${sigName})")
+    end
+  end;
 
 function makeAnnoAssign
 String ::= n::NamedSignatureElement
@@ -378,34 +390,26 @@ function makeInhOccursContextAccess
 String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhArray::String t::Type
 {
   t.boundVariables = bv;
-  local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
+  local inhs::[String] = lookupAllBy(typeNameEq, ^t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
 			${if null(inhs) then "return null;" else
-s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
-${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
+s"""common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, ^t, bv), inhs))} + 1];
+${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, ^t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
 			return res;"""}
 		}
 """;
 }
 
-function makeTyVarDecls
-String ::= indent::Integer vars::[TyVar]
-{
-  return
-    implode(
-      "\n",
-      map(
-        \ tv::TyVar ->
-          s"${concat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.varId)} = new common.VarTypeRep();",
-          vars));
-    
-}
-function makeAnnoIndexDcls
-String ::= i::Integer s::[NamedSignatureElement]
-{
-  return if null(s) then ""
+fun makeTyVarDecls String ::= indent::Integer vars::[TyVar] =
+  implode(
+    "\n",
+    map(
+      \ tv::TyVar ->
+        s"${concat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.varId)} = new common.VarTypeRep();",
+        vars));
+fun makeAnnoIndexDcls String ::= i::Integer s::[NamedSignatureElement] =
+  if null(s) then ""
   else s"\t\tfinal int i${head(s).annoRefElem} = ${toString(i)};\n" ++ makeAnnoIndexDcls(i+1, tail(s));
-}
 function makeChildUnify
 String ::= fn::String n::NamedSignatureElement
 {

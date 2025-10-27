@@ -25,15 +25,12 @@ Integer ::= s::String
  - @param lst  The list of string to collapse.
  - @return  The combined string.
  -}
-function implode
-String ::= sep::String lst::[String]
-{
-  return if null(lst)
-         then ""
-         else head(lst) ++ if null(tail(lst))
-                           then ""
-                           else sep ++ implode(sep, tail(lst));
-}
+fun implode String ::= sep::String lst::[String] =
+  if null(lst)
+  then ""
+  else head(lst) ++ if null(tail(lst))
+                    then ""
+                    else sep ++ implode(sep, tail(lst));
 
 @{--
  - Split a string into a list of strings by a separator.  If the separtor
@@ -43,13 +40,10 @@ String ::= sep::String lst::[String]
  - @param str  The original string.
  - @return  The list of strings separated by sep in the original string.
  -}
-function explode
-[String] ::= sep::String str::String
-{
-  return if sep=="" then explodeSingle(str)
-         else if str == "" then []
-         else explodeNormal(sep, str);
-}
+fun explode [String] ::= sep::String str::String =
+  if sep=="" then explodeSingle(str)
+  else if str == "" then []
+  else explodeNormal(sep, str);
 function explodeNormal -- do not use
 [String] ::= sep::String str::String
 {
@@ -61,14 +55,11 @@ function explodeNormal -- do not use
          else substring(0, i, str) ::
               explodeNormal(sep, substring(i+length(sep), length(str), str));
 }
-function explodeSingle -- do not use
-[String] ::= str::String
-{
-  return if length(str) == 0
-         then []
-         else substring(0,1,str) ::
-              explodeSingle (substring(1,length(str),str));
-}
+fun explodeSingle [String] ::= str::String =
+  if length(str) == 0
+  then []
+  else substring(0,1,str) ::
+       explodeSingle (substring(1,length(str),str));
 
 @{--
  - Find the index of a needle in the haystack.  (Indices are 0-based.)
@@ -368,9 +359,7 @@ function stripExtraWhiteSpaceHelper
 @{--
  - Strips all whitespace from a string.
  -}
-function stripWhiteSpace
-String ::= s::String
-{ return implode ("", stripWhiteSpaceHelper(explode("",s))) ; }
+fun stripWhiteSpace String ::= s::String = implode ("", stripWhiteSpaceHelper(explode("",s)));
 
 function stripWhiteSpaceHelper
 [String] ::= ss::[String]

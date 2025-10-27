@@ -71,14 +71,12 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.errors <- warnIfMultJarName(h.jarName, t.jarName);
 }
 
-function makeAppendAGDclOfAGDcls
-AGDcl ::= dcls::AGDcls
-{
-  return case dcls of
-         | nilAGDcls() -> emptyAGDcl()
-         | consAGDcls(dcl, rest) -> appendAGDcl(dcl, makeAppendAGDclOfAGDcls(rest))
-         end;
-}
+-- TODO: There should probably just be a production with this signature
+fun makeAppendAGDclOfAGDcls AGDcl ::= dcls::AGDcls =
+  case dcls of
+  | nilAGDcls() -> emptyAGDcl()
+  | consAGDcls(dcl, rest) -> appendAGDcl(^dcl, makeAppendAGDclOfAGDcls(^rest))
+  end;
 
 abstract production jarNameDcl
 top::AGDcl ::= n::Name
@@ -93,14 +91,19 @@ top::AGDcl ::=
   propagate moduleNames, defs, occursDefs, jarName;
 }
 
-function warnIfMultJarName
-[Message] ::= n1::Maybe<String>  n2::Maybe<String>
-{
-  return if n1.isJust && n2.isJust
-         then [wrnFromOrigin(ambientOrigin(),
-                 "Duplicate specification of jar name: " ++
-                 n1.fromJust ++ " and " ++ n2.fromJust)]
-         else [];
+fun warnIfMultJarName [Message] ::= n1::Maybe<String>  n2::Maybe<String> =
+  if n1.isJust && n2.isJust
+  then [wrnFromOrigin(ambientOrigin(),
+          "Duplicate specification of jar name: " ++
+          n1.fromJust ++ " and " ++ n2.fromJust)]
+  else [];
+
+instance Semigroup AGDcl {
+  append = appendAGDcl;
+}
+
+instance Monoid AGDcl {
+  mempty = emptyAGDcl();
 }
 
 -- All AGDcls have their own file, or modification. None here.

@@ -12,7 +12,7 @@ grammar silver:core;
 data OriginInfoType =
 @{- Information was computed at the site of invoking a constructor (this is "normal") -}
   setAtConstructionOIT
-@{- Result of calling new(x) on a tracked nonterminal (including children of x that were also new-ed) -}
+@{- Result of calling ^x on a tracked nonterminal (including children of x that were also new-ed) -}
 | setAtNewOIT
 @{-
   - Result of forwarding to a nonterminal. This is a little weird because there's an extra indirection.
@@ -125,10 +125,25 @@ top::OriginNote ::= string::String
   top.notepp = just(s"debug ${string}");
 }
 
-abstract production logicalLocationNote
-top::OriginNote ::= loc::Location
+abstract production maybeLogicalLocationNote
+top::OriginNote ::= mLoc::Maybe<Location>
 {
-  top.notepp = just(s"logical ${loc.filename}:${toString(loc.line)}:${toString(loc.column)}");
+  top.notepp = just(
+    case mLoc of
+    | just(l) -> s"logical ${l.filename}:${toString(l.line)}:${toString(l.column)}"
+    | nothing() -> "logical location missing"
+    end);
+}
+global logicalLocationNote :: (OriginNote ::= Location) = compose(maybeLogicalLocationNote, just);
+
+abstract production logicalLocationFromOriginNote
+top::OriginNote ::= x::a
+{
+  top.notepp =
+    case getParsedOriginLocationFromChain(getOriginInfoChain(x)) of
+    | just(l) -> just(s"logical origin at ${l.filename}:${toString(l.line)}:${toString(l.column)}")
+    | nothing() -> just(s"logical origin missing")
+    end;
 }
 
 @{-
@@ -143,85 +158,59 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 @{-
   - Compute the 'chain' of origins leading back to whatever the first thing without an origin (really without
   - an origin that has an `origin` field.) -}
-function getOriginInfoChain
-[OriginInfo] ::= l::a
-{
-  return case getOriginInfo(l) of
-         | just(info) -> 
-             case info of
-             | originOriginInfo(o, _) -> info :: getOriginInfoChain(o)
-             | originAndRedexOriginInfo(o, _, _, _) -> info :: getOriginInfoChain(o)
-             | _ -> [info]
-             end
-         | _ -> []
-        end;
-}
+fun getOriginInfoChain [OriginInfo] ::= l::a =
+  case getOriginInfo(l) of
+  | just(info) -> 
+      case info of
+      | originOriginInfo(o, _) -> info :: getOriginInfoChain(o)
+      | originAndRedexOriginInfo(o, _, _, _) -> info :: getOriginInfoChain(o)
+      | _ -> [info]
+      end
+  | _ -> []
+  end;
 
 @{- Low level accessor for getting OriginInfo (maybe) from a node. -}
-function getOriginInfo
-Maybe<OriginInfo> ::= arg::a
-{
-  return javaGetOrigin(arg);
-}
+fun getOriginInfo Maybe<OriginInfo> ::= arg::a = javaGetOrigin(arg);
 
 @{- Walk back to the first thing with an origin in the history of `a`. -}
-function getUrOrigin
-Maybe<OriginInfo> ::= arg::a
-{
-  return case getOriginInfoChain(arg) of
-         | [] -> nothing()
-         | l -> just(last(l))
-         end;
-}
+fun getUrOrigin Maybe<OriginInfo> ::= arg::a =
+  case getOriginInfoChain(arg) of
+  | [] -> nothing()
+  | l -> just(last(l))
+  end;
 
 @{- Try to walk back to a parsedOriginInfo and extract the location the node came from in the source -}
-function getParsedOriginLocation
-Maybe<Location> ::= arg::a
-{
-  return getParsedOriginLocationFromChain(getOriginInfoChain(arg));
-}
+fun getParsedOriginLocation Maybe<Location> ::= arg::a =
+  getParsedOriginLocationFromChain(getOriginInfoChain(arg));
 
-function getParsedOriginLocationFromChain
-Maybe<Location> ::= chain::[OriginInfo]
-{
-  return case chain of
-         | [] -> nothing()
-         | link::rest -> 
-             case link of
-             | parsedOriginInfo(l) -> just(l)
-             | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
-                        | nothing() -> getParsedOriginLocationFromChain(rest)
-                        | x -> x
-                        end
-             end
-         end;
-}
+fun getParsedOriginLocationFromChain Maybe<Location> ::= chain::[OriginInfo] =
+  case chain of
+  | [] -> nothing()
+  | link::rest -> 
+      case link of
+      | parsedOriginInfo(l) -> just(l)
+      | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
+                 | nothing() -> getParsedOriginLocationFromChain(rest)
+                 | x -> x
+                 end
+      end
+   end;
 @{- @hide -}
-function getParsedOriginLocation_findLogicalLocationNote
-Maybe<Location> ::= notes::[OriginNote]
-{
-  return case notes of
-         | [] -> nothing()
-         | logicalLocationNote(l)::_ -> just(l)
-         | x::r -> getParsedOriginLocation_findLogicalLocationNote(r)
-         end;
-}
+fun getParsedOriginLocation_findLogicalLocationNote Maybe<Location> ::= notes::[OriginNote] =
+  case notes of
+  | [] -> nothing()
+  | maybeLogicalLocationNote(ml)::_ -> ml
+  | logicalLocationFromOriginNote(x)::_ -> getParsedOriginLocation(x)
+  | x::r -> getParsedOriginLocation_findLogicalLocationNote(r)
+  end;
 
-function originNotesToString
-String ::= ns::[OriginNote]
-{
-  return implode(", ", filterMap((.notepp), ns));
-}
+fun originNotesToString String ::= ns::[OriginNote] = implode(", ", filterMap((.notepp), ns));
 
-function getOriginNotesString
-String ::= arg::a
-{
-  return
-    case getOriginInfo(arg) of
-    | just(oi) -> originNotesToString(oi.originNotes)
-    | nothing() -> ""
-    end;
-}
+fun getOriginNotesString String ::= arg::a =
+  case getOriginInfo(arg) of
+  | just(oi) -> originNotesToString(oi.originNotes)
+  | nothing() -> ""
+  end;
 
 @{-
   - Dump out two objects in a format for svdraw2 to consume and draw their
@@ -229,15 +218,12 @@ String ::= arg::a
   - objects. The only difference between `start` and `stop` is that they will
   - be specially colored in the visualization diagram.)
   -}
-function printObjectPairForOriginsViz
-IOToken ::= start::a stop::b io::IOToken
-{
-  return printT(
+fun printObjectPairForOriginsViz IOToken ::= start::a stop::b io::IOToken =
+  printT(
     "\n\n\n---SVDRAW2 START---" ++
     "\n" ++ sexprify(start) ++
     "\n" ++ sexprify(stop) ++
     "\n" ++ "---SVDRAW2 END---\n\n\n", io);
-}
 
 @{- @hide -}
 function sexprify
@@ -276,11 +262,8 @@ top::AmbientOriginNT ::=
 }
 
 @{- Call fn in a context where notes have been added to the origins context -}
-function callWithListOfNotes
-a ::= notes::[OriginNote] fn::(a::=)
-{
-  return case notes of
-         | [] -> fn()
-         | x::xs -> attachNote x on callWithListOfNotes(xs, fn) end
-         end;
-}
+fun callWithListOfNotes a ::= notes::[OriginNote] fn::(a::=) =
+  case notes of
+  | [] -> fn()
+  | x::xs -> attachNote x on callWithListOfNotes(xs, fn) end
+  end;

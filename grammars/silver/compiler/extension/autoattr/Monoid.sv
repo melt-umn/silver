@@ -23,7 +23,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   -- TODO: We want to define our own defs here but can't forward to defsAGDcl because collections define different translation.
   -- Not sure about the best way to refactor this.
   top.defs :=
-    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))];
+    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, ^e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.nameLoc)))];
 
   top.errors <- e.errors;
   
@@ -40,9 +40,9 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
-
-  errCheck1.finalSubst = errCheck1.upSubst;
-  e.finalSubst = errCheck1.upSubst;
+  e.downSubst2 = errCheck1.upSubst;
+  e.finalSubst = e.upSubst2;
+  errCheck1.finalSubst = e.finalSubst;
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -53,13 +53,14 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 
   e.frame = globalExprContext(fName, nilContext(), te.typerep, myFlowGraph, sourceGrammar=top.grammarName);
   e.isRoot = false;
-  e.originRules = [];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
+  e.appDecSiteVertexInfo = nothing();
+  e.dispatchFlowDeps = [];
   
   forwards to
     collectionAttributeDclSyn(
-      'synthesized', 'attribute', a, tl, '::', te, 'with', q, ';');
+      'synthesized', 'attribute', @a, @tl, '::', @te, 'with', @q, ';');
 }
 
 concrete production tcMonoidAttributeDcl
@@ -68,7 +69,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
   forwards to
     monoidAttributeDcl(
-      $1, $2, a, tl, $5, te, 'with',
+      $1, $2, @a, @tl, $5, @te, 'with',
       baseExpr(qName("silver:core:mempty")), ',',
       exprOperator(baseExpr(qName("silver:core:append"))), $7);
 }
@@ -78,7 +79,7 @@ synthesized attribute appendProd :: (Expr ::= Expr Expr) occurs on Operation;
 aspect production functionOperation
 top::Operation ::= e::Expr _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr -> mkFunctionInvocation(e, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr -> mkFunctionInvocation(^e, [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 
@@ -115,11 +116,10 @@ top::Operation ::=
  - Propagate a monoid attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateMonoid
-top::ProductionStmt ::= attr::Decorated! QName
+abstract production propagateMonoid implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
-  undecorates to propagateOneAttr(attr);
-  top.unparse = s"propagate ${attr.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
@@ -128,10 +128,10 @@ top::ProductionStmt ::= attr::Decorated! QName
   local inputsWithAttr::[NamedSignatureElement] =
     filter(
       \ input::NamedSignatureElement ->
-        (isDecorable(input.typerep, top.env) || input.typerep.isNonterminal) &&
-        !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
+        (isDecorable(input.elementDclType, top.env) || input.elementDclType.isNonterminal) &&
+        !null(getOccursDcl(attrFullName, input.elementDclType.typeName, top.env)),
       top.frame.signature.inputElements);
-  local res :: Expr = 
+  nondecorated local res::Expr =
     if null(inputsWithAttr)
     then attr.lookupAttribute.dcl.emptyVal
     else
@@ -142,7 +142,7 @@ top::ProductionStmt ::= attr::Decorated! QName
             access(
               baseExpr(qName(i.elementName)),
               '.',
-              qNameAttrOccur(new(attr))),
+              qNameAttrOccur(^attr)),
           inputsWithAttr));
 
   -- Construct an attribute def and call with the generated arguments
@@ -150,6 +150,14 @@ top::ProductionStmt ::= attr::Decorated! QName
     attrContainsBase(
       concreteDefLHS(qName(top.frame.signature.outputElement.elementName)),
       '.',
-      qNameAttrOccur(new(attr)),
+      qNameAttrOccur(^attr),
       ':=', res, ';');
+}
+
+abstract production monoidErrorRegularAttributeDef implements AttributeDef
+top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
+{
+  forwards to errorAttributeDef(
+    dl, attr, @e,
+    [errFromOrigin(top, dl.unparse ++ "." ++ attr.unparse ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")]);
 }

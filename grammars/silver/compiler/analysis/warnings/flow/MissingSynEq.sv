@@ -11,7 +11,7 @@ abstract production warnMissingSynFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnMissingSyn = true;
-  forwards to rest;
+  forwards to @rest;
 }
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
@@ -81,7 +81,7 @@ function raiseMissingProds
  - closer to the location where a fix would be requird.
  -}
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
   -- All locally known synthesized attributes. This does not need to be exhaustive,
   -- because this error message is a courtesy, not the basis of the analysis.

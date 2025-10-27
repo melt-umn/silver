@@ -55,5 +55,5 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
   top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ ";\n";
 
-  forwards to globalValueDclConcrete($1, id, $3, nilConstraint(), '=>', t, $5, e, $7);
+  forwards to globalValueDclConcrete($1, @id, $3, nilConstraint(), '=>', @t, $5, @e, $7);
 }

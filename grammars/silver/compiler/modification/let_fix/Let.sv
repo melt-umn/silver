@@ -14,24 +14,24 @@ top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
 
-  forwards to letp(la.letAssignExprs, e);
+  forwards to letp(@la.letAssignExprs, @e);
 }
 
 tracked nonterminal LetAssigns with unparse, letAssignExprs;
 
-synthesized attribute letAssignExprs :: AssignExpr;
+translation attribute letAssignExprs :: AssignExpr;
 
 concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
   top.unparse = ae.unparse ++ ", " ++ list.unparse;
-  top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs);
+  top.letAssignExprs = appendAssignExpr(@ae, @list.letAssignExprs);
 }
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
 {
   top.unparse = ae.unparse;
-  top.letAssignExprs = ae;
+  top.letAssignExprs = @ae;
 }
 
 --------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   
   top.typerep = e.typerep;
 
-  propagate downSubst, upSubst, finalSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2, finalSubst;
   
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
@@ -61,9 +61,14 @@ monoid attribute boundNames::[String];
 
 tracked nonterminal AssignExpr with config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
-                            downSubst, finalSubst, frame, originRules;
+                            downSubst, upSubst2, downSubst2, finalSubst, frame, originRules;
 
-propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
+flowtype AssignExpr =
+  decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, compiledGrammars, config, bodyDecSites},
+  upSubst {decorate}, defs {decorate};
+
+propagate config, grammarName, compiledGrammars, frame, env, errors, defs, downSubst2, upSubst2, finalSubst, originRules
+  on AssignExpr;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -87,7 +92,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- our DclInfo in `defs` because we expect variables in the env to have
   -- explicit types. We can't use `finalSubst` here because that requires
   -- having completed type inference which requires `defs` which we're defining.
-  local semiTy :: Type = performSubstitution(t.typerep, top.upSubst);
+  nondecorated local semiTy::Type = performSubstitution(t.typerep, top.upSubst);
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 
   -- Using finalTy here, so our defs requires we have downSubst...
@@ -95,7 +100,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -119,37 +124,15 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   e.isRoot = false;
 }
 
-abstract production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::Maybe<VertexType>  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
+abstract production lexicalLocalReference implements Reference
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
 {
-  undecorates to baseExpr(q);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);
-  
-  -- We're adding the "unusual" behavior that types like "Decorated Foo" in LETs
-  -- will auto-undecorate if you want a Foo.
-  
-  -- (The usual behavior is a declared Foo, but value is Decorated Foo, can
-  --  be used either way.)
-  
-  -- A note about possible unexpected behavior here: if q.lookupValue.typerep
-  -- is itself a ntOrDecType, which is only possible if for generated 'let'
-  -- expressions that use a type variable as their type, then this ntOrDecType
-  -- we're generating here means we're NOT propagating the information about the
-  -- "actual usage" backwards to expression.
-  -- i.e.  "let x :: a = someLocal in wantsUndecorated(x) end"
-  --       will mean "let x = decorated version of someLocal in wantsUndecorated(x.undecorate())"
-  --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
 
-  top.typerep = 
-    case q.lookupValue.typeScheme.monoType of
-    | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
-    | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | t -> t
-    end;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, downSubst2, upSubst2;
 }
 

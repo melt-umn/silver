@@ -20,6 +20,12 @@ public abstract class FunctionNode extends Node {
 		super(false);
 	}
 
+	@Override
+	public final Node updateAnnos(Object[] annos) {
+		// Functions should never even have this consulted. Ever.
+		throw new SilverInternalError("Functions do not have annotations!");
+	}
+
 	// Used only when needing origins info on lazily evaluated locals in functions :/
 	public DecoratedNode decorate(OriginContext originCtx) {
 		DecoratedNode tmp = decorate();
@@ -56,6 +62,11 @@ public abstract class FunctionNode extends Node {
 
 	@Override
 	public final Lazy getSynthesized(final int index) {
+		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested index " + index + ")");
+	}
+
+	@Override
+	public final TransOccursInfo getTransOccurs(final int index) {
 		throw new SilverInternalError("Functions do not possess synthesized attributes! (Requested index " + index + ")");
 	}
 

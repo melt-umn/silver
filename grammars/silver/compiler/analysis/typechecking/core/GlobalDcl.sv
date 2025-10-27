@@ -9,9 +9,10 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
 
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
+  e.downSubst2 = errCheck1.upSubst;
 
-  errCheck1.finalSubst = errCheck1.upSubst;
-  e.finalSubst = errCheck1.upSubst;
+  e.finalSubst = e.upSubst2;
+  errCheck1.finalSubst = e.finalSubst;
 
   errCheck1 = check(e.typerep, t.typerep);
   top.errors <- if errCheck1.typeerror

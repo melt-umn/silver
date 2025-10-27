@@ -25,6 +25,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
   ns.signatureName = fName;
+  ns.implementedSig = nothing();
   ns.env = newScopeEnv(ns.defs, top.env);
   pm.productionSig = ns.namedSignature;
   pm.env = newScopeEnv(ns.actionDefs, top.env);
@@ -36,7 +37,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- note that we're not merging the typing contexts between action blocks and productions
   -- this seems reasonable since inference should never have effects across this border...
 
-  forwards to concreteProductionDcl($1, $2, id, ns, pm, body);
+  forwards to concreteProductionDcl($1, $2, @id, @ns, @pm, @body);
 } action {
   insert semantic token IdFnProdDcl_t at id.nameLoc;
   sigNames = [];
@@ -115,7 +116,7 @@ function hackTransformLocals
 {
   return
     case d of
-    | valueDef(item) when item.dcl matches localDcl(fn,ty,false,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
+    | valueDef(item) when item.dcl matches localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,^ty)]
     | _ -> [] -- TODO: possibly error??
     end;
 }
@@ -148,7 +149,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 }
 
 aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
+top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
 {
   top.actionDefs = [actionChildDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 }

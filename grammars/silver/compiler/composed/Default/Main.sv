@@ -2,12 +2,9 @@ grammar silver:compiler:composed:Default;
 
 import silver:compiler:host;
 
-parser svParse::Root {
+parser svParse::File {
   silver:compiler:host;
 }
 
-function main 
-IOVal<Integer> ::= args::[String] ioin::IOToken
-{
-  return evalIO(cmdLineRun(args, svParse), ioin);
-}
+fun main IO<Integer> ::= args::[String] = cmdLineRun(args, svParse);
+fun codeProberParse IO<Compilation> ::= args::[String] = codeProberRun(args, svParse);

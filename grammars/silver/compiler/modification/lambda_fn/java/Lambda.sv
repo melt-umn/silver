@@ -52,7 +52,7 @@ ${makeTyVarDecls(5, top.finalType.freeVariables)}
 }
 
 aspect production lambdaParamReference
-top::Expr ::= q::Decorated! QName
+top::Expr ::= @q::QName
 {
   top.translation = s"common.Util.<${top.finalType.transType}>demandIndex(lambda_${toString(q.lookupValue.dcl.lambdaId)}_args, ${toString(q.lookupValue.dcl.lambdaParamIndex)})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

@@ -18,28 +18,23 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
 {
     local docCommentContent::String = body.lexeme;
     local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, body.location.filename);
-    local comment::DclComment = if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError);
+    nondecorated local comment::DclComment =
+      if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError);
     return if conf.parseDocs then comment else theEmptyDclComment;
 }
 
-function getFreeTypeNames
-[String] ::= l::[TyVar]
-{
-    return case l of
-           | tyVarNamed(s)::xs -> s :: getFreeTypeNames(xs)
-           | _::xs -> getFreeTypeNames(xs)
-           | [] -> []
-           end;
-}
+fun getFreeTypeNames [String] ::= l::[TyVar] =
+  case l of
+  | tyVarNamed(s)::xs -> s :: getFreeTypeNames(xs)
+  | _::xs -> getFreeTypeNames(xs)
+  | [] -> []
+  end;
 
-function getFirstAGDcl
-Decorated AGDcl ::= a::Decorated AGDcl
-{
-    return case a of
-           | appendAGDcl(x, _) -> getFirstAGDcl(x)
-           | x -> x
-           end;
-}
+fun getFirstAGDcl Decorated AGDcl ::= a::Decorated AGDcl =
+  case a of
+  | appendAGDcl(x, _) -> getFirstAGDcl(x)
+  | x -> x
+  end;
 
 @{-
  - This wraps an AGDcl to allow it to be prefixed with a doc comment. AGDcls will by default
@@ -56,12 +51,16 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     local paramNamesAndForWhat::Pair<Maybe<[String]> String> = case getFirstAGDcl(forward) of
         | functionDcl(_, _, ns, _) -> (just(ns.argNames), "function")
         | aspectFunctionDcl(_, _, _, ns, _) -> (just(ns.argNames), "function")
-        | productionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
+        | productionDcl(_, _, _, _, ns, _) -> (just(ns.argNames), "production")
         | aspectProductionDcl(_, _, _, ns, _) -> (just(ns.argNames), "production")
         | nonterminalDcl(_, _, _, tl, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
         | attributeDclInh(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
         | attributeDclSyn(_, _, _, tl, _, _, _) -> (just(getFreeTypeNames(tl.freeVariables)), "attribute")
+<<<<<<< HEAD
         -- another case for precise functions
+=======
+        | shortFunctionDcl (_, _, ns, _, _, _) -> (just(ns.argNames), "function")
+>>>>>>> develop
         | _ -> (just([]), if isDoubleComment then "standalone" else "other")
         end;
 
@@ -86,7 +85,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
                     then [wrnFromOrigin(parsed, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];
 
-    forwards to dcl;
+    forwards to @dcl;
 }
 
 @{-

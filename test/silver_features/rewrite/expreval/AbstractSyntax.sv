@@ -70,7 +70,7 @@ Strategy ::= n::String e::Expr
 {
   return bottomUp(try(
     rule on Expr of
-    | var(n1) when n == n1 -> e
+    | var(n1) when n == n1 -> ^e
     end));
 }
 
@@ -146,41 +146,41 @@ partial strategy attribute evalStep =
      let g::Integer = gcd(a, b) in div(const(a / g), const(b / g)) end
   -- This rule does not respect lexical shadowing;
   -- it is assumed that the overall rewrite will be done in an innermost order.
-  | letE(n, e1, e2) -> decorate e2 with {substName = n; substExpr = e1;}.substRes
+  | letE(n, e1, e2) -> decorate ^e2 with {substName = n; substExpr = ^e1;}.substRes
   end;
 
 partial strategy attribute simplifyConstIdent =
   rule on Expr of
-  | add(a, const(0)) -> a
-  | add(const(0), a) -> a
+  | add(a, const(0)) -> ^a
+  | add(const(0), a) -> ^a
   
-  | sub(a, const(0)) -> a
+  | sub(a, const(0)) -> ^a
   
   | mul(_, const(0)) -> const(0)
   | mul(const(0), _) -> const(0)
-  | mul(a, const(1)) -> a
-  | mul(const(1), a) -> a
+  | mul(a, const(1)) -> ^a
+  | mul(const(1), a) -> ^a
   
   | div(const(0), _) -> const(0)
-  | div(a, const(1)) -> a
+  | div(a, const(1)) -> ^a
   end;
 
 partial strategy attribute simplifyFrac =
   rule on Expr of
-  | add(div(a, b), c) -> div(add(a, mul(b, c)), b)
-  | sub(div(a, b), c) -> div(sub(a, mul(b, c)), b)
-  | mul(div(a, b), c) -> div(mul(a, c), b)
-  | div(div(a, b), c) -> div(a, mul(b, c))
+  | add(div(a, b), c) -> div(add(^a, mul(^b, ^c)), ^b)
+  | sub(div(a, b), c) -> div(sub(^a, mul(^b, ^c)), ^b)
+  | mul(div(a, b), c) -> div(mul(^a, ^c), ^b)
+  | div(div(a, b), c) -> div(^a, mul(^b, ^c))
   
-  | add(a, div(b, c)) -> div(add(mul(a, c), b), c)
-  | sub(a, div(b, c)) -> div(sub(mul(a, c), b), c)
-  | mul(a, div(b, c)) -> div(mul(a, b), c)
-  | div(a, div(b, c)) -> div(mul(a, c), b)
+  | add(a, div(b, c)) -> div(add(mul(^a, ^c), ^b), ^c)
+  | sub(a, div(b, c)) -> div(sub(mul(^a, ^c), ^b), ^c)
+  | mul(a, div(b, c)) -> div(mul(^a, ^b), ^c)
+  | div(a, div(b, c)) -> div(mul(^a, ^c), ^b)
   
-  | add(div(a, b), div(c, d)) -> div(add(mul(a, d), mul(c, b)), mul(b, d))
-  | sub(div(a, b), div(c, d)) -> div(sub(mul(a, d), mul(c, b)), mul(b, d))
-  | mul(div(a, b), div(c, d)) -> div(mul(a, c), mul(c, d))
-  | div(div(a, b), div(c, d)) -> div(mul(a, d), mul(b, c))
+  | add(div(a, b), div(c, d)) -> div(add(mul(^a, ^d), mul(^c, ^b)), mul(^b, ^d))
+  | sub(div(a, b), div(c, d)) -> div(sub(mul(^a, ^d), mul(^c, ^b)), mul(^b, ^d))
+  | mul(div(a, b), div(c, d)) -> div(mul(^a, ^c), mul(^c, ^d))
+  | div(div(a, b), div(c, d)) -> div(mul(^a, ^d), mul(^b, ^c))
   end;
 
 strategy attribute eval = innermost(evalStep <+ simplifyConstIdent <+ simplifyFrac);

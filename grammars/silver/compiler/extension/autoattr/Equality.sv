@@ -27,15 +27,14 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
  - Propagate a equality synthesized attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateEquality
-top::ProductionStmt ::= inh::String syn::Decorated! QName
+abstract production propagateEquality implements Propagate
+top::ProductionStmt ::= includeShared::Boolean @syn::QName inh::String
 {
-  undecorates to propagateOneAttr(syn);
-  top.unparse = s"propagate ${syn.unparse};";
+  top.unparse = s"propagate ${if includeShared then "@" else ""}${syn.unparse};";
   
   forwards to
     Silver_ProductionStmt {
-      $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
+      $name{top.frame.signature.outputElement.elementName}.$QName{^syn} =
         case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
@@ -54,9 +53,15 @@ top::ProductionStmt ::= inh::String syn::Decorated! QName
               trueConst('true'),
               map(
                 \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
+                  if !null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
+                  then Silver_Expr { $name{ie.elementName}.$QName{^syn} }
+                  else if isDecorable(ie.typerep, top.env)
+                  then Silver_Expr {
+                    silver:core:eq(silver:core:new($name{ie.elementName}), silver:core:new($name{ie.elementName ++ "2"}))
+                  }
+                  else Silver_Expr {
+                    silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"})
+                  },
                 top.frame.signature.inputElements))}
         | _ -> false
         end;
