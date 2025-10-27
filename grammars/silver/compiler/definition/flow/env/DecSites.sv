@@ -108,6 +108,12 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
           getSynAttrsOn(ntName, realEnv))));
 }
 
+{--
+ - The state used in finding possible decoration sites.
+ - We track the (prod, vertex) and (dispatch sig, rhs name) pairs already visited
+ - to avoid O(n^2) blowup due to revisiting the same productions in different
+ - branches of the resolution tree.
+ -}
 type PDSState = ([(String, VertexType)], [(String, String)]);
 
 {--
