@@ -289,13 +289,12 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
  - @param prod  the full name of the production
  - @param fName  the name of the local/production attribute
  - @param typeName  the full name of the type, or empty string if not a decorable type!
- - @param isNT  true if the type is a nonterminal  TODO unused?
  - @param isFwrd  true if this is a forward production attribute
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  isFwrd::Boolean deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  isFwrd::Boolean deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];

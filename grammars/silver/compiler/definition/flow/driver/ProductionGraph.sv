@@ -500,7 +500,7 @@ fun addFwdProdAttrInhEqs
 fun allFwdProdAttrs [String] ::= d::[FlowDef] =
   case d of
   | [] -> []
-  | localEq(_, fN, _, true, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
+  | localEq(_, fN, _, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
   | _ :: rest -> allFwdProdAttrs(rest)
   end;
 {--

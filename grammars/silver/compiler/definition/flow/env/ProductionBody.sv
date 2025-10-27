@@ -247,7 +247,7 @@ top::ProductionStmt ::= @val::QName e::Expr
   top.flowDefs <-
     [localEq(
       top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName,
-      val.lookupValue.typeScheme.typerep.isNonterminal, val.lookupValue.found && val.lookupValue.dcl.hasForward,
+      val.lookupValue.found && val.lookupValue.dcl.hasForward,
       if e.alwaysDecorated then e.outerFlowDeps else e.flowDeps)];
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
