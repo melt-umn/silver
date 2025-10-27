@@ -7,16 +7,25 @@ import silver:util:treemap as rtm;
 -- This isn't exactly a warning, but it can live here for now...
 
 synthesized attribute dumpFlowGraph :: Boolean occurs on CmdArgs;
+synthesized attribute dumpProds :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.dumpFlowGraph = false;
+  top.dumpProds = [];
 }
 abstract production dumpFlowGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpFlowGraph = true;
+  forwards to @rest;
+}
+abstract production dumpProdsFlag
+top::CmdArgs ::= prods::String  rest::CmdArgs
+{
+  top.dumpFlowGraph = true;
+  top.dumpProds = explode(",", prods) ++ rest.dumpProds;
   forwards to @rest;
 }
 aspect function parseArgs
@@ -29,6 +38,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
            , flagSpec(name="--dump-flow-graphs", paramString=nothing(),
                help="a typo of --dump-flow-graph",
                flagParser=flag(dumpFlowGraphFlag))
+           , flagSpec(name="--dump-prods", paramString=just("<prod1,prod2,...>"),
+               help="productions to include in the flow graph dump (comma-separated)",
+               flagParser=option(dumpProdsFlag))
            ];
   -- not omitting descriptions deliberately!
 }
@@ -36,9 +48,14 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars  _  _  a::Decorated CmdArgs  benv::BuildEnv
 {
+  local includeInDump :: (Boolean ::= ProductionGraph) = \ pg::ProductionGraph ->
+    null(a.dumpProds) || any(map(endsWith(_, pg.prod), a.dumpProds));
   top.postOps <-
     if a.dumpFlowGraph
-    then [dumpFlowGraphAction(prodGraph, rtm:values(finalGraphEnv), unList(rtm:toList(flowTypes)))]
+    then [dumpFlowGraphAction(
+      filter(includeInDump, prodGraph),
+      filter(includeInDump, rtm:values(finalGraphEnv)),
+      unList(rtm:toList(flowTypes)))]
     else [];
 }
 
