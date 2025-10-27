@@ -1,96 +1,75 @@
 grammar silver:compiler:extension:scopegraphs;
 
-terminal Scope_kwd 'scope!' lexer classes {KEYWORD};
-terminal With_kwd 'with' lexer classes {KEYWORD};
-terminal Var_kwd 'var' lexer classes {KEYWORD};
-terminal Lex_kwd 'lex' lexer classes {KEYWORD};
+--
 
-concrete production mkScopeNoDatum_c
-top::Expr ::= 
-  'scope!' '{'
-  var_edges :: Expr
-  ','
-  lex_edges :: Expr
-  '}'
+terminal Scope_t 'scope' lexer classes {KEYWORD, RESERVED};
+
+terminal Arrow_t '->';
+
+terminal EdgeLeft_t '-[';
+terminal EdgeRight_t ']->';
+
+--
+
+concrete production scopeAssertion
+top::ProductionStmt ::= 'scope' a::Name ';'
 {
-  forwards to Silver_Expr { mkScopeFull (nothing(), var_edges, lex_edges) };
+  top.unparse = "scope " ++ a.unparse ++ ";";
+
+  forwards to
+    productionStmtAppend(
+      productionAttributeDcl(
+        -- production attribute or local?
+        'production', 'attribute', ^a,
+        '::', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Scope"))), ';'
+      ),
+      valueEq(
+        qNameId(^a), '=', Silver_Expr { absScopeAssertion() }, ';' 
+      )
+    )
+  ;
 }
 
-terminal Query_kwd 'query?' lexer classes {KEYWORD};
-terminal From_kwd 'from' lexer classes {KEYWORD};
-terminal On_kwd 'on' lexer classes {KEYWORD};
-terminal Ordering_kwd 'ordering' lexer classes {KEYWORD};
-
-concrete production query_c
-top::Expr ::=
-  'query?' name::IdLower_t
-  'from' scope::Expr 
-  'on' '_' --r::Regex
-  'ordering' '_'
+concrete production scopeAssertionDatum
+top::ProductionStmt ::= 'scope' a::Name '->' e::Expr ';'
 {
-  forwards to Silver_Expr { mkQuery (scope, name.lexeme, seq(star(lex_label())), var_label()) };
+  top.unparse = "scope " ++ a.unparse ++ " -> " ++ e.unparse ++ ";";
+
+  forwards to
+    productionStmtAppend(
+      productionAttributeDcl(
+        -- production attribute or local?
+        'production', 'attribute', ^a,
+        '::', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Scope"))), ';'
+      ),
+      valueEq(
+        qNameId(^a), '=', Silver_Expr { absScopeAssertionDatum($Expr{^e}) }, ';' 
+      )
+    )
+  ;
 }
 
-{-
-concrete production mkScopeDatumScope_c
-top::Expr ::= 
-  'scope' 'with'
-  var_edges :: EdgeTargetList
-  lex_edges :: EdgeTargetList
-  'datum'
-  str::IdLower_t ':' q::QName
+
+--
+
+concrete production edgeAssertion
+top::ProductionStmt ::= d::DefLHS '-[' lab::IdUpper_t ']->' e::Expr ';'
 {
-  forwards to Silver_Expr { mkScopeFull (just(datum), var_edges, lex_edges) };
+  top.unparse = d.unparse ++ " -[ " ++ lab.lexeme ++ " ]-> " ++ e.unparse ++ ";";
+
+  -- todo: check that e1 is a reference to a Decorated Scope [with i]
+  --       and is either a production attribute or inherited scope
+
+  -- todo: check that e2 is a reference to a Decorated Scope [with i]
+
+  -- if this ProductionStmt is in a production with signature top::SomeNt ::= ...,
+  -- then prodRootName will be "top"
+  local prodRootName::String = top.frame.signature.outputElement.elementName;
+
+  forwards to
+    -- dummy forward for the time being
+    Silver_ProductionStmt {
+      local attribute foo::Integer;
+    }
+  ;
 }
-
-concrete production mkScopeDatumType_c
-top::Expr ::= 
-  'scope' 'with'
-  var_edges :: EdgeTargetList
-  lex_edges :: EdgeTargetList
-  'datum'
-  str::IdLower_t ':' t::TypeExpr
-{
-  forwards to Silver_Expr { mkScopeFull (just(datum), var_edges, lex_edges) };
-}
--}
-
-{-
-nonterminal EdgeTargetList_c;
-
-synthesized attribute asLst :: [Scope] occurs on EdgeTargetList_c;
-
-concrete production edgeTargetCons
-top::EdgeTargetList_c ::= 
-  q::QName
-  t::EdgeTargetList_c
-{
-
-  forwards to if null(q.lookupValue.dcls)
-              then edgeTargetError()
-              else edgeTargetConsScope (
-                let res::Expr = q.lookupValue.dcl.refDispatcher(q) in
-                  case res of
-                    mkScopeNoDatum_c (_, _, ve, le) -> 
-                  | mkScopeDatumScope_c (_, _, ve, le, _, str, _, q) ->
-                  | mkScopeDatumType_c (_, _, ve, le, _, str, _, t) -> 
-                  | _ -> edgeTargetError()
-                  end
-                end
-              ); --q.lookupValue.dcl.refDispatcher(q);
-
-  top.asLst = s :: t.asLst;
-
-}
-
-concrete production edgeTargetNil
-top::EdgeTargetList_c ::=
-{
-
-  top.asLst = [];
-
-}
-
-abstract production edgeTargetError
-top::EdgeTargetList_c ::=
-{}-}

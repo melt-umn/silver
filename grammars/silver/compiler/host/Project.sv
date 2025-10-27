@@ -28,6 +28,7 @@ exports silver:compiler:modification:list;
 exports silver:compiler:modification:copper_mda;
 
 -- Pure extensions to Silver
+exports silver:compiler:extension:scopegraphs;
 exports silver:compiler:extension:doc;
 exports silver:compiler:extension:convenience;
 exports silver:compiler:extension:easyterminal;
@@ -60,4 +61,3 @@ exports silver:compiler:analysis:warnings:flow;
 exports silver:compiler:analysis:warnings:exporting;
 exports silver:compiler:langserver;
 exports silver:compiler:refactor;
-exports silver:compiler:extension:scopegraphs;
