@@ -109,6 +109,14 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
 }
 
 {--
+ - The state used in finding possible decoration sites.
+ - We track the (prod, vertex) and (dispatch sig, rhs name) pairs already visited
+ - to avoid O(n^2) blowup due to revisiting the same productions in different
+ - branches of the resolution tree.
+ -}
+type PDSState = ([(String, VertexType)], [(String, String)]);
+
+{--
  - Generate a decision tree to determine all decoration sites where an inherited attribute
  - might be supplied to some vertex type.
  - This is used in checking for potentially hidden transitive dependencies.
@@ -123,7 +131,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
  - @return A decision tree to determine if an inherited attributes could possibly be supplied for vt.
  -}
 function findPossibleDecSites
-State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
+State<PDSState DecSiteTree> ::=
   prodName::String vt::VertexType
   flowEnv::FlowEnv realEnv::Env
 {
@@ -141,11 +149,11 @@ State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
     | _ -> ""
     end;
 
-  local recurse::(State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::= String VertexType) =
+  local recurse::(State<PDSState DecSiteTree> ::= String VertexType) =
     findPossibleDecSites(_, _, flowEnv, realEnv);
 
   return do {
-    seen :: ([(String, VertexType)], [(String, String)]) <- getState();
+    seen :: PDSState <- getState();
     if contains((prodName, vt), seen.1)
     then pure(neverDec())
     else do {
@@ -176,7 +184,7 @@ State<([(String, VertexType)], [(String, String)]) DecSiteTree> ::=
                 | sigDcl :: _
                     when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
                     matches sn :: _ -> do {
-                      setState((seen.1, (prod.1, sn) :: seen.2));
+                      modifyState(\ seen::PDSState -> (seen.1, (prod.1, sn) :: seen.2));
                       recurse(prod.1, rhsVertexType(sn));
                     }
                 | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
@@ -294,7 +302,7 @@ partial strategy attribute lookupDecSiteStep =
 
 partial strategy attribute resolveDecSiteStep =
   --rule on DecSiteTree of
-  --| ds -> unsafeTracePrint(^ds, ds.dbgPP ++ "\n\n")
+  --| ds -> unsafeTracePrint(^ds, ds.attrToResolve ++ " on " ++ ds.dbgPP ++ "\n\n")
   --end <*
   elimCycleDecSiteStep <+ lookupDecSiteStep <+ reduceDecSiteStep <+
   -- Short-circuit alternatives to potentially avoid building the entire tree

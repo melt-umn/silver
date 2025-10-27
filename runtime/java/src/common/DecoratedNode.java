@@ -632,7 +632,7 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
-	 * Evaluate a translation attribute without statically knowing the auxiliary inh indicies.
+	 * Evaluate a translation attribute without statically knowing the auxiliary inh indices.
 	 * This is the slow path, used only in a corner case where the translation attribute occurrence
 	 * is an optional export.
 	 * 
