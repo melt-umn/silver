@@ -377,11 +377,8 @@ top::AppExpr ::= e::Expr
   e.decSiteVertexInfo =
     case top.decSiteVertexInfo, top.appProd of
     | just(parent), just(ns) when
-        isDecorable(
-          if sigIsShared
-          then top.appExprTyperep.decoratedType
-          else top.appExprTyperep,
-          top.env) &&
+        !sigIsShared &&
+        isDecorable(top.appExprTyperep, top.env) &&
         !(null(e.flowDeps) && null(e.sharedRefs)) ->
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
@@ -402,6 +399,12 @@ top::AppExpr ::= e::Expr
       sigIndex < length(ns.inputNames) && head(drop(sigIndex, ns.inputElements)).elementShared
     | _ -> false
     end;
+  production sigDecSite::Maybe<VertexType> =
+    case top.decSiteVertexInfo, top.appProd of
+    | just(parent), just(ns) when sigIsShared ->
+      just(subtermVertexType(parent, ns.fullName, sigName))
+    | _, _ -> nothing()
+    end;
   production isForwardParam::Boolean =
     -- Don't try to share if someone uses a signature sharing prod somewhere invalid.
     case top.decSiteVertexInfo of
@@ -410,11 +413,9 @@ top::AppExpr ::= e::Expr
     | _ -> false
     end;
   top.flowDefs <-
-    case top.decSiteVertexInfo, top.appProd, e.flowVertexInfo of
-    | just(parent), just(ns), just(v) when sigIsShared ->
-      refDecSiteEq(
-        top.frame.fullName, e.finalType.typeName, v,
-        subtermVertexType(parent, ns.fullName, sigName), top.alwaysDecorated) ::
+    case sigDecSite, top.appProd, e.flowVertexInfo of
+    | just(decSite), just(ns), just(v) ->
+      refDecSiteEq(top.frame.fullName, e.finalType.typeName, v, decSite, top.alwaysDecorated) ::
       if inputSigIsShared then []
       else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v)]
     | _, _, _ -> []
