@@ -465,7 +465,7 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  childDeps::
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
     flatMap(\ c::(String, [FlowVertex]) ->
-      cartProd([subtermEqVertex(parent, termProd, c.1)], c.2),
+      cartProd([subtermEqVertex(parent, termProd, c.1)], parent.eqVertex ++ c.2),
       childDeps);
 }
 
