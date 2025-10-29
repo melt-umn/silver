@@ -91,6 +91,16 @@ top::DecSiteTree ::= prodName::String vt::VertexType
 }
 
 {--
+ - An attribute could be supplied via a production that wasn't found in the environment
+ - (e.g. in a modification that wasn't imported).
+ -}
+production hiddenProdDec
+top::DecSiteTree ::= prodName::String vt::VertexType
+{
+  top.decSitePP = s"${vt.vertexPP} of hidden production ${prodName}";
+}
+
+{--
  - An attribute can be supplied via forwarding.
  - Inherited attributes on a translation attribute are only supplied if this is
  - the forward of the production (not a forward prod attr), and there is no

@@ -74,15 +74,16 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
               viaProdVertexDec(
                 prodOrSig, rhsVertexType(sigName),
                 product(map(\ prod::(String, [String]) ->
-                  case getTypeDcl(prodOrSig, realEnv) of
-                  | sigDcl :: _
-                      when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
-                      matches sn :: _ -> recurse(prod.1, rhsVertexType(sn))
+                  case drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2) of
+                  | sn :: _ -> recurse(prod.1, rhsVertexType(sn))
                   | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
                   end,
                 -- Look at all the (host) productions that implement this dispatch signature
                 getImplementingProds(prodOrSig, flowEnv))))
-            | _ -> error(s"findDecSites: Couldn't find dispatch ${sigName}")
+            -- TODO: This could be a production in a grammar that isn't in scope in the local environment,
+            -- e.g. in a modification, that was missed in the above getValueDcl(prodOrSig, realEnv).
+            -- We really should be using the global env here.
+            | _ -> hiddenProdDec(prodOrSig, rhsVertexType(sigName))
             end) *
           projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
       -- Via signature/dispatch sharing
@@ -178,18 +179,23 @@ State<PDSState DecSiteTree> ::=
             -- This is a dispatch that we have already tried to resolve.
             then pure(neverDec())
             -- Otherwise, look at all the (host) productions that implement this dispatch signature
-            else map(sum, traverseA(
-              \ prod::(String, [String]) ->
-                case getTypeDcl(prodOrSig, realEnv) of
-                | sigDcl :: _
-                    when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
-                    matches sn :: _ -> do {
+            else 
+              case getTypeDcl(prodOrSig, realEnv) of
+              | sigDcl :: _ -> map(sum, traverseA(
+                \ prod::(String, [String]) ->
+                  case drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2) of
+                  | sn :: _ -> do {
                       modifyState(\ seen::PDSState -> (seen.1, (prod.1, sn) :: seen.2));
                       recurse(prod.1, rhsVertexType(sn));
                     }
-                | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
-                end,
-              getImplementingProds(prodOrSig, flowEnv))))
+                  | _ -> error(s"findPossibleDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
+                  end,
+                getImplementingProds(prodOrSig, flowEnv)))
+              -- TODO: This could be a production in a grammar that isn't in scope in the local environment,
+              -- e.g. in a modification, that was missed in the above getValueDcl(prodOrSig, realEnv).
+              -- We really should be using the global env here.
+              | _ -> pure(alwaysDec())
+              end)
         -- Via signature/dispatch sharing
         | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
           map(sum, sequence(unzipWith(recurse,
