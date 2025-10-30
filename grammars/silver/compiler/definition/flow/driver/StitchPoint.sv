@@ -127,14 +127,10 @@ fun edgeIsNew Boolean ::= edge::(FlowVertex, FlowVertex)  e::g:Graph<FlowVertex>
 
 {--
  - Creates edges from a "flow type" source to a "flow type" sink.
- - Special case: have to spot forwards and handle them correctly. This stinks.
  -
  - @param vt  The vertex type we're creating edges within
  - @param edge  pair of syn/fwd and inh. The edge.
  -}
 fun flowTypeEdge (FlowVertex, FlowVertex) ::= vt::VertexType  edge::Pair<String String> =
-  if edge.fst == "forward" then
-    (vt.fwdVertex, vt.inhVertex(edge.snd))
-  else
-    (vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
+  (vt.synVertex(edge.fst), vt.inhVertex(edge.snd));
 
