@@ -36,7 +36,7 @@ top::VertexType ::=
   top.isInhDefVertex = false;
   top.synVertex = lhsSynVertex;
   top.inhVertex = lhsInhVertex;
-  top.fwdVertex = forwardEqVertex;
+  top.fwdVertex = forwardEqVertex();
   top.eqVertex = [];
 }
 
@@ -97,12 +97,14 @@ top::VertexType ::=
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
   top.fwdVertex = forwardSynVertex("forward");
-  top.eqVertex = [forwardEqVertex];
+  top.eqVertex = [forwardEqVertex()];
 }
 
 abstract production forwardParentVertexType
 top::VertexType ::=
 {
+  -- TODO: Deps on these vertices need to introduce deps on the forward vertices of the remote prod
+  -- that forwarded to this sig sharing prod, even when there are override eqs.
   top.vertexName = "forwardParent";
   top.vertexPP = "forward parent";
   top.isInhDefVertex = false;

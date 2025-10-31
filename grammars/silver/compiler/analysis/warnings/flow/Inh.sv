@@ -96,6 +96,17 @@ fun checkEqDeps
   | localInhVertex(fName, attrName) -> 
       checkInhEq(prodName, localVertexType(fName), attrName, config, prodGraphs, flowEnv, realEnv)
   | localSynVertex(fName, attrName) -> []
+  -- If we depend on the forward EQ, then it must exist.
+  | forwardEqVertex() -> []
+  -- INH on forward always exists due to copy equations, except for trans.inh when trans has an override.
+  | forwardInhVertex(attrName) ->
+      case splitTransAttrInh(attrName) of
+      | just((transAttr, inhAttr)) when !null(lookupSyn(prodName, transAttr, flowEnv)) ->
+        [mwdaWrnAmbientOrigin(config,
+          s"Equation requires inherited attribute ${inhAttr} on forward.${transAttr}, however the copy equation from forwarding is suppressed by an override of this translation attribute.")]
+      | _ -> []
+      end
+  | forwardSynVertex(_) -> []
   -- A dependency on a ANON. This do always exist (`decorate expr with..` always has expr.)
   | anonEqVertex(fName) -> []
   -- A dependency on ANON.ATTR. Again, SYN are safe. We need to check only for INH.

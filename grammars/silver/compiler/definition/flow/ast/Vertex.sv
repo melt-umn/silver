@@ -78,6 +78,27 @@ data FlowVertex =
 | localInhVertex fName::String  attrName::String
 
 {--
+ - A vertex representing the forward tree.
+ - Note that this has only the deps for the outer node;
+ - lhsSynVertex("forward") has the deps for taking a reference to the forward tree.
+ -}
+| forwardEqVertex
+
+{--
+ - A vertex representing a synthesized attribute on the forward tree.
+ - 
+ - @param attrName  the full name of the attribute on the forward
+ -}
+| forwardSynVertex attrName::String
+
+{--
+ - A vertex representing an inherited attribute on the forward tree.
+ - 
+ - @param attrName  the full name of the attribute on the forward
+ -}
+| forwardInhVertex attrName::String
+
+{--
  - A vertex representing an anonymous equation. i.e. a 'decorate e with..'
  - expression, this production will represent 'e'.
  -
@@ -148,6 +169,9 @@ aspect vertexName on FlowVertex of
 | localEqVertex(fName) -> fName ++ "!"
 | localSynVertex(fName, attrName) -> s"${fName}.${attrName}"
 | localInhVertex(fName, attrName) -> s"${fName}.${attrName}"
+| forwardEqVertex() -> "forward!"
+| forwardSynVertex(attrName) -> s"forward.${attrName}"
+| forwardInhVertex(attrName) -> s"forward.${attrName}"
 | anonEqVertex(fName) -> fName ++ "!"
 | anonSynVertex(fName, attrName) -> s"${fName}.${attrName}"
 | anonInhVertex(fName, attrName) -> s"${fName}.${attrName}"
@@ -170,13 +194,6 @@ instance Ord FlowVertex {
   compare = \ v1::FlowVertex v2::FlowVertex -> compare(v1.vertexName, v2.vertexName);
 }
 
-
--- The forward equation for this production. We do not care to distinguish it.
-global forwardEqVertex :: FlowVertex = localEqVertex("forward");
-
--- An attribute on the forward node for this production
-fun forwardSynVertex FlowVertex ::= attrName::String = localSynVertex("forward", attrName);
-fun forwardInhVertex FlowVertex ::= attrName::String = localInhVertex("forward", attrName);
-
 -- An attribute on the production that forwarded to this one
+-- TODO should be its own FlowVertex prod?
 fun forwardParentSynVertex FlowVertex ::= attrName::String = localSynVertex("forwardParent", attrName);

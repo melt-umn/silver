@@ -52,7 +52,6 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
       | transAttrVertexType(lhsVertexType(), attrName) -> alwaysDec()
       -- Via forwarding
       | forwardVertexType() -> forwardDec(prodName, nothing())
-      | localVertexType("forward") -> forwardDec(prodName, nothing())
       | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
           forwardDec(prodName, just(fName))
       -- Via projected remote equation
@@ -163,7 +162,6 @@ State<PDSState DecSiteTree> ::=
         case vt of
         -- Via forwarding
         | forwardVertexType() -> pure(forwardDec(prodName, nothing()))
-        | localVertexType("forward") -> pure(forwardDec(prodName, nothing()))
         | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
             pure(forwardDec(prodName, just(fName)))
         -- Via projected remote equation

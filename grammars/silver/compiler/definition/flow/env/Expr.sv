@@ -164,7 +164,7 @@ top::Expr ::= @q::QName
 {
   -- Always a non-data nonterminal type.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps <- forwardEqVertex :: map(forwardVertexType().inhVertex, fromMaybe([], refSet));
+  top.flowDeps <- lhsSynVertex("forward") :: map(forwardInhVertex, fromMaybe([], refSet));
   top.flowVertexInfo = just(forwardVertexType());
 }
 aspect production forwardParentReference

@@ -478,7 +478,7 @@ fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] fl
   if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
     then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
-          (lhsSynVertex(head(syns)), forwardEqVertex)] else []) ++
+          (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.

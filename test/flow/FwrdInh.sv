@@ -11,3 +11,29 @@ top::FIExpr ::= e::FIExpr
   forwards to ^e;
 }
 }
+
+production fie
+top::FIExpr ::= 
+{
+  top.errors1 = null(top.env1);
+}
+
+nonterminal FIExtExpr with errors1, toFIE;
+translation attribute toFIE::FIExpr;
+
+production fieExt
+top::FIExtExpr ::=
+{
+  top.toFIE = fie();
+  top.errors1 = false;
+}
+
+warnCode "Equation requires inherited attribute flow:env1 on forward.flow:toFIE, however the copy equation from forwarding is suppressed" {
+production fieExtFwrd
+top::FIExtExpr ::= e::FIExtExpr
+{
+  top.toFIE = @e.toFIE;
+  top.errors1 = null(forward.toFIE.env1);
+  forwards to fieExt();
+}
+}

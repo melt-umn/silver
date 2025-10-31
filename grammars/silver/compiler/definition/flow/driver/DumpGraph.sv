@@ -161,6 +161,9 @@ aspect dotName on FlowVertex of
 | localEqVertex(fName) -> fName ++ "!"
 | localSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | localInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| forwardEqVertex() -> "forward!"
+| forwardSynVertex(attrName) -> "forward/" ++ attrName
+| forwardInhVertex(attrName) -> "forward/" ++ attrName
 | anonEqVertex(fName) -> fName ++ "!"
 | anonSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | anonInhVertex(fName, attrName) -> fName ++ "/" ++ attrName

@@ -246,7 +246,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  outerDeps::[FlowVertex]  mayA
   top.prodGraphContribs := [(prod, top)];
   local ftEdges :: [(FlowVertex, FlowVertex)] = cartProd([lhsSynVertex("forward")], deps);
   top.flowEdges =
-    cartProd([forwardEqVertex], outerDeps) ++
+    cartProd([forwardEqVertex()], outerDeps) ++
     if mayAffectFlowType then ftEdges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else ftEdges;
 }
