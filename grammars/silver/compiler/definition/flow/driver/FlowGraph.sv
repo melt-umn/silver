@@ -2,14 +2,14 @@ grammar silver:compiler:definition:flow:driver;
 
 import silver:util:idcache as i;
 
-type FlowType = g:Graph<String>;
+type FlowType = rtm:Map<String InhDep>;
 
 function findFlowType
-FlowType ::= prod::String  e::EnvTree<FlowType>
+FlowType ::= nt::String  e::EnvTree<FlowType>
 {
-  local lookup :: [FlowType] = searchEnvTree(prod, e);
+  local lookup :: [FlowType] = searchEnvTree(nt, e);
   
-  return if null(lookup) then g:empty() else head(lookup);
+  return if null(lookup) then rtm:empty() else head(lookup);
 }
 fun findProductionGraph ProductionGraph ::= n::String l::EnvTree<ProductionGraph> =
   case searchEnvTree(n, l) of
@@ -27,7 +27,7 @@ function expandGraph
 
   return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
 }
-fun onlyLhsInh set:Set<String> ::= s::[FlowVertex] = set:add(filterLhsInh(s), set:empty());
+fun onlyLhsInh set:Set<InhDep> ::= s::[FlowVertex] = set:add(filterMap((.lhsInh), s), set:empty());
 
 fun expandTileGraphSigDeps
 set:Set<FlowVertex> ::= v::[FlowVertex] rhsNames::[String] g::ProductionGraph =
@@ -36,11 +36,11 @@ set:Set<FlowVertex> ::= v::[FlowVertex] rhsNames::[String] g::ProductionGraph =
 
 fun isSigVertex Boolean ::= rhsNames::[String] v::FlowVertex =
   case v of
-  | lhsSynVertex(_) -> true
-  | lhsInhVertex(_) -> true
-  | rhsEqVertex(sigName) -> contains(sigName, rhsNames)
-  | rhsSynVertex(sigName, _) -> contains(sigName, rhsNames)
-  | rhsInhVertex(sigName, _) -> contains(sigName, rhsNames)
+  | synVertex(lhsVertexType(), _) -> true
+  | inhVertex(lhsVertexType(), _) -> true
+  | eqVertex(rhsVertexType(sigName)) -> contains(sigName, rhsNames)
+  | synVertex(rhsVertexType(sigName), _) -> contains(sigName, rhsNames)
+  | inhVertex(rhsVertexType(sigName), _) -> contains(sigName, rhsNames)
   | _ -> false
   end;
 
@@ -67,14 +67,14 @@ set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p:
  - @param flow  The flow type environment (NOTE: TODO: this is currently 'myFlow' or something, NOT top.flowEnv)
  - @return A set of inherited attributes on this nonterminal, needed to compute this synthesized attribute.
  -}
-fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType> =
-  g:edgesFrom(syn, findFlowType(nt, flow));
+fun inhDepsForSyn set:Set<InhDep> ::= syn::String  nt::String  flow::EnvTree<FlowType> =
+  set:fromList(rtm:lookup(syn, findFlowType(nt, flow)));
 
 
 
-fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
+fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<InhDep> =
   case v of
-  | lhsInhVertex(a) -> set:contains(a, inhSet)
+  | inhVertex(lhsVertexType(), a) -> set:contains(inhDep(a), inhSet)
   | _ -> false
   end;
 

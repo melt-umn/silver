@@ -15,8 +15,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
 {
   -- aggregate all flow def information
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), top.allGrammars));
-  local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), top.allGrammars);
-  local allRefDefs :: [(String, [String])] = flatMap((.refDefs), top.allGrammars);
+  local allSpecDefs :: [(String, String, [InhDep], [String])] = flatMap((.specDefs), top.allGrammars);
+  local allRefDefs :: [(String, [InhDep])] = flatMap((.refDefs), top.allGrammars);
   local allSharedRefs :: [(String, SharedRefSite)] = flatMap((.sharedRefs), top.allGrammars);
   local allFlowEnv :: FlowEnv = flowEnv(allSpecDefs, allRefDefs, allSharedRefs, allFlowDefs);
   

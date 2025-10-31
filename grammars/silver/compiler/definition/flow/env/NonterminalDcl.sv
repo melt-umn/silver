@@ -10,10 +10,10 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   -- Normally the flow analysis consider options to be the same as exports.
   -- Here, to avoid creating a hard dependency on options, we ignore options when
   -- deciding the include things in the *inferred* ref set. (Thus, isStrictlyExportedBy.)
-  local inferredInhs :: [String] =
+  local inferredInhs :: [InhDep] =
     getInhAttrsOnForReferences(fName, top.env, isStrictlyExportedBy(_, [top.grammarName], top.compiledGrammars));
   
-  local specInhs :: Maybe<[String]> =
+  local specInhs :: Maybe<[InhDep]> =
     map(fst, lookup("decorate", getFlowTypeSpecFor(fName, top.flowEnv)));
 
   -- Notice the circularity: refDefs uses flowEnv. Works fine because only
@@ -27,7 +27,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 -- Note that we only include trans.inh when both trans and inh are exported by nt's grammar.
 -- We might want to consider including all trans.inh where inh is in the ref set of trans's nonterminal.
 function getInhAttrsOnForReferences
-[String] ::= nt::String  e::Env  authority::(Boolean ::= String)
+[InhDep] ::= nt::String  e::Env  authority::(Boolean ::= String)
 {
   nondecorated local ntty::Type =
     case getTypeDcl(nt, e) of
@@ -38,12 +38,12 @@ function getInhAttrsOnForReferences
     case getAttrDcl(occ.attrOccurring, e) of
     | at :: _ when authority(occ.sourceGrammar) ->
         if at.isInherited
-        then [occ.attrOccurring]
+        then [inhDep(occ.attrOccurring)]
         else if at.isSynthesized && at.isTranslation
         then flatMap(\ occ2::OccursDclInfo ->
           case getAttrDcl(occ2.attrOccurring, e) of
           | at2 :: _ when authority(occ2.sourceGrammar) && at2.isInherited ->
-            [s"${occ.attrOccurring}.${occ2.attrOccurring}"]
+            [transInhDep(occ.attrOccurring, inhDep(occ2.attrOccurring))]
           | _ -> []
           end,
           getAttrOccursOn(determineAttributeType(occ, ntty).typeName, e))

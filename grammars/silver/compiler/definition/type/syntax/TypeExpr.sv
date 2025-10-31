@@ -5,6 +5,7 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:definition:flow:env;
+imports silver:compiler:definition:flow:ast only InhDep;
 
 tracked nonterminal TypeExpr  with config, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases, onNt, errorsInhSet, typerepInhSet;
 tracked nonterminal Signature with config, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;

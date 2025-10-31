@@ -43,11 +43,11 @@ function raiseImplicitFwdEqFlowTypes
 [Message] ::= config::Decorated CmdArgs  lhsNt::String  prod::String  attr::String  e::FlowEnv  myGraph::ProductionGraph  myFlow::EnvTree<FlowType> 
 {
   -- The actual dependencies for `forward.attr`
-  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(expandGraph([forwardEqVertex, forwardSynVertex(attr)], myGraph));
+  local fwdFlowDeps :: set:Set<InhDep> = onlyLhsInh(expandGraph([forwardEqVertex, forwardSynVertex(attr)], myGraph));
   -- The flow type for `attr` on `lhsNt`
-  local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);
+  local depsForThisAttr :: set:Set<InhDep> = inhDepsForSyn(attr, lhsNt, myFlow);
   -- Actual forwards equation deps not in the flow type for `attr`
-  local diff :: [String] = set:toList(set:difference(fwdFlowDeps, depsForThisAttr));
+  local diff :: [InhDep] = set:toList(set:difference(fwdFlowDeps, depsForThisAttr));
 
   return case lookupSyn(prod, attr, e) of
   | eq :: _ -> []

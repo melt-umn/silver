@@ -18,6 +18,7 @@ imports silver:compiler:definition:env;
 
 -- Flow Information
 imports silver:compiler:definition:flow:env;
+imports silver:compiler:definition:flow:ast only InhDep, inhDep;
 
 -- Utilities
 

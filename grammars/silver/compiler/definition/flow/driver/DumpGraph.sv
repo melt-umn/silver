@@ -97,7 +97,7 @@ function generateFlowDotGraph
 String ::= flowTypes::[Pair<String [FlowType]>]
 {
   local nt::String = head(flowTypes).fst;
-  local edges::[Pair<String String>] = g:toList(head(head(flowTypes).snd));
+  local edges::[Pair<String InhDep>] = rtm:toList(head(head(flowTypes).snd));
   
   return if null(flowTypes) then ""
   else "subgraph \"cluster:" ++ nt ++ "\" {\nlabel=\"" ++ substring(lastIndexOf(":", nt) + 1, length(nt), nt) ++ "\";\n" ++ 
@@ -107,16 +107,16 @@ String ::= flowTypes::[Pair<String [FlowType]>]
        generateFlowDotGraph(tail(flowTypes));
 }
 
-fun expandLabels [String] ::= l::[Pair<String String>] =
-  if null(l) then [] else head(l).fst :: head(l).snd :: expandLabels(tail(l));
+fun expandLabels [String] ::= l::[Pair<String InhDep>] =
+  if null(l) then [] else head(l).fst :: head(l).snd.dotName :: expandLabels(tail(l));
 function makeLabelDcls
 String ::= nt::String  attr::String
 {
   local a :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
   return "\"" ++ nt ++ "/" ++ attr ++ "\"[label=\"" ++ a ++ "\"];\n";
 }
-fun makeNtFlow String ::= nt::String  e::Pair<String String> =
-  "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
+fun makeNtFlow String ::= nt::String  e::Pair<String InhDep> =
+  "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd.dotName ++ "\";\n";
 
 fun writeDotGraphs IO<Unit> ::= fileName::String specs::[ProductionGraph] = do {
   writeFile(fileName, "digraph flow {\n");
@@ -150,26 +150,30 @@ fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String 
 {--
  - DOT graph names for vertices in the production flow graphs
  -}
-synthesized attribute dotName :: String occurs on FlowVertex;
+synthesized attribute dotName :: String occurs on FlowVertex, VertexType, InhDep;
 
 aspect dotName on FlowVertex of
-| lhsSynVertex(attrName) -> attrName
-| lhsInhVertex(attrName) -> attrName
-| rhsEqVertex(sigName) -> sigName ++ "!"
-| rhsSynVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
-| rhsInhVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
-| localEqVertex(fName) -> fName ++ "!"
-| localSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
-| localInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
-| anonEqVertex(fName) -> fName ++ "!"
-| anonSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
-| anonInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
-| subtermEqVertex(parent, prodName, sigName) ->
-  parent.synVertex(prodName ++ "@" ++ sigName ++ "!").dotName  -- Hack!
-| subtermSynVertex(parent, prodName, sigName, attrName) ->
-  parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
-| subtermInhVertex(parent, prodName, sigName, attrName) ->
-  parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
+| eqVertex(vt) -> vt.dotName ++ "!"
+| synVertex(vt, attrName) -> vt.dotName ++ "/" ++ attrName
+| inhVertex(vt, attrName) -> vt.dotName ++ "/" ++ attrName
+end;
+
+aspect dotName on VertexType of
+| lhsVertexType() -> ""
+| rhsVertexType(sigName) -> "/" ++ sigName
+| localVertexType(fName) -> "/" ++ fName
+| anonVertexType(fName) -> "/" ++ fName
+| transAttrVertexType(v, transAttr) ->
+    v.dotName ++ "." ++ transAttr
+| forwardVertexType() -> "/forward"
+| forwardParentVertexType() -> "/forwardParent"
+| subtermVertexType(parent, prodName, sigName) ->
+    parent.dotName ++ "/" ++ prodName ++ "@" ++ sigName
+end;
+
+aspect dotName on InhDep of
+| inhDep(inhName) -> inhName
+| transInhDep(transName, inh) -> transName ++ "." ++ inh.dotName
 end;
 
 fun generateStitchPointsDump String ::= specs::[ProductionGraph] =
@@ -186,7 +190,7 @@ aspect showStitchPoint on StitchPoint of
 | nonterminalStitchPoint(nt, vertexType) ->
   s"\tnonterminal ${nt} at ${vertexType.vertexName}\n"
 | projectionStitchPoint(prod, sourceType, targetType, prodType, attrs) ->
-  s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
+  s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", map((.vertexName), attrs))}\n"
 | tileStitchPoint(prod, parentType) ->
   s"\ttile ${prod} at ${parentType.vertexName}\n"
 end;

@@ -17,28 +17,28 @@ type NtName = String;
 
 -- from explicit specifications and initial flow graphs
 function computeInitialFlowTypes
-EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
+EnvTree<FlowType> ::= specDefs::[(String, String, [InhDep], [String])]
 {
   -- We don't care what flow specs reference what.
   -- Also, exclude specs for 'decorate' which isn't a real attribute.
-  local dropRefs::[(String, String, [String])] =
-    filterMap(\ d::(String, String, [String], [String]) ->
+  local dropRefs::[(String, String, [InhDep])] =
+    filterMap(\ d::(String, String, [InhDep], [String]) ->
       if d.2 == "decorate" then nothing() else just((d.1, d.2, d.3)),
       specDefs);
 
-  local specs :: [(NtName, [(String, [String])])] =
+  local specs :: [(NtName, [(String, [InhDep])])] =
     ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, dropRefs)));
   
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
-fun initialFlowType Pair<NtName FlowType> ::= x::(NtName, [(String, [String])]) =
-  (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
+fun initialFlowType Pair<NtName FlowType> ::= x::(NtName, [(String, [InhDep])]) =
+  (x.fst, rtm:fromList(flatMap(toFlatEdges, x.snd)));
 fun ntListLte Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst <= b.fst;
 fun ntListEq Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst == b.fst;
-fun ntListCoalesce [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]] =
+fun ntListCoalesce [(NtName, [(String, [InhDep])])] ::= l::[[(NtName, String, [InhDep])]] =
   if null(l) then []
   else (head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
-fun toFlatEdges [Pair<String String>] ::= x::Pair<String [String]> =
+fun toFlatEdges [Pair<String InhDep>] ::= x::Pair<String [InhDep]> =
   map(pair(fst=x.fst, snd=_), x.snd);
 
 fun runFlowTypeInference
@@ -98,7 +98,7 @@ top::InferState<()> ::= prod::ProdName
 {
   local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.1);
   local currentFlowType :: FlowType = findFlowType(graph.lhsNt, top.stateIn.2);
-  local newFlowType :: FlowType = g:add(
+  local newFlowType :: FlowType = rtm:add(
     flatMap(expandVertexFilterTo(_, graph), graph.flowTypeAttrs),
     currentFlowType);
   top.stateOut = (top.stateIn.1, rtm:update(graph.lhsNt, [newFlowType], top.stateIn.2));
@@ -106,22 +106,5 @@ top::InferState<()> ::= prod::ProdName
 }
 
 -- Expand 'lhsSynVertex(syn)' using 'graph', then filter down to just those in 'inhs'
-fun expandVertexFilterTo [(String, String)] ::= syn::String  graph::ProductionGraph =
-  map(pair(fst=syn, snd=_), filterLhsInh(set:toList(graph.edgeMap(lhsSynVertex(syn)))));
-
-{--
- - Filters vertexes down to just the names of inherited attributes on the LHS
- -}
-global filterLhsInh :: ([String] ::= [FlowVertex]) = flatMap(collectInhs, _);
-
-{--
- - Used to filter down to just the inherited attributes (on the LHS)
- - 
- - @param f  The flow vertex in question
- - @return  {f} if f is an LHS Inh vertex, otherwise {}
- -}
-fun collectInhs [String] ::= f::FlowVertex =
-  case f of
-  | lhsInhVertex(a) -> [a]
-  | _ -> []
-  end;
+fun expandVertexFilterTo [(String, InhDep)] ::= syn::String  graph::ProductionGraph =
+  map(pair(fst=syn, snd=_), filterMap((.lhsInh), set:toList(graph.edgeMap(lhsSynVertex(syn)))));

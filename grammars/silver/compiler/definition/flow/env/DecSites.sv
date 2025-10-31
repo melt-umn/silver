@@ -26,7 +26,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
     end;
   local ntName::String =
     case vt of
-    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | forwardVertexType() -> ns.outputElement.typerep.typeName
     | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
     | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
     | _ -> ""
@@ -48,11 +48,10 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
        else neverDec()) +
       case vt of
       -- Via flow type
-      | lhsVertexType_real() -> error("findDecSites: lhsVertexType") -- Should never actually be a decoration site
-      | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
+      | lhsVertexType() -> error("findDecSites: lhsVertexType") -- Should never actually be a decoration site
+      | transAttrVertexType(lhsVertexType(), attrName) -> alwaysDec()
       -- Via forwarding
-      | forwardVertexType_real() -> forwardDec(prodName, nothing())
-      | localVertexType("forward") -> forwardDec(prodName, nothing())
+      | forwardVertexType() -> forwardDec(prodName, nothing())
       | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
           forwardDec(prodName, just(fName))
       -- Via projected remote equation
@@ -144,7 +143,7 @@ State<PDSState DecSiteTree> ::=
     end;
   local ntName::String =
     case vt of
-    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | forwardVertexType() -> ns.outputElement.typerep.typeName
     | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
     | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
     | _ -> ""
@@ -162,8 +161,7 @@ State<PDSState DecSiteTree> ::=
       viaVertex :: DecSiteTree <-
         case vt of
         -- Via forwarding
-        | forwardVertexType_real() -> pure(forwardDec(prodName, nothing()))
-        | localVertexType("forward") -> pure(forwardDec(prodName, nothing()))
+        | forwardVertexType() -> pure(forwardDec(prodName, nothing()))
         | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
             pure(forwardDec(prodName, just(fName)))
         -- Via projected remote equation
@@ -244,16 +242,16 @@ partial strategy attribute reduceDecSiteStep =
   end occurs on DecSiteTree;
 
 -- The inherited attribute for which we are trying to resolve the decision tree
-inherited attribute attrToResolve::String occurs on DecSiteTree;
+inherited attribute attrToResolve::InhDep occurs on DecSiteTree;
 propagate attrToResolve on DecSiteTree excluding depAttrDec, projectedDepsDec, transAttrDec;
 aspect production depAttrDec
-top::DecSiteTree ::= attrName::String d::DecSiteTree
+top::DecSiteTree ::= inh::InhDep d::DecSiteTree
 {
-  d.attrToResolve = attrName;
+  d.attrToResolve = inh;
 }
 
 -- The set of (prod, vertex, inh) that have been seen so far in this branch of the tree
-inherited attribute seenProdVertexAttrs::set:Set<(String, VertexType, String)> occurs on DecSiteTree;
+inherited attribute seenProdVertexAttrs::set:Set<(String, VertexType, InhDep)> occurs on DecSiteTree;
 propagate seenProdVertexAttrs on DecSiteTree excluding viaProdVertexDec;
 aspect production viaProdVertexDec
 top::DecSiteTree ::= prodName::String vt::VertexType d::DecSiteTree
@@ -281,12 +279,13 @@ partial strategy attribute lookupDecSiteStep =
         when vertexHasInhEq(prodName, vt, top.attrToResolve, top.flowEnv) ->
       alwaysDec()
   | forwardDec(_, just(_)) ->
-      if splitTransAttrInh(top.attrToResolve).isJust
-      then neverDec()
-      else alwaysDec()
+      case top.attrToResolve of
+      | inhDep(_) -> alwaysDec()
+      | transInhDep(_, _) -> neverDec()
+      end
   | forwardDec(prodName, nothing()) ->
-      case splitTransAttrInh(top.attrToResolve) of
-      | just((transAttr, inhAttr))
+      case top.attrToResolve of
+      | transInhDep(transAttr, inh)
             when !null(lookupSyn(prodName, transAttr, top.flowEnv)) ->
           -- transAttr has an override equation, so trans.inh supplied on lhs
           -- isn't supplied to trans on forward:
@@ -296,12 +295,12 @@ partial strategy attribute lookupDecSiteStep =
   -- This is safe as the tree is traversed top-down, so the current attrToResolve is the final one.
   | depAttrDec(attrName, d) when top.attrToResolve == attrName -> ^d
   | projectedDepsDec(prodName, sigName, d) ->
-      product(map(depAttrDec(_, ^d), set:toList(onlyLhsInh(expandGraph(
-        [rhsInhVertex(sigName, top.attrToResolve)],
-        findProductionGraph(prodName, top.productionFlowGraphs))))))
+      product(map(depAttrDec(_, ^d), filterMap((.lhsInh), expandGraph(
+        [top.attrToResolve.vertexOf(rhsVertexType(sigName))],
+        findProductionGraph(prodName, top.productionFlowGraphs)))))
   | transAttrDec(attrName, d) ->
-      case splitTransAttrInh(top.attrToResolve) of
-      | just((transAttr, inhAttr)) when transAttr == attrName -> depAttrDec(inhAttr, ^d)
+      case top.attrToResolve of
+      | transInhDep(transAttr, inh) when transAttr == attrName -> depAttrDec(inh, ^d)
       | _ -> neverDec()
       end
   end occurs on DecSiteTree;
@@ -342,16 +341,16 @@ propagate
   - Determine if some decoration site has some inherited attribute supplied.
   -
   - @param d The decoration site to check.
-  - @param attrName The name of the inherited attribute.
+  - @param inh  The inherited/inh-on-trans attribute.
   - @param prodGraphs The final production flow graphs.
   - @param flowEnv The flow environment.
   - @return alwaysDec(), if the attribute is always present,
   - or else the places where it could be supplied.
   -}
 function resolveDecSiteInhEq
-DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv
+DecSiteTree ::= inh::InhDep d::DecSiteTree prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv
 {
-  d.attrToResolve = attrName;
+  d.attrToResolve = inh;
   d.productionFlowGraphs = prodGraphs;
   d.flowEnv = flowEnv;
   d.seenProdVertexAttrs = set:empty();
@@ -365,7 +364,7 @@ DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGr
   -
   - @param prodName The name of the production containing the vertex.
   - @param vt The vertex type to check.
-  - @param attrName The name of the inherited attribute.
+  - @param inh  The inherited/inh-on-trans attribute.
   - @param prodGraphs The final production flow graphs.
   - @param flowEnv The flow environment.
   - @param realEnv The regular environment.
@@ -374,35 +373,35 @@ DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGr
   -}
 fun resolveInhEq
 DecSiteTree ::=
-    prodName::String vt::VertexType attrName::String
+    prodName::String vt::VertexType inh::InhDep
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, flowEnv, realEnv), prodGraphs, flowEnv);
+  resolveDecSiteInhEq(inh, findDecSites(prodName, vt, flowEnv, realEnv), prodGraphs, flowEnv);
 
 {--
  - Determine if a decoration site for some vertex has an inherited attribute supplied.
  - 
  - @param prodName The name of the production containing the vertex.
  - @param vt The vertex type to check.
- - @param attrName The name of the inherited attribute.
+ - @param inh  The inherited/inh-on-trans attribute.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
  - @return true if the vertex is guaranteed to be supplied with the attribute.
  -}
 fun decSiteHasInhEq
 Boolean ::=
-    prodName::String vt::VertexType attrName::String
+    prodName::String vt::VertexType inh::InhDep
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveInhEq(prodName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
+  resolveInhEq(prodName, vt, inh, prodGraphs, flowEnv, realEnv) == alwaysDec();
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs
-[(DecSiteTree, [String])] ::=
-  prodName::String vt::VertexType attrNames::[String]
+[(DecSiteTree, [InhDep])] ::=
+  prodName::String vt::VertexType inhs::[InhDep]
   prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env
 {
   nondecorated local d::DecSiteTree = findDecSites(prodName, vt, flowEnv, realEnv);
-  local resolved::map:Map<DecSiteTree String> =
-    map:add(map(\ a -> (resolveDecSiteInhEq(a, d, prodGraphs, flowEnv), a), attrNames), map:empty());
+  local resolved::map:Map<DecSiteTree InhDep> =
+    map:add(map(\ a -> (resolveDecSiteInhEq(a, d, prodGraphs, flowEnv), a), inhs), map:empty());
   return flatMap(\ d -> 
     case map:lookup(d, resolved) of
     | [] -> []
@@ -416,7 +415,7 @@ function decSitesMissingInhEqs
  - 
  - @param prodName The name of the production containing the vertex.
  - @param vt The vertex type to check.
- - @param attrName The name of the inherited attribute.
+ - @param inh  The inherited/inh-on-trans attribute.
  - @param prodGraphs The final production flow graphs.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
@@ -424,7 +423,7 @@ function decSitesMissingInhEqs
  -}
 fun possibleDecSiteHasInhEq
 Boolean ::=
-    prodName::String vt::VertexType attrName::String
+    prodName::String vt::VertexType inh::InhDep
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(attrName, evalState(findPossibleDecSites(prodName, vt, flowEnv, realEnv), ([], [])), prodGraphs, flowEnv)
+  resolveDecSiteInhEq(inh, evalState(findPossibleDecSites(prodName, vt, flowEnv, realEnv), ([], [])), prodGraphs, flowEnv)
   == alwaysDec();

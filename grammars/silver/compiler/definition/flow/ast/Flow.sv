@@ -227,7 +227,7 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = cartProd(
-    rhsInhVertex(sigName, attr) :: map(\ v::VertexType -> v.inhVertex(attr), decSites),
+    map(inhVertex(_, attr), rhsVertexType(sigName) :: decSites),
     deps);
 }
 
@@ -279,7 +279,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.fwdInhTreeContribs := [(crossnames(prod, attr), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=forwardInhVertex(attr), snd=_), deps);
+  top.flowEdges = map(pair(fst=inhVertex(forwardVertexType(), attr), snd=_), deps);
 }
 
 {--
@@ -317,7 +317,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]  
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = cartProd(
-    localInhVertex(fName, attr) :: map(\ v::VertexType -> v.inhVertex(attr), decSites),
+    map(inhVertex(_, attr), localVertexType(fName) :: decSites),
     deps);
 }
 {--
@@ -339,9 +339,10 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = cartProd(
-    rhsInhVertex(sigName, s"${transAttr}.${attr}") ::
-    map(\ v::VertexType -> v.inhVertex(s"${transAttr}.${attr}"), baseDecSites) ++
-    map(\ v::VertexType -> v.inhVertex(attr), transDecSites),
+    map(\ vt ->
+      inhVertex(transAttrVertexType(vt, transAttr), attr), 
+      rhsVertexType(sigName) :: baseDecSites) ++
+    map(inhVertex(_, attr), transDecSites),
     deps);
 }
 
@@ -364,9 +365,10 @@ top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  d
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = cartProd(
-    localInhVertex(fName, s"${transAttr}.${attr}") ::
-    map(\ v::VertexType -> v.inhVertex(s"${transAttr}.${attr}"), baseDecSites) ++
-    map(\ v::VertexType -> v.inhVertex(attr), transDecSites),
+    map(\ vt ->
+      inhVertex(transAttrVertexType(vt, transAttr), attr), 
+      localVertexType(fName) :: baseDecSites) ++
+    map(inhVertex(_, attr), transDecSites),
     deps);
 }
 
@@ -400,7 +402,7 @@ top::FlowDef ::= prod::String  fName::String  loc::Location  deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=anonEqVertex(fName), snd=_), deps);
+  top.flowEdges = map(pair(fst=eqVertex(anonVertexType(fName)), snd=_), deps);
 }
 
 {--
@@ -417,7 +419,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=anonInhVertex(fName, attr), snd=_), deps);
+  top.flowEdges = map(pair(fst=inhVertex(anonVertexType(fName), attr), snd=_), deps);
 }
 
 {--
@@ -429,10 +431,10 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - @param deps  the full names of the inherited attribute dependencies specified in the occurs-on context.
  -}
 abstract production synOccursContextEq
-top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
+top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[InhDep]
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=vt.synVertex(attr), snd=_), map(vt.inhVertex, deps));
+  top.flowEdges = map(pair(fst=synVertex(vt, attr), snd=_), map(inhVertexOf(vt, _), deps));
 }
 
 {--
@@ -465,7 +467,8 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  childDeps::
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
     flatMap(\ c::(String, [FlowVertex]) ->
-      cartProd([subtermEqVertex(parent, termProd, c.1)], parent.eqVertex ++ c.2),
+      -- TODO: is this is redundant with adding the lhs eq vertex in the tile graph?
+      cartProd([eqVertex(subtermVertexType(parent, termProd, c.1))], parent.eqVertex ++ c.2),
       childDeps);
 }
 
@@ -521,7 +524,6 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
  -}
 abstract production sigShareSite
 top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType
-
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];

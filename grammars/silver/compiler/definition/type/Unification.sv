@@ -132,7 +132,7 @@ top::Type ::= fn::String
 }
 
 aspect production inhSetType
-top::Type ::= inhs::[String]
+top::Type ::= inhs::[InhDep]
 {
   top.unify =
     case top.unifyWith of

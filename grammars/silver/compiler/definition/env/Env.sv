@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:env;
 
+imports silver:compiler:definition:flow:ast only InhDep, inhDep, transInhDep;
+
 
 -- emptyEnv    Env ::=
 -- toEnv       Env ::= d::Defs
@@ -270,19 +272,20 @@ fun getInhAttrsOn [String] ::= fnnt::String e::Env =
     getAttrOccursOn(fnnt, e));
 
 {--
- - Returns the names of all inherited attributes known locally to occur on a nonterminal.
+ - Returns all inherited attributes known locally to occur on a nonterminal.
  - Also includes all inherited attributes occurring on translation attributes on the
  - nonterminal, when we want to treat these like inherited attributes.
+ - TODO: Need to bail out if there are occurs cycles to avoid a crash?
  -}
-fun getInhAndInhOnTransAttrsOn [String] ::= fnnt::String e::Env =
+fun getInhAndInhOnTransAttrsOn [InhDep] ::= fnnt::String e::Env =
   flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, e) of
-      | at :: _ when at.isInherited -> [o.attrOccurring]
+      | at :: _ when at.isInherited -> [inhDep(o.attrOccurring)]
       | at :: _ when at.isSynthesized && at.isTranslation ->
         map(
-          \ inh::String -> s"${o.attrOccurring}.${inh}",
-          getInhAttrsOn(at.typeScheme.typeName, e))
+          transInhDep(o.attrOccurring, _),
+          getInhAndInhOnTransAttrsOn(at.typeScheme.typeName, e))
       | _ -> []
       end,
     getAttrOccursOn(fnnt, e));
@@ -317,12 +320,12 @@ function getInstanceDcl
 
 -- Compute a lower bound on the members of an InhSet type, including transitive ones arising from subset constraints
 function getMinInhSetMembers
-([String], [TyVar]) ::= seen::[TyVar] t::Type e::Env
+([InhDep], [TyVar]) ::= seen::[TyVar] t::Type e::Env
 {
   local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), @t);
   c.env = e;
   
-  local recurse::[([String], [TyVar])] =
+  local recurse::[([InhDep], [TyVar])] =
     map(
       \ d::InstDclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
       c.resolved);
@@ -336,7 +339,7 @@ function getMinInhSetMembers
 }
 
 function getMinRefSet
-[String] ::= t::Type e::Env
+[InhDep] ::= t::Type e::Env
 {
   return
     case t of
@@ -347,12 +350,12 @@ function getMinRefSet
 
 -- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
 function getMaxInhSetMembers
-(Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Env
+(Maybe<[InhDep]>, [TyVar]) ::= seen::[TyVar] t::Type e::Env
 {
   local c::Context = inhSubsetContext(@t, varType(freshTyVar(inhSetKind())));
   c.env = e;
   
-  local recurse::[(Maybe<[String]>, [TyVar])] =
+  local recurse::[(Maybe<[InhDep]>, [TyVar])] =
     map(
       \ d::InstDclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, e),
       c.resolved);
@@ -363,14 +366,14 @@ function getMaxInhSetMembers
     | varType(_) -> (just([]), [])  -- If an InhSet is unspecialized after type checking, assume it is empty
     | inhSetType(inhs) -> (just(inhs), [])
     | _ -> (map(sort, foldr(
-        \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
+        \ inhs1::Maybe<[InhDep]> inhs2::Maybe<[InhDep]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
         empty, map(fst, recurse))),
       unions(t.freeVariables :: map(snd, recurse)))
     end;
 }
 
 function getMaxRefSet
-Maybe<[String]> ::= t::Type e::Env
+Maybe<[InhDep]> ::= t::Type e::Env
 {
   return
     case t of

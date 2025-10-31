@@ -56,39 +56,39 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
-  local vertexHasHideableEq :: (Boolean ::= VertexType String) =
+  local vertexHasHideableEq :: (Boolean ::= VertexType InhDep) =
     possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
 
-  local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
-    case filter(vertexHasHideableEq(_, attr.attrDcl.fullName), dl.defLHSDecSites) of
+  local refDecSiteInhDepsLhsInh :: Maybe<set:Set<InhDep>> =
+    case filter(vertexHasHideableEq(_, inhDep(attr.attrDcl.fullName)), dl.defLHSDecSites) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.eqVertex ++
-        map(\ v::VertexType -> v.inhVertex(attr.attrDcl.fullName), vs),
+        map(inhVertex(_, attr.attrDcl.fullName), vs),
         top.frame.flowGraph)))
     end;
 
-  local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
+  local transBaseRefDecSiteInhDepsLhsInh :: Maybe<set:Set<InhDep>> =
     case dl.defLHSVertex of
     | transAttrVertexType(v, transAttr) ->
-      case filter(vertexHasHideableEq(_, dl.inhAttrName), dl.defLHSTransBaseDecSites) of
+      case filter(vertexHasHideableEq(_, dl.inhAttr), dl.defLHSTransBaseDecSites) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.eqVertex ++
-          map(\ v::VertexType -> v.inhVertex(dl.inhAttrName), vs),
+          map(inhVertexOf(_, dl.inhAttr), vs),
           top.frame.flowGraph)))
       end
     | _ -> nothing()
     end;
 
   -- problem = lhsinh deps - inh deps on dec site
-  local lhsInhExceedsRefDecSiteDeps :: [String] =
+  local lhsInhExceedsRefDecSiteDeps :: [InhDep] =
     case refDecSiteInhDepsLhsInh of
     | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
     | _ -> []
     end;
 
-  local lhsInhExceedsTransBaseRefDecSiteDeps :: [String] =
+  local lhsInhExceedsTransBaseRefDecSiteDeps :: [InhDep] =
     case transBaseRefDecSiteInhDepsLhsInh of
     | just(deps) -> set:toList(set:difference(lhsInhDeps, deps))
     | _ -> []
@@ -123,7 +123,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     guard(sigPos < length(dispatchSig.inputElements));
     let dispatchVertex = rhsInhVertex(
       head(drop(sigPos, dispatchSig.inputElements)).elementName,
-      dl.inhAttrName);
+      dl.inhAttr);
     return set:fromList(flatMap(fromDispatchSigVertex(dispatchSig, ns, _),
       rhsEqVertex(sigName) ::  -- TODO: Workaround: the rhs inh vertex should depend on the rhs eq vertex already!
       set:toList(findProductionGraph(dispatchSig.fullName, myGraphs).tileEdgeMap(dispatchVertex))));
@@ -204,15 +204,10 @@ fun vertexHasPossibleInhEq Boolean ::= v::VertexType env::Env =
 
 fun fromDispatchSigVertex
 [FlowVertex] ::= dispatchSig::NamedSignature prodSig::NamedSignature v::FlowVertex =
-  case v of
-  | lhsSynVertex(_) -> [v]
-  | lhsInhVertex(_) -> [v]
-  | rhsEqVertex(sn) ->
-    [rhsEqVertex(head(drop(positionOf(sn, dispatchSig.inputNames), prodSig.inputNames)))]
-  | rhsSynVertex(sn, a) ->
-    [rhsSynVertex(head(drop(positionOf(sn, dispatchSig.inputNames), prodSig.inputNames)), a)]
-  | rhsInhVertex(sn, a) ->
-    [rhsInhVertex(head(drop(positionOf(sn, dispatchSig.inputNames), prodSig.inputNames)), a)]
-  | _ -> []
-  end;
-
+  flatMapVertex(\ vt ->
+    case vt of
+    | lhsVertexType() -> [vt]
+    | rhsVertexType(sigName) ->
+      [rhsVertexType(head(drop(positionOf(sigName, dispatchSig.inputNames), prodSig.inputNames)))]
+    | _ -> []
+    end, v);

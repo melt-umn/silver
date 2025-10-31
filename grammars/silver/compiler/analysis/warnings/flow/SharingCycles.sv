@@ -36,10 +36,10 @@ top::Expr ::= '@' e::Expr
   top.errors <-
     case top.decSiteVertexInfo, e.flowVertexInfo of
     | _, just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
-    | just(decSite), just(ref) when top.config.warnSharingCycles -> flatMap(\ i::String ->
+    | just(decSite), just(ref) when top.config.warnSharingCycles -> flatMap(\ i::InhDep ->
         if !vertexHasInhEq(top.frame.fullName, ref, i, top.flowEnv)
         && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
-        && contains(ref.inhVertex(i), expandGraph(decSite.inhVertex(i) :: decSite.eqVertex, top.frame.flowGraph))
+        && contains(inhVertex(ref, i), expandGraph(inhVertex(decSite, i) :: decSite.eqVertex, top.frame.flowGraph))
         then [mwdaWrnFromOrigin(top, s"Potentially missing inherited override equation for ${i} on ${ref.vertexName}; a cycle may exist via its sharing decoration site ${decSite.vertexName}")]
         else [],
         getInhAndInhOnTransAttrsOn(e.finalType.typeName, top.env))
@@ -58,10 +58,10 @@ top::AppExpr ::= e::Expr
     case sigDecSite, e.flowVertexInfo of
     | just(decSite), just(ref)
         when top.config.warnSharingCycles && sigIsShared && isForwardParam ->
-      flatMap(\ i::String ->
+      flatMap(\ i::InhDep ->
         if !vertexHasInhEq(top.frame.fullName, ref, i, top.flowEnv)
         && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
-        && contains(ref.inhVertex(i), expandGraph(decSite.inhVertex(i) :: decSite.eqVertex, top.frame.flowGraph))
+        && contains(inhVertex(ref, i), expandGraph(inhVertex(decSite, i) :: decSite.eqVertex, top.frame.flowGraph))
         then [mwdaWrnFromOrigin(top, s"Potentially missing inherited override equation for ${i} on ${ref.vertexName}; a cycle may exist via its sharing decoration site ${decSite.vertexName}")]
         else [],
         getInhAndInhOnTransAttrsOn(e.finalType.typeName, top.env))

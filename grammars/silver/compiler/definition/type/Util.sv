@@ -12,7 +12,7 @@ synthesized attribute namedTypes :: [Pair<String Type>];
 synthesized attribute arity :: Integer;
 synthesized attribute baseType :: Type;
 synthesized attribute argTypes :: [Type];
-synthesized attribute inhSetMembers :: [String];
+synthesized attribute inhSetMembers :: [InhDep];
 monoid attribute freeSkolemVars :: [TyVar] with [], setUnionTyVars;
 monoid attribute freeFlexibleVars :: [TyVar] with [], setUnionTyVars;
 
@@ -224,7 +224,7 @@ top::Type ::= fn::String
 }
 
 aspect production inhSetType
-top::Type ::= inhs::[String]
+top::Type ::= inhs::[InhDep]
 {
   top.inhSetMembers = inhs;
 }

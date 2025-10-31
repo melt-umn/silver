@@ -38,7 +38,7 @@ top::InterfaceItem ::= val::[FlowDef]
 }
 
 abstract production refDefsInterfaceItem
-top::InterfaceItem ::= val::[(String, [String])]
+top::InterfaceItem ::= val::[(String, [InhDep])]
 {
   propagate isEqual;
   top.refDefs <- val;
@@ -46,7 +46,7 @@ top::InterfaceItem ::= val::[(String, [String])]
 }
 
 abstract production specDefsInterfaceItem
-top::InterfaceItem ::= val::[(String, String, [String], [String])]
+top::InterfaceItem ::= val::[(String, String, [InhDep], [String])]
 {
   propagate isEqual;
   top.specDefs <- val;

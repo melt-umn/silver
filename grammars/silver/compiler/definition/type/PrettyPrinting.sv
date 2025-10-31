@@ -199,15 +199,17 @@ top::Type ::= fn::String
 }
 
 aspect production inhSetType
-top::Type ::= inhs::[String]
+top::Type ::= inhs::[InhDep]
 {
   -- Elide the grammar name when it is repeated
   -- e.g. {silver:compiler:definition:env:env, :config, :isRoot}
+  -- TODO: does this treat trans.inh correctly?
   top.typepp =
     s"{${implode(", ",
       flatMap(
         \ is::[String] -> head(is) :: map(\ i::String -> ":" ++ last(explode(":", i)), tail(is)),
-        groupBy(\ i1::String i2::String -> init(explode(":", i1)) == init(explode(":", i2)), inhs)))}}";
+        groupBy(\ i1::String i2::String -> init(explode(":", i1)) == init(explode(":", i2)),
+          map((.vertexName), inhs))))}}";
 }
 
 aspect production decoratedType

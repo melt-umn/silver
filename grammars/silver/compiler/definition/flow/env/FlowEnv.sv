@@ -13,8 +13,8 @@ inherited attribute flowEnv :: FlowEnv;
 monoid attribute flowDefs :: [FlowDef];
 -- These are factored out of FlowDefs to avoid a circular dependency,
 -- since they are needed during type checking
-monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
-monoid attribute refDefs :: [(String, [String])];
+monoid attribute specDefs :: [(String, String, [InhDep], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
+monoid attribute refDefs :: [(String, [InhDep])];
 
 data nonterminal FlowEnv with
   synTree, inhTree, defTree, fwdTree, prodTree, implTree, fwdInhTree, refTree,
@@ -29,7 +29,7 @@ synthesized attribute fwdTree :: EnvTree<FlowDef>;
 synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
 synthesized attribute prodTree :: EnvTree<String>;
 synthesized attribute implTree :: EnvTree<(String, [String])>;
-synthesized attribute refTree :: EnvTree<[String]>;
+synthesized attribute refTree :: EnvTree<[InhDep]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
 synthesized attribute refDecSiteTree :: EnvTree<VertexType>;
@@ -38,12 +38,12 @@ synthesized attribute localInhTree ::EnvTree<FlowDef>;
 synthesized attribute localTree :: EnvTree<FlowDef>;
 synthesized attribute nonSuspectTree :: EnvTree<[String]>;
 synthesized attribute hostSynTree :: EnvTree<FlowDef>;
-synthesized attribute specTree :: EnvTree<(String, [String], [String])>;
+synthesized attribute specTree :: EnvTree<(String, [InhDep], [String])>;
 synthesized attribute prodGraphTree :: EnvTree<FlowDef>;
 
 abstract production flowEnv
 top::FlowEnv ::=
-  specContribs::[(String, String, [String], [String])] refContribs::[(String, [String])]
+  specContribs::[(String, String, [InhDep], [String])] refContribs::[(String, [InhDep])]
   sharedRefContribs::[(String, SharedRefSite)]
   d::FlowDefs
 {
@@ -126,52 +126,54 @@ fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::Stri
 
 -- inherited equation for some arbitrary vertex type
 -- (note that inh is just an inherited attribute, not trans.inh)
-fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
+fun vertexHasInhEq
+Boolean ::= prodName::String  vt::VertexType  inh::InhDep  flowEnv::FlowEnv =
   case vt of
-  | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
-  | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | forwardVertexType_real() -> true
+  | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, inh, flowEnv))
+  | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, inh, flowEnv))
+  | forwardVertexType() -> true
   -- Note that we only support inh equations on trans attrs directly on a child/local,
   -- and not chained trans attrs.
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
-    !null(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
+    !null(lookupInh(prodName, sigName, transInhDep(transAttr, inh), flowEnv))
   | transAttrVertexType(localVertexType(fName), transAttr) ->
-    !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
+    !null(lookupLocalInh(prodName, fName, transInhDep(transAttr, inh), flowEnv))
   | transAttrVertexType(_, _) -> false
-  | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, inh, flowEnv))
   | subtermVertexType(_, remoteProdName, sigName) ->
-    vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
+    vertexHasInhEq(remoteProdName, rhsVertexType(sigName), inh, flowEnv)
   -- This is a tricky case since we don't know what decorated this prod.
   -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
   -- but here we are remotely looking for equations that might not be the direct dependency of
   -- anything in the prod flow graph.
-  | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+  | lhsVertexType() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
   | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwarded to us.
   end;
 
 -- used for duplicate equations checks
--- (note that inh is just an inherited attribute, not trans.inh)
-fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
+-- (note that attrName is just an inherited attribute, not trans.inh)
+fun countVertexEqs
+Integer ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
   case vt of
   | rhsVertexType(sigName) ->
-      length(lookupInh(prodName, sigName, attrName, flowEnv)) +
+      length(lookupInh(prodName, sigName, inhDep(attrName), flowEnv)) +
       let sites :: [(String, VertexType)] =
         lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)
       in
-        if !null(sites) && all(unzipWith(vertexHasInhEq(_, _, attrName, flowEnv), sites))
+        if !null(sites) && all(unzipWith(vertexHasInhEq(_, _, inhDep(attrName), flowEnv), sites))
         then 1 else 0
       end
-  | localVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | localVertexType(fName) -> length(lookupLocalInh(prodName, fName, inhDep(attrName), flowEnv))
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
-      length(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
+      length(lookupInh(prodName, sigName, transInhDep(transAttr, inhDep(attrName)), flowEnv))
   | transAttrVertexType(localVertexType(fName), transAttr) ->
-      length(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
+      length(lookupLocalInh(prodName, fName, transInhDep(transAttr, inhDep(attrName)), flowEnv))
   | transAttrVertexType(_, _) -> 0
-  | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, inhDep(attrName), flowEnv))
   | subtermVertexType(_, remoteProdName, sigName) -> 0
-  | lhsVertexType_real() -> length(lookupSyn(prodName, attrName, flowEnv))
+  | lhsVertexType() -> length(lookupSyn(prodName, attrName, flowEnv))
   | forwardParentVertexType() -> 0
-  | forwardVertexType_real() -> length(lookupFwdInh(prodName, attrName, flowEnv))
+  | forwardVertexType() -> length(lookupFwdInh(prodName, inhDep(attrName), flowEnv))
   end;
 
 -- Check if a production attribute is a forward production attribute.
@@ -184,7 +186,7 @@ fun isForwardProdAttr Boolean ::= prod::String  fName::String  e::FlowEnv =
   end;
 
 -- default set of inherited attributes required/assumed to exist for references
-fun getInhsForNtRef [[String]] ::= nt::String  e::FlowEnv = searchEnvTree(nt, e.refTree);
+fun getInhsForNtRef [[InhDep]] ::= nt::String  e::FlowEnv = searchEnvTree(nt, e.refTree);
 
 -- implicit forward syn copy equations that are allowed to affect the flow type
 fun getNonSuspectAttrsForProd [String] ::= prod::String  e::FlowEnv =
@@ -211,13 +213,13 @@ function getHostSynsFor
 -- Get syns (and "forward") that have flow types specified
 fun getSpecifiedSynsForNt [String] ::= nt::String  e::FlowEnv =
   map(fst, searchEnvTree(nt, e.specTree));
-fun getFlowTypeSpecFor [(String, [String], [String])] ::= nt::String  e::FlowEnv =
+fun getFlowTypeSpecFor [(String, [InhDep], [String])] ::= nt::String  e::FlowEnv =
   searchEnvTree(nt, e.specTree);
 
 fun getGraphContribsFor [FlowDef] ::= prod::String  e::FlowEnv =
   searchEnvTree(prod, e.prodGraphTree);
 
-monoid attribute occursContextInhDeps::[(String, String, [String])]  -- (type name, syn, inhs)
+monoid attribute occursContextInhDeps::[(String, String, [InhDep])]  -- (type name, syn, inhs)
   occurs on Contexts, Context;
 monoid attribute occursContextInhSetDeps::[(String, String, [TyVar])]  -- (type name, syn, InhSet tyvars)
   occurs on Contexts, Context;
@@ -232,7 +234,7 @@ top::Context ::=
 aspect production synOccursContext
 top::Context ::= syn::String _ _ inhs::Type ntty::Type
 {
-  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], ^inhs, top.env);
+  local maxInhSetMembers::(Maybe<[InhDep]>, [TyVar]) = getMaxInhSetMembers([], ^inhs, top.env);
   top.occursContextInhDeps :=
     case maxInhSetMembers.fst of
     | just(inhAttrs) -> [(ntty.typeName, syn, inhAttrs)]
@@ -248,14 +250,6 @@ function occursContextDeps
   local contexts::Contexts = foldContexts(ns.contexts);
   contexts.env = env;
   return map(
-    \ synDeps::(String, [String]) -> synOccursContextEq(ns.fullName, vt, synDeps.fst, synDeps.snd),
+    \ synDeps::(String, [InhDep]) -> synOccursContextEq(ns.fullName, vt, synDeps.fst, synDeps.snd),
     lookupAll(t.typeName, contexts.occursContextInhDeps));
-}
-
-function splitTransAttrInh
-Maybe<(String, String)> ::= attr::String
-{
-  local i::Integer = indexOf(".", attr);
-  return if i == -1 then nothing() else
-    just((substring(0, i, attr), substring(i + 1, length(attr), attr)));
 }

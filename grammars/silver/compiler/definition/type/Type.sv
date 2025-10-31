@@ -4,6 +4,7 @@ option silver:compiler:modification:ffi; -- foreign types
 option silver:compiler:modification:list; -- list type
 
 imports silver:compiler:definition:env only NamedSignature, fullName, outputElement;
+imports silver:compiler:definition:flow:ast only InhDep, vertexName;
 
 synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];
@@ -234,7 +235,7 @@ top::Type ::= fn::String
  - @param inhs  The (sorted) list of fully-qualified inherited attribute names. 
  -}
 abstract production inhSetType
-top::Type ::= inhs::[String]
+top::Type ::= inhs::[InhDep]
 {
   top.kindrep = inhSetKind();
   top.freeVariables = [];

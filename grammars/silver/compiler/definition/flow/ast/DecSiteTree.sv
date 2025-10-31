@@ -120,10 +120,10 @@ top::DecSiteTree ::= prodName::String prodAttrName::Maybe<String>
  - Decoration sites where some other attribute must be supplied as a dependency.
  -}
 production depAttrDec
-top::DecSiteTree ::= attrName::String d::DecSiteTree
+top::DecSiteTree ::= inh::InhDep d::DecSiteTree
 {
-  top.decSitePP = s"dependency ${attrName} supplied to ${d.decSitePP}";
-  top.dbgPP = if top.maxDepth > 0 then s"dependency ${attrName} supplied to ${d.dbgPP}" else "...";
+  top.decSitePP = s"dependency ${inh.vertexName} supplied to ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"dependency ${inh.vertexName} supplied to ${d.dbgPP}" else "...";
   d.maxDepth = top.maxDepth - 1;
 }
 
@@ -157,8 +157,8 @@ fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
   then "all of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteReqs))
   else
     case d of
-    | depAttrDec(attrName, d) ->
-        s"dependency ${attrName} supplied to" ++
+    | depAttrDec(inh, d) ->
+        s"dependency ${inh.vertexName} supplied to" ++
         if length(d.decSiteAlts) > 1
         then " any of\n" ++ implode("\n", map(prettyDecSites(nest + 1, _), d.decSiteAlts))
         else if length(d.decSiteReqs) > 1

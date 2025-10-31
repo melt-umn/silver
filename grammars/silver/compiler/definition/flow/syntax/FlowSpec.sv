@@ -86,7 +86,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local missingFt :: [String] =
+  local missingFt :: [InhDep] =
     set:toList(set:removeAll(inhs.inhList, inhDepsForSyn("forward", top.onNt.typeName, myFlow)));
 
   top.errors <-
@@ -95,7 +95,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
        isExportedBy(attr.authorityGrammar, [hackGramFromFName(top.onNt.typeName)], top.compiledGrammars) ||
        null(missingFt)
     then []
-    else [errFromOrigin(attr, attr.name ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
+    else [errFromOrigin(attr, attr.name ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", map((.vertexName), missingFt)))];
 
   top.errors <-
     if attr.found && contains(attr.synName, inhs.refList)
@@ -155,7 +155,7 @@ top::FlowSpecId ::= 'decorate'
 
 tracked nonterminal FlowSpecInhs with config, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-monoid attribute inhList :: [String];  -- The attributes in the flow specification
+monoid attribute inhList :: [InhDep];  -- The attributes in the flow specification
 monoid attribute refList :: [String];  -- Flow specifications referenced in this one (currently can only contain "decorate" / "forward")
 
 propagate config, grammarName, errors, env, onNt, inhList, refList, flowEnv on FlowSpecInhs;
@@ -186,7 +186,7 @@ concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.unparse = inh.unparse;
-  top.inhList := if inh.attrFound then [inh.attrDcl.fullName] else [];
+  top.inhList := if inh.attrFound then [inhDep(inh.attrDcl.fullName)] else [];
   top.refList := [];
   
   inh.attrFor = top.onNt;
@@ -202,7 +202,7 @@ top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::FlowSpecInh
   top.unparse = s"${transSyn.unparse}.${inh.unparse}";
   top.inhList :=
     if transSyn.attrFound
-    then map(\ i -> s"${transSyn.attrDcl.fullName}.${i}", filter(notTransAttr, inh.inhList))
+    then map(transInhDep(transSyn.attrDcl.fullName, _), filter(notTransAttr, inh.inhList))
     else [];
   top.refList := [];  -- TODO: An (erroneous) cycle in translation attr occurrences could lead to a crash here.
 
@@ -214,7 +214,11 @@ top::FlowSpecInh ::= transSyn::QNameAttrOccur '.' inh::FlowSpecInh
     else [errFromOrigin(transSyn, transSyn.name ++ " is not a translation attribute and so cannot be within a flow type")];
 }
 
-fun notTransAttr Boolean ::= a::String = indexOf(".", a) == -1;
+fun notTransAttr Boolean ::= a::InhDep =
+  case a of
+  | transInhDep(_, _) -> false
+  | _ -> true
+  end;
 
 {--
  - Inherit a flow spec from another flow spec.
@@ -236,8 +240,8 @@ top::FlowSpecInh ::= 'decorate'
 {
   top.unparse = "decorate";
   
-  local specs :: [(String, [String], [String])] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
-  local decSpec :: Maybe<([String], [String])> = lookup("decorate", specs);
+  local specs :: [(String, [InhDep], [String])] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local decSpec :: Maybe<([InhDep], [String])> = lookup("decorate", specs);
   
   -- This error message also shows up for Decorated Foo when Foo lacks a spec for 'decorate',
   -- so be sufficiently general here.
@@ -259,8 +263,8 @@ top::FlowSpecInh ::= 'forward'
 {
   top.unparse = "forward";
   
-  local specs :: [(String, [String], [String])] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
-  local forwardSpec :: Maybe<([String], [String])> = lookup("forward", specs);
+  local specs :: [(String, [InhDep], [String])] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local forwardSpec :: Maybe<([InhDep], [String])> = lookup("forward", specs);
   
   top.errors <-
     case forwardSpec of

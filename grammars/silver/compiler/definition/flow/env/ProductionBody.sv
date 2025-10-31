@@ -58,7 +58,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
         getAttrOccursOn(top.frame.lhsNtName, top.env))))];
 
-  e.decSiteVertexInfo = just(forwardVertexType);
+  e.decSiteVertexInfo = just(forwardVertexType());
   e.alwaysDecorated = true;
   e.appDecSiteVertexInfo = nothing();
 }
@@ -141,7 +141,7 @@ synthesized attribute defLHSTransBaseDecSites::[VertexType] occurs on DefLHS;
 synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS;
 
 -- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
-synthesized attribute inhAttrName::String occurs on DefLHS;
+synthesized attribute inhAttr::InhDep occurs on DefLHS;
 
 flowtype DefLHS = defLHSDecSites {grammarName, frame, env, flowEnv};
 
@@ -150,7 +150,7 @@ top::DefLHS ::=
 {
   top.defLHSVertex = localVertexType("bogus:lhs:vertex");
   top.defLHSInhEq = [];
-  top.inhAttrName = "";
+  top.inhAttr = inhDep("");
   top.defLHSDecSites =
     lookupRefPossibleDecSites(top.frame.fullName, top.defLHSVertex, top.flowEnv);
   top.defLHSTransBaseDecSites = error("Not a trans attr inh def LHS");
@@ -165,14 +165,12 @@ top::DefLHS ::= @q::QName
       if isExportedBy(top.grammarName, [top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars)
       then top.defLHSDecSites
       else [])];
-  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+  top.inhAttr = inhDep(top.defLHSattr.attrDcl.fullName);
 }
 aspect production lhsDefLHS
 top::DefLHS ::= @q::QName
 {
-  top.defLHSVertex = lhsVertexType;
-  top.defLHSInhEq = [];
-  top.inhAttrName = "";
+  top.defLHSVertex = lhsVertexType();
 }
 aspect production localDefLHS
 top::DefLHS ::= @q::QName
@@ -183,14 +181,14 @@ top::DefLHS ::= @q::QName
       if isExportedBy(top.grammarName, [top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars)
       then top.defLHSDecSites
       else [])];
-  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+  top.inhAttr = inhDep(top.defLHSattr.attrDcl.fullName);
 }
 aspect production forwardDefLHS
 top::DefLHS ::= @q::QName
 {
-  top.defLHSVertex = forwardVertexType;
+  top.defLHSVertex = forwardVertexType();
   top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
-  top.inhAttrName = top.defLHSattr.attrDcl.fullName;
+  top.inhAttr = inhDep(top.defLHSattr.attrDcl.fullName);
 }
 aspect production childTransAttrDefLHS
 top::DefLHS ::= @q::QName @attr::QNameAttrOccur
@@ -202,7 +200,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
     [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
       if isExportedByOccurs then top.defLHSTransBaseDecSites else [],
       if isExportedByOccurs then top.defLHSDecSites else [])];
-  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+  top.inhAttr = transInhDep(attr.attrDcl.fullName, inhDep(top.defLHSattr.attrDcl.fullName));
   top.defLHSTransBaseDecSites =
     lookupRefPossibleDecSites(top.frame.fullName, rhsVertexType(q.lookupValue.fullName), top.flowEnv);
 }
@@ -216,7 +214,7 @@ top::DefLHS ::= @q::QName @attr::QNameAttrOccur
     [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
       if isExportedByOccurs then top.defLHSTransBaseDecSites else [],
       if isExportedByOccurs then top.defLHSDecSites else [])];
-  top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
+  top.inhAttr = transInhDep(attr.attrDcl.fullName, inhDep(top.defLHSattr.attrDcl.fullName));
   top.defLHSTransBaseDecSites =
     lookupRefPossibleDecSites(top.frame.fullName, localVertexType(q.lookupValue.fullName), top.flowEnv);
 }
@@ -273,7 +271,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
 {
-  top.flowDefs <- [extraEq(top.frame.fullName, dl.defLHSVertex.inhVertex(attr.attrDcl.fullName), e.flowDeps, true)];
+  top.flowDefs <- [extraEq(top.frame.fullName, inhVertex(dl.defLHSVertex, attr.attrDcl.fullName), e.flowDeps, true)];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.appDecSiteVertexInfo = nothing();

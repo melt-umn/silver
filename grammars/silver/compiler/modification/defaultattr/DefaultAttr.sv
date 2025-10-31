@@ -107,9 +107,9 @@ top::DefLHS ::= @q::QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  top.defLHSVertex = lhsVertexType;
+  top.defLHSVertex = lhsVertexType();
   top.defLHSInhEq = [];
-  top.inhAttrName = "";
+  top.inhAttr = "";
 
   top.translation = makeNTName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }
