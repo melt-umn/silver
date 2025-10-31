@@ -392,7 +392,7 @@ fun decSiteHasInhEq
 Boolean ::=
     prodName::String vt::VertexType attrName::String
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveInhEq(attrName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
+  resolveInhEq(prodName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs
