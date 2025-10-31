@@ -25,8 +25,8 @@ top::Expr ::=  '@' e::Expr
   top.errors <-
     case e.flowVertexInfo of
     -- These are errors because we assume these checks in the translation:
-    | just(lhsVertexType_real()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
-    | just(forwardVertexType_real()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
+    | just(lhsVertexType()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
+    | just(forwardVertexType()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
     | just(anonVertexType(_)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
     | just(v) ->
         -- Check that this tree is shared in at most one non-mutually-exclusive place.
@@ -68,8 +68,8 @@ top::AppExpr ::= e::Expr
     if sigIsShared && isForwardParam then
       case e.flowVertexInfo of
       -- These are errors because we assume these checks in the translation:
-      | just(lhsVertexType_real()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
-      | just(forwardVertexType_real()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
+      | just(lhsVertexType()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
+      | just(forwardVertexType()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
       | just(anonVertexType(_)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
       | just(v) ->
           -- Check that this tree is shared in at most one non-mutually-exclusive place.

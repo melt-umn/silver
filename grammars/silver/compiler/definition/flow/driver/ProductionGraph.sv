@@ -357,7 +357,7 @@ function constructDefaultProductionGraph
   -- There can still be anonEq, but there's no RHS anymore
   -- However, we do behave like phantom graphs and create an LHS stitch point!
   local stitchPoints :: [StitchPoint] =
-    nonterminalStitchPoints(realEnv, nt, lhsVertexType) ++ 
+    nonterminalStitchPoints(realEnv, nt, lhsVertexType()) ++ 
     localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
@@ -396,7 +396,7 @@ function constructPhantomProductionGraph
     map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
-  local stitchPoints :: [StitchPoint] = nonterminalStitchPoints(realEnv, nt, lhsVertexType);
+  local stitchPoints :: [StitchPoint] = nonterminalStitchPoints(realEnv, nt, lhsVertexType());
   local sigNtStitchPoints :: [StitchPoint] = [];
     
   local flowTypeAttrs :: [String] = syns;
@@ -547,16 +547,16 @@ fun addDispatchEqs
   case d of
   | implFlowDef(_, prod, sigNames, _) -> concat(zipWith(
       \ ie::NamedSignatureElement sigName::String ->
-        (rhsEqVertex(ie.elementName), subtermEqVertex(lhsVertexType, prod, sigName)) ::
-        (subtermEqVertex(lhsVertexType, prod, sigName), rhsEqVertex(ie.elementName)) ::
+        (rhsEqVertex(ie.elementName), subtermEqVertex(lhsVertexType(), prod, sigName)) ::
+        (subtermEqVertex(lhsVertexType(), prod, sigName), rhsEqVertex(ie.elementName)) ::
         map(\ attr::String ->
-          (subtermSynVertex(lhsVertexType, prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
+          (subtermSynVertex(lhsVertexType(), prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
           "forward" :: getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
         flatMap(\ attr::String ->
-          [(rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType, prod, sigName, attr)),
+          [(rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType(), prod, sigName, attr)),
           -- We always include the subterm -> RHS inh dep, because we are trying to determine
           -- what RHS inh are allowable deps in dispatch impl override eqs.
-           (subtermInhVertex(lhsVertexType, prod, sigName, attr), rhsInhVertex(ie.elementName, attr))],
+           (subtermInhVertex(lhsVertexType(), prod, sigName, attr), rhsInhVertex(ie.elementName, attr))],
           getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv)),
       dispatch.inputElements, sigNames))
   | _ -> []
@@ -629,7 +629,7 @@ fun sigSharingStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
     case d of
     | sigShareSite(_, sigNt, sigName, sourceProd, vt) ->
         [projectionStitchPoint(
-          sourceProd, rhsVertexType(sigName), lhsVertexType, vt,
+          sourceProd, rhsVertexType(sigName), lhsVertexType(), vt,
           getInhAndInhOnTransAttrsOn(sigNt, realEnv))]
     | _ -> []
     end,
@@ -638,7 +638,7 @@ fun sigSharingStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
 fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ie::NamedSignatureElement  dispatch::String se::NamedSignatureElement =
   if ie.elementShared || ie.typerep.isNonterminal
   then [projectionStitchPoint(
-    dispatch, rhsVertexType(ie.elementName), lhsVertexType, rhsVertexType(se.elementName),
+    dispatch, rhsVertexType(ie.elementName), lhsVertexType(), rhsVertexType(se.elementName),
     getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
   else [];
 -- deps for dispatch sig, from prods that implement it
@@ -646,9 +646,9 @@ fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispa
   flatMap(\ d::FlowDef ->
     case d of
     | implFlowDef(_, prod, sigNames, extraSigNts) ->
-        tileStitchPoint(prod, lhsVertexType) ::
+        tileStitchPoint(prod, lhsVertexType()) ::
         concat(unzipWith(\ sigName::String nt::String ->
-          nonterminalStitchPoints(realEnv, nt, subtermVertexType(lhsVertexType, prod, sigName)),
+          nonterminalStitchPoints(realEnv, nt, subtermVertexType(lhsVertexType(), prod, sigName)),
           extraSigNts))
     | _ -> []
     end,

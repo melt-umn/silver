@@ -26,7 +26,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
     end;
   local ntName::String =
     case vt of
-    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | forwardVertexType() -> ns.outputElement.typerep.typeName
     | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
     | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
     | _ -> ""
@@ -48,10 +48,10 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
        else neverDec()) +
       case vt of
       -- Via flow type
-      | lhsVertexType_real() -> error("findDecSites: lhsVertexType") -- Should never actually be a decoration site
-      | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
+      | lhsVertexType() -> error("findDecSites: lhsVertexType") -- Should never actually be a decoration site
+      | transAttrVertexType(lhsVertexType(), attrName) -> alwaysDec()
       -- Via forwarding
-      | forwardVertexType_real() -> forwardDec(prodName, nothing())
+      | forwardVertexType() -> forwardDec(prodName, nothing())
       | localVertexType("forward") -> forwardDec(prodName, nothing())
       | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
           forwardDec(prodName, just(fName))
@@ -144,7 +144,7 @@ State<PDSState DecSiteTree> ::=
     end;
   local ntName::String =
     case vt of
-    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | forwardVertexType() -> ns.outputElement.typerep.typeName
     | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
     | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
     | _ -> ""
@@ -162,7 +162,7 @@ State<PDSState DecSiteTree> ::=
       viaVertex :: DecSiteTree <-
         case vt of
         -- Via forwarding
-        | forwardVertexType_real() -> pure(forwardDec(prodName, nothing()))
+        | forwardVertexType() -> pure(forwardDec(prodName, nothing()))
         | localVertexType("forward") -> pure(forwardDec(prodName, nothing()))
         | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
             pure(forwardDec(prodName, just(fName)))

@@ -4,8 +4,8 @@ grammar silver:compiler:definition:flow:ast;
  - A "classification" of FlowVertex that has ways to map attributes to vertexes.
  -
  - Quick reference: 
- - lhsVertexType, rhsVertexType(sigName), localVertexType(fName),
- - forwardVertexType, anonVertexType(x)
+ - lhsVertexType(), rhsVertexType(sigName), localVertexType(fName),
+ - forwardVertexType(), anonVertexType(x)
  -}
 data nonterminal VertexType with
   vertexName, vertexPP, isInhDefVertex,
@@ -25,13 +25,10 @@ synthesized attribute fwdVertex :: FlowVertex;
 {-- FlowVertex for the equation giving this FlowVertex (there may not be one!) -}
 synthesized attribute eqVertex :: [FlowVertex];
 
-global lhsVertexType :: VertexType = lhsVertexType_real();
-global forwardVertexType :: VertexType = forwardVertexType_real();
-
 {--
- - Represents the vertexes for a production lhs. You can use lhsVertexType instead of this production directly.
+ - Represents the vertexes for a production lhs.
  -}
-abstract production lhsVertexType_real
+abstract production lhsVertexType
 top::VertexType ::=
 {
   top.vertexName = "top";
@@ -89,9 +86,9 @@ top::VertexType ::= v::VertexType  transAttr::String
 }
 
 {--
- - Represents the vertexes for the forward of a production. You can use forwardVertexType instead of this production directly.
+ - Represents the vertexes for the forward of a production.
  -}
-abstract production forwardVertexType_real
+abstract production forwardVertexType
 top::VertexType ::=
 {
   top.vertexName = "forward";

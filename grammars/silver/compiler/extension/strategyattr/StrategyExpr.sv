@@ -1112,7 +1112,7 @@ abstract production hackLHSExprType
 top::Expr ::= t::Type
 {
   top.typerep = ^t;
-  top.flowVertexInfo = just(lhsVertexType);
+  top.flowVertexInfo = just(lhsVertexType());
   forwards to errorExpr([]);
 }
 

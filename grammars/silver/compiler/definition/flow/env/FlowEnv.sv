@@ -130,7 +130,7 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | forwardVertexType_real() -> true
+  | forwardVertexType() -> true
   -- Note that we only support inh equations on trans attrs directly on a child/local,
   -- and not chained trans attrs.
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
@@ -145,7 +145,7 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
   -- but here we are remotely looking for equations that might not be the direct dependency of
   -- anything in the prod flow graph.
-  | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+  | lhsVertexType() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
   | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwarded to us.
   end;
 
@@ -169,9 +169,9 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(_, _) -> 0
   | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
   | subtermVertexType(_, remoteProdName, sigName) -> 0
-  | lhsVertexType_real() -> length(lookupSyn(prodName, attrName, flowEnv))
+  | lhsVertexType() -> length(lookupSyn(prodName, attrName, flowEnv))
   | forwardParentVertexType() -> 0
-  | forwardVertexType_real() -> length(lookupFwdInh(prodName, attrName, flowEnv))
+  | forwardVertexType() -> length(lookupFwdInh(prodName, attrName, flowEnv))
   end;
 
 -- Check if a production attribute is a forward production attribute.

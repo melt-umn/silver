@@ -125,11 +125,11 @@ top::Expr ::= @q::QName
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   top.flowDeps <-
     if top.finalType.isDecorated
-    then map(lhsVertexType.inhVertex, fromMaybe([], refSet))
+    then map(lhsInhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
     if top.finalType.isDecorated
-    then just(lhsVertexType)
+    then just(lhsVertexType())
     else nothing();
 }
 aspect production localReference
@@ -164,8 +164,8 @@ top::Expr ::= @q::QName
 {
   -- Always a non-data nonterminal type.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps <- forwardEqVertex :: map(forwardVertexType.inhVertex, fromMaybe([], refSet));
-  top.flowVertexInfo = just(forwardVertexType);
+  top.flowDeps <- forwardEqVertex :: map(forwardVertexType().inhVertex, fromMaybe([], refSet));
+  top.flowVertexInfo = just(forwardVertexType());
 }
 aspect production forwardParentReference
 top::Expr ::= 'forwardParent'
@@ -388,7 +388,7 @@ top::AppExpr ::= e::Expr
   production isForwardParam::Boolean =
     -- Don't try to share if someone uses a signature sharing prod somewhere invalid.
     case top.decSiteVertexInfo of
-    | just(forwardVertexType_real()) -> true
+    | just(forwardVertexType()) -> true
     | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> true
     | _ -> false
     end;

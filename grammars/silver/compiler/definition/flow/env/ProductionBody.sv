@@ -58,7 +58,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
         getAttrOccursOn(top.frame.lhsNtName, top.env))))];
 
-  e.decSiteVertexInfo = just(forwardVertexType);
+  e.decSiteVertexInfo = just(forwardVertexType());
   e.alwaysDecorated = true;
   e.appDecSiteVertexInfo = nothing();
 }
@@ -170,7 +170,7 @@ top::DefLHS ::= @q::QName
 aspect production lhsDefLHS
 top::DefLHS ::= @q::QName
 {
-  top.defLHSVertex = lhsVertexType;
+  top.defLHSVertex = lhsVertexType();
   top.defLHSInhEq = [];
   top.inhAttrName = "";
 }
@@ -188,7 +188,7 @@ top::DefLHS ::= @q::QName
 aspect production forwardDefLHS
 top::DefLHS ::= @q::QName
 {
-  top.defLHSVertex = forwardVertexType;
+  top.defLHSVertex = forwardVertexType();
   top.defLHSInhEq = [fwdInhEq(top.frame.fullName, top.defLHSattr.attrDcl.fullName, _)];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
