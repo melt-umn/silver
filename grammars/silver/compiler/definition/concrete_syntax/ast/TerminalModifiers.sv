@@ -123,7 +123,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
   production allClsRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(allCls, top.cstEnv));
 
   top.cstErrors := []; 
-  top.classTerminalContribs := map(pair(fst=_, snd=top.terminalName), allCls);
+  top.classTerminalContribs := zipSnd(allCls, top.terminalName);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominates_ := flatMap((.domContribs), allClsRefs);
   top.submits_ := flatMap((.subContribs), allClsRefs);

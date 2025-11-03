@@ -32,14 +32,12 @@ EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
 fun initialFlowType Pair<NtName FlowType> ::= x::(NtName, [(String, [String])]) =
-  (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
+  (x.fst, g:add(concat(unzipWith(zipFst, x.snd)), g:empty()));
 fun ntListLte Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst <= b.fst;
 fun ntListEq Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst == b.fst;
 fun ntListCoalesce [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]] =
   if null(l) then []
   else (head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
-fun toFlatEdges [Pair<String String>] ::= x::Pair<String [String]> =
-  map(pair(fst=x.fst, snd=_), x.snd);
 
 fun runFlowTypeInference
 (EnvTree<ProductionGraph>, EnvTree<FlowType>) ::=
@@ -107,7 +105,7 @@ top::InferState<()> ::= prod::ProdName
 
 -- Expand 'lhsSynVertex(syn)' using 'graph', then filter down to just those in 'inhs'
 fun expandVertexFilterTo [(String, String)] ::= syn::String  graph::ProductionGraph =
-  map(pair(fst=syn, snd=_), filterLhsInh(set:toList(graph.edgeMap(lhsSynVertex(syn)))));
+  zipFst(syn, filterLhsInh(set:toList(graph.edgeMap(lhsSynVertex(syn)))));
 
 {--
  - Filters vertexes down to just the names of inherited attributes on the LHS

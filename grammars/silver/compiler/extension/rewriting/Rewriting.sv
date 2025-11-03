@@ -58,7 +58,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   es.appIndexOffset = 0;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(pair(fst=_, snd=nonterminalType("silver:rewrite:Strategy", [], false, true)), annotations);
+    zipSnd(annotations, nonterminalType("silver:rewrite:Strategy", [], false, true));
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] =

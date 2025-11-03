@@ -160,7 +160,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.layoutContribs := map(pair(fst=t.typeName, snd=_), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
+  top.layoutContribs := zipFst(t.typeName, fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(t.typeName));
@@ -195,8 +195,8 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.classTerminalContribs := modifiers.classTerminalContribs;
   top.memberTerminals := [top];
   top.dominatingTerminalContribs :=
-    map(pair(fst=n, snd=_), flatMap((.memberTerminals), modifiers.submits_)) ++
-    map(pair(fst=_, snd=top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
+    zipFst(n, flatMap((.memberTerminals), modifiers.submits_)) ++
+    zipSnd(map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)), top);
   top.terminalRegex = ^regex;
 
   -- left(terminal name) or right(string prefix)
@@ -273,7 +273,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs :=
-    map(pair(fst=ns.fullName, snd=_), fromMaybe([], modifiers.customLayout)) ++
+    zipFst(ns.fullName, fromMaybe([], modifiers.customLayout)) ++
     -- The production inherits its LHS nonterminal's layout, unless overridden.
     (if top.hasCustomLayout then [] else [(ns.fullName, head(lhsRef).fullName)]) ++
     -- All nonterminals on the RHS that export this production inherit this

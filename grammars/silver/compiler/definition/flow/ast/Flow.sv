@@ -190,7 +190,7 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs := [(crossnames(nt, attr), top)];
   top.prodGraphContribs := [(nt ++ ":default", top)];
-  top.flowEdges = map(pair(fst=lhsSynVertex(attr), snd=_), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
+  top.flowEdges = zipFst(lhsSynVertex(attr), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
 
 {--
@@ -206,7 +206,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
 {
   top.synTreeContribs := [(crossnames(prod, attr), top)];
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=lhsSynVertex(attr), snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = zipFst(lhsSynVertex(attr), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -279,7 +279,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.fwdInhTreeContribs := [(crossnames(prod, attr), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=forwardInhVertex(attr), snd=_), deps);
+  top.flowEdges = zipFst(forwardInhVertex(attr), deps);
 }
 
 {--
@@ -298,7 +298,7 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isFwrd::Boolean 
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=localEqVertex(fName), snd=_), deps);
+  top.flowEdges = zipFst(localEqVertex(fName), deps);
 }
 
 {--
@@ -382,7 +382,7 @@ abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=src, snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = zipFst(src, deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -400,7 +400,7 @@ top::FlowDef ::= prod::String  fName::String  loc::Location  deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=anonEqVertex(fName), snd=_), deps);
+  top.flowEdges = zipFst(anonEqVertex(fName), deps);
 }
 
 {--
@@ -417,7 +417,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=anonInhVertex(fName, attr), snd=_), deps);
+  top.flowEdges = zipFst(anonInhVertex(fName, attr), deps);
 }
 
 {--
@@ -432,7 +432,7 @@ abstract production synOccursContextEq
 top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=vt.synVertex(attr), snd=_), map(vt.inhVertex, deps));
+  top.flowEdges = zipFst(vt.synVertex(attr), map(vt.inhVertex, deps));
 }
 
 {--
@@ -521,7 +521,6 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
  -}
 abstract production sigShareSite
 top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType
-
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];

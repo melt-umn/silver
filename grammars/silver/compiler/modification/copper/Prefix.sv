@@ -10,7 +10,7 @@ concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
 {  
   top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
-  top.terminalPrefixes <- map(pair(fst=_, snd=s.terminalPrefix), ts.prefixItemNames);
+  top.terminalPrefixes <- zipSnd(ts.prefixItemNames, s.terminalPrefix);
   top.grammarTerminalPrefixes <-
     if ts.isAllMarking then [(top.componentGrammarName, s.terminalPrefix)] else [];
   s.prefixedTerminals = ts.prefixItemNames;

@@ -66,7 +66,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
   -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
   production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
-  top.superClassContribs := map(pair(fst=top.className, snd=_), map((.fullName), superRefs));
+  top.superClassContribs := zipFst(top.className, map((.fullName), superRefs));
 }
 
 {--
