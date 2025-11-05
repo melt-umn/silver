@@ -19,6 +19,7 @@ flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, do
 flowtype decorate {forward} on ProductionBody;
 flowtype decorate {forward, originRules} on ProductionStmts, ProductionStmt;
 
+flowtype unparse {} on ProductionBody, ProductionStmts, ProductionStmt;
 flowtype defs {forward} on ProductionBody, ProductionStmts, ProductionStmt;
 flowtype productionAttributes {forward} on ProductionBody, ProductionStmts, ProductionStmt;
 

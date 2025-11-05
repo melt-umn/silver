@@ -273,6 +273,7 @@ fun getInhAttrsOn [String] ::= fnnt::String e::Env =
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
  - Also includes all inherited attributes occurring on translation attributes on the
  - nonterminal, when we want to treat these like inherited attributes.
+ - TODO: Audit uses of this, verify if we only need one level of trans attrs!
  -}
 fun getInhAndInhOnTransAttrsOn [String] ::= fnnt::String e::Env =
   flatMap(

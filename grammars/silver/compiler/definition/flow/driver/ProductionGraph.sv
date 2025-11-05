@@ -73,7 +73,7 @@ top::ProductionGraph ::=
         flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), top.sigNtStitchPoints)
     in let
       newEdges :: [(FlowVertex, FlowVertex)] =
-        filter(edgeIsNew(_, top.graph), filter(notRhsEqDep, edges) ++ sigEdges),
+        filter(edgeIsNew(_, top.graph), filter(notSigEqDep, edges) ++ sigEdges),
       newTileEdges :: [(FlowVertex, FlowVertex)] =
         filter(edgeIsNew(_, top.tileGraph), edges)  -- sigEdges not included in tileGraph
     in let
@@ -211,12 +211,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
         dcl.namedSignature.inputElements,
         sig.inputElements))
     | nothing() -> []
-    end ++
-    if any(map((.elementShared), dcl.namedSignature.inputElements))
-    -- TODO: We could be more precise here by only considering the productions
-    -- that could have actually forwarded to this one and introducing tile stitch points.
-    then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType())
-    else [];
+    end;
 
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
   
@@ -225,7 +220,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
       (if nonForwarding then [] else ["forward"]) ++ syns);
   
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(filter(notRhsEqDep, fixedEdges));  -- deps on RHS.EQ don't matter in the regular graph
+    createFlowGraph(filter(notSigEqDep, fixedEdges));  -- deps on LHS/RHS.EQ don't matter in the regular graph
   local initialTileGraph :: g:Graph<FlowVertex> =
     createFlowGraph(suspectEdges ++ fixedEdges);
 
@@ -265,7 +260,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
     flatMap((.suspectFlowEdges), defs);
     
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(filter(notRhsEqDep, fixedEdges)); -- deps on RHS.EQ don't matter in the regular graph
+    createFlowGraph(filter(notSigEqDep, fixedEdges)); -- deps on LHS/RHS.EQ don't matter in the regular graph
   -- TODO: functions shouldn't have a tile graph
   local initialTileGraph :: g:Graph<FlowVertex> =
     createFlowGraph(suspectEdges ++ fixedEdges); -- suspect edges included in tile graph initially
@@ -447,11 +442,13 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 }
 
 fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
-  (lhsSynVertex(at), lhsSynVertex("forward"));
+  (lhsSynVertex(at), forwardEqVertex);
 
-fun notRhsEqDep Boolean ::= e::(FlowVertex, FlowVertex) =
+fun notSigEqDep Boolean ::= e::(FlowVertex, FlowVertex) =
   case e of
+  | (_, lhsEqVertex()) -> false
   | (_, rhsEqVertex(_)) -> false
+  | (_, rhsOuterEqVertex(_)) -> false
   | _ -> true
   end;
 
@@ -460,25 +457,30 @@ fun isSigEdge Boolean ::= edge::(FlowVertex, FlowVertex) =
 
 synthesized attribute isSigVertex :: Boolean occurs on FlowVertex;
 aspect isSigVertex on FlowVertex of
+| lhsEqVertex() -> true
 | lhsSynVertex(_) -> true
 | lhsInhVertex(_) -> true
 | rhsEqVertex(_) -> true
+| rhsOuterEqVertex(_) -> true
 | rhsSynVertex(_, _) -> true
 | rhsInhVertex(_, _) -> true
+| forwardParentEqVertex() -> true
+| forwardParentSynVertex(_) -> true
+| forwardParentInhVertex(_) -> true
 | _ -> false
 end;
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
 
 {--
- - Introduces implicit 'lhs.syn -> forward.syn' (& forward.eq) equations.
+ - Introduces implicit 'lhs.syn -> forward.syn' (& forward.outerEq) equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
 fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv =
   if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
     then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
-          (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
+          (lhsSynVertex(head(syns)), forwardOuterEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.
@@ -500,7 +502,7 @@ fun addFwdProdAttrInhEqs
 fun allFwdProdAttrs [String] ::= d::[FlowDef] =
   case d of
   | [] -> []
-  | localEq(_, fN, _, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
+  | localEq(_, fN, _, true, _, _) :: rest -> fN :: allFwdProdAttrs(rest)
   | _ :: rest -> allFwdProdAttrs(rest)
   end;
 {--
@@ -525,7 +527,8 @@ fun addDefEqs
         | localVertexType(fName) -> !isForwardProdAttr(prod, fName, flowEnv)
         | _ -> true
         end ->
-      cartProd(decSite.eqVertex, ref.eqVertex) ++
+      (decSite.eqVertex, ref.eqVertex) ::
+      (decSite.outerEqVertex, ref.outerEqVertex) ::
       filterMap(
         \ attr::String ->
           if vertexHasInhEq(prod, ref, attr, flowEnv)
@@ -589,15 +592,11 @@ fun localStitchPoints [StitchPoint] ::= realEnv::Env  ds::[FlowDef] =
     -- Ignore all other flow def info
     | _ -> []
     end, ds);
-function rhsStitchPoints
-[StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement
-{
-  return
-    -- We want only NONTERMINAL stitch points!
-    if rhs.typerep.isNonterminal
-    then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
-    else [];
-}
+fun rhsStitchPoints [StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement =
+  -- We want only NONTERMINAL stitch points!
+  if rhs.typerep.isNonterminal
+  then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
+  else [];
 fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
   case defs of
   | [] -> []

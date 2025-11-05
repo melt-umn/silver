@@ -438,6 +438,7 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
+  -- TODO: Error when no named arguments provided?
   local prod::Application =
     if es.appExprSize > 0
     then annoUpdatePositionalErrorApplication

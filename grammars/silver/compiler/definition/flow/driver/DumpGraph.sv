@@ -83,8 +83,9 @@ top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph
     eprintln("Generating flow graphs");
     writeFile("stitch-points.txt", generateStitchPointsDump(prodGraph));
     writeDotGraphs("flow-deps-direct.dot", prodGraph);
+    writeTileDotGraphs("flow-deps-tile-direct.dot", prodGraph);
     writeDotGraphs("flow-deps-transitive.dot", finalGraph);
-    writeTileDotGraphs("flow-deps-tile.dot", prodGraph);
+    writeTileDotGraphs("flow-deps-tile.dot", finalGraph);
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
     return 0;
   };
@@ -153,22 +154,31 @@ fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String 
 synthesized attribute dotName :: String occurs on FlowVertex;
 
 aspect dotName on FlowVertex of
+| lhsEqVertex() -> "!"
 | lhsSynVertex(attrName) -> attrName
 | lhsInhVertex(attrName) -> attrName
 | rhsEqVertex(sigName) -> sigName ++ "!"
+| rhsOuterEqVertex(sigName) -> sigName ++ "~"
 | rhsSynVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
 | rhsInhVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
 | localEqVertex(fName) -> fName ++ "!"
+| localOuterEqVertex(fName) -> fName ++ "~"
 | localSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | localInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
-| forwardEqVertex() -> "forward!"
+| transAttrOuterEqVertex(vt, fName) -> vt.synVertex(fName).dotName ++ "~"
+| forwardOuterEqVertex() -> "forward~"
 | forwardSynVertex(attrName) -> "forward/" ++ attrName
 | forwardInhVertex(attrName) -> "forward/" ++ attrName
+| forwardParentEqVertex() -> "forwardParent!"
+| forwardParentSynVertex(attrName) -> "forwardParent/" ++ attrName
+| forwardParentInhVertex(attrName) -> "forwardParent/" ++ attrName
 | anonEqVertex(fName) -> fName ++ "!"
 | anonSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | anonInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
 | subtermEqVertex(parent, prodName, sigName) ->
   parent.synVertex(prodName ++ "@" ++ sigName ++ "!").dotName  -- Hack!
+| subtermOuterEqVertex(parent, prodName, sigName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "~").dotName  -- Hack!
 | subtermSynVertex(parent, prodName, sigName, attrName) ->
   parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
 | subtermInhVertex(parent, prodName, sigName, attrName) ->

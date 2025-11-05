@@ -63,8 +63,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     case filter(vertexHasHideableEq(_, attr.attrDcl.fullName), dl.defLHSDecSites) of
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
-        dl.defLHSVertex.eqVertex ++
-        map(\ v::VertexType -> v.inhVertex(attr.attrDcl.fullName), vs),
+        dl.defLHSVertex.outerEqDeps ++
+        flatMap(\ v::VertexType -> v.inhDeps(attr.attrDcl.fullName), vs),
         top.frame.flowGraph)))
     end;
 
@@ -74,8 +74,8 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       case filter(vertexHasHideableEq(_, dl.inhAttrName), dl.defLHSTransBaseDecSites) of
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
-          v.eqVertex ++
-          map(\ v::VertexType -> v.inhVertex(dl.inhAttrName), vs),
+          v.outerEqDeps ++
+          flatMap(\ v::VertexType -> v.inhDeps(dl.inhAttrName), vs),
           top.frame.flowGraph)))
       end
     | _ -> nothing()

@@ -179,7 +179,7 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
 -- If looking up in another prod, need to get the prod attr defs for the prod.
 fun isForwardProdAttr Boolean ::= prod::String  fName::String  e::FlowEnv =
   case lookupLocalEq(prod, fName, e) of
-  | localEq(_, _, _, isFwrd, _) :: _ -> isFwrd
+  | localEq(_, _, _, isFwrd, _, _) :: _ -> isFwrd
   | _ -> false
   end;
 

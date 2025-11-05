@@ -5,25 +5,47 @@ grammar silver:compiler:definition:flow:ast;
  -
  - Quick reference: 
  - lhsVertexType(), rhsVertexType(sigName), localVertexType(fName),
- - forwardVertexType(), anonVertexType(x)
+ - transAttrVertexType(v, transAttr), forwardVertexType(), anonVertexType(x)
  -}
 data nonterminal VertexType with
   vertexName, vertexPP, isInhDefVertex,
-  synVertex, inhVertex, fwdVertex, eqVertex;
+  synVertex, inhVertex, eqVertex, outerEqVertex,
+  eqDeps, outerEqDeps, synDeps, inhDeps, fwdDeps;
 derive Eq, Ord on VertexType;
 
 synthesized attribute vertexName::String;
 synthesized attribute vertexPP::String;
 synthesized attribute isInhDefVertex::Boolean;
 
-{-- FlowVertex for a synthesized attribute for this FlowVertex -}
+{-- FlowVertex for a synthesized attribute for this VertexType -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
-{-- FlowVertex for a inherited attribute for this FlowVertex -}
+{-- FlowVertex for a inherited attribute for this VertexType -}
 synthesized attribute inhVertex :: (FlowVertex ::= String);
-{-- FlowVertex for the forward flow type for this FlowVertex -}
-synthesized attribute fwdVertex :: FlowVertex;
-{-- FlowVertex for the equation giving this FlowVertex (there may not be one!) -}
-synthesized attribute eqVertex :: [FlowVertex];
+{-- FlowVertex for the equation giving this VertexType -}
+synthesized attribute eqVertex :: FlowVertex;
+{-- FlowVertex for the outer dependencies of the equation giving this VertexType -}
+synthesized attribute outerEqVertex :: FlowVertex;
+{-- FlowVertex dependencies of taking a reference to this VertexType -}
+synthesized attribute eqDeps :: [FlowVertex];
+{-- FlowVertex dependencies of constructing the outer node of this VertexType -}
+synthesized attribute outerEqDeps :: [FlowVertex];
+{-- FlowVertex dependencies of a synthesized attribute access on this VertexType -}
+synthesized attribute synDeps :: ([FlowVertex] ::= String);
+{-- FlowVertex dependencies of an inherited attribute access on this VertexType -}
+synthesized attribute inhDeps :: ([FlowVertex] ::= String);
+{-- FlowVertex dependencies for the forward flow type for this VertexType -}
+synthesized attribute fwdDeps :: [FlowVertex];
+
+aspect default production
+top::VertexType ::=
+{
+  top.eqDeps = [top.eqVertex];
+  top.outerEqDeps = [top.outerEqVertex];
+  top.synDeps = \ attr -> top.synVertex(attr) :: top.outerEqDeps;
+  top.inhDeps = \ attr -> top.inhVertex(attr) :: top.outerEqDeps;
+  top.fwdDeps = top.synDeps("forward");
+}
+
 
 {--
  - Represents the vertexes for a production lhs.
@@ -36,8 +58,10 @@ top::VertexType ::=
   top.isInhDefVertex = false;
   top.synVertex = lhsSynVertex;
   top.inhVertex = lhsInhVertex;
-  top.fwdVertex = forwardEqVertex();
-  top.eqVertex = [];
+  top.eqVertex = lhsEqVertex();
+  top.outerEqVertex = error("Shouldn't ask for an outerEqVertex on lhsVertexType");
+  top.outerEqDeps = [];
+  top.fwdDeps = [forwardEqVertex];  -- override for better caching
 }
 
 {--
@@ -51,8 +75,8 @@ top::VertexType ::= sigName::String
   top.isInhDefVertex = true;
   top.synVertex = rhsSynVertex(sigName, _);
   top.inhVertex = rhsInhVertex(sigName, _);
-  top.fwdVertex = rhsSynVertex(sigName, "forward");
-  top.eqVertex = [rhsEqVertex(sigName)];
+  top.eqVertex = rhsEqVertex(sigName);
+  top.outerEqVertex = rhsOuterEqVertex(sigName);
 }
 
 {--
@@ -66,8 +90,8 @@ top::VertexType ::= fName::String
   top.isInhDefVertex = true;
   top.synVertex = localSynVertex(fName, _);
   top.inhVertex = localInhVertex(fName, _);
-  top.fwdVertex = localSynVertex(fName, "forward");
-  top.eqVertex = [localEqVertex(fName)];
+  top.eqVertex = localEqVertex(fName);
+  top.outerEqVertex = localOuterEqVertex(fName);
 }
 
 {--
@@ -81,8 +105,10 @@ top::VertexType ::= v::VertexType  transAttr::String
   top.isInhDefVertex = v.isInhDefVertex;
   top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
   top.inhVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
-  top.fwdVertex = v.synVertex(s"${transAttr}.forward");
-  top.eqVertex = v.synVertex(transAttr) :: v.eqVertex;
+  top.eqVertex = v.synVertex(transAttr);
+  top.outerEqVertex = transAttrOuterEqVertex(v, transAttr);
+  top.eqDeps = v.synDeps(transAttr);
+  top.outerEqDeps = top.outerEqVertex :: v.outerEqDeps;
 }
 
 {--
@@ -96,8 +122,8 @@ top::VertexType ::=
   top.isInhDefVertex = true;
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
-  top.fwdVertex = forwardSynVertex("forward");
-  top.eqVertex = [forwardEqVertex()];
+  top.eqVertex = forwardEqVertex;
+  top.outerEqVertex = forwardOuterEqVertex();
 }
 
 abstract production forwardParentVertexType
@@ -109,11 +135,12 @@ top::VertexType ::=
   top.vertexPP = "forward parent";
   top.isInhDefVertex = false;
   top.synVertex = forwardParentSynVertex;
-  top.inhVertex = lhsInhVertex;
-  -- The forward of the forward parent is the LHS of this production, which doesn't have a vertex!
-  -- This should never really be consulted in practice.
-  top.fwdVertex = localEqVertex("__lhs");
-  top.eqVertex = [];
+  top.inhVertex = forwardParentInhVertex;
+  top.eqVertex = forwardParentEqVertex();
+  top.outerEqVertex = error("Shouldn't ask for an outerEqVertex on forwardParentVertexType");
+  top.outerEqDeps = [];
+  -- The forward of the forward parent is the LHS of this production
+  top.fwdDeps = [lhsEqVertex()];
 }
 
 {--
@@ -127,8 +154,8 @@ top::VertexType ::= x::String
   top.isInhDefVertex = true;
   top.synVertex = anonSynVertex(x, _);
   top.inhVertex = anonInhVertex(x, _);
-  top.fwdVertex = anonSynVertex(x, "forward");
-  top.eqVertex = [anonEqVertex(x)];
+  top.eqVertex = anonEqVertex(x);
+  top.outerEqVertex = anonEqVertex(x);  -- We don't distinguish the outer eq for anon vertexes
 }
 
 {--
@@ -142,6 +169,6 @@ top::VertexType ::= parent::VertexType prodName::String sigName::String
   top.isInhDefVertex = false;
   top.synVertex = subtermSynVertex(parent, prodName, sigName, _);
   top.inhVertex = subtermInhVertex(parent, prodName, sigName, _);
-  top.fwdVertex = subtermSynVertex(parent, prodName, sigName, "forward");
-  top.eqVertex = [subtermEqVertex(parent, prodName, sigName)];
+  top.eqVertex = subtermEqVertex(parent, prodName, sigName);
+  top.outerEqVertex = subtermOuterEqVertex(parent, prodName, sigName);
 }

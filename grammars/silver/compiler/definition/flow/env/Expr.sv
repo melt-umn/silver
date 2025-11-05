@@ -108,10 +108,9 @@ top::Expr ::= @q::QName
   -- Note that q should find the actual type written in the signature, and so
   -- isDecorable on that indeed tells us whether it's something autodecorated.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
-  top.flowDeps <-
+  top.flowDeps <- rhsEqVertex(q.lookupValue.fullName) ::
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
-    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
+    then map(rhsInhVertex(q.lookupValue.fullName, _), fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
@@ -123,7 +122,7 @@ top::Expr ::= @q::QName
 {
   -- Always a nonterminal type, but check if it's decorated in case it's a data NT:
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps <-
+  top.flowDeps <- lhsEqVertex() ::
     if top.finalType.isDecorated
     then map(lhsInhVertex, fromMaybe([], refSet))
     else [];
@@ -137,10 +136,9 @@ top::Expr ::= @q::QName
 {
   -- Again, q give the actual type written.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
   top.flowDeps <- localEqVertex(q.lookupValue.fullName) ::
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
-    then map(localVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
+    then map(localInhVertex(q.lookupValue.fullName, _), fromMaybe([], refSet))
     else [];
   top.flowVertexInfo =
     if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && top.finalType.isDecorated
@@ -164,7 +162,7 @@ top::Expr ::= @q::QName
 {
   -- Always a non-data nonterminal type.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps <- lhsSynVertex("forward") :: map(forwardInhVertex, fromMaybe([], refSet));
+  top.flowDeps <- forwardEqVertex :: map(forwardInhVertex, fromMaybe([], refSet));
   top.flowVertexInfo = just(forwardVertexType());
 }
 aspect production forwardParentReference
@@ -397,6 +395,7 @@ top::AppExpr ::= e::Expr
     | just(decSite), just(ns), just(v) ->
       refDecSiteEq(top.frame.fullName, e.finalType.typeName, v, decSite, top.alwaysDecorated) ::
       if inputSigIsShared then []
+      -- TODO: Should only introduce projected deps in appProd's graph here if we are exported by appProd!
       else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v)]
     | _, _, _ -> []
     end;
@@ -437,7 +436,7 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.flowDeps := 
     case e.flowVertexInfo of
-    | just(vertex) -> vertex.fwdVertex :: vertex.eqVertex
+    | just(vertex) -> vertex.fwdDeps
     | nothing() -> e.flowDeps
     end;
   top.flowDefs <-
@@ -458,7 +457,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
-    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | just(vertex) -> vertex.synDeps(q.attrDcl.fullName)
     | nothing() -> e.flowDeps
     end;
   top.flowDefs <-
@@ -472,7 +471,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
-    | just(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
+    | just(vertex) -> vertex.inhDeps(q.attrDcl.fullName)
     | nothing() -> e.flowDeps
     end;
   top.flowDefs <-
@@ -488,7 +487,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
   top.flowVertexInfo = map(transAttrVertexType(_, q.attrDcl.fullName), e.flowVertexInfo);
   top.flowDeps := 
     case e.flowVertexInfo of
-    | just(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex ++
+    | just(vertex) -> vertex.synDeps(q.attrDcl.fullName) ++
       map(transAttrVertexType(vertex, q.attrDcl.fullName).inhVertex, fromMaybe([], refSet))
     | nothing() -> e.flowDeps
     end;
@@ -690,10 +689,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
-  top.flowDeps := pr.flowDeps ++ f.flowDeps ++
-    (pr.scrutineeVertexType.fwdVertex :: pr.scrutineeVertexType.eqVertex);
-  top.outerFlowDeps := pr.outerFlowDeps ++ f.outerFlowDeps ++
-    (pr.scrutineeVertexType.fwdVertex :: pr.scrutineeVertexType.eqVertex);
+  top.flowDeps := pr.flowDeps ++ f.flowDeps ++ pr.scrutineeVertexType.fwdDeps;
+  top.outerFlowDeps := pr.outerFlowDeps ++ f.outerFlowDeps ++ pr.scrutineeVertexType.fwdDeps;
 
   local eTy::Type = e.finalType;
   top.flowDefs <-

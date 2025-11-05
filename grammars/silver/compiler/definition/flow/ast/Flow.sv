@@ -232,6 +232,28 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 }
 
 {--
+ - The definition of a translation attribute in a production.
+ -
+ - @param prod  the full name of the production
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - @param outerDeps the dependencies of the top-level node constructed by this equation
+ - CONTRIBUTIONS ARE *NOT* POSSIBLE
+ -}
+abstract production transEq
+top::FlowDef ::= prod::String  attr::String
+  deps::[FlowVertex]  outerDeps::[FlowVertex]  mayAffectFlowType::Boolean
+{
+  top.synTreeContribs := [(crossnames(prod, attr), top)];
+  top.prodGraphContribs := [(prod, top)];
+  local ftEdges :: [(FlowVertex, FlowVertex)] = zipFst(lhsSynVertex(attr), deps);
+  top.flowEdges =
+    zipFst(transAttrOuterEqVertex(lhsVertexType(), attr), outerDeps) ++
+    if mayAffectFlowType then ftEdges else [];
+  top.suspectFlowEdges = if mayAffectFlowType then [] else ftEdges;
+}
+
+{--
  - The definition of the forward of a production.
  -
  - @param prod  the full name of the production
@@ -240,13 +262,14 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
  - CONTRIBUTIONS ARE *NOT* repeat *NOT* POSSIBLE
  -}
 abstract production fwdEq
-top::FlowDef ::= prod::String  deps::[FlowVertex]  outerDeps::[FlowVertex]  mayAffectFlowType::Boolean
+top::FlowDef ::= prod::String  deps::[FlowVertex]
+  outerDeps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.fwdTreeContribs := [(prod, top)];
   top.prodGraphContribs := [(prod, top)];
-  local ftEdges :: [(FlowVertex, FlowVertex)] = cartProd([lhsSynVertex("forward")], deps);
+  local ftEdges :: [(FlowVertex, FlowVertex)] = zipFst(forwardEqVertex, deps);
   top.flowEdges =
-    cartProd([forwardEqVertex()], outerDeps) ++
+    zipFst(forwardOuterEqVertex(), outerDeps) ++
     if mayAffectFlowType then ftEdges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else ftEdges;
 }
@@ -291,14 +314,18 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
  - @param typeName  the full name of the type, or empty string if not a decorable type!
  - @param isFwrd  true if this is a forward production attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param outerDeps the dependencies of the top-level node constructed by this equation
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  isFwrd::Boolean deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  isFwrd::Boolean
+  deps::[FlowVertex]  outerDeps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = zipFst(localEqVertex(fName), deps);
+  top.flowEdges =
+    zipFst(localEqVertex(fName), deps) ++
+    zipFst(localOuterEqVertex(fName), outerDeps);
 }
 
 {--
@@ -373,6 +400,7 @@ top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  d
 {--
  - Used for contributions to collections. Allows tacking on dependencies
  - to vertices.
+ - TODO: Handle contributions for inh collections on shared trees?
  -
  - @param prod  the full name of the production
  - @param src  the vertex to add dependencies to
@@ -465,7 +493,7 @@ top::FlowDef ::= prod::String  parent::VertexType  termProd::String  childDeps::
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
     flatMap(\ c::(String, [FlowVertex]) ->
-      cartProd([subtermEqVertex(parent, termProd, c.1)], parent.eqVertex ++ c.2),
+      cartProd([subtermOuterEqVertex(parent, termProd, c.1)], parent.outerEqVertex :: c.2),
       childDeps);
 }
 
@@ -487,7 +515,7 @@ top::FlowDef ::= prod::String  typeName::String  isNt::Boolean  vt::VertexType  
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
     case vt of
-    | subtermVertexType(_, _, _) -> flatMap(\ v1 -> map(\ v2 -> (v1, v2), deps), vt.eqVertex)
+    | subtermVertexType(_, _, _) -> cartProd([vt.eqVertex, vt.outerEqVertex], deps)
     | _ -> []
     end;
 }

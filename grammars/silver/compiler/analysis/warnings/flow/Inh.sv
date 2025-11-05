@@ -76,6 +76,9 @@ fun checkEqDeps
   prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv  realEnv::Env =
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   case v of
+  -- A dependency on an RHS is always assumed to exist locally.
+  -- These vertices only exist for tile stitch points.
+  | lhsEqVertex() -> []
   -- A dependency on an LHS.INH is a flow issue: these equations do not exist
   -- locally, so we cannot check them.
   | lhsInhVertex(_) -> []
@@ -85,6 +88,7 @@ fun checkEqDeps
   -- A dependency on an RHS is always assumed to exist locally.
   -- These vertices only exist for tile stitch points.
   | rhsEqVertex(_) -> []
+  | rhsOuterEqVertex(_) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
   | rhsInhVertex(sigName, attrName) ->
       checkInhEq(prodName, rhsVertexType(sigName), attrName, config, prodGraphs, flowEnv, realEnv)
@@ -92,12 +96,16 @@ fun checkEqDeps
   -- A dependency on a LOCAL. Technically, local equations may not exist!
   -- But let's just assume they do, since `local name :: type = expr;` is the preferred syntax.
   | localEqVertex(fName) -> []
+  | localOuterEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   | localInhVertex(fName, attrName) -> 
       checkInhEq(prodName, localVertexType(fName), attrName, config, prodGraphs, flowEnv, realEnv)
   | localSynVertex(fName, attrName) -> []
+  -- Translation attributes must somehow always have an equation on any vertex type;
+  -- this is covered by the SYN completeness checks.
+  | transAttrOuterEqVertex(base, transAttr) -> []
   -- If we depend on the forward EQ, then it must exist.
-  | forwardEqVertex() -> []
+  | forwardOuterEqVertex() -> []
   -- INH on forward always exists due to copy equations, except for trans.inh when trans has an override.
   | forwardInhVertex(attrName) ->
       case splitTransAttrInh(attrName) of
@@ -107,6 +115,12 @@ fun checkEqDeps
       | _ -> []
       end
   | forwardSynVertex(_) -> []
+  -- If there is dependency on the forward parent, then it must exist.
+  | forwardParentEqVertex() -> []
+  -- A dependency on a forward parent INH is a flow issue in the production that forwarded to this one.
+  | forwardParentInhVertex(_) -> []
+  -- A dependency on a forward parent SYN will always exist.
+  | forwardParentSynVertex(_) -> []
   -- A dependency on a ANON. This do always exist (`decorate expr with..` always has expr.)
   | anonEqVertex(fName) -> []
   -- A dependency on ANON.ATTR. Again, SYN are safe. We need to check only for INH.
@@ -126,6 +140,7 @@ fun checkEqDeps
   | anonSynVertex(fName, attrName) -> []
   -- A dependency on an argument to a production call.  This always has an expression.
   | subtermEqVertex(parent, termProdName, sigName) -> []
+  | subtermOuterEqVertex(parent, termProdName, sigName) -> []
   -- A dependency on a projected equation in another production.
   -- We only depend on these vertices via sharing, and projected transitive dependencies
   -- will be checked at the sharing site by resolveInhEq, so no need to check here.

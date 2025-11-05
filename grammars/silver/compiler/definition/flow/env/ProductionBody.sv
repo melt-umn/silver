@@ -106,10 +106,11 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
-  -- TODO: Trans attr outerFlowDeps?
   top.flowDefs <-
     if top.frame.hasPartialSignature then 
-      [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
+      if attr.found && attr.attrDcl.isTranslation
+      then [transEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, e.outerFlowDeps, mayAffectFlowType)]
+      else [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
   e.decSiteVertexInfo =
@@ -239,7 +240,7 @@ top::ProductionStmt ::= @val::QName e::Expr
     [localEq(
       top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName,
       val.lookupValue.found && val.lookupValue.dcl.hasForward,
-      if e.alwaysDecorated then e.outerFlowDeps else e.flowDeps)];
+      e.flowDeps, e.outerFlowDeps)];
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));

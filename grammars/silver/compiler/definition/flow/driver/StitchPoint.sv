@@ -105,14 +105,23 @@ fun fromSigEdge
 fun fromSigVertex
 FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   case v of
+  | lhsEqVertex() -> parentType.eqVertex
   | lhsSynVertex(attr) -> parentType.synVertex(attr)
   | lhsInhVertex(attr) -> parentType.inhVertex(attr)
   | rhsEqVertex(sigName) ->
     subtermEqVertex(parentType, prodName, sigName)
+  | rhsOuterEqVertex(sigName) ->
+    subtermOuterEqVertex(parentType, prodName, sigName)
   | rhsSynVertex(sigName, attr) ->
     subtermSynVertex(parentType, prodName, sigName, attr)
   | rhsInhVertex(sigName, attr) ->
     subtermInhVertex(parentType, prodName, sigName, attr)
+  -- Deps on forward parent vertices are only allowed in sig sharing prods,
+  -- which must be applied in the root of the forward tree,
+  -- thus forward parent vertices in the remote production always map to the LHS vertices.
+  | forwardParentEqVertex() -> lhsEqVertex()
+  | forwardParentSynVertex(attr) -> lhsSynVertex(attr)
+  | forwardParentInhVertex(attr) -> lhsInhVertex(attr)
   | _ -> error("Unexpected non-signature vertex in tileEdges: " ++ v.dotName)
   end;
 
