@@ -105,7 +105,8 @@ fun fromSigEdge
 fun fromSigVertex
 FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   case v of
-  | lhsEqVertex() -> parentType.eqVertex
+  -- Note that deps on lhsEqVertex are not included in tile stitch points,
+  -- as it is only used to locally collect the deps for taking a reference to the LHS.
   | lhsSynVertex(attr) -> parentType.synVertex(attr)
   | lhsInhVertex(attr) -> parentType.inhVertex(attr)
   | rhsEqVertex(sigName) ->

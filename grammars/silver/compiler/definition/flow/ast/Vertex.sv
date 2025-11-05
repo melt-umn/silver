@@ -8,7 +8,7 @@ grammar silver:compiler:definition:flow:ast;
 data FlowVertex =
 {--
 - A vertex representing the signature LHS.
-- This has no direct dependencies, but is needed to record dependencies on the LHS for tile stitch points.
+- This exists for convenience when taking a reference to the LHS, to depend on all RHS.EQ vertices.
 -}
   lhsEqVertex
 

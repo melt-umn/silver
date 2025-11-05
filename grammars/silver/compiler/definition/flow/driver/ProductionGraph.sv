@@ -183,7 +183,8 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
      else addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
-    flatMap(addSharingEqs(flowEnv, realEnv, _), defs);
+    flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
+    map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
@@ -457,7 +458,8 @@ fun isSigEdge Boolean ::= edge::(FlowVertex, FlowVertex) =
 
 synthesized attribute isSigVertex :: Boolean occurs on FlowVertex;
 aspect isSigVertex on FlowVertex of
-| lhsEqVertex() -> true
+-- Note that deps on lhsEqVertex are not included in tile stitch points,
+-- as it is only used to locally collect the deps for taking a reference to the LHS.
 | lhsSynVertex(_) -> true
 | lhsInhVertex(_) -> true
 | rhsEqVertex(_) -> true
@@ -564,6 +566,11 @@ fun addDispatchEqs
       dispatch.inputElements, sigNames))
   | _ -> []
   end;
+{--
+ - Introduce 'lhs.eq -> rhs.eq' edges, to capture the deps of taking a reference to the LHS.
+ -}
+fun addLhsEqRhsEq (FlowVertex, FlowVertex) ::= ne::NamedSignatureElement =
+  (lhsEqVertex(), rhsEqVertex(ne.elementName));
 
 ---- End helpers for fixing up graphs ------------------------------------------
 
