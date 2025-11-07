@@ -21,6 +21,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
   local fnnt :: String = makeNTName(ntName);
   local isData :: Boolean = namedSig.outputElement.typerep.isData;
   local wantsTracking :: Boolean = namedSig.outputElement.typerep.isTracked;
+  local hasSingleton :: Boolean =
+    !wantsTracking && null(namedSig.contexts) && null(namedSig.inputElements) && null(namedSig.namedInputElements);
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
@@ -127,6 +129,8 @@ ${contexts.contextInitTrans}
     public ${className}(${namedSig.javaSignature}) {
         this(null${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
+
+${if hasSingleton then s"    public static final ${className} singleton = new ${className}();" else ""}
 
 ${namedSig.childDecls}
 
@@ -371,12 +375,12 @@ ${contexts.contextInitTrans}
 	
 		@Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(
+            return ${if hasSingleton then s"${className}.singleton" else s"""new ${className}(
               ${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++
                 -- If this prod implements a dispatch signature, then it *can* have shared children when invoked.
                 (if d.implementsSig.isJust then "true" else "false") ::
                 map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++
-                unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+                unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))})"""};
         }
 		
         @Override

@@ -158,9 +158,14 @@ top::Expr ::= @q::QName
   top.invokeTranslation =
     case top.finalType.outputType of
     | dispatchType(fn) -> s"${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)})"
-    | _ ->
+    | ty ->
+      if !ty.isTracked
+      && null(typeScheme.contexts)
+      && null(q.lookupValue.dcl.namedSignature.inputElements)
+      && null(q.lookupValue.dcl.namedSignature.namedInputElements)
+      then s"${makeProdName(q.lookupValue.fullName)}.singleton"
       -- static constructor invocation
-      s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ",
+      else s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ",
         makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++
         toString(top.invokeIsUnique) ::
         contexts.transContexts ++
