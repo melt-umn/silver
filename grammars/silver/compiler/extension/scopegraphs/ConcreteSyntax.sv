@@ -11,65 +11,25 @@ terminal EdgeRight_t ']->';
 
 --
 
-concrete production scopeAssertion
-top::ProductionStmt ::= 'scope' a::Name ';'
-{
-  top.unparse = "scope " ++ a.unparse ++ ";";
-
-  forwards to
-    productionStmtAppend(
-      productionAttributeDcl(
-        -- production attribute or local?
-        'production', 'attribute', ^a,
-        '::', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Scope"))), ';'
-      ),
-      valueEq(
-        qNameId(^a), '=', Silver_Expr { absScopeAssertion() }, ';' 
-      )
-    )
-  ;
-}
+concrete production scopeAssertionNoDatum
+top::ProductionStmt ::= 'scope' '<' inhs::TypeExpr '>' a::Name ';'
+{ forwards to absScopeAssertion(^inhs, ^a, errorExpr([]), false); }
 
 concrete production scopeAssertionDatum
-top::ProductionStmt ::= 'scope' a::Name '->' e::Expr ';'
-{
-  top.unparse = "scope " ++ a.unparse ++ " -> " ++ e.unparse ++ ";";
-
-  forwards to
-    productionStmtAppend(
-      productionAttributeDcl(
-        -- production attribute or local?
-        'production', 'attribute', ^a,
-        '::', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Scope"))), ';'
-      ),
-      valueEq(
-        qNameId(^a), '=', Silver_Expr { absScopeAssertionDatum($Expr{^e}) }, ';' 
-      )
-    )
-  ;
-}
-
+top::ProductionStmt ::= 'scope' '<' inhs::TypeExpr '>' a::Name 
+                                '->' e::Expr ';'
+{ forwards to absScopeAssertion(^inhs, ^a, ^e, true); }
 
 --
 
-concrete production edgeAssertion
-top::ProductionStmt ::= d::DefLHS '-[' lab::IdUpper_t ']->' e::Expr ';'
-{
-  top.unparse = d.unparse ++ " -[ " ++ lab.lexeme ++ " ]-> " ++ e.unparse ++ ";";
+{-concrete production edgeAssertionDot
+top::ProductionStmt ::= d::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t ']->' e::Expr ';'
+{ forwards to absEdgeAssertionDot(^d, ^attr, lab.lexeme, ^e); }
 
-  -- todo: check that e1 is a reference to a Decorated Scope [with i]
-  --       and is either a production attribute or inherited scope
+concrete production edgeAssertionLocal
+top::ProductionStmt ::= d::DefLHS '-[' lab::IdLower_t ']->' e::Expr ';'
+{ forwards to absEdgeAssertionLocal(^d, lab.lexeme, ^e); }-}
 
-  -- todo: check that e2 is a reference to a Decorated Scope [with i]
-
-  -- if this ProductionStmt is in a production with signature top::SomeNt ::= ...,
-  -- then prodRootName will be "top"
-  local prodRootName::String = top.frame.signature.outputElement.elementName;
-
-  forwards to
-    -- dummy forward for the time being
-    Silver_ProductionStmt {
-      local attribute foo::Integer;
-    }
-  ;
-}
+concrete production edgeAssertionLocal
+top::ProductionStmt ::= n::QName '-[' lab::IdLower_t ']->' e::Expr ';'
+{ forwards to absEdgeAssertionLocal(^n, lab.lexeme, ^e); }
