@@ -47,7 +47,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
     isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars);
   
   top.flowDefs <- [
-    fwdEq(top.frame.fullName, e.flowDeps, e.outerFlowDeps, mayAffectFlowType),
+    fwdEq(top.frame.fullName, e.flowDeps, mayAffectFlowType),
     -- These are attributes that we know, here, occurs on this nonterminal.
     -- The point is, these are the implicit equations we KNOW get generated, so
     -- we regard these as non-suspect. That is, we implicitly insert these copy
@@ -109,7 +109,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.flowDefs <-
     if top.frame.hasPartialSignature then 
       if attr.found && attr.attrDcl.isTranslation
-      then [transEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, e.outerFlowDeps, mayAffectFlowType)]
+      then [transEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
       else [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
@@ -239,8 +239,7 @@ top::ProductionStmt ::= @val::QName e::Expr
   top.flowDefs <-
     [localEq(
       top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName,
-      val.lookupValue.found && val.lookupValue.dcl.hasForward,
-      e.flowDeps, e.outerFlowDeps)];
+      val.lookupValue.found && val.lookupValue.dcl.hasForward, e.flowDeps)];
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));

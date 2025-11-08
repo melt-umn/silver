@@ -20,12 +20,6 @@ import silver:compiler:driver:util only isExportedBy;
 monoid attribute flowDeps :: [FlowVertex];
 
 {--
- - Only dependencies of this expression that correspond to constructing the outer tree node.
- - In local/forward/trans attr equations, sub-tree nodes have their own equation vertices.
- -}
-monoid attribute outerFlowDeps :: [FlowVertex];
-
-{--
  - Determines whether this expression corresponds to a node in the flow graph, and how
  - to treat it specially if so.
  - 
@@ -72,9 +66,7 @@ monoid attribute lexicalLocalAlwaysDecorated :: [(String, Boolean)];
 -- flowDefs because expressions (decorate, patterns) can now generate stitchpoints
 attribute flowDeps, flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
   occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
-attribute outerFlowDeps, flowVertexInfo occurs on Expr;
-
-monoid attribute argOuterFlowDeps :: [[FlowVertex]] occurs on AppExprs, AppExpr;
+attribute flowVertexInfo occurs on Expr;
 
 flowtype Expr =
   flowVertexInfo {forward}, flowDeps {forward}, flowDefs {forward, alwaysDecorated},
@@ -88,14 +80,13 @@ propagate flowDefs, flowEnv, lexicalLocalDecSites, lexicalLocalAlwaysDecorated
   on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 attribute decSiteVertexInfo, alwaysDecorated occurs on Expr, AppExprs, AppExpr;
-propagate decSiteVertexInfo, alwaysDecorated, argOuterFlowDeps on AppExprs;
+propagate decSiteVertexInfo, alwaysDecorated on AppExprs;
 
 attribute appDecSiteVertexInfo occurs on Expr;
 
 aspect default production
 top::Expr ::=
 {
-  top.outerFlowDeps := top.flowDeps;
   -- We go with using default here because
   -- (a) it's safe. vertexInfo is for being less conservative and more precise.
   -- (b) only a few productions actually provide it.
@@ -205,9 +196,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   top.flowDefs <-
     case es.appProd, top.decSiteVertexInfo of
     | just(ns), just(v) ->
-        [subtermDecEq(
-          top.frame.fullName, v, ns.fullName,
-          zip(ns.inputNames, es.argOuterFlowDeps))]
+        [subtermDecEq(top.frame.fullName, ns.inputNames, v, ns.fullName)]
     | _, just(v) -> [holeEq(top.frame.fullName, top.finalType.typeName, top.finalType.isNonterminal, v, top.flowDeps)]
     | _, _ -> []
     end;
@@ -224,10 +213,11 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production functionInvocation
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  top.outerFlowDeps :=
-    case e of
-    | productionReference(_) when top.decSiteVertexInfo.isJust -> anns.flowDeps
-    | _ -> top.flowDeps
+  top.flowDefs <-
+    case e, top.decSiteVertexInfo of
+    | productionReference(q), just(v) when !null(anns.flowDeps) ->
+        [decSiteDepEq(top.frame.fullName, v, anns.flowDeps)]
+    | _, _ -> []
     end;
 
   es.appIndexOffset =
@@ -279,7 +269,12 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production dispatchApplication
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
-  top.outerFlowDeps := e.flowDeps ++ anns.flowDeps;
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [decSiteDepEq(top.frame.fullName, v, e.flowDeps ++ anns.flowDeps)]
+    | nothing() -> []
+    end;
+
   es.appIndexOffset = 0;
   es.decSiteVertexInfo = top.decSiteVertexInfo;
   es.alwaysDecorated = top.alwaysDecorated;
@@ -318,16 +313,9 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
   e.alwaysDecorated = false;
 }
 
-aspect production missingAppExpr
-top::AppExpr ::= _
-{
-  top.argOuterFlowDeps := [];
-}
-
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  top.argOuterFlowDeps := [e.outerFlowDeps];
   production sigIndex::Integer = top.appExprIndex + top.appIndexOffset;
   production sigName::String =  -- Name of the corresponding child of the production/dispatch being applied
     case top.appProd of
@@ -404,7 +392,12 @@ top::AppExpr ::= e::Expr
 aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
-  top.outerFlowDeps := note.flowDeps ++ e.outerFlowDeps;
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) when !null(note.flowDeps) ->
+        [decSiteDepEq(top.frame.fullName, v, note.flowDeps)]
+    | _ -> []
+    end;
   note.decSiteVertexInfo = nothing();
   e.decSiteVertexInfo = top.decSiteVertexInfo;
   note.alwaysDecorated = false;
@@ -569,7 +562,11 @@ top::Expr ::= '@' e::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  top.outerFlowDeps := e1.flowDeps ++ e2.outerFlowDeps ++ e3.outerFlowDeps;
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [decSiteDepEq(top.frame.fullName, v, e1.flowDeps)]
+    | nothing() -> []
+    end;
   e1.decSiteVertexInfo = nothing();
   e2.decSiteVertexInfo = top.decSiteVertexInfo;
   e3.decSiteVertexInfo = top.decSiteVertexInfo;
@@ -659,9 +656,9 @@ top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  _
 
 
 -- FROM PATTERN TODO
-attribute flowDeps, outerFlowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
+attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
   occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, outerFlowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
+propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
   on PrimPatterns, PrimPattern;
 
 inherited attribute scrutineeVertexType :: VertexType;
@@ -690,7 +687,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- Let's make sure for decorated types, we only demand what's necessary for forward
   -- evaluation.
   top.flowDeps := pr.flowDeps ++ f.flowDeps ++ pr.scrutineeVertexType.fwdDeps;
-  top.outerFlowDeps := pr.outerFlowDeps ++ f.outerFlowDeps ++ pr.scrutineeVertexType.fwdDeps;
 
   local eTy::Type = e.finalType;
   top.flowDefs <-
@@ -700,6 +696,12 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
       -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
       [anonEq(top.frame.fullName, anonName, getParsedOriginLocationOrFallback(top), e.flowDeps),
        holeEq(top.frame.fullName, eTy.typeName, eTy.isNonterminal, anonVertexType(anonName), [])]
+    end;
+  
+  top.flowDefs <-
+    case top.decSiteVertexInfo of
+    | just(v) -> [decSiteDepEq(top.frame.fullName, v, pr.scrutineeVertexType.fwdDeps)]
+    | nothing() -> []
     end;
 
   e.decSiteVertexInfo = nothing();
@@ -716,7 +718,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' _ e::Expr
 {
-  propagate flowDeps, outerFlowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType;
+  propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, scrutineeVertexType;
   top.flowDefs <-
     [patternRuleEq(top.frame.fullName, qn.lookupValue.fullName, top.scrutineeVertexType, ns.flowProjections)];
   e.appDecSiteVertexInfo = nothing();

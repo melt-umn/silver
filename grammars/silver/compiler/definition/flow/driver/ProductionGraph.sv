@@ -504,7 +504,7 @@ fun addFwdProdAttrInhEqs
 fun allFwdProdAttrs [String] ::= d::[FlowDef] =
   case d of
   | [] -> []
-  | localEq(_, fN, _, true, _, _) :: rest -> fN :: allFwdProdAttrs(rest)
+  | localEq(_, fN, _, true, _) :: rest -> fN :: allFwdProdAttrs(rest)
   | _ :: rest -> allFwdProdAttrs(rest)
   end;
 {--
@@ -529,8 +529,6 @@ fun addDefEqs
         | localVertexType(fName) -> !isForwardProdAttr(prod, fName, flowEnv)
         | _ -> true
         end ->
-      (decSite.eqVertex, ref.eqVertex) ::
-      (decSite.outerEqVertex, ref.outerEqVertex) ::
       filterMap(
         \ attr::String ->
           if vertexHasInhEq(prod, ref, attr, flowEnv)
@@ -624,7 +622,7 @@ fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexTyp
 fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =
   flatMap(\ d::FlowDef ->
     case d of
-    | subtermDecEq(_, parent, termProdName, _) ->
+    | subtermDecEq(_, _, parent, termProdName) ->
         [tileStitchPoint(termProdName, parent)]
     | _ -> []
     end,
