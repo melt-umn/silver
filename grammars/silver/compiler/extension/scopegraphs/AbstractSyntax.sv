@@ -19,22 +19,26 @@ abstract production absScopeAssertion
 top::ProductionStmt ::= inhs::TypeExpr a::Name e::Expr hasExpr::Boolean
 {
   propagate flowEnv, env, grammarName, config, compiledGrammars, frame,
-            finalSubst, downSubst, boundVariables, errors;
+            finalSubst, downSubst, boundVariables;
 
   e.dispatchFlowDeps = [];
-  e.isRoot = false; e.alwaysDecorated = false;
-  e.decSiteVertexInfo = nothing(); e.appDecSiteVertexInfo = nothing();
+  e.isRoot = false;
+  e.alwaysDecorated = false;
+  e.decSiteVertexInfo = nothing();
+  e.appDecSiteVertexInfo = nothing();
 
   --
 
-  local scopeListTypeExpr::Decorated TypeExpr with {env} = 
+  -- list type for scopes with inherited attributes `inhs`
+  local scopeListTypeExpr::Decorated TypeExpr with {env, grammarName, flowEnv} = 
     decorate
-      Silver_TypeExpr {[Decorated silver:compiler:extension:scopegraphs:Scope 
-                        with $TypeExpr{^inhs}]}
-    with {env = top.env;};
+      Silver_TypeExpr {[Decorated silver:compiler:extension:scopegraphs:Scope with $TypeExpr{^inhs}]}
+    with {env = top.env; grammarName = top.grammarName; flowEnv = top.flowEnv;};
 
-  local inhNames::[String] = inhs.typerep.inhSetMembers; -- cycle here....
+  -- names of inherited attributes corresponding to SG edges
+  local inhNames::[String] = inhs.typerep.inhSetMembers;
 
+  -- types of the inherited attributes in the set defined by `inhs`
   local inhTypes::[Type] =
     let attrLookups::[QNameLookup<AttributeDclInfo>] = 
       map (\i::String -> customLookup("attribute", getAttrDcl(i, top.env), i),
@@ -47,13 +51,16 @@ top::ProductionStmt ::= inhs::TypeExpr a::Name e::Expr hasExpr::Boolean
                 attrDcls)
     end end;
 
+  -- true if types of all inhs in the set from `inhs` have type `scopeListTypeExpr`
   local inhTypesOk::Boolean = foldr(
     \t::Type ok::Boolean -> ok && !unify(t, scopeListTypeExpr.typerep).failure,
     true, inhTypes);
 
+  -- produce an inherited attribute definition for when a new scope is decorated
   local mkExprInh::(ExprInh ::= String) = \inhName::String ->
-    exprInh(exprLhsExpr(qNameAttrOccur(qName(inhName))), '=', Silver_Expr{[]}, ';');
+    exprInh(exprLhsExpr(qNameAttrOccur(qName(inhName))), '=', Silver_Expr{$QName{qNameId(name(a.name ++ "_" ++ inhName))}}, ';');
 
+  -- produce inherited attribute definitions for when a new scope is decorated
   local decorateScopeExpr::Expr = Silver_Expr {
     decorate mkScope() with {
       $ExprInhs{
@@ -66,21 +73,23 @@ top::ProductionStmt ::= inhs::TypeExpr a::Name e::Expr hasExpr::Boolean
     }
   };
 
+  -- for a given edge inh attr, define and initialize collection attribute
   local inhEdgeDefStmt::(ProductionStmt ::= String) = \inhName::String ->
     productionStmtAppend(
       Silver_ProductionStmt{production attribute $Name{name(a.name ++ "_" ++ inhName)}::$TypeExpr{^scopeListTypeExpr} with ++;},
       Silver_ProductionStmt{$QName{qName(a.name ++ "_" ++ inhName)} := [];}
     );
 
+  -- for every edge inh attr, define and initialize collection attribute
   local inhEdgeDefStmts::ProductionStmt = foldrLastElem(
     \inhName::String acc::ProductionStmt -> productionStmtAppend(inhEdgeDefStmt(inhName), acc),
     \lastInhName::String -> inhEdgeDefStmt(lastInhName),
-    inhNames -- cycle here...
+    inhNames
   );
 
   --
 
-  top.errors <-
+  top.errors :=
     if inhs.typerep.kindrep != inhSetKind()
     then [errFromOrigin(top, "Type argument for scope must to have kind " ++ 
                              "InhSet an argument was given of kind " ++ 
@@ -92,12 +101,11 @@ top::ProductionStmt ::= inhs::TypeExpr a::Name e::Expr hasExpr::Boolean
 
   --
 
-  top.unparse = "scope <" ++ inhs.unparse ++ ">" ++ a.unparse ++ " -> " ++
-                e.unparse ++ ";";
+  top.unparse = "scope <" ++ inhs.unparse ++ ">" ++ a.unparse ++ " -> " ++ e.unparse ++ ";";
     
   forwards to productionStmtAppend(
     Silver_ProductionStmt{production attribute $Name{^a}::Decorated Scope with $TypeExpr{^inhs} = $Expr{^decorateScopeExpr};},
-    ^inhEdgeDefStmts -- cycle here...
+    ^inhEdgeDefStmts -- removing this resolves cycle error
   );
 
 }
@@ -112,8 +120,8 @@ top::ProductionStmt ::= n::QName lab::String e::Expr
   -- TODO: check that n is not qualified
   -- TODO: check if lab is an inh attr - maybe should be a QName too
 
-  propagate flowDefs, flowEnv, env, config, compiledGrammars, grammarName,
-            frame, finalSubst, upSubst2, downSubst2, boundVariables, errors;
+  {-propagate flowDefs, flowEnv, env, config, compiledGrammars, grammarName,
+            frame, finalSubst, upSubst2, downSubst2, boundVariables;
 
   e.dispatchFlowDeps = [];
   e.isRoot = true; e.alwaysDecorated = true;
@@ -126,7 +134,7 @@ top::ProductionStmt ::= n::QName lab::String e::Expr
   local nIsQualified::Boolean =
     case n of qNameId(_) -> false | _ -> true end;
 
-  local nTy::Decorated Type with {boundVariables} =
+  local nTy::Decorated Type with {boundVariables, flowEnv} =
     decorate n.lookupValue.dcl.refDispatcher(n).typerep
     with { boundVariables = []; };
 
@@ -134,7 +142,8 @@ top::ProductionStmt ::= n::QName lab::String e::Expr
     decorate e.typerep
       with { boundVariables = []; };
 
-  nondecorated local scopeTyUnify::Type = decoratedType(nondecScopeType, errorType());
+  local scopeTyUnify::Type = decoratedType(nondecScopeType, errorType());
+  scopeTyUnify.boundVariables = [];
 
   --
 
@@ -157,6 +166,10 @@ top::ProductionStmt ::= n::QName lab::String e::Expr
 
   forwards to Silver_ProductionStmt {
     $QName{qName(n.name ++ "_" ++ lab)} <- [$Expr{^e}];
+  };-}
+
+  forwards to Silver_ProductionStmt {
+    local attribute $Name{name(n.name)}::Integer;
   };
 
 }
