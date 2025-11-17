@@ -12,3 +12,4 @@ imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:copper;
 imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:extension:convenience;
+imports silver:compiler:modification:lambda_fn;

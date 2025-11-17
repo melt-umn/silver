@@ -97,7 +97,7 @@ top::Type ::= tv::TyVar
   -- Perform one iteration of substitution
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindrep != tv.kind -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindrep != tv.kind -> error("Kind mismatch in applying substitution! " ++ s.kindrep.typepp ++ ", " ++ tv.kind.typepp)
     | ps -> ps
     end;
   

@@ -4,56 +4,52 @@ imports silver:compiler:extension:scopegraphs2;
 
 --
 
-fun main IO<Integer> ::= args::[String] = pure(0);
+synthesized attribute allScopes::[MyScope];
 
 --
 
-scope graph edges { lex, var, imp, mod }; -- translates to:
-{-
-type Scope = Decorated SGScope with {lex, var, imp, mod};
-inherited attribute lex::[Scope];
-  attribute lex occurs on SGScope;
-inherited attribute var::[Scope];
-  attribute var occurs on SGScope;
-inherited attribute imp::[Scope];
-  attribute imp occurs on SGScope;
-inherited attribute mod::[Scope];
-  attribute mod occurs on SGScope;
--}
+fun main IO<Integer> ::= args::[String] = do {
 
+  let root::Root = root(child());
+
+  let vizStr::String = vizStr(allLabs, root.allScopes);
+
+  system("echo '" ++ vizStr ++ "' | dot -Tsvg > sg.svg");
+
+  return 0;
+
+};
 
 --
 
-nonterminal Root;
+scope MyScope edges { lex, var, imp, mod };
+
+--
+
+nonterminal Root with allScopes;
 
 production root
 top::Root ::= child::Child
 {
 
-  mkscope s2; -- translates to:
-  {-
-  production attribute s2::Scope = decorate scope() with {
-    lex = local_s2_lex;  var = local_s2_var;
-    imp = local_s2_imp;  mod = local_s2_mod;
-  };
-  production attribute local_s2_lex::[Scope] with ++;
-    local_s2_lex := [];
-  production attribute local_s2_var::[Scope] with ++;
-    local_s2_var := [];
-  production attribute local_s2_imp::[Scope] with ++;
-    local_s2_imp := [];
-  production attribute local_s2_mod::[Scope] with ++;
-    local_s2_mod := [];
-  -}
+  mkscope s1;
+  mkscope s2;
+  mkscope s3 -> "foo" : [1, 2, 3];
+
+  s1 -[ lex ]-> s2;
+  s2 -[ var ]-> s3;
 
   child.s = s2;
+
+  top.allScopes = [s1, s2, s3];
 
 }
 
 
 --
 
-inherited attribute s::Scope;
+-- todo, scope attribute
+inherited attribute s::MyScope;
 
 nonterminal Child with s;
 
