@@ -13,3 +13,6 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:extension:convenience;
 imports silver:compiler:modification:lambda_fn;
+imports silver:compiler:extension:autoattr;
+imports silver:compiler:driver:util;
+imports silver:compiler:modification:concisefunctions;

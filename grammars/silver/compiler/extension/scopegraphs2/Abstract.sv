@@ -1,8 +1,152 @@
 grammar silver:compiler:extension:scopegraphs2;
 
+import silver:util:treemap as rtm;
+
 global sgScopeName::String =
   "silver:compiler:extension:scopegraphs2:SGScope"
 ;
+
+----------------------
+-- `scope attribute <aName> occurs on <qNames>;`
+
+abstract production scopeAttribute
+top::AGDcl ::= aName::String qNames::QNames
+{
+  -- Names of inherited attributes corresponding to labels
+  --local labelNames::[String] =
+  --  map(\attr::String -> last(explode(":", attr)), 
+  --      getInhAttrsOn(sgScopeName, top.env));
+  local labelNames::[String] =
+    case searchEnvTree("MyScope", top.sgEnv) of
+    | [] -> []
+    | h::_ -> h.labelSet
+    end;
+
+  -- Set of label inherited attributes to decorate scopes with
+  nondecorated local labelSetTypeExpr::TypeExpr = inhSetTypeExpr (
+    terminal(InhSetLCurly_t, "{"), 
+    foldrLastElem(
+      \labelName::String rest::FlowSpecInhs -> consFlowSpecInhs(labelFlowSpecInh(labelName), ',', rest),
+      \lastLabelName::String -> oneFlowSpecInhs(labelFlowSpecInh(lastLabelName)),
+      labelNames
+    ),
+    '}'
+  );
+
+  -- "Hidden" type of scopes
+  nondecorated local scopeType::TypeExpr = Silver_TypeExpr {
+    Decorated SGScope with $TypeExpr{labelSetTypeExpr}
+  };
+
+  ------------------------------------------------------------------------------
+  -- Names of monoid attributes
+
+  local monoidAttrNames::[String] = 
+    map (\lab::String -> aName ++ "_" ++ lab, labelNames);
+
+  ------------------------------------------------------------------------------
+  -- occurs declarations for monoids on all qNames
+
+  -- Monoid occurs dcl for ma on qn
+  local oneNtOccurDcl::(AGDcl ::= QName String) = \qn::QName ma::String ->
+    Silver_AGDcl {
+      attribute $Name{name(ma)} occurs on $QName{qn};
+    };
+
+  -- Monoid occurs dcls for all monoid attrs on qn
+  local oneNtOccursDcls::(AGDcl ::= QName) = \qn::QName ->
+    foldrLastElem(
+      \ma::String rest::AGDcl-> appendAGDcl(oneNtOccurDcl(qn, ma), rest),
+      \ma::String -> oneNtOccurDcl(qn, ma),
+      monoidAttrNames
+    );
+
+  nondecorated local allNtOccursDcls::AGDcl = 
+    foldrLastElem(
+      \qn::QName rest::AGDcl -> appendAGDcl(oneNtOccursDcls(qn), rest),
+      \qn::QName -> oneNtOccursDcls(qn),
+      map((.qnwtQN), qNames.qnames)
+    );
+
+  ------------------------------------------------------------------------------
+  -- monnoid attribute declarations
+
+  local monoidAttrDcl::(AGDcl ::= String) = \ma::String ->
+    Silver_AGDcl {
+      monoid attribute $Name{name(ma)}::[$TypeExpr{scopeType}];
+    };
+
+  nondecorated local monoidAttrDcls::AGDcl = foldrLastElem (
+    \ma::String rest::AGDcl -> appendAGDcl(monoidAttrDcl(ma), rest),
+    \ma::String -> monoidAttrDcl(ma),
+    monoidAttrNames
+  );
+
+  ------------------------------------------------------------------------------
+  -- aspect production for all qNames, default label monoids to []
+
+  local monoidDefaultEq::(ProductionStmt ::= String) = \ma::String ->
+     Silver_ProductionStmt{top.$QName{qName(ma)} := [];};
+
+  nondecorated local monoidDefaultEqs::ProductionStmt = foldrLastElem (
+    \ma::String rest::ProductionStmt -> productionStmtAppend(monoidDefaultEq(ma), rest),
+    \ma::String -> monoidDefaultEq(ma),
+    monoidAttrNames
+  );
+
+  local aspectOneNt::(AGDcl ::= QName) = \qn::QName ->
+    Silver_AGDcl {
+      aspect default production top::$TypeExpr{nominalTypeExpr(qn.qNameType)} ::= {
+        $ProductionStmt{monoidDefaultEqs}
+      }
+    };
+
+  nondecorated local aspectsAll::AGDcl = foldrLastElem(
+    \qn::QName rest::AGDcl -> appendAGDcl(aspectOneNt(qn), rest),
+    \qn::QName -> aspectOneNt(qn),
+    map((.qnwtQN), qNames.qnames)
+  );
+
+  ------------------------------------------------------------------------------
+  -- occurs for inh attr
+
+  local inhOccDcl::(AGDcl ::= QName) = \qn::QName ->
+    Silver_AGDcl{
+      attribute $Name{name(aName)} occurs on $QName{qn};
+    };
+
+  nondecorated local inhOccDcls::AGDcl = foldrLastElem(
+    \qn::QName rest::AGDcl -> appendAGDcl(inhOccDcl(qn), rest),
+    \qn::QName -> inhOccDcl(qn),
+    map((.qnwtQN), qNames.qnames)
+  );
+
+  ------------------------------------------------------------------------------
+
+  local attrDcls::AGDcl = appendAGDcl(
+    Silver_AGDcl{inherited attribute $Name{name(aName)}::$TypeExpr{scopeType};},
+    appendAGDcl(
+      inhOccDcls,
+      appendAGDcl(
+        monoidAttrDcls,
+        appendAGDcl(
+          allNtOccursDcls,
+          aspectsAll
+        )
+      )
+    )
+  );
+
+  top.defs := attrDcls.defs;
+  top.scopeGraphDefs := [];
+
+  forwards to @attrDcls;
+}
+
+-----------------------
+-- attribute occurences
+
+
 
 ------------------------------------------------
 -- `scope MyScope labels { lex, var, imp, mod }`
@@ -14,85 +158,84 @@ top::AGDcl ::= alias::String labelNames::[String]
   nondecorated local labelSetTypeExpr::TypeExpr = inhSetTypeExpr (
     terminal(InhSetLCurly_t, "{"), 
     foldrLastElem(
-      \labelName::String rest::FlowSpecInhs -> consFlowSpecInhs(mkLabelFlowSpecInh(labelName), ',', rest),
-      \lastLabelName::String -> oneFlowSpecInhs(mkLabelFlowSpecInh(lastLabelName)),
+      \labelName::String rest::FlowSpecInhs -> consFlowSpecInhs(labelFlowSpecInh(labelName), ',', rest),
+      \lastLabelName::String -> oneFlowSpecInhs(labelFlowSpecInh(lastLabelName)),
       labelNames
     ),
     '}'
   );
 
+  nondecorated local scopeTypeDec::Type = decoratedType(
+    nonterminalType("silver:compiler:extension:scopegraphs2:SGScope", [], false, false),
+    inhSetType(labelNames)
+  );
+
   -- "Hidden" type of scopes
-  nondecorated local scopeType::TypeExpr = Silver_TypeExpr {
+  nondecorated local scopeTypeExpr::TypeExpr = Silver_TypeExpr {
     Decorated SGScope with $TypeExpr{labelSetTypeExpr}
   };
 
   -- Attribute and occurs declarations for each label name
   nondecorated local labelAGDcls::AGDcl =
     foldrLastElem(
-      \labelName::String rest::AGDcl -> appendAGDcl(mkLabelAGDcl(scopeType, labelName), rest),
-      \lastLabelName::String -> mkLabelAGDcl(scopeType, lastLabelName),
+      \labelName::String rest::AGDcl -> appendAGDcl(mkLabelAGDcl(scopeTypeExpr, labelName), rest),
+      \lastLabelName::String -> mkLabelAGDcl(scopeTypeExpr, lastLabelName),
       labelNames
     );
+
+  
 
   -- Label productions for all label names
   nondecorated local labelProds::AGDcl = 
     foldrLastElem(
-      \labelName::String rest::AGDcl -> appendAGDcl(mkLabelProd(labelSetTypeExpr, labelName), rest),
-      \lastLabelName::String -> mkLabelProd(labelSetTypeExpr, lastLabelName),
+      \labelName::String rest::AGDcl -> appendAGDcl(labelProd(labelSetTypeExpr, labelName), rest),
+      \lastLabelName::String -> labelProd(labelSetTypeExpr, lastLabelName),
       labelNames
-    )
-  ;
-
-  local labelProdNameToApp::(Expr ::= String) = \label::String -> 
-    applicationEmpty(
-      baseExpr(qName("label_" ++ label)), '(', ')'
-    )
-  ;
-
-  nondecorated local labelProdNameExprs::Exprs = foldrLastElem (
-    \labelName::String rest::Exprs -> exprsCons(labelProdNameToApp(labelName), ',', rest),
-    \lastLabelName::String -> exprsSingle(labelProdNameToApp(lastLabelName)),
-    labelNames
-  );
-
-  -- `global allLabs::[Label<<set>>] = [ label_lex(), label_var(), ...]`
-  nondecorated local labelProdGlobalList::AGDcl = Silver_AGDcl {
-    global allLabs::[Label<$TypeExpr{labelSetTypeExpr}>] =
-      $Expr{fullList('[', labelProdNameExprs, ']')};
-  };
+    );
 
   forwards to
     appendAGDcl(
-      Silver_AGDcl {type $Name{name(alias)} = $TypeExpr{scopeType};},
-      appendAGDcl(
-        labelAGDcls,
-        appendAGDcl(
-          labelProds,
-          labelProdGlobalList
-        )
-      )
+      Silver_AGDcl {type $Name{name(alias)} = $TypeExpr{scopeTypeExpr};},
+      appendAGDcl(labelAGDcls, labelProds)
     )
   ;
+
+  top.scopeGraphDefs := [
+    scopeLabelsDef(
+      defaultEnvItem(
+        labelSetDcl(alias, labelNames)
+      )
+    )
+  ];
+
 }
 
 ----------------
--- `mkscope s1;`
+-- mkscope
 
+-- `mkscope s1`
 abstract production scopeAssertionNoDatum
 top::ProductionStmt ::= a::Name
 { forwards to scopeAssertionBoth(^a, nothing()); }
 
+-- `mkscope s1 -> "name" : data`
 abstract production scopeAssertionDatum
-top::ProductionStmt ::= a::Name name::String_t e::Expr
-{ forwards to scopeAssertionBoth(^a, just((name, ^e))); }
+top::ProductionStmt ::= a::Name name::Expr e::Expr
+{ forwards to scopeAssertionBoth(^a, just((^name, ^e))); }
 
+-- Combined
 abstract production scopeAssertionBoth
-top::ProductionStmt ::= a::Name data::Maybe<(String_t, Expr)>
+top::ProductionStmt ::= a::Name data::Maybe<(Expr, Expr)>
 {
   -- Names of inherited attributes corresponding to labels
+  --local labelNames::[String] =
+  --  map(\attr::String -> last(explode(":", attr)), 
+  --      getInhAttrsOn(sgScopeName, top.env));
   local labelNames::[String] =
-    map(\attr::String -> last(explode(":", attr)), 
-        getInhAttrsOn(sgScopeName, top.env));
+    case searchEnvTree("MyScope", top.sgEnv) of
+    | [] -> []
+    | h::_ -> h.labelSet
+    end;
 
   -- Production attribute for the scope asserted
   local scopeProdAttr::ProductionStmt = 
@@ -101,7 +244,7 @@ top::ProductionStmt ::= a::Name data::Maybe<(String_t, Expr)>
       Silver_ProductionStmt {
         production attribute $Name{^a}::SGScope = 
           scopeDatum(
-            $Expr{stringConst(data.fromJust.1)},
+            $Expr{data.fromJust.1},
             $Expr{data.fromJust.2}
           );
       }
@@ -113,8 +256,8 @@ top::ProductionStmt ::= a::Name data::Maybe<(String_t, Expr)>
   -- Generating `scope.inh := [];` for every inherited label attribute `inh`
   nondecorated local baseAttrEqs::ProductionStmt = 
     foldrLastElem(
-      \inh::String rest::ProductionStmt -> productionStmtAppend(mkInhAttrInit(a.name, inh), rest),
-      \inh::String -> mkInhAttrInit(a.name, inh),
+      \inh::String rest::ProductionStmt -> productionStmtAppend(inhAttrInit(a.name, inh), rest),
+      \inh::String -> inhAttrInit(a.name, inh),
       labelNames
     )
   ;
@@ -137,9 +280,14 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
   propagate config, grammarName, compiledGrammars, env, flowEnv;
 
   -- Names of inherited attributes corresponding to labels
+  --local labelNames::[String] =
+  --  map(\attr::String -> last(explode(":", attr)), 
+  --      getInhAttrsOn(sgScopeName, top.env));
   local labelNames::[String] =
-    map(\attr::String -> last(explode(":", attr)), 
-        getInhAttrsOn(sgScopeName, top.env));
+    case searchEnvTree("MyScope", top.sgEnv) of
+    | [] -> []
+    | h::_ -> h.labelSet
+    end;
 
   -- Expected decorated type of scopes
   local scopeType::Type = decoratedType(
@@ -156,21 +304,21 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
     decorate tgt.typerep
     with { boundVariables = []; };
 
-  top.errors :=
-    -- check `lab` is in `labelNames`
+  {-top.errors :=
+    -- Check `lab` is in `labelNames`
     if !contains(lab, labelNames)
     then [errFromOrigin(top, "Label " ++ lab ++ " not in edge label set {" ++ implode(", ", labelNames) ++ "}")]
-    -- check `src` is of type `Decorated SGScope with <set>`
+    -- Check `src` is of type `Decorated SGScope with <set>`
     else if !isDecScope(labelNames, ^srcDecTy)
     then [errFromOrigin(top, "Left side of Scope edge assertion has type " ++ 
                              srcDecTy.typepp ++ " but must have type " ++ 
                              scopeType.typepp)]
-    -- check `tgt` is of type `Decorated SGScope with <set>`
+    -- Check `tgt` is of type `Decorated SGScope with <set>`
     else if !isDecScope(labelNames, ^tgtDecTy)
     then [errFromOrigin(top, "Right side of Scope edge assertion has type " ++ 
-                             tgtDecTy.typepp ++ " but must have type '" ++ 
+                             tgtDecTy.typepp ++ " but must have type " ++ 
                              scopeType.typepp)]
-    else tgt.errors;
+    else tgt.errors;-}
 
   -- LHS for inh attr
   local lhs::DefLHS = concreteDefLHS(^src);
@@ -180,7 +328,7 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
 
   -- Edge inh attr being defined
   local attrName::QNameAttrOccur = qNameAttrOccur(qName(lab));
-  attrName.attrFor = ^scopeType;
+  attrName.attrFor = ^srcDecTy;--^scopeType;
   attrName.env = top.env;
   attrName.grammarName = top.grammarName;
 
@@ -192,7 +340,7 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
 -----------------
 -- util functions
 
-fun mkLabelFlowSpecInh FlowSpecInh ::= labelName::String =
+fun labelFlowSpecInh FlowSpecInh ::= labelName::String =
   flowSpecInh(qNameAttrOccur(qName(labelName)));
 
 fun mkLabelAGDcl AGDcl ::= scopeType::TypeExpr inhName::String =
@@ -201,7 +349,7 @@ fun mkLabelAGDcl AGDcl ::= scopeType::TypeExpr inhName::String =
     Silver_AGDcl{attribute $QName{qName(inhName)} occurs on SGScope;}
   );
 
-fun mkInhAttrInit ProductionStmt ::= scopeName::String inhName::String =
+fun inhAttrInit ProductionStmt ::= scopeName::String inhName::String =
   attrContainsBase(
     concreteDefLHS(qName(scopeName)), '.', qNameAttrOccur(qName(inhName)),
     ':=', Silver_Expr{[]}, ';'
@@ -216,7 +364,7 @@ fun isDecScope Boolean ::= labs::[String] ty::Type =
   end
 ;
 
-fun mkLabelProd AGDcl ::= inhsTypeExpr::TypeExpr lab::String =
+fun labelProd AGDcl ::= inhsTypeExpr::TypeExpr lab::String =
   Silver_AGDcl{
     production $Name{name("label_" ++ lab)}
     top::Label<$TypeExpr{inhsTypeExpr}> ::= 
@@ -228,3 +376,40 @@ fun mkLabelProd AGDcl ::= inhsTypeExpr::TypeExpr lab::String =
     }
   }
 ;
+
+-----------
+-- inh attr
+
+abstract production scopeForChild
+top::ProductionStmt ::= n::Name d::DefLHS a::QNameAttrOccur
+{
+  -- Names of inherited attributes corresponding to labels
+  local labelNames::[String] =
+    case searchEnvTree("MyScope", top.sgEnv) of
+    | [] -> []
+    | h::_ -> h.labelSet
+    end;
+
+  -- monoid contribs
+  nondecorated local monoidContribs::ProductionStmt =
+    foldrLastElem(
+      \lab::String rest::ProductionStmt -> 
+        productionStmtAppend(
+          Silver_ProductionStmt{ 
+            $QName{qName(n.name)}.$QName{qName(lab)} <- $Expr{access(baseExpr(qName(d.name)), '.', qNameAttrOccur(qName(a.name ++ "_" ++ lab)))};
+          },
+          rest
+        ),
+      \lab::String -> 
+        Silver_ProductionStmt{ 
+          $QName{qName(n.name)}.$QName{qName(lab)} <- $Expr{access(baseExpr(qName(d.name)), '.', qNameAttrOccur(qName(a.name ++ "_" ++ lab)))}; 
+        },
+      labelNames
+    )
+  ;
+
+  forwards to productionStmtAppend(
+    attributeDef(^d, '.', ^a, '=', baseExpr(qName(n.name)), ';'),
+    monoidContribs
+  );
+}
