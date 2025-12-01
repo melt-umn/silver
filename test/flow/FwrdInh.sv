@@ -28,7 +28,7 @@ top::FIExtExpr ::=
   top.errors1 = false;
 }
 
-warnCode "Equation requires inherited attribute flow:env1 on forward.flow:toFIE, however the copy equation from forwarding is suppressed" {
+warnCode "Access of inherited attribute env1 on forward.toFIE requires missing inherited attribute(s) flow:env1 to be supplied to translation attribute flow:toFIE of forward of production flow:fieExtFwrd" {
 production fieExtFwrd
 top::FIExtExpr ::= e::FIExtExpr
 {

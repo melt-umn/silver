@@ -405,7 +405,7 @@ top::RSExpr ::= e::RSExpr
     end;
 }
 
-warnCode "Equation requires inherited attribute flow:env1 be supplied to child e of production flow:condShareInLetBindingDep" {
+warnCode "Access of synthesized attribute errors1 on e requires missing inherited attribute(s) flow:env1 to be supplied to child e of production flow:condShareInLetBindingDep" {
 production condShareInLetBindingDep
 top::RSExpr ::= e::RSExpr
 {

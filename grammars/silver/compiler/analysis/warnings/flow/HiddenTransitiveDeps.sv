@@ -56,6 +56,9 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
   -- Make sure we aren't introducing any hidden transitive dependencies.
 
+  -- oh no again!
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
   local vertexHasHideableEq :: (Boolean ::= VertexType String) =
     possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
 

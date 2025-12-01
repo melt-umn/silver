@@ -438,6 +438,22 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 }
 
 {--
+ - The definition of a pattern match on an anonymous reference.
+ -
+ - @param prod  the full name of the production
+ - @param fName  the generated anonymous name for this decoration site
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - (no contributions are possible)
+ -}
+abstract production anonScrutineeEq
+top::FlowDef ::= prod::String  fName::String  typeName::String  isNt::Boolean  deps::[FlowVertex]
+{
+  top.localTreeContribs := [(crossnames(prod, fName), top)];
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges = zipFst(anonEqVertex(fName), deps);
+}
+
+{--
  - A synthesized occurs-on context for a decoration site of a type variable.
  -
  - @param prod  the full name of the production
@@ -567,18 +583,3 @@ top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String sour
 --
 
 fun crossnames String ::= a::String b::String = a ++ " @ " ++ b;
-
---
-
--- Used to get better error messages
-fun collectAnonOrigin [Pair<String  Location>] ::= f::[FlowDef] =
-  foldr(collectAnonOriginItem, [], f);
-fun collectAnonOriginItem [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>] =
-  case f of
-  | anonEq(_, fN, l, _) ->
-      -- Small hack to improve error messages. Ignore anonEq's that come from patterns
-      if startsWith("__scrutinee", fN)
-      then rest
-      else (fN, l) :: rest
-  | _ -> rest
-  end;

@@ -86,7 +86,6 @@ top::DecSiteTree ::= prodName::String vt::VertexType d::DecSiteTree
 production directDec
 top::DecSiteTree ::= prodName::String vt::VertexType
 {
-  -- TODO: What if vt is an anonVertexType?
   top.decSitePP = s"${vt.vertexPP} of production ${prodName}";
 }
 

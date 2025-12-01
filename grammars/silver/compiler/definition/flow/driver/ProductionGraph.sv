@@ -594,6 +594,7 @@ fun localStitchPoints [StitchPoint] ::= realEnv::Env  ds::[FlowDef] =
     case d of
     -- Add stitch points for holes that are nonterminal types
     | holeEq(_, tN, true, vt, _) -> nonterminalStitchPoints(realEnv, tN, vt)
+    | anonScrutineeEq(_, fName, tN, true, _) -> nonterminalStitchPoints(realEnv, tN, anonScrutineeVertexType(fName))
     -- Ignore all other flow def info
     | _ -> []
     end, ds);

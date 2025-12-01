@@ -48,7 +48,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
        else neverDec()) +
       case vt of
       -- Via flow type
-      | lhsVertexType() -> error("findDecSites: lhsVertexType") -- Should never actually be a decoration site
+      | lhsVertexType() -> alwaysDec()
       | transAttrVertexType(lhsVertexType(), attrName) -> alwaysDec()
       -- Via forwarding
       | forwardVertexType() -> forwardDec(prodName, nothing())

@@ -366,6 +366,7 @@ fun refDecSiteTranslationHelp Either<String String> ::= env::Env flowEnv::FlowEn
   | forwardVertexType() -> right(s"context.forward()")
   | forwardParentVertexType() -> error("forward parent shouldn't be a ref decoration site")
   | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
+  | anonScrutineeVertexType(_) -> error("dec site projection shouldn't happen with anon scrutinee")
   | subtermVertexType(parent, prodName, sigName) ->
     -- prodName is either a production or dispatch signature name
     case refDecSiteTranslationHelp(env, flowEnv, lhsNtName, parent) of

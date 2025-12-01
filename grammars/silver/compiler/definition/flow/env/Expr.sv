@@ -500,7 +500,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- this as to the flow analysis, and justifies all the choices below:
 
   -- First, generate our "anonymous" flow vertex name:
-  inh.decorationVertex = "__decorate" ++ toString(genInt()) ++ ":line" ++ toString(getParsedOriginLocationOrFallback(top).line);
+  inh.decorationVertex = 
+    s"${top.grammarName}:${getParsedOriginLocationOrFallback(top).unparse}:__decorate${toString(genInt())}";
 
   -- Next, emit the "local equation" for this anonymous flow vertex.
   -- This means only the deps in 'e', see above conceptual transformation to see why.
@@ -674,14 +675,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- consider 'case e of prod(x) -> decorate x.syn with ...'
   -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
   -- so we DO need to be transitive. Unfortunately.
-  
-  -- hack note: there's a test that depends on this name starting with __scrutinee. grep for it if you have to change this
-  local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(getParsedOriginLocationOrFallback(e).line);
+
+  local anonName :: String =
+    s"${top.grammarName}:${getParsedOriginLocationOrFallback(e).unparse}:__scrutinee${toString(genInt())}";
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
     | just(vertex) -> vertex
-    | nothing() -> anonVertexType(anonName)
+    | nothing() -> anonScrutineeVertexType(anonName)
     end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
@@ -694,10 +695,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | just(vertex) -> []
     | nothing() ->
       -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
-      [anonEq(top.frame.fullName, anonName, getParsedOriginLocationOrFallback(top), e.flowDeps),
-       holeEq(top.frame.fullName, eTy.typeName, eTy.isNonterminal, anonVertexType(anonName), [])]
+      [anonScrutineeEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, e.flowDeps)]
     end;
-  
+
   top.flowDefs <-
     case top.decSiteVertexInfo of
     | just(v) -> [decSiteDepEq(top.frame.fullName, v, pr.scrutineeVertexType.fwdDeps)]

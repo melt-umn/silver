@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:flow:ast;
 
+imports silver:langutil only unparse;
+
 {--
  - A "classification" of FlowVertex that has ways to map attributes to vertexes.
  -
@@ -152,6 +154,21 @@ top::VertexType ::= x::String
   top.vertexName = x;
   top.vertexPP = s"anonymous decoration site ${x}";
   top.isInhDefVertex = true;
+  top.synVertex = anonSynVertex(x, _);
+  top.inhVertex = anonInhVertex(x, _);
+  top.eqVertex = anonEqVertex(x);
+  top.outerEqVertex = anonEqVertex(x);  -- We don't distinguish the outer eq for anon vertexes
+}
+
+{--
+ - Represents the vertexes for the scrutinee when pattern matching on a reference that lacks a vertex type.
+ -}
+abstract production anonScrutineeVertexType
+top::VertexType ::= x::String
+{
+  top.vertexName = x;
+  top.vertexPP = s"anonymous scrutinee ${x}";
+  top.isInhDefVertex = false;
   top.synVertex = anonSynVertex(x, _);
   top.inhVertex = anonInhVertex(x, _);
   top.eqVertex = anonEqVertex(x);
