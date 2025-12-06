@@ -28,6 +28,7 @@ top::Expr ::=  '@' e::Expr
     | just(lhsVertexType()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
     | just(forwardVertexType()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
     | just(anonVertexType(_)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
+    | just(subtermVertexType(_, _, _)) -> [errFromOrigin(e, s"Cannot share a pattern variable.")]  -- Only way this can happen
     | just(v) ->
         -- Check that this tree is shared in at most one non-mutually-exclusive place.
         case lookupSharedRefs(top.frame.fullName, v, top.flowEnv) of
@@ -71,6 +72,7 @@ top::AppExpr ::= e::Expr
       | just(lhsVertexType()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
       | just(forwardVertexType()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
       | just(anonVertexType(_)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
+      | just(subtermVertexType(_, _, _)) -> [errFromOrigin(e, s"Cannot share a pattern variable.")]  -- Only way this can happen
       | just(v) ->
           -- Check that this tree is shared in at most one non-mutually-exclusive place.
           case lookupSharedRefs(top.frame.fullName, v, top.flowEnv) of

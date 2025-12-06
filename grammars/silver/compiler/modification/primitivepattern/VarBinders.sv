@@ -7,7 +7,8 @@ import silver:compiler:translation:java:type;
 
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, anonVertexType, VertexType, FlowVertex, inhVertex;
+import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, subtermVertexType, VertexType, FlowVertex, inhVertex;
+import silver:compiler:definition:flow:env only scrutineeVertexType;
 -- also unfortunately placed references to flowEnv
 
 import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
@@ -142,21 +143,24 @@ top::VarBinder ::= n::Name
   -- if it's not, then we treat it like a generic reference.
   top.flowProjections =
     if isDecorable(top.bindingType, top.env)
-    then [patternVarProjection(top.bindingName, top.bindingType.typeName, fName)]
+    then [patternVarProjection(top.bindingName, top.bindingType.typeName)]
     else [];
   -- because we don't have an 'anonEq' (the nonterminal stitch point gets generated for us by the above contribution) we won't be reported as missing in this production. Checks for presence in remote productions have to be done explicitly
 
   -- Recall that we emit (vertex, [reference set]) for expressions with a vertex.
   -- and the correct value is computed based on how this gets used.
-  -- TODO: Could this be simplified by using subtermVertexType instead of an anon vertex here?
-  local vt :: Maybe<VertexType> =
-    if isDecorable(top.bindingType, top.env)
-    then just(anonVertexType(fName))
+  production vt :: Maybe<VertexType> =
+    if isDecorable(top.bindingType, top.env) && top.matchingAgainst.isJust
+    then just(subtermVertexType(
+      top.scrutineeVertexType,
+      top.matchingAgainst.fromJust.fullName,
+      top.bindingName))
     else nothing();
   local deps :: [FlowVertex] =
-    if isDecorable(top.bindingType, top.env)
-    then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
-    else [];
+    case vt of
+    | just(svt) -> map(svt.inhVertex, fromMaybe([], refSet))
+    | _ -> []
+    end;
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps, [])];
   top.boundNames <- [n.name];

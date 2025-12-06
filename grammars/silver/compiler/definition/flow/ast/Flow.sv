@@ -481,7 +481,7 @@ top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[
 }
 
 data PatternVarProjection
-  = patternVarProjection child::String  typeName::String  patternVar::String;
+  = patternVarProjection child::String  typeName::String;
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.

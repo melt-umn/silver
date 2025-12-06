@@ -683,12 +683,19 @@ top::VarBinder ::= n::Name
   -- oh no again!
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  -- Check that we're not taking an unbounded reference
   top.errors <-
     if top.config.warnMissingInh
     && isDecorable(top.bindingType, top.env)
-    then if refSet.isJust then []
-         else [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(^finalTy)}, as the reference set is not bounded.")]
+    then
+      case refSet of
+      | just(inhDeps) -> map(\ di::(DecSiteTree, [String]) ->
+          mwdaWrnFromOrigin(top,
+            s"Taking a reference to ${n.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
+          decSitesMissingInhEqs(top.frame.fullName, vt.fromJust, inhDeps, myGraphs, top.flowEnv, top.env))
+      | nothing() ->
+          [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.bindingType)}, as the reference set is not bounded.")]
+      end
     else [];
 
   -- fName is our invented vertex name for the pattern variable

@@ -613,11 +613,11 @@ fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
   end;
 fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection =
   case var of
-  | patternVarProjection(child, typeName, patternVar) -> 
+  | patternVarProjection(child, typeName) -> 
       projectionStitchPoint(
-        matchProd, anonVertexType(patternVar), scrutinee, rhsVertexType(child),
+        matchProd, subtermVertexType(scrutinee, matchProd, child), scrutinee, rhsVertexType(child),
         getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
-      nonterminalStitchPoints(realEnv, typeName, anonVertexType(patternVar))
+      nonterminalStitchPoints(realEnv, typeName, subtermVertexType(scrutinee, matchProd, child))
   end;
 -- deps for subterm vertex of applied prod
 fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =

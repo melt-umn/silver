@@ -7,7 +7,8 @@ imports silver:langutil only unparse;
  -
  - Quick reference: 
  - lhsVertexType(), rhsVertexType(sigName), localVertexType(fName),
- - transAttrVertexType(v, transAttr), forwardVertexType(), anonVertexType(x)
+ - transAttrVertexType(v, transAttr), forwardVertexType(), anonVertexType(x),
+ - anonScrutineeVertexType(x), subtermVertexType(parent, prodName, sigName)
  -}
 data nonterminal VertexType with
   vertexName, vertexPP, isInhDefVertex,

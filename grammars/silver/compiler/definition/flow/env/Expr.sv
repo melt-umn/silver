@@ -661,6 +661,8 @@ attribute flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDe
   occurs on PrimPatterns, PrimPattern;
 propagate flowDeps, flowDefs, flowEnv, decSiteVertexInfo, alwaysDecorated, appDecSiteVertexInfo, scrutineeVertexType
   on PrimPatterns, PrimPattern;
+attribute scrutineeVertexType occurs on VarBinders, VarBinder;
+propagate scrutineeVertexType on VarBinders, VarBinder;
 
 inherited attribute scrutineeVertexType :: VertexType;
 
