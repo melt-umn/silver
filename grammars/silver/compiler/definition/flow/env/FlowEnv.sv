@@ -138,8 +138,8 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(localVertexType(fName), transAttr) ->
     !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(_, _) -> false
-  | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | anonScrutineeVertexType(fName) -> false
+  | anonVertexType(fName, _, _) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | anonScrutineeVertexType(fName, _, _) -> false
   | subtermVertexType(_, remoteProdName, sigName) ->
     vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
   -- This is a tricky case since we don't know what decorated this prod.
@@ -168,8 +168,8 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(localVertexType(fName), transAttr) ->
       length(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(_, _) -> 0
-  | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | anonScrutineeVertexType(fName) -> 0
+  | anonVertexType(fName, _, _) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | anonScrutineeVertexType(fName, _, _) -> 0
   | subtermVertexType(_, remoteProdName, sigName) -> 0
   | lhsVertexType() -> length(lookupSyn(prodName, attrName, flowEnv))
   | forwardParentVertexType() -> 0

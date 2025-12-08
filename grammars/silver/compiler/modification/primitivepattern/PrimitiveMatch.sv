@@ -35,7 +35,7 @@ tracked nonterminal PrimPattern with
   scrutineeType, returnType, translation, initTransDecSites, originRules;
 flowtype PrimPattern = decorate {
   env, config, compiledGrammars, grammarName, frame, originRules, finalSubst, downSubst,
-  flowEnv, decSiteVertexInfo, appDecSiteVertexInfo, alwaysDecorated,
+  flowEnv, decSiteVertexInfo, appDecSiteVertexInfo, alwaysDecorated, scrutineeVertexType,
   scrutineeType, returnType
 };
 

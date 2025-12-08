@@ -24,8 +24,14 @@ tracked nonterminal VarBinder with
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
-flowtype decorate {grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config, bindingTypes, bindingIndex, bindingNames, matchingAgainst} on VarBinders;
-flowtype decorate {grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config, bindingType, bindingIndex, bindingName, matchingAgainst} on VarBinder;
+flowtype decorate {
+  grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config,
+  bindingTypes, bindingIndex, bindingNames, matchingAgainst, scrutineeVertexType
+} on VarBinders;
+flowtype decorate {
+  grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config,
+  bindingType, bindingIndex, bindingName, matchingAgainst, scrutineeVertexType
+} on VarBinder;
 
 flowtype forward {decorate} on VarBinders, VarBinder;
 flowtype errors {decorate, receivedDeps} on VarBinders, VarBinder;

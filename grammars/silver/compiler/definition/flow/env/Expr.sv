@@ -500,8 +500,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- this as to the flow analysis, and justifies all the choices below:
 
   -- First, generate our "anonymous" flow vertex name:
-  inh.decorationVertex = 
-    s"${top.grammarName}:${getParsedOriginLocationOrFallback(top).unparse}:__decorate${toString(genInt())}";
+  inh.decorationVertex = s"__decorate${toString(genInt())}";
+  local vt::VertexType =
+    anonVertexType(inh.decorationVertex, top.grammarName, getParsedOriginLocationOrFallback(top));
 
   -- Next, emit the "local equation" for this anonymous flow vertex.
   -- This means only the deps in 'e', see above conceptual transformation to see why.
@@ -512,8 +513,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
-  top.flowVertexInfo = just(anonVertexType(inh.decorationVertex));
-  e.decSiteVertexInfo = just(anonVertexType(inh.decorationVertex));
+  local loc::Location = getParsedOriginLocationOrFallback(top);
+  top.flowVertexInfo = just(vt);
+  e.decSiteVertexInfo = just(vt);
   -- The type of decorate ... with ... is a normal reference for now, so this should always be false, but that could change.
   e.alwaysDecorated = top.alwaysDecorated;
   e.appDecSiteVertexInfo = nothing();
@@ -522,10 +524,10 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- This are of course ignored when treated specially.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
   top.flowDeps := [anonEqVertex(inh.decorationVertex)] ++
-    map(anonVertexType(inh.decorationVertex).inhVertex, fromMaybe([], refSet));
+    map(vt.inhVertex, fromMaybe([], refSet));
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
-  top.flowDefs <- occursContextDeps(top.frame.signature, top.env, top.finalType, anonVertexType(inh.decorationVertex));
+  top.flowDefs <- occursContextDeps(top.frame.signature, top.env, top.finalType, vt);
 }
 
 inherited attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
@@ -678,13 +680,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
   -- so we DO need to be transitive. Unfortunately.
 
-  local anonName :: String =
-    s"${top.grammarName}:${getParsedOriginLocationOrFallback(e).unparse}:__scrutinee${toString(genInt())}";
+  local anonName :: String = s"__scrutinee${toString(genInt())}";
+  local eLoc::Location = getParsedOriginLocationOrFallback(e);
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
     | just(vertex) -> vertex
-    | nothing() -> anonScrutineeVertexType(anonName)
+    | nothing() -> anonScrutineeVertexType(anonName, top.grammarName, eLoc)
     end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
@@ -697,7 +699,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | just(vertex) -> []
     | nothing() ->
       -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
-      [anonScrutineeEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, e.flowDeps)]
+      [anonScrutineeEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.grammarName, eLoc, e.flowDeps)]
     end;
 
   top.flowDefs <-

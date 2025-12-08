@@ -150,10 +150,10 @@ top::VertexType ::=
  - Represents the vertexes for anonymous vertex types somewhere within a production (e.g. 'decorate with' expressions).
  -}
 abstract production anonVertexType
-top::VertexType ::= x::String
+top::VertexType ::= x::String grammarName::String loc::Location
 {
-  top.vertexName = x;
-  top.vertexPP = s"anonymous decoration site ${x}";
+  top.vertexName = s"${grammarName}:${loc.unparse}:${x}";
+  top.vertexPP = s"anonymous decoration site at ${grammarName}:${loc.unparse}";
   top.isInhDefVertex = true;
   top.synVertex = anonSynVertex(x, _);
   top.inhVertex = anonInhVertex(x, _);
@@ -165,15 +165,15 @@ top::VertexType ::= x::String
  - Represents the vertexes for the scrutinee when pattern matching on a reference that lacks a vertex type.
  -}
 abstract production anonScrutineeVertexType
-top::VertexType ::= x::String
+top::VertexType ::= x::String grammarName::String loc::Location
 {
-  top.vertexName = x;
-  top.vertexPP = s"anonymous scrutinee ${x}";
+  top.vertexName = s"${grammarName}:${loc.unparse}:${x}";
+  top.vertexPP = s"anonymous scrutinee ${grammarName}:${loc.unparse}";
   top.isInhDefVertex = false;
-  top.synVertex = anonSynVertex(x, _);
-  top.inhVertex = anonInhVertex(x, _);
-  top.eqVertex = anonEqVertex(x);
-  top.outerEqVertex = anonEqVertex(x);  -- We don't distinguish the outer eq for anon vertexes
+  top.synVertex = anonSynVertex(top.vertexName, _);
+  top.inhVertex = anonInhVertex(top.vertexName, _);
+  top.eqVertex = anonEqVertex(top.vertexName);
+  top.outerEqVertex = anonEqVertex(top.vertexName);  -- We don't distinguish the outer eq for anon vertexes
 }
 
 {--
