@@ -1,7 +1,5 @@
 grammar silver:compiler:modification:primitivepattern;
 
-option silver:compiler:analysis:warnings:flow;  -- needed due to receivedDeps attribute
-
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
@@ -10,8 +8,6 @@ import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexica
 import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, subtermVertexType, VertexType, FlowVertex, inhVertex;
 import silver:compiler:definition:flow:env only scrutineeVertexType;
 -- also unfortunately placed references to flowEnv
-
-import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
 
 tracked nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
@@ -34,7 +30,7 @@ flowtype decorate {
 } on VarBinder;
 
 flowtype forward {decorate} on VarBinders, VarBinder;
-flowtype errors {decorate, receivedDeps} on VarBinders, VarBinder;
+flowtype errors {decorate} on VarBinders, VarBinder;
 flowtype defs {decorate} on VarBinders, VarBinder;
 flowtype boundNames {} on VarBinders, VarBinder;
 

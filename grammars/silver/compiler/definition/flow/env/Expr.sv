@@ -699,7 +699,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | just(vertex) -> []
     | nothing() ->
       -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
-      [anonScrutineeEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.grammarName, eLoc, e.flowDeps)]
+      [anonScrutineeEq(
+        top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal,
+        getMinRefSet(^eTy, top.env),
+        top.grammarName, eLoc, e.flowDeps)]
     end;
 
   top.flowDefs <-

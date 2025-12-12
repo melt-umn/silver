@@ -185,6 +185,12 @@ fun isForwardProdAttr Boolean ::= prod::String  fName::String  e::FlowEnv =
   | _ -> false
   end;
 
+fun getAnonScrutineeRefSet [String] ::= prod::String  fName::String  e::FlowEnv =
+  case lookupLocalEq(prod, fName, e) of
+  | anonScrutineeEq(_, _, _, _, refSet, _, _, _) :: _ -> refSet
+  | _ -> []
+  end;
+
 -- default set of inherited attributes required/assumed to exist for references
 fun getInhsForNtRef [[String]] ::= nt::String  e::FlowEnv = searchEnvTree(nt, e.refTree);
 

@@ -620,54 +620,8 @@ top::AppExpr ::= e::Expr
     else [];
 }
 
-{--
- - For pattern matching, we have an obligation to check:
- - 1. If we invented an anon vertex type for the scrutinee, then it's a sink, and
- -    we need to check that nothing more than the ref set was depended upon.
- -}
-aspect production matchPrimitiveReal
-top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
-{
-  -- slightly awkward way to recover the name and whether/not it was invented
-  local sinkVertexName :: Maybe<String> =
-    case e.flowVertexInfo, pr.scrutineeVertexType of
-    | nothing(), anonVertexType(n, _, _) -> just(n)
-    | _, _ -> nothing()
-    end;
-
-  -- These should be the only ones that can reference our anon sink
-  local transitiveDeps :: [FlowVertex] =
-    expandGraph(top.flowDeps, top.frame.flowGraph);
-  
-  pr.receivedDeps = transitiveDeps;
-
-  -- just the deps on inhs of our sink
-  local inhDeps :: [String] = toAnonInhs(transitiveDeps, sinkVertexName.fromJust);
-
-  -- Subtract the ref set from our deps
-  local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(^scrutineeType, top.env), set:add(inhDeps, set:empty())));
-
-  top.errors <-
-    if null(e.errors)
-    && top.config.warnMissingInh
-    && sinkVertexName.isJust
-    && !null(diff)
-    then [mwdaWrnFromOrigin(e, "Pattern match on reference of type " ++ prettyType(^scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
-    else [];
-
-}
-
-fun toAnonInhs [String] ::= vs::[FlowVertex]  vertex::String =
-  filterMap(\ v::FlowVertex ->
-    case v of
-    | anonInhVertex(n, inh) when n == vertex -> just(inh)
-    | _ -> nothing()
-    end, vs);
-
-inherited attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder, PrimPatterns, PrimPattern;
-propagate @receivedDeps on VarBinders, VarBinder, PrimPatterns, PrimPattern;
-
+-- Also need to check for taking a reference to a pattern var.
+-- Note that we know this at VarBinder due to a non-empty reference set type being inferred.
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
@@ -687,28 +641,6 @@ top::VarBinder ::= n::Name
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.bindingType)}, as the reference set is not bounded.")]
       end
-    else [];
-
-  -- fName is our invented vertex name for the pattern variable
-  local requiredInhs :: [String] = toAnonInhs(top.receivedDeps, fName);
-
-  -- Check for equation's existence:
-  -- Prod: top.matchingAgainst.fromJust.fullName
-  -- Child: top.bindingName
-  -- Inh: each of requiredInhs
-  local missingInhEqs :: [(DecSiteTree, [String])] =
-    decSitesMissingInhEqs(
-      top.matchingAgainst.fromJust.fullName, rhsVertexType(top.bindingName),
-      removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs),
-      myGraphs, top.flowEnv, top.env);
-
-  top.errors <-
-    if top.config.warnMissingInh
-    && isDecorable(top.bindingType, top.env)
-    && top.matchingAgainst.isJust
-    then map(\ eqs::(DecSiteTree, [String]) ->
-        mwdaWrnFromOrigin(top, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations for ${implode(", ", eqs.2)}. These attributes must be supplied to ${prettyDecSites(0, eqs.1)}"),
-      missingInhEqs)
     else [];
 }
 

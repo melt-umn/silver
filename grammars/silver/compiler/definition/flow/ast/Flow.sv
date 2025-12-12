@@ -446,7 +446,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - (no contributions are possible)
  -}
 abstract production anonScrutineeEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  isNt::Boolean  gram::String  loc::Location  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  isNt::Boolean  refSet::[String] gram::String  loc::Location  deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];

@@ -85,6 +85,9 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
             | _ -> hiddenProdDec(prodOrSig, rhsVertexType(sigName))
             end) *
           projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
+      -- Via the reference set of a pattern match scrutinee
+      | anonScrutineeVertexType(x, grammarName, l) ->
+        anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, x, flowEnv), grammarName, l)
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         product(unzipWith(recurse,
@@ -194,6 +197,9 @@ State<PDSState DecSiteTree> ::=
               -- We really should be using the global env here.
               | _ -> pure(alwaysDec())
               end)
+        -- Via the reference set of a pattern match scrutinee
+        | anonScrutineeVertexType(x, grammarName, l) ->
+          pure(anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, x, flowEnv), grammarName, l))
         -- Via signature/dispatch sharing
         | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
           map(sum, sequence(unzipWith(recurse,
@@ -297,6 +303,8 @@ partial strategy attribute lookupDecSiteStep =
       product(map(depAttrDec(_, ^d), set:toList(onlyLhsInh(expandGraph(
         [rhsInhVertex(sigName, top.attrToResolve)],
         findProductionGraph(prodName, top.productionFlowGraphs))))))
+  | anonScrutineeRefSetDec(refSet, _, _) when contains(top.attrToResolve, refSet) ->
+      alwaysDec()
   | transAttrDec(attrName, d) ->
       case splitTransAttrInh(top.attrToResolve) of
       | just((transAttr, inhAttr)) when transAttr == attrName -> depAttrDec(inhAttr, ^d)

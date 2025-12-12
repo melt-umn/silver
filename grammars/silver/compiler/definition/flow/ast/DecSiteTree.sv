@@ -138,6 +138,15 @@ top::DecSiteTree ::= prodName::String sigName::String d::DecSiteTree
 }
 
 {--
+ - Scrutinee of a pattern match on a reference requires the inherited attribute to be in the reference set.
+ -}
+production anonScrutineeRefSetDec
+top::DecSiteTree ::= refSet::[String] grammarName::String loc::Location
+{
+  top.decSitePP = s"reference set {${implode(", ", refSet)}} of pattern match scrutinee at ${grammarName}:${loc.unparse}";
+}
+
+{--
  - An inherited attribute on a translation attribute can be supplied via a translation attribute.
  -}
 production transAttrDec
