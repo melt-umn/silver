@@ -42,14 +42,14 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
 
   return
     viaProdVertexDec(prodName, vt,
-      -- Direct inherited equation at a decoration site
       (if vt.isInhDefVertex
+       -- Direct inherited equation at a decoration site
        then directDec(prodName, vt)
+       else if vt.isFlowTypeDepVertex
+       -- Tracked via a flow type, don't need to check here
+       then alwaysDec()
        else neverDec()) +
       case vt of
-      -- Via flow type
-      | lhsVertexType() -> alwaysDec()
-      | transAttrVertexType(lhsVertexType(), attrName) -> alwaysDec()
       -- Via forwarding
       | forwardVertexType() -> forwardDec(prodName, nothing())
       | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
@@ -220,9 +220,12 @@ State<PDSState DecSiteTree> ::=
           end,
           getSynAttrsOn(ntName, realEnv));
       return
+       (if vt.isInhDefVertex
         -- Direct inherited equation at a decoration site
-        (if vt.isInhDefVertex
         then directDec(prodName, vt)
+        else if vt.isFlowTypeDepVertex
+        -- May be supplied non-locally
+        then alwaysDec()
         else neverDec()) +
         viaVertex + sum(viaDirectShare) + sum(concat(viaTransAttrShare));
     };

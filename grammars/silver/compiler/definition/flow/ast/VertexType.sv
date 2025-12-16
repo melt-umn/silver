@@ -11,14 +11,19 @@ imports silver:langutil only unparse;
  - anonScrutineeVertexType(x), subtermVertexType(parent, prodName, sigName)
  -}
 data nonterminal VertexType with
-  vertexName, vertexPP, isInhDefVertex,
+  vertexName, vertexPP, isInhDefVertex, isFlowTypeDepVertex,
   synVertex, inhVertex, eqVertex, outerEqVertex,
   eqDeps, outerEqDeps, synDeps, inhDeps, fwdDeps;
 derive Eq, Ord on VertexType;
 
+{-- Short name of this VertexType -}
 synthesized attribute vertexName::String;
+{-- Expanded representation that indicates the sort of VertexType -}
 synthesized attribute vertexPP::String;
+{-- Can inherited equations be written for this VertexType? -}
 synthesized attribute isInhDefVertex::Boolean;
+{-- Are dependencies on inherited attributes on this VertexType tracked by the flow types? -}
+synthesized attribute isFlowTypeDepVertex::Boolean;
 
 {-- FlowVertex for a synthesized attribute for this VertexType -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
@@ -59,6 +64,7 @@ top::VertexType ::=
   top.vertexName = "top";
   top.vertexPP = "left-hand side";
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = true;
   top.synVertex = lhsSynVertex;
   top.inhVertex = lhsInhVertex;
   top.eqVertex = lhsEqVertex();
@@ -76,6 +82,7 @@ top::VertexType ::= sigName::String
   top.vertexName = sigName;
   top.vertexPP = "child " ++ sigName;
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = rhsSynVertex(sigName, _);
   top.inhVertex = rhsInhVertex(sigName, _);
   top.eqVertex = rhsEqVertex(sigName);
@@ -91,6 +98,7 @@ top::VertexType ::= fName::String
   top.vertexName = fName;
   top.vertexPP = "local " ++ fName;
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = localSynVertex(fName, _);
   top.inhVertex = localInhVertex(fName, _);
   top.eqVertex = localEqVertex(fName);
@@ -106,6 +114,7 @@ top::VertexType ::= v::VertexType  transAttr::String
   top.vertexName = s"${v.vertexName}.${transAttr}";
   top.vertexPP = s"translation attribute ${transAttr} of ${v.vertexPP}";
   top.isInhDefVertex = v.isInhDefVertex;
+  top.isFlowTypeDepVertex = v.isFlowTypeDepVertex;
   top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
   top.inhVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
   top.eqVertex = v.synVertex(transAttr);
@@ -123,6 +132,7 @@ top::VertexType ::=
   top.vertexName = "forward";
   top.vertexPP = "forward";
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
   top.eqVertex = forwardEqVertex;
@@ -137,6 +147,7 @@ top::VertexType ::=
   top.vertexName = "forwardParent";
   top.vertexPP = "forward parent";
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = true;
   top.synVertex = forwardParentSynVertex;
   top.inhVertex = forwardParentInhVertex;
   top.eqVertex = forwardParentEqVertex();
@@ -155,6 +166,7 @@ top::VertexType ::= x::String grammarName::String loc::Location
   top.vertexName = s"${grammarName}:${loc.unparse}:${x}";
   top.vertexPP = s"anonymous decoration site at ${grammarName}:${loc.unparse}";
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = anonSynVertex(x, _);
   top.inhVertex = anonInhVertex(x, _);
   top.eqVertex = anonEqVertex(x);
@@ -170,6 +182,7 @@ top::VertexType ::= x::String grammarName::String loc::Location
   top.vertexName = s"${grammarName}:${loc.unparse}:${x}";
   top.vertexPP = s"anonymous scrutinee ${grammarName}:${loc.unparse}";
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = anonSynVertex(top.vertexName, _);
   top.inhVertex = anonInhVertex(top.vertexName, _);
   top.eqVertex = anonEqVertex(top.vertexName);
@@ -185,6 +198,7 @@ top::VertexType ::= parent::VertexType prodName::String sigName::String
   top.vertexName = s"${parent.vertexName}[${prodName}:${sigName}]";
   top.vertexPP = top.vertexName;  -- Shouldn't appear in error messages?  Gets too long to spell out anyway.
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = subtermSynVertex(parent, prodName, sigName, _);
   top.inhVertex = subtermInhVertex(parent, prodName, sigName, _);
   top.eqVertex = subtermEqVertex(parent, prodName, sigName);
