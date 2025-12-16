@@ -306,7 +306,7 @@ top::Expr ::= @q::QName
       | just(inhDeps) -> map(\ di::(DecSiteTree, [String]) ->
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${q.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt)),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt, inhDeps, myGraphs, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
@@ -338,7 +338,7 @@ top::Expr ::= @q::QName
       | just(inhDeps) -> map(\ di::(DecSiteTree, [String]) ->
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${q.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt)),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt, inhDeps, myGraphs, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
@@ -359,7 +359,7 @@ top::Expr ::= @q::QName
       | just(inhDeps) -> map(\ di::(DecSiteTree, [String]) ->
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${q.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, forwardVertexType())),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, forwardVertexType(), inhDeps, myGraphs, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
@@ -433,7 +433,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           mwdaWrnFromOrigin(top,
             "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++  -- TODO: e.unparse can be big, abbreviate it?
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt)),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), myGraphs, top.flowEnv, top.env))
       | _ -> []
       end
@@ -472,7 +472,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           mwdaWrnFromOrigin(top,
             "Access of inherited attribute " ++ q.name ++ " on " ++ e.unparse ++  -- TODO: e.unparse can be big, abbreviate it?
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt)),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt, [q.attrDcl.fullName], myGraphs, top.flowEnv, top.env))
       | _ -> []
       end
@@ -504,7 +504,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
         | just(vt) -> map(\ di::(DecSiteTree, [String]) ->
             mwdaWrnFromOrigin(top,
               s"Taking a reference to ${top.unparse} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
-              " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt)),
+              " to be supplied to " ++ prettyDecSites(0, di.1)),
             decSitesMissingInhEqs(top.frame.fullName, transAttrVertexType(vt, q.attrDcl.fullName), inhDeps, myGraphs, top.flowEnv, top.env))
         | nothing() ->
             if null(inhDeps) then []
@@ -566,7 +566,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
           mwdaWrnFromOrigin(top,
             "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt)),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), myGraphs, top.flowEnv, top.env))
       | _ -> []
       end
@@ -636,7 +636,7 @@ top::VarBinder ::= n::Name
       | just(inhDeps) -> map(\ di::(DecSiteTree, [String]) ->
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${n.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
-            " to be supplied to " ++ prettyDecSitesOn(di.1, top.frame.fullName, vt.fromJust)),
+            " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt.fromJust, inhDeps, myGraphs, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.bindingType)}, as the reference set is not bounded.")]

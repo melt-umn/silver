@@ -175,9 +175,6 @@ fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
     | _ -> d.decSitePP
     end;
 
-fun prettyDecSitesOn String ::= d::DecSiteTree prodName::String vt::VertexType =
-  if d == directDec(prodName, vt) then "this tree" else prettyDecSites(0, d);
-
 derive Eq, Ord on DecSiteTree;
 
 instance Semiring DecSiteTree {
