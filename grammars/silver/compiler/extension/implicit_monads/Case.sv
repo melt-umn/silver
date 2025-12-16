@@ -149,7 +149,8 @@ Boolean ::= elst::[Expr] env::Env sub::Substitution f::BlockContext gn::String
   | e::etl ->
     let etyp::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                                       downSubst=sub; finalSubst=sub;
-                                      compiledGrammars=cg; config=c; alwaysDecorated = false; flowEnv=fe;
+                                      compiledGrammars=cg; config=c; flowEnv=fe;
+                                      alwaysDecorated=false; decSiteVertexInfo=nothing(); appDecSiteVertexInfo=nothing();
                                       expectedMonad=em; isRoot=iR;}.mtyperep
     in
       fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em, iR)
