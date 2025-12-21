@@ -273,20 +273,25 @@ fun getInhAttrsOn [String] ::= fnnt::String e::Env =
  - Returns the names of all inherited attributes known locally to occur on a nonterminal.
  - Also includes all inherited attributes occurring on translation attributes on the
  - nonterminal, when we want to treat these like inherited attributes.
- - TODO: Audit uses of this, verify if we only need one level of trans attrs!
  -}
-fun getInhAndInhOnTransAttrsOn [String] ::= fnnt::String e::Env =
-  flatMap(
-    \ o::OccursDclInfo ->
-      case getAttrDcl(o.attrOccurring, e) of
-      | at :: _ when at.isInherited -> [o.attrOccurring]
-      | at :: _ when at.isSynthesized && at.isTranslation ->
-        map(
-          \ inh::String -> s"${o.attrOccurring}.${inh}",
-          getInhAttrsOn(at.typeScheme.typeName, e))
-      | _ -> []
-      end,
-    getAttrOccursOn(fnnt, e));
+function getInhAndInhOnTransAttrsOn
+[String] ::= fnnt::String e::Env
+{
+  local recurse::([String] ::= [String] String) = \ seenNts nt ->
+    if contains(nt, seenNts) then []
+    else flatMap(
+      \ o::OccursDclInfo ->
+        case getAttrDcl(o.attrOccurring, e) of
+        | at :: _ when at.isInherited -> [o.attrOccurring]
+        | at :: _ when at.isSynthesized && at.isTranslation ->
+          map(
+            \ inh::String -> s"${o.attrOccurring}.${inh}",
+            recurse(nt :: seenNts, at.typeScheme.typeName))
+        | _ -> []
+        end,
+      getAttrOccursOn(nt, e));
+  return recurse([], fnnt);
+}
 
 -- This ensure the annotation list is in the properly sorted order!
 function annotationsForNonterminal
