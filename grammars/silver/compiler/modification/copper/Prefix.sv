@@ -180,7 +180,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
       \ tsNames::[String] -> 
         syntaxDisambiguationGroup(
           s"Prefer_${toString(loc.line)}_${tName}__${implode("__", tsNames)}",
-          tName :: tsNames, false, pluckTAction.translation,
+          tName :: tsNames, false, actionCode(acodeSrc=pluckTAction.unparse, acodeTrans=pluckTAction.translation),
           location=loc, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
 } action {

@@ -32,7 +32,7 @@ top::SyntaxProductionModifiers ::=
 nonterminal SyntaxProductionModifier with
   compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
 
-propagate compareTo, isEqual, cstEnv, productionSig on SyntaxProductionModifier;
+propagate compareTo, isEqual, cstEnv, acode, productionSig on SyntaxProductionModifier;
 
 aspect default production
 top::SyntaxProductionModifier ::=
@@ -67,10 +67,8 @@ top::SyntaxProductionModifier ::= term::String
  - The action to perform when this production is REDUCEd.
  -}
 abstract production prodAction
-top::SyntaxProductionModifier ::= acode::String
-{
-  top.acode := acode;
-}
+top::SyntaxProductionModifier ::= acode::ActionCode
+{}
 {--
  - The layout for this production.
  -}

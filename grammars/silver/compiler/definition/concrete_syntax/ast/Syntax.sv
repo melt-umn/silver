@@ -400,7 +400,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
  - A parser attribute. The acode initializes it.
  -}
 abstract production syntaxParserAttribute
-top::SyntaxDcl ::= n::String ty::Type acode::String
+top::SyntaxDcl ::= n::String ty::Type acode::ActionCode
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
@@ -415,7 +415,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
   top.copperGrammarElements =
     [ copper:parserAttribute(top.sourceGrammar, top.location,
         makeCopperName(n), ty.transType,
-        acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
+        acode.acodeTrans ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
     ];
 
   -- TODO: technically, there should be no free variables in ty.
@@ -427,7 +427,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
  - a parser attribute. 
  -}
 abstract production syntaxParserAttributeAspect
-top::SyntaxDcl ::= n::String acode::String
+top::SyntaxDcl ::= n::String acode::ActionCode
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
@@ -438,7 +438,7 @@ top::SyntaxDcl ::= n::String acode::String
 
   top.cstNormalize := [^top];
 
-  top.parserAttributeAspectContribs := [(n, acode)];
+  top.parserAttributeAspectContribs := [(n, acode.acodeTrans)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
   top.copperElementReference = error("can't demand copperElementReference of an aspect");
   top.copperGrammarElements = [];
@@ -449,7 +449,7 @@ top::SyntaxDcl ::= n::String acode::String
  - The acode distinguished between the listed terminals.
  -}
 abstract production syntaxDisambiguationGroup
-top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
+top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::ActionCode
 {
   top.fullName = n;
   top.sortKey = "DDD" ++ n;
@@ -474,7 +474,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
         trefs);
   top.copperGrammarElements =
     [ copper:disambiguationFunction(top.sourceGrammar, top.location,
-        makeCopperName(n), acode, members, applicableToSubsets)
+        makeCopperName(n), acode.acodeTrans, members, applicableToSubsets)
     ];
 }
 
@@ -491,3 +491,14 @@ function sortKeyLte
 Boolean ::= l::SyntaxDcl r::SyntaxDcl
 { return l.sortKey <= r.sortKey; }
 
+annotation acodeSrc::String;
+annotation acodeTrans::String;
+data ActionCode = actionCode with acodeSrc, acodeTrans, acode;
+
+aspect acode on top::ActionCode using := of
+| _ -> top.acodeTrans
+end;
+
+instance Eq ActionCode {
+  eq = \ a1::ActionCode a2::ActionCode -> a1.acodeSrc == a2.acodeSrc;
+}
