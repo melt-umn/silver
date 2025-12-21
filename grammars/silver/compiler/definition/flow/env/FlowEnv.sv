@@ -138,12 +138,12 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(localVertexType(fName), transAttr) ->
     !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(_, _) -> false
-  | anonVertexType(fName, _, _) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | anonScrutineeVertexType(fName, _, _) -> false
+  | anonVertexType(_, _, _) -> !null(lookupLocalInh(prodName, vt.vertexName, attrName, flowEnv))
+  | anonScrutineeVertexType(_, _, _) -> false
   | subtermVertexType(_, remoteProdName, sigName) ->
     vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
   -- This is a tricky case since we don't know what decorated this prod.
-  -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
+  -- We can count on missing LHS inh eqs being caught as flow issues elsewhere,
   -- but here we are remotely looking for equations that might not be the direct dependency of
   -- anything in the prod flow graph.
   | lhsVertexType() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
@@ -168,8 +168,8 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(localVertexType(fName), transAttr) ->
       length(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(_, _) -> 0
-  | anonVertexType(fName, _, _) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | anonScrutineeVertexType(fName, _, _) -> 0
+  | anonVertexType(_, _, _) -> length(lookupLocalInh(prodName, vt.vertexName, attrName, flowEnv))
+  | anonScrutineeVertexType(_, _, _) -> 0
   | subtermVertexType(_, remoteProdName, sigName) -> 0
   | lhsVertexType() -> length(lookupSyn(prodName, attrName, flowEnv))
   | forwardParentVertexType() -> 0

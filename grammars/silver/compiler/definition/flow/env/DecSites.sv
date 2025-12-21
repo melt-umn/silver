@@ -86,8 +86,8 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
             end) *
           projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
       -- Via the reference set of a pattern match scrutinee
-      | anonScrutineeVertexType(x, grammarName, l) ->
-        anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, x, flowEnv), grammarName, l)
+      | anonScrutineeVertexType(_, grammarName, l) ->
+        anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l)
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         product(unzipWith(recurse,
@@ -198,8 +198,8 @@ State<PDSState DecSiteTree> ::=
               | _ -> pure(alwaysDec())
               end)
         -- Via the reference set of a pattern match scrutinee
-        | anonScrutineeVertexType(x, grammarName, l) ->
-          pure(anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, x, flowEnv), grammarName, l))
+        | anonScrutineeVertexType(_, grammarName, l) ->
+          pure(anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l))
         -- Via signature/dispatch sharing
         | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
           map(sum, sequence(unzipWith(recurse,

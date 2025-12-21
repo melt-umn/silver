@@ -500,9 +500,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- this as to the flow analysis, and justifies all the choices below:
 
   -- First, generate our "anonymous" flow vertex name:
-  inh.decorationVertex = s"__decorate${toString(genInt())}";
   local vt::VertexType =
-    anonVertexType(inh.decorationVertex, top.grammarName, getParsedOriginLocationOrFallback(top));
+    anonVertexType(s"__decorate${toString(genInt())}", top.grammarName, getParsedOriginLocationOrFallback(top));
+  inh.decorationVertex = vt.vertexName;
 
   -- Next, emit the "local equation" for this anonymous flow vertex.
   -- This means only the deps in 'e', see above conceptual transformation to see why.
@@ -523,7 +523,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
   production refSet::Maybe<[String]> = getMaxRefSet(top.finalType, top.env);
-  top.flowDeps := [anonEqVertex(inh.decorationVertex)] ++
+  top.flowDeps := vt.eqVertex ::
     map(vt.inhVertex, fromMaybe([], refSet));
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
@@ -680,13 +680,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- that introduces the use of 'x.syn' in a flowDef, and then emits the anonEq in flowDep
   -- so we DO need to be transitive. Unfortunately.
 
-  local anonName :: String = s"__scrutinee${toString(genInt())}";
   local eLoc::Location = getParsedOriginLocationOrFallback(e);
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
     | just(vertex) -> vertex
-    | nothing() -> anonScrutineeVertexType(anonName, top.grammarName, eLoc)
+    | nothing() -> anonScrutineeVertexType(
+        s"__scrutinee${toString(genInt())}", top.grammarName, eLoc)
     end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
@@ -700,7 +700,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | nothing() ->
       -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
       [anonScrutineeEq(
-        top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal,
+        top.frame.fullName, pr.scrutineeVertexType.vertexName, eTy.typeName, eTy.isNonterminal,
         getMinRefSet(^eTy, top.env),
         top.grammarName, eLoc, e.flowDeps)]
     end;
