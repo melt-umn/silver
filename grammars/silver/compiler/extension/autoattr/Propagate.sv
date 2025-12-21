@@ -148,6 +148,9 @@ dispatch Propagate = ProductionStmt ::= includeShared::Boolean @attr::QName;
 abstract production propagateError implements Propagate
 top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
+  -- Seeding flow deps
+  top.errors <- if false then [] else error(hackUnparse((attr.lookupAttribute, includeShared)));
+
   forwards to
     errorProductionStmt(
       [errFromOrigin(attr, s"Attribute ${attr.name} cannot be propagated")]);

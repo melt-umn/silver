@@ -178,6 +178,10 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
         " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
     | _ -> []
     end;
+  
+  -- Seeding flow deps
+  top.errors <- if false then [] else error(hackUnparse(
+    (nttl.forward, nt.qNameType, attl.errorsTyVars, top.unparse)));
 }
 
 concrete production attributionDcl
