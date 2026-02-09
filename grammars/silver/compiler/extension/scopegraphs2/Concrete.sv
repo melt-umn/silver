@@ -32,9 +32,9 @@ top::ProductionStmt ::= 'new' ident::IdLower_t '::' sg::IdUpper_t scopeLab::IdLo
 --
 
 concrete production edgeSpecNoType_c
-top::AGDcl ::= 'edge' '-[' label::IdLower_t ']->' ';'
-{ forwards to edgeSpecNoType(label.lexeme); }
+top::AGDcl ::= 'edge' '-[' label::IdLower_t '::' sg::IdUpper_t ']->' ';'
+{ forwards to edgeSpecNoType(label.lexeme, sg); }
 
 concrete production edgeSpecWithType_c
-top::AGDcl ::= 'edge' '-[' label::IdLower_t ']->' te::TypeExpr ';'
-{ forwards to edgeSpecWithType(label.lexeme, @te); }
+top::AGDcl ::= 'edge' '-[' label::IdLower_t '::' sg::IdUpper_t ']->' te::TypeExpr ';'
+{ forwards to edgeSpecWithType(label.lexeme, sg, @te); }

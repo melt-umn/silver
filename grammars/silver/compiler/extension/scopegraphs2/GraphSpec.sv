@@ -10,4 +10,6 @@ top::AGDcl ::= ident::String qns::FlowSpecInhs
     type $Name{name(ident)} = 
       $TypeExpr{inhSetTypeExpr(terminal(InhSetLCurly_t, "{"), @qns, '}')};
   };
+
+  top.errors := qns.errors;
 }
