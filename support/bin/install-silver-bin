@@ -28,51 +28,29 @@ fi
 
 echo "Found ~/bin"
 
-case `uname` in
-*Darwin*)
-  READLINK=greadlink
-  if [ ! -f `which greadlink` ]; then
-    echo "Missing greadlink. Please install coreutils:"
-    echo -e "\tbrew install coreutils"
-    exit 4
-  fi
-  ;;
-*)
-  READLINK=readlink
-  ;;
-esac
+# get REPO location from git
+REPO=$(git rev-parse --show-toplevel)
+echo "Found $REPO"
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 for SCRIPT_NAME in silver silver-custom
 do
+    SRC_SCRIPT="${SCRIPT_DIR}/${SCRIPT_NAME}"
+    DST_SCRIPT="${HOME}/bin/${SCRIPT_NAME}"
 
-    if [ -f $SCRIPT_NAME ]; then
-        REPO=$("$READLINK" -f ../..)
-        SCRIPT=$SCRIPT_NAME
-    elif [ -f support/bin/$SCRIPT_NAME ]; then
-        REPO=$("$READLINK" -f .)
-        SCRIPT=support/bin/$SCRIPT_NAME
+    if [ -f "${SRC_SCRIPT}" ]; then
+       rm -f "${DST_SCRIPT}"
+       ln -s "${SRC_SCRIPT}" "${DST_SCRIPT}"
     else
-        echo "Couldn't find the Silver jars!"
-        echo "(if this is a fresh checkout, run fetch-jars before this script.)"
-        exit 2
-    fi
-    
-    echo "Found $REPO"
-
-    if [ -e ~/bin/$SCRIPT_NAME -o -h ~/bin/$SCRIPT_NAME ]; then
-        # -h needed in case the link exists but the targeted file does not
-        rm ~/bin/$SCRIPT_NAME
-        echo "Removed old(?) ~/bin/$SCRIPT_NAME file."
+       echo "Couldn't find ${SRC_SCRIPT}, there is a problem with the setup. Checkout from github again."
     fi
 
-    ln -s "$("$READLINK" -f "$SCRIPT")" ~/bin/
+    echo "Created ${DST_SCRIPT}"
 
-    echo "Created ~/bin/$SCRIPT_NAME"
-
-    # Just in case
-    chmod +x "$SCRIPT"
+    # Just in case...ahem...
+    chmod +x "${DST_SCRIPT}"
 
 done
 
 echo "Install finished."
-
