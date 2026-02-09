@@ -38,3 +38,13 @@ top::AGDcl ::= 'edge' '-[' label::IdLower_t '::' sg::IdUpper_t ']->' ';'
 concrete production edgeSpecWithType_c
 top::AGDcl ::= 'edge' '-[' label::IdLower_t '::' sg::IdUpper_t ']->' te::TypeExpr ';'
 { forwards to edgeSpecWithType(label.lexeme, sg, @te); }
+
+--
+
+concrete production edgeAssertionLocal_c
+top::ProductionStmt ::= a::Name '-[' lab::IdLower_t ']->' tgt::Expr ';'
+{ forwards to edgeAssertionLocal(qNameId(^a), lab.lexeme, ^tgt); }
+
+concrete production edgeAssertionInh_c
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t ']->' tgt::Expr ';'
+{ forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt); }
