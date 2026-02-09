@@ -13,7 +13,7 @@ terminal EdgeRight_t ']->';
 --
 
 concrete production graphSpec_c
-top::AGDcl ::= 'scope' 'graph' ident::IdUpper_t 'with' qns::QNames ';'
+top::AGDcl ::= 'scope' 'graph' ident::IdUpper_t 'with' '{' qns::FlowSpecInhs '}' ';'
 { forwards to graphSpec(ident.lexeme, @qns); }
 
 --
