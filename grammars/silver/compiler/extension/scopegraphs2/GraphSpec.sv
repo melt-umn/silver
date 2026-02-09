@@ -1,6 +1,7 @@
 grammar silver:compiler:extension:scopegraphs2;
 
---
+
+-- Scope graph identified by the edge labels within it
 
 production graphSpec
 top::AGDcl ::= ident::String qns::FlowSpecInhs

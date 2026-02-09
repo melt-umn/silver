@@ -14,7 +14,7 @@ top::Scope ::= d::Datum
 
 data nonterminal Datum;
 
-production datum
+production datumNone
 top::Datum ::=
 {
 }
