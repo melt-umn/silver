@@ -5,10 +5,13 @@ grammar silver:compiler:extension:scopegraphs2;
 production edgeSpecNoType
 top::AGDcl ::= label::String sg::IdUpper_t
 {
-  forwards to Silver_AGDcl {
-    inherited attribute $Name{name(label)}::Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))}
-      occurs on Scope;
-  };
+  local edgeDcls::AGDcl = appendAGDcl (
+    dclInhProd(label, sg),
+    edgeLabelProd(label, sg)
+    -- todo
+  );
+
+  forwards to @edgeDcls;
 }
 
 production edgeSpecWithType
@@ -16,13 +19,14 @@ top::AGDcl ::= label::String sg::IdUpper_t te::TypeExpr
 {
   local edgeDcls::AGDcl = appendAGDcl(
     dclDatumProd(label, ^te),
-    dclInhProd(label, sg, ^te)
-    -- more todo
+    appendAGDcl(
+      edgeLabelProd(label, sg),
+      dclInhProd(label, sg)
+    )
+    -- todo
   );
 
   forwards to @edgeDcls;
-
-  top.errors := if !null(te.errors) then te.errors else edgeDcls.errors;
 }
 
 --
@@ -38,10 +42,23 @@ top::AGDcl ::= label::String te::TypeExpr
 }
 
 production dclInhProd
-top::AGDcl ::= label::String sg::IdUpper_t te::TypeExpr
+top::AGDcl ::= label::String sg::IdUpper_t
 {
   forwards to Silver_AGDcl {
-    inherited attribute $Name{name(label)}::Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))}
+    inherited attribute $Name{name(label)}::[Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))}]
       occurs on Scope;
+  };
+}
+
+production edgeLabelProd
+top::AGDcl ::= label::String sg::IdUpper_t
+{
+  forwards to Silver_AGDcl {
+    production $Name{name("label_" ++ label)}
+    top::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(sg))}> ::=
+    {
+      top.label = $Expr{stringConst(terminal(String_t, "\"" ++ label ++ "\""))};
+      top.demand = \s::Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))} -> s.$QName{qName(label)};
+    }
   };
 }

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -eu
+silver() { "../../support/bin/silver" "$@"; }
+
+SRC=..  # cheating a bit. Current directory should be 'scopegraphs'
+GRAMMAR=scopegraphs
+
+silver -I $SRC $@ $GRAMMAR
