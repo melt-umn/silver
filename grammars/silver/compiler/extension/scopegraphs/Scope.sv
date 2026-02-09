@@ -1,63 +1,127 @@
-grammar silver:compiler:extension:scopegraphs2;
+grammar silver:compiler:extension:scopegraphs;
+
+--
+
+synthesized attribute id::Integer;
+synthesized attribute name::String;
+synthesized attribute datum::Decorated Datum;
 
 -- put this in silver:langutil:scopegraphs:
 
-nonterminal Scope;
+nonterminal SGScope with id, datum;
 
-synthesized attribute datum::Datum occurs on Scope;
+abstract production scopeNoDatum
+top::SGScope ::= 
+{ top.id = genInt();
+  top.datum = decorate datumNone() with {}; }
 
-abstract production mkScope
-top::Scope ::= d::Datum
-{ top.datum = d; }
+abstract production scopeDatum
+top::SGScope ::= name::String e::a
+{ top.id = genInt();
+  top.datum = decorate datumJust(name, e) with {}; }
+
+type DecScope<(i::InhSet)> = Decorated SGScope with i;
 
 -- put this in silver:langutil:scopegraphs:
 
-data nonterminal Datum;
+nonterminal Datum with name;
 
-production datum
+production datumNone
 top::Datum ::=
-{
-}
+{ top.name = ""; }
+
+production datumJust
+top::Datum ::= name::String expr::a
+{ top.name = name; }
 
 -- put this in silver:langutil:scopegraphs:
 
-data nonterminal Label<(i::InhSet)>;
+nonterminal Label<(i::InhSet)> with name, demand<i>;
 
-synthesized attribute label::String occurs on Label<(i::InhSet)>;
-synthesized attribute demand<(i::InhSet)>::([Decorated Scope with i] ::= Decorated Scope with i) occurs on Label<(i::InhSet)>;
+synthesized attribute demand<(i::InhSet)>::([DecScope<i>] ::= DecScope<i>);
 
 production label
 top::Label<(i::InhSet)> ::=
 { top.demand = error("label.demand");
-  top.label = error("label.name"); }
+  top.name = error("label.name"); }
 
 instance Eq Label<(i::InhSet)> {
-  eq = \left::Label<(i::InhSet)> right::Label<(i::InhSet)> -> left.label == right.label;
+  eq = \left::Label<(i::InhSet)> right::Label<(i::InhSet)> -> 
+    left.name == right.name;
 }
+
+-- Viz stuff:
+
+synthesized attribute col::String occurs on Label<(i::InhSet)>;
+
+aspect production label
+top::Label<(i::InhSet)> ::=
+{ top.col = "black"; }
 
 --
 
-type Predicate = (Boolean ::= Datum);
+fun vizStr String ::= labs::[Label<i>] scopes::[DecScope<i>] =
+  "digraph {layoud=dot\n" ++ 
+    implode("\n", map(vizStrScope, scopes)) ++ "\n" ++
+    implode("\n", concat(map(vizStrEdges(labs, _), scopes))) ++ "\n" ++
+  "}\n"
+;
+
+--
+
+fun vizStrScope String ::= s::DecScope<(i::InhSet)> =
+  "{ node [label=\"" ++ vizStrScopeLabel(s) ++ "\" " ++ 
+    "style=rounded shape=rect fontsize=12 margin=0 fillcolor=white] " ++ 
+    toString(s.id) ++ 
+  "}"
+;
+
+fun vizStrScopeLabel String ::= s::DecScope<(i::InhSet)> =
+  case s.datum of
+  | datumNone()  -> toString(s.id)
+  | datumJust(n, _) -> toString(s.id) ++ " ↦ " ++ n
+  end
+;
+
+--
+
+fun vizStrEdges [String] ::= labs::[Label<i>] s::DecScope<i> =
+  concat(map(
+    \l::Label<i> ->
+      map (vizStrEdge(l, s, _), l.demand(s)),
+    labs
+  ))
+;
+
+fun vizStrEdge String ::= lab::Label<i> src::DecScope<i> tgt::DecScope<i> =
+  "{edge [label=\"" ++ lab.name ++ "\" color=" ++ lab.col ++ 
+                                     " fontcolor=" ++ lab.col ++ "] " ++ 
+  toString(src.id) ++ " -> " ++ toString(tgt.id) ++ "}"
+;
+
+--
+
+type Predicate = (Boolean ::= Decorated Datum);
 type Ordering<(i::InhSet)> = (Integer ::= Label<i> Label<i>);
 
 -- Resolution
 
 fun resolve
-[Decorated Scope with i] ::= p::Predicate r::Regex<i> o::Maybe<Ordering<i>> s::Decorated Scope with i
+[DecScope<i>] ::= p::Predicate r::Regex<i> o::Maybe<Ordering<i>> s::DecScope<i>
 =
-  let cont::[Decorated Scope with i] =
+  let cont::[DecScope<i>] =
     -- labels that form a prefix of a word in L(r)
     let validLabels::[Label<i>] = r.first in
       foldl (
-        \acc::(Maybe<Label<i>>, [Decorated Scope with i]) nextLab::Label<i> ->
+        \acc::(Maybe<Label<i>>, [DecScope<i>]) nextLab::Label<i> ->
           -- label followed to get the resolution in acc.2
           let prevLab::Maybe<Label<i>> = acc.1
           in
           -- resolution found by following the label in acc.1
-          let prevRes::[Decorated Scope with i] = acc.2
+          let prevRes::[DecScope<i>] = acc.2
           in
           -- make a new resolution by following edges with label nextLab
-          let nextRes::[Decorated Scope with i] =
+          let nextRes::[DecScope<i>] =
             concat(map(resolve(p, r.deriv(nextLab), o, _),
                        nextLab.demand(s)))
           in
@@ -88,11 +152,11 @@ fun resolve
   end;
 
 fun visible
-[Decorated Scope with i] ::= p::Predicate r::Regex<i> o::Ordering<i> s::Decorated Scope with i
+[DecScope<i>] ::= p::Predicate r::Regex<i> o::Ordering<i> s::DecScope<i>
 = resolve(p, r, just(o), s);
 
 fun reachable
-[Decorated Scope with i] ::= p::Predicate r::Regex<i> s::Decorated Scope with i 
+[DecScope<i>] ::= p::Predicate r::Regex<i> s::DecScope<i> 
 = resolve(p, r, nothing(), s);
 
 -- Regex
@@ -115,11 +179,11 @@ production regexLabel
 top::Regex<(i::InhSet)> ::= label::Label<(i::InhSet)>
 {
   top.hasEps = regexEmpty();
-  top.deriv = \l::Label<i> -> if l.label == label.label 
+  top.deriv = \l::Label<i> -> if l.name == label.name 
                               then regexEpsilon() else regexEmpty();
   top.simplify = ^top;
   top.nullable = false;
-  top.first = [label];
+  top.first = [^label];
 }
 
 production regexEpsilon

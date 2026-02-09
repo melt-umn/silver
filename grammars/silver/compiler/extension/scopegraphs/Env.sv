@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:scopegraphs2;
+grammar silver:compiler:extension:scopegraphs;
 
 --
 
@@ -83,6 +83,11 @@ top::Def ::= d::EnvItem<ScopeLabelDclInfo>
 {
   propagate isEqual, compareTo;
   top.scopeLabelList = [^d];
+
+  top.filterIncludeOnly := error("todo");
+  top.filterIncludeHiding := error("todo");
+  top.renamed = error("todo");
+  top.prepended = error("todo");
 }
 
 --------------------------------------------------------------------------------
