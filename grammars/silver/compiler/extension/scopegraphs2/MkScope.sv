@@ -2,29 +2,32 @@ grammar silver:compiler:extension:scopegraphs2;
 
 --
 
--- todo, label env
-global labs::[String] = ["lex", "var"];
+global fnScopeNt::String = "silver:compiler:extension:scopegraphs2:Scope";
 
 --
 
 production mkScopeNoData
 top::ProductionStmt ::= ident::String sg::IdUpper_t
 {
-  nondecorated local inhs::ExprInhs = exprInhsLabels(ident, labs);
+  local labs::[String] = getLabAttrNames(top.grammarName, top.env);
 
-  forwards to productionStmtAppend(
+  nondecorated local stmts::ProductionStmt = productionStmtAppend(
     Silver_ProductionStmt {
       production attribute $Name{name(ident)}::$TypeExpr{scopeTyExpr(sg)}
-      = decorate mkScope(datumNone()) with { $ExprInhs{inhs} };
+      = decorate mkScope(datumNone()) with { $ExprInhs{exprInhsLabels(ident, labs)} };
     },
-    mkScopeProdAttrs(ident, sg)
+    mkScopeProdAttrs(ident, sg, labs)
   );
+
+  forwards to stmts;
   
 }
 
 production mkScopeWithData
 top::ProductionStmt ::= ident::String sg::IdUpper_t scopeLab::String datum::Expr
 {
+  local labs::[String] = getLabAttrNames(top.grammarName, top.env);
+
   nondecorated local inhs::ExprInhs = exprInhsLabels(ident, labs);
 
   forwards to productionStmtAppend(
@@ -33,14 +36,14 @@ top::ProductionStmt ::= ident::String sg::IdUpper_t scopeLab::String datum::Expr
       = decorate mkScope($QName{qName("datum_" ++ scopeLab)}($Expr{@datum}))
         with { $ExprInhs{inhs} };
     },
-    mkScopeProdAttrs(ident, sg)
+    mkScopeProdAttrs(ident, sg, labs)
   );
 }
 
 --
 
 production mkScopeProdAttrs
-top::ProductionStmt ::= ident::String sg::IdUpper_t
+top::ProductionStmt ::= ident::String sg::IdUpper_t labs::[String]
 {
   nondecorated local prodAttrs::ProductionStmt = foldrLastElem(
     \lab::String acc::ProductionStmt ->
@@ -92,4 +95,12 @@ fun scopeTyExpr TypeExpr ::= sg::IdUpper_t =
   Silver_TypeExpr {
     Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))}
   }
+;
+
+fun getLabAttrNames [String] ::= gram::String e::Env =
+  filterMap(\s::String -> if startsWith(gram, s) 
+                          then just(last(explode(":", s)))
+                          else nothing(),
+    map((.attrOccurring), getAttrOccursOn(fnScopeNt, e))
+  )
 ;

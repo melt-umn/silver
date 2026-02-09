@@ -6,24 +6,26 @@ imports silver:compiler:extension:scopegraphs2;
 
 fun main IO<Integer> ::= largs::[String] = do {
   
-  let cool::Boolean = thing().ok;
+  let ok::Boolean = thing().ok;
 
-  return if cool then 0 else 1;
+  return if ok then 0 else 1;
 
 };
 
 --
 
-scope graph LMGraph with lex, var;
+scope graph LMGraph with lex, var, mod;
 
 edge -[ lex::LMGraph ]->;
 edge -[ var::LMGraph ]-> (String, Boolean);
+edge -[ mod::LMGraph ]-> String;
 
 --
 
 synthesized attribute ok::Boolean;
+attribute ok occurs on Thing;
 
-nonterminal Thing with ok;
+nonterminal Thing;
 
 production thing
 top::Thing ::= 

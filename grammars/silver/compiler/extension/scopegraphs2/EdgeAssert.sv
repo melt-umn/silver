@@ -6,20 +6,13 @@ grammar silver:compiler:extension:scopegraphs2;
 production edgeAssertionLocal
 top::ProductionStmt ::= src::QName lab::String tgt::Expr
 {
-  nondecorated local contrib::ProductionStmt = Silver_ProductionStmt{
-    $QName{qnScopeAttr(src.name, lab)} <- [$Expr{^tgt}];
-  };
-
-  forwards to 
-    unsafeTracePrint(
-      contrib,
-      "##### " ++
-
-      "C'oh blimey! " ++ top.frame.lhsNtName
-
-      ++ " #####\n"
-    )
+  nondecorated local contrib::ProductionStmt = 
+    Silver_ProductionStmt{
+      $QName{qnScopeAttr(src.name, lab)} <- [$Expr{^tgt}];
+    }
   ;
+
+  forwards to contrib;
 }
 
 -- n.s1 -[ lex ]-> s2;
