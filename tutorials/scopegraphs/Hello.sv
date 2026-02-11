@@ -14,11 +14,14 @@ fun main IO<Integer> ::= largs::[String] = do {
 
 --
 
-scope graph LMGraph with lex, var, mod;
+scope graph LMGraph with lex, var, mod, imp;
 
 edge -[ lex::LMGraph ]->;
 edge -[ var::LMGraph ]-> (String, Boolean);
 edge -[ mod::LMGraph ]-> String;
+edge -[ imp::LMGraph ]->;
+
+--scope attribute LMGraph:lex s;
 
 --
 

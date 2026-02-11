@@ -12,6 +12,12 @@ top::AGDcl ::= label::String sg::IdUpper_t
   );
 
   forwards to @edgeDcls;
+
+  top.scopeGraphDefs := [scopeLabelDef(defaultEnvItem(labelDcl(
+    top.grammarName ++ ":" ++ sg.lexeme,
+    top.grammarName ++ ":" ++ label,
+    nothing()
+  )))];
 }
 
 production edgeSpecWithType
@@ -27,6 +33,12 @@ top::AGDcl ::= label::String sg::IdUpper_t te::TypeExpr
   );
 
   forwards to @edgeDcls;
+
+  top.scopeGraphDefs := [scopeLabelDef(defaultEnvItem(labelDcl(
+    top.grammarName ++ ":" ++ sg.lexeme,
+    top.grammarName ++ ":" ++ label,
+    just(^te)
+  )))];
 }
 
 --
