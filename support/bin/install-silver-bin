@@ -28,10 +28,6 @@ fi
 
 echo "Found ~/bin"
 
-# get REPO location from git
-REPO=$(git rev-parse --show-toplevel)
-echo "Found $REPO"
-
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 for SCRIPT_NAME in silver silver-custom
