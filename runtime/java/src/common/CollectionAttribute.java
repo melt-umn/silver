@@ -68,7 +68,7 @@ public abstract class CollectionAttribute implements Lazy {
 				} catch(Throwable t) {
 					throw new TraceException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
 				}
-			}	else {
+			} else {
 				Lazy l = un.getDefaultSynthesized(index);
 				if(l != null) {
 					try {
