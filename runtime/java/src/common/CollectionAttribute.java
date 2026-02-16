@@ -69,15 +69,15 @@ public abstract class CollectionAttribute implements Lazy {
 					throw new TraceException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
 				}
 			}	else {
-        Lazy l = un.getDefaultSynthesized(index);
-        if(l != null) {
-          try {
-            return l.eval(context);
-          } catch(Throwable t) {
-            throw new TraceException("While evaling default for collection attribute '" + un.getNameOfSynAttr(index) + "' in " + context.getDebugID(), t);
-          }
-        }
-		  }
+				Lazy l = un.getDefaultSynthesized(index);
+				if(l != null) {
+					try {
+						return l.eval(context);
+					} catch(Throwable t) {
+						throw new TraceException("While evaling default for collection attribute '" + un.getNameOfSynAttr(index) + "' in " + context.getDebugID(), t);
+					}
+				}
+			}
 
 			throw new MissingDefinitionException("No base defined for collection attribute " + un.getNameOfSynAttr(index) + " in " + un.getName());
 		}
