@@ -3,74 +3,60 @@ grammar silver:compiler:extension:scopegraphs2;
 --
 
 production edgeSpecNoType
-top::AGDcl ::= label::String sg::IdUpper_t
+top::AGDcl ::= label::String
 {
-  local edgeDcls::AGDcl = appendAGDcl (
-    dclInhProd(label, sg),
-    edgeLabelProd(label, sg)
-    -- todo
-  );
+  local moo::Boolean = length(
+    lookupGraphDcl("MyGraph", top.sgEnv)
+  ) == 0;
 
-  forwards to @edgeDcls;
+  forwards to if moo then emptyAGDcl() else emptyAGDcl();
 
-  top.scopeGraphDefs := [scopeLabelDef(defaultEnvItem(labelDcl(
-    top.grammarName ++ ":" ++ sg.lexeme,
-    top.grammarName ++ ":" ++ label,
+  top.scopeLabelDefs := [scopeLabelDef(defaultEnvItem(labelDcl(
+    label,
     nothing()
   )))];
+
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+  top.defs := [];
+
+  top.errors := 
+    let 
+      lookup::[ScopeLabelDclInfo] =
+            lookupLabelDcl(label, top.sgEnv)
+    in
+      case lookup of
+      | h::[] -> []
+      | _ -> [errFromOrigin(top, "duplicate declaration of label '" ++ label ++ "'")]
+      end
+    end
+  ;
+
 }
 
 production edgeSpecWithType
-top::AGDcl ::= label::String sg::IdUpper_t te::TypeExpr
-{
-  local edgeDcls::AGDcl = appendAGDcl(
-    dclDatumProd(label, ^te),
-    appendAGDcl(
-      edgeLabelProd(label, sg),
-      dclInhProd(label, sg)
-    )
-    -- todo
-  );
-
-  forwards to @edgeDcls;
-
-  top.scopeGraphDefs := [scopeLabelDef(defaultEnvItem(labelDcl(
-    top.grammarName ++ ":" ++ sg.lexeme,
-    top.grammarName ++ ":" ++ label,
-    just(^te)
-  )))];
-}
-
---
-
-production dclDatumProd
 top::AGDcl ::= label::String te::TypeExpr
 {
-  forwards to Silver_AGDcl {
-    production $Name{name("datum_" ++ label)}
-    top::Datum ::= d::$TypeExpr{^te}
-    {}
-  };
-}
+  forwards to emptyAGDcl();
 
-production dclInhProd
-top::AGDcl ::= label::String sg::IdUpper_t
-{
-  forwards to Silver_AGDcl {
-    inherited attribute $Name{name(label)}::[Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))}]
-      occurs on Scope;
-  };
-}
+  top.scopeLabelDefs := [scopeLabelDef(defaultEnvItem(labelDcl(
+    label,
+    just(^te)
+  )))];
 
-production edgeLabelProd
-top::AGDcl ::= label::String sg::IdUpper_t
-{
-  forwards to Silver_AGDcl {
-    production $Name{name("label_" ++ label)}
-    top::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(sg))}> ::=
-    {
-      top.label = $Expr{stringConst(terminal(String_t, "\"" ++ label ++ "\""))};
-      top.demand = \s::Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(sg))} -> s.$QName{qName(label)};
-    }
-  };
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+  top.defs := [];
+
+  top.errors := 
+    let 
+      lookup::[ScopeLabelDclInfo] =
+            lookupLabelDcl(label, top.sgEnv)
+    in
+      case lookup of
+      | h::[] -> []
+      | _ -> [errFromOrigin(top, "duplicate declaration of label '" ++ label ++ "'")]
+      end
+    end
+  ;
 }

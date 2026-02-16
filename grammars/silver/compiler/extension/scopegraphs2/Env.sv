@@ -10,10 +10,10 @@ synthesized attribute scopeGraphsTree::EnvTree<ScopeGraphDclInfo> occurs on SGEn
 synthesized attribute scopeLabelsTree::EnvTree<ScopeLabelDclInfo> occurs on SGEnv;
 
 abstract production sgEnv
-top::SGEnv ::= ds::Defs
+top::SGEnv ::= graphs::Defs labels::Defs
 {
-  top.scopeGraphsTree = buildTree(ds.scopeGraphList);
-  top.scopeLabelsTree = buildTree(ds.scopeLabelList);
+  top.scopeGraphsTree = buildTree(graphs.scopeGraphList);
+  top.scopeLabelsTree = buildTree(labels.scopeLabelList);
 }
 
 --------------------------------------------------------------------------------
@@ -75,35 +75,45 @@ top::Def ::= d::EnvItem<ScopeLabelDclInfo>
 --------------------------------------------------------------------------------
 
 monoid attribute scopeGraphDefs::[Def];
+monoid attribute scopeLabelDefs::[Def];
 inherited attribute sgEnv::SGEnv;
 
 --
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
-{ g.sgEnv = sgEnv(foldr(consDefs, nilDefs(), g.scopeGraphDefs)); }
+{ g.sgEnv = sgEnv(foldr(consDefs, nilDefs(), g.scopeGraphDefs), foldr(consDefs, nilDefs(), g.scopeLabelDefs)); }
 
 --
 
-attribute scopeGraphDefs, sgEnv occurs on Grammar;
-propagate sgEnv, scopeGraphDefs on Grammar;
+attribute scopeGraphDefs, scopeLabelDefs, sgEnv occurs on Grammar;
+propagate sgEnv, scopeGraphDefs, scopeLabelDefs on Grammar;
 
 --
 
-attribute scopeGraphDefs, sgEnv occurs on File;
-propagate sgEnv, scopeGraphDefs on File;
+attribute scopeGraphDefs, scopeLabelDefs, sgEnv occurs on File;
+propagate sgEnv, scopeGraphDefs, scopeLabelDefs on File;
 
 --
 
-attribute scopeGraphDefs, sgEnv occurs on AGDcls;
-propagate sgEnv, scopeGraphDefs on AGDcls;
+attribute scopeGraphDefs, scopeLabelDefs, sgEnv occurs on AGDcls;
+propagate sgEnv, scopeGraphDefs, scopeLabelDefs on AGDcls;
 
 --
+
+aspect production attributionDcl
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+{
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+  top.scopeLabelDefs := [];
+}
 
 aspect default production top::AGDcl ::=
-{ top.scopeGraphDefs := []; }
+{ top.scopeGraphDefs := []; 
+  top.scopeLabelDefs := []; }
 
-attribute scopeGraphDefs, sgEnv occurs on AGDcl;
+attribute scopeGraphDefs, scopeLabelDefs, sgEnv occurs on AGDcl;
 propagate sgEnv on AGDcl;
 
 --
@@ -123,17 +133,15 @@ propagate sgEnv on ProductionStmt;
 
 --------------------------------------------------------------------------------
 
-fun allGraphDcls [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
+fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
   searchEnvTree(sgfn, sgEnv.scopeGraphsTree)
 ;
 
 fun allLabelDcls [ScopeLabelDclInfo] ::= sgfn::String sgEnv::SGEnv =
-  filter(
-    \l::ScopeLabelDclInfo -> l.sgFullName == sgfn,
-    rtm:values(sgEnv.scopeLabelsTree)
-  )
+  rtm:values(sgEnv.scopeLabelsTree)
 ;
 
 fun lookupLabelDcl [ScopeLabelDclInfo] ::= fn::String sgEnv::SGEnv =
   searchEnvTree(fn, sgEnv.scopeLabelsTree)
 ;
+

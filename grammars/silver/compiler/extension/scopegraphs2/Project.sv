@@ -16,3 +16,5 @@ imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:extension:autoattr;
 imports silver:compiler:driver:util;
 imports silver:compiler:modification:concisefunctions;
+imports silver:compiler:extension:tuple;
+imports silver:compiler:extension:patternmatching;
