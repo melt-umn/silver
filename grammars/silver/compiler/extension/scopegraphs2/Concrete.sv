@@ -6,7 +6,8 @@ terminal NewScope_t 'newScope' lexer classes {KEYWORD, RESERVED};
 terminal NewScopeArrow_t '->';
 
 terminal Scope_t 'scope' lexer classes {KEYWORD};
-terminal Graph_t 'graph' lexer classes {KEYWORD};
+terminal ScopeGraph_t 'scopegraph' lexer classes {KEYWORD};
+terminal Labels_t 'labels' lexer classes {KEYWORD};
 
 terminal ScopeEdge_t 'edge' lexer classes {KEYWORD}; 
 
@@ -16,7 +17,7 @@ terminal EdgeRight_t ']->';
 --
 
 concrete production graphSpec_c
-top::AGDcl ::= 'scope' 'graph' ident::IdUpper_t 'with' names::LabelNames';'
+top::AGDcl ::= 'scopegraph' ident::IdUpper_t 'labels' names::LabelNames';'
 { forwards to graphSpec(ident.lexeme, ^names); }
 
 --
@@ -38,18 +39,8 @@ top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t ';'
 { forwards to mkScopeNoData(ident.lexeme, sg); }
 
 concrete production mkScopeWithData_c
-top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t scopeLab::IdLower_t '->' datum::Expr ';'
-{ forwards to mkScopeWithData(ident.lexeme, sg, scopeLab.lexeme, @datum); }
-
---
-
-concrete production edgeSpecNoType_c
-top::AGDcl ::= 'edge' '-[' label::IdLower_t ']->' ';'
-{ forwards to edgeSpecNoType(label.lexeme); }
-
-concrete production edgeSpecWithType_c
-top::AGDcl ::= 'edge' '-[' label::IdLower_t ']->' te::TypeExpr ';'
-{ forwards to edgeSpecWithType(label.lexeme, @te); }
+top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t '->' datum::Expr ';'
+{ forwards to mkScopeWithData(ident.lexeme, sg, ^datum); }
 
 --
 

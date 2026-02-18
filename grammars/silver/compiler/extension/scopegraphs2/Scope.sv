@@ -1,54 +1,58 @@
 grammar silver:compiler:extension:scopegraphs2;
 
--- put this in silver:langutil:scopegraphs:
+--
 
-nonterminal Scope<d>;
-
-synthesized attribute datum<d>::d occurs on Scope<d>;
-
-abstract production mkScope
-top::Scope<d> ::= datum::d
-{ top.datum = datum; }
+synthesized attribute datum::Decorated Datum;
 
 -- put this in silver:langutil:scopegraphs:
 
-data nonterminal Label<(i::InhSet) d>;
+nonterminal Scope with datum;
 
-synthesized attribute label::String occurs on Label<(i::InhSet) d>;
-synthesized attribute demand<(i::InhSet) d>::([Decorated Scope<d> with i] ::= Decorated Scope<d> with i) occurs on Label<(i::InhSet) d>;
+abstract production scopeNoDatum
+top::Scope ::= d::Datum
+{ top.datum = d; }
 
-production label
-top::Label<(i::InhSet) d> ::=
-{ top.demand = error("label.demand");
-  top.label = error("label.name"); }
+type DecScope<(i::InhSet)> = Decorated Scope with i;
 
-instance Eq Label<(i::InhSet) d> {
-  eq = \left::Label<(i::InhSet) d> right::Label<(i::InhSet) d> -> left.label == right.label;
+-- put this in silver:langutil:scopegraphs:
+
+closed nonterminal Datum;
+
+-- put this in silver:langutil:scopegraphs:
+
+closed nonterminal Label<(i::InhSet)> with name, demand<i>;
+
+synthesized attribute name::String;
+synthesized attribute demand<(i::InhSet)>::([DecScope<i>] ::= DecScope<i>);
+
+instance Eq Label<(i::InhSet)> {
+  eq = \left::Label<(i::InhSet)> right::Label<(i::InhSet)> -> 
+    left.name == right.name;
 }
 
 --
 
-type Predicate<(i::InhSet) d> = (Boolean ::= Decorated Scope<d> with i);
-type Ordering<(i::InhSet) d> = (Integer ::= Label<i d> Label<i d>);
+type Predicate = (Boolean ::= Decorated Datum);
+type Ordering<(i::InhSet)> = (Integer ::= Label<i> Label<i>);
 
 -- Resolution
 
 fun resolve
-[Decorated Scope<d> with i] ::= p::Predicate<i d> r::Regex<i d> o::Maybe<Ordering<i d>> s::Decorated Scope<d> with i
+[DecScope<i>] ::= p::Predicate r::Regex<i> o::Maybe<Ordering<i>> s::DecScope<i>
 =
-  let cont::[Decorated Scope<d> with i] =
+  let cont::[DecScope<i>] =
     -- labels that form a prefix of a word in L(r)
-    let validLabels::[Label<i d>] = r.first in
+    let validLabels::[Label<i>] = r.first in
       foldl (
-        \acc::(Maybe<Label<i d>>, [Decorated Scope<d> with i]) nextLab::Label<i d> ->
+        \acc::(Maybe<Label<i>>, [DecScope<i>]) nextLab::Label<i> ->
           -- label followed to get the resolution in acc.2
-          let prevLab::Maybe<Label<i d>> = acc.1
+          let prevLab::Maybe<Label<i>> = acc.1
           in
           -- resolution found by following the label in acc.1
-          let prevRes::[Decorated Scope<d> with i] = acc.2
+          let prevRes::[DecScope<i>] = acc.2
           in
           -- make a new resolution by following edges with label nextLab
-          let nextRes::[Decorated Scope<d> with i] =
+          let nextRes::[DecScope<i>] =
             concat(map(resolve(p, r.deriv(nextLab), o, _),
                        nextLab.demand(s)))
           in
@@ -74,47 +78,47 @@ fun resolve
   in
     case r.simplify of
     | regexEmpty() -> []
-    | _ -> if p(s) && r.nullable then s::cont else cont
+    | _ -> if p(s.datum) && r.nullable then s::cont else cont
     end
   end;
 
 fun visible
-[Decorated Scope<d> with i] ::= p::Predicate<i d> r::Regex<i d> o::Ordering<i d> s::Decorated Scope<d> with i
+[DecScope<i>] ::= p::Predicate r::Regex<i> o::Ordering<i> s::DecScope<i>
 = resolve(p, r, just(o), s);
 
 fun reachable
-[Decorated Scope<d> with i] ::= p::Predicate<i d> r::Regex<i d> s::Decorated Scope<d> with i 
+[DecScope<i>] ::= p::Predicate r::Regex<i> s::DecScope<i> 
 = resolve(p, r, nothing(), s);
 
 -- Regex
 
-nonterminal Regex<(i::InhSet) d>;
+nonterminal Regex<(i::InhSet)>;
 
 -- Transform a Regex to an equivalent fully simplified one
-synthesized attribute simplify<(i::InhSet) d>::Regex<(i::InhSet) d> occurs on Regex<(i::InhSet) d>;
+synthesized attribute simplify<(i::InhSet)>::Regex<(i::InhSet)> occurs on Regex<(i::InhSet)>;
 -- Theorem 3.1 of Brzozowski (1964). Derivative with respect to a single token
-synthesized attribute deriv<(i::InhSet) d>::(Regex<i d> ::= Label<i d>) occurs on Regex<(i::InhSet) d>;
+synthesized attribute deriv<(i::InhSet)>::(Regex<i> ::= Label<i>) occurs on Regex<(i::InhSet)>;
 -- Definition 3.2 of Brzozowski (1964), return epsilon if Regex contains epsilon
-synthesized attribute hasEps<(i::InhSet) d>::Regex<i d>;
-attribute hasEps<i d> occurs on Regex<(i::InhSet) d>;
+synthesized attribute hasEps<(i::InhSet)>::Regex<i>;
+attribute hasEps<i> occurs on Regex<(i::InhSet)>;
 -- True if epsilon is a valid string in the language of the Regex
-synthesized attribute nullable::Boolean occurs on Regex<(i::InhSet) d>;
+synthesized attribute nullable::Boolean occurs on Regex<(i::InhSet)>;
 -- Compute first set of a Regex
-synthesized attribute first<(i::InhSet) d>::[Label<i d>] occurs on Regex<(i::InhSet) d>;
+synthesized attribute first<(i::InhSet)>::[Label<i>] occurs on Regex<(i::InhSet)>;
 
 production regexLabel
-top::Regex<(i::InhSet) d> ::= label::Label<(i::InhSet) d>
+top::Regex<(i::InhSet)> ::= label::Label<(i::InhSet)>
 {
   top.hasEps = regexEmpty();
-  top.deriv = \l::Label<i d> -> if l.label == label.label 
-                                then regexEpsilon() else regexEmpty();
+  top.deriv = \l::Label<i> -> if l.name == label.name 
+                              then regexEpsilon() else regexEmpty();
   top.simplify = ^top;
   top.nullable = false;
-  top.first = [label];
+  top.first = [^label];
 }
 
 production regexEpsilon
-top::Regex<(i::InhSet) d> ::=
+top::Regex<(i::InhSet)> ::=
 {
   top.hasEps = regexEpsilon();
   top.deriv = \_ -> regexEmpty();
@@ -124,7 +128,7 @@ top::Regex<(i::InhSet) d> ::=
 }
 
 production regexEmpty
-top::Regex<(i::InhSet) d> ::=
+top::Regex<(i::InhSet)> ::=
 {
   top.hasEps = regexEmpty();
   top.deriv = \_ -> regexEmpty();
@@ -134,14 +138,14 @@ top::Regex<(i::InhSet) d> ::=
 }
 
 production regexCat
-top::Regex<(i::InhSet) d> ::= left::Regex<i d> right::Regex<i d>
+top::Regex<(i::InhSet)> ::= left::Regex<i> right::Regex<i>
 {
   top.hasEps = regexAnd(left.hasEps, right.hasEps);
   top.deriv = \l -> regexOr(regexCat(left.deriv(l), ^right),
                             regexCat(left.hasEps, right.deriv(l)));
   top.simplify = 
-    let simpR1::Regex<i d> = left.simplify in
-    let simpR2::Regex<i d> = right.simplify in
+    let simpR1::Regex<i> = left.simplify in
+    let simpR2::Regex<i> = right.simplify in
       case (simpR1, simpR2) of
       | (regexEmpty(), _) -> regexEmpty()
       | (_, regexEmpty()) -> regexEmpty()
@@ -156,13 +160,13 @@ top::Regex<(i::InhSet) d> ::= left::Regex<i d> right::Regex<i d>
 }
 
 production regexOr
-top::Regex<(i::InhSet) d> ::= left::Regex<i d> right::Regex<i d>
+top::Regex<(i::InhSet)> ::= left::Regex<i> right::Regex<i>
 {
   top.hasEps = regexOr(left.hasEps, right.hasEps);
   top.deriv = \l -> regexOr(left.deriv(l), right.deriv(l));
   top.simplify =
-    let simpR1::Regex<i d> = left.simplify in
-    let simpR2::Regex<i d> = right.simplify in
+    let simpR1::Regex<i> = left.simplify in
+    let simpR2::Regex<i> = right.simplify in
       case (simpR1, simpR2) of
       | (regexEmpty(), _) -> simpR2
       | (_, regexEmpty()) -> simpR1
@@ -177,13 +181,13 @@ top::Regex<(i::InhSet) d> ::= left::Regex<i d> right::Regex<i d>
 }
 
 production regexAnd
-top::Regex<(i::InhSet) d> ::= left::Regex<i d> right::Regex<i d>
+top::Regex<(i::InhSet)> ::= left::Regex<i> right::Regex<i>
 {
   top.hasEps = regexAnd(left.hasEps, right.hasEps);
   top.deriv = \l -> regexAnd(left.deriv(l), right.deriv(l));
   top.simplify =
-    let simpR1::Regex<i d> = left.simplify in
-    let simpR2::Regex<i d> = right.simplify in
+    let simpR1::Regex<i> = left.simplify in
+    let simpR2::Regex<i> = right.simplify in
       case (simpR1, simpR2) of
       | (regexEmpty(), _) -> regexEmpty()
       | (_ , regexEmpty()) -> regexEmpty()
@@ -197,12 +201,12 @@ top::Regex<(i::InhSet) d> ::= left::Regex<i d> right::Regex<i d>
 }
 
 production regexStar
-top::Regex<(i::InhSet) d> ::= sub::Regex<i d>
+top::Regex<(i::InhSet)> ::= sub::Regex<i>
 {
   top.hasEps = regexEpsilon();
   top.deriv = \l -> regexCat(sub.deriv(l), regexStar(^sub));
   top.simplify =
-    let simpR::Regex<i d> = sub.simplify in 
+    let simpR::Regex<i> = sub.simplify in 
       case simpR of
       | regexEmpty() -> regexEmpty()
       | regexEpsilon() -> regexEpsilon()
@@ -214,9 +218,9 @@ top::Regex<(i::InhSet) d> ::= sub::Regex<i d>
 }
 
 production regexPlus
-top::Regex<(i::InhSet) d> ::= sub::Regex<i d>
+top::Regex<(i::InhSet)> ::= sub::Regex<i>
 { forwards to regexCat(^sub, regexStar(^sub)); }
 
 production regexMaybe
-top::Regex<(i::InhSet) d> ::= sub::Regex<i d>
+top::Regex<(i::InhSet)> ::= sub::Regex<i>
 { forwards to regexOr(regexEpsilon(), ^sub); }

@@ -2,22 +2,33 @@ grammar silver:compiler:extension:scopegraphs2;
 
 --
 
-fun scopeTypeExpr TypeExpr ::= datum::TypeExpr sg::String =
-  Silver_TypeExpr{
-    Decorated Scope<$TypeExpr{datum}>
-    with $TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))}
-  };
-
-fun mkLabelInhs AGDcl ::= allDatumTe::TypeExpr labs::[String] sg::String =
+fun mkLabelInhs AGDcl ::= sg::String labs::[String] =
   foldr(
     \lab::String acc::AGDcl ->
       appendAGDcl(
         Silver_AGDcl{
-          inherited attribute $Name{name(lab)}::[$TypeExpr{scopeTypeExpr(allDatumTe, sg)}]
-          occurs on Scope<d>;
+          inherited attribute
+            $Name{name(lab)}::[$TypeExpr{scopeTypeExpr(sg)}]
+          occurs on Scope;
         },
         acc
       ),
     emptyAGDcl(),
     labs
   );
+
+fun scopeTypeExpr TypeExpr ::= sg::String =
+  Silver_TypeExpr{
+    Decorated Scope with
+      $TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))}
+  };
+
+fun labelProdName
+Name ::= lab::String =
+  name("label_" ++ lab);
+
+fun qnScopeAttr QName ::= s::String l::String = 
+  qName(s ++ "_" ++ l);
+
+fun nScopeAttr Name ::= s::String l::String =
+  name(s ++ "_" ++ l);
