@@ -8,9 +8,8 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
 {
   forwards to
     Silver_ProductionStmt {
-      local attribute foo::Integer;
-    }
-  ;
+      $QName{^src}.$QName{qName(lab)} <- $Expr{^tgt};
+    };
 }
 
 -- n.s1 -[ lex ]-> s2;
@@ -19,7 +18,6 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
 {
   forwards to
     Silver_ProductionStmt {
-      local attribute foo::Integer;
-    }
-  ;
+      $QName{qName(dl.name)}.$QName{qnScopeAttr(attr.name, lab)} <- [$Expr{^tgt}];
+    };
 }

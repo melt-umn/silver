@@ -31,7 +31,7 @@ top::ProductionStmt ::= ident::String sg::IdUpper_t datum::Expr
 fun mkScopeBaseInhs ProductionStmt ::= s::String labs::[String] =
   let baseEq::(ProductionStmt ::= String) = \lab::String ->
     Silver_ProductionStmt {
-      top.$QName{qnScopeAttr(s, lab)} := [];
+      $QName{qName(s)}.$QName{qName(lab)} := [];
     }
   in
     foldrLastElem(
