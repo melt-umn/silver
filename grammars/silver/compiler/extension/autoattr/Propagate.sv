@@ -149,7 +149,7 @@ abstract production propagateError implements Propagate
 top::ProductionStmt ::= includeShared::Boolean @attr::QName
 {
   -- Seeding flow deps
-  top.errors <- if false then [] else error(hackUnparse((attr.lookupAttribute, includeShared)));
+  top.errors <- if true then [] else error(hackUnparse((attr.lookupAttribute, includeShared)));
 
   forwards to
     errorProductionStmt(

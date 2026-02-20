@@ -180,7 +180,7 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOp
     end;
   
   -- Seeding flow deps
-  top.errors <- if false then [] else error(hackUnparse(
+  top.errors <- if true then [] else error(hackUnparse(
     (nttl.forward, nt.qNameType, attl.errorsTyVars, top.unparse)));
 }
 
