@@ -8,7 +8,7 @@ synthesized attribute datum::Decorated Datum;
 
 nonterminal Scope with datum;
 
-abstract production scopeNoDatum
+abstract production scope
 top::Scope ::= d::Datum
 { top.datum = d; }
 

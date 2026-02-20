@@ -34,13 +34,15 @@ top::LabelNames ::= lab::IdLower_t ',' ns::LabelNames
 
 --
 
-concrete production mkScopeNoData_c
-top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t ';'
-{ forwards to mkScopeNoData(ident.lexeme, sg); }
+concrete production scopeAttribute_c
+top::AGDcl ::= 'scope' 'attribute' sg::IdUpper_t ':' ident::IdLower_t ';'
+{ forwards to scopeAttribute(sg.lexeme, qName(ident.lexeme), ident.location); }
 
-concrete production mkScopeWithData_c
+--
+
+concrete production mkScope_c
 top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t '->' datum::Expr ';'
-{ forwards to mkScopeWithData(ident.lexeme, sg, ^datum); }
+{ forwards to mkScope(ident.lexeme, sg, ^datum); }
 
 --
 
@@ -51,11 +53,3 @@ top::ProductionStmt ::= a::Name '-[' lab::IdLower_t ']->' tgt::Expr ';'
 concrete production edgeAssertionInh_c
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t ']->' tgt::Expr ';'
 { forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt); }
-
---
-
-concrete production scopeAttribute_c
-top::AGDcl ::= 'scope' 'attribute' sg::IdUpper_t ':' lab::IdLower_t ident::IdLower_t ';'
-{
-  forwards to scopeAttribute(sg, lab.lexeme, ident.lexeme);
-}

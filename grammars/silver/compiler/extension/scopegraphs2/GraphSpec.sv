@@ -49,6 +49,6 @@ fun labelProd AGDcl ::= sg::String lab::String =
 -- Generate an inherited attribute declaration for a given label
 fun labelInh AGDcl ::= sg::String lab::String =
   Silver_AGDcl {
-    inherited attribute $Name{name(lab)}::[$TypeExpr{scopeTypeExpr(sg)}]
+    inherited attribute $Name{name(lab)}::[$TypeExpr{scopeTypeExpr(sg)}] with ++
     occurs on Scope;
   };
