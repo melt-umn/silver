@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:let_fix;
 
 import silver:compiler:definition:flow:ast only VertexType, FlowVertex;
+import silver:compiler:analysis:uniqueness only SharedRefSite;
 import silver:util:treeset as ts;
 
 --- Concrete Syntax for lets
@@ -100,7 +101,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.nameLoc, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.sharedRefs)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -125,7 +126,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 abstract production lexicalLocalReference implements Reference
-top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]
+top::Expr ::= @q::QName  fi::Maybe<VertexType>  fd::[FlowVertex]  sr::[(String, SharedRefSite)]
 {
   top.unparse = q.unparse;
   top.errors := [];

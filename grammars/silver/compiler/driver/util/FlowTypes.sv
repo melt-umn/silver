@@ -34,7 +34,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 
     map(constructProductionGraph(_, allFlowEnv, allRealEnv), allProds) ++
-    -- Add in phantom, default and dispatch graphs
+    -- Add in phantom, default, tile and dispatch graphs
     flatMap(constructPhantomProductionGraph(_, allFlowEnv, allRealEnv), allNts) ++
     flatMap(constructDefaultProductionGraph(_, allFlowEnv, allRealEnv), allNts) ++
     map(constructDispatchGraph(_, allFlowEnv, allRealEnv), allDispatchSigs);

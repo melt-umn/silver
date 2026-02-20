@@ -160,7 +160,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.layoutContribs := map(pair(fst=t.typeName, snd=_), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
+  top.layoutContribs := zipFst(t.typeName, fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(t.typeName));
@@ -195,8 +195,8 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.classTerminalContribs := modifiers.classTerminalContribs;
   top.memberTerminals := [top];
   top.dominatingTerminalContribs :=
-    map(pair(fst=n, snd=_), flatMap((.memberTerminals), modifiers.submits_)) ++
-    map(pair(fst=_, snd=top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
+    zipFst(n, flatMap((.memberTerminals), modifiers.submits_)) ++
+    zipSnd(map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)), top);
   top.terminalRegex = ^regex;
 
   -- left(terminal name) or right(string prefix)
@@ -273,7 +273,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs :=
-    map(pair(fst=ns.fullName, snd=_), fromMaybe([], modifiers.customLayout)) ++
+    zipFst(ns.fullName, fromMaybe([], modifiers.customLayout)) ++
     -- The production inherits its LHS nonterminal's layout, unless overridden.
     (if top.hasCustomLayout then [] else [(ns.fullName, head(lhsRef).fullName)]) ++
     -- All nonterminals on the RHS that export this production inherit this
@@ -400,7 +400,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
  - A parser attribute. The acode initializes it.
  -}
 abstract production syntaxParserAttribute
-top::SyntaxDcl ::= n::String ty::Type acode::String
+top::SyntaxDcl ::= n::String ty::Type acode::ActionCode
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
@@ -415,7 +415,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
   top.copperGrammarElements =
     [ copper:parserAttribute(top.sourceGrammar, top.location,
         makeCopperName(n), ty.transType,
-        acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
+        acode.acodeTrans ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
     ];
 
   -- TODO: technically, there should be no free variables in ty.
@@ -427,7 +427,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
  - a parser attribute. 
  -}
 abstract production syntaxParserAttributeAspect
-top::SyntaxDcl ::= n::String acode::String
+top::SyntaxDcl ::= n::String acode::ActionCode
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
@@ -438,7 +438,7 @@ top::SyntaxDcl ::= n::String acode::String
 
   top.cstNormalize := [^top];
 
-  top.parserAttributeAspectContribs := [(n, acode)];
+  top.parserAttributeAspectContribs := [(n, acode.acodeTrans)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
   top.copperElementReference = error("can't demand copperElementReference of an aspect");
   top.copperGrammarElements = [];
@@ -449,7 +449,7 @@ top::SyntaxDcl ::= n::String acode::String
  - The acode distinguished between the listed terminals.
  -}
 abstract production syntaxDisambiguationGroup
-top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
+top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::ActionCode
 {
   top.fullName = n;
   top.sortKey = "DDD" ++ n;
@@ -474,7 +474,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
         trefs);
   top.copperGrammarElements =
     [ copper:disambiguationFunction(top.sourceGrammar, top.location,
-        makeCopperName(n), acode, members, applicableToSubsets)
+        makeCopperName(n), acode.acodeTrans, members, applicableToSubsets)
     ];
 }
 
@@ -491,3 +491,14 @@ function sortKeyLte
 Boolean ::= l::SyntaxDcl r::SyntaxDcl
 { return l.sortKey <= r.sortKey; }
 
+annotation acodeSrc::String;
+annotation acodeTrans::String;
+data ActionCode = actionCode with acodeSrc, acodeTrans, acode;
+
+aspect acode on top::ActionCode using := of
+| _ -> top.acodeTrans
+end;
+
+instance Eq ActionCode {
+  eq = \ a1::ActionCode a2::ActionCode -> a1.acodeSrc == a2.acodeSrc;
+}

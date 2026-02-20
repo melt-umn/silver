@@ -21,7 +21,8 @@ imports silver:compiler:analysis:typechecking:core;
 -- flow analysis
 imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:flow:env;
-imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
+imports silver:compiler:definition:flow:driver only
+  ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh, expandTileGraphSigDeps, tileEdgeMap;
 
 -- uniqueness analysis
 imports silver:compiler:analysis:uniqueness;

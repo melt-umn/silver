@@ -65,4 +65,9 @@ Pair<[a] [b]> ::= lst::[Pair<a b>]
   else (head(lst).fst :: recurse.fst, head(lst).snd :: recurse.snd);
 }
 
+@{--
+ - Compute the Cartesian product of two lists.
+ -}
+global cartProd :: ([Pair<a b>] ::= [a] [b]) = lift2(pair(fst=_, snd=_), _, _);
+
 

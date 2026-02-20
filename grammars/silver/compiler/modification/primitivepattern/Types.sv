@@ -397,6 +397,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.fullName = ntty.typeName;
   propagate compareTo, isEqual;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   top.typeScheme = monoType(^atty);
   
   oc.boundVariables = tvs;
@@ -413,6 +414,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.fullName = ntty.typeName;
   propagate compareTo, isEqual;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   top.typeScheme = monoType(^atty);
   top.isAnnotation = true;
   

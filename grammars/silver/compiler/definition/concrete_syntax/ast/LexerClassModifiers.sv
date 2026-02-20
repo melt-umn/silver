@@ -66,7 +66,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
   -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
   production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
-  top.superClassContribs := map(pair(fst=top.className, snd=_), map((.fullName), superRefs));
+  top.superClassContribs := zipFst(top.className, map((.fullName), superRefs));
 }
 
 {--
@@ -108,20 +108,20 @@ top::SyntaxLexerClassModifier ::= dom::[String]
  - A disambiguation function that should be created for the members of a lexer class.
  -}
 abstract production lexerClassDisambiguate
-top::SyntaxLexerClassModifier ::= acode::String
+top::SyntaxLexerClassModifier ::= acode::ActionCode
 {
   production terms :: [String] = searchEnvTree(top.className, top.classTerminals);
   production funName::String = s"disambiguate_${makeCopperName(top.className)}";
   
   production syntaxDcl::SyntaxDcl =
-    syntaxDisambiguationGroup(funName, terms, true, s"""
+    syntaxDisambiguationGroup(funName, terms, true, acode(acodeTrans=s"""
 common.ConsCell tempShiftableList = common.ConsCell.nil;
 for (int i = nextMember(0, shiftable); i >= 0; i = nextMember(i+1, shiftable)) {
 	tempShiftableList = new common.ConsCell(i, tempShiftableList);
 }
 final common.ConsCell shiftableList = tempShiftableList;
-${acode}
-""", location=top.location, sourceGrammar=top.sourceGrammar);
+${acode.acodeTrans}
+"""), location=top.location, sourceGrammar=top.sourceGrammar);
   syntaxDcl.cstEnv = top.cstEnv;
   syntaxDcl.containingGrammar = top.containingGrammar;
   syntaxDcl.classTerminals = top.classTerminals;

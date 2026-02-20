@@ -38,7 +38,7 @@ synthesized attribute hasForward :: Boolean;
 -- occurs
 synthesized attribute attrOccurring :: String;
 inherited attribute givenNonterminalType :: Type;
-
+synthesized attribute attrTypeName::String;
 synthesized attribute isAnnotation :: Boolean; -- also "attrs"
 
 -- attrs
@@ -359,7 +359,7 @@ top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys:
 
 nonterminal OccursDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
-  typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
+  typeScheme, givenNonterminalType, attrOccurring, attrTypeName, isAnnotation;
 propagate compareTo, isEqual on OccursDclInfo excluding occursDcl;
 
 aspect default production
@@ -395,6 +395,7 @@ top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
     else monoType(performRenaming(^atty, subst));
   
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
 }
 
 abstract production occursInstConstraintDcl
@@ -402,6 +403,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   
   top.typeScheme = monoType(^atty);
   
@@ -412,6 +414,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   
   top.typeScheme = monoType(^atty);
   
@@ -422,6 +425,7 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 {
   top.fullName = baseDcl.typeScheme.typerep.typeName;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, ^atty);
 }
@@ -445,6 +449,7 @@ top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
     else monoType(performRenaming(^atty, subst));
   
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
 
   -- UGH - bit of a short hand here...
   top.isAnnotation = true;
@@ -454,6 +459,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   top.isAnnotation = true;
   
   top.typeScheme = monoType(^atty);
@@ -465,6 +471,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   top.isAnnotation = true;
   
   top.typeScheme = monoType(^atty);
@@ -476,6 +483,7 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 {
   top.fullName = baseDcl.typeScheme.typerep.typeName;
   top.attrOccurring = fnat;
+  top.attrTypeName = atty.typeName;
   top.isAnnotation = true;
   
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, ^atty);

@@ -22,7 +22,7 @@ top::Expr ::=
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= @q::QName _ _
+top::Expr ::= @q::QName _ _ _
 {
   top.transform =
     case getValueDcl(q.name, top.ruleEnv) of

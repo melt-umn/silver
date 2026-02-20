@@ -160,7 +160,8 @@ abstract production exit
 top::IO<a> ::= val::Integer
 {
   top.stateOut = exitT(val, top.stateIn);
-  top.stateVal = error("stateOut should've been evaluated first?");
+  -- This can happen via unsafeInterleaveIO
+  top.stateVal = error("Exit called lazily - code " ++ toString(val));
 }
 
 abstract production mkdir

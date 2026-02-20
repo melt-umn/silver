@@ -19,7 +19,7 @@ Boolean ::= x::a y::a
   return x.isEqual;
 }
 
-warnCode "Equation requires inherited attribute flow:env1 be supplied to child x of production flow:isEqualBad" {
+warnCode "Access of synthesized attribute isEqual on x requires missing inherited attribute(s) flow:env1 to be supplied to child x of production flow:isEqualBad" {
 function isEqualBad
 attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo, env1} occurs on a =>
@@ -36,7 +36,7 @@ global isEqualGlobal ::
   (Boolean ::= a a) = \ x::a y::a ->
     decorate x with {compareTo = decorate y with {};}.isEqual;
 
-warnCode "Decoration requires inherited attribute for flow:env1." {
+warnCode "requires missing inherited attribute(s) silver:core:compareTo, flow:env1 to be supplied to anonymous decoration site" {
 global isEqualGlobalBad ::
   attribute compareTo<a {}> occurs on a,
   attribute isEqual {compareTo, env1} occurs on a =>
@@ -71,7 +71,7 @@ class Equal1 a {
   isEqual1 :: (Boolean ::= a a);
 }
 
-warnCode "Decoration requires inherited attribute for flow:env1." {
+warnCode "requires missing inherited attribute(s) silver:core:compareTo, flow:env1 to be supplied to anonymous decoration site" {
 instance attribute compareTo<a {}> occurs on a,
          attribute isEqual {compareTo, env1} occurs on a =>
          Equal1 a {
@@ -80,7 +80,7 @@ instance attribute compareTo<a {}> occurs on a,
 }
 }
 
-warnCode "Decoration requires inherited attribute for flow:env1." {
+warnCode "requires missing inherited attribute(s) silver:core:compareTo, flow:env1 to be supplied to anonymous decoration site" {
 class attribute compareTo<a {}> occurs on a,
       attribute isEqual {compareTo, env1} occurs on a =>
       Equal2 a {

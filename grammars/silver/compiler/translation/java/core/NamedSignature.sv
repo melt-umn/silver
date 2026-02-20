@@ -348,14 +348,14 @@ fun refDecSiteTranslation String ::= env::Env flowEnv::FlowEnv lhsNtName::String
 -- Returns either left(translation as a Lazy object) or right(translation as an access from context).
 fun refDecSiteTranslationHelp Either<String String> ::= env::Env flowEnv::FlowEnv lhsNtName::String v::VertexType =
   case v of
-  | lhsVertexType_real() -> error("lhs can't be a ref decoration site")
+  | lhsVertexType() -> error("lhs can't be a ref decoration site")
   | rhsVertexType(sigName) -> error("child can't be a ref decoration site")
   | localVertexType(fName) ->
     case getValueDcl(fName, env) of
     | dcl :: _ -> right(s"context.localDecorated(${dcl.attrOccursIndex})")
     | [] -> error("Couldn't find decl for local " ++ fName)
     end
-  | transAttrVertexType(lhsVertexType_real(), transAttr) ->
+  | transAttrVertexType(lhsVertexType(), transAttr) ->
     case getOccursDcl(transAttr, lhsNtName, env) of
     | h :: _ -> right(s"context.translation(${h.attrGlobalOccursInitIndex}, ${h.attrGlobalOccursInitIndex}_inhs, ${h.attrGlobalOccursInitIndex}_dec_site)")
     -- If a translation attribute occurrence is defined in an optionally exported grammar,
@@ -363,9 +363,10 @@ fun refDecSiteTranslationHelp Either<String String> ::= env::Env flowEnv::FlowEn
     | [] -> left(s"common.RTTIManager.getNonterminalton(\"${lhsNtName}\").getTransDecSite(\"${transAttr}\")")
     end
   | transAttrVertexType(_, transAttr) -> error("trans attr on non-lhs can't be a ref decoration site")
-  | forwardVertexType_real() -> right(s"context.forward()")
+  | forwardVertexType() -> right(s"context.forward()")
   | forwardParentVertexType() -> error("forward parent shouldn't be a ref decoration site")
-  | anonVertexType(_) -> error("dec site projection shouldn't happen with anon decorate")
+  | anonVertexType(_, _, _) -> error("dec site projection shouldn't happen with anon decorate")
+  | anonScrutineeVertexType(_, _, _) -> error("dec site projection shouldn't happen with anon scrutinee")
   | subtermVertexType(parent, prodName, sigName) ->
     -- prodName is either a production or dispatch signature name
     case refDecSiteTranslationHelp(env, flowEnv, lhsNtName, parent) of
