@@ -45,7 +45,7 @@ top::AGDcl ::= 'scope' 'attribute' sg::IdUpper_t ':' ident::IdLower_t ';'
 
 concrete production existsScope_c
 top::ProductionStmt ::= 'existsScope' sg::IdUpper_t ':' ident::IdLower_t ';'
-{ forwards to existsScope(sg.lexeme, ident.lexeme); }
+{ forwards to scopeExists(sg.lexeme, ident.lexeme); }
 
 --
 

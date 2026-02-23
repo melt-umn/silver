@@ -69,7 +69,7 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::IdUpper_t datum::Exp
 
 --
 
-production existsScope
+production scopeExists
 top::ProductionStmt ::= sg::String s::String
 {
   nondecorated local mkScopeExpr::Expr =
@@ -77,7 +77,7 @@ top::ProductionStmt ::= sg::String s::String
       let undecs::[Scope] = $QName{qName(s ++ "_undec")} in
         case undecs of
         | h::[] -> h.datum
-        | _ -> error("Oh no!!! existsScope.mkScopeExpr")
+        | _ -> error("Oh no! scopeExists.mkScopeExpr")
         end
       end
     };
