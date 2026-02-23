@@ -2,106 +2,37 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
-synthesized attribute id::Integer;
+synthesized attribute datum::Datum;
+
+-- put this in silver:langutil:scopegraphs:
+
+nonterminal Scope with datum;
+
+abstract production scope
+top::Scope ::= d::Datum
+{ top.datum = ^d; }
+
+type DecScope<(i::InhSet)> = Decorated Scope with i;
+
+-- put this in silver:langutil:scopegraphs:
+
+closed nonterminal Datum;
+
+-- put this in silver:langutil:scopegraphs:
+
+closed nonterminal Label<(i::InhSet)> with name, demand<i>;
+
 synthesized attribute name::String;
-synthesized attribute datum::Decorated Datum;
-
--- put this in silver:langutil:scopegraphs:
-
-nonterminal SGScope with id, datum;
-
-abstract production scopeNoDatum
-top::SGScope ::= 
-{ top.id = genInt();
-  top.datum = decorate datumNone() with {}; }
-
-abstract production scopeDatum
-top::SGScope ::= name::String e::a
-{ top.id = genInt();
-  top.datum = decorate datumJust(name, e) with {}; }
-
-type DecScope<(i::InhSet)> = Decorated SGScope with i;
-
--- put this in silver:langutil:scopegraphs:
-
-nonterminal Datum with name;
-
-production datumNone
-top::Datum ::=
-{ top.name = ""; }
-
-production datumJust
-top::Datum ::= name::String expr::a
-{ top.name = name; }
-
--- put this in silver:langutil:scopegraphs:
-
-nonterminal Label<(i::InhSet)> with name, demand<i>;
-
 synthesized attribute demand<(i::InhSet)>::([DecScope<i>] ::= DecScope<i>);
-
-production label
-top::Label<(i::InhSet)> ::=
-{ top.demand = error("label.demand");
-  top.name = error("label.name"); }
 
 instance Eq Label<(i::InhSet)> {
   eq = \left::Label<(i::InhSet)> right::Label<(i::InhSet)> -> 
     left.name == right.name;
 }
 
--- Viz stuff:
-
-synthesized attribute col::String occurs on Label<(i::InhSet)>;
-
-aspect production label
-top::Label<(i::InhSet)> ::=
-{ top.col = "black"; }
-
 --
 
-fun vizStr String ::= labs::[Label<i>] scopes::[DecScope<i>] =
-  "digraph {layoud=dot\n" ++ 
-    implode("\n", map(vizStrScope, scopes)) ++ "\n" ++
-    implode("\n", concat(map(vizStrEdges(labs, _), scopes))) ++ "\n" ++
-  "}\n"
-;
-
---
-
-fun vizStrScope String ::= s::DecScope<(i::InhSet)> =
-  "{ node [label=\"" ++ vizStrScopeLabel(s) ++ "\" " ++ 
-    "style=rounded shape=rect fontsize=12 margin=0 fillcolor=white] " ++ 
-    toString(s.id) ++ 
-  "}"
-;
-
-fun vizStrScopeLabel String ::= s::DecScope<(i::InhSet)> =
-  case s.datum of
-  | datumNone()  -> toString(s.id)
-  | datumJust(n, _) -> toString(s.id) ++ " ↦ " ++ n
-  end
-;
-
---
-
-fun vizStrEdges [String] ::= labs::[Label<i>] s::DecScope<i> =
-  concat(map(
-    \l::Label<i> ->
-      map (vizStrEdge(l, s, _), l.demand(s)),
-    labs
-  ))
-;
-
-fun vizStrEdge String ::= lab::Label<i> src::DecScope<i> tgt::DecScope<i> =
-  "{edge [label=\"" ++ lab.name ++ "\" color=" ++ lab.col ++ 
-                                     " fontcolor=" ++ lab.col ++ "] " ++ 
-  toString(src.id) ++ " -> " ++ toString(tgt.id) ++ "}"
-;
-
---
-
-type Predicate = (Boolean ::= Decorated Datum);
+type Predicate = (Boolean ::= Datum);
 type Ordering<(i::InhSet)> = (Integer ::= Label<i> Label<i>);
 
 -- Resolution

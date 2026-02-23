@@ -2,61 +2,66 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
-terminal Scope_t 'scope' lexer classes {KEYWORD};
-terminal Edges_t 'edges' lexer classes {KEYWORD};
-terminal For_t 'as' lexer classes {KEYWORD};
+terminal NewScope_t 'newScope' lexer classes {KEYWORD, RESERVED};
+terminal NewScopeArrow_t '->';
 
-terminal MkScope_t 'mkscope' lexer classes {KEYWORD, RESERVED};
-terminal InhScope_t 'inhscope' lexer classes {KEYWORD, RESERVED};
+terminal Exists_t 'exists' lexer classes {KEYWORD, RESERVED};
+terminal Scope_t 'scope' lexer classes {KEYWORD};
+terminal ScopeGraph_t 'scopegraph' lexer classes {KEYWORD};
+terminal Labels_t 'labels' lexer classes {KEYWORD};
+
+terminal ScopeEdge_t 'edge' lexer classes {KEYWORD}; 
 
 terminal EdgeLeft_t '-[';
 terminal EdgeRight_t ']->';
-terminal ArrRight_t '->';
-
-terminal BindName_t '|->';
 
 --
 
-concrete production scopeAttributeConc
-top::AGDcl ::= 'scope' 'attribute' alias::IdLower_t 'occurs' 'on' qs::QNames ';'
-{ forwards to scopeAttribute(qName(alias.lexeme), ^qs); }
+concrete production graphSpec_c
+top::AGDcl ::= 'scopegraph' ident::IdUpper_t 'labels' names::LabelNames';'
+{ forwards to graphSpec(ident.lexeme, ^names); }
 
 --
 
-concrete production edgesSpecConc
-top::AGDcl ::= 'scope' alias::IdUpper_t 'edges' '{' lst::SGEdgeList '}' ';'
-{ forwards to labelsSpecAbs(alias.lexeme, lst.edgeNames); }
+nonterminal LabelNames;
+
+concrete production labelNamesOne_c
+top::LabelNames ::= lab::IdLower_t
+{ forwards to labelNamesOne(lab.lexeme); }
+
+concrete production labelNamesCons_c
+top::LabelNames ::= lab::IdLower_t ',' ns::LabelNames
+{ forwards to labelNamesCons(lab.lexeme, ^ns); }
 
 --
 
-synthesized attribute edgeNames::[String];
-
-nonterminal SGEdgeList with edgeNames;
-
-concrete production edgesListCons
-top::SGEdgeList ::= n::Name ',' lst::SGEdgeList
-{ top.edgeNames = n.name :: lst.edgeNames; }
-
-concrete production edgesListLast
-top::SGEdgeList ::= n::Name
-{ top.edgeNames = [n.name]; }
+concrete production scopeAttribute_c
+top::AGDcl ::= 'scope' 'attribute' sg::IdUpper_t ':' ident::IdLower_t ';'
+{ forwards to scopeAttribute(sg.lexeme, qName(ident.lexeme), ident.location); }
 
 --
 
-concrete production scopeAssertionNoDatumConc
-top::ProductionStmt ::= 'mkscope' a::Name ';'
-{ forwards to scopeAssertionNoDatum(^a); }
-
-concrete production scopeAssertionDatumConc
-top::ProductionStmt ::= 'mkscope' a::Name '->' name::Expr '|->' e::Expr ';'
-{ forwards to scopeAssertionDatum(^a, ^name, ^e); }
+concrete production existsScope_c
+top::ProductionStmt ::= 'exists' 'scope' sg::IdUpper_t ':' ident::IdLower_t ';'
+{ forwards to existsScope(sg.lexeme, ident.lexeme); }
 
 --
 
-concrete production edgeAssertionLocalConc
+concrete production mkScope_c
+top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t '->' datum::Expr ';'
+{ forwards to mkScope(ident.lexeme, sg.lexeme, ^datum); }
+
+concrete production mkScopeUndec_c
+top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t '->' datum::Expr ';'
+{ forwards to mkScopeUndec(^dl, ^attr, sg, ^datum); }
+
+
+--
+
+concrete production edgeAssertionLocal_c
 top::ProductionStmt ::= a::Name '-[' lab::IdLower_t ']->' tgt::Expr ';'
 { forwards to edgeAssertionLocal(qNameId(^a), lab.lexeme, ^tgt); }
 
-concrete production edgeAssertionInhConc
+concrete production edgeAssertionInh_c
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t ']->' tgt::Expr ';'
 { forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt); }

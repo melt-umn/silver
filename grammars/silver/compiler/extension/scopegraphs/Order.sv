@@ -1,17 +1,18 @@
 grammar silver:compiler:extension:scopegraphs;
 
-imports silver:compiler:extension:patternmatching;
-
---
-
-terminal SGOrderBraceLeft_t '{{';
-terminal SGOrderBraceRight_t '}}';
-
 --
 
 concrete production sgOrder_c
-top::Expr ::= RegexSlash_t r::SGOrderOption RegexSlash_t
+top::Expr ::= RegexSlash_t r::SGOrderOption RegexSlash_t '::' sg::IdUpper_t
 {
+  local sgName::(String, [Message]) =
+    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sg.lexeme, top.sgEnv) in
+      case res of
+      | h::[] -> (h.fullName, [])
+      | _ -> ("<err>", [errFromOrigin(top, toString(length(res)) ++ 
+                                      " scope graph declarations found named '" ++ sg.lexeme ++ "'")])
+      end
+    end;
 
   -- | _, _ -> 0
   nondecorated local defaultCase::MatchRule =
@@ -86,11 +87,13 @@ top::Expr ::= RegexSlash_t r::SGOrderOption RegexSlash_t
 
   forwards to
     Silver_Expr{
-      \left::Label<{lex, var, mod, imp}> right::Label<{lex, var, mod, imp}> ->
+      \left::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sgName.1)))}> 
+       right::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sgName.1)))}> ->
         $Expr{labCase}
     }
   ;
 
+  top.errors := sgName.2;
 }
 
 --

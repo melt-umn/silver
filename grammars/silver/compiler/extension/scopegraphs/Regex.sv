@@ -10,10 +10,8 @@ terminal RegexQuestion_t '?' precedence = 30, association = left;
 --
 
 concrete production sgRegex_c
-top::Expr ::= RegexSlash_t r::SGRegex RegexSlash_t
-{
-  forwards to r.regexApp;
-}
+top::Expr ::= RegexSlash_t r::SGRegex RegexSlash_t  '::' sg::IdUpper_t
+{ forwards to r.regexApp; }
 
 --
 

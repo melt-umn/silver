@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:scopegraphs2;
+grammar silver:compiler:extension:scopegraphs;
 
 --
 
@@ -66,7 +66,7 @@ fun scopeSyns AGDcl ::= sg::String attr::String labs::[String] =
 fun inhScopeType Type ::= grammarName::String labs::[String] =
   decoratedType(
     nonterminalType(
-      "silver:compiler:extension:scopegraphs2:Scope",
+      "silver:compiler:extension:scopegraphs:Scope",
       [], false, false
     ),
     inhSetType(map(\lab::String ->grammarName ++ ":" ++ lab, labs))

@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:scopegraphs2;
+grammar silver:compiler:extension:scopegraphs;
 
 --
 

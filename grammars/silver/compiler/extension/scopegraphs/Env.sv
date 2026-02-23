@@ -1,105 +1,66 @@
 grammar silver:compiler:extension:scopegraphs;
 
---
+import silver:util:treemap as rtm;
 
-synthesized attribute scopeLabelsTree::[EnvTree<ScopeLabelDclInfo>]
-  occurs on Env;
+--------------------------------------------------------------------------------
 
---
+nonterminal SGEnv;
 
-aspect production emptyEnv
-top::Env ::=
+synthesized attribute scopeGraphsTree::EnvTree<ScopeGraphDclInfo> occurs on SGEnv;
+
+abstract production sgEnv
+top::SGEnv ::= graphs::Defs
 {
-  top.scopeLabelsTree = [emptyEnvTree()];
+  top.scopeGraphsTree = buildTree(graphs.scopeGraphList);
 }
 
-aspect production appendEnv
-top::Env ::= e1::Env e2::Env
-{
-  top.scopeLabelsTree = e1.scopeLabelsTree ++ e2.scopeLabelsTree;
-}
+--------------------------------------------------------------------------------
 
-aspect production newScopeEnv
-top::Env ::= ds::[Def] e::Env
-{
-  top.scopeLabelsTree = buildTree(d.scopeLabelList) :: e.scopeLabelsTree;
-}
-
-aspect production occursEnv
-top::Env ::= d::[OccursDclInfo]  e::Env
-{
-  top.scopeLabelsTree = e.scopeLabelsTree;
-}
-
---
-
-synthesized attribute labelSet::[String];
-
-nonterminal ScopeLabelDclInfo with fullName, isEqual, compareTo, labelSet;
-
-abstract production labelSetDcl
-top::ScopeLabelDclInfo ::= fn::String names::[String]
-{
-  top.fullName = fn;
-  top.isEqual = case top.compareTo of
-                | labelSetDcl(fn2, _) -> fn == fn2
-                | _ -> false
-                end;
-  top.labelSet = names;
-}
-
-instance Eq ScopeLabelDclInfo {
-  eq = \l::ScopeLabelDclInfo r::ScopeLabelDclInfo -> l.fullName == r.fullName;
-}
-
---
-
-synthesized attribute scopeLabelList :: [EnvItem<ScopeLabelDclInfo>];
-
-attribute scopeLabelList occurs on Defs;
+synthesized attribute scopeGraphList :: [EnvItem<ScopeGraphDclInfo>] occurs on Defs, Def;
 
 aspect production nilDefs 
 top::Defs ::= 
 {
-  top.scopeLabelList = [];
+  top.scopeGraphList = [];
 }
 
 aspect production consDefs 
 top::Defs ::= e1::Def e2::Defs
 {
-  top.scopeLabelList = e1.scopeLabelList ++ e2.scopeLabelList;
+  top.scopeGraphList = e1.scopeGraphList ++ e2.scopeGraphList;
 }
 
-attribute scopeLabelList occurs on Def;
+--
 
 aspect default production
 top::Def ::=
 {
-  top.scopeLabelList = [];
+  top.scopeGraphList = [];
 }
 
-abstract production scopeLabelsDef
-top::Def ::= d::EnvItem<ScopeLabelDclInfo>
+abstract production scopeGraphDef
+top::Def ::= d::EnvItem<ScopeGraphDclInfo>
 {
   propagate isEqual, compareTo;
-  top.scopeLabelList = [^d];
 
-  top.filterIncludeOnly := error("todo");
-  top.filterIncludeHiding := error("todo");
-  top.renamed = error("todo");
-  top.prepended = error("todo");
+  top.scopeGraphList = [^d];
+
+  top.filterIncludeOnly := error("todo scopeGraphDef.filterIncludeOnly");
+  top.filterIncludeHiding := error("todo scopeGraphDef.filterIncludeHiding");
+  top.renamed = error("todo scopeGraphDef.renamed");
+  top.prepended = error("todo scopeGraphDef.prepended");
 }
 
 --------------------------------------------------------------------------------
 
 monoid attribute scopeGraphDefs::[Def];
-inherited attribute sgEnv::EnvTree<ScopeLabelDclInfo>;
+inherited attribute sgEnv::SGEnv;
 
 --
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
-{ g.sgEnv = buildTree(foldr(consDefs, nilDefs(), g.scopeGraphDefs).scopeLabelList); }
+{ g.sgEnv = sgEnv(foldr(consDefs, nilDefs(), g.scopeGraphDefs)); }
 
 --
 
@@ -117,6 +78,13 @@ attribute scopeGraphDefs, sgEnv occurs on AGDcls;
 propagate sgEnv, scopeGraphDefs on AGDcls;
 
 --
+
+aspect production attributionDcl
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+{
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+}
 
 aspect default production top::AGDcl ::=
 { top.scopeGraphDefs := []; }
@@ -138,3 +106,20 @@ propagate sgEnv on ProductionStmts;
 
 attribute sgEnv occurs on ProductionStmt;
 propagate sgEnv on ProductionStmt;
+
+--
+
+attribute sgEnv occurs on Expr, AppExpr, AppExprs;
+propagate sgEnv on Expr, AppExpr, AppExprs;
+
+-- non supply runtime error otherwise
+aspect production applicationExpr
+top::Expr ::= e::Expr '(' es::AppExprs ')'
+{ e.sgEnv = top.sgEnv;
+  es.sgEnv = top.sgEnv; }
+
+--------------------------------------------------------------------------------
+
+fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
+  searchEnvTree(sgfn, sgEnv.scopeGraphsTree)
+;
