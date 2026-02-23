@@ -8,7 +8,7 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
 {
   forwards to
     Silver_ProductionStmt {
-      $QName{^src}.$QName{qName(lab)} <- $Expr{^tgt};
+      $QName{^src}.$QName{qName(lab)} <- [$Expr{^tgt}];
     };
 }
 

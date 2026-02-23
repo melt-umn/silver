@@ -8,6 +8,7 @@ top::AttributeDclInfo ::= fn::String ty::Type sglabs::[String]
 {
   propagate compareKey;
   
+  top.propagateDispatcher = propagateError; -- todo
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.undecoratedAccessHandler = error("scopeInhDcl.undecoratedAccessHandler todo");
   top.dataAccessHandler = error("scopeInhDcl.dataAccessHandler todo");
@@ -33,6 +34,18 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   e.env = top.env;
   e.isRoot = true;
+  e.flowEnv = top.flowEnv;
+  e.dispatchFlowDeps = [];
+  e.appDecSiteVertexInfo = nothing();
+  e.decSiteVertexInfo = nothing();
+  e.alwaysDecorated = true;
+  e.config = top.config;
+  e.compiledGrammars = top.compiledGrammars;
+  e.originRules = [];
+  e.grammarName = top.grammarName;
+  e.frame = top.frame;
+  e.finalSubst = top.finalSubst;
+  e.downSubst = top.downSubst;
 
   local labs::[String] =
     let res::AttributeDclInfo = attrQn.lookupAttribute.dcl in
@@ -44,7 +57,10 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   forwards to productionStmtAppend(
     inheritedAttributeDef(dl, attr, ^e),
-    edgeContributions(^dl, ^attr, e, labs)
+    productionStmtAppend(
+      edgeContributions(^dl, ^attr, e, labs),
+      undecContributions(^dl, ^attr, e)
+    )
   );
 }
 
@@ -58,7 +74,7 @@ fun edgeContributions ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur e::Deco
       }
     | access(baseExpr(qn1), _, qNameAttrOccur(qn2)) ->
       Silver_ProductionStmt {
-        $QName{^qn1}.$QName{qName(attr.name ++ "_" ++ lab)} <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_" ++ lab)};
+        $QName{^qn1}.$QName{qName(qn2.name ++ "_" ++ lab)} <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_" ++ lab)};
       }
     | _ ->
       error("Impossible(?) silver:compiler:extension:scopegraphs2:edgeContributions")
@@ -71,6 +87,21 @@ fun edgeContributions ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur e::Deco
     )
   end;
 
+-- todo: revisit cases here. need something more intricate and/or error message generation if patterns not matched
+fun undecContributions ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur e::Decorated Expr =
+  case e of
+  | baseExpr(qn) ->
+    Silver_ProductionStmt {
+      $QName{qName(qn.name ++ "_undec")} <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_undec")};
+    }
+  | access(baseExpr(qn1), _, qNameAttrOccur(qn2)) ->
+    Silver_ProductionStmt {
+      $QName{^qn1}.$QName{qName(qn2.name ++ "_undec")} <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_undec")};
+    }
+  | _ ->
+    error("Impossible(?) silver:compiler:extension:scopegraphs2:undecContributions")
+  end;
+
 --------------------
 -- Scope attribution
 
@@ -78,6 +109,8 @@ fun edgeContributions ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur e::Deco
 abstract production scopeAttributeAttributionDcl implements AttributionDcl
 top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
+  at.env = top.env;
+
   local labs::[String] =
     let res::AttributeDclInfo = at.lookupAttribute.dcl in
       case res of
@@ -105,7 +138,7 @@ fun edgeSynsOccurDcls AGDcl ::= at::QName nt::QName nttl::BracketedOptTypeExprs 
     foldrLastElem(
       \lab::String acc::AGDcl -> appendAGDcl(occDcl(lab), acc),
       \lab::String -> occDcl(lab),
-      labs
+      "undec"::labs
     )
   end;
 
@@ -129,7 +162,7 @@ fun aspectBaseDefinitions AGDcl ::= nt::QName s::String labs::[String] =
           foldrLastElem(
             \lab::String acc::ProductionStmt -> productionStmtAppend(baseDef(lab), acc),
             \lab::String -> baseDef(lab),
-            labs
+            "undec"::labs
           )
         }
       }

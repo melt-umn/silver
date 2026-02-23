@@ -14,14 +14,17 @@ top::AGDcl ::= sg::String attr::QName loc::Location
       end
     end;
 
-  forwards to --appendAGDcl(
-    --scopeInh(sg, attr),
-    scopeSyns(sg, attr.name, labs.1);
-  --);
+  forwards to
+    appendAGDcl(
+      scopeSyns(sg, attr.name, labs.1),
+      undecScopeAttrDcl(attr.name)
+    );
 
   top.errors := labs.2;
 
   top.scopeGraphDefs := [];
+
+  local sortedLabs::[String] = sort(labs.1);
 
   top.defs <-
     if null(labs.2) 
@@ -29,8 +32,8 @@ top::AGDcl ::= sg::String attr::QName loc::Location
       [
         attrDef(defaultEnvItem(scopeInhDcl(
           attr.name,
-          inhScopeType(labs.1),
-          labs.1,
+          inhScopeType(top.grammarName, sortedLabs),
+          sortedLabs,
           sourceGrammar=top.grammarName, sourceLocation=loc
         )))
       ]
@@ -60,12 +63,19 @@ fun scopeSyns AGDcl ::= sg::String attr::String labs::[String] =
     )
   end;
 
-fun inhScopeType Type ::= labs::[String] =
+fun inhScopeType Type ::= grammarName::String labs::[String] =
   decoratedType(
     nonterminalType(
       "silver:compiler:extension:scopegraphs2:Scope",
       [], false, false
     ),
-    inhSetType(labs)
+    inhSetType(map(\lab::String ->grammarName ++ ":" ++ lab, labs))
   )
 ;
+
+fun undecScopeAttrDcl AGDcl ::= attr::String =
+  Silver_AGDcl {
+    synthesized attribute
+      $Name{nScopeAttr(attr, "undec")}::[Scope]
+    with ++;
+  };

@@ -5,6 +5,7 @@ grammar silver:compiler:extension:scopegraphs2;
 terminal NewScope_t 'newScope' lexer classes {KEYWORD, RESERVED};
 terminal NewScopeArrow_t '->';
 
+terminal Exists_t 'exists' lexer classes {KEYWORD, RESERVED};
 terminal Scope_t 'scope' lexer classes {KEYWORD};
 terminal ScopeGraph_t 'scopegraph' lexer classes {KEYWORD};
 terminal Labels_t 'labels' lexer classes {KEYWORD};
@@ -40,9 +41,20 @@ top::AGDcl ::= 'scope' 'attribute' sg::IdUpper_t ':' ident::IdLower_t ';'
 
 --
 
+concrete production existsScope_c
+top::ProductionStmt ::= 'exists' 'scope' sg::IdUpper_t ':' ident::IdLower_t ';'
+{ forwards to existsScope(sg.lexeme, ident.lexeme); }
+
+--
+
 concrete production mkScope_c
 top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t '->' datum::Expr ';'
-{ forwards to mkScope(ident.lexeme, sg, ^datum); }
+{ forwards to mkScope(ident.lexeme, sg.lexeme, ^datum); }
+
+concrete production mkScopeUndec_c
+top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t '->' datum::Expr ';'
+{ forwards to mkScopeUndec(^dl, ^attr, sg, ^datum); }
+
 
 --
 

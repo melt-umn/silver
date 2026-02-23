@@ -107,6 +107,17 @@ propagate sgEnv on ProductionStmts;
 attribute sgEnv occurs on ProductionStmt;
 propagate sgEnv on ProductionStmt;
 
+--
+
+attribute sgEnv occurs on Expr, AppExpr, AppExprs;
+propagate sgEnv on Expr, AppExpr, AppExprs;
+
+-- non supply runtime error otherwise
+aspect production applicationExpr
+top::Expr ::= e::Expr '(' es::AppExprs ')'
+{ e.sgEnv = top.sgEnv;
+  es.sgEnv = top.sgEnv; }
+
 --------------------------------------------------------------------------------
 
 fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =

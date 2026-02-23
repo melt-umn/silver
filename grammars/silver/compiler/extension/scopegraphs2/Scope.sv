@@ -2,7 +2,7 @@ grammar silver:compiler:extension:scopegraphs2;
 
 --
 
-synthesized attribute datum::Decorated Datum;
+synthesized attribute datum::Datum;
 
 -- put this in silver:langutil:scopegraphs:
 
@@ -10,7 +10,7 @@ nonterminal Scope with datum;
 
 abstract production scope
 top::Scope ::= d::Datum
-{ top.datum = d; }
+{ top.datum = ^d; }
 
 type DecScope<(i::InhSet)> = Decorated Scope with i;
 
@@ -32,7 +32,7 @@ instance Eq Label<(i::InhSet)> {
 
 --
 
-type Predicate = (Boolean ::= Decorated Datum);
+type Predicate = (Boolean ::= Datum);
 type Ordering<(i::InhSet)> = (Integer ::= Label<i> Label<i>);
 
 -- Resolution

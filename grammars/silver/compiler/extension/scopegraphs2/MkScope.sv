@@ -3,14 +3,14 @@ grammar silver:compiler:extension:scopegraphs2;
 --
 
 production mkScope
-top::ProductionStmt ::= ident::String sg::IdUpper_t datum::Expr
+top::ProductionStmt ::= ident::String sg::String datum::Expr
 {
   local labs::([String], [Message]) =
-    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sg.lexeme, top.sgEnv) in
+    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sg, top.sgEnv) in
       case res of
       | h::[] -> (h.labelSet, [])
       | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '" ++ sg.lexeme ++ "'")])
+                                      " scope graph declarations found named '" ++ sg ++ "'")])
       end
     end;
   
@@ -18,9 +18,23 @@ top::ProductionStmt ::= ident::String sg::IdUpper_t datum::Expr
     local attribute $Name{name(ident)}::Scope = scope($Expr{^datum});
   };
 
+  nondecorated local undecsLst::ProductionStmt = Silver_ProductionStmt {
+    production attribute $Name{name(ident ++ "_undec")}::[Scope] with ++;
+  };
+
+  nondecorated local emptyContrib::ProductionStmt = Silver_ProductionStmt {
+    $QName{qName(ident ++ "_undec")} := [];
+  };
+
   forwards to productionStmtAppend(
     mkScopeEq,
-    mkScopeBaseInhs(ident, labs.1)
+    productionStmtAppend(
+      mkScopeBaseInhs(ident, labs.1),
+      productionStmtAppend(
+        undecsLst,
+        emptyContrib
+      )
+    )
   );
 
   top.errors <- labs.2;
@@ -40,3 +54,33 @@ fun mkScopeBaseInhs ProductionStmt ::= s::String labs::[String] =
       labs
     )
   end;
+
+--
+
+production mkScopeUndec
+top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::IdUpper_t datum::Expr
+{
+  nondecorated local qn::QName = case attr of qNameAttrOccur(qn) -> ^qn end;
+
+  forwards to Silver_ProductionStmt {
+    $QName{qName(dl.name)}.$QName{appendToQName(qn, "_undec")} <- [scope($Expr{^datum})];
+  };
+}
+
+--
+
+production existsScope
+top::ProductionStmt ::= sg::String s::String
+{
+  nondecorated local mkScopeExpr::Expr =
+    Silver_Expr {
+      let undecs::[Scope] = $QName{qName(s ++ "_undec")} in
+        case undecs of
+        | h::[] -> h.datum
+        | _ -> error("Oh no!!! existsScope.mkScopeExpr")
+        end
+      end
+    };
+
+  forwards to mkScope(s, sg, mkScopeExpr);
+}
