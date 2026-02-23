@@ -5,9 +5,11 @@ grammar silver:compiler:extension:scopegraphs;
 terminal NewScope_t 'newScope' lexer classes {KEYWORD, RESERVED};
 terminal NewScopeArrow_t '->';
 
-terminal Exists_t 'exists' lexer classes {KEYWORD, RESERVED};
+terminal Exists_t 'existsScope' lexer classes {KEYWORD, RESERVED};
+
 terminal Scope_t 'scope' lexer classes {KEYWORD};
 terminal ScopeGraph_t 'scopegraph' lexer classes {KEYWORD};
+
 terminal Labels_t 'labels' lexer classes {KEYWORD};
 
 terminal ScopeEdge_t 'edge' lexer classes {KEYWORD}; 
@@ -42,7 +44,7 @@ top::AGDcl ::= 'scope' 'attribute' sg::IdUpper_t ':' ident::IdLower_t ';'
 --
 
 concrete production existsScope_c
-top::ProductionStmt ::= 'exists' 'scope' sg::IdUpper_t ':' ident::IdLower_t ';'
+top::ProductionStmt ::= 'existsScope' sg::IdUpper_t ':' ident::IdLower_t ';'
 { forwards to existsScope(sg.lexeme, ident.lexeme); }
 
 --
