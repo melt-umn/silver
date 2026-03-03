@@ -3,20 +3,22 @@ grammar silver:compiler:extension:scopegraphs;
 --
 
 production scopeAttribute
-top::AGDcl ::= sg::String attr::QName loc::Location
+top::AGDcl ::= attr::QName sg::Maybe<String> loc::Location
 {
+  local sgName::String = fromMaybe("_Scope_Default", sg);
+
   local labs::([String], [Message]) =
-    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sg, top.sgEnv) in
+    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sgName, top.sgEnv) in
       case res of
       | h::[] -> (h.labelSet, [])
       | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '" ++ sg ++ "'")])
+                                      " scope graph declarations found named '" ++ sgName ++ "'")])
       end
     end;
 
   forwards to
     appendAGDcl(
-      scopeSyns(sg, attr.name, labs.1),
+      scopeSyns(sgName, attr.name, labs.1),
       undecScopeAttrDcl(attr.name)
     );
 

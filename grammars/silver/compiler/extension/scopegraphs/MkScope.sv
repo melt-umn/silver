@@ -3,14 +3,16 @@ grammar silver:compiler:extension:scopegraphs;
 --
 
 production mkScope
-top::ProductionStmt ::= ident::String sg::String datum::Expr
+top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Expr
 {
+  local sgName::String = fromMaybe("_Scope_Default", sg);
+
   local labs::([String], [Message]) =
-    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sg, top.sgEnv) in
+    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sgName, top.sgEnv) in
       case res of
       | h::[] -> (h.labelSet, [])
       | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '" ++ sg ++ "'")])
+                                      " scope graph declarations found named '" ++ sgName ++ "'")])
       end
     end;
   
@@ -58,7 +60,7 @@ fun mkScopeBaseInhs ProductionStmt ::= s::String labs::[String] =
 --
 
 production mkScopeUndec
-top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::IdUpper_t datum::Expr
+top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::Maybe<String> datum::Expr
 {
   nondecorated local qn::QName = case attr of qNameAttrOccur(qn) -> ^qn end;
 
@@ -70,8 +72,10 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::IdUpper_t datum::Exp
 --
 
 production scopeExists
-top::ProductionStmt ::= sg::String s::String
+top::ProductionStmt ::= s::String sg::Maybe<String>
 {
+  local sgName::String = fromMaybe("_Scope_Default", sg);
+
   nondecorated local mkScopeExpr::Expr =
     Silver_Expr {
       let undecs::[Scope] = $QName{qName(s ++ "_undec")} in
