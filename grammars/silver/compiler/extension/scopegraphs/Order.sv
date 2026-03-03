@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:scopegraphs;
 
 --
-
+{-}
 concrete production sgOrder_c
 top::Expr ::= RegexSlash_t r::SGOrderOption RegexSlash_t '::' sg::IdUpper_t
 {
@@ -139,3 +139,4 @@ top::SGOrderOne ::= l::IdLower_t '>' r::IdLower_t
 {
   top.ords = [(l.lexeme, r.lexeme)];
 }
+-}

@@ -20,75 +20,75 @@ ParseResult<XML_Document> ::= filename::String
 }
 
 -- NATIVE AST response. This is just a helper for 
-fun nodeListXPathQueryN XMLNodeList ::= query::String doc::XML_Document =
-  xmlNodeListF2N(nodeListXPathQueryF(query, doc));
+fun nodeListXPathQueryN XMLNodeList ::= q::String doc::XML_Document =
+  xmlNodeListF2N(nodeListXPathQueryF(q, doc));
 
 -- FOREIGN DOM response
 function nodeListXPathQueryF
-XML_NodeList ::= query::String doc::XML_Document
+XML_NodeList ::= q::String doc::XML_Document
 {
   return error("nodeListXPathQueryN not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %q%.toString(), null)";
 }
 
 function stringXPathQuery
-String ::= query::String doc::XML_Document
+String ::= q::String doc::XML_Document
 {
   return error("stringXPathQuery not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %q%.toString(), null)";
 }
 
--- REQUERYING a previous query result...
+-- REQUERYING a previous q result...
 function nodeListXPathReQueryF
-XML_NodeList ::= query::String doc::XML_Node
+XML_NodeList ::= q::String doc::XML_Node
 {
   return error("nodeListXPathReQueryF not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %q%.toString(), null)";
 }
 function stringXPathReQuery
-String ::= query::String doc::XML_Node
+String ::= q::String doc::XML_Node
 {
   return error("stringXPathReQuery not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), null)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %q%.toString(), null)";
 }
 
 ----- namespace variants ------------------------------------------------------
 
 -- FOREIGN DOM response
 function nodeListXPathQueryFns
-XML_NodeList ::= query::String ns::[Pair<String String>] doc::XML_Document
+XML_NodeList ::= q::String ns::[Pair<String String>] doc::XML_Document
 {
   return error("nodeListXPathQueryN not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %q%.toString(), %ns%)";
 }
 
 function stringXPathQueryns
-String ::= query::String ns::[Pair<String String>] doc::XML_Document
+String ::= q::String ns::[Pair<String String>] doc::XML_Document
 {
   return error("stringXPathQuery not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %q%.toString(), %ns%)";
 }
 
--- REQUERYING a previous query result...
+-- REQUERYING a previous q result...
 function nodeListXPathReQueryFns
-XML_NodeList ::= query::String ns::[Pair<String String>] doc::XML_Node
+XML_NodeList ::= q::String ns::[Pair<String String>] doc::XML_Node
 {
   return error("nodeListXPathReQueryF not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryNodeSet(%doc%, %q%.toString(), %ns%)";
 }
 function stringXPathReQueryns
-String ::= query::String ns::[Pair<String String>] doc::XML_Node
+String ::= q::String ns::[Pair<String String>] doc::XML_Node
 {
   return error("stringXPathReQuery not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %query%.toString(), %ns%)";
+  "java" : return "common.rawlib.RawXML.xpathQueryString(%doc%, %q%.toString(), %ns%)";
 }
 
 -------------------------------------------------------------------------------

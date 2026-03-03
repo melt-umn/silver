@@ -14,6 +14,8 @@ terminal Labels_t 'labels' lexer classes {KEYWORD};
 
 terminal ScopeEdge_t 'edge' lexer classes {KEYWORD}; 
 
+terminal Query_t 'query' lexer classes {KEYWORD, RESERVED};
+
 terminal EdgeLeft_t '-[';
 terminal EdgeRight_t ']->';
 
@@ -67,3 +69,17 @@ top::ProductionStmt ::= a::Name '-[' lab::IdLower_t ']->' tgt::Expr ';'
 concrete production edgeAssertionInh_c
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t ']->' tgt::Expr ';'
 { forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt); }
+
+--
+
+concrete production visibleQuery_c
+top::Expr ::= 'query' '(' rx::SGRegex_c ',' pred::Expr ',' s::Expr ')'
+{ 
+  forwards to Silver_Expr{
+    reachableQuery(
+      $Expr{rx.toExpr},
+      $Expr{^pred},
+      $Expr{^s}
+    )
+  };
+}

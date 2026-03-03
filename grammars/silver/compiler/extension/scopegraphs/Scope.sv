@@ -82,12 +82,12 @@ fun resolve
     end
   end;
 
-fun visible
-[DecScope<i>] ::= p::Predicate r::Regex<i> o::Ordering<i> s::DecScope<i>
+fun visibleQuery
+[DecScope<i>] ::= r::Regex<i> o::Ordering<i> p::Predicate s::DecScope<i>
 = resolve(p, r, just(o), s);
 
-fun reachable
-[DecScope<i>] ::= p::Predicate r::Regex<i> s::DecScope<i> 
+fun reachableQuery
+[DecScope<i>] ::= r::Regex<i> p::Predicate s::DecScope<i> 
 = resolve(p, r, nothing(), s);
 
 -- Regex
