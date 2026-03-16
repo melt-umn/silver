@@ -142,13 +142,13 @@ top::ColNT ::=
 {
   top.colList := ["one"];
   top.colList <- ["two"];
-  top.colOr := false;
+  --top.colOr := false; -- default below
   top.colOr <- true;
-  top.colAnd := true;
+  --top.colAnd := true; -- default below
   top.colAnd <- false;
-  top.colFun := nothing();
+  --top.colFun := nothing(); -- default below
   top.colFun <- just(1);
-  top.colProd := colLeaf();
+  --top.colProd := colLeaf(); -- default below
   top.colProd <- colLeaf();
   top.colTCFun := [1, 2, 3];
   top.colTCFun <- [2, 3, 4];
@@ -169,13 +169,13 @@ top::ColNT ::=
   top.colList <- [];
   top.colOr := true;
   top.colOr <- false;
-  top.colAnd := true;
+  --top.colAnd := true; -- default below
   top.colAnd <- true;
-  top.colFun := nothing();
+  --top.colFun := nothing(); -- default below
   top.colFun <- nothing();
   top.colProd := colProdLeaf();
   top.colProd <- colLeaf();
-  top.colTCFun := [];
+  --top.colTCFun := []; -- default below
 }
 
 equalityTest( colTest2().colList, ["one", "two"], [String], silver_tests );
@@ -187,16 +187,26 @@ equalityTest( colTest2().colProd.colSyn, " j  k ( d  e ) b ", String, silver_tes
 abstract production colTest3
 top::ColNT ::=
 {
-  top.colList := [];
+  --top.colList := []; -- default below
   top.colList <- ["one", "two"];
-  top.colOr := false;
+  --top.colOr := false; -- default below
   top.colOr <- false;
   top.colAnd := false;
   top.colAnd <- true;
   top.colFun := just(1);
   top.colFun <- just(2);
-  top.colProd := colLeaf();
+  --top.colProd := colLeaf(); -- default below
   top.colProd <- colProdLeaf();
+  --top.colTCFun := []; -- default below
+}
+
+aspect default production top::ColNT ::=
+{
+  top.colList := [];
+  top.colOr := false;
+  top.colAnd := true;
+  top.colFun := nothing();
+  top.colProd := colLeaf();
   top.colTCFun := [];
 }
 
