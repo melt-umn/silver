@@ -18,6 +18,10 @@ type DecScope<(i::InhSet)> = Decorated Scope with i;
 
 closed nonterminal Datum;
 
+production datumDefault
+top::Datum ::=
+{}
+
 -- put this in silver:langutil:scopegraphs:
 
 closed nonterminal Label<(i::InhSet)> with name, demand<i>;

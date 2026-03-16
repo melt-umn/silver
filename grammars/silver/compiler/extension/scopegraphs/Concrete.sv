@@ -93,20 +93,38 @@ top::ProductionStmt ::= 'existsScope' ident::IdLower_t ';'
 --
 
 concrete production mkScope_c
-top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t '->' datum::Expr ';'
-{ forwards to mkScope(ident.lexeme, just(sg.lexeme), ^datum); }
+top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t d::SGDatum ';'
+{ forwards to mkScope(ident.lexeme, just(sg.lexeme), d.datumExprOpt); }
 
 concrete production mkScopeDefault_c
-top::ProductionStmt ::= 'newScope' ident::IdLower_t '->' datum::Expr ';'
-{ forwards to mkScope(ident.lexeme, nothing(), ^datum); }
+top::ProductionStmt ::= 'newScope' ident::IdLower_t d::SGDatum ';'
+{ forwards to mkScope(ident.lexeme, nothing(), d.datumExprOpt); }
 
 concrete production mkScopeUndec_c
-top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t '->' datum::Expr ';'
-{ forwards to mkScopeUndec(^dl, ^attr, just(sg.lexeme), ^datum); }
+top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t d::SGDatum ';'
+{ forwards to mkScopeUndec(^dl, ^attr, just(sg.lexeme), d.datumExprOpt); }
 
 concrete production mkScopeUndecDefault_c
-top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '->' datum::Expr ';'
-{ forwards to mkScopeUndec(^dl, ^attr, nothing(), ^datum); }
+top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur d::SGDatum ';'
+{ forwards to mkScopeUndec(^dl, ^attr, nothing(), d.datumExprOpt); }
+
+--
+
+nonterminal SGDatum;
+
+synthesized attribute datumExprOpt::Maybe<Expr> occurs on SGDatum;
+
+concrete production sgDatum_c
+top::SGDatum ::= '->' datum::Expr
+{
+  top.datumExprOpt = just(^datum);
+}
+
+concrete production sgDatumNone_c
+top::SGDatum ::=
+{
+  top.datumExprOpt = nothing();
+}
 
 --
 

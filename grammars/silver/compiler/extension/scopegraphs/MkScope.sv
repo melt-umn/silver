@@ -3,8 +3,13 @@ grammar silver:compiler:extension:scopegraphs;
 --
 
 production mkScope
-top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Expr
+top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Maybe<Expr>
 {
+  nondecorated local datumReal::Expr = fromMaybe(
+    Silver_Expr{datumDefault()},
+    datum
+  );
+
   local sgName::String = fromMaybe("_Scope_Default", sg);
 
   local labs::([String], [Message]) =
@@ -17,7 +22,7 @@ top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Expr
     end;
   
   nondecorated local mkScopeEq::ProductionStmt = Silver_ProductionStmt {
-    local attribute $Name{name(ident)}::Scope = scope($Expr{^datum});
+    local attribute $Name{name(ident)}::Scope = scope($Expr{datumReal});
   };
 
   nondecorated local undecsLst::ProductionStmt = Silver_ProductionStmt {
@@ -60,12 +65,17 @@ fun mkScopeBaseInhs ProductionStmt ::= s::String labs::[String] =
 --
 
 production mkScopeUndec
-top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::Maybe<String> datum::Expr
+top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::Maybe<String> datum::Maybe<Expr>
 {
   nondecorated local qn::QName = case attr of qNameAttrOccur(qn) -> ^qn end;
 
+  nondecorated local contrib::Expr = fromMaybe(
+    Silver_Expr{datumDefault()},
+    datum
+  );
+
   forwards to Silver_ProductionStmt {
-    $QName{qName(dl.name)}.$QName{appendToQName(qn, "_undec")} <- [scope($Expr{^datum})];
+    $QName{qName(dl.name)}.$QName{appendToQName(qn, "_undec")} <- [scope($Expr{contrib})];
   };
 }
 
@@ -86,5 +96,5 @@ top::ProductionStmt ::= s::String sg::Maybe<String>
       end
     };
 
-  forwards to mkScope(s, sg, mkScopeExpr);
+  forwards to mkScope(s, sg, just(mkScopeExpr));
 }
