@@ -16,6 +16,7 @@ MaybeT<IO RootSpec> ::= grammarName::String  libs::[String]
 
     -- IO Step 3: Perhaps complain it failed to deserialize.
     -- A failure to deserialize here is a fatal error, as it indicates a problem with the library jar file.
+    -- TODO: Calling exit here sometimes doesn't work right due to unsafeInterleaveIO.
     case ir of
     | left(msg) -> lift(
       do {

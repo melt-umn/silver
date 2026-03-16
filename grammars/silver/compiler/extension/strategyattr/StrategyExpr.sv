@@ -1030,7 +1030,6 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   checkExpr.decSiteVertexInfo = nothing();
   checkExpr.alwaysDecorated = false;
   checkExpr.appDecSiteVertexInfo = nothing();
-  checkExpr.dispatchFlowDeps = [];
   checkExpr.downSubst = emptySubst();
   checkExpr.downSubst2 = checkExpr.upSubst;
   checkExpr.finalSubst = checkExpr.upSubst2;
@@ -1113,7 +1112,7 @@ abstract production hackLHSExprType
 top::Expr ::= t::Type
 {
   top.typerep = ^t;
-  top.flowVertexInfo = just(lhsVertexType);
+  top.flowVertexInfo = just(lhsVertexType());
   forwards to errorExpr([]);
 }
 

@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:flow:driver;
 
+import silver:util:idcache as i;
+
 type FlowType = g:Graph<String>;
 
 function findFlowType
@@ -21,11 +23,26 @@ function expandGraph
 {
   -- look up each vertex, uniq it down.
   local initial :: set:Set<FlowVertex> =
-    set:add(v, foldr(set:union, set:empty(), map(e.edgeMap, v)));
+    set:add(v, foldr(set:union, set:emptyWith(compareVertexId), map(e.edgeMap, v)));
 
   return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
 }
 fun onlyLhsInh set:Set<String> ::= s::[FlowVertex] = set:add(filterLhsInh(s), set:empty());
+
+fun expandTileGraphSigDeps
+set:Set<FlowVertex> ::= v::[FlowVertex] rhsNames::[String] g::ProductionGraph =
+  set:filter(isSigVertex(rhsNames, _),
+    set:add(v, flatMap(g.tileEdgeMap, v)));
+
+fun isSigVertex Boolean ::= rhsNames::[String] v::FlowVertex =
+  case v of
+  | lhsSynVertex(_) -> true
+  | lhsInhVertex(_) -> true
+  | rhsEqVertex(sigName) -> contains(sigName, rhsNames)
+  | rhsSynVertex(sigName, _) -> contains(sigName, rhsNames)
+  | rhsInhVertex(sigName, _) -> contains(sigName, rhsNames)
+  | _ -> false
+  end;
 
 -- suspect edges are not in the standard graph, so iteratively add them
 -- call like expandSuspectEdges(p.edges.toList, p.edges, p)
@@ -61,17 +78,15 @@ fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
   | _ -> false
   end;
 
-fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] = g:add(l, g:empty());
+fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =
+  g:transitiveClosure(g:add(l, g:emptyWith(compareVertexId)));
 
-fun extendFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)]  g::g:Graph<FlowVertex> =
-  g:add(l, g);
 
-fun transitiveClose
-g:Graph<FlowVertex> ::=
-  graph::g:Graph<FlowVertex> = g:transitiveClosure(graph);
+global vertexCache::i:IdCache<FlowVertex> = i:empty();
+synthesized attribute vertexId::Integer occurs on FlowVertex;
+aspect default production
+top::FlowVertex ::=
+{ top.vertexId = i:lookup(top, vertexCache); }
 
-fun repairClosure
-g:Graph<FlowVertex> ::=
-  newEdges::[(FlowVertex, FlowVertex)]
-  graph::g:Graph<FlowVertex> = g:repairClosure(newEdges, graph);
-
+fun compareVertexId Integer ::= a::FlowVertex b::FlowVertex =
+  a.vertexId - b.vertexId;

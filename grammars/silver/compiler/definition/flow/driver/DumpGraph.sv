@@ -7,16 +7,25 @@ import silver:util:treemap as rtm;
 -- This isn't exactly a warning, but it can live here for now...
 
 synthesized attribute dumpFlowGraph :: Boolean occurs on CmdArgs;
+synthesized attribute dumpProds :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.dumpFlowGraph = false;
+  top.dumpProds = [];
 }
 abstract production dumpFlowGraphFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.dumpFlowGraph = true;
+  forwards to @rest;
+}
+abstract production dumpProdsFlag
+top::CmdArgs ::= prods::String  rest::CmdArgs
+{
+  top.dumpFlowGraph = true;
+  top.dumpProds = explode(",", prods) ++ rest.dumpProds;
   forwards to @rest;
 }
 aspect function parseArgs
@@ -29,6 +38,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
            , flagSpec(name="--dump-flow-graphs", paramString=nothing(),
                help="a typo of --dump-flow-graph",
                flagParser=flag(dumpFlowGraphFlag))
+           , flagSpec(name="--dump-prods", paramString=just("<prod1,prod2,...>"),
+               help="productions to include in the flow graph dump (comma-separated)",
+               flagParser=option(dumpProdsFlag))
            ];
   -- not omitting descriptions deliberately!
 }
@@ -36,9 +48,14 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars  _  _  a::Decorated CmdArgs  benv::BuildEnv
 {
+  local includeInDump :: (Boolean ::= ProductionGraph) = \ pg::ProductionGraph ->
+    null(a.dumpProds) || any(map(endsWith(_, pg.prod), a.dumpProds));
   top.postOps <-
     if a.dumpFlowGraph
-    then [dumpFlowGraphAction(prodGraph, rtm:values(finalGraphEnv), unList(rtm:toList(flowTypes)))]
+    then [dumpFlowGraphAction(
+      filter(includeInDump, prodGraph),
+      filter(includeInDump, rtm:values(finalGraphEnv)),
+      unList(rtm:toList(flowTypes)))]
     else [];
 }
 
@@ -64,8 +81,11 @@ top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph
 {
   top.run = do {
     eprintln("Generating flow graphs");
-    writeFile("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}");
-    writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}");
+    writeFile("stitch-points.txt", generateStitchPointsDump(prodGraph));
+    writeDotGraphs("flow-deps-direct.dot", prodGraph);
+    writeTileDotGraphs("flow-deps-tile-direct.dot", prodGraph);
+    writeDotGraphs("flow-deps-transitive.dot", finalGraph);
+    writeTileDotGraphs("flow-deps-tile.dot", finalGraph);
     writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
     return 0;
   };
@@ -99,16 +119,28 @@ String ::= nt::String  attr::String
 fun makeNtFlow String ::= nt::String  e::Pair<String String> =
   "\"" ++ nt ++ "/" ++ e.fst ++ "\" -> \"" ++ nt ++ "/" ++ e.snd ++ "\";\n";
 
-fun generateDotGraph String ::= specs::[ProductionGraph] =
-  case specs of
-  | [] -> ""
-  | productionGraph(prod, _, _, graph, suspect, _) :: t ->
-      "subgraph \"cluster:" ++ prod ++ "\" {\n" ++ 
-      implode("", map(makeDotArrow(prod, _, ""), g:toList(graph))) ++
-      implode("", map(makeDotArrow(prod, _, " [style=dotted]"), suspect)) ++
-      "}\n" ++
-      generateDotGraph(t)
-  end;
+fun writeDotGraphs IO<Unit> ::= fileName::String specs::[ProductionGraph] = do {
+  writeFile(fileName, "digraph flow {\n");
+  traverse_(\ spec::ProductionGraph ->
+    appendFile(fileName,
+      "subgraph \"cluster:" ++ spec.prod ++ "\" {\n" ++ 
+      implode("", map(makeDotArrow(spec.prod, _, ""), g:toList(spec.graph))) ++
+      implode("", map(makeDotArrow(spec.prod, _, " [style=dotted]"), spec.suspectEdges)) ++
+      "}\n"),
+    specs);
+  appendFile(fileName, "}\n");
+};
+
+fun writeTileDotGraphs IO<Unit> ::= fileName::String specs::[ProductionGraph] = do {
+  writeFile(fileName, "digraph flow {\n");
+  traverse_(\ spec::ProductionGraph ->
+    appendFile(fileName,
+      "subgraph \"cluster:" ++ spec.prod ++ "\" {\n" ++ 
+      implode("", map(makeDotArrow(spec.prod, _, ""), g:toList(spec.tileGraph))) ++
+      "}\n"),
+    specs);
+  appendFile(fileName, "}\n");
+};
 
 -- "production/flowvertex" -> "production/flowvertex"
 fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String =
@@ -121,66 +153,53 @@ fun makeDotArrow String ::= p::String e::(FlowVertex, FlowVertex) style::String 
  -}
 synthesized attribute dotName :: String occurs on FlowVertex;
 
-aspect production lhsSynVertex
-top::FlowVertex ::= attrName::String
-{
-  top.dotName = attrName;
-}
-aspect production lhsInhVertex
-top::FlowVertex ::= attrName::String
-{
-  top.dotName = attrName;
-}
-aspect production rhsSynVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.dotName = sigName ++ "/" ++ attrName;
-}
-aspect production rhsInhVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.dotName = sigName ++ "/" ++ attrName;
-}
-aspect production localEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.dotName = fName;
-}
-aspect production localSynVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production localInhVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production anonEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.dotName = fName;
-}
-aspect production anonSynVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production anonInhVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.dotName = fName ++ "/" ++ attrName;
-}
-aspect production subtermSynVertex
-top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
-{
-  top.dotName = parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
-}
-aspect production subtermInhVertex
-top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
-{
-  top.dotName = parent.inhVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName;  -- Hack!
-}
+aspect dotName on FlowVertex of
+| lhsEqVertex() -> "!"
+| lhsSynVertex(attrName) -> attrName
+| lhsInhVertex(attrName) -> attrName
+| rhsEqVertex(sigName) -> sigName ++ "!"
+| rhsOuterEqVertex(sigName) -> sigName ++ "~"
+| rhsSynVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
+| rhsInhVertex(sigName, attrName) -> sigName ++ "/" ++ attrName
+| localEqVertex(fName) -> fName ++ "!"
+| localOuterEqVertex(fName) -> fName ++ "~"
+| localSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| localInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| transAttrOuterEqVertex(vt, fName) -> vt.synVertex(fName).dotName ++ "~"
+| forwardOuterEqVertex() -> "forward~"
+| forwardSynVertex(attrName) -> "forward/" ++ attrName
+| forwardInhVertex(attrName) -> "forward/" ++ attrName
+| forwardParentEqVertex() -> "forwardParent!"
+| forwardParentSynVertex(attrName) -> "forwardParent/" ++ attrName
+| forwardParentInhVertex(attrName) -> "forwardParent/" ++ attrName
+| anonEqVertex(fName) -> fName ++ "!"
+| anonSynVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| anonInhVertex(fName, attrName) -> fName ++ "/" ++ attrName
+| subtermEqVertex(parent, prodName, sigName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "!").dotName  -- Hack!
+| subtermOuterEqVertex(parent, prodName, sigName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "~").dotName  -- Hack!
+| subtermSynVertex(parent, prodName, sigName, attrName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
+| subtermInhVertex(parent, prodName, sigName, attrName) ->
+  parent.synVertex(prodName ++ "@" ++ sigName ++ "/" ++ attrName).dotName  -- Hack!
+end;
 
+fun generateStitchPointsDump String ::= specs::[ProductionGraph] =
+  flatMap(dumpGraphStitchPoints, specs);
 
+fun dumpGraphStitchPoints String ::= g::ProductionGraph =
+  s"${g.prod}\n${flatMap((.showStitchPoint), g.stitchPoints)}" ++
+  (if null(g.sigNtStitchPoints) then ""
+   else s"from signature nts\n${flatMap((.showStitchPoint), g.sigNtStitchPoints)}") ++
+  "\n";
 
+synthesized attribute showStitchPoint :: String occurs on StitchPoint;
+aspect showStitchPoint on StitchPoint of
+| nonterminalStitchPoint(nt, vertexType) ->
+  s"\tnonterminal ${nt} at ${vertexType.vertexName}\n"
+| projectionStitchPoint(prod, sourceType, targetType, prodType, attrs) ->
+  s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
+| tileStitchPoint(prod, parentType) ->
+  s"\ttile ${prod} at ${parentType.vertexName}\n"
+end;

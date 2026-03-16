@@ -12,6 +12,14 @@ wrongCode "Declaration of global missingRes with type Decorated flow:FSExpr2 wit
   global missingRes::Decorated FSExpr2 = decorate fse() with {};
 }
 
+warnCode "Forward equation exceeds flow type with dependencies on flow:env2" {
+production fseForwardExceedsSpec
+top::FSExpr ::= e::FSExpr
+{
+  forwards to if null(top.env2) then fse() else @e;
+}
+}
+
 nonterminal FSExpr2 with env1, env2;
 
 wrongCode "circularity in flow specification for decorate on flow:FSExpr2" {

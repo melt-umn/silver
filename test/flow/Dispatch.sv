@@ -93,7 +93,7 @@ UDExpr ::= e::UDExpr
 }
 }
 
-warnCode "Dispatching may require inherited attribute(s) flow:env2 on e, but these attribute(s) are supplied here after dispatching" {
+warnCode "Potentially missing inherited override equation for flow:env2 on e; a cycle may exist via its sharing decoration site forward[flow:DispatchOp:e1]" {
 production dispatchCycle
 top::UDExpr ::= e::UDExpr
 {
@@ -121,7 +121,7 @@ top::UDExpr ::= e::UDExpr
   top.errors2 = !null(e.env1);
 }
 
-warnCode "Dispatching may require inherited attribute(s) flow:env2 on e, but these attribute(s) are supplied here after dispatching" {
+warnCode "Potentially missing inherited override equation for flow:env2 on e; a cycle may exist via its sharing decoration site forward[flow:DispatchOp2:e]" {
 production dispatchCycle2
 top::UDExpr ::= e::UDExpr
 {

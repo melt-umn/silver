@@ -1,52 +1,76 @@
 grammar silver:compiler:definition:flow:ast;
 
+imports silver:langutil only unparse;
+
 {--
  - A "classification" of FlowVertex that has ways to map attributes to vertexes.
  -
  - Quick reference: 
- - lhsVertexType, rhsVertexType(sigName), localVertexType(fName),
- - forwardVertexType, anonVertexType(x)
+ - lhsVertexType(), rhsVertexType(sigName), localVertexType(fName),
+ - transAttrVertexType(v, transAttr), forwardVertexType(), anonVertexType(x),
+ - anonScrutineeVertexType(x), subtermVertexType(parent, prodName, sigName)
  -}
 data nonterminal VertexType with
-  vertexName, vertexPP, isInhDefVertex,
-  synVertex, inhVertex, fwdVertex, eqVertex;
+  vertexName, vertexPP, isInhDefVertex, isFlowTypeDepVertex,
+  synVertex, inhVertex, eqVertex, outerEqVertex,
+  eqDeps, outerEqDeps, synDeps, inhDeps, fwdDeps;
 derive Eq, Ord on VertexType;
 
+{-- Short name of this VertexType -}
 synthesized attribute vertexName::String;
+{-- Expanded representation that indicates the sort of VertexType -}
 synthesized attribute vertexPP::String;
+{-- Can inherited equations be written for this VertexType? -}
 synthesized attribute isInhDefVertex::Boolean;
+{-- Are dependencies on inherited attributes on this VertexType tracked by the flow types? -}
+synthesized attribute isFlowTypeDepVertex::Boolean;
 
-{-- FlowVertex for a synthesized attribute for this FlowVertex -}
+{-- FlowVertex for a synthesized attribute for this VertexType -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
-{-- FlowVertex for a inherited attribute for this FlowVertex -}
+{-- FlowVertex for a inherited attribute for this VertexType -}
 synthesized attribute inhVertex :: (FlowVertex ::= String);
-{-- FlowVertex for the forward flow type for this FlowVertex -}
-synthesized attribute fwdVertex :: FlowVertex;
-{-- FlowVertex for the equation giving this FlowVertex (there may not be one!) -}
-synthesized attribute eqVertex :: [FlowVertex];
+{-- FlowVertex for the equation giving this VertexType -}
+synthesized attribute eqVertex :: FlowVertex;
+{-- FlowVertex for the outer dependencies of the equation giving this VertexType -}
+synthesized attribute outerEqVertex :: FlowVertex;
+{-- FlowVertex dependencies of taking a reference to this VertexType -}
+synthesized attribute eqDeps :: [FlowVertex];
+{-- FlowVertex dependencies of constructing the outer node of this VertexType -}
+synthesized attribute outerEqDeps :: [FlowVertex];
+{-- FlowVertex dependencies of a synthesized attribute access on this VertexType -}
+synthesized attribute synDeps :: ([FlowVertex] ::= String);
+{-- FlowVertex dependencies of an inherited attribute access on this VertexType -}
+synthesized attribute inhDeps :: ([FlowVertex] ::= String);
+{-- FlowVertex dependencies for the forward flow type for this VertexType -}
+synthesized attribute fwdDeps :: [FlowVertex];
 
-global lhsVertexType :: VertexType = lhsVertexType_real();
-global forwardVertexType :: VertexType = forwardVertexType_real();
-
--- implementation detail, do no use outside this file.
-global forwardEqVertex_singleton :: FlowVertex = localEqVertex("forward");
--- forwardEqVertex() == localEqVertex("forward")
--- we consider lhsSynVertex("forward") also equivalent, actually.
+aspect default production
+top::VertexType ::=
+{
+  top.eqDeps = [top.eqVertex];
+  top.outerEqDeps = [top.outerEqVertex];
+  top.synDeps = \ attr -> top.synVertex(attr) :: top.outerEqDeps;
+  top.inhDeps = \ attr -> top.inhVertex(attr) :: top.outerEqDeps;
+  top.fwdDeps = top.synDeps("forward");
+}
 
 
 {--
- - Represents the vertexes for a production lhs. You can use lhsVertexType instead of this production directly.
+ - Represents the vertexes for a production lhs.
  -}
-abstract production lhsVertexType_real
+abstract production lhsVertexType
 top::VertexType ::=
 {
   top.vertexName = "top";
   top.vertexPP = "left-hand side";
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = true;
   top.synVertex = lhsSynVertex;
   top.inhVertex = lhsInhVertex;
-  top.fwdVertex = forwardEqVertex_singleton;
-  top.eqVertex = [];
+  top.eqVertex = lhsEqVertex();
+  top.outerEqVertex = error("Shouldn't ask for an outerEqVertex on lhsVertexType");
+  top.outerEqDeps = [];
+  top.fwdDeps = [forwardEqVertex];  -- override for better caching
 }
 
 {--
@@ -58,10 +82,11 @@ top::VertexType ::= sigName::String
   top.vertexName = sigName;
   top.vertexPP = "child " ++ sigName;
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = rhsSynVertex(sigName, _);
   top.inhVertex = rhsInhVertex(sigName, _);
-  top.fwdVertex = rhsSynVertex(sigName, "forward");
-  top.eqVertex = [];
+  top.eqVertex = rhsEqVertex(sigName);
+  top.outerEqVertex = rhsOuterEqVertex(sigName);
 }
 
 {--
@@ -73,10 +98,11 @@ top::VertexType ::= fName::String
   top.vertexName = fName;
   top.vertexPP = "local " ++ fName;
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = localSynVertex(fName, _);
   top.inhVertex = localInhVertex(fName, _);
-  top.fwdVertex = localSynVertex(fName, "forward");
-  top.eqVertex = [localEqVertex(fName)];
+  top.eqVertex = localEqVertex(fName);
+  top.outerEqVertex = localOuterEqVertex(fName);
 }
 
 {--
@@ -88,54 +114,79 @@ top::VertexType ::= v::VertexType  transAttr::String
   top.vertexName = s"${v.vertexName}.${transAttr}";
   top.vertexPP = s"translation attribute ${transAttr} of ${v.vertexPP}";
   top.isInhDefVertex = v.isInhDefVertex;
+  top.isFlowTypeDepVertex = v.isFlowTypeDepVertex;
   top.synVertex = \ attr::String -> v.synVertex(s"${transAttr}.${attr}");
   top.inhVertex = \ attr::String -> v.inhVertex(s"${transAttr}.${attr}");
-  top.fwdVertex = v.synVertex(s"${transAttr}.forward");
-  top.eqVertex = v.synVertex(transAttr) :: v.eqVertex;
+  top.eqVertex = v.synVertex(transAttr);
+  top.outerEqVertex = transAttrOuterEqVertex(v, transAttr);
+  top.eqDeps = v.synDeps(transAttr);
+  top.outerEqDeps = top.outerEqVertex :: v.outerEqDeps;
 }
 
 {--
- - Represents the vertexes for the forward of a production. You can use forwardVertexType instead of this production directly.
+ - Represents the vertexes for the forward of a production.
  -}
-abstract production forwardVertexType_real
+abstract production forwardVertexType
 top::VertexType ::=
 {
   top.vertexName = "forward";
   top.vertexPP = "forward";
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = forwardSynVertex;
   top.inhVertex = forwardInhVertex;
-  top.fwdVertex = forwardSynVertex("forward");
-  top.eqVertex = [forwardEqVertex_singleton];
+  top.eqVertex = forwardEqVertex;
+  top.outerEqVertex = forwardOuterEqVertex();
 }
 
 abstract production forwardParentVertexType
 top::VertexType ::=
 {
+  -- TODO: Deps on these vertices need to introduce deps on the forward vertices of the remote prod
+  -- that forwarded to this sig sharing prod, even when there are override eqs.
   top.vertexName = "forwardParent";
   top.vertexPP = "forward parent";
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = true;
   top.synVertex = forwardParentSynVertex;
-  top.inhVertex = lhsInhVertex;
-  -- The forward of the forward parent is the LHS of this production, which doesn't have a vertex!
-  -- This should never really be consulted in practice.
-  top.fwdVertex = localEqVertex("__lhs");
-  top.eqVertex = [];
+  top.inhVertex = forwardParentInhVertex;
+  top.eqVertex = forwardParentEqVertex();
+  top.outerEqVertex = error("Shouldn't ask for an outerEqVertex on forwardParentVertexType");
+  top.outerEqDeps = [];
+  -- The forward of the forward parent is the LHS of this production
+  top.fwdDeps = [lhsEqVertex()];
 }
 
 {--
  - Represents the vertexes for anonymous vertex types somewhere within a production (e.g. 'decorate with' expressions).
  -}
 abstract production anonVertexType
-top::VertexType ::= x::String
+top::VertexType ::= x::String grammarName::String loc::Location
 {
-  top.vertexName = x;
-  top.vertexPP = s"anonymous decoration site ${x}";
+  top.vertexName = s"${grammarName}:${loc.unparse}:${x}";
+  top.vertexPP = s"anonymous decoration site at ${grammarName}:${loc.unparse}";
   top.isInhDefVertex = true;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = anonSynVertex(x, _);
   top.inhVertex = anonInhVertex(x, _);
-  top.fwdVertex = anonSynVertex(x, "forward");
-  top.eqVertex = [anonEqVertex(x)];
+  top.eqVertex = anonEqVertex(x);
+  top.outerEqVertex = anonEqVertex(x);  -- We don't distinguish the outer eq for anon vertexes
+}
+
+{--
+ - Represents the vertexes for the scrutinee when pattern matching on a reference that lacks a vertex type.
+ -}
+abstract production anonScrutineeVertexType
+top::VertexType ::= x::String grammarName::String loc::Location
+{
+  top.vertexName = s"${grammarName}:${loc.unparse}:${x}";
+  top.vertexPP = s"anonymous scrutinee ${grammarName}:${loc.unparse}";
+  top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = false;
+  top.synVertex = anonSynVertex(top.vertexName, _);
+  top.inhVertex = anonInhVertex(top.vertexName, _);
+  top.eqVertex = anonEqVertex(top.vertexName);
+  top.outerEqVertex = anonEqVertex(top.vertexName);  -- We don't distinguish the outer eq for anon vertexes
 }
 
 {--
@@ -147,8 +198,9 @@ top::VertexType ::= parent::VertexType prodName::String sigName::String
   top.vertexName = s"${parent.vertexName}[${prodName}:${sigName}]";
   top.vertexPP = top.vertexName;  -- Shouldn't appear in error messages?  Gets too long to spell out anyway.
   top.isInhDefVertex = false;
+  top.isFlowTypeDepVertex = false;
   top.synVertex = subtermSynVertex(parent, prodName, sigName, _);
   top.inhVertex = subtermInhVertex(parent, prodName, sigName, _);
-  top.fwdVertex = subtermSynVertex(parent, prodName, sigName, "forward");
-  top.eqVertex = [];
+  top.eqVertex = subtermEqVertex(parent, prodName, sigName);
+  top.outerEqVertex = subtermOuterEqVertex(parent, prodName, sigName);
 }

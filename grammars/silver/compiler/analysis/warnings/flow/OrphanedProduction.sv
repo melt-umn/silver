@@ -57,9 +57,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
           -- If this production implements a dispatch signature from a grammar that does not export this production
           !isExportedBy(top.grammarName, [implode(":", init(explode(":", dSig.fullName)))], top.compiledGrammars) &&
           -- AND this production does not forward to an application of the same dispatch signature with the same shared children
-          !any(map(
-            \ e::Decorated Expr -> e.isDispatchApplication(dSig),
-            body.forwardExpr ++ body.forwardProdAttrExprs))
+          !any(map(\ e::Decorated Expr -> e.isDispatchApplication(dSig), body.forwardExpr))
         -> [mwdaWrnFromOrigin(top, s"Orphaned implementation production ${id.name} for dispatch ${dSig.fullName}; this production must forward directly to an application of this dispatch signature with the same shared children.")]
       | _ -> []
       end
@@ -74,7 +72,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::Prod
  -}
 monoid attribute isDispatchApplication :: (Boolean ::= NamedSignature) with pure(false), lift2(conj, _, _)
   occurs on Expr, PrimPatterns, PrimPattern;
-flowtype isDispatchApplication {decorate} on Expr;
+flowtype isDispatchApplication {decorate} on Expr, PrimPattern;
 
 aspect isDispatchApplication on top::Expr using := of
 | dispatchApplication(e, es, _) -> \ dSig::NamedSignature ->

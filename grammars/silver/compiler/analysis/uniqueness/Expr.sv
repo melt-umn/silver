@@ -2,7 +2,7 @@ grammar silver:compiler:analysis:uniqueness;
 
 attribute sharedRefs occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
 propagate sharedRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern
-  excluding ifThenElse, matchPrimitiveReal, consPattern;
+  excluding ifThenElse, matchPrimitiveReal, consPattern, letp;
 
 aspect production decorationSiteExpr
 top::Expr ::=  '@' e::Expr
@@ -25,9 +25,10 @@ top::Expr ::=  '@' e::Expr
   top.errors <-
     case e.flowVertexInfo of
     -- These are errors because we assume these checks in the translation:
-    | just(lhsVertexType_real()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
-    | just(forwardVertexType_real()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
-    | just(anonVertexType(_)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
+    | just(lhsVertexType()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
+    | just(forwardVertexType()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
+    | just(anonVertexType(_, _, _)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
+    | just(subtermVertexType(_, _, _)) -> [errFromOrigin(e, s"Cannot share a pattern variable.")]  -- Only way this can happen
     | just(v) ->
         -- Check that this tree is shared in at most one non-mutually-exclusive place.
         case lookupSharedRefs(top.frame.fullName, v, top.flowEnv) of
@@ -68,9 +69,10 @@ top::AppExpr ::= e::Expr
     if sigIsShared && isForwardParam then
       case e.flowVertexInfo of
       -- These are errors because we assume these checks in the translation:
-      | just(lhsVertexType_real()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
-      | just(forwardVertexType_real()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
-      | just(anonVertexType(_)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
+      | just(lhsVertexType()) -> [errFromOrigin(e, s"Cannot share the production LHS.")]
+      | just(forwardVertexType()) -> [errFromOrigin(e, s"Cannot share the forward tree.")]
+      | just(anonVertexType(_, _, _)) -> [errFromOrigin(e, s"Cannot share an anonymously decorated tree.")]  -- TODO: I think this works now?
+      | just(subtermVertexType(_, _, _)) -> [errFromOrigin(e, s"Cannot share a pattern variable.")]  -- Only way this can happen
       | just(v) ->
           -- Check that this tree is shared in at most one non-mutually-exclusive place.
           case lookupSharedRefs(top.frame.fullName, v, top.flowEnv) of
@@ -113,4 +115,16 @@ aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern _ ps::PrimPatterns
 {
   top.sharedRefs := unionMutuallyExclusiveRefs(p.sharedRefs, ps.sharedRefs);
+}
+
+aspect production letp
+top::Expr ::= la::AssignExpr  e::Expr
+{
+  top.sharedRefs := e.sharedRefs;
+}
+
+aspect production lexicalLocalReference
+top::Expr ::= @q::QName _ _ sr::[(String, SharedRefSite)]
+{
+  top.sharedRefs <- sr;
 }

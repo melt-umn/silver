@@ -391,6 +391,14 @@ fun unzipWith [c] ::= f::(c ::= a b)  l::[(a, b)] =
   if null(l) then []
   else f(head(l).1, head(l).2) :: unzipWith(f, tail(l));
 
+fun zipFst [(a, b)] ::= x::a ys::[b] =
+  if null(ys) then []
+  else (x, head(ys)) :: zipFst(x, tail(ys));
+
+fun zipSnd [(a, b)] ::= xs::[a] y::b =
+  if null(xs) then []
+  else (head(xs), y) :: zipSnd(tail(xs), y);
+
 fun zip [(a, b)] ::= l1::[a]  l2::[b] =
   if null(l1) || null(l2) then []
   else (head(l1), head(l2)) :: zip(tail(l1), tail(l2));

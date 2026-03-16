@@ -1,14 +1,16 @@
 grammar silver:compiler:definition:core;
 
 tracked nonterminal AspectProductionSignature with config, grammarName, env, unparse, errors, defs, realSignature, namedSignature, signatureName;
-tracked nonterminal AspectProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement, realSignature;
+tracked nonterminal AspectProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement, elementName, realSignature;
 
 tracked nonterminal AspectFunctionSignature with config, grammarName, env, unparse, errors, defs, realSignature, namedSignature, signatureName;
 tracked nonterminal AspectFunctionLHS with config, grammarName, env, unparse, errors, defs, realSignature, outputElement;
 
-tracked nonterminal AspectRHS with config, grammarName, env, unparse, errors, defs, inputElements, realSignature;
-tracked nonterminal AspectRHSElem with config, grammarName, env, unparse, errors, defs, realSignature, inputElements, deterministicCount;
+tracked nonterminal AspectRHS with config, grammarName, env, unparse, errors, defs, inputElements, elementNames, realSignature;
+tracked nonterminal AspectRHSElem with config, grammarName, env, unparse, errors, defs, realSignature, inputElements, elementNames, deterministicCount;
 
+flowtype elementName {} on AspectProductionLHS;
+flowtype elementNames {} on AspectRHS, AspectRHSElem;
 flowtype forward {realSignature, grammarName, env, flowEnv} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
 flowtype forward {deterministicCount, realSignature, grammarName, env, flowEnv} on AspectRHSElem;
 
@@ -151,7 +153,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
 } action {
-  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
+  sigNames = lhs.elementName :: rhs.elementNames;
 }
 
 concrete production aspectProductionLHSNone
@@ -198,6 +200,7 @@ top::AspectProductionLHS ::= id::Name t::Type
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
 
   top.outputElement = namedSignatureElement(id.name, ^t, false);
+  top.elementName = id.name;
   
   top.defs := [aliasedLhsDef(top.grammarName, id.nameLoc, fName, performSubstitution(^t, top.upSubst), id.name)];
 
@@ -213,6 +216,7 @@ top::AspectRHS ::=
 
   propagate defs;
   top.inputElements = [];
+  top.elementNames = [];
 }
 
 concrete production aspectRHSElemCons
@@ -223,6 +227,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
   propagate defs;
 
   top.inputElements = h.inputElements ++ t.inputElements;
+  top.elementNames = h.elementNames ++ t.elementNames;
 
   h.deterministicCount = length(t.inputElements);
   h.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
@@ -233,6 +238,7 @@ concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'
 {
   top.unparse = "_";
+  top.elementNames = [];
 
   nondecorated production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -301,6 +307,7 @@ top::AspectRHSElem ::= shared::Boolean id::Name t::Type
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).elementDclType;
 
   top.inputElements = [namedSignatureElement(id.name, ^t, shared)];
+  top.elementNames = [id.name];
 
   top.defs := [aliasedChildDef(top.grammarName, id.nameLoc, fName, performSubstitution(^t, top.upSubst), shared, id.name)];
 
@@ -326,6 +333,8 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
+} action {
+  sigNames = rhs.elementNames;
 }
 
 concrete production functionLHSType

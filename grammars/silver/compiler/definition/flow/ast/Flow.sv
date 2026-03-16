@@ -150,9 +150,11 @@ top::FlowDef ::= nt::String  prod::String
  -
  - @param dispatchSig  The full name of the dispatch signature that is implemented
  - @param prod         The full name of the production
+ - @param sigNames     The names of the RHS elements in the production
+ - @param extraSigNts  Extra nonterminal children that do not correspond to the dispatch signature, and their types
  -}
 abstract production implFlowDef
-top::FlowDef ::= dispatchSig::String  prod::String  sigNames::[String]
+top::FlowDef ::= dispatchSig::String  prod::String  sigNames::[String]  extraSigNts::[(String, String)]
 {
   top.implTreeContribs := [(dispatchSig, prod, sigNames)];
   top.prodGraphContribs := [(dispatchSig, top)];
@@ -188,7 +190,7 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs := [(crossnames(nt, attr), top)];
   top.prodGraphContribs := [(nt ++ ":default", top)];
-  top.flowEdges = map(pair(fst=lhsSynVertex(attr), snd=_), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
+  top.flowEdges = zipFst(lhsSynVertex(attr), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
 
 {--
@@ -204,7 +206,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
 {
   top.synTreeContribs := [(crossnames(prod, attr), top)];
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=lhsSynVertex(attr), snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = zipFst(lhsSynVertex(attr), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -216,14 +218,35 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
  - @param sigName  the name of the RHS element
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param decSites  sharing sites for which this is an override equation
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production inhEq
-top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]  decSites::[VertexType]
 {
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=rhsInhVertex(sigName, attr), snd=_), deps);
+  top.flowEdges = cartProd(
+    rhsInhVertex(sigName, attr) :: map(\ v::VertexType -> v.inhVertex(attr), decSites),
+    deps);
+}
+
+{--
+ - The definition of a translation attribute in a production.
+ -
+ - @param prod  the full name of the production
+ - @param attr  the full name of the attribute
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - CONTRIBUTIONS ARE *NOT* POSSIBLE
+ -}
+abstract production transEq
+top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
+{
+  top.synTreeContribs := [(crossnames(prod, attr), top)];
+  top.prodGraphContribs := [(prod, top)];
+  local edges :: [(FlowVertex, FlowVertex)] = zipFst(lhsSynVertex(attr), deps);
+  top.flowEdges = if mayAffectFlowType then edges else [];
+  top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
 
 {--
@@ -238,7 +261,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.fwdTreeContribs := [(prod, top)];
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=forwardEqVertex(), snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = zipFst(forwardEqVertex, deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -271,7 +294,7 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
   top.fwdInhTreeContribs := [(crossnames(prod, attr), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=forwardInhVertex(attr), snd=_), deps);
+  top.flowEdges = zipFst(forwardInhVertex(attr), deps);
 }
 
 {--
@@ -281,17 +304,17 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
  - @param prod  the full name of the production
  - @param fName  the name of the local/production attribute
  - @param typeName  the full name of the type, or empty string if not a decorable type!
- - @param isNT  true if the type is a nonterminal
  - @param isFwrd  true if this is a forward production attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param outerDeps the dependencies of the top-level node constructed by this equation
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  isFwrd::Boolean deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  isFwrd::Boolean  deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=localEqVertex(fName), snd=_), deps);
+  top.flowEdges = zipFst(localEqVertex(fName), deps);
 }
 
 {--
@@ -301,16 +324,18 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  i
  - @param fName  the name of the local/production attribute
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param decSites  sharing sites for which this is an override equation
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localInhEq
-top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]  decSites::[VertexType]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=localInhVertex(fName, attr), snd=_), deps);
+  top.flowEdges = cartProd(
+    localInhVertex(fName, attr) :: map(\ v::VertexType -> v.inhVertex(attr), decSites),
+    deps);
 }
-
 {--
  - The definition of an inherited attribute for a translation attribute
  - on an rhs signature element in a production.
@@ -320,13 +345,20 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - @param transAttr  the full name of the translation attribute
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param baseDecSites  sharing sites for sigName, for which this is an override equation
+ - @param transDecSites  sharing sites for sigName.transAttr, for which this is an override equation
  -}
 abstract production transInhEq
 top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String  deps::[FlowVertex]
+  baseDecSites::[VertexType]  transDecSites::[VertexType]
 {
   top.inhTreeContribs := [(crossnames(prod, crossnames(sigName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=rhsInhVertex(sigName, s"${transAttr}.${attr}"), snd=_), deps);
+  top.flowEdges = cartProd(
+    rhsInhVertex(sigName, s"${transAttr}.${attr}") ::
+    map(\ v::VertexType -> v.inhVertex(s"${transAttr}.${attr}"), baseDecSites) ++
+    map(\ v::VertexType -> v.inhVertex(attr), transDecSites),
+    deps);
 }
 
 {--
@@ -338,18 +370,26 @@ top::FlowDef ::= prod::String  sigName::String  transAttr::String  attr::String 
  - @param transAttr  the full name of the translation attribute
  - @param attr  the full name of the attribute
  - @param deps  the dependencies of this equation on other flow graph elements
+ - @param baseDecSites  sharing sites for fName, for which this is an override equation
+ - @param transDecSites  sharing sites for fName.transAttr, for which this is an override equation
  -}
 abstract production localTransInhEq
 top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  deps::[FlowVertex]
+  baseDecSites::[VertexType]  transDecSites::[VertexType]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, s"${transAttr}.${attr}")), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=localSynVertex(fName, s"${transAttr}.${attr}"), snd=_), deps);
+  top.flowEdges = cartProd(
+    localInhVertex(fName, s"${transAttr}.${attr}") ::
+    map(\ v::VertexType -> v.inhVertex(s"${transAttr}.${attr}"), baseDecSites) ++
+    map(\ v::VertexType -> v.inhVertex(attr), transDecSites),
+    deps);
 }
 
 {--
  - Used for contributions to collections. Allows tacking on dependencies
  - to vertices.
+ - TODO: Handle contributions for inh collections on shared trees?
  -
  - @param prod  the full name of the production
  - @param src  the vertex to add dependencies to
@@ -359,7 +399,7 @@ abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
   top.prodGraphContribs := [(prod, top)];
-  local edges :: [(FlowVertex, FlowVertex)] = map(pair(fst=src, snd=_), deps);
+  local edges :: [(FlowVertex, FlowVertex)] = zipFst(src, deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -369,17 +409,15 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
  -
  - @param prod  the full name of the production
  - @param fName  the generated anonymous name for this decoration site
- - @param typeName  the full name of the type (usually a nonterminal, but may be a decorable type var)
- - @param isNT  true if the type is a nonterminal
  - @param deps  the dependencies of this equation on other flow graph elements
  - (no contributions are possible)
  -}
 abstract production anonEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  loc::Location  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  loc::Location  deps::[FlowVertex]
 {
   top.localTreeContribs := [(crossnames(prod, fName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=anonEqVertex(fName), snd=_), deps);
+  top.flowEdges = zipFst(anonEqVertex(fName), deps);
 }
 
 {--
@@ -396,7 +434,23 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
   top.localInhTreeContribs := [(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=anonInhVertex(fName, attr), snd=_), deps);
+  top.flowEdges = zipFst(anonInhVertex(fName, attr), deps);
+}
+
+{--
+ - The definition of a pattern match on an anonymous reference.
+ -
+ - @param prod  the full name of the production
+ - @param fName  the generated anonymous name for this decoration site
+ - @param deps  the dependencies of this equation on other flow graph elements
+ - (no contributions are possible)
+ -}
+abstract production anonScrutineeEq
+top::FlowDef ::= prod::String  fName::String  typeName::String  isNt::Boolean  refSet::[String]  gram::String  loc::Location  deps::[FlowVertex]
+{
+  top.localTreeContribs := [(crossnames(prod, fName), top)];
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges = zipFst(anonEqVertex(fName), deps);
 }
 
 {--
@@ -411,7 +465,7 @@ abstract production synOccursContextEq
 top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = map(pair(fst=vt.synVertex(attr), snd=_), map(vt.inhVertex, deps));
+  top.flowEdges = zipFst(vt.synVertex(attr), map(vt.inhVertex, deps));
 }
 
 {--
@@ -427,22 +481,68 @@ top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[
 }
 
 data PatternVarProjection
-  = patternVarProjection child::String  typeName::String  patternVar::String;
+  = patternVarProjection child::String  typeName::String;
 
 {--
  - A sub-term with a flow vertex, that has a known decoration site.
- - Like patternRuleEq, this is only used in creating stitch points.
+ - Also add the outer equation vertex dependencies on the parent.
  -
  - @param prod     the full name of the production
+ - @param sigNames the names of the children of prod
  - @param parent   the flow vertex of the enclosing production call
  - @param termProd the applied production (or dispatch signature)
- - @param sigName  the name of the child under which this term appears
  -}
 abstract production subtermDecEq
-top::FlowDef ::= prod::String  parent::VertexType  termProd::String  nt::String  sigName::String
+top::FlowDef ::= prod::String  sigNames::[String]  parent::VertexType  termProd::String
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = [];
+  top.flowEdges =
+    map(\ c -> (subtermOuterEqVertex(parent, termProd, c), parent.outerEqVertex), sigNames);
+}
+
+{--
+ - An unknown tree that has a decoration site, e.g. a higher-order attribute access or new(ref).
+ - Also add the equation vertex dependencies on subterm vertices.
+ - Other vertex types get their eq deps from a top-level localEq, fwdEq or synEq,
+ - which also handles suspect edges.
+ -
+ - @param prod  the full name of the production
+ - @param typeName  the full name of the type (usually a nonterminal, but may be a decorable type var)
+ - @param isNT  true if the type is a nonterminal
+ - @param vt    the decoration site vertex type, for which the stitch point is created
+ - @param deps  the dependencies of the defining expression on other flow graph elements
+ -}
+abstract production holeEq
+top::FlowDef ::= prod::String  typeName::String  isNt::Boolean  vt::VertexType  deps::[FlowVertex]
+{
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges =
+    case vt of
+    | subtermVertexType(_, _, _) -> cartProd([vt.eqVertex, vt.outerEqVertex], deps)
+    | _ -> []
+    end;
+}
+
+{--
+ - A dependency of a decoration site in a sharing equation,
+ - e.g. 'f.callProd' in 'f.callProd(@a)`.
+ -
+ - @param prod    the full name of the production
+ - @param decSite the decoration site vertex type
+ - @param deps    the dependencies of this decoration site's equation vertex on other flow graph elements
+ -}
+abstract production decSiteDepEq
+top::FlowDef ::= prod::String  decSite::VertexType  deps::[FlowVertex]
+{
+  top.prodGraphContribs := [(prod, top)];
+  top.flowEdges = cartProd(
+    decSite.outerEqVertex ::
+    -- The regular equation vertex deps will be added by the local/forward/trans equation,
+    -- and may need to be added as suspect edges, so don't add them here.
+    case decSite of
+    | subtermVertexType(_, _, _) -> [decSite.eqVertex]
+    | _ -> []
+    end, deps);
 }
 
 {--
@@ -471,10 +571,9 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
  - @param sigName    the name of the shared child in prod
  - @param sourceProd the full name of the (dispatching) production that forwarded to prod
  - @param source     the vertex type of the shared tree supplied by sourceProd as the shared child
- - @param parent     the vertex type of where prod is decorated in sourceProd - should always be forward or a forward prod attr.
  -}
 abstract production sigShareSite
-top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType parent::VertexType
+top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String source::VertexType
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges = [];
@@ -484,18 +583,3 @@ top::FlowDef ::= prod::String nt::String sigName::String sourceProd::String sour
 --
 
 fun crossnames String ::= a::String b::String = a ++ " @ " ++ b;
-
---
-
--- Used to get better error messages
-fun collectAnonOrigin [Pair<String  Location>] ::= f::[FlowDef] =
-  foldr(collectAnonOriginItem, [], f);
-fun collectAnonOriginItem [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>] =
-  case f of
-  | anonEq(_, fN, _, _, l, _) ->
-      -- Small hack to improve error messages. Ignore anonEq's that come from patterns
-      if startsWith("__scrutinee", fN)
-      then rest
-      else (fN, l) :: rest
-  | _ -> rest
-  end;

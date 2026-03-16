@@ -46,7 +46,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
 tracked nonterminal ActionCode_c withconfig,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv, flowDefs;
 
-synthesized attribute actionCode :: String;
+synthesized attribute actionCode :: ActionCode;
 
 concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
@@ -55,11 +55,11 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.defs := flatMap(hackTransformLocals, stmts.defs);
   propagate config, grammarName, compiledGrammars, env, frame, flowDefs, flowEnv;
 
-  top.actionCode =
+  top.actionCode = actionCode(acodeSrc=stmts.unparse, acodeTrans=
     -- action code translation goes in the env/syntax AST, so we might demand it
     -- when writing interface files in the presence of errors.
     if !null(top.errors) then ""
-    else flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
+    else flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation);
 
   top.errors := stmts.errors;
   top.errors <- if top.frame.permitPluck && !stmts.containsPluck then
