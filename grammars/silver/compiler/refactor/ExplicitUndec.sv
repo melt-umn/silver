@@ -72,7 +72,7 @@ top::Expr ::= @q::QName
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= @q::QName _ _
+top::Expr ::= @q::QName _ _ _
 {
   top.transforms <-
     if top.config.refactorExplicitUndec

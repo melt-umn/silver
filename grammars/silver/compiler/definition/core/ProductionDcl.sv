@@ -2,15 +2,16 @@ grammar silver:compiler:definition:core;
 
 tracked nonterminal ProductionImplements with config, grammarName, env, unparse, errors, implementsSig;
 tracked nonterminal ProductionSignature with config, grammarName, env, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName, implementedSig<NamedSignature>;
-tracked nonterminal ProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement, implementedSig<NamedSignatureElement>;
-tracked nonterminal ProductionRHS with config, grammarName, env, unparse, errors, defs, inputElements, elementCount, implementedSig<NamedSignatureElements>;
-tracked nonterminal ProductionRHSElem with config, grammarName, env, unparse, errors, defs, inputElements, deterministicCount, implementedSig<NamedSignatureElement>;
+tracked nonterminal ProductionLHS with config, grammarName, env, unparse, errors, defs, outputElement, elementName, implementedSig<NamedSignatureElement>;
+tracked nonterminal ProductionRHS with config, grammarName, env, unparse, errors, defs, inputElements, elementNames, elementCount, implementedSig<NamedSignatureElements>;
+tracked nonterminal ProductionRHSElem with config, grammarName, env, unparse, errors, defs, inputElements, elementNames, deterministicCount, implementedSig<NamedSignatureElement>;
 
 flowtype forward {env, signatureName} on ProductionSignature;
 flowtype forward {env} on ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
-flowtype decorate {forward, grammarName, flowEnv, implementedSig} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+flowtype decorate {forward, grammarName, flowEnv, implementedSig} on
+  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 propagate config, grammarName, errors on
   ProductionImplements, ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
@@ -147,7 +148,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
       lhs.outputElement,
       foldNamedSignatureElements(annotationsForNonterminal(lhs.outputElement.typerep, top.env)));
 } action {
-  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
+  sigNames = lhs.elementName :: rhs.elementNames;
 }
 
 concrete production productionSignatureNoCL
@@ -157,7 +158,7 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   
   forwards to productionSignature(nilConstraint(), '=>', @lhs, $2, @rhs);
 } action {
-  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
+  sigNames = lhs.elementName :: rhs.elementNames;
 }
 
 concrete production productionLHS
@@ -167,6 +168,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
   propagate env;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep, false);
+  top.elementName = id.name;
 
   top.defs := [lhsDef(top.grammarName, id.nameLoc, id.name, t.typerep)];
 
@@ -192,6 +194,7 @@ top::ProductionRHS ::=
   top.unparse = "";
 
   top.inputElements = [];
+  top.elementNames = [];
   top.elementCount = 0;
 }
 
@@ -201,6 +204,7 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.unparse = h.unparse ++ " " ++ t.unparse;
 
   top.inputElements = h.inputElements ++ t.inputElements;
+  top.elementNames = h.elementNames ++ t.elementNames;
   top.elementCount = 1 + t.elementCount;
   h.deterministicCount = t.elementCount;
 
@@ -217,6 +221,7 @@ top::ProductionRHSElem ::= ms::MaybeShared id::Name '::' t::TypeExpr
   propagate env;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep, ms.isShared)];
+  top.elementNames = [id.name];
 
   top.defs := [childDef(top.grammarName, id.nameLoc, id.name, t.typerep, ms.isShared)];
 
@@ -232,6 +237,7 @@ concrete production productionRHSElemType
 top::ProductionRHSElem ::= ms::MaybeShared t::TypeExpr
 {
   top.unparse = ms.unparse ++ t.unparse;
+  top.elementNames = [];
 
   forwards to productionRHSElem(@ms, name("_G_" ++ toString(top.deterministicCount)), '::', @t);
 }

@@ -55,7 +55,7 @@ fun makeSpecialLocalBinding String ::= fn::String  et::String  ty::String =
   s"final common.Thunk<${ty}> ${makeLocalValueName(fn)} = ${wrapThunkText(et, ty)};\n";
 
 aspect production lexicalLocalReference
-top::Expr ::= @q::QName  _ _
+top::Expr ::= @q::QName  _ _ _
 {
   top.translation = makeLocalValueName(q.lookupValue.fullName) ++ ".eval()";
 

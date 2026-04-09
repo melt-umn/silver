@@ -74,7 +74,7 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
     then [errFromOrigin(rhs, "Sharing in function parameters is not permitted.")]
     else [];
 } action {
-  sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
+  sigNames = rhs.elementNames;
 }
 
 concrete production functionSignatureNoCL
@@ -84,7 +84,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 
   forwards to functionSignature(nilConstraint(), '=>', @lhs, $2, @rhs);
 } action {
-  sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
+  sigNames = rhs.elementNames;
 }
 
 concrete production functionLHS

@@ -33,6 +33,11 @@ tracked nonterminal PrimPattern with
   unparse, errors, freeVars,
   downSubst, upSubst, downSubst2, upSubst2, finalSubst,
   scrutineeType, returnType, translation, initTransDecSites, originRules;
+flowtype PrimPattern = decorate {
+  env, config, compiledGrammars, grammarName, frame, originRules, finalSubst, downSubst,
+  flowEnv, decSiteVertexInfo, appDecSiteVertexInfo, alwaysDecorated, scrutineeVertexType,
+  scrutineeType, returnType
+};
 
 inherited attribute scrutineeType :: Type;
 inherited attribute returnType :: Type;
@@ -59,7 +64,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   propagate config, grammarName, env, freeVars, frame, compiledGrammars, finalSubst, originRules, flowEnv;
   e.decSiteVertexInfo = nothing();
   e.appDecSiteVertexInfo = nothing();
-  e.dispatchFlowDeps = [];
   e.isRoot = false;
 
   e.downSubst = top.downSubst;
@@ -550,8 +554,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   propagate finalSubst;
   
   local consdefs :: [Def] =
-    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), []),
-     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [])];
+    [lexicalLocalDef(top.grammarName, h.nameLoc, h_fName, elemType, nothing(), [], []),
+     lexicalLocalDef(top.grammarName, t.nameLoc, t_fName, top.scrutineeType, nothing(), [], [])];
   
   e.env = newScopeEnv(consdefs, top.env);
   e.isRoot = false;

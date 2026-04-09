@@ -56,7 +56,7 @@ closed nonterminal SyntaxTerminalModifier with compareTo, isEqual, cstEnv, cstEr
   prefixSeperatorToApply, componentGrammarMarkingTerminals, marking,
   terminalName, prettyName;
 
-propagate compareTo, isEqual on SyntaxTerminalModifier;
+propagate compareTo, isEqual, acode on SyntaxTerminalModifier;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -123,7 +123,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
   production allClsRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(allCls, top.cstEnv));
 
   top.cstErrors := []; 
-  top.classTerminalContribs := map(pair(fst=_, snd=top.terminalName), allCls);
+  top.classTerminalContribs := zipSnd(allCls, top.terminalName);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominates_ := flatMap((.domContribs), allClsRefs);
   top.submits_ := flatMap((.subContribs), allClsRefs);
@@ -172,10 +172,8 @@ top::SyntaxTerminalModifier ::= dom::[String]
  - The action to take whenever this terminal is SHIFTed.
  -}
 abstract production termAction
-top::SyntaxTerminalModifier ::= acode::String
-{
-  top.acode := acode;
-}
+top::SyntaxTerminalModifier ::= acode::ActionCode
+{}
 {--
  - The prefix separator to use for the terminal.
  - Doesn't seem super useful, but support this on terminals too for consistency

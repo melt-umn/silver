@@ -2,6 +2,6 @@ grammar hello;
 
 fun main IO<Integer> ::= largs::[String] =
   do {
-    print("Hello, world!\n");
+    print("Hello, World!\n");
     return 0;
   };

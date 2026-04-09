@@ -19,9 +19,12 @@ type NtName = String;
 function computeInitialFlowTypes
 EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
 {
-  -- We don't care what flow specs reference what
+  -- We don't care what flow specs reference what.
+  -- Also, exclude specs for 'decorate' which isn't a real attribute.
   local dropRefs::[(String, String, [String])] =
-    map(\ d::(String, String, [String], [String]) -> (d.1, d.2, d.3), specDefs);
+    filterMap(\ d::(String, String, [String], [String]) ->
+      if d.2 == "decorate" then nothing() else just((d.1, d.2, d.3)),
+      specDefs);
 
   local specs :: [(NtName, [(String, [String])])] =
     ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, dropRefs)));
@@ -29,14 +32,12 @@ EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
 fun initialFlowType Pair<NtName FlowType> ::= x::(NtName, [(String, [String])]) =
-  (x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
+  (x.fst, g:add(concat(unzipWith(zipFst, x.snd)), g:empty()));
 fun ntListLte Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst <= b.fst;
 fun ntListEq Boolean ::= a::Pair<NtName a>  b::Pair<NtName b> = a.fst == b.fst;
 fun ntListCoalesce [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]] =
   if null(l) then []
   else (head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
-fun toFlatEdges [Pair<String String>] ::= x::Pair<String [String]> =
-  map(pair(fst=x.fst, snd=_), x.snd);
 
 fun runFlowTypeInference
 (EnvTree<ProductionGraph>, EnvTree<FlowType>) ::=
@@ -70,7 +71,8 @@ fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
 };
 
 {--
- - Update a production graph using the current flow types.
+ - Update a production graph using the current flow types and graphs,
+ - including tile graphs and stitch points.
  -}
 production updateProdGraph
 top::InferState<Boolean> ::= prod::ProdName
@@ -95,16 +97,15 @@ top::InferState<()> ::= prod::ProdName
   local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.1);
   local currentFlowType :: FlowType = findFlowType(graph.lhsNt, top.stateIn.2);
   local newFlowType :: FlowType = g:add(
-    flatMap(expandVertexFilterTo(_, graph), graph.flowTypeVertexes),
+    flatMap(expandVertexFilterTo(_, graph), graph.flowTypeAttrs),
     currentFlowType);
   top.stateOut = (top.stateIn.1, rtm:update(graph.lhsNt, [newFlowType], top.stateIn.2));
   top.stateVal = ();
 }
 
--- Expand 'ver' using 'graph', then filter down to just those in 'inhs'
-fun expandVertexFilterTo [(String, String)] ::= ver::FlowVertex  graph::ProductionGraph =
-  map(pair(fst=ver.flowTypeName, snd=_),
-    filterLhsInh(set:toList(graph.edgeMap(ver))));
+-- Expand 'lhsSynVertex(syn)' using 'graph', then filter down to just those in 'inhs'
+fun expandVertexFilterTo [(String, String)] ::= syn::String  graph::ProductionGraph =
+  zipFst(syn, filterLhsInh(set:toList(graph.edgeMap(lhsSynVertex(syn)))));
 
 {--
  - Filters vertexes down to just the names of inherited attributes on the LHS
@@ -122,70 +123,3 @@ fun collectInhs [String] ::= f::FlowVertex =
   | lhsInhVertex(a) -> [a]
   | _ -> []
   end;
-
-
-{--
- - Flow type lookup names for vertices
- -}
-synthesized attribute flowTypeName :: String occurs on FlowVertex;
-
-aspect production lhsSynVertex
-top::FlowVertex ::= attrName::String
-{
-  top.flowTypeName = attrName;
-}
-aspect production lhsInhVertex
-top::FlowVertex ::= attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for inherited attributes?");
-}
-aspect production rhsSynVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child synthesized attributes?");
-}
-aspect production rhsInhVertex
-top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for child inherited attributes?");
-}
-aspect production localEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.flowTypeName = fName; -- secretly only ever "forward" when we actually demand flowTypeName
-}
-aspect production localSynVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local synthesized attributes?");
-}
-aspect production localInhVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for local inherited attributes?");
-}
-aspect production anonEqVertex
-top::FlowVertex ::= fName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon equations?");
-}
-aspect production anonSynVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon synthesized attributes?");
-}
-aspect production anonInhVertex
-top::FlowVertex ::= fName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
-}
-aspect production subtermSynVertex
-top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm synthesized attributes?");
-}
-aspect production subtermInhVertex
-top::FlowVertex ::= parent::VertexType prodName::String sigName::String  attrName::String
-{
-  top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for subterm inherited attributes?");
-}

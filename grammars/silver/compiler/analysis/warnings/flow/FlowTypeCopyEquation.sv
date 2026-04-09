@@ -13,6 +13,9 @@ grammar silver:compiler:analysis:warnings:flow;
 -- The flow environment can give us the authoritative list of those attributes to check.
 -- These may be from `options` and so requires the flowEnv.
 
+-- TODO: Lots of duplicate warnings here when a projected production exceeds a flow type.
+-- Somehow suppress them?  Or filter out edges from tile stitch points that exceed a flow type?
+
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name d::ProductionImplements ns::ProductionSignature body::ProductionBody
 {
@@ -40,7 +43,7 @@ function raiseImplicitFwdEqFlowTypes
 [Message] ::= config::Decorated CmdArgs  lhsNt::String  prod::String  attr::String  e::FlowEnv  myGraph::ProductionGraph  myFlow::EnvTree<FlowType> 
 {
   -- The actual dependencies for `forward.attr`
-  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(expandGraph([forwardEqVertex(), forwardSynVertex(attr)], myGraph));
+  local fwdFlowDeps :: set:Set<String> = onlyLhsInh(expandGraph(forwardVertexType().synDeps(attr), myGraph));
   -- The flow type for `attr` on `lhsNt`
   local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);
   -- Actual forwards equation deps not in the flow type for `attr`

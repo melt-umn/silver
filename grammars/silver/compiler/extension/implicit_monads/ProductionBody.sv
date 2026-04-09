@@ -191,7 +191,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.appDecSiteVertexInfo = nothing();
-  e.dispatchFlowDeps = [];
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -219,7 +218,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.appDecSiteVertexInfo = nothing();
-  e.dispatchFlowDeps = [];
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -258,7 +256,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   checkE.decSiteVertexInfo = nothing();
   checkE.alwaysDecorated = false;
   checkE.appDecSiteVertexInfo = nothing();
-  checkE.dispatchFlowDeps = [];
   checkE.isRoot = true;
   checkE.expectedMonad = attr.typerep;
 
@@ -299,7 +296,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   checkE.decSiteVertexInfo = nothing();
   checkE.alwaysDecorated = false;
   checkE.appDecSiteVertexInfo = nothing();
-  checkE.dispatchFlowDeps = [];
   checkE.isRoot = true;
   checkE.expectedMonad = attr.typerep;
 

@@ -130,7 +130,7 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | forwardVertexType_real() -> true
+  | forwardVertexType() -> true
   -- Note that we only support inh equations on trans attrs directly on a child/local,
   -- and not chained trans attrs.
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
@@ -138,14 +138,15 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(localVertexType(fName), transAttr) ->
     !null(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(_, _) -> false
-  | anonVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | anonVertexType(_, _, _) -> !null(lookupLocalInh(prodName, vt.vertexName, attrName, flowEnv))
+  | anonScrutineeVertexType(_, _, _) -> false
   | subtermVertexType(_, remoteProdName, sigName) ->
     vertexHasInhEq(remoteProdName, rhsVertexType(sigName), attrName, flowEnv)
   -- This is a tricky case since we don't know what decorated this prod.
-  -- checkEqDeps can count on missing LHS inh eqs being caught as flow issues elsewhere,
+  -- We can count on missing LHS inh eqs being caught as flow issues elsewhere,
   -- but here we are remotely looking for equations that might not be the direct dependency of
   -- anything in the prod flow graph.
-  | lhsVertexType_real() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
+  | lhsVertexType() -> false  -- Shouldn't ever be directly needed, since the LHS is never the dec site for another vertex.
   | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwarded to us.
   end;
 
@@ -167,11 +168,12 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
   | transAttrVertexType(localVertexType(fName), transAttr) ->
       length(lookupLocalInh(prodName, fName, s"${transAttr}.${attrName}", flowEnv))
   | transAttrVertexType(_, _) -> 0
-  | anonVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
+  | anonVertexType(_, _, _) -> length(lookupLocalInh(prodName, vt.vertexName, attrName, flowEnv))
+  | anonScrutineeVertexType(_, _, _) -> 0
   | subtermVertexType(_, remoteProdName, sigName) -> 0
-  | lhsVertexType_real() -> length(lookupSyn(prodName, attrName, flowEnv))
+  | lhsVertexType() -> length(lookupSyn(prodName, attrName, flowEnv))
   | forwardParentVertexType() -> 0
-  | forwardVertexType_real() -> length(lookupFwdInh(prodName, attrName, flowEnv))
+  | forwardVertexType() -> length(lookupFwdInh(prodName, attrName, flowEnv))
   end;
 
 -- Check if a production attribute is a forward production attribute.
@@ -179,8 +181,14 @@ fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::Strin
 -- If looking up in another prod, need to get the prod attr defs for the prod.
 fun isForwardProdAttr Boolean ::= prod::String  fName::String  e::FlowEnv =
   case lookupLocalEq(prod, fName, e) of
-  | localEq(_, _, _, _, isFwrd, _) :: _ -> isFwrd
+  | localEq(_, _, _, isFwrd, _) :: _ -> isFwrd
   | _ -> false
+  end;
+
+fun getAnonScrutineeRefSet [String] ::= prod::String  fName::String  e::FlowEnv =
+  case lookupLocalEq(prod, fName, e) of
+  | anonScrutineeEq(_, _, _, _, refSet, _, _, _) :: _ -> refSet
+  | _ -> []
   end;
 
 -- default set of inherited attributes required/assumed to exist for references

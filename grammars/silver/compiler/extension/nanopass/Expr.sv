@@ -26,7 +26,7 @@ aspect includeTrans on top::Expr of
 | localReference(q) -> \ _ -> baseExpr(^q)
 | nondecLocalReference(q) -> \ _ -> baseExpr(^q)
 | forwardReference(q) -> \ _ -> baseExpr(^q)
-| lexicalLocalReference(q, _, _) -> \ _ -> baseExpr(^q)
+| lexicalLocalReference(q, _, _, _) -> \ _ -> baseExpr(^q)
 | lambdaParamReference(q) -> \ _ -> baseExpr(^q)
 | shortFunParamReference(q) -> \ _ -> baseExpr(^q)
 | actionChildReference(q) -> \ _ -> baseExpr(^q)

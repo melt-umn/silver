@@ -86,8 +86,17 @@ top::DecSiteTree ::= prodName::String vt::VertexType d::DecSiteTree
 production directDec
 top::DecSiteTree ::= prodName::String vt::VertexType
 {
-  -- TODO: What if vt is an anonVertexType?
   top.decSitePP = s"${vt.vertexPP} of production ${prodName}";
+}
+
+{--
+ - An attribute could be supplied via a production that wasn't found in the environment
+ - (e.g. in a modification that wasn't imported).
+ -}
+production hiddenProdDec
+top::DecSiteTree ::= prodName::String vt::VertexType
+{
+  top.decSitePP = s"${vt.vertexPP} of hidden production ${prodName}";
 }
 
 {--
@@ -126,6 +135,15 @@ top::DecSiteTree ::= prodName::String sigName::String d::DecSiteTree
   top.decSitePP = s"projected dependencies for ${sigName} in production ${prodName}: ${d.decSitePP}";
   top.dbgPP = if top.maxDepth > 0 then s"projected dependencies for ${sigName} in production ${prodName}: ${d.dbgPP}" else "...";
   d.maxDepth = top.maxDepth - 1;
+}
+
+{--
+ - Scrutinee of a pattern match on a reference requires the inherited attribute to be in the reference set.
+ -}
+production anonScrutineeRefSetDec
+top::DecSiteTree ::= refSet::[String] grammarName::String loc::Location
+{
+  top.decSitePP = s"reference set {${implode(", ", refSet)}} of pattern match scrutinee at ${grammarName}:${loc.unparse}";
 }
 
 {--

@@ -109,7 +109,6 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   monadLocal.decSiteVertexInfo = nothing();
   monadLocal.alwaysDecorated = false;
   monadLocal.appDecSiteVertexInfo = nothing();
-  monadLocal.dispatchFlowDeps = [];
   monadLocal.isRoot = false;
   top.monadRewritten = monadLocal.monadRewritten;
   top.mtyperep = monadLocal.mtyperep;
@@ -124,7 +123,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; decSiteVertexInfo = nothing(); alwaysDecorated = false;
-                                     appDecSiteVertexInfo = nothing(); dispatchFlowDeps = []; flowEnv=top.flowEnv; expectedMonad=top.expectedMonad;
+                                     appDecSiteVertexInfo = nothing(); flowEnv=top.flowEnv; expectedMonad=top.expectedMonad;
                                      isRoot=top.isRoot;}
              in if isMonad(a.mtyperep, top.env) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
                    !isMonad(performSubstitution(x.snd, top.mDownSubst), top.env)
@@ -134,7 +133,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      config=top.config; flowEnv=top.flowEnv; monadicallyUsed=true;
                                      expectedMonad=top.expectedMonad;
                                      decSiteVertexInfo = nothing(); alwaysDecorated = false;
-                                     appDecSiteVertexInfo = nothing(); dispatchFlowDeps = []; isRoot=top.isRoot;}.monadicNames
+                                     appDecSiteVertexInfo = nothing(); isRoot=top.isRoot;}.monadicNames
                 else []
              end ++ l,
            monadLocal.monadicNames, zipWith(\x::Expr y::Type -> (x,y), es.rawExprs, ml.patternTypeList));
@@ -150,7 +149,8 @@ Boolean ::= elst::[Expr] env::Env sub::Substitution f::BlockContext gn::String
   | e::etl ->
     let etyp::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                                       downSubst=sub; finalSubst=sub;
-                                      compiledGrammars=cg; config=c; alwaysDecorated = false; flowEnv=fe;
+                                      compiledGrammars=cg; config=c; flowEnv=fe;
+                                      alwaysDecorated=false; decSiteVertexInfo=nothing(); appDecSiteVertexInfo=nothing();
                                       expectedMonad=em; isRoot=iR;}.mtyperep
     in
       fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em, iR)
@@ -419,7 +419,6 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                   decSiteVertexInfo = nothing();
                   alwaysDecorated = false;
                   appDecSiteVertexInfo = nothing();
-                  dispatchFlowDeps = [];
                   isRoot = top.isRoot;
                  }.monadRewritten,
              caseExprs);
@@ -435,7 +434,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                               compiledGrammars=top.compiledGrammars; grammarName=top.grammarName;
                               frame=top.frame; downSubst=top.mDownSubst; finalSubst=top.mDownSubst;
                               decSiteVertexInfo = top.decSiteVertexInfo;
-                              appDecSiteVertexInfo = top.appDecSiteVertexInfo; dispatchFlowDeps = []; isRoot=top.isRoot;
+                              appDecSiteVertexInfo = top.appDecSiteVertexInfo; isRoot=top.isRoot;
                              }.typerep
               in
                 if isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst
@@ -490,8 +489,7 @@ Expr ::= exprs::[Expr] names::[String] base::Expr
                               compiledGrammars=cg; config=c; flowEnv=fe;
                               expectedMonad=^em;
                               isRoot = iR; decSiteVertexInfo = nothing(); alwaysDecorated = false;
-                              appDecSiteVertexInfo = nothing();
-                              dispatchFlowDeps = []; }.mtyperep
+                              appDecSiteVertexInfo = nothing(); }.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, ^em, sub))
              then buildApplication(
@@ -598,7 +596,6 @@ top::MatchRule ::= pt::PatternList arr::Arrow_kwd e::Expr
   ne.decSiteVertexInfo = nothing();
   ne.appDecSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
-  ne.dispatchFlowDeps = [];
   ne.isRoot = false;
 
   top.patternTypeList = pt.patternTypeList;
@@ -621,7 +618,6 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ncond.decSiteVertexInfo = nothing();
   ncond.alwaysDecorated = false;
   ncond.appDecSiteVertexInfo = nothing();
-  ncond.dispatchFlowDeps = [];
   ncond.isRoot = false;
   local ne::Expr = ^e;
   ne.flowEnv = top.temp_flowEnv;
@@ -635,7 +631,6 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ne.decSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
   ne.appDecSiteVertexInfo = nothing();
-  ne.dispatchFlowDeps = [];
   ne.isRoot = false;
 
   top.patternTypeList = pt.patternTypeList;
@@ -658,7 +653,6 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ncond.decSiteVertexInfo = nothing();
   ncond.alwaysDecorated = false;
   ncond.appDecSiteVertexInfo = nothing();
-  ncond.dispatchFlowDeps = [];
   ncond.isRoot = false;
   local ne::Expr = ^e;
   ne.flowEnv = top.temp_flowEnv;
@@ -672,7 +666,6 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ne.decSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
   ne.appDecSiteVertexInfo = nothing();
-  ne.dispatchFlowDeps = [];
   ne.isRoot = false;
 
   top.patternTypeList = pt.patternTypeList;
@@ -725,7 +718,6 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Patt
   ne.decSiteVertexInfo = nothing();
   ne.alwaysDecorated = false;
   ne.appDecSiteVertexInfo = nothing();
-  ne.dispatchFlowDeps = [];
   ne.isRoot = false;
 
   ne.mDownSubst = top.mDownSubst;

@@ -86,6 +86,7 @@ concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
+  top.elementNames = [];
   propagate env;
   top.errors <- reg.errors;
 

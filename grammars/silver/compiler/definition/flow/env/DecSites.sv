@@ -26,7 +26,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
     end;
   local ntName::String =
     case vt of
-    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | forwardVertexType() -> ns.outputElement.typerep.typeName
     | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
     | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
     | _ -> ""
@@ -42,17 +42,16 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
 
   return
     viaProdVertexDec(prodName, vt,
-      -- Direct inherited equation at a decoration site
       (if vt.isInhDefVertex
+       -- Direct inherited equation at a decoration site
        then directDec(prodName, vt)
+       else if vt.isFlowTypeDepVertex
+       -- Tracked via a flow type, don't need to check here
+       then alwaysDec()
        else neverDec()) +
       case vt of
-      -- Via flow type
-      | lhsVertexType_real() -> error("findDecSites: lhsVertexType") -- Should never actually be a decoration site
-      | transAttrVertexType(lhsVertexType_real(), attrName) -> alwaysDec()
       -- Via forwarding
-      | forwardVertexType_real() -> forwardDec(prodName, nothing())
-      | localVertexType("forward") -> forwardDec(prodName, nothing())
+      | forwardVertexType() -> forwardDec(prodName, nothing())
       | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
           forwardDec(prodName, just(fName))
       -- Via projected remote equation
@@ -74,17 +73,21 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
               viaProdVertexDec(
                 prodOrSig, rhsVertexType(sigName),
                 product(map(\ prod::(String, [String]) ->
-                  case getTypeDcl(prodOrSig, realEnv) of
-                  | sigDcl :: _
-                      when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
-                      matches sn :: _ -> recurse(prod.1, rhsVertexType(sn))
+                  case drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2) of
+                  | sn :: _ -> recurse(prod.1, rhsVertexType(sn))
                   | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
                   end,
                 -- Look at all the (host) productions that implement this dispatch signature
                 getImplementingProds(prodOrSig, flowEnv))))
-            | _ -> error(s"findDecSites: Couldn't find dispatch ${sigName}")
+            -- TODO: This could be a production in a grammar that isn't in scope in the local environment,
+            -- e.g. in a modification, that was missed in the above getValueDcl(prodOrSig, realEnv).
+            -- We really should be using the global env here.
+            | _ -> hiddenProdDec(prodOrSig, rhsVertexType(sigName))
             end) *
           projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
+      -- Via the reference set of a pattern match scrutinee
+      | anonScrutineeVertexType(_, grammarName, l) ->
+        anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l)
       -- Via signature/dispatch sharing
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         product(unzipWith(recurse,
@@ -143,7 +146,7 @@ State<PDSState DecSiteTree> ::=
     end;
   local ntName::String =
     case vt of
-    | forwardVertexType_real() -> ns.outputElement.typerep.typeName
+    | forwardVertexType() -> ns.outputElement.typerep.typeName
     | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
     | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
     | _ -> ""
@@ -161,8 +164,7 @@ State<PDSState DecSiteTree> ::=
       viaVertex :: DecSiteTree <-
         case vt of
         -- Via forwarding
-        | forwardVertexType_real() -> pure(forwardDec(prodName, nothing()))
-        | localVertexType("forward") -> pure(forwardDec(prodName, nothing()))
+        | forwardVertexType() -> pure(forwardDec(prodName, nothing()))
         | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
             pure(forwardDec(prodName, just(fName)))
         -- Via projected remote equation
@@ -178,18 +180,26 @@ State<PDSState DecSiteTree> ::=
             -- This is a dispatch that we have already tried to resolve.
             then pure(neverDec())
             -- Otherwise, look at all the (host) productions that implement this dispatch signature
-            else map(sum, traverseA(
-              \ prod::(String, [String]) ->
-                case getTypeDcl(prodOrSig, realEnv) of
-                | sigDcl :: _
-                    when drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2)
-                    matches sn :: _ -> do {
+            else 
+              case getTypeDcl(prodOrSig, realEnv) of
+              | sigDcl :: _ -> map(sum, traverseA(
+                \ prod::(String, [String]) ->
+                  case drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2) of
+                  | sn :: _ -> do {
                       modifyState(\ seen::PDSState -> (seen.1, (prod.1, sn) :: seen.2));
                       recurse(prod.1, rhsVertexType(sn));
                     }
-                | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
-                end,
-              getImplementingProds(prodOrSig, flowEnv))))
+                  | _ -> error(s"findPossibleDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
+                  end,
+                getImplementingProds(prodOrSig, flowEnv)))
+              -- TODO: This could be a production in a grammar that isn't in scope in the local environment,
+              -- e.g. in a modification, that was missed in the above getValueDcl(prodOrSig, realEnv).
+              -- We really should be using the global env here.
+              | _ -> pure(alwaysDec())
+              end)
+        -- Via the reference set of a pattern match scrutinee
+        | anonScrutineeVertexType(_, grammarName, l) ->
+          pure(anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l))
         -- Via signature/dispatch sharing
         | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
           map(sum, sequence(unzipWith(recurse,
@@ -210,9 +220,12 @@ State<PDSState DecSiteTree> ::=
           end,
           getSynAttrsOn(ntName, realEnv));
       return
+       (if vt.isInhDefVertex
         -- Direct inherited equation at a decoration site
-        (if vt.isInhDefVertex
         then directDec(prodName, vt)
+        else if vt.isFlowTypeDepVertex
+        -- May be supplied non-locally
+        then alwaysDec()
         else neverDec()) +
         viaVertex + sum(viaDirectShare) + sum(concat(viaTransAttrShare));
     };
@@ -293,6 +306,8 @@ partial strategy attribute lookupDecSiteStep =
       product(map(depAttrDec(_, ^d), set:toList(onlyLhsInh(expandGraph(
         [rhsInhVertex(sigName, top.attrToResolve)],
         findProductionGraph(prodName, top.productionFlowGraphs))))))
+  | anonScrutineeRefSetDec(refSet, _, _) when contains(top.attrToResolve, refSet) ->
+      alwaysDec()
   | transAttrDec(attrName, d) ->
       case splitTransAttrInh(top.attrToResolve) of
       | just((transAttr, inhAttr)) when transAttr == attrName -> depAttrDec(inhAttr, ^d)
@@ -386,7 +401,7 @@ fun decSiteHasInhEq
 Boolean ::=
     prodName::String vt::VertexType attrName::String
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveInhEq(attrName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
+  resolveInhEq(prodName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs

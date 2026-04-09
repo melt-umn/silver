@@ -19,6 +19,10 @@ flowtype forward {frame, grammarName, compiledGrammars, config, env, flowEnv, do
 flowtype decorate {forward} on ProductionBody;
 flowtype decorate {forward, originRules} on ProductionStmts, ProductionStmt;
 
+flowtype unparse {} on ProductionBody, ProductionStmts, ProductionStmt;
+flowtype defs {forward} on ProductionBody, ProductionStmts, ProductionStmt;
+flowtype productionAttributes {forward} on ProductionBody, ProductionStmts, ProductionStmt;
+
 tracked nonterminal DefLHS with 
   config, grammarName, env, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
 
@@ -390,13 +394,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.isRoot = true;
-
-  top.errors <-
-    case getValueDcl(top.frame.fullName, top.env) of
-    | dcl :: _ when dcl.hasForward && attr.found && attr.attrDcl.isTranslation ->
-      [errFromOrigin(top, s"Overriding translation attribute ${attr.attrDcl.fullName} in a forwarding production is not currently supported.")]
-    | _ -> []
-    end;
 }
 
 abstract production inheritedAttributeDef implements AttributeDef

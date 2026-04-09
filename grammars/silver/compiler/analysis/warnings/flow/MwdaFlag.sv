@@ -17,6 +17,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnOrphaned = true;
   top.warnFwd = true;
   top.warnSharing = true;
+  -- warnSharingCycles is not enabled by default in --mwda
   forwards to @rest;
 }
 
@@ -30,6 +31,7 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnOrphaned = true;
   top.warnFwd = true;
   top.warnSharing = true;
+  top.warnSharingCycles = true;
 }
 
 aspect function parseArgs
