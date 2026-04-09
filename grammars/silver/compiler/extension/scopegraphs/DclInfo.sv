@@ -35,7 +35,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.env = top.env;
   e.isRoot = true;
   e.flowEnv = top.flowEnv;
-  e.dispatchFlowDeps = [];
   e.appDecSiteVertexInfo = nothing();
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = true;
