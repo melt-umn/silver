@@ -59,7 +59,9 @@ inherited attribute sgEnv::SGEnv;
 --
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
+top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems> 
+                  grammarName::String  grammarSource::String 
+                  grammarTime::Integer  generateLocation::String
 { g.sgEnv = sgEnv(foldr(consDefs, nilDefs(), g.scopeGraphDefs)); }
 
 --
@@ -80,7 +82,8 @@ propagate sgEnv, scopeGraphDefs on AGDcls;
 --
 
 aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 
+               'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   -- otherwise computed by fwd causing cycle
   top.scopeGraphDefs := [];
@@ -117,9 +120,3 @@ aspect production applicationExpr
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 { e.sgEnv = top.sgEnv;
   es.sgEnv = top.sgEnv; }
-
---------------------------------------------------------------------------------
-
-fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
-  searchEnvTree(sgfn, sgEnv.scopeGraphsTree)
-;

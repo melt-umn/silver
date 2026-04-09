@@ -21,9 +21,10 @@ terminal EdgeRight_t ']->';
 
 --
 
-concrete production graphSpec_c
-top::AGDcl ::= 'scope' ident::IdUpper_t 'labels' names::LabelNames 'as' labsId::IdUpper_t ';'
-{ forwards to graphSpec(just(ident.lexeme), ^names, labsId.lexeme); }
+-- no named SGs
+--concrete production graphSpec_c
+--top::AGDcl ::= 'scope' ident::IdUpper_t 'labels' names::LabelNames 'as' labsId::IdUpper_t ';'
+--{ forwards to graphSpec(just(ident.lexeme), ^names, labsId.lexeme); }
 
 concrete production graphDefaultSpec_c
 top::AGDcl ::= 'scope' 'labels' names::LabelNames 'as' labsId::IdUpper_t ';'
@@ -51,14 +52,15 @@ concrete production scopeAttributeDefault_c
 top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t ';'
 { forwards to scopeAttribute(qName(ident.lexeme), nothing(), ident.location); }
 
-concrete production scopeAttributeConvenience_c
-top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t '::' sg::IdUpper_t 'occurs' 'on' qs::QNames ';'
-{
-  forwards to appendAGDcl(
-    scopeAttribute(qName(ident.lexeme), just(sg.lexeme), ident.location),
-    makeOccursDclsHelp(qNameWithTL(qName(ident.lexeme), botlNone()), qs.qnames)
-  );
-}
+-- no named SGs
+--concrete production scopeAttributeConvenience_c
+--top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t '::' sg::IdUpper_t 'occurs' 'on' qs::QNames ';'
+--{
+--  forwards to appendAGDcl(
+--    scopeAttribute(qName(ident.lexeme), just(sg.lexeme), ident.location),
+--    makeOccursDclsHelp(qNameWithTL(qName(ident.lexeme), botlNone()), qs.qnames)
+--  );
+--}
 
 concrete production scopeAttributeConvenienceDefault_c
 top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t 'occurs' 'on' qs::QNames ';'
@@ -69,22 +71,12 @@ top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t 'occurs' 'on' qs::QNames ';'
   );
 }
 
-{-
-concrete production attributeDclSynMultiple
-top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames ';'
-{
-  top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
-  forwards to appendAGDcl(
-    attributeDclSyn($1, $2, @a, @tl, $5, @te, $10),
-    makeOccursDclsHelp(qNameWithTL(qNameId(^a), ^tl), qs.qnames));
-}
--}
-
 --
 
-concrete production existsScope_c
-top::ProductionStmt ::= 'existsScope' ident::IdLower_t '::' sg::IdUpper_t ';'
-{ forwards to scopeExists(ident.lexeme, just(sg.lexeme)); }
+-- no named SGs
+--concrete production existsScope_c
+--top::ProductionStmt ::= 'existsScope' ident::IdLower_t '::' sg::IdUpper_t ';'
+--{ forwards to scopeExists(ident.lexeme, just(sg.lexeme)); }
 
 concrete production existsScopeDefault_c
 top::ProductionStmt ::= 'existsScope' ident::IdLower_t ';'
@@ -92,17 +84,18 @@ top::ProductionStmt ::= 'existsScope' ident::IdLower_t ';'
 
 --
 
-concrete production mkScope_c
-top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t d::SGDatum ';'
-{ forwards to mkScope(ident.lexeme, just(sg.lexeme), d.datumExprOpt); }
+--concrete production mkScope_c
+--top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t d::SGDatum ';'
+--{ forwards to mkScope(ident.lexeme, just(sg.lexeme), d.datumExprOpt); }
 
 concrete production mkScopeDefault_c
 top::ProductionStmt ::= 'newScope' ident::IdLower_t d::SGDatum ';'
 { forwards to mkScope(ident.lexeme, nothing(), d.datumExprOpt); }
 
-concrete production mkScopeUndec_c
-top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t d::SGDatum ';'
-{ forwards to mkScopeUndec(^dl, ^attr, just(sg.lexeme), d.datumExprOpt); }
+-- no named SGs
+--concrete production mkScopeUndec_c
+--top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t d::SGDatum ';'
+--{ forwards to mkScopeUndec(^dl, ^attr, just(sg.lexeme), d.datumExprOpt); }
 
 concrete production mkScopeUndecDefault_c
 top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur d::SGDatum ';'
@@ -138,7 +131,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t 
 
 --
 
-concrete production visibleQuery_c
+concrete production reachableQuery_c
 top::Expr ::= 'query' '(' rx::SGRegex_c ',' pred::Expr ',' s::Expr ')'
 { 
   forwards to Silver_Expr{

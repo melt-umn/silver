@@ -5,61 +5,47 @@ grammar silver:compiler:extension:scopegraphs;
 
 terminal SGRegexBacktick_t '`';
 terminal SGRegexStar_t '*';
+terminal SGRegexPlus_t '+';
 terminal SGRegexQuestion_t '?';
+terminal SGRegexOr_t '|';
 
-{-
-nonterminal SGSGRegex;
-
-synthesized attribute regexApp::Expr occurs on SGSGRegex;
-
-concrete production regexLabel_c
-top::SGSGRegex ::= lab::IdLower_t
-{
-  top.regexApp = applicationExpr(
-    baseExpr(qName("regexLabel")),
-    '(',
-    oneAppExprs(
-      presentAppExpr(
-        applicationExpr(
-          baseExpr(qName("label_" ++ lab.lexeme)), '(', emptyAppExprs(), ')'
-        )
-      )
-    ),
-    ')'
-  );
-}
-
-concrete production regexStar_c
-top::SGSGRegex ::= r::SGSGRegex SGRegexStar_t
-{
-  top.regexApp = Silver_Expr{
-    regexStar($Expr{r.regexApp})
-  };
-}
-
-concrete production regexCat_c
-top::SGSGRegex ::= l::SGSGRegex Dot_t r::SGSGRegex
-{
-  top.regexApp = Silver_Expr{
-    regexCat($Expr{l.regexApp}, $Expr{r.regexApp})
-  };
-}
-
-concrete production regexMaybe_c
-top::SGSGRegex ::= r::SGSGRegex SGRegexQuestion_t
-{
-  top.regexApp = Silver_Expr{
-    regexMaybe($Expr{r.regexApp})
-  };
-}
--}
+--
 
 synthesized attribute toExpr::Expr;
 
 nonterminal SGRegex_c with toExpr;
 
+concrete production regexEps_c
+top::SGRegex_c ::= 
+{
+  top.toExpr = Silver_Expr {
+    regexEpsilon()
+  };
+}
+
+concrete production regexOr_c
+top::SGRegex_c ::= l::SGRegexCat_c '|' r::SGRegex_c
+{
+  top.toExpr = Silver_Expr {
+    regexOr(
+      $Expr{l.toExpr},
+      $Expr{r.toExpr}
+    )
+  };
+}
+
 concrete production regexCat_c
-top::SGRegex_c ::= l::SGRegex_c r::SGRegexRepetition_c
+top::SGRegex_c ::= r::SGRegexCat_c
+{
+  top.toExpr = r.toExpr;
+}
+
+--
+
+nonterminal SGRegexCat_c with toExpr;
+
+concrete production regexCatCat_c
+top::SGRegexCat_c ::= l::SGRegexCat_c r::SGRegexRepetition_c
 {
   top.toExpr = Silver_Expr {
     regexCat(
@@ -69,8 +55,8 @@ top::SGRegex_c ::= l::SGRegex_c r::SGRegexRepetition_c
   };
 }
 
-concrete production regexRepetition_c
-top::SGRegex_c ::= r::SGRegexRepetition_c
+concrete production regexCatRepetition_c
+top::SGRegexCat_c ::= r::SGRegexRepetition_c
 {
   top.toExpr = r.toExpr;
 }
@@ -79,16 +65,24 @@ top::SGRegex_c ::= r::SGRegexRepetition_c
 
 nonterminal SGRegexRepetition_c with toExpr;
 
-concrete production regexStar_c
-top::SGRegexRepetition_c ::= r::SGRegexLabel_c SGRegexStar_t
+concrete production regexRepetitionStar_c
+top::SGRegexRepetition_c ::= r::SGRegexLabel_c '*'
 {
   top.toExpr = Silver_Expr {
     regexStar($Expr{r.toExpr})
   };
 }
 
-concrete production regexMaybe_c
-top::SGRegexRepetition_c ::= r::SGRegexLabel_c SGRegexQuestion_t
+concrete production regexRepetitionPlus_c
+top::SGRegexRepetition_c ::= r::SGRegexLabel_c '+'
+{
+  top.toExpr = Silver_Expr {
+    regexCat(r.toExpr, regexStar($Expr{r.toExpr}))
+  };
+}
+
+concrete production regexRepetitionMaybe_c
+top::SGRegexRepetition_c ::= r::SGRegexLabel_c '?'
 {
   top.toExpr = Silver_Expr {
     regexMaybe(
@@ -97,7 +91,7 @@ top::SGRegexRepetition_c ::= r::SGRegexLabel_c SGRegexQuestion_t
   };
 }
 
-concrete production regexLabelItem_c
+concrete production regexRepetitionLabel_c
 top::SGRegexRepetition_c ::= r::SGRegexLabel_c
 {
   top.toExpr = r.toExpr;
@@ -111,7 +105,11 @@ concrete production regexLabel_c
 top::SGRegexLabel_c ::= SGRegexBacktick_t lab::IdLower_t
 {
   top.toExpr = Silver_Expr {
-    regexLabel($Expr{applicationExpr(baseExpr(qName("label_" ++ lab.lexeme)), '(', emptyAppExprs(), ')')})
+    regexLabel($Expr{
+      applicationExpr(
+        baseExpr(qName("label_" ++ lab.lexeme)),
+        '(', emptyAppExprs(), ')')
+    })
   };
 }
 

@@ -12,7 +12,8 @@ top::AGDcl ::= attr::QName sg::Maybe<String> loc::Location
       case res of
       | h::[] -> (h.labelSet, [])
       | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '" ++ sgName ++ "'")])
+                                      " scope graph declarations found named '"
+                                      ++ sgName ++ "'")])
       end
     end;
 
@@ -41,43 +42,3 @@ top::AGDcl ::= attr::QName sg::Maybe<String> loc::Location
       ]
     else [];
 }
-
---
-
-fun scopeInh AGDcl ::= sg::String attr::String =
-  Silver_AGDcl {
-    inherited attribute $Name{name(attr)}::$TypeExpr{scopeTypeExpr(sg)};
-  };
-
-fun scopeSyns AGDcl ::= sg::String attr::String labs::[String] =
-  let
-    oneSyn::(AGDcl ::= String) = \lab::String ->
-      Silver_AGDcl {
-        synthesized attribute 
-          $Name{nScopeAttr(attr, lab)}::[$TypeExpr{scopeTypeExpr(sg)}]
-        with ++;
-      }
-  in
-    foldrLastElem(
-      \lab::String acc::AGDcl -> appendAGDcl(oneSyn(lab), acc),
-      \lab::String -> oneSyn(lab),
-      labs
-    )
-  end;
-
-fun inhScopeType Type ::= grammarName::String labs::[String] =
-  decoratedType(
-    nonterminalType(
-      "silver:compiler:extension:scopegraphs:Scope",
-      [], false, false
-    ),
-    inhSetType(map(\lab::String ->grammarName ++ ":" ++ lab, labs))
-  )
-;
-
-fun undecScopeAttrDcl AGDcl ::= attr::String =
-  Silver_AGDcl {
-    synthesized attribute
-      $Name{nScopeAttr(attr, "undec")}::[Scope]
-    with ++;
-  };

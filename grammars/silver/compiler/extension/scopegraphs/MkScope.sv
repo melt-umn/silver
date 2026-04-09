@@ -17,7 +17,8 @@ top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Maybe<Expr>
       case res of
       | h::[] -> (h.labelSet, [])
       | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '" ++ sgName ++ "'")])
+                                      " scope graph declarations found named '"
+                                      ++ sgName ++ "'")])
       end
     end;
   
@@ -46,21 +47,6 @@ top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Maybe<Expr>
 
   top.errors <- labs.2;
 }
-
--- inh attr base exprs
-
-fun mkScopeBaseInhs ProductionStmt ::= s::String labs::[String] =
-  let baseEq::(ProductionStmt ::= String) = \lab::String ->
-    Silver_ProductionStmt {
-      $QName{qName(s)}.$QName{qName(lab)} := [];
-    }
-  in
-    foldrLastElem(
-      \lab::String acc::ProductionStmt -> productionStmtAppend(baseEq(lab), acc),
-      \lab::String -> baseEq(lab),
-      labs
-    )
-  end;
 
 --
 
