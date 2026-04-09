@@ -21,6 +21,7 @@ top::AttributeDclInfo ::= fn::String ty::Type sglabs::[String]
   top.isInherited = true;
 }
 
+
 -----------------------------
 -- Scope attribute definition
 
@@ -62,6 +63,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   );
 }
 
+
 --------------------
 -- Scope attribution
 
@@ -87,4 +89,24 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName
       aspectBaseDefinitions(^nt, at.name, labs)
     )
   );
+}
+
+
+----------------------------------
+-- Scope graph definition (labels)
+
+synthesized attribute labelSet::[String];
+
+nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labelSet;
+
+abstract production graphDcl
+top::ScopeGraphDclInfo ::= fn::String labs::[String]
+{
+  top.fullName = fn;
+  top.isEqual = ^top.compareTo == ^top;
+  top.labelSet = labs;
+}
+
+instance Eq ScopeGraphDclInfo {
+  eq = \l::ScopeGraphDclInfo r::ScopeGraphDclInfo -> l.fullName == r.fullName;
 }
