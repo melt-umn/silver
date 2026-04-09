@@ -28,7 +28,7 @@ terminal EdgeRight_t ']->';
 
 concrete production graphDefaultSpec_c
 top::AGDcl ::= 'scope' 'labels' names::LabelNames 'as' labsId::IdUpper_t ';'
-{ forwards to graphSpec(nothing(), ^names, labsId.lexeme); }
+{ forwards to graphSpec({-nothing(),-} ^names, labsId.lexeme); } -- no named SGs
 
 --
 

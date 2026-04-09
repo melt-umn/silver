@@ -5,25 +5,23 @@ grammar silver:compiler:extension:scopegraphs;
 
 production graphSpec
 top::AGDcl ::=
-  sgId::Maybe<String>
+  --sgId::Maybe<String> -- no names SGs
   qns::LabelNames
   labsId::String
 {
-  -- alias of the set of inherited attributes corresponding to graph label set
-  nondecorated local alias::AGDcl = Silver_AGDcl {
-    type $Name{name(labsId)} =
-      $TypeExpr{inhSetTypeExpr(terminal(InhSetLCurly_t, "{"), qns.fsInhs, '}')};
-  };
+  -- 'graph definition' consisting of an identifier and constituent labels
+  top.scopeGraphDefs := [
+    scopeGraphDef(defaultEnvItem(graphDcl("_Scope_Default", qns.names)))
+  ];
 
   forwards to appendAGDcl(
-    alias,
+    Silver_AGDcl {
+      type $Name{name(labsId)} = $TypeExpr{
+        inhSetTypeExpr(terminal(InhSetLCurly_t, "{"), qns.fsInhs, '}')
+      };
+    },
     labelsAGDcls(labsId, qns.names)
   );
-
-  local sgName::String = fromMaybe("_Scope_Default", sgId);
-
-  -- 'graph definition' consisting of an identifier and constituent labels
-  top.scopeGraphDefs := [scopeGraphDef(defaultEnvItem(graphDcl(sgName, qns.names)))];
 }
 
 --------------
@@ -44,6 +42,6 @@ top::LabelNames ::= lab::String ns::LabelNames
 {
   top.names = lab::ns.names;
   top.fsInhs = consFlowSpecInhs(
-    flowSpecInh(qNameAttrOccur(qName(lab))), ',', ns.fsInhs
-  );
+                flowSpecInh(qNameAttrOccur(qName(lab))), ',',
+                ns.fsInhs);
 }

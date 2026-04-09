@@ -54,15 +54,59 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       end
     end;
 
-  forwards to productionStmtAppend(
-    inheritedAttributeDef(dl, attr, ^e),
-    productionStmtAppend(
-      edgeContributions(^dl, ^attr, e, labs),
-      undecContributions(^dl, ^attr, e)
-    )
-  );
+  local maybeAttrContribs::Maybe<ProductionStmt> = contributions(^dl, ^attr, e, labs);
+
+  nondecorated local attrContribs::ProductionStmt =
+    fromMaybe(emptyProductionStmt(), maybeAttrContribs);
+
+  top.errors <-
+    if !maybeAttrContribs.isJust 
+    then [errFromOrigin(top,
+            "definition of scope attribute " ++ attr.name ++ " on child " ++
+            dl.name ++ " must be a reference to a locally asserted scope, " ++ 
+            "or a scope attribute occurring on " ++ top.frame.signature.outputElement.elementName)]
+    else [];
+
+  forwards to productionStmtAppend(inheritedAttributeDef(dl, attr, ^e),
+                                   attrContribs);
 }
 
+-- todo: generate appropriate type error message if expr is not a Decorated Scope
+fun contributions Maybe<ProductionStmt> ::=
+  dl::DefLHS attr::QNameAttrOccur e::Decorated Expr labs::[String] =
+  let asEdgeContribBaseExpr::(ProductionStmt ::= QName String) = \qn::QName lab::String ->
+    Silver_ProductionStmt {
+      $QName{qn}.$QName{qName(lab)} <-
+        $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_" ++ lab)}; }
+  in
+  let asUndecContribBaseExpr::(ProductionStmt ::= QName) = \qn::QName ->
+    Silver_ProductionStmt {
+      $QName{qName(qn.name ++ "_undec")} <-
+        $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_undec")}; }
+  in
+    case e of
+    | baseExpr(qn) ->
+        let edgeContribs::[ProductionStmt] =
+              map(asEdgeContribBaseExpr(^qn, _), labs) in
+        let undecContrib::ProductionStmt = 
+              asUndecContribBaseExpr(^qn)
+        in
+          just(foldr(productionStmtAppend(_, _), emptyProductionStmt(),
+                    undecContrib::edgeContribs))
+        end end
+    | access(baseExpr(qn1), _, qNameAttrOccur(qn2)) ->
+        let allContribs::[ProductionStmt] =
+          map(\i::String -> Silver_ProductionStmt {
+                $QName{^qn1}.$QName{qName(qn2.name ++ "_" ++ i)} <-
+                  $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_" ++ i)};},
+              "undec"::labs)
+        in
+          just(foldr(productionStmtAppend(_, _), emptyProductionStmt(),
+                    allContribs))
+        end
+    | _ -> nothing()
+    end 
+  end end;
 
 --------------------
 -- Scope attribution
@@ -84,13 +128,36 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName
 
   forwards to appendAGDcl(
     defaultAttributionDcl(^at, botlNone(), ^nt, ^nttl),
-    appendAGDcl(
-      edgeSynsOccurDcls(^at, ^nt, ^nttl, labs),
-      aspectBaseDefinitions(^nt, at.name, labs)
-    )
+    edgeOccDclsBaseDefs(^at, ^nt, ^nttl, labs)
   );
 }
 
+fun edgeOccDclsBaseDefs AGDcl ::= at::QName nt::QName nttl::BracketedOptTypeExprs
+                                  labs::[String] =
+  let baseDef::(ProductionStmt ::= String) = \lab::String ->
+    Silver_ProductionStmt { top.$QName{qnScopeAttr(at.name, lab)} := []; }
+  in
+  let occDcl::(AGDcl ::= String) = \lab::String ->
+    attributionDcl('attribute', appendToQName(at, "_" ++ lab), botlNone(),
+                   'occurs', 'on', nt, nttl, ';')
+  in
+  let occsBases::(AGDcl, ProductionStmt) = 
+    foldrLastElem(
+      \lab::String acc::(AGDcl, ProductionStmt) ->
+        (appendAGDcl(occDcl(lab), acc.1), productionStmtAppend(baseDef(lab), acc.2)),
+      \lab::String -> 
+        (occDcl(lab), baseDef(lab)),
+      "undec"::labs
+    )
+  in
+    appendAGDcl(
+      occsBases.1,
+      Silver_AGDcl{
+        aspect default production top::$TypeExpr{nominalTypeExpr(nt.qNameType)} ::=
+        { $ProductionStmt{occsBases.2} }
+      }
+    )
+  end end end;
 
 ----------------------------------
 -- Scope graph definition (labels)

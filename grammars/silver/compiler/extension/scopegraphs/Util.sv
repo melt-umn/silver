@@ -2,101 +2,24 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
-fun mkLabelInhs AGDcl ::= sg::String labs::[String] =
-  foldr(
-    \lab::String acc::AGDcl ->
-      appendAGDcl(
-        Silver_AGDcl{
-          inherited attribute
-            $Name{name(lab)}::[$TypeExpr{scopeTypeExpr(sg)}]
-          occurs on Scope;
-        },
-        acc
-      ),
-    emptyAGDcl(),
-    labs
-  );
-
 fun scopeTypeExpr TypeExpr ::= sg::String =
   Silver_TypeExpr{
-    Decorated Scope with
-      $TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))}
+    Decorated Scope with $TypeExpr{
+      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))
+    }
   };
 
-fun labelProdName
-Name ::= lab::String =
-  name("label_" ++ lab);
+fun qnScopeAttr QName ::= s::String l::String = qName(s ++ "_" ++ l);
+fun nScopeAttr Name ::= s::String l::String = name(s ++ "_" ++ l);
 
-fun qnScopeAttr QName ::= s::String l::String = 
-  qName(s ++ "_" ++ l);
+---------
+-- Env.sv
 
-fun nScopeAttr Name ::= s::String l::String =
-  name(s ++ "_" ++ l);
-
+fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
+  searchEnvTree(sgfn, sgEnv.scopeGraphsTree);
 
 -------------
 -- DclInfo.sv
-
--- todo: revisit cases here. need something more intricate and/or error message generation if patterns not matched
-fun edgeContributions ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur
-                                         e::Decorated Expr labs::[String] =
-  let edgeContrib::(ProductionStmt ::= String) = \lab::String ->
-    case e of
-    | baseExpr(qn) ->
-      Silver_ProductionStmt {
-        $QName{^qn}.$QName{qName(lab)}
-          <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_" ++ lab)};
-      }
-    | access(baseExpr(qn1), _, qNameAttrOccur(qn2)) ->
-      Silver_ProductionStmt {
-        $QName{^qn1}.$QName{qName(qn2.name ++ "_" ++ lab)}
-          <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_" ++ lab)};
-      }
-    | _ ->
-      error("edgeContributions")
-    end
-  in
-    foldrLastElem(
-      \lab::String acc::ProductionStmt -> productionStmtAppend(edgeContrib(lab), acc),
-      \lab::String -> edgeContrib(lab),
-      labs
-    )
-  end;
-
--- todo: revisit cases here. need something more intricate and/or error message generation if patterns not matched
-fun undecContributions ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur
-                                          e::Decorated Expr =
-  case e of
-  | baseExpr(qn) ->
-    Silver_ProductionStmt {
-      $QName{qName(qn.name ++ "_undec")}
-        <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_undec")};
-    }
-  | access(baseExpr(qn1), _, qNameAttrOccur(qn2)) ->
-    Silver_ProductionStmt {
-      $QName{^qn1}.$QName{qName(qn2.name ++ "_undec")}
-        <- $QName{qName(dl.name)}.$QName{qName(attr.name ++ "_undec")};
-    }
-  | _ ->
-    error("undecContributions")
-  end;
-
---
-
-fun edgeSynsOccurDcls AGDcl ::= at::QName nt::QName nttl::BracketedOptTypeExprs
-                                labs::[String] =
-  let occDcl::(AGDcl ::= String) = \lab::String ->
-    attributionDcl(
-      'attribute', appendToQName(at, "_" ++ lab), botlNone(),
-      'occurs', 'on', nt, nttl, ';'
-    )
-  in
-    foldrLastElem(
-      \lab::String acc::AGDcl -> appendAGDcl(occDcl(lab), acc),
-      \lab::String -> occDcl(lab),
-      "undec"::labs
-    )
-  end;
 
 fun appendToQName QName ::= orig::QName extra::String =
   case orig of
@@ -104,35 +27,6 @@ fun appendToQName QName ::= orig::QName extra::String =
   | qNameCons(id, _, qn) -> qNameCons(^id, ':', appendToQName(^qn, extra))
   | qNameError(_) -> error("appendToQName")
   end;
-
-fun aspectBaseDefinitions AGDcl ::= nt::QName s::String labs::[String] =
-  let baseDef::(ProductionStmt ::= String) = \lab::String ->
-    Silver_ProductionStmt {
-      top.$QName{qnScopeAttr(s, lab)} := [];
-    }
-  in
-    Silver_AGDcl {
-      aspect default production top::$TypeExpr{nominalTypeExpr(nt.qNameType)} ::=
-      {
-        $ProductionStmt{
-          foldrLastElem(
-            \lab::String acc::ProductionStmt -> productionStmtAppend(baseDef(lab), acc),
-            \lab::String -> baseDef(lab),
-            "undec"::labs
-          )
-        }
-      }
-    }
-  end;
-
-
----------
--- Env.sv
-
-fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
-  searchEnvTree(sgfn, sgEnv.scopeGraphsTree)
-;
-
 
 ---------------
 -- GraphSpec.sv
@@ -155,7 +49,7 @@ fun labelsAGDcls AGDcl ::= sg::String labs::[String] =
 -- Generate a Label production declaration for a given label
 fun labelProd AGDcl ::= sg::String lab::String =
   Silver_AGDcl {
-    production $Name{labelProdName(lab)}
+    production $Name{name("label_" ++ lab)}
     top::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))}> ::=
     {
       top.name = $Expr{stringConst(terminal(String_t, "\"" ++ lab ++ "\""))};
@@ -169,7 +63,6 @@ fun labelInh AGDcl ::= sg::String lab::String =
     inherited attribute $Name{name(lab)}::[$TypeExpr{scopeTypeExpr(sg)}] with ++
     occurs on Scope;
   };
-
 
 -------------
 -- MkScope.sv
@@ -188,7 +81,6 @@ fun mkScopeBaseInhs ProductionStmt ::= s::String labs::[String] =
       labs
     )
   end;
-
 
 --------------------
 -- ScopeAttribute.sv
