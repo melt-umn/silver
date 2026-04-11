@@ -10,7 +10,7 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
 
   forwards to edgeAssertionBoth(
     \e::Expr -> Silver_ProductionStmt{$QName{^src}.$QName{qName(lab)} <- [$Expr{e}];},
-    localReference(src).typerep, lab, ^tgt, []--labels
+    localReference(src).typerep, lab, ^tgt
   );
 }
 
@@ -24,7 +24,7 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
   forwards to edgeAssertionBoth(
     \e::Expr ->
       Silver_ProductionStmt{$QName{qName(dl.name)}.$QName{qnScopeAttr(attr.name, lab)} <- [$Expr{e}];},
-    attr.typerep, lab, ^tgt, []--labels
+    attr.typerep, lab, ^tgt
   );
 }
 
@@ -32,7 +32,7 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
 
 production edgeAssertionBoth
 top::ProductionStmt ::=
-  lhs::(ProductionStmt ::= Expr) srcTy::Type lab::String tgt::Expr possibleLabs::[String]
+  lhs::(ProductionStmt ::= Expr) srcTy::Type lab::String tgt::Expr
 {
   propagate env;
 
