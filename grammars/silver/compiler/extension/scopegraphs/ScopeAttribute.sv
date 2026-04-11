@@ -10,7 +10,7 @@ top::AGDcl ::= attr::QName sg::Maybe<String> loc::Location
   local labs::([String], [Message]) =
     let res::[ScopeGraphDclInfo] = lookupGraphDcl(sgName, top.sgEnv) in
       case res of
-      | h::[] -> (h.labelSet, [])
+      | h::[] -> (h.labels, [])
       | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
                                       " scope graph declarations found named '"
                                       ++ sgName ++ "'")])

@@ -165,16 +165,18 @@ fun edgeOccDclsBaseDefs AGDcl ::= at::QName nt::QName nttl::BracketedOptTypeExpr
 ----------------------------------
 -- Scope graph definition (labels)
 
-synthesized attribute labelSet::[String];
+synthesized attribute labels::[String];
+synthesized attribute labelsFn::[String];
 
-nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labelSet;
+nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labels, labelsFn;
 
 abstract production graphDcl
-top::ScopeGraphDclInfo ::= fn::String labs::[String]
+top::ScopeGraphDclInfo ::= grammarName::String name::String labs::[String]
 {
-  top.fullName = fn;
+  top.fullName = {-grammarName ++ ":" ++-} name;
   top.isEqual = ^top.compareTo == ^top;
-  top.labelSet = labs;
+  top.labels = labs;
+  top.labelsFn = map(\l::String -> grammarName ++ ":" ++ l, labs);
 }
 
 instance Eq ScopeGraphDclInfo {

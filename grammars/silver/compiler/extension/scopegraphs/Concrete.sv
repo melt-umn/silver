@@ -44,9 +44,10 @@ top::LabelNames ::= lab::IdLower_t ',' ns::LabelNames
 
 --
 
-concrete production scopeAttribute_c
-top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t '::' sg::IdUpper_t ';'
-{ forwards to scopeAttribute(qName(ident.lexeme), just(sg.lexeme), ident.location); }
+-- no named SGs
+--concrete production scopeAttribute_c
+--top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t '::' sg::IdUpper_t ';'
+--{ forwards to scopeAttribute(qName(ident.lexeme), just(sg.lexeme), ident.location); }
 
 concrete production scopeAttributeDefault_c
 top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t ';'

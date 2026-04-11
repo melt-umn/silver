@@ -5,13 +5,13 @@ grammar silver:compiler:extension:scopegraphs;
 
 production graphSpec
 top::AGDcl ::=
-  --sgId::Maybe<String> -- no names SGs
+  --sgId::Maybe<String> -- no named SGs
   qns::LabelNames
   labsId::String
 {
   -- 'graph definition' consisting of an identifier and constituent labels
   top.scopeGraphDefs := [
-    scopeGraphDef(defaultEnvItem(graphDcl("_Scope_Default", qns.names)))
+    scopeGraphDef(defaultEnvItem(graphDcl(top.grammarName, "_Scope_Default", sort(qns.names))))
   ];
 
   forwards to appendAGDcl(
