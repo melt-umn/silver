@@ -79,45 +79,41 @@ top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t 'occurs' 'on' qs::QNames ';'
 --{ forwards to scopeExists(ident.lexeme, just(sg.lexeme)); }
 
 concrete production existsScopeDefault_c
-top::ProductionStmt ::= 'existsScope' ident::IdLower_t ';'
-{ forwards to scopeExists(ident.lexeme, nothing()); }
+top::ProductionStmt ::= 'existsScope' ident::Name ';'
+{ forwards to scopeExists(^ident, nothing()); }
 
 --
 
 --concrete production mkScope_c
 --top::ProductionStmt ::= 'newScope' ident::IdLower_t '::' sg::IdUpper_t d::SGDatum ';'
---{ forwards to mkScope(ident.lexeme, just(sg.lexeme), d.datumExprOpt); }
+--{ forwards to mkScope(ident.lexeme, just(sg.lexeme), d.datumExpr); }
 
-concrete production mkScopeDefault_c
-top::ProductionStmt ::= 'newScope' ident::IdLower_t d::SGDatum ';'
-{ forwards to mkScope(ident.lexeme, nothing(), d.datumExprOpt); }
+concrete production mkScopeLocal_c
+top::ProductionStmt ::= 'newScope' ident::Name d::SGDatum ';'
+{ forwards to mkScopeLocal(qName(ident.name), nothing(), d.datumExpr); }
 
 -- no named SGs
---concrete production mkScopeUndec_c
+--concrete production mkScopeInherited_c
 --top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur '::' sg::IdUpper_t d::SGDatum ';'
---{ forwards to mkScopeUndec(^dl, ^attr, just(sg.lexeme), d.datumExprOpt); }
+--{ forwards to mkScopeInherited(^dl, ^attr, just(sg.lexeme), d.datumExpr); }
 
-concrete production mkScopeUndecDefault_c
-top::ProductionStmt ::= 'newScope' dl::DefLHS '.' attr::QNameAttrOccur d::SGDatum ';'
-{ forwards to mkScopeUndec(^dl, ^attr, nothing(), d.datumExprOpt); }
+concrete production mkScopeInheritedDefault_c
+top::ProductionStmt ::= 'newScope' lhsqn::QName '.' attrqn::QName d::SGDatum ';'
+{ forwards to mkScopeInherited(^lhsqn, ^attrqn, nothing(), d.datumExpr); }
 
 --
 
 nonterminal SGDatum;
 
-synthesized attribute datumExprOpt::Maybe<Expr> occurs on SGDatum;
+synthesized attribute datumExpr::Expr occurs on SGDatum;
 
 concrete production sgDatum_c
 top::SGDatum ::= '->' datum::Expr
-{
-  top.datumExprOpt = just(^datum);
-}
+{ top.datumExpr = ^datum; }
 
 concrete production sgDatumNone_c
 top::SGDatum ::=
-{
-  top.datumExprOpt = nothing();
-}
+{ top.datumExpr = Silver_Expr{ datumDefault() }; }
 
 --
 

@@ -2,15 +2,56 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
-production mkScope
-top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Maybe<Expr>
+production mkScopeLocal
+top::ProductionStmt ::= locqn::QName sg::Maybe<String> datum::Expr
 {
-  nondecorated local datumReal::Expr = fromMaybe(
-    Silver_Expr{datumDefault()},
-    datum
-  );
+  propagate env, flowEnv, config, compiledGrammars, grammarName, frame, finalSubst;
+  thread downSubst, upSubst on top, datum, top;
 
+  datum.isRoot = true;
+  datum.decSiteVertexInfo = nothing();
+  datum.appDecSiteVertexInfo = nothing();
+
+  -- avoid errors from forward, hide '_undec' attrs
+  top.errors := locqn.lookupValue.errors;
+  top.errors <- datum.errors;
+
+  top.defs := [];
+
+  forwards to Silver_ProductionStmt {
+    $QName{appendToQName(^locqn, "_undec")} <-
+      [scope($Expr{^datum})];
+  };
+}
+
+production mkScopeInherited
+top::ProductionStmt ::= lhsqn::QName attrqn::QName sg::Maybe<String> datum::Expr
+{
+  top.defs := [];
+
+  forwards to Silver_ProductionStmt {
+    $QName{^lhsqn}.$QName{appendToQName(^attrqn, "_undec")} <-
+      [scope($Expr{^datum})];
+  };
+}
+
+--
+
+production scopeExists
+top::ProductionStmt ::= s::Name sg::Maybe<String>
+{
+  local ident::String = s.name;
   local sgName::String = fromMaybe("_Scope_Default", sg);
+
+  nondecorated local mkScopeExpr::Expr =
+    Silver_Expr {
+      let undecs::[Scope] = $QName{qName(ident ++ "_undec")} in
+        case undecs of
+        | [s_undec] -> s_undec
+        | _ -> error("Oh no! scopeExists.mkScopeExpr")
+        end
+      end
+    };
 
   local labs::([String], [Message]) =
     let res::[ScopeGraphDclInfo] = lookupGraphDcl(sgName, top.sgEnv) in
@@ -21,66 +62,18 @@ top::ProductionStmt ::= ident::String sg::Maybe<String> datum::Maybe<Expr>
                                       ++ sgName ++ "'")])
       end
     end;
-  
-  nondecorated local mkScopeEq::ProductionStmt = Silver_ProductionStmt {
-    local attribute $Name{name(ident)}::Scope = scope($Expr{datumReal});
-  };
-
-  nondecorated local undecsLst::ProductionStmt = Silver_ProductionStmt {
-    production attribute $Name{name(ident ++ "_undec")}::[Scope] with ++;
-  };
-
-  nondecorated local emptyContrib::ProductionStmt = Silver_ProductionStmt {
-    $QName{qName(ident ++ "_undec")} := [];
-  };
 
   forwards to productionStmtAppend(
-    mkScopeEq,
+    Silver_ProductionStmt {local attribute $Name{name(ident)}::Scope = $Expr{mkScopeExpr};},
     productionStmtAppend(
       mkScopeBaseInhs(ident, labs.1),
       productionStmtAppend(
-        undecsLst,
-        emptyContrib
+        Silver_ProductionStmt {production attribute $Name{name(ident ++ "_undec")}::[Scope] with ++;},
+        Silver_ProductionStmt {$QName{qName(ident ++ "_undec")} := [];}
       )
     )
   );
 
   top.errors <- labs.2;
-}
 
---
-
-production mkScopeUndec
-top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur sg::Maybe<String> datum::Maybe<Expr>
-{
-  nondecorated local qn::QName = case attr of qNameAttrOccur(qn) -> ^qn end;
-
-  nondecorated local contrib::Expr = fromMaybe(
-    Silver_Expr{datumDefault()},
-    datum
-  );
-
-  forwards to Silver_ProductionStmt {
-    $QName{qName(dl.name)}.$QName{appendToQName(qn, "_undec")} <- [scope($Expr{contrib})];
-  };
-}
-
---
-
-production scopeExists
-top::ProductionStmt ::= s::String sg::Maybe<String>
-{
-  local sgName::String = fromMaybe("_Scope_Default", sg);
-
-  nondecorated local mkScopeExpr::Expr =
-    Silver_Expr {
-      let undecs::[Scope] = $QName{qName(s ++ "_undec")} in
-        case undecs of
-        | h::[] -> h.datum
-        | _ -> error("Oh no! scopeExists.mkScopeExpr")
-        end
-      end
-    };
-
-  forwards to mkScope(s, sg, just(mkScopeExpr));
 }

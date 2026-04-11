@@ -8,7 +8,7 @@ top::AttributeDclInfo ::= fn::String ty::Type sglabs::[String]
 {
   propagate compareKey;
   
-  top.propagateDispatcher = propagateInh; -- todo(?)
+  top.propagateDispatcher = propagateInh;
   top.decoratedAccessHandler = inhDecoratedAccessHandler;
   top.undecoratedAccessHandler = accessBounceDecorate (inhDecoratedAccessHandler);
   top.dataAccessHandler = inhUndecoratedAccessErrorHandler;
@@ -21,7 +21,6 @@ top::AttributeDclInfo ::= fn::String ty::Type sglabs::[String]
   top.isInherited = true;
 }
 
-
 -----------------------------
 -- Scope attribute definition
 
@@ -29,6 +28,10 @@ top::AttributeDclInfo ::= fn::String ty::Type sglabs::[String]
 abstract production scopeAttributeDef implements AttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 {
+  local errCheck :: TypeCheck = check(attr.typerep, e.typerep);
+  errCheck.finalSubst = top.finalSubst;
+  thread downSubst, upSubst on top, e, errCheck, top;
+
   local attrQn::QName = case attr of qNameAttrOccur(qn) -> ^qn end;
   attrQn.env = top.env;
 
@@ -44,7 +47,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.grammarName = top.grammarName;
   e.frame = top.frame;
   e.finalSubst = top.finalSubst;
-  e.downSubst = top.downSubst;
+  --e.downSubst = top.downSubst;
 
   local labs::[String] =
     let res::AttributeDclInfo = attrQn.lookupAttribute.dcl in
@@ -55,20 +58,20 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     end;
 
   local maybeAttrContribs::Maybe<ProductionStmt> = contributions(^dl, ^attr, e, labs);
+  nondecorated local attrContribs::ProductionStmt = fromMaybe(emptyProductionStmt(), maybeAttrContribs);
 
-  nondecorated local attrContribs::ProductionStmt =
-    fromMaybe(emptyProductionStmt(), maybeAttrContribs);
+  local inhDef::ProductionStmt = inheritedAttributeDef(dl, attr, ^e);
 
+  forwards to productionStmtAppend(@inhDef, attrContribs);
+
+  top.errors := inhDef.errors;
   top.errors <-
-    if !maybeAttrContribs.isJust 
+    if !maybeAttrContribs.isJust
     then [errFromOrigin(top,
-            "definition of scope attribute " ++ attr.name ++ " on child " ++
-            dl.name ++ " must be a reference to a locally asserted scope, " ++ 
-            "or a scope attribute occurring on " ++ top.frame.signature.outputElement.elementName)]
+            "Scope attribute " ++ attr.name ++
+            " must be defined as a locally asserted scope, or scope attribute on " ++
+            top.frame.signature.outputElement.elementName)]
     else [];
-
-  forwards to productionStmtAppend(inheritedAttributeDef(dl, attr, ^e),
-                                   attrContribs);
 }
 
 -- todo: generate appropriate type error message if expr is not a Decorated Scope
