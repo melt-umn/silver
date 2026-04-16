@@ -51,9 +51,13 @@ top::ProductionStmt ::= a::Name e::Expr
   local localScopeDef::ProductionStmt =
     Silver_ProductionStmt { $Name{^a} = $Expr{^e}; };
 
-  -- Declaration of a_undec attribute for contributions of nondecorated scopes from subtrees
+  nondecorated local undecAttrName::Name = name(a.name ++ "_undec");
+  -- Definition of a_undec attribute for contributions of nondecorated scopes from subtrees
   nondecorated local undecAttrDcl::ProductionStmt = 
-    Silver_ProductionStmt {production attribute $Name{name(a.name ++ "_undec")}::[Scope] with ++;};
+    productionStmtAppend(
+      Silver_ProductionStmt{production attribute $Name{undecAttrName}::[Scope] with ++;},
+      Silver_ProductionStmt{$Name{undecAttrName} := [];}
+    );
 
   -- Equation a.lab := [], for every label lab in labs
   nondecorated local baseInhDefs::ProductionStmt = mkScopeBaseInhs(a.name, labs);

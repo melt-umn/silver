@@ -21,11 +21,16 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
   propagate env;
   attr.attrFor = dl.typerep;
 
-  forwards to edgeAssertionBoth(
+  local assert::ProductionStmt = edgeAssertionBoth(
     \e::Expr ->
       Silver_ProductionStmt{$QName{qName(dl.name)}.$QName{qnScopeAttr(attr.name, lab)} <- [$Expr{e}];},
     attr.typerep, lab, ^tgt
   );
+
+  forwards to @assert;
+
+  -- Avoid errors about non-existence of attr_lab for some lab
+  top.errors := if !null(attr.errors) then attr.errors else assert.errors;
 }
 
 --
