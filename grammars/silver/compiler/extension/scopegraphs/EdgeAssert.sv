@@ -33,11 +33,14 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
   forwards to @assert;
 
   local lhsErrs::[Message] =
-    case dl of
-    | lhsDefLHS(_) -> dl.errors
-    | _ -> [errFromOrigin(dl, "Edge LHS must be " ++ top.frame.signature.outputElement.elementName ++ 
-                              ".s for some scope attribute s, or a reference to a locally declared scope")]
-    end;
+    if !top.frame.hasFullSignature
+    then [errFromOrigin(dl, "Edge LHS in function context must be a reference to a locally defined scope")]
+    else 
+      case dl of
+      | lhsDefLHS(_) -> dl.errors
+      | _ -> [errFromOrigin(dl, "Edge LHS must be " ++ top.frame.signature.outputElement.elementName ++ 
+                                ".s for some scope attribute s, or a reference to a locally declared scope")]
+      end;
 
   top.errors := lhsErrs ++ attr.errors ++ assert.errors;
 }
