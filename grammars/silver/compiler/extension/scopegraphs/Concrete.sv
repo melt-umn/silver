@@ -81,7 +81,7 @@ top::AGDcl ::= 'scope' 'attribute' ident::IdLower_t 'occurs' 'on' qs::QNames ';'
 
 concrete production existsScopeDefault_c
 top::ProductionStmt ::= 'existsScope' ident::Name ';'
-{ forwards to scopeExists(^ident, nothing()); }
+{ forwards to scopeExists(^ident); }
 
 --
 
@@ -91,7 +91,7 @@ top::ProductionStmt ::= 'existsScope' ident::Name ';'
 
 concrete production mkScopeLocal_c
 top::ProductionStmt ::= 'newScope' ident::Name d::SGDatum ';'
-{ forwards to mkScopeLocal(qName(ident.name), nothing(), d.datumExpr); }
+{ forwards to mkScopeLocal(^ident, d.datumExpr); }
 
 -- no named SGs
 --concrete production mkScopeInherited_c

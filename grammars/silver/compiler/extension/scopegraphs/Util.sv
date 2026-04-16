@@ -2,6 +2,17 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
+global globScopeTy::Type = nonterminalType(
+  "silver:compiler:extension:scopegraphs:Scope", [], false, false
+);
+
+fun decScopeTy Type ::= labs::[String] =
+  decoratedType(
+    globScopeTy,
+    inhSetType(labs)
+  )
+;
+
 fun scopeTypeExpr TypeExpr ::= sg::String =
   Silver_TypeExpr{
     Decorated Scope with $TypeExpr{
@@ -17,6 +28,10 @@ fun nScopeAttr Name ::= s::String l::String = name(s ++ "_" ++ l);
 
 fun lookupGraphDcl [ScopeGraphDclInfo] ::= sgfn::String sgEnv::SGEnv =
   searchEnvTree(sgfn, sgEnv.scopeGraphsTree);
+
+fun lookupGraphDclOpt Maybe<ScopeGraphDclInfo> ::= sgfn::String sgEnv::SGEnv =
+  let res::[ScopeGraphDclInfo] = lookupGraphDcl(sgfn, sgEnv) in
+  if null(res) then nothing() else just(head(res)) end;
 
 -------------
 -- DclInfo.sv

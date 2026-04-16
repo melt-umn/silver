@@ -167,18 +167,37 @@ fun edgeOccDclsBaseDefs AGDcl ::= at::QName nt::QName nttl::BracketedOptTypeExpr
 
 synthesized attribute labels::[String];
 synthesized attribute labelsFn::[String];
+synthesized attribute scopeType::Type;
 
-nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labels, labelsFn;
+nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labels, labelsFn, scopeType;
 
 abstract production graphDcl
-top::ScopeGraphDclInfo ::= grammarName::String name::String labs::[String]
+top::ScopeGraphDclInfo ::= gram::String name::String labs::[String]
 {
-  top.fullName = {-grammarName ++ ":" ++-} name;
+  top.fullName = gram ++ ":" ++ name;
   top.isEqual = ^top.compareTo == ^top;
-  top.labels = labs;
-  top.labelsFn = map(\l::String -> grammarName ++ ":" ++ l, labs);
+  top.labels = sort(labs);
+  top.labelsFn = map(\l::String -> gram ++ ":" ++ l, top.labels);
+  top.scopeType = decScopeTy(top.labelsFn);
 }
 
 instance Eq ScopeGraphDclInfo {
   eq = \l::ScopeGraphDclInfo r::ScopeGraphDclInfo -> l.fullName == r.fullName;
 }
+
+
+--------------
+-- Local scope
+
+synthesized attribute isScopeDcl::Boolean occurs on ValueDclInfo;
+
+abstract production localScopeDcl
+top::ValueDclInfo ::= fn::String ty::Type
+{ top.isScopeDcl = true;
+  forwards to localDcl(fn, ^ty, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation); }
+
+aspect default production top::ValueDclInfo ::=
+{ top.isScopeDcl = false; }
+
+fun scopeDef Def ::= gram::String sl::Location fn::String ty::Type =
+  valueDef(defaultEnvItem(localScopeDcl(fn, ty, sourceGrammar=gram, sourceLocation=sl)));

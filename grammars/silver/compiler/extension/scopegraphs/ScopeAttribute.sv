@@ -19,26 +19,20 @@ top::AGDcl ::= attr::QName sg::Maybe<String> loc::Location
 
   forwards to
     appendAGDcl(
-      scopeSyns(sgName, attr.name, labs.1),
-      undecScopeAttrDcl(attr.name)
+      defsAGDcl([
+        attrDef(defaultEnvItem(scopeInhDcl(
+          attr.name,
+          inhScopeType(top.grammarName, labs.1),
+          labs.1,
+          sourceGrammar=top.grammarName, sourceLocation=loc
+        )))
+      ]),
+      appendAGDcl(
+        scopeSyns(sgName, attr.name, labs.1),
+        undecScopeAttrDcl(attr.name)
+      )
     );
 
   top.errors := labs.2;
-
   top.scopeGraphDefs := [];
-
-  local sortedLabs::[String] = sort(labs.1);
-
-  top.defs <-
-    if null(labs.2) 
-    then
-      [
-        attrDef(defaultEnvItem(scopeInhDcl(
-          attr.name,
-          inhScopeType(top.grammarName, sortedLabs),
-          sortedLabs,
-          sourceGrammar=top.grammarName, sourceLocation=loc
-        )))
-      ]
-    else [];
 }

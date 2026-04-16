@@ -2,7 +2,7 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
--- s -[ lex ]-> s2;
+-- s -[ lex ]-> s';
 production edgeAssertionLocal
 top::ProductionStmt ::= src::QName lab::String tgt::Expr
 {
@@ -14,7 +14,7 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
   );
 }
 
--- n.s1 -[ lex ]-> s2;
+-- top.s -[ lex ]-> s';
 production edgeAssertionInh
 top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
 {
@@ -36,26 +36,37 @@ top::ProductionStmt ::=
 {
   propagate env;
 
-  local labs::[String] =
-    let res::[ScopeGraphDclInfo] = lookupGraphDcl("_Scope_Default", top.sgEnv) in
-      case res of | h::[] -> h.labelsFn | _ -> [] end
-    end;
+  local sg::Maybe<ScopeGraphDclInfo> = lookupGraphDclOpt("_Scope_Default", top.sgEnv);
+  local labsfn::[String] = mapOrElse([], (.labelsFn), sg);
+  local sgScopeTy::Type = mapOrElse(errorType(), (.scopeType), sg);
 
-  nondecorated local expectTy::Type =
-    decoratedType(nonterminalType("silver:compiler:extension:scopegraphs:Scope", [], false, false),
-                  inhSetType(labs));
+  local attribute errCheck1::TypeCheck = check(^srcTy, ^sgScopeTy);
+  local attribute errCheck2::TypeCheck = check(tgt.typerep, ^sgScopeTy);
+  thread downSubst, upSubst on top, tgt, errCheck1, errCheck2, top;
 
-  local attribute errCheck::TypeCheck = check(^srcTy, expectTy);
-  thread downSubst, upSubst on top, tgt, errCheck, top;
-
-  top.errors :=
-    if !contains(top.grammarName ++ ":" ++ lab, labs)
+  production attribute edgeErrs::[Message] with ++;
+  edgeErrs := 
+    if !sg.isJust
+    then [errFromOrigin(top, "No scope graph decl found!")]
+    else [];
+  edgeErrs <-
+    if !contains(top.grammarName ++ ":" ++ lab, labsfn)
     then [errFromOrigin(top, "No known scope graph label '" ++ lab ++ "'.")]
-    else if errCheck.typeerror
-    then [errFromOrigin(top, "Scope edge source must be a Decorated Scope " ++
-                             "but is instead has type " ++ srcTy.typepp)]
-    else contrib.errors;
+    else [];
+  edgeErrs <-
+    if errCheck1.typeerror
+    then [errFromOrigin(top, "Scope edge source must be a Decorated Scope " ++ 
+                             "but is instead has type " ++ errCheck1.leftpp)]
+    else [];
+  edgeErrs <-
+    if errCheck2.typeerror
+    then [errFromOrigin(top, "Scope edge target must be a Decorated Scope " ++ 
+                             "but is instead has type " ++ errCheck2.leftpp)]
+    else [];
 
   local contrib::ProductionStmt = lhs(^tgt);
+
+  top.errors := if null(edgeErrs) then contrib.errors else edgeErrs;
+
   forwards to @contrib;
 }

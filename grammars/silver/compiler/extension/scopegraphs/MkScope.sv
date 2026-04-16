@@ -2,92 +2,77 @@ grammar silver:compiler:extension:scopegraphs;
 
 --
 
-production mkScopeLocal
-top::ProductionStmt ::= locqn::QName sg::Maybe<String> datum::Expr
+production scopeExists
+top::ProductionStmt ::= a::Name
 {
-  propagate env, flowEnv, config, compiledGrammars, grammarName, frame, finalSubst;
-  thread downSubst, upSubst on top, datum, top;
-
-  datum.isRoot = true;
-  datum.decSiteVertexInfo = nothing();
-  datum.appDecSiteVertexInfo = nothing();
-
-  -- avoid errors from forward, hide '_undec' attrs
-  -- todo: new dcl info type for scopes instead? then locqn.lookupScope.dcl here, 
-  -- or locqn.lookupScope.errors
-  top.errors := 
-    let dcls::[ValueDclInfo] = locqn.lookupValue.dcls in
-      if null(dcls)
-      then [errFromOrigin(top, "Undeclared scope '" ++ locqn.name ++ "'.")]
-      else if length(dcls) > 1
-      then [errFromOrigin(top, "Ambiguous reference to scope '" ++ locqn.name ++ 
-                               "'. Possibilities are:\n" ++ printPossibilities(dcls))]
-      else []
-    end;
-  top.errors <- datum.errors;
-
-  forwards to Silver_ProductionStmt {
-    $QName{appendToQName(^locqn, "_undec")} <- [scope($Expr{^datum})];
+  nondecorated local e::Expr = Silver_Expr {
+    let undecs::[Scope] = $QName{qName(a.name ++ "_undec")} in
+      case undecs of
+      | [s_undec] -> s_undec
+      | _ -> error("Scope is built more than once in this tree.")
+      end
+    end
   };
+
+  forwards to produceDecoratedScope(^a, e);
+}
+
+--
+
+production mkScopeLocal
+top::ProductionStmt ::= a::Name e::Expr
+{
+  forwards to produceDecoratedScope(^a, Silver_Expr{scope($Expr{^e})});
 }
 
 production mkScopeInherited
-top::ProductionStmt ::= lhsqn::QName attrqn::QName sg::Maybe<String> datum::Expr
+top::ProductionStmt ::= lhsqn::QName attrqn::QName sg::Maybe<String> e::Expr
 {
+  -- Contribution to undecs list for scopes introduced by existsScope
   forwards to Silver_ProductionStmt {
-    $QName{^lhsqn}.$QName{appendToQName(^attrqn, "_undec")} <- [scope($Expr{^datum})];
+    $QName{^lhsqn}.$QName{appendToQName(^attrqn, "_undec")} <- [scope($Expr{^e})];
   };
 }
 
 --
 
-production scopeExists
-top::ProductionStmt ::= s::Name sg::Maybe<String>
+production produceDecoratedScope
+top::ProductionStmt ::= a::Name e::Expr
 {
-  local ident::String = s.name;
-  local sgName::String = fromMaybe("_Scope_Default", sg);
+  -- Could be refactored away, but useful if we decide to allow multiple named scope graphs
+  local graph::Maybe<ScopeGraphDclInfo> = lookupGraphDclOpt("_Scope_Default", top.sgEnv);
+  -- What are the raw label names that graph defines 
+  local labs::[String] = mapOrElse([], (.labels), graph);
 
-  nondecorated local qn_undec::QName = qName(ident ++ "_undec");
+  -- Declare attribute for built scope
+  local localScopeDcl::ProductionStmt = 
+    Silver_ProductionStmt { local attribute $Name{^a}::Scope; };
+  -- Definition for built scope, separated to make dupl errors cleaner 
+  local localScopeDef::ProductionStmt =
+    Silver_ProductionStmt { $Name{^a} = $Expr{^e}; };
 
-  nondecorated local mkScopeExpr::Expr = Silver_Expr {
-    let undecs::[Scope] = $QName{qn_undec} in
-      case undecs of
-      | [s_undec] -> s_undec
-      | _ -> error("Oh no! scopeExists.mkScopeExpr")
-      end
-    end
-  };
+  -- Declaration of a_undec attribute for contributions of nondecorated scopes from subtrees
+  nondecorated local undecAttrDcl::ProductionStmt = 
+    Silver_ProductionStmt {production attribute $Name{name(a.name ++ "_undec")}::[Scope] with ++;};
 
-  local labs::([String], [Message]) =
-    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sgName, top.sgEnv) in
-      case res of
-      | h::[] -> (h.labels, [])
-      | _ -> ([], [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '"
-                                      ++ sgName ++ "'")])
-      end
-    end;
+  -- Equation a.lab := [], for every label lab in labs
+  nondecorated local baseInhDefs::ProductionStmt = mkScopeBaseInhs(a.name, labs);
 
-  local localDef::ProductionStmt = Silver_ProductionStmt {
-    local attribute $Name{name(ident)}::Scope = $Expr{mkScopeExpr};
-  };
-
-  -- hide errors related to defining expression, _undec, and inherited attributes
-  top.errors := localDef.errors;
-  top.errors <- labs.2;
-
-  forwards to productionStmtAppend(
-    @localDef,
-    --productionStmtAppend(
-      --Silver_ProductionStmt{$QName{qName(ident)} = $Expr{mkScopeExpr};},
+  forwards to 
+    productionStmtAppend(
+      @localScopeDcl, 
       productionStmtAppend(
-        mkScopeBaseInhs(ident, labs.1),
+        @localScopeDef,
         productionStmtAppend(
-          Silver_ProductionStmt {production attribute $Name{name(qn_undec.name)}::[Scope] with ++;},
-          Silver_ProductionStmt {$QName{qn_undec} := [];}
+          undecAttrDcl,
+          baseInhDefs
         )
       )
-    --)
-  );
+    );
 
+  -- Avoids errors which expose agtix-generated attributes
+  top.errors :=
+    if length(getValueDclInScope(a.name, top.env)) > 1 
+    then [errFromOrigin(a, "Scope '" ++ a.name ++ "' is already bound.")]
+    else localScopeDef.errors;
 }
