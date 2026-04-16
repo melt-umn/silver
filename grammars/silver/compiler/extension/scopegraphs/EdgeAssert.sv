@@ -19,6 +19,9 @@ production edgeAssertionInh
 top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
 {
   propagate env;
+  dl.defLHSattr = decorate qNameAttrOccur(qName(attr.name ++ "_" ++ lab))
+                  with {attrFor = dl.typerep; grammarName = top.grammarName;
+                        env = top.env; config = top.config;};
   attr.attrFor = dl.typerep;
 
   local assert::ProductionStmt = edgeAssertionBoth(
@@ -29,8 +32,14 @@ top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur lab::String tgt::Expr
 
   forwards to @assert;
 
-  -- Avoid errors about non-existence of attr_lab for some lab
-  top.errors := if !null(attr.errors) then attr.errors else assert.errors;
+  local lhsErrs::[Message] =
+    case dl of
+    | lhsDefLHS(_) -> dl.errors
+    | _ -> [errFromOrigin(dl, "Edge LHS must be " ++ top.frame.signature.outputElement.elementName ++ 
+                              ".s for some scope attribute s, or a reference to a locally declared scope")]
+    end;
+
+  top.errors := lhsErrs ++ attr.errors ++ assert.errors;
 }
 
 --
@@ -40,6 +49,8 @@ top::ProductionStmt ::=
   lhs::(ProductionStmt ::= Expr) srcTy::Type lab::String tgt::Expr
 {
   propagate env;
+
+  tgt.config = top.config;
 
   local sg::Maybe<ScopeGraphDclInfo> = lookupGraphDclOpt("_Scope_Default", top.sgEnv);
   local labsfn::[String] = mapOrElse([], (.labelsFn), sg);
@@ -71,7 +82,10 @@ top::ProductionStmt ::=
 
   local contrib::ProductionStmt = lhs(^tgt);
 
-  top.errors := if null(edgeErrs) then contrib.errors else edgeErrs;
+  top.errors := edgeErrs;
+  top.errors <- tgt.errors;
+
+  --top.errors := if null(edgeErrs) then contrib.errors else edgeErrs;
 
   forwards to @contrib;
 }
