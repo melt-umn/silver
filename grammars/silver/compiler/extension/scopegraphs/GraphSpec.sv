@@ -12,7 +12,7 @@ top::AGDcl ::=
   -- 'graph definition' consisting of an identifier and constituent labels
   top.scopeGraphDefs := [
     scopeGraphDef(defaultEnvItem(
-      graphDcl(top.grammarName, "_Scope_Default", qns.names)))
+      graphDcl(top.grammarName, "_Scope_Default", qns.names, labsId)))
   ];
 
   forwards to appendAGDcl(

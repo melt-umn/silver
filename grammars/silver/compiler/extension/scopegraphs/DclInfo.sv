@@ -34,7 +34,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   local attrQn::QName = case attr of qNameAttrOccur(qn) -> ^qn end;
   attrQn.env = top.env;
-
+  
   e.env = top.env;
   e.isRoot = true;
   e.flowEnv = top.flowEnv;
@@ -47,7 +47,6 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   e.grammarName = top.grammarName;
   e.frame = top.frame;
   e.finalSubst = top.finalSubst;
-  --e.downSubst = top.downSubst;
 
   local labs::[String] =
     let res::AttributeDclInfo = attrQn.lookupAttribute.dcl in
@@ -64,17 +63,16 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   forwards to productionStmtAppend(@inhDef, attrContribs);
 
-  top.errors := inhDef.errors;
-  top.errors <-
+  top.errors := inhDef.errors ++ 
     if !maybeAttrContribs.isJust
     then [errFromOrigin(top,
-            "Scope attribute " ++ attr.name ++
-            " must be defined as a locally asserted scope, or scope attribute on " ++
-            top.frame.signature.outputElement.elementName)]
+            "Scope attribute " ++ dl.name ++ "." ++ attr.name ++
+            " must be defined as a locally built scope, or " ++
+            top.frame.signature.outputElement.elementName ++ 
+            ".s for some scope attribute s.")]
     else [];
 }
 
--- todo: generate appropriate type error message if expr is not a Decorated Scope
 fun contributions Maybe<ProductionStmt> ::=
   dl::DefLHS attr::QNameAttrOccur e::Decorated Expr labs::[String] =
   let asEdgeContribBaseExpr::(ProductionStmt ::= QName String) = \qn::QName lab::String ->
@@ -114,7 +112,6 @@ fun contributions Maybe<ProductionStmt> ::=
 --------------------
 -- Scope attribution
 
--- todo: reduce number of times we loop over label list
 abstract production scopeAttributeAttributionDcl implements AttributionDcl
 top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName
                nttl::BracketedOptTypeExprs
@@ -129,8 +126,9 @@ top::AGDcl ::= at::QName attl::BracketedOptTypeExprs nt::QName
       end
     end;
 
-  forwards to appendAGDcl(
-    defaultAttributionDcl(^at, botlNone(), ^nt, ^nttl),
+  forwards to extraDclsAttributionDcl(
+    @at, @attl, @nt, @nttl,
+    defaultAttributionDcl,
     edgeOccDclsBaseDefs(^at, ^nt, ^nttl, labs)
   );
 }
@@ -161,43 +159,3 @@ fun edgeOccDclsBaseDefs AGDcl ::= at::QName nt::QName nttl::BracketedOptTypeExpr
       }
     )
   end end end;
-
-----------------------------------
--- Scope graph definition (labels)
-
-synthesized attribute labels::[String];
-synthesized attribute labelsFn::[String];
-synthesized attribute scopeType::Type;
-
-nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labels, labelsFn, scopeType;
-
-abstract production graphDcl
-top::ScopeGraphDclInfo ::= gram::String name::String labs::[String]
-{
-  top.fullName = gram ++ ":" ++ name;
-  top.isEqual = ^top.compareTo == ^top;
-  top.labels = sort(labs);
-  top.labelsFn = map(\l::String -> gram ++ ":" ++ l, top.labels);
-  top.scopeType = decScopeTy(top.labelsFn);
-}
-
-instance Eq ScopeGraphDclInfo {
-  eq = \l::ScopeGraphDclInfo r::ScopeGraphDclInfo -> l.fullName == r.fullName;
-}
-
-
---------------
--- Local scope
-
-synthesized attribute isScopeDcl::Boolean occurs on ValueDclInfo;
-
-abstract production localScopeDcl
-top::ValueDclInfo ::= fn::String ty::Type
-{ top.isScopeDcl = true;
-  forwards to localDcl(fn, ^ty, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation); }
-
-aspect default production top::ValueDclInfo ::=
-{ top.isScopeDcl = false; }
-
-fun scopeDef Def ::= gram::String sl::Location fn::String ty::Type =
-  valueDef(defaultEnvItem(localScopeDcl(fn, ty, sourceGrammar=gram, sourceLocation=sl)));

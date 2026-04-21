@@ -8,9 +8,11 @@ top::ProductionStmt ::= src::QName lab::String tgt::Expr
 {
   propagate env;
 
+  nondecorated local srcTy::Type = localReference(src).typerep;
+
   forwards to edgeAssertionBoth(
     \e::Expr -> Silver_ProductionStmt{$QName{^src}.$QName{qName(lab)} <- [$Expr{e}];},
-    localReference(src).typerep, lab, ^tgt
+    srcTy, lab, ^tgt
   );
 }
 
@@ -51,16 +53,23 @@ production edgeAssertionBoth
 top::ProductionStmt ::=
   lhs::(ProductionStmt ::= Expr) srcTy::Type lab::String tgt::Expr
 {
-  propagate env;
+  propagate env, flowEnv, compiledGrammars, grammarName, frame, finalSubst;
 
   tgt.config = top.config;
+  tgt.decSiteVertexInfo = nothing();
+  tgt.appDecSiteVertexInfo = nothing();
+  tgt.isRoot = true;
 
   local sg::Maybe<ScopeGraphDclInfo> = lookupGraphDclOpt("_Scope_Default", top.sgEnv);
   local labsfn::[String] = mapOrElse([], (.labelsFn), sg);
   local sgScopeTy::Type = mapOrElse(errorType(), (.scopeType), sg);
 
   local attribute errCheck1::TypeCheck = check(^srcTy, ^sgScopeTy);
+  errCheck1.finalSubst = top.finalSubst;
+  
   local attribute errCheck2::TypeCheck = check(tgt.typerep, ^sgScopeTy);
+  errCheck2.finalSubst = top.finalSubst;
+
   thread downSubst, upSubst on top, tgt, errCheck1, errCheck2, top;
 
   production attribute edgeErrs::[Message] with ++;
@@ -70,7 +79,7 @@ top::ProductionStmt ::=
     else [];
   edgeErrs <-
     if !contains(top.grammarName ++ ":" ++ lab, labsfn)
-    then [errFromOrigin(top, "No known scope graph label '" ++ lab ++ "'.")]
+    then [errFromOrigin(top, "No known scope graph label '`" ++ lab ++ "'.")]
     else [];
   edgeErrs <-
     if errCheck1.typeerror

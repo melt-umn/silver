@@ -1,142 +1,139 @@
 grammar silver:compiler:extension:scopegraphs;
 
 --
-{-}
-concrete production sgOrder_c
-top::Expr ::= RegexSlash_t r::SGOrderOption RegexSlash_t '::' sg::IdUpper_t
+
+
+nonterminal SGOrderRoot with sgEnv, toExpr, errors, location, possibleLabs;
+
+concrete production orderRoot
+top::SGOrderRoot ::= o::SGOrder
 {
-  local sgName::(String, [Message]) =
-    let res::[ScopeGraphDclInfo] = lookupGraphDcl(sg.lexeme, top.sgEnv) in
-      case res of
-      | h::[] -> (h.fullName, [])
-      | _ -> ("<err>", [errFromOrigin(top, toString(length(res)) ++ 
-                                      " scope graph declarations found named '" ++ sg.lexeme ++ "'")])
-      end
-    end;
+  propagate errors, possibleLabs;
 
-  -- | _, _ -> 0
-  nondecorated local defaultCase::MatchRule =
-    matchRule_c(
-      patternList_more(
-        wildcPattern('_'),
-        ',',
-        patternList_one(
-          wildcPattern('_')
-        )
-      ),
-      terminal(Arrow_kwd, "->", bogusLoc()),
-      Silver_Expr{0}
-    )
-  ;
+  top.toExpr = 
+    if null(o.errors)
+    then labMatcher
+    else Silver_Expr { error("Should never be demanded!") };
 
-  nondecorated local allCases::MRuleList =
-    foldr(
-      (
-        \ord::(String, String) acc::MRuleList ->
-          mRuleList_cons(
-            matchRule_c(
-              patternList_more(
-                prodAppPattern(qName("label_" ++ ord.1), '(', patternList_nil(), ')'),
-                ',',
-                patternList_one(
-                  prodAppPattern(qName("label_" ++ ord.2), '(', patternList_nil(), ')')
-                )
-              ),
-              terminal(Arrow_kwd, "->", bogusLoc()),
-              Silver_Expr{ 1 }
-            ),
-            terminal(Vbar_kwd, "|", bogusLoc()),
-            mRuleList_cons(
-              matchRule_c(
-                patternList_more(
-                  prodAppPattern(qName("label_" ++ ord.2), '(', patternList_nil(), ')'),
-                  ',',
-                  patternList_one(
-                    prodAppPattern(qName("label_" ++ ord.1), '(', patternList_nil(), ')')
-                  )
-                ),
-                terminal(Arrow_kwd, "->", bogusLoc()),
-                Silver_Expr{ -1 }
-              ),
-              terminal(Vbar_kwd, "|", bogusLoc()),
-              acc
+  nondecorated local labMatcher::Expr = caseExpr_c (
+    'case',
+    exprsCons(baseExpr(qName("l")),',',exprsSingle(baseExpr(qName("r")))),
+    'of',
+    terminal(Opt_Vbar_t, "", bogusLoc()),
+    allCases,
+    'end'
+  );
+
+  nondecorated local allCases::MRuleList = foldr(
+    \ord::(String, String) acc::MRuleList ->
+      mRuleList_cons(
+        matchRule_c(
+          patternList_more(
+            prodAppPattern(qName("label_" ++ ord.1), '(', patternList_nil(), ')'),
+            ',',
+            patternList_one(
+              prodAppPattern(qName("label_" ++ ord.2), '(', patternList_nil(), ')')
             )
-          )
+          ),
+          terminal(Arrow_kwd, "->", bogusLoc()),
+          Silver_Expr{ 1 }
+        ),
+        terminal(Vbar_kwd, "|", bogusLoc()),
+        mRuleList_cons(
+          matchRule_c(
+            patternList_more(
+              prodAppPattern(qName("label_" ++ ord.2), '(', patternList_nil(), ')'),
+              ',',
+              patternList_one(
+                prodAppPattern(qName("label_" ++ ord.1), '(', patternList_nil(), ')')
+              )
+            ),
+            terminal(Arrow_kwd, "->", bogusLoc()),
+            Silver_Expr{ -1 }
+          ),
+          terminal(Vbar_kwd, "|", bogusLoc()),
+          acc
+        )
       ),
       mRuleList_one(defaultCase),
-      r.ords
-    )
-  ;
+      o.ords
+  );
 
-  nondecorated local labCase::Expr =
-    caseExpr_c(
-      'case',
-      exprsCons(
-        baseExpr(qName("left")),
-        ',',
-        exprsSingle(
-          baseExpr(qName("right"))
-        )
-      ),
-      'of',
-      terminal(Opt_Vbar_t, "", bogusLoc()),
-      allCases,
-      'end'
-    )
-  ;
+  -- _, _ -> 0
+  nondecorated local defaultCase::MatchRule =
+    matchRule_c(
+      patternList_more(wildcPattern('_'), ',', patternList_one(wildcPattern('_'))),
+        terminal(Arrow_kwd, "->", bogusLoc()),
+        Silver_Expr{0});
 
-  forwards to
-    Silver_Expr{
-      \left::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sgName.1)))}> 
-       right::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sgName.1)))}> ->
-        $Expr{labCase}
-    }
-  ;
-
-  top.errors := sgName.2;
+  o.gt = [];
+  o.leftEqTo = [];
+  o.labsUsed = [];
 }
 
 --
 
+inherited attribute leftEqTo::[String];
+inherited attribute gt::[String];
+inherited attribute labsUsed::[String];
+inherited attribute possibleLabs::[String];
 synthesized attribute ords::[(String, String)];
 
-nonterminal SGOrderOption with ords;
+nonterminal SGOrder with errors, location, leftEqTo, labsUsed, gt, ords, possibleLabs;
 
-concrete production orderSome_c
-top::SGOrderOption ::= o::SGOrder
+propagate errors, possibleLabs on SGOrder;
+
+concrete production sgOrderCons
+top::SGOrder ::= h::SGOrderOne '<' t::SGOrder
 {
-  top.ords = o.ords;
+  h.labsUsed = top.labsUsed;
+
+  t.gt = h.lab::(top.leftEqTo ++ top.gt);
+  t.leftEqTo = [];
+  t.labsUsed = h.lab::top.labsUsed;
+
+  top.ords = map(\l::String -> (h.lab, l), top.gt) ++ t.ords;
 }
 
-concrete production orderNone_c
-top::SGOrderOption ::=
+concrete production sgOrderConsEq
+top::SGOrder ::= h::SGOrderOne '=' t::SGOrder
 {
-  top.ords = [];
+  h.labsUsed = top.labsUsed;
+
+  t.gt = top.gt;
+  t.leftEqTo = h.lab::top.leftEqTo;
+  t.labsUsed = h.lab::top.labsUsed;
+
+  top.ords = map(\l::String -> (h.lab, l), top.gt) ++ t.ords;
 }
 
---
-
-nonterminal SGOrder with ords;
-
-concrete production sgOrderCons_c
-top::SGOrder ::= h::SGOrderOne ',' t::SGOrder
-{
-  top.ords = h.ords ++ t.ords;
-}
-
-concrete production sgOrderLast_c
+concrete production sgOrderLast
 top::SGOrder ::= h::SGOrderOne
 {
-  top.ords = h.ords;
+  propagate labsUsed;
+  top.ords = map(\l::String -> (h.lab, l), top.gt);
 }
 
 --
 
-nonterminal SGOrderOne with ords;
+synthesized attribute lab::String;
 
-concrete production sgOrderOne_c
-top::SGOrderOne ::= l::IdLower_t '>' r::IdLower_t
+nonterminal SGOrderOne with errors, location, lab, labsUsed, possibleLabs;
+
+concrete production sgOrderOne
+top::SGOrderOne ::= SGRegexBacktick_t l::Name
 {
-  top.ords = [(l.lexeme, r.lexeme)];
+  -- multiple uses of same label
+  top.errors :=
+    if contains(top.lab, top.labsUsed)
+    then [errFromOrigin(l, "Multiple uses of label '`" ++ top.lab ++ "' in query label order.")]
+    else [];
+
+  -- label doesn't exist
+  top.errors <-
+    if !contains(top.lab, top.possibleLabs)
+    then [errFromOrigin(l, "Unknown label '`" ++ top.lab ++ "' in query label order.")]
+    else [];
+
+  top.lab = l.name;
 }
--}

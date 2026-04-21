@@ -2,6 +2,31 @@ grammar silver:compiler:extension:scopegraphs;
 
 import silver:util:treemap as rtm;
 
+----------------------------------
+-- Scope graph definition (labels)
+
+synthesized attribute labels::[String];
+synthesized attribute labelsFn::[String];
+synthesized attribute scopeType::Type;
+synthesized attribute labelsAlias::String;
+
+nonterminal ScopeGraphDclInfo with fullName, isEqual, compareTo, labels, labelsFn, scopeType, labelsAlias;
+
+abstract production graphDcl
+top::ScopeGraphDclInfo ::= gram::String name::String labs::[String] labsAlias::String
+{
+  top.fullName = gram ++ ":" ++ name;
+  top.isEqual = ^top.compareTo == ^top;
+  top.labels = sort(labs);
+  top.labelsFn = map(\l::String -> gram ++ ":" ++ l, top.labels);
+  top.scopeType = decScopeTy(top.labelsFn);
+  top.labelsAlias = labsAlias;
+}
+
+instance Eq ScopeGraphDclInfo {
+  eq = \l::ScopeGraphDclInfo r::ScopeGraphDclInfo -> l.fullName == r.fullName;
+}
+
 --------------------------------------------------------------------------------
 
 nonterminal SGEnv;

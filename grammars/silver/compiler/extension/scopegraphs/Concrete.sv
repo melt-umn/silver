@@ -35,11 +35,11 @@ top::AGDcl ::= 'scope' 'labels' names::LabelNames 'as' labsId::IdUpper_t ';'
 nonterminal LabelNames;
 
 concrete production labelNamesOne_c
-top::LabelNames ::= lab::IdLower_t
+top::LabelNames ::= SGRegexBacktick_t lab::IdLower_t
 { forwards to labelNamesOne(lab.lexeme); }
 
 concrete production labelNamesCons_c
-top::LabelNames ::= lab::IdLower_t ',' ns::LabelNames
+top::LabelNames ::= SGRegexBacktick_t lab::IdLower_t ',' ns::LabelNames
 { forwards to labelNamesCons(lab.lexeme, ^ns); }
 
 --
@@ -119,21 +119,56 @@ top::SGDatum ::=
 --
 
 concrete production edgeAssertionLocal_c
-top::ProductionStmt ::= a::Name '-[' lab::IdLower_t ']->' tgt::Expr ';'
+top::ProductionStmt ::= a::Name '-[' SGRegexBacktick_t lab::IdLower_t ']->' tgt::Expr ';'
 { forwards to edgeAssertionLocal(qNameId(^a), lab.lexeme, ^tgt); }
 
 concrete production edgeAssertionInh_c
-top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' lab::IdLower_t ']->' tgt::Expr ';'
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' SGRegexBacktick_t lab::IdLower_t ']->' tgt::Expr ';'
 { forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt); }
 
 --
 
 concrete production reachableQuery_c
-top::Expr ::= 'query' '(' rx::SGRegex_c ',' pred::Expr ',' s::Expr ')'
+top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' pred::Expr ',' s::Expr ')'
 { 
+  local sg::Maybe<ScopeGraphDclInfo> =
+    lookupGraphDclOpt("_Scope_Default", top.sgEnv);
+  rx.possibleLabs = mapOrElse([], (.labels), sg);
+
+  top.errors <- rx.errors;
+
   forwards to Silver_Expr{
     reachableQuery(
       $Expr{rx.toExpr},
+      $Expr{^pred},
+      $Expr{^s}
+    )
+  };
+}
+
+concrete production visibleQuery_c
+top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' ord::SGOrderRoot ',' pred::Expr ',' s::Expr ')'
+{ 
+  -- putting this in SGOrderRoot and generating the lambda there causes errors in generated java code
+  local sg::Maybe<ScopeGraphDclInfo> =
+    lookupGraphDclOpt("_Scope_Default", top.sgEnv);
+  nondecorated local labsTyExpr::TypeExpr =
+    nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, mapOrElse("", (.labelsAlias), sg))));
+  nondecorated local ordLam::Expr =
+    Silver_Expr{\l::Label<$TypeExpr{labsTyExpr}> r::Label<$TypeExpr{labsTyExpr}> -> $Expr{ord.toExpr}};
+
+  ord.sgEnv = top.sgEnv;
+  ord.possibleLabs = mapOrElse([], (.labels), sg);
+
+  rx.possibleLabs = mapOrElse([], (.labels), sg);
+
+  top.errors <- rx.errors;
+  top.errors <- ord.errors;
+
+  forwards to Silver_Expr{
+    visibleQuery(
+      $Expr{rx.toExpr},
+      $Expr{ordLam},
       $Expr{^pred},
       $Expr{^s}
     )
