@@ -106,6 +106,9 @@ propagate sgEnv, scopeGraphDefs on AGDcls;
 
 --
 
+aspect default production top::AGDcl ::=
+{ top.scopeGraphDefs := []; }
+
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 
                'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
@@ -114,8 +117,33 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs
   top.scopeGraphDefs := [];
 }
 
-aspect default production top::AGDcl ::=
-{ top.scopeGraphDefs := []; }
+aspect production propagateOnNTListExcludingDcl_c
+top::AGDcl ::= 'propagate' attrs::AttrNameList 'on' nts::NameList 'excluding' ps::ProdNameList ';'
+{
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+}
+
+aspect production propagateOnNTListDcl_c
+top::AGDcl ::= 'propagate' attrs::AttrNameList 'on' nts::NameList ';'
+{
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+}
+
+aspect production propagateOnNTListDcl
+top::AGDcl ::= attrs::AttrNameList nts::NameList ps::ProdNameList
+{
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+}
+
+aspect production propagateOnOneNTDcl
+top::AGDcl ::= attrs::AttrNameList nt::QName ps::ProdNameList
+{
+  -- otherwise computed by fwd causing cycle
+  top.scopeGraphDefs := [];
+}
 
 attribute scopeGraphDefs, sgEnv occurs on AGDcl;
 propagate sgEnv on AGDcl;
@@ -137,11 +165,38 @@ propagate sgEnv on ProductionStmt;
 
 --
 
-attribute sgEnv occurs on Expr, AppExpr, AppExprs;
-propagate sgEnv on Expr, AppExpr, AppExprs;
+attribute sgEnv occurs on PrimPattern, PrimPatterns, Expr, Exprs, AssignExpr, AppExpr, AppExprs;
+propagate sgEnv on PrimPattern, PrimPatterns, Expr, Exprs, AssignExpr, AppExpr, AppExprs;
+
+--
+
+attribute sgEnv occurs on MatchRule, MRuleList, Pattern, NamedPatternList, NamedPattern;
+propagate sgEnv on MatchRule, MRuleList, Pattern, NamedPatternList, NamedPattern;
+
+--
 
 -- non supply runtime error otherwise
 aspect production applicationExpr
 top::Expr ::= e::Expr '(' es::AppExprs ')'
 { e.sgEnv = top.sgEnv;
   es.sgEnv = top.sgEnv; }
+
+-- non supply runtime error otherwise
+aspect production prodPattern
+top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
+{ e.sgEnv = top.sgEnv; }
+
+-- non supply runtime error otherwise
+aspect production caseExpr_c
+top::Expr ::= 'case' es::Exprs 'of' b::Opt_Vbar_t ml::MRuleList 'end'
+{ es.sgEnv = top.sgEnv; 
+  ml.sgEnv = top.sgEnv; }
+
+aspect production attrContainsAppend
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
+{
+  propagate sgEnv;
+}
+
+--
+

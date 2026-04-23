@@ -35,4 +35,5 @@ top::AGDcl ::= attr::QName sg::Maybe<String> loc::Location
 
   top.errors := labs.2;
   top.scopeGraphDefs := [];
+  top.moduleNames := [];
 }

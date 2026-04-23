@@ -19,3 +19,4 @@ imports silver:compiler:driver:util;
 imports silver:compiler:modification:concisefunctions;
 imports silver:compiler:extension:tuple;
 imports silver:compiler:extension:patternmatching;
+imports silver:compiler:modification:primitivepattern;

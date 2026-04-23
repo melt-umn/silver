@@ -19,6 +19,9 @@ terminal Query_t 'query' lexer classes {KEYWORD, RESERVED};
 terminal EdgeLeft_t '-[';
 terminal EdgeRight_t ']->';
 
+terminal EdgeLeftLst_t '-[[';
+terminal EdgeRightLst_t ']]->';
+
 --
 
 -- no named SGs
@@ -120,11 +123,22 @@ top::SGDatum ::=
 
 concrete production edgeAssertionLocal_c
 top::ProductionStmt ::= a::Name '-[' SGRegexBacktick_t lab::IdLower_t ']->' tgt::Expr ';'
-{ forwards to edgeAssertionLocal(qNameId(^a), lab.lexeme, ^tgt); }
+{ forwards to edgeAssertionLocal(qNameId(^a), lab.lexeme, ^tgt, false); }
 
 concrete production edgeAssertionInh_c
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[' SGRegexBacktick_t lab::IdLower_t ']->' tgt::Expr ';'
-{ forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt); }
+{ forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt, false); }
+
+--
+
+concrete production edgeAssertionLocalLst_c
+top::ProductionStmt ::= a::Name '-[[' SGRegexBacktick_t lab::IdLower_t ']]->' tgt::Expr ';'
+{ forwards to edgeAssertionLocal(qNameId(^a), lab.lexeme, ^tgt, true); }
+
+concrete production edgeAssertionInhLst_c
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '-[[' SGRegexBacktick_t lab::IdLower_t ']]->' tgt::Expr ';'
+{ forwards to edgeAssertionInh(^dl, ^attr, lab.lexeme, ^tgt, true); }
+
 
 --
 
