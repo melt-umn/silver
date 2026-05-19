@@ -3,7 +3,7 @@ grammar silver:compiler:extension:scopegraphs;
 --
 
 
-nonterminal SGOrderRoot with sgEnv, toExpr, errors, location, possibleLabs;
+nonterminal SGOrderRoot with sgEnv, toExpr, toExpr2, errors, location, possibleLabs;
 
 concrete production orderRoot
 top::SGOrderRoot ::= o::SGOrder
@@ -15,12 +15,26 @@ top::SGOrderRoot ::= o::SGOrder
     then labMatcher
     else Silver_Expr { error("Should never be demanded!") };
 
+  top.toExpr2 =
+    if null(o.errors)
+    then labMatcher2
+    else Silver_Expr { error("Should never be demanded!") };
+
   nondecorated local labMatcher::Expr = caseExpr_c (
     'case',
     exprsCons(baseExpr(qName("l")),',',exprsSingle(baseExpr(qName("r")))),
     'of',
     terminal(Opt_Vbar_t, "", bogusLoc()),
     allCases,
+    'end'
+  );
+
+  nondecorated local labMatcher2::Expr = caseExpr_c (
+    'case',
+    exprsCons(baseExpr(qName("l")),',',exprsSingle(baseExpr(qName("r")))),
+    'of',
+    terminal(Opt_Vbar_t, "", bogusLoc()),
+    allCases2,
     'end'
   );
 
@@ -46,6 +60,41 @@ top::SGOrderRoot ::= o::SGOrder
               ',',
               patternList_one(
                 prodAppPattern(qName("label_" ++ ord.1), '(', patternList_nil(), ')')
+              )
+            ),
+            terminal(Arrow_kwd, "->", bogusLoc()),
+            Silver_Expr{ -1 }
+          ),
+          terminal(Vbar_kwd, "|", bogusLoc()),
+          acc
+        )
+      ),
+      mRuleList_one(defaultCase),
+      o.ords
+  );
+
+  nondecorated local allCases2::MRuleList = foldr(
+    \ord::(String, String) acc::MRuleList ->
+      mRuleList_cons(
+        matchRule_c(
+          patternList_more(
+            strPattern(terminal(String_t, "\"" ++ ord.1 ++ "\"")),
+            ',',
+            patternList_one(
+              strPattern(terminal(String_t, "\"" ++ ord.2 ++ "\""))
+            )
+          ),
+          terminal(Arrow_kwd, "->", bogusLoc()),
+          Silver_Expr{ 1 }
+        ),
+        terminal(Vbar_kwd, "|", bogusLoc()),
+        mRuleList_cons(
+          matchRule_c(
+            patternList_more(
+              strPattern(terminal(String_t, "\"" ++ ord.2 ++ "\"")),
+              ',',
+              patternList_one(
+                strPattern(terminal(String_t, "\"" ++ ord.1 ++ "\""))
               )
             ),
             terminal(Arrow_kwd, "->", bogusLoc()),

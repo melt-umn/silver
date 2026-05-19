@@ -147,18 +147,43 @@ top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' pred::Expr ',' s::Expr ')'
 { 
   local sg::Maybe<ScopeGraphDclInfo> =
     lookupGraphDclOpt("_Scope_Default", top.sgEnv);
+
   rx.possibleLabs = mapOrElse([], (.labels), sg);
+  rx.grammarName = top.grammarName;
 
   top.errors <- rx.errors;
 
-  forwards to Silver_Expr{
-    reachableQuery(
-      $Expr{rx.toExpr},
-      $Expr{^pred},
-      $Expr{^s}
+  local fwdExpr::Expr = Silver_Expr {
+    filterMap(
+      applyScopePredR($Expr{^pred}, _),
+      $Expr{rx.toExpr2}(($Expr{^s}, []))
     )
   };
+
+  forwards to @fwdExpr;
 }
+
+fun applyScopePredR Maybe<Decorated Scope with i> ::= dp::Predicate p::ResPair<(i::InhSet)> =
+  if dp(p.1.datum) then just(p.1) else nothing()
+;
+
+fun applyScopePredV Boolean ::= dp::Predicate p::ResPair<(i::InhSet)> =
+  dp(p.1.datum)
+;
+
+fun labelsComp Integer ::= c::(Integer ::= String String) l::[String] r::[String] =
+  case l, r of
+  | [], [] -> 0
+  | [], _ -> -1
+  | _, [] -> 1
+  | hl::tl, hr::tr ->
+    let compOne::Integer = c(hl, hr) in
+      if compOne == 0
+      then labelsComp(c, tl, tr)
+      else compOne
+    end
+  end
+;
 
 concrete production visibleQuery_c
 top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' ord::SGOrderRoot ',' pred::Expr ',' s::Expr ')'
@@ -169,7 +194,7 @@ top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' ord::SGOrderRoot ',' pred::Expr 
   nondecorated local labsTyExpr::TypeExpr =
     nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, mapOrElse("", (.labelsAlias), sg))));
   nondecorated local ordLam::Expr =
-    Silver_Expr{\l::Label<$TypeExpr{labsTyExpr}> r::Label<$TypeExpr{labsTyExpr}> -> $Expr{ord.toExpr}};
+    Silver_Expr{\l::String r::String -> $Expr{ord.toExpr2}};
 
   ord.sgEnv = top.sgEnv;
   ord.possibleLabs = mapOrElse([], (.labels), sg);
@@ -179,12 +204,20 @@ top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' ord::SGOrderRoot ',' pred::Expr 
   top.errors <- rx.errors;
   top.errors <- ord.errors;
 
-  forwards to Silver_Expr{
-    visibleQuery(
-      $Expr{rx.toExpr},
-      $Expr{ordLam},
-      $Expr{^pred},
-      $Expr{^s}
+  local fwdExpr::Expr = Silver_Expr {
+    map(
+      \p::ResPair<$TypeExpr{labsTyExpr}> -> p.1,
+      min(
+        $Expr{ordLam},
+        filter(
+          applyScopePredV($Expr{^pred}, _),
+          $Expr{rx.toExpr2}(($Expr{^s}, []))
+        )
+      )
     )
   };
+
+  forwards to @fwdExpr;
+
 }
+

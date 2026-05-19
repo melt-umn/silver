@@ -63,14 +63,28 @@ fun labelsAGDcls AGDcl ::= sg::String labs::[String] =
 
 -- Generate a Label production declaration for a given label
 fun labelProd AGDcl ::= sg::String lab::String =
-  Silver_AGDcl {
-    production $Name{name("label_" ++ lab)}
-    top::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))}> ::=
-    {
-      top.name = $Expr{stringConst(terminal(String_t, "\"" ++ lab ++ "\""))};
-      top.demand = \s::$TypeExpr{scopeTypeExpr(sg)} -> s.$QName{qName(lab)};
-    }
-  };
+  appendAGDcl(
+    Silver_AGDcl {
+      production $Name{name("label_" ++ lab)}
+      top::Label<$TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))}> ::=
+      {
+        top.name = $Expr{stringConst(terminal(String_t, "\"" ++ lab ++ "\""))};
+        top.demand = \s::$TypeExpr{scopeTypeExpr(sg)} -> s.$QName{qName(lab)};
+      }
+    },
+    let te::TypeExpr = Silver_TypeExpr { Decorated Scope with $TypeExpr{nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg)))} } in
+    let labsTe::TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, sg))) in
+      Silver_AGDcl {
+        fun $Name{name("regexLabelFun_" ++ lab)} ([ResPair<$TypeExpr{labsTe}>] ::= ResPair<$TypeExpr{labsTe}>) ::=  =
+          \p::ResPair<$TypeExpr{labsTe}> -> 
+            map(
+              \sf::$TypeExpr{te} -> 
+                (sf, $Expr{stringConst(terminal(String_t, "\"" ++ lab ++ "\""))}::p.2),
+              p.1.$QName{qName(lab)}
+            );
+      }
+    end end
+  );
 
 -- Generate an inherited attribute declaration for a given label
 fun labelInh AGDcl ::= sg::String lab::String =

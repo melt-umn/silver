@@ -178,8 +178,8 @@ production regexMaybe
 top::Regex<(i::InhSet)> ::= sub::Regex<i>
 { forwards to regexOr(regexEpsilon(), ^sub); }
 
--------------
--- Resolution
+---------------
+-- Resolution 1
 
 type Predicate = (Boolean ::= Datum);
 type Ordering<(i::InhSet)> = (Integer ::= Label<i> Label<i>);
@@ -236,3 +236,66 @@ fun visibleQuery
 fun reachableQuery
 [DecScope<i>] ::= r::Regex<i> p::Predicate s::DecScope<i> 
 = resolve(p, r, nothing(), s);
+
+---------------
+-- Resolution 2
+
+type ResPath = [String];
+type ResPair<(i::InhSet)> = (Decorated Scope with i, ResPath);
+type ResPairList<(i::InhSet)> = [ResPair<i>];
+
+fun regexEpsilonFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= =
+  \p::ResPair<i> -> [p]
+;
+
+fun regexEpsilonEmpty2 (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= =
+  \p::ResPair<i> -> []
+;
+
+fun regexCatFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= l::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) r::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) =
+  \p::ResPair<i> -> concat(
+    map(r, l(p))
+  )
+;
+
+fun regexOrFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= l::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) r::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) =
+  \p::ResPair<i> -> l(p) ++ r(p)
+;
+
+fun regexStarFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= r::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) =
+  \p::ResPair<i> ->
+    let go::ResPairList<i> = r(p) in
+      if null(go) then [p] else p::concat(map(regexStarFun(r), go)) 
+    end
+;
+
+fun regexPlusFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= r::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) =
+  regexCatFun(r, regexStarFun(r))
+;
+
+fun regexMaybeFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= r::(ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) =
+  regexOrFun(regexEpsilonFun(), r)
+;
+
+-- Path minimum
+
+fun min ResPairList<(i::InhSet)> ::= c::(Integer ::= String String) ps::ResPairList<(i::InhSet)> =
+  foldr(
+    \rp::ResPair<i> acc::ResPairList<i> ->
+      let s::Decorated Scope with i = rp.1 in
+      let p::[String] = reverse(rp.2) in
+        if null(acc)
+        then [(s, p)]
+        else
+          let hp::[String] = head(acc).2 in
+            case labelsComp(c, p, hp) of
+            | 0  -> (s, p)::acc
+            | -1 -> [(s, p)]
+            | _  -> acc
+            end
+          end
+      end end,
+    [],
+    ps
+  )
+;
