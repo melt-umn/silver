@@ -245,10 +245,10 @@ type ResPair<(i::InhSet)> = (Decorated Scope with i, ResPath);
 type ResPairList<(i::InhSet)> = [ResPair<i>];
 
 fun regexEpsilonFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= =
-  \p::ResPair<i> -> [p]
+  \p::ResPair<i> -> [(p.1, "$"::p.2)]
 ;
 
-fun regexEpsilonEmpty2 (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= =
+fun regexEmptyFun (ResPairList<(i::InhSet)> ::= ResPair<(i::InhSet)>) ::= =
   \p::ResPair<i> -> []
 ;
 
@@ -298,4 +298,25 @@ fun min ResPairList<(i::InhSet)> ::= c::(Integer ::= String String) ps::ResPairL
     [],
     ps
   )
+;
+
+fun labelsComp Integer ::= c::(Integer ::= String String) l::[String] r::[String] =
+  case l, r of
+  | [], [] -> 0
+  | [], _ -> 0 | _, [] -> 0
+  | hl::tl, hr::tr ->
+    let compOne::Integer = c(hl, hr) in
+      if compOne == 0
+      then labelsComp(c, tl, tr)
+      else compOne
+    end
+  end
+;
+
+fun applyScopePredR Maybe<Decorated Scope with i> ::= dp::Predicate p::ResPair<(i::InhSet)> =
+  if dp(p.1.datum) then just(p.1) else nothing()
+;
+
+fun applyScopePredV Boolean ::= dp::Predicate p::ResPair<(i::InhSet)> =
+  dp(p.1.datum)
 ;

@@ -163,28 +163,6 @@ top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' pred::Expr ',' s::Expr ')'
   forwards to @fwdExpr;
 }
 
-fun applyScopePredR Maybe<Decorated Scope with i> ::= dp::Predicate p::ResPair<(i::InhSet)> =
-  if dp(p.1.datum) then just(p.1) else nothing()
-;
-
-fun applyScopePredV Boolean ::= dp::Predicate p::ResPair<(i::InhSet)> =
-  dp(p.1.datum)
-;
-
-fun labelsComp Integer ::= c::(Integer ::= String String) l::[String] r::[String] =
-  case l, r of
-  | [], [] -> 0
-  | [], _ -> -1
-  | _, [] -> 1
-  | hl::tl, hr::tr ->
-    let compOne::Integer = c(hl, hr) in
-      if compOne == 0
-      then labelsComp(c, tl, tr)
-      else compOne
-    end
-  end
-;
-
 concrete production visibleQuery_c
 top::Expr ::= 'query' '(' rx::SGRegexRoot_c ',' ord::SGOrderRoot ',' pred::Expr ',' s::Expr ')'
 { 
