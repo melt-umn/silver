@@ -557,7 +557,9 @@ top::Expr ::= '@' e::Expr
   top.flowDefs <-
     case e.flowVertexInfo, top.decSiteVertexInfo of
     | just(ref), just(decSite) ->
-      [refDecSiteEq(top.frame.fullName, e.typerep.typeName, ref, decSite, top.alwaysDecorated)]
+      [refDecSiteEq(top.frame.fullName, e.typerep.typeName, ref, decSite, top.alwaysDecorated),
+       -- The root of the decoration site is the root of the shared tree
+       decSiteDepEq(top.frame.fullName, decSite, ref.outerEqDeps)]
     | _, _ -> []
     end;
 }

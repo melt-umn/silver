@@ -502,9 +502,11 @@ top::FlowDef ::= prod::String  sigNames::[String]  parent::VertexType  termProd:
 
 {--
  - An unknown tree that has a decoration site, e.g. a higher-order attribute access or new(ref).
- - Also add the equation vertex dependencies on subterm vertices.
- - Other vertex types get their eq deps from a top-level localEq, fwdEq or synEq,
- - which also handles suspect edges.
+ - Nothing is known about the root of such a tree beyond the tree itself, so its outer eq
+ - vertex depends on everything the hole depends on.
+ - For subterm vertex types the eq vertex gets these deps here as well; other vertex types get
+ - their eq deps from a top-level localEq, fwdEq or transEq, which also handles suspect edges.
+ - (Like the outer eq deps added by decSiteDepEq, the ones added here are never suspect.)
  -
  - @param prod  the full name of the production
  - @param typeName  the full name of the type (usually a nonterminal, but may be a decorable type var)
@@ -517,8 +519,9 @@ top::FlowDef ::= prod::String  typeName::String  isNt::Boolean  vt::VertexType  
 {
   top.prodGraphContribs := [(prod, top)];
   top.flowEdges =
+    zipFst(vt.outerEqVertex, deps) ++
     case vt of
-    | subtermVertexType(_, _, _) -> cartProd([vt.eqVertex, vt.outerEqVertex], deps)
+    | subtermVertexType(_, _, _) -> zipFst(vt.eqVertex, deps)
     | _ -> []
     end;
 }
@@ -535,14 +538,14 @@ abstract production decSiteDepEq
 top::FlowDef ::= prod::String  decSite::VertexType  deps::[FlowVertex]
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = cartProd(
-    decSite.outerEqVertex ::
+  top.flowEdges = 
+    zipFst(decSite.outerEqVertex, deps) ++
     -- The regular equation vertex deps will be added by the local/forward/trans equation,
     -- and may need to be added as suspect edges, so don't add them here.
     case decSite of
-    | subtermVertexType(_, _, _) -> [decSite.eqVertex]
+    | subtermVertexType(_, _, _) -> zipFst(decSite.eqVertex, deps)
     | _ -> []
-    end, deps);
+    end;
 }
 
 {--

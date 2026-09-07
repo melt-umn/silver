@@ -120,7 +120,13 @@ top::VertexType ::= v::VertexType  transAttr::String
   top.eqVertex = v.synVertex(transAttr);
   top.outerEqVertex = transAttrOuterEqVertex(v, transAttr);
   top.eqDeps = v.synDeps(transAttr);
-  top.outerEqDeps = top.outerEqVertex :: v.outerEqDeps;
+  top.outerEqDeps =
+    case v of
+    -- The translation attribute is defined here, so the root of its tree has deps of its own
+    | lhsVertexType() -> top.outerEqVertex :: v.outerEqDeps
+    -- The tree comes from elsewhere, and is known only as the value of the attribute
+    | _ -> v.synDeps(transAttr)
+    end;
 }
 
 {--
