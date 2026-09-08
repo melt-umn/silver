@@ -39,9 +39,9 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 function sharingSiteDependsOnInh
 (Boolean ::= String) ::= ref::VertexType  decSite::VertexType  graph::ProductionGraph
 {
-  local refDeps :: [FlowVertex] = expandGraph(ref.eqDeps ++ ref.outerEqDeps, graph);
-  return \ i::String -> contains(ref.inhVertex(i), expandGraph(
-      if contains(ref.inhVertex(i), refDeps)
+  local refDeps :: set:Set<FlowVertex> = expandGraph(ref.eqDeps ++ ref.outerEqDeps, graph);
+  return \ i::String -> set:contains(ref.inhVertex(i), expandGraph(
+      if set:contains(ref.inhVertex(i), refDeps)
       then [decSite.inhVertex(i)]
       else decSite.inhDeps(i),
     graph));
