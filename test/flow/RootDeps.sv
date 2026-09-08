@@ -145,3 +145,35 @@ top::RDExprS ::= e::RDExprS
   top.rdType = e.rdType;
 }
 }
+
+-- An inherited attribute read on a sharing site: the site is the shared local x, so reading
+-- anything on it needs x built, which needs rdExtra.
+nonterminal RDExprI;
+attribute rdEnv, rdExtra, rdType occurs on RDExprI;
+
+abstract production rdLitI
+top::RDExprI ::= i::Integer
+{ top.rdType = i + top.rdEnv; }
+
+function rdMkI
+RDExprI ::= i::Integer
+{ return rdLitI(i); }
+
+abstract production rdShareInh
+top::RDExprI ::=
+{
+  local x::RDExprI = rdMkI(top.rdExtra);
+  x.rdEnv = top.rdEnv;
+  x.rdExtra = top.rdExtra;
+  forwards to @x;
+  top.rdType = forward.rdEnv;
+}
+
+warnCode "Access of synthesized attribute rdType on e requires missing inherited attribute(s) flow:rdExtra to be supplied to child e of production flow:rdUserI" {
+abstract production rdUserI
+top::RDExprI ::= e::RDExprI
+{
+  e.rdEnv = top.rdEnv;
+  top.rdType = e.rdType;
+}
+}
