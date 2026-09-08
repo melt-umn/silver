@@ -202,6 +202,22 @@ fun getTranslationAttrTargets [String] ::= seen::[String] ntty::Type e::Env =
         end,
       getAttrOccursOn(ntty.typeName, e)));
 
+{--
+ - Does some translation attribute occurring on 'ntty' (transitively) translate back to 'ntty'?
+ - This mirrors the error check for translation attribute occurrences in typechecking.
+ -}
+fun ntHasTransAttrOccursCycle Boolean ::= ntty::Type  env::Env =
+  any(map(
+    \ o::OccursDclInfo ->
+      contains(ntty.typeName, getTranslationAttrTargets([], determineAttributeType(o, ntty), env)),
+    filter(
+      \ o::OccursDclInfo ->
+        case getAttrDcl(o.attrOccurring, env) of
+        | at :: _ -> at.isTranslation
+        | _ -> false
+        end,
+      getAttrOccursOn(ntty.typeName, env))));
+
 -- Determines whether a type is automatically promoted to a decorated type
 -- and whether a type may be supplied with inherited attributes.
 -- Used by expression (id refs), decorate type checking, and translations.

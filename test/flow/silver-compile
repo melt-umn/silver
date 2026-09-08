@@ -8,3 +8,6 @@ GRAMMAR=flow
 
 silver -I $SRC --warn-all --dont-translate $@ $GRAMMAR
 
+# Grammars with errors that affect the flow analysis of the whole grammar (captured by
+# wrongFlowCode) are compiled on their own.  A regression here is a hang, hence the timeout.
+timeout 300 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow:transCycle

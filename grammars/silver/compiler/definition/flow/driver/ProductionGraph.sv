@@ -576,15 +576,21 @@ fun addLhsEqRhsEq (FlowVertex, FlowVertex) ::= ne::NamedSignatureElement =
 
 {--
  - Stitch points for the flow type of 'nt', and the flow types of all translation attributes on 'nt'.
+ - A cycle in translation attribute occurrences is an error (checked in typechecking), but the
+ - 'seen' list guarantees that this is finite regardless, since these graphs are also constructed
+ - during error checking.
  -}
 fun nonterminalStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  vertexType::VertexType =
-  nonterminalStitchPoint(nt, vertexType) ::
+  nonterminalStitchPointsSeen([], realEnv, nt, vertexType);
+fun nonterminalStitchPointsSeen [StitchPoint] ::= seen::[NtName]  realEnv::Env  nt::NtName  vertexType::VertexType =
+  if contains(nt, seen) then []
+  else nonterminalStitchPoint(nt, vertexType) ::
   flatMap(
     \ o::OccursDclInfo ->
       case getAttrDcl(o.attrOccurring, realEnv) of
       | at :: _ when at.isSynthesized && at.isTranslation ->
-        nonterminalStitchPoints(
-          realEnv, o.attrTypeName,
+        nonterminalStitchPointsSeen(
+          nt :: seen, realEnv, o.attrTypeName,
           transAttrVertexType(vertexType, o.attrOccurring))
       | _ -> []
       end,
