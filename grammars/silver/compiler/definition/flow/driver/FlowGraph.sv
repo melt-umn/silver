@@ -17,17 +17,17 @@ fun findProductionGraph ProductionGraph ::= n::String l::EnvTree<ProductionGraph
   | _ -> error("Failed to find graph for " ++ n)
   end;
 
--- These two functions are used by Inh.sv:
+-- These two functions are used by the flow checks:
 function expandGraph
-[FlowVertex] ::= v::[FlowVertex]  e::ProductionGraph
+set:Set<FlowVertex> ::= v::[FlowVertex]  e::ProductionGraph
 {
   -- look up each vertex, uniq it down.
   local initial :: set:Set<FlowVertex> =
     set:add(v, foldr(set:union, set:emptyWith(compareVertexId), map(e.edgeMap, v)));
 
-  return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
+  return expandSuspectEdges(set:toList(initial), initial, e);
 }
-fun onlyLhsInh set:Set<String> ::= s::[FlowVertex] = set:add(filterLhsInh(s), set:empty());
+fun onlyLhsInh set:Set<String> ::= s::set:Set<FlowVertex> = set:add(filterLhsInh(set:toList(s)), set:empty());
 
 fun expandTileGraphSigDeps
 set:Set<FlowVertex> ::= v::[FlowVertex] rhsNames::[String] g::ProductionGraph =
