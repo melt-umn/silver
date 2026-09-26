@@ -43,9 +43,8 @@ top::Expr ::=  '@' e::Expr
   
   top.errors <-
     case e.flowVertexInfo of
-    | just(transAttrVertexType(v, transAttr))
-        when lookupSharedRefs(top.frame.fullName, v, top.flowEnv) matches sr :: _ ->
-      [errFromOrigin(e, s"Cannot share ${v.vertexName}.${transAttr} in production ${top.frame.fullName}, because ${v.vertexPP} is also shared (at ${sr.sourceGrammar}:${sr.sourceLocation.unparse}).")]
+    | just(vt) when sharedTransBase(top.frame.fullName, vt, top.flowEnv) matches just((v, sr)) ->
+      [errFromOrigin(e, s"Cannot share ${vt.vertexName} in production ${top.frame.fullName}, because ${v.vertexPP} is also shared (at ${sr.sourceGrammar}:${sr.sourceLocation.unparse}).")]
     | _ -> []
     end;
 }
@@ -88,15 +87,30 @@ top::AppExpr ::= e::Expr
 
   top.errors <-
     case e.flowVertexInfo of
-    | just(transAttrVertexType(v, transAttr)) when sigIsShared && isForwardParam ->
-      case lookupSharedRefs(top.frame.fullName, v, top.flowEnv) of
-      | sr :: _ ->
-        [errFromOrigin(e, s"Cannot share ${v.vertexName}.${transAttr} in production ${top.frame.fullName}, because ${v.vertexPP} is also shared (at ${sr.sourceGrammar}:${sr.sourceLocation.unparse}).")]
-      | _ -> []
+    | just(vt) when sigIsShared && isForwardParam ->
+      case sharedTransBase(top.frame.fullName, vt, top.flowEnv) of
+      | just((v, sr)) ->
+        [errFromOrigin(e, s"Cannot share ${vt.vertexName} in production ${top.frame.fullName}, because ${v.vertexPP} is also shared (at ${sr.sourceGrammar}:${sr.sourceLocation.unparse}).")]
+      | nothing() -> []
       end
     | _ -> []
     end;
 }
+
+{--
+ - If vt is a translation attribute (possibly of a translation attribute, and so on) of a tree that
+ - is also shared in this production, that tree and one of its sharing sites.  Sharing both would
+ - give the translation a second decoration site.
+ -}
+fun sharedTransBase Maybe<(VertexType, SharedRefSite)> ::= prod::String  vt::VertexType  e::FlowEnv =
+  case vt of
+  | transAttrVertexType(v, _) ->
+    case lookupSharedRefs(prod, v, e) of
+    | sr :: _ -> just((v, sr))
+    | [] -> sharedTransBase(prod, v, e)
+    end
+  | _ -> nothing()
+  end;
 
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr

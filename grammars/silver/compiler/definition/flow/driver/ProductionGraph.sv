@@ -180,7 +180,8 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     normalEdges ++
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
-     else addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
+     else addFwdSynEqs(prod, nt, synsBySuspicion.fst, flowEnv, realEnv) ++
+          addFwdTransRootEqs(prod, syns, flowEnv, realEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
@@ -194,7 +195,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local suspectEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.suspectFlowEdges), defs) ++
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
-    if nonForwarding then [] else addFwdSynEqs(prod, synsBySuspicion.snd, flowEnv);
+    if nonForwarding then [] else addFwdSynEqs(prod, nt, synsBySuspicion.snd, flowEnv, realEnv);
 
   -- RHS only.
   local sigNtStitchPoints :: [StitchPoint] =
@@ -478,12 +479,34 @@ end;
  - Introduces implicit 'lhs.syn -> forward.syn' (& forward.outerEq) equations.
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
-fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv =
-  if null(syns) then []
-  else (if null(lookupSyn(prod, head(syns), flowEnv))
-    then [(lhsSynVertex(head(syns)), forwardSynVertex(head(syns))),
-          (lhsSynVertex(head(syns)), forwardOuterEqVertex())] else []) ++
-    addFwdSynEqs(prod, tail(syns), flowEnv);
+fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName nt::NtName syns::[String] flowEnv::FlowEnv realEnv::Env =
+  flatMap(
+    \ syn::String ->
+      if null(lookupSyn(prod, syn, flowEnv))
+      then (lhsSynVertex(syn), forwardSynVertex(syn)) ::
+           (lhsSynVertex(syn), forwardOuterEqVertex()) ::
+           -- A translation attribute taken from the forward is the forward's translation,
+           -- so the synthesized attributes of the translation are copied as well.
+           map(
+             \ transSyn::String ->
+               (lhsSynVertex(s"${syn}.${transSyn}"), forwardSynVertex(s"${syn}.${transSyn}")),
+             getSynOnTransAttr(syn, nt, realEnv))
+      else [],
+    syns);
+{--
+ - A translation attribute taken from the forward is the forward's translation, so the root of
+ - the LHS's translation depends on the whole value of the attribute, and through it on the forward.
+ - Never suspect: suspicion is kept on the edges out of the attribute's own vertex.
+ -}
+fun addFwdTransRootEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv realEnv::Env =
+  flatMap(
+    \ syn::String ->
+      case getAttrDcl(syn, realEnv) of
+      | at :: _ when at.isTranslation && null(lookupSyn(prod, syn, flowEnv)) ->
+        [(transAttrOuterEqVertex(lhsVertexType(), syn), lhsSynVertex(syn))]
+      | _ -> []
+      end,
+    syns);
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.
  - Inherited equations are never suspect.
@@ -537,9 +560,11 @@ fun addDefEqs
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv)) ++
+      -- The shared tree's translations are the decoration site's translations,
+      -- so their synthesized attributes are related too.
       map(
         \ attr::String -> (decSite.synVertex(attr), ref.synVertex(attr)),
-        "forward" :: getSynAttrsOn(nt, realEnv))
+        "forward" :: getSynAndSynOnTransAttrsOn(nt, realEnv))
    | _ -> []
    end;
 {--
@@ -554,7 +579,7 @@ fun addDispatchEqs
         (subtermEqVertex(lhsVertexType(), prod, sigName), rhsEqVertex(ie.elementName)) ::
         map(\ attr::String ->
           (subtermSynVertex(lhsVertexType(), prod, sigName, attr), rhsSynVertex(ie.elementName, attr)),
-          "forward" :: getSynAttrsOn(ie.typerep.typeName, realEnv)) ++
+          "forward" :: getSynAndSynOnTransAttrsOn(ie.typerep.typeName, realEnv)) ++
         flatMap(\ attr::String ->
           [(rhsInhVertex(ie.elementName, attr), subtermInhVertex(lhsVertexType(), prod, sigName, attr)),
           -- We always include the subterm -> RHS inh dep, because we are trying to determine
