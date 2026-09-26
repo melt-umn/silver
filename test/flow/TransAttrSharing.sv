@@ -207,3 +207,53 @@ top::TSM ::= x::TSN
   forwards to tsMShare(x.tsT);
 }
 }
+
+-- Sharing a translation of a translation is orphaned: it has no decoration site of its own.
+warnCode "Orphaned sharing of translation attribute flow:tsU of translation attribute flow:tsT2 of child x" {
+production tsShareNested
+top::TSP ::= x::TSN2
+{
+  local z::TSL = @x.tsT2.tsU;
+  z.tsJ = top.tsK;
+  top.tsOut = z.tsS;
+}
+}
+
+-- A translation taken from a default equation is built elsewhere: its root depends on how the
+-- default builds it, and its attributes on what is supplied to the translation.
+translation attribute tsTD::TSM;
+synthesized attribute tsOutD::Integer;
+nonterminal TSD with tsK, tsTD, tsOutD;
+flowtype tsOutD {} on TSD;
+aspect default production
+top::TSD ::=
+{
+  top.tsTD = if top.tsK > 0 then tsM() else tsM();
+}
+
+warnCode "Synthesized equation tsOutD exceeds flow type with dependencies on flow:tsK, flow:tsTD.flow:tsJ" {
+production tsDUse
+top::TSD ::=
+{
+  top.tsOutD = top.tsTD.tsS;
+}
+}
+
+-- The same for a translation of a translation from a default equation.
+translation attribute tsTD2::TSM2;
+synthesized attribute tsOutD2::Integer;
+nonterminal TSD2 with tsTD2, tsOutD2;
+flowtype tsOutD2 {} on TSD2;
+aspect default production
+top::TSD2 ::=
+{
+  top.tsTD2 = tsM2();
+}
+
+warnCode "Synthesized equation tsOutD2 exceeds flow type with dependencies on flow:tsTD2.flow:tsU.flow:tsJ" {
+production tsDUse2
+top::TSD2 ::=
+{
+  top.tsOutD2 = top.tsTD2.tsU.tsS;
+}
+}

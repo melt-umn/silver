@@ -181,8 +181,8 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
      else addFwdSynEqs(prod, nt, synsBySuspicion.fst, flowEnv, realEnv) ++
-          addFwdTransRootEqs(prod, syns, flowEnv, realEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
+    addTransRootEqs(prod, syns, flowEnv, realEnv) ++
     flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
     map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
@@ -197,12 +197,30 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, nt, synsBySuspicion.snd, flowEnv, realEnv);
 
-  -- RHS only.
+  -- Translation attributes this production does not define, whose translation it cannot see.
+  local undefinedTransAttrs :: [String] =
+    filter(
+      \ attr::String -> isTranslationAttr(attr, realEnv) && null(lookupSyn(prod, attr, flowEnv)),
+      syns);
+  -- One supplied by a default equation.  The default's own tiles are not among this production's defs,
+  -- so the stitch point is needed in the tile graph too.
+  local defaultTransAttrs :: [String] =
+    if nonForwarding then filter(\ attr::String -> !null(lookupDef(nt, attr, flowEnv)), undefinedTransAttrs) else [];
+  -- One taken from the forward whose implicit copy is suspect.  The dotted copies of its synthesized
+  -- attributes are never admitted into the graph (see findAdmissibleEdges), but they are exact in the
+  -- tile graph, so the stitch point is kept out of it.
+  local suspectTransAttrs :: [String] =
+    if nonForwarding then [] else filter(contains(_, synsBySuspicion.snd), undefinedTransAttrs);
+
+  -- Stitch points used only in the normal flow graph and not the tile graph: those of the RHS,
+  -- and those of suspect translations taken from the forward.
   local sigNtStitchPoints :: [StitchPoint] =
-    flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements);
+    flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements) ++
+    lhsTransStitchPoints(realEnv, nt, suspectTransAttrs);
 
   -- locals and forward.
   local stitchPoints :: [StitchPoint] =
+    lhsTransStitchPoints(realEnv, nt, defaultTransAttrs) ++
     localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(defs) ++
@@ -487,6 +505,7 @@ fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName nt::NtName syns::
            (lhsSynVertex(syn), forwardOuterEqVertex()) ::
            -- A translation attribute taken from the forward is the forward's translation,
            -- so the synthesized attributes of the translation are copied as well.
+           -- (When suspect, these dotted copies reach only the tile graph; see findAdmissibleEdges.)
            map(
              \ transSyn::String ->
                (lhsSynVertex(s"${syn}.${transSyn}"), forwardSynVertex(s"${syn}.${transSyn}")),
@@ -494,19 +513,36 @@ fun addFwdSynEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName nt::NtName syns::
       else [],
     syns);
 {--
- - A translation attribute taken from the forward is the forward's translation, so the root of
- - the LHS's translation depends on the whole value of the attribute, and through it on the forward.
- - Never suspect: suspicion is kept on the edges out of the attribute's own vertex.
+ - A translation attribute that the production does not define (it is taken from the forward, or
+ - from a default equation) is built elsewhere, so the root of the LHS's translation depends on the
+ - whole value of the attribute.  Never suspect: suspicion is kept on the edges out of the attribute's
+ - own vertex.
  -}
-fun addFwdTransRootEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv realEnv::Env =
+fun addTransRootEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName syns::[String] flowEnv::FlowEnv realEnv::Env =
   flatMap(
     \ syn::String ->
-      case getAttrDcl(syn, realEnv) of
-      | at :: _ when at.isTranslation && null(lookupSyn(prod, syn, flowEnv)) ->
-        [(transAttrOuterEqVertex(lhsVertexType(), syn), lhsSynVertex(syn))]
-      | _ -> []
-      end,
+      if isTranslationAttr(syn, realEnv) && null(lookupSyn(prod, syn, flowEnv))
+      then [(transAttrOuterEqVertex(lhsVertexType(), syn), lhsSynVertex(syn))]
+      else [],
     syns);
+
+fun isTranslationAttr Boolean ::= attr::String realEnv::Env =
+  case getAttrDcl(attr, realEnv) of
+  | at :: _ -> at.isTranslation
+  | [] -> false
+  end;
+
+{--
+ - Nonterminal stitch points for the LHS's translations of the given translation attributes on 'nt'.
+ -}
+fun lhsTransStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  attrs::[String] =
+  flatMap(
+    \ attr::String ->
+      case getOccursDcl(attr, nt, realEnv) of
+      | o :: _ -> nonterminalStitchPoints(realEnv, o.attrTypeName, transAttrVertexType(lhsVertexType(), attr))
+      | [] -> []
+      end,
+    attrs);
 {--
  - Introduces implicit 'forward.inh = lhs.inh' equations.
  - Inherited equations are never suspect.
@@ -719,7 +755,10 @@ fun prodGraphToEnv Pair<String ProductionGraph> ::= p::ProductionGraph = (p.prod
  - So once valid that edge is valid, it is always valid. No additional edges or
  - flow type updates will change that.
  -
- - @param edge  A suspect edge. INVARIANT: edge.fst can always be looked up in the flow type.
+ - @param edge  A suspect edge. INVARIANT: edge.fst is an lhsSynVertex, looked up in the flow type.
+ -              For the dotted synthesized attributes of a translation ("a.s"), which are never
+ -              flow type keys, nothing is admitted: those copies only feed the tile graph, and the
+ -              graph gets a nonterminal stitch point for the translation instead (suspectTransAttrs).
  -              (currently, a syn or fwd)
  - @param graph  The current graph
  - @param ft  The current flow types for the nonterminal this graph belongs to.
