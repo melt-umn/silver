@@ -202,6 +202,22 @@ fun getTranslationAttrTargets [String] ::= seen::[String] ntty::Type e::Env =
         end,
       getAttrOccursOn(ntty.typeName, e)));
 
+{--
+ - Does some translation attribute occurring on 'ntty' (transitively) translate back to 'ntty'?
+ - This mirrors the error check for translation attribute occurrences in typechecking.
+ -}
+fun ntHasTransAttrOccursCycle Boolean ::= ntty::Type  env::Env =
+  any(map(
+    \ o::OccursDclInfo ->
+      contains(ntty.typeName, getTranslationAttrTargets([], determineAttributeType(o, ntty), env)),
+    filter(
+      \ o::OccursDclInfo ->
+        case getAttrDcl(o.attrOccurring, env) of
+        | at :: _ -> at.isTranslation
+        | _ -> false
+        end,
+      getAttrOccursOn(ntty.typeName, env))));
+
 -- Determines whether a type is automatically promoted to a decorated type
 -- and whether a type may be supplied with inherited attributes.
 -- Used by expression (id refs), decorate type checking, and translations.
@@ -286,12 +302,48 @@ function getInhAndInhOnTransAttrsOn
         | at :: _ when at.isSynthesized && at.isTranslation ->
           map(
             \ inh::String -> s"${o.attrOccurring}.${inh}",
-            recurse(nt :: seenNts, at.typeScheme.typeName))
+            recurse(nt :: seenNts, o.attrTypeName))
         | _ -> []
         end,
       getAttrOccursOn(nt, e));
   return recurse([], fnnt);
 }
+
+{--
+ - Returns the names of all synthesized attributes known locally to occur on a nonterminal.
+ - Also includes the synthesized attributes (and forward) of the trees of translation attributes
+ - on the nonterminal, as dotted names, like getInhAndInhOnTransAttrsOn does for inherited ones.
+ -}
+function getSynAndSynOnTransAttrsOn
+[String] ::= fnnt::String e::Env
+{
+  local recurse::([String] ::= [String] String) = \ seenNts nt ->
+    if contains(nt, seenNts) then []
+    else flatMap(
+      \ o::OccursDclInfo ->
+        case getAttrDcl(o.attrOccurring, e) of
+        | at :: _ when at.isSynthesized && at.isTranslation ->
+          o.attrOccurring ::
+          map(
+            \ syn::String -> s"${o.attrOccurring}.${syn}",
+            "forward" :: recurse(nt :: seenNts, o.attrTypeName))
+        | at :: _ when at.isSynthesized -> [o.attrOccurring]
+        | _ -> []
+        end,
+      getAttrOccursOn(nt, e));
+  return recurse([], fnnt);
+}
+
+{--
+ - For a translation attribute occurring on a nonterminal, the synthesized attributes (and forward)
+ - of its translation, as relative names to be prefixed with "attr."; empty for any other attribute.
+ -}
+fun getSynOnTransAttr [String] ::= attr::String  fnnt::String  e::Env =
+  case getAttrDcl(attr, e), getOccursDcl(attr, fnnt, e) of
+  | at :: _, o :: _ when at.isSynthesized && at.isTranslation ->
+    "forward" :: getSynAndSynOnTransAttrsOn(o.attrTypeName, e)
+  | _, _ -> []
+  end;
 
 -- This ensure the annotation list is in the properly sorted order!
 function annotationsForNonterminal

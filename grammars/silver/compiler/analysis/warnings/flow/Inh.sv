@@ -81,7 +81,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   production myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local transitiveDeps :: [FlowVertex] =
+  local transitiveDeps :: set:Set<FlowVertex> =
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -99,7 +99,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local transitiveDeps :: [FlowVertex] = 
+  local transitiveDeps :: set:Set<FlowVertex> = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   production lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -127,7 +127,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   production myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local transitiveDeps :: [FlowVertex] =
+  local transitiveDeps :: set:Set<FlowVertex> =
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -145,7 +145,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   production myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local transitiveDeps :: [FlowVertex] =
+  local transitiveDeps :: set:Set<FlowVertex> =
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -162,7 +162,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local transitiveDeps :: [FlowVertex] = 
+  local transitiveDeps :: set:Set<FlowVertex> = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   production lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -186,7 +186,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local transitiveDeps :: [FlowVertex] = 
+  local transitiveDeps :: set:Set<FlowVertex> = 
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   production lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -212,7 +212,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local transitiveDeps :: [FlowVertex] =
+  local transitiveDeps :: set:Set<FlowVertex> =
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -229,7 +229,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local transitiveDeps :: [FlowVertex] =
+  local transitiveDeps :: set:Set<FlowVertex> =
     expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
@@ -255,9 +255,9 @@ aspect production appendCollectionValueDef
 top::ProductionStmt ::= @val::QName e::Expr
 {
   local productionFlowGraph :: ProductionGraph = top.frame.flowGraph;
-  local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, productionFlowGraph);
+  local transitiveDeps :: set:Set<FlowVertex> = expandGraph(e.flowDeps, productionFlowGraph);
   
-  local originalEqDeps :: [FlowVertex] = 
+  local originalEqDeps :: set:Set<FlowVertex> = 
     expandGraph([localEqVertex(val.lookupValue.fullName)], productionFlowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
