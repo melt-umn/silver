@@ -199,6 +199,29 @@ top::TisR ::= tag::String x::TisX
   top.tisOut = site.tisOut ++ " " ++ x.tisB.tisOut;
 }
 
+-- x is shared unconditionally, so x's production can demand what the site supplies to x.a.
+production tisViaEnvSite
+top::TisR ::= x::TisX
+{
+  local site::TisP = tisEnvSite(@x);
+  top.tisName = x.tisA.tisOut;
+  top.tisOut = site.tisOut;
+}
+production tisViaShareSite
+top::TisR ::= x::TisX
+{
+  local site::TisP = tisShareSite(@x);
+  top.tisName = x.tisA.tisOut;
+  top.tisOut = site.tisOut;
+}
+-- The translation attribute of the forward is this production's own, so it gets what the parent supplies to that.
+production tisFwdOut
+top::TisX ::= n::String
+{
+  top.tisOut = "fwdOut[" ++ forward.tisA.tisOut ++ "]";
+  forwards to tisX(n);
+}
+
 -- The translation attribute created before or after the site is decorated.
 -- These take a decorated tree, as each access to an undecorated parameter decorates it anew.
 fun tisTransFirst String ::= r::Decorated TisR = r.tisName ++ " ; " ++ r.tisOut;
@@ -246,3 +269,10 @@ equalityTest(
   tisSiteFirst(decorate tisOverrideNested("2", tisX("x")) with {}),
   "nestedShareSite[x.b.a(site1), site[x.b.a(site1)]] x.b(owner1) ; x.b.a | nestedShareSite[x.b.a(site2), site[x.b.a(site2)]] x.b(owner2) ; x.b.a",
   String, silver_tests);
+
+-- Demanded by x's production from a site that x is shared at.
+equalityTest(tisTransFirst(decorate tisViaEnvSite(tisX("x")) with {}), "x.a(envSite) ; envSite[x.a(envSite)]", String, silver_tests);
+equalityTest(tisSiteFirst(decorate tisViaEnvSite(tisX("x")) with {}), "envSite[x.a(envSite)] ; x.a(envSite)", String, silver_tests);
+equalityTest(tisTransFirst(decorate tisViaEnvSite(tisXFwd("x")) with {}), "x.a(envSite) ; envSite[x.a(envSite)]", String, silver_tests);
+equalityTest(tisTransFirst(decorate tisViaShareSite(tisX("x")) with {}), "x.a(site) ; shareSite[x.a(site), site[x.a(site)]]", String, silver_tests);
+equalityTest(decorate tisEnvOutSite(tisFwdOut("x")) with {}.tisOut, "envOutSite[fwdOut[x.a(envOutSite)]]", String, silver_tests);

@@ -167,7 +167,14 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  | forwardVertexType() -> true
+  -- The forward gets its inherited attributes from the LHS, and those on a translation attribute
+  -- only when the production has no equation for the translation attribute,
+  -- so that the forward's translation attribute is the production's own.
+  | forwardVertexType() ->
+    case splitTransAttrInh(attrName) of
+    | just((transAttr, _)) -> null(lookupSyn(prodName, transAttr, flowEnv))
+    | nothing() -> true
+    end
   -- Note that we only support inh equations on trans attrs directly on a child/local,
   -- and not chained trans attrs.
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
