@@ -24,13 +24,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
     | d :: _ -> d.namedSignature
     | [] -> bogusNamedSignature()
     end;
-  local ntName::String =
-    case vt of
-    | forwardVertexType() -> ns.outputElement.typerep.typeName
-    | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
-    | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
-    | _ -> ""
-    end;
+  local ntName::String = vertexTypeName(prodName, vt, realEnv);
   local implementedSigName::Maybe<String> =
     case prodDcl of
     | d :: _ -> map((.fullName), d.implementedSignature)
@@ -39,6 +33,25 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
 
   local recurse::(DecSiteTree ::= String VertexType) =
     findDecSites(_, _, flowEnv, realEnv);
+
+  -- Decoration sites where translation attributes of the tree (of translation attributes, and so on)
+  -- are shared, for the inherited attributes on these translation attributes.
+  -- The nonterminals seen so far bound this in the presence of a cycle in translation attribute occurrences.
+  local transAttrShareDecSites::([DecSiteTree] ::= [String] String VertexType) =
+    \ seenNts::[String] nt::String transBase::VertexType ->
+      if contains(nt, seenNts) then []
+      else flatMap(
+        \ occDcl::OccursDclInfo ->
+          case getAttrDcl(occDcl.attrOccurring, realEnv) of
+          | dcl :: _ when dcl.isTranslation ->
+            let transVt::VertexType = transAttrVertexType(transBase, occDcl.attrOccurring)
+            in map(transAttrDec(occDcl.attrOccurring, _),
+                map(recurse(prodName, _), lookupRefDecSite(prodName, transVt, flowEnv)) ++
+                transAttrShareDecSites(nt :: seenNts, occDcl.attrTypeName, transVt))
+            end
+          | _ -> []
+          end,
+        getAttrOccursOn(nt, realEnv));
 
   return
     viaProdVertexDec(prodName, vt,
@@ -96,19 +109,10 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
           lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
       | _ -> neverDec()
       end +
-      -- Via direct sharing
-      sum(map(recurse(prodName, _), lookupRefDecSite(prodName, vt, flowEnv))) +
+      -- Via direct sharing, of this tree or of a tree that it is a translation attribute of
+      sum(map(recurse(prodName, _), lookupAllRefDecSites(prodName, vt, flowEnv))) +
       -- Via translation attribute sharing
-      sum(
-        flatMap(
-          \ attrName ->
-            case getAttrDcl(attrName, realEnv) of
-            | dcl :: _ when dcl.isTranslation ->
-              map(\ transDecSite -> transAttrDec(attrName, recurse(prodName, transDecSite)),
-                lookupRefDecSite(prodName, transAttrVertexType(vt, attrName), flowEnv))
-            | _ -> []
-            end,
-          getSynAttrsOn(ntName, realEnv))));
+      sum(transAttrShareDecSites([], ntName, vt)));
 }
 
 {--
@@ -144,16 +148,31 @@ State<PDSState DecSiteTree> ::=
     | d :: _ -> d.namedSignature
     | [] -> bogusNamedSignature()
     end;
-  local ntName::String =
-    case vt of
-    | forwardVertexType() -> ns.outputElement.typerep.typeName
-    | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
-    | rhsVertexType(sigName) -> lookupSignatureInputElem(sigName, ns).typerep.typeName
-    | _ -> ""
-    end;
+  local ntName::String = vertexTypeName(prodName, vt, realEnv);
 
   local recurse::(State<PDSState DecSiteTree> ::= String VertexType) =
     findPossibleDecSites(_, _, flowEnv, realEnv);
+
+  -- As in findDecSites, but for all places where translation attributes of the tree are possibly shared.
+  local transAttrSharePossibleDecSites::(State<PDSState [DecSiteTree]> ::= [String] String VertexType) =
+    \ seenNts::[String] nt::String transBase::VertexType ->
+      if contains(nt, seenNts) then pure([])
+      else map(concat, traverseA(
+        \ occDcl::OccursDclInfo ->
+          case getAttrDcl(occDcl.attrOccurring, realEnv) of
+          | dcl :: _ when dcl.isTranslation ->
+            let transVt::VertexType = transAttrVertexType(transBase, occDcl.attrOccurring)
+            in do {
+              viaShare :: [DecSiteTree] <-
+                traverseA(recurse(prodName, _), lookupRefPossibleDecSites(prodName, transVt, flowEnv));
+              viaNestedShare :: [DecSiteTree] <-
+                transAttrSharePossibleDecSites(nt :: seenNts, occDcl.attrTypeName, transVt);
+              return map(transAttrDec(occDcl.attrOccurring, _), viaShare ++ viaNestedShare);
+            }
+            end
+          | _ -> pure([])
+          end,
+        getAttrOccursOn(nt, realEnv)));
 
   return do {
     seen :: PDSState <- getState();
@@ -209,16 +228,8 @@ State<PDSState DecSiteTree> ::=
         | _ -> pure(neverDec())
         end;
       viaDirectShare :: [DecSiteTree] <-
-        traverseA(recurse(prodName, _), lookupRefPossibleDecSites(prodName, vt, flowEnv));
-      viaTransAttrShare :: [[DecSiteTree]] <-
-        traverseA(\ attrName ->
-          case getAttrDcl(attrName, realEnv) of
-          | dcl :: _ when dcl.isTranslation ->
-            traverseA(\ transDecSite -> map(transAttrDec(attrName, _), recurse(prodName, transDecSite)),
-              lookupRefPossibleDecSites(prodName, transAttrVertexType(vt, attrName), flowEnv))
-          | _ -> pure([])
-          end,
-          getSynAttrsOn(ntName, realEnv));
+        traverseA(recurse(prodName, _), lookupAllRefPossibleDecSites(prodName, vt, flowEnv));
+      viaTransAttrShare :: [DecSiteTree] <- transAttrSharePossibleDecSites([], ntName, vt);
       return
        (if vt.isInhDefVertex
         -- Direct inherited equation at a decoration site
@@ -227,7 +238,7 @@ State<PDSState DecSiteTree> ::=
         -- May be supplied non-locally
         then alwaysDec()
         else neverDec()) +
-        viaVertex + sum(viaDirectShare) + sum(concat(viaTransAttrShare));
+        viaVertex + sum(viaDirectShare) + sum(viaTransAttrShare);
     };
   };
 }

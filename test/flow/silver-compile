@@ -19,3 +19,7 @@ timeout 300 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow
 # A long match with guards, whose failure branches are deeply nested lets.
 # A regression in how shared references in lets are checked is exponential time, hence the timeout.
 timeout 120 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow:longCase
+
+# Extensions sharing translation attributes of translation attributes in aspects of host productions:
+# flow:transShare declares an occurrence on the shared chain, and flow:transShare:orphan does not.
+silver -I $SRC --warn-all --dont-translate $@ flow:transShare:orphan

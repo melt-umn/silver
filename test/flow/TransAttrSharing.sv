@@ -208,13 +208,14 @@ top::TSM ::= x::TSN
 }
 }
 
--- Sharing a translation of a translation is orphaned: it has no decoration site of its own.
-warnCode "Orphaned sharing of translation attribute flow:tsU of translation attribute flow:tsT2 of child x" {
+-- Sharing a translation of a translation from the production's grammar is not orphaned
+-- (see NestedTransSharing.sv.)
+noWarnCode "Orphaned sharing" {
 production tsShareNested
 top::TSP ::= x::TSN2
 {
   local z::TSL = @x.tsT2.tsU;
-  z.tsJ = top.tsK;
+  z.tsJ = 0;
   top.tsOut = z.tsS;
 }
 }

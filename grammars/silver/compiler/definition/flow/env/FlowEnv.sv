@@ -107,6 +107,26 @@ fun lookupRefPossibleDecSites [VertexType] ::= prod::String v::VertexType e::Flo
 fun lookupRefDecSite [VertexType] ::= prod::String v::VertexType e::FlowEnv =
   searchEnvTree(s"${prod}:${v.vertexName}", e.refDecSiteTree);
 
+-- possible decoration sites for places where this tree is shared, or where a tree that it is
+-- a translation attribute of (at any depth) is shared, as sharing a tree also shares its translations
+fun lookupAllRefPossibleDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv =
+  lookupRefPossibleDecSites(prod, v, e) ++
+  case v of
+  | transAttrVertexType(treeVertex, transAttr) ->
+    map(transAttrVertexType(_, transAttr), lookupAllRefPossibleDecSites(prod, treeVertex, e))
+  | _ -> []
+  end;
+
+-- unconditional decoration sites for places where this tree is shared, or where a tree that it is
+-- a translation attribute of (at any depth) is shared, as sharing a tree also shares its translations
+fun lookupAllRefDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv =
+  lookupRefDecSite(prod, v, e) ++
+  case v of
+  | transAttrVertexType(treeVertex, transAttr) ->
+    map(transAttrVertexType(_, transAttr), lookupAllRefDecSites(prod, treeVertex, e))
+  | _ -> []
+  end;
+
 -- places where this child was decorated in a production forwarding to this one
 fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
   searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
@@ -123,6 +143,22 @@ fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::Stri
     | _ -> []
     end
   | _ -> []
+  end;
+
+-- name of the nonterminal type of the tree of a vertex type in a production,
+-- or "" if this isn't known (e.g. for an anonymous decoration site)
+fun vertexTypeName String ::= prodName::String  vt::VertexType  realEnv::Env =
+  case vt of
+  | forwardVertexType() when getValueDcl(prodName, realEnv) matches prdDcl :: _ ->
+    prdDcl.namedSignature.outputElement.typerep.typeName
+  | rhsVertexType(sigName) when getValueDcl(prodName, realEnv) matches prdDcl :: _ ->
+    lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep.typeName
+  | localVertexType(fName) when getValueDcl(fName, realEnv) matches dcl :: _ -> dcl.typeScheme.typeName
+  -- The type of a translation attribute (of a translation attribute, and so on) is that of its occurrence
+  | transAttrVertexType(v, transAttr)
+      when getOccursDcl(transAttr, vertexTypeName(prodName, v, realEnv), realEnv) matches occDcl :: _ ->
+    occDcl.attrTypeName
+  | _ -> ""
   end;
 
 -- inherited equation for some arbitrary vertex type
