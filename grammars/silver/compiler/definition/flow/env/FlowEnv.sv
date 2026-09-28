@@ -94,9 +94,10 @@ fun lookupLocalInh [FlowDef] ::= prod::String  fName::String  attr::String  e::F
 fun lookupLocalEq [FlowDef] ::= prod::String  fName::String  e::FlowEnv =
   searchEnvTree(crossnames(prod, fName), e.localTree);
 
--- places where this tree is shared
+-- places where the tree at the root of this vertex (that it is a translation attribute of, and so on),
+-- or a translation attribute of that tree at any depth, is shared
 fun lookupSharedRefs [SharedRefSite] ::= prod::String v::VertexType e::FlowEnv =
-  searchEnvTree(s"${prod}:${v.vertexName}", e.sharedRefTree);
+  searchEnvTree(s"${prod}:${transRootVertex(v).vertexName}", e.sharedRefTree);
 
 -- possible decoration sites for places where this tree is shared
 fun lookupRefPossibleDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv =

@@ -15,3 +15,7 @@ timeout 300 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow
 # An extension, whose attributes are not known to the host's forwarding productions.
 # This recompiles flow as a dependency; a regression in flow type inference is a hang, hence the timeout.
 timeout 300 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow:transExt
+
+# A long match with guards, whose failure branches are deeply nested lets.
+# A regression in how shared references in lets are checked is exponential time, hence the timeout.
+timeout 120 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow:longCase
