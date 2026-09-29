@@ -87,7 +87,14 @@ top::ProductionGraph ::=
       else just(top(graph=repaired, tileGraph=repairedTile))
     end end end;
 
-  top.tileEdges = filter(isSigEdge, g:toList(top.tileGraph));
+  -- Only the edges from signature vertices are needed, so avoid listing all the edges of the tile graph.
+  top.tileEdges =
+    flatMap(
+      \ vws::(FlowVertex, [FlowVertex]) ->
+        if vws.1.isSigVertex
+        then map(\ w::FlowVertex -> (vws.1, w), filter(\ w::FlowVertex -> w.isSigVertex, vws.2))
+        else [],
+      graphAdjacency(top.tileGraph));
 
   top.edgeMap = g:edgesFrom(_, top.graph);
   top.tileEdgeMap = g:edgesFrom(_, top.tileGraph);
@@ -471,9 +478,6 @@ fun notSigEqDep Boolean ::= e::(FlowVertex, FlowVertex) =
   | (_, rhsOuterEqVertex(_)) -> false
   | _ -> true
   end;
-
-fun isSigEdge Boolean ::= edge::(FlowVertex, FlowVertex) =
-  edge.1.isSigVertex && edge.2.isSigVertex;
 
 synthesized attribute isSigVertex :: Boolean occurs on FlowVertex;
 aspect isSigVertex on FlowVertex of
