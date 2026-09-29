@@ -15,6 +15,17 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnMissingInh = true;
   forwards to @rest;
 }
+{--
+ - The same arguments, without the checks for missing inherited attributes.
+ - For an expression that is checked where it ends up, and is also checked on its own
+ - in a context where the equations it relies on cannot be found.
+ -}
+abstract production noWarnMissingInhFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.warnMissingInh = false;
+  forwards to @rest;
+}
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
