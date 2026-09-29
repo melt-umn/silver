@@ -127,6 +127,16 @@ FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   end;
 
 
+{--
+ - The vertex type whose synthesized attributes this stitch point gives the dependencies of, if any.
+ -}
+synthesized attribute stitchVertexType :: Maybe<VertexType> occurs on StitchPoint;
+aspect stitchVertexType on StitchPoint of
+| nonterminalStitchPoint(_, vertexType) -> just(vertexType)
+| tileStitchPoint(_, parentType) -> just(parentType)
+| projectionStitchPoint(_, _, _, _, _) -> nothing()
+end;
+
 -- Useful for mapping
 fun stitchEdgesFor
 [(FlowVertex, FlowVertex)] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph> =

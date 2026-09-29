@@ -112,6 +112,24 @@ top::ProductionGraph ::=
     end end;
 }
 
+{--
+ - Does some stitch point of the graph give the dependencies of the synthesized attributes on the tree
+ - at a vertex type, or on a tree that it is a translation attribute of?
+ - If not, as for a child shared through the signature, the graph says nothing about them.
+ -}
+fun hasSynStitchPoint Boolean ::= vt::VertexType  g::ProductionGraph =
+  any(map(
+    \ sp::StitchPoint ->
+      case sp.stitchVertexType of
+      | just(v) -> v.vertexName == vt.vertexName
+      | nothing() -> false
+      end,
+    g.stitchPoints ++ g.sigNtStitchPoints)) ||
+  case vt of
+  | transAttrVertexType(v, _) -> hasSynStitchPoint(v, g)
+  | _ -> false
+  end;
+
 fun updateGraph
 Maybe<ProductionGraph> ::=
     graph::ProductionGraph
