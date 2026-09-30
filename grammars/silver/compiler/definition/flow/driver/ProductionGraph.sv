@@ -90,11 +90,11 @@ top::ProductionGraph ::=
   -- Only the edges from signature vertices are needed, so avoid listing all the edges of the tile graph.
   top.tileEdges =
     flatMap(
-      \ vws::(FlowVertex, [FlowVertex]) ->
+      \ vws::(FlowVertex, set:Set<FlowVertex>) ->
         if vws.1.isSigVertex
-        then map(\ w::FlowVertex -> (vws.1, w), filter(\ w::FlowVertex -> w.isSigVertex, vws.2))
+        then map(\ w::FlowVertex -> (vws.1, w), filter(\ w::FlowVertex -> w.isSigVertex, set:toList(vws.2)))
         else [],
-      graphAdjacency(top.tileGraph));
+      g:adjacency(top.tileGraph));
 
   top.edgeMap = g:edgesFrom(_, top.graph);
   top.tileEdgeMap = g:edgesFrom(_, top.tileGraph);
@@ -115,7 +115,7 @@ top::ProductionGraph ::=
 {--
  - Does some stitch point of the graph give the dependencies of the synthesized attributes on the tree
  - at a vertex type, or on a tree that it is a translation attribute of?
- - If not, as for a child shared through the signature, the graph says nothing about them.
+ - If not, the graph says nothing about them.
  -}
 fun hasSynStitchPoint Boolean ::= vt::VertexType  g::ProductionGraph =
   any(map(

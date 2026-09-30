@@ -74,18 +74,6 @@ fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<Flo
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =
   g:transitiveClosure(g:add(l, g:emptyWith(compareVertexId)));
 
-{--
- - Each vertex of a graph that has edges from it, with the vertices those edges go to.
- - This walks the graph directly, rather than looking up the edges from each vertex.
- -}
-function graphAdjacency
-[(a, [a])] ::= graph::g:Graph<a>
-{
-  return error("NYI");
-} foreign {
-  "java" : return "common.ConsCell.fromList(%graph%.entrySet().stream().map(e -> new silver.core.Ppair(e.getKey(), common.rawlib.RawTreeSet.toList(e.getValue()))).collect(java.util.stream.Collectors.toList()))";
-}
-
 
 {--
  - Vertices are compared by ids given to their names, which are cached on each vertex.
