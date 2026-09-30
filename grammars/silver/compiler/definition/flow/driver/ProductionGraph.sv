@@ -38,10 +38,10 @@ annotation sigNtStitchPoints::[StitchPoint];
 
 {--
  - Given a set of flow types, stitches those edges into the graph for
- - all stitch points (i.e. children, locals, forward).
+ - the stitch points (i.e. children, locals, forward) that satisfy a predicate.
  - Either just a new graph, or nothing if no new edges were added.
  -}
-synthesized attribute stitchedGraph :: (Maybe<ProductionGraph> ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
+synthesized attribute stitchedGraph :: (Maybe<ProductionGraph> ::= EnvTree<FlowType> EnvTree<ProductionGraph> (Boolean ::= StitchPoint));
 
 {--
  - All edges between LHS and RHS vertices of the tile graph.
@@ -65,12 +65,12 @@ synthesized attribute cullSuspect :: (Maybe<ProductionGraph> ::= EnvTree<FlowTyp
 abstract production productionGraph
 top::ProductionGraph ::=
 {
-  top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
+  top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> include::(Boolean ::= StitchPoint) ->
     let
       edges :: [(FlowVertex, FlowVertex)] =
-        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), top.stitchPoints),
+        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), filter(include, top.stitchPoints)),
       sigEdges :: [(FlowVertex, FlowVertex)] =
-        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), top.sigNtStitchPoints)
+        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), filter(include, top.sigNtStitchPoints))
     in let
       newEdges :: [(FlowVertex, FlowVertex)] =
         filter(edgeIsNew(_, top.graph), filter(notSigEqDep, edges) ++ sigEdges),
@@ -135,9 +135,27 @@ Maybe<ProductionGraph> ::=
     graph::ProductionGraph
     prodEnv::EnvTree<ProductionGraph>
     ntEnv::EnvTree<FlowType> =
-  case graph.stitchedGraph(ntEnv, prodEnv) of
+  updateChangedGraph(graph, prodEnv, ntEnv, \ _ -> true);
+
+{--
+ - Update a graph whose flow types and production graphs have changed only for some dependency keys
+ - (see stitchDep) since it was last updated.  Only the stitch points depending on those can give new
+ - edges, and the suspect edges need another look only if the graph or its nonterminal's flow type changed.
+ -
+ - @param changed  Whether a dependency key has changed since the graph was last updated
+ -}
+fun updateChangedGraph
+Maybe<ProductionGraph> ::=
+    graph::ProductionGraph
+    prodEnv::EnvTree<ProductionGraph>
+    ntEnv::EnvTree<FlowType>
+    changed::(Boolean ::= String) =
+  case graph.stitchedGraph(ntEnv, prodEnv, \ sp::StitchPoint -> changed(sp.stitchDep)) of
   | just(newGraph) -> alt(newGraph.cullSuspect(ntEnv), just(newGraph))
-  | nothing() -> graph.cullSuspect(ntEnv)
+  | nothing() ->
+    if changed(prodDep(graph.prod)) || changed(ntDep(graph.lhsNt))
+    then graph.cullSuspect(ntEnv)
+    else nothing()
   end;
 
 

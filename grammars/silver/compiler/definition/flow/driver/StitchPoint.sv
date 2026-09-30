@@ -137,6 +137,20 @@ aspect stitchVertexType on StitchPoint of
 | projectionStitchPoint(_, _, _, _, _) -> nothing()
 end;
 
+{--
+ - The key for what the edges of this stitch point are computed from: the flow type of a nonterminal,
+ - or the graph of a production.
+ -}
+synthesized attribute stitchDep :: String occurs on StitchPoint;
+aspect stitchDep on StitchPoint of
+| nonterminalStitchPoint(nt, _) -> ntDep(nt)
+| projectionStitchPoint(prod, _, _, _, _) -> prodDep(prod)
+| tileStitchPoint(prod, _) -> prodDep(prod)
+end;
+
+fun ntDep String ::= nt::String = "nt:" ++ nt;
+fun prodDep String ::= prod::String = "prod:" ++ prod;
+
 -- Useful for mapping
 fun stitchEdgesFor
 [(FlowVertex, FlowVertex)] ::= sp::StitchPoint  ntEnv::EnvTree<FlowType>  prodEnv::EnvTree<ProductionGraph> =

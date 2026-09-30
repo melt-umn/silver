@@ -42,11 +42,30 @@ fun ntListCoalesce [(NtName, [(String, [String])])] ::= l::[[(NtName, String, [S
 fun runFlowTypeInference
 (EnvTree<ProductionGraph>, EnvTree<FlowType>) ::=
     graphs::[ProductionGraph] ntEnv::EnvTree<FlowType> =
-  runState(
-    fullySolveFlowTypes(map((.prod), graphs)),
-    (directBuildTree(map(prodGraphToEnv, graphs)), ntEnv)).1;
+  let final::InferStateVal =
+    runState(
+      fullySolveFlowTypes(map((.prod), graphs)),
+      inferStateVal(
+        inferGraphs=directBuildTree(map(prodGraphToEnv, graphs)), inferFlowTypes=ntEnv,
+        changedLastRound=set:empty(), changedThisRound=set:empty())).1
+  in (final.inferGraphs, final.inferFlowTypes)
+  end;
 
-type InferState = State<(EnvTree<ProductionGraph>, EnvTree<FlowType>) _>;
+{--
+ - The state of flow type inference.
+ -}
+data InferStateVal = inferStateVal with
+  inferGraphs,       -- The production graphs
+  inferFlowTypes,    -- The flow types
+  changedLastRound,  -- The dependency keys (see stitchDep) of the graphs and flow types that changed in the last round of updates
+  changedThisRound;  -- The same, for those that have changed so far in this round
+
+annotation inferGraphs::EnvTree<ProductionGraph>;
+annotation inferFlowTypes::EnvTree<FlowType>;
+annotation changedLastRound::set:Set<String>;
+annotation changedThisRound::set:Set<String>;
+
+type InferState = State<InferStateVal _>;
 
 {--
  - Produces flow types for every nonterminal.
@@ -56,33 +75,47 @@ fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
   -- Update the flow types from all the initial production graphs
   traverse_(updateFlowType, prods);
 
-  -- Just iterate until no new edges are added
-  doWhile_(
-    map(any, traverseA(
-      \ prod::ProdName -> do {
-        -- Update the production graph
-        graphUpdated :: Boolean <- updateProdGraph(prod);
+  -- Stitch every graph in full once, then just iterate until no new edges are added,
+  -- updating only the graphs with dependencies that changed since they were last updated.
+  -- A graph is updated once in each round, so these changed in the previous round or earlier in this one.
+  changed :: Boolean <- solveRound(true, prods);
+  when_(changed, doWhile_(solveRound(false, prods)));
+};
 
-        -- Only update the flow types for the prod's NT if the prod graph changed
-        when_(graphUpdated, updateFlowType(prod));
-        return graphUpdated;
-      },
-      prods)));
+fun solveRound InferState<Boolean> ::= all::Boolean prods::[ProdName] = do {
+  modifyState(\ s::InferStateVal -> s(changedLastRound=s.changedThisRound, changedThisRound=set:empty()));
+  map(any, traverseA(
+    \ prod::ProdName -> do {
+      -- Update the production graph
+      graphUpdated :: Boolean <- updateProdGraph(all, prod);
+
+      -- Only update the flow types for the prod's NT if the prod graph changed
+      when_(graphUpdated, updateFlowType(prod));
+      return graphUpdated;
+    },
+    prods));
 };
 
 {--
  - Update a production graph using the current flow types and graphs,
  - including tile graphs and stitch points.
+ -
+ - @param all  Whether to consider every dependency changed
  -}
 production updateProdGraph
-top::InferState<Boolean> ::= prod::ProdName
+top::InferState<Boolean> ::= all::Boolean prod::ProdName
 {
-  local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.1);
+  local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.inferGraphs);
   local updatedGraph :: Maybe<ProductionGraph> =
-    updateGraph(graph, top.stateIn.1, top.stateIn.2);
+    updateChangedGraph(graph, top.stateIn.inferGraphs, top.stateIn.inferFlowTypes,
+      \ dep::String ->
+        all || set:contains(dep, top.stateIn.changedLastRound) || set:contains(dep, top.stateIn.changedThisRound));
   top.stateOut =
     case updatedGraph of
-    | just(g) -> (rtm:update(prod, [g], top.stateIn.1), top.stateIn.2)
+    | just(g) ->
+      top.stateIn(
+        inferGraphs=rtm:update(prod, [g], top.stateIn.inferGraphs),
+        changedThisRound=set:add([prodDep(prod)], top.stateIn.changedThisRound))
     | nothing() -> top.stateIn
     end;
   top.stateVal = updatedGraph.isJust;
@@ -94,12 +127,18 @@ top::InferState<Boolean> ::= prod::ProdName
 production updateFlowType
 top::InferState<()> ::= prod::ProdName
 {
-  local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.1);
-  local currentFlowType :: FlowType = findFlowType(graph.lhsNt, top.stateIn.2);
-  local newFlowType :: FlowType = g:add(
-    flatMap(expandVertexFilterTo(_, graph), graph.flowTypeAttrs),
-    currentFlowType);
-  top.stateOut = (top.stateIn.1, rtm:update(graph.lhsNt, [newFlowType], top.stateIn.2));
+  local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.inferGraphs);
+  local currentFlowType :: FlowType = findFlowType(graph.lhsNt, top.stateIn.inferFlowTypes);
+  local newEdges :: [(String, String)] =
+    filter(
+      \ e::(String, String) -> !g:contains(e, currentFlowType),
+      flatMap(expandVertexFilterTo(_, graph), graph.flowTypeAttrs));
+  top.stateOut =
+    top.stateIn(
+      inferFlowTypes=rtm:update(graph.lhsNt, [g:add(newEdges, currentFlowType)], top.stateIn.inferFlowTypes),
+      changedThisRound=
+        if null(newEdges) then top.stateIn.changedThisRound
+        else set:add([ntDep(graph.lhsNt)], top.stateIn.changedThisRound));
   top.stateVal = ();
 }
 
