@@ -87,11 +87,14 @@ function graphAdjacency
 }
 
 
-global vertexCache::i:IdCache<FlowVertex> = i:empty();
+{--
+ - Vertices are compared by ids given to their names, which are cached on each vertex.
+ -}
+global vertexCache::i:IdCache = i:empty();
 synthesized attribute vertexId::Integer occurs on FlowVertex;
 aspect default production
 top::FlowVertex ::=
-{ top.vertexId = i:lookup(top, vertexCache); }
+{ top.vertexId = i:lookup(top.vertexName, vertexCache); }
 
 fun compareVertexId Integer ::= a::FlowVertex b::FlowVertex =
   a.vertexId - b.vertexId;
