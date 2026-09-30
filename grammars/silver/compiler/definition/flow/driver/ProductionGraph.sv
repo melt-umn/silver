@@ -800,14 +800,15 @@ function findAdmissibleEdges
   local currentDeps :: set:Set<String> =
     g:edgesFrom(edgeSyn, ft);
   
-  local targetNotSource :: set:Set<FlowVertex> = 
-    set:difference(
-      g:edgesFrom(edge.snd, graph),
-      g:edgesFrom(edge.fst, graph));
+  local targetDeps :: set:Set<FlowVertex> = g:edgesFrom(edge.snd, graph);
+  local sourceDeps :: set:Set<FlowVertex> = g:edgesFrom(edge.fst, graph);
   
   -- ONLY those that ARE in current. i.e. dependencies that do not expand the flow type of this source vertex.
+  -- (Look these up, rather than listing everything the target depends on, which can be much more.)
   local validDeps :: [FlowVertex] = 
-    filter(isLhsInhSet(_, currentDeps), set:toList(targetNotSource));
+    filter(
+      \ v::FlowVertex -> set:contains(v, targetDeps) && !set:contains(v, sourceDeps),
+      map(lhsInhVertex, set:toList(currentDeps)));
   
   return if set:isEmpty(currentDeps) then [] -- just a quick optimization.
   else zipFst(edge.fst, validDeps);

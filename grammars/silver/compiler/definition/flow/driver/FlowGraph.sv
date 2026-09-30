@@ -71,13 +71,6 @@ fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<Flo
   g:edgesFrom(syn, findFlowType(nt, flow));
 
 
-
-fun isLhsInhSet Boolean ::= v::FlowVertex  inhSet::set:Set<String> =
-  case v of
-  | lhsInhVertex(a) -> set:contains(a, inhSet)
-  | _ -> false
-  end;
-
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =
   g:transitiveClosure(g:add(l, g:emptyWith(compareVertexId)));
 
