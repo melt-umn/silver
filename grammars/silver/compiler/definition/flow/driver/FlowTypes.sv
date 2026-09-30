@@ -70,6 +70,11 @@ type InferState = State<InferStateVal _>;
 {--
  - Produces flow types for every nonterminal.
  - Iterates until convergence.
+ -
+ - TODO: Each round builds up a chain of binds and unevaluated states as long as the list of productions,
+ - and evaluating it takes stack space for each production (e.g. MWDA of ableC-prolog needs -Xss30m).
+ - Making the state strict, evaluating it after the update for each production in turn, would reduce the stack usage.
+ - (Just evaluating the states isn't enough without tail calls; the traversal itself needs to be a loop.)
  -}
 fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
   -- Update the flow types from all the initial production graphs
