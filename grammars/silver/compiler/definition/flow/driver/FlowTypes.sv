@@ -87,12 +87,12 @@ fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
   when_(changed, doWhile_(solveRound(false, prods)));
 };
 
-fun solveRound InferState<Boolean> ::= all::Boolean prods::[ProdName] = do {
+fun solveRound InferState<Boolean> ::= allChanged::Boolean prods::[ProdName] = do {
   modifyState(\ s::InferStateVal -> s(changedLastRound=s.changedThisRound, changedThisRound=set:empty()));
   map(any, traverseA(
     \ prod::ProdName -> do {
       -- Update the production graph
-      graphUpdated :: Boolean <- updateProdGraph(all, prod);
+      graphUpdated :: Boolean <- updateProdGraph(allChanged, prod);
 
       -- Only update the flow types for the prod's NT if the prod graph changed
       when_(graphUpdated, updateFlowType(prod));
@@ -105,16 +105,18 @@ fun solveRound InferState<Boolean> ::= all::Boolean prods::[ProdName] = do {
  - Update a production graph using the current flow types and graphs,
  - including tile graphs and stitch points.
  -
- - @param all  Whether to consider every dependency changed
+ - @param allChanged  Whether to consider every flow type and graph changed, as when first stitching the graph
  -}
 production updateProdGraph
-top::InferState<Boolean> ::= all::Boolean prod::ProdName
+top::InferState<Boolean> ::= allChanged::Boolean prod::ProdName
 {
   local graph :: ProductionGraph = findProductionGraph(prod, top.stateIn.inferGraphs);
   local updatedGraph :: Maybe<ProductionGraph> =
     updateChangedGraph(graph, top.stateIn.inferGraphs, top.stateIn.inferFlowTypes,
       \ dep::String ->
-        all || set:contains(dep, top.stateIn.changedLastRound) || set:contains(dep, top.stateIn.changedThisRound));
+        allChanged ||
+        set:contains(dep, top.stateIn.changedLastRound) ||
+        set:contains(dep, top.stateIn.changedThisRound));
   top.stateOut =
     case updatedGraph of
     | just(g) ->
