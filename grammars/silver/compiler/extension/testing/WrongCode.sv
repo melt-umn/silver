@@ -34,11 +34,14 @@ concrete production warnDecl
 top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "warnCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
-  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
   
+  -- Check the errors of the forward, since its flow definitions are the ones in the flow environment:
+  -- decorating ags separately would give anonymous decorations in it different flow vertices.
+  -- (Sharing ags with the forward instead would need an AGDcl production with an AGDcls child;
+  -- see makeAppendAGDclOfAGDcls.)
   top.errors := 
-    if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
-    then [errFromOrigin(top, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
+    if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, forward.errors)
+    then [errFromOrigin(top, "Warn code did not raise a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ forward.errors
     else [];
   
   forwards to makeAppendAGDclOfAGDcls(^ags);
@@ -57,17 +60,17 @@ concrete production noWarnDecl
 top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "noWarnCode " ++ s.lexeme ++ " {" ++ ags.unparse ++ "}";
-  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
 
   {-
-    I think we want the errors from ags in any case.  This production
+    I think we want the errors from the code in any case.  This production
     is essentially requiring that the code is correct, so we want to
     know that the reason there is no warning is because the code was
     written correctly, not because it had a worse error in it.
+    As in warnDecl, these are the errors of the forward.
   -}
   top.errors :=
-    ags.errors ++
-    if containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
+    forward.errors ++
+    if containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, forward.errors)
     then [errFromOrigin(top, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
     else [];
 

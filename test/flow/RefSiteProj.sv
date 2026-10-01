@@ -258,7 +258,7 @@ top::RSExpr ::= e::RSExpr
     if top.env1 == [] then copy12From2(@e) else base();
 }
 
-warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to local" {
+-- The tree shared at e1 is supplied env1 by the equation on e, so e1 needs none.
 production noReverseSharing
 top::RSExpr ::= e::RSExpr
 {
@@ -268,6 +268,17 @@ top::RSExpr ::= e::RSExpr
   e1.env2 = [];
   top.errors1 = e1.errors1;
   top.errors2 = e1.errors2;
+}
+
+warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to local" {
+production sharedMissing
+top::RSExpr ::= e::RSExpr
+{
+  e.env2 = top.env2;
+  local e1::RSExpr = @e;  -- No equation for e1.env1 or e.env1
+  e1.env2 = [];
+  top.errors1 = e1.errors1;
+  top.errors2 = false;
 }
 }
 

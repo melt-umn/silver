@@ -15,6 +15,17 @@ top::CmdArgs ::= rest::CmdArgs
   top.warnMissingInh = true;
   forwards to @rest;
 }
+{--
+ - The same arguments, without the checks for missing inherited attributes.
+ - For an expression that is checked where it ends up, and is also checked on its own
+ - in a context where the equations it relies on cannot be found.
+ -}
+abstract production noWarnMissingInhFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.warnMissingInh = false;
+  forwards to @rest;
+}
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
@@ -69,6 +80,26 @@ function inhDepsForSynOnType
       map(set:fromList, lookup(syn, lookupAll(t.typeName, contexts.occursContextInhDeps))),
       concat(lookupAll(syn, lookupAll(t.typeName, contexts.occursContextInhSetDeps))));
 }
+
+{--
+ - The inherited attributes in the flow type of a synthesized attribute that an access of it on the tree at a
+ - vertex type actually depends on, according to the production flow graph.
+ - A tree whose productions are unknown here has a nonterminal stitch point, giving it every attribute in the flow type.
+ - For a tree that the production constructs, its tile stitch points give only those needed by the productions it
+ - is built from, which can be fewer.
+ - For a tree shared there (as by `local y = @x;`), they are those given by the shared tree's own stitch points,
+ - except any that the shared tree is supplied with directly.
+ -
+ - @param vt  The vertex type of the tree on which the attribute is accessed
+ - @param syn  The accessed synthesized attribute
+ - @param flowTypeDeps  The inherited attributes in the flow type of syn on the tree's nonterminal
+ - @param g  The flow graph of the production (or function) where the access occurs
+ -}
+fun graphInhDepsForSyn
+set:Set<String> ::= vt::VertexType  syn::String  flowTypeDeps::set:Set<String>  g::ProductionGraph =
+  let reached::set:Set<FlowVertex> = expandGraph([vt.synVertex(syn)], g)
+  in set:filter(\ i::String -> set:contains(vt.inhVertex(i), reached), flowTypeDeps)
+  end;
 
 
 --------------------------------------------------------------------------------
@@ -432,7 +463,9 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             "Access of synthesized attribute " ++ q.name ++ " on " ++ e.unparse ++  -- TODO: e.unparse can be big, abbreviate it?
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), myGraphs, top.flowEnv, top.env))
+          decSitesMissingInhEqs(top.frame.fullName, vt,
+            set:toList(graphInhDepsForSyn(vt, q.attrDcl.fullName, inhDeps, top.frame.flowGraph)),
+            myGraphs, top.flowEnv, top.env))
       | _ -> []
       end
     else [];
@@ -486,11 +519,13 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
 
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
     inhDepsForSynOnType(q.attrDcl.fullName, e.finalType, myFlow, top.frame.signature, top.env);
+  -- When taking a reference to this translation attribute access, we depend on the ref set inhs on e.
+  local refInhDeps :: set:Set<String> =
+    set:fromList(map(\ inh::String -> s"${q.attrDcl.fullName}.${inh}", fromMaybe([], refSet)));
   local inhDeps :: set:Set<String> =
     -- Inh deps for computing this syn attribute
     fromMaybe(set:empty(), deps.1) ++  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
-    -- When taking a reference to this translation attribute access, we depend on the ref set inhs on e.
-    set:fromList(map(\ inh::String -> s"${q.attrDcl.fullName}.${inh}", fromMaybe([], refSet)));
+    refInhDeps;
 
   -- Need to check that all attrs in the reference set are supplied when taking a reference, as with locals/children/etc.
   top.errors <-
@@ -565,7 +600,11 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             "Access of translation attribute " ++ q.name ++ " on " ++ e.unparse ++
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, vt, set:toList(inhDeps), myGraphs, top.flowEnv, top.env))
+          decSitesMissingInhEqs(top.frame.fullName, vt,
+            set:toList(
+              graphInhDepsForSyn(vt, q.attrDcl.fullName, fromMaybe(set:empty(), deps.1), top.frame.flowGraph) ++
+              refInhDeps),
+            myGraphs, top.flowEnv, top.env))
       | _ -> []
       end
     else [];
