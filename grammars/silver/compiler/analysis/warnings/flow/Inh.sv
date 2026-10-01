@@ -87,7 +87,8 @@ function inhDepsForSynOnType
  - A tree whose productions are unknown here has a nonterminal stitch point, giving it every attribute in the flow type.
  - For a tree that the production constructs, its tile stitch points give only those needed by the productions it
  - is built from, which can be fewer.
- - A tree with no such stitch point, such as a child shared through the signature, needs the whole flow type.
+ - For a tree shared there (as by `local y = @x;`), they are those given by the shared tree's own stitch points,
+ - except any that the shared tree is supplied with directly.
  -
  - @param vt  The vertex type of the tree on which the attribute is accessed
  - @param syn  The accessed synthesized attribute
@@ -96,7 +97,6 @@ function inhDepsForSynOnType
  -}
 fun graphInhDepsForSyn
 set:Set<String> ::= vt::VertexType  syn::String  flowTypeDeps::set:Set<String>  g::ProductionGraph =
-  if !hasSynStitchPoint(vt, g) then flowTypeDeps else
   let reached::set:Set<FlowVertex> = expandGraph([vt.synVertex(syn)], g)
   in set:filter(\ i::String -> set:contains(vt.inhVertex(i), reached), flowTypeDeps)
   end;

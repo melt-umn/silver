@@ -112,24 +112,6 @@ top::ProductionGraph ::=
     end end;
 }
 
-{--
- - Does some stitch point of the graph give the dependencies of the synthesized attributes on the tree
- - at a vertex type, or on a tree that it is a translation attribute of?
- - If not, the graph says nothing about them.
- -}
-fun hasSynStitchPoint Boolean ::= vt::VertexType  g::ProductionGraph =
-  any(map(
-    \ sp::StitchPoint ->
-      case sp.stitchVertexType of
-      | just(v) -> v.vertexName == vt.vertexName
-      | nothing() -> false
-      end,
-    g.stitchPoints ++ g.sigNtStitchPoints)) ||
-  case vt of
-  | transAttrVertexType(v, _) -> hasSynStitchPoint(v, g)
-  | _ -> false
-  end;
-
 fun updateGraph
 Maybe<ProductionGraph> ::=
     graph::ProductionGraph
@@ -375,7 +357,8 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   -- There can still be anonEq, but there's no RHS anymore
   local stitchPoints :: [StitchPoint] =
     localStitchPoints(realEnv, defs) ++
-    patternStitchPoints(realEnv, defs);
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
   local flowTypeAttrs :: [String] = []; -- Not used as part of inference.
@@ -417,7 +400,8 @@ function constructDefaultProductionGraph
   local stitchPoints :: [StitchPoint] =
     nonterminalStitchPoints(realEnv, nt, lhsVertexType()) ++ 
     localStitchPoints(realEnv, defs) ++
-    patternStitchPoints(realEnv, defs);
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
@@ -708,7 +692,8 @@ fun localStitchPoints [StitchPoint] ::= realEnv::Env  ds::[FlowDef] =
     end, ds);
 fun rhsStitchPoints [StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement =
   -- We want only NONTERMINAL stitch points!
-  if rhs.typerep.isNonterminal
+  -- A child shared through the signature has a reference type, but is still a tree of its nonterminal.
+  if rhs.elementShared || rhs.typerep.isNonterminal
   then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
   else [];
 fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =

@@ -97,6 +97,35 @@ top::CaExpr ::= x::CaExpr
 }
 }
 
+-- A tree shared from a constructed local requires only what the local's productions use.
+noWarnCode "requires missing inherited attribute" {
+production caSharedLocal
+top::CaExpr ::=
+{
+  local a::CaExpr = caTwo();
+  local b::CaExpr = @a;
+  b.caEnv2 = "2";
+  top.caOut = b.caOut;
+}
+}
+warnCode "Access of synthesized attribute caOut on b requires missing inherited attribute(s) flow:caEnv2 to be supplied" {
+production caSharedLocalMissing
+top::CaExpr ::=
+{
+  local a::CaExpr = caTwo();
+  local b::CaExpr = @a;
+  top.caOut = b.caOut;
+}
+}
+
+-- The same holds for a tree decorated in a global.
+noWarnCode "requires missing inherited attribute" {
+global caGlobalTwo::String = decorate caTwo() with { caEnv2 = "2"; }.caOut;
+}
+warnCode "requires missing inherited attribute(s) flow:caEnv2 to be supplied to anonymous decoration site" {
+global caGlobalTwoMissing::String = decorate caTwo() with {}.caOut;
+}
+
 -- A constructed tree's translation attribute.
 translation attribute caTr::CaExpr;
 nonterminal CaHost with caTr, caOut;
