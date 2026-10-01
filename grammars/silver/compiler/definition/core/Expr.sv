@@ -409,6 +409,7 @@ abstract production curriedDispatchApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
 
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
 
@@ -437,6 +438,7 @@ abstract production annoUpdateApplication implements Application
 top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
 
   -- TODO: Error when no named arguments provided?
   local prod::Application =
@@ -568,6 +570,7 @@ abstract production undecoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars := e.freeVars;
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
   forwards to if !q.found then unknownDclAccessHandler(e, q)
@@ -582,6 +585,7 @@ abstract production dataAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars := e.freeVars;
   
   -- Note: LHS is data, here we dispatch based on the kind of attribute.
   forwards to if !q.found then unknownDclAccessHandler(e, q)
@@ -628,6 +632,7 @@ abstract production decoratedAccessHandler implements Access
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars := e.freeVars;
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
   forwards to if !q.found then unknownDclAccessHandler(e, q)
