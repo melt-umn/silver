@@ -157,16 +157,9 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   top.errors <- t.lookupType.errors;
   
   local pluckTAction::ProductionStmt = Silver_ProductionStmt { pluck $QName{^t}; };
-  -- Most of these aren't actually needed since we just want the translation. 
-  pluckTAction.config = top.config;
+  -- Only what the translation needs.
   pluckTAction.env = top.env;
-  pluckTAction.flowEnv = top.flowEnv;
-  pluckTAction.grammarName = top.grammarName;
-  pluckTAction.compiledGrammars = top.compiledGrammars;
-  pluckTAction.frame = error("Not needed");
-  pluckTAction.downSubst = emptySubst();
   pluckTAction.finalSubst = emptySubst();
-  pluckTAction.originRules = [];
   
   local tName::String = t.lookupType.dcl.fullName;
   local loc::Location = getParsedOriginLocation(top).fromJust;

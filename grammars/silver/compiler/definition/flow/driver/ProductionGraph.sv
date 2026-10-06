@@ -38,10 +38,10 @@ annotation sigNtStitchPoints::[StitchPoint];
 
 {--
  - Given a set of flow types, stitches those edges into the graph for
- - all stitch points (i.e. children, locals, forward).
+ - the stitch points (i.e. children, locals, forward) that satisfy a predicate.
  - Either just a new graph, or nothing if no new edges were added.
  -}
-synthesized attribute stitchedGraph :: (Maybe<ProductionGraph> ::= EnvTree<FlowType> EnvTree<ProductionGraph>);
+synthesized attribute stitchedGraph :: (Maybe<ProductionGraph> ::= EnvTree<FlowType> EnvTree<ProductionGraph> (Boolean ::= StitchPoint));
 
 {--
  - All edges between LHS and RHS vertices of the tile graph.
@@ -65,12 +65,12 @@ synthesized attribute cullSuspect :: (Maybe<ProductionGraph> ::= EnvTree<FlowTyp
 abstract production productionGraph
 top::ProductionGraph ::=
 {
-  top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
+  top.stitchedGraph = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> include::(Boolean ::= StitchPoint) ->
     let
       edges :: [(FlowVertex, FlowVertex)] =
-        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), top.stitchPoints),
+        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), filter(include, top.stitchPoints)),
       sigEdges :: [(FlowVertex, FlowVertex)] =
-        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), top.sigNtStitchPoints)
+        flatMap(stitchEdgesFor(_, flowTypes, prodGraphs), filter(include, top.sigNtStitchPoints))
     in let
       newEdges :: [(FlowVertex, FlowVertex)] =
         filter(edgeIsNew(_, top.graph), filter(notSigEqDep, edges) ++ sigEdges),
@@ -87,7 +87,14 @@ top::ProductionGraph ::=
       else just(top(graph=repaired, tileGraph=repairedTile))
     end end end;
 
-  top.tileEdges = filter(isSigEdge, g:toList(top.tileGraph));
+  -- Only the edges from signature vertices are needed, so avoid listing all the edges of the tile graph.
+  top.tileEdges =
+    flatMap(
+      \ vws::(FlowVertex, set:Set<FlowVertex>) ->
+        if vws.1.isSigVertex
+        then map(\ w::FlowVertex -> (vws.1, w), filter(\ w::FlowVertex -> w.isSigVertex, set:toList(vws.2)))
+        else [],
+      g:adjacency(top.tileGraph));
 
   top.edgeMap = g:edgesFrom(_, top.graph);
   top.tileEdgeMap = g:edgesFrom(_, top.tileGraph);
@@ -110,9 +117,27 @@ Maybe<ProductionGraph> ::=
     graph::ProductionGraph
     prodEnv::EnvTree<ProductionGraph>
     ntEnv::EnvTree<FlowType> =
-  case graph.stitchedGraph(ntEnv, prodEnv) of
+  updateChangedGraph(graph, prodEnv, ntEnv, \ _ -> true);
+
+{--
+ - Update a graph whose flow types and production graphs have changed only for some dependency keys
+ - (see stitchDep) since it was last updated.  Only the stitch points depending on those can give new
+ - edges, and the suspect edges need another look only if the graph or its nonterminal's flow type changed.
+ -
+ - @param changed  Whether a dependency key has changed since the graph was last updated
+ -}
+fun updateChangedGraph
+Maybe<ProductionGraph> ::=
+    graph::ProductionGraph
+    prodEnv::EnvTree<ProductionGraph>
+    ntEnv::EnvTree<FlowType>
+    changed::(Boolean ::= String) =
+  case graph.stitchedGraph(ntEnv, prodEnv, \ sp::StitchPoint -> changed(sp.stitchDep)) of
   | just(newGraph) -> alt(newGraph.cullSuspect(ntEnv), just(newGraph))
-  | nothing() -> graph.cullSuspect(ntEnv)
+  | nothing() ->
+    if changed(prodDep(graph.prod)) || changed(ntDep(graph.lhsNt))
+    then graph.cullSuspect(ntEnv)
+    else nothing()
   end;
 
 
@@ -332,7 +357,8 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   -- There can still be anonEq, but there's no RHS anymore
   local stitchPoints :: [StitchPoint] =
     localStitchPoints(realEnv, defs) ++
-    patternStitchPoints(realEnv, defs);
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
   local flowTypeAttrs :: [String] = []; -- Not used as part of inference.
@@ -374,7 +400,8 @@ function constructDefaultProductionGraph
   local stitchPoints :: [StitchPoint] =
     nonterminalStitchPoints(realEnv, nt, lhsVertexType()) ++ 
     localStitchPoints(realEnv, defs) ++
-    patternStitchPoints(realEnv, defs);
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(defs);
   local sigNtStitchPoints :: [StitchPoint] = [];
 
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
@@ -471,9 +498,6 @@ fun notSigEqDep Boolean ::= e::(FlowVertex, FlowVertex) =
   | (_, rhsOuterEqVertex(_)) -> false
   | _ -> true
   end;
-
-fun isSigEdge Boolean ::= edge::(FlowVertex, FlowVertex) =
-  edge.1.isSigVertex && edge.2.isSigVertex;
 
 synthesized attribute isSigVertex :: Boolean occurs on FlowVertex;
 aspect isSigVertex on FlowVertex of
@@ -668,7 +692,8 @@ fun localStitchPoints [StitchPoint] ::= realEnv::Env  ds::[FlowDef] =
     end, ds);
 fun rhsStitchPoints [StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement =
   -- We want only NONTERMINAL stitch points!
-  if rhs.typerep.isNonterminal
+  -- A child shared through the signature has a reference type, but is still a tree of its nonterminal.
+  if rhs.elementShared || rhs.typerep.isNonterminal
   then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
   else [];
 fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
@@ -778,14 +803,15 @@ function findAdmissibleEdges
   local currentDeps :: set:Set<String> =
     g:edgesFrom(edgeSyn, ft);
   
-  local targetNotSource :: set:Set<FlowVertex> = 
-    set:difference(
-      g:edgesFrom(edge.snd, graph),
-      g:edgesFrom(edge.fst, graph));
+  local targetDeps :: set:Set<FlowVertex> = g:edgesFrom(edge.snd, graph);
+  local sourceDeps :: set:Set<FlowVertex> = g:edgesFrom(edge.fst, graph);
   
   -- ONLY those that ARE in current. i.e. dependencies that do not expand the flow type of this source vertex.
+  -- (Look these up, rather than listing everything the target depends on, which can be much more.)
   local validDeps :: [FlowVertex] = 
-    filter(isLhsInhSet(_, currentDeps), set:toList(targetNotSource));
+    filter(
+      \ v::FlowVertex -> set:contains(v, targetDeps) && !set:contains(v, sourceDeps),
+      map(lhsInhVertex, set:toList(currentDeps)));
   
   return if set:isEmpty(currentDeps) then [] -- just a quick optimization.
   else zipFst(edge.fst, validDeps);
