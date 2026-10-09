@@ -29,21 +29,6 @@ set:Set<FlowVertex> ::= v::[FlowVertex]  e::ProductionGraph
 }
 fun onlyLhsInh set:Set<String> ::= s::set:Set<FlowVertex> = set:add(filterLhsInh(set:toList(s)), set:empty());
 
-fun expandTileGraphSigDeps
-set:Set<FlowVertex> ::= v::[FlowVertex] rhsNames::[String] g::ProductionGraph =
-  set:filter(isSigVertex(rhsNames, _),
-    set:add(v, flatMap(g.tileEdgeMap, v)));
-
-fun isSigVertex Boolean ::= rhsNames::[String] v::FlowVertex =
-  case v of
-  | lhsSynVertex(_) -> true
-  | lhsInhVertex(_) -> true
-  | rhsEqVertex(sigName) -> contains(sigName, rhsNames)
-  | rhsSynVertex(sigName, _) -> contains(sigName, rhsNames)
-  | rhsInhVertex(sigName, _) -> contains(sigName, rhsNames)
-  | _ -> false
-  end;
-
 -- suspect edges are not in the standard graph, so iteratively add them
 -- call like expandSuspectEdges(p.edges.toList, p.edges, p)
 function expandSuspectEdges
@@ -69,6 +54,35 @@ set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p:
  -}
 fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType> =
   g:edgesFrom(syn, findFlowType(nt, flow));
+
+{--
+ - The direct dependencies of what a decoration site itself supplies for the inherited attribute attr, in the terms of
+ - the production whose graph is given.  Unlike decSite.inhDeps(attr), these do not go through the tree shared there
+ - (see addDecSiteTreeEqs).  They come from the production's own edges (see unstitchedGraph), including implicit copies,
+ - and for a subterm, the edges of the production or dispatch signature applied there.  A translation attribute of the
+ - LHS is supplied what the LHS is supplied.
+ -}
+fun decSiteOwnInhDeps
+[FlowVertex] ::= graph::ProductionGraph  decSite::VertexType  attr::String  prodGraphs::EnvTree<ProductionGraph> =
+  (if transRootVertex(decSite) == lhsVertexType() then [decSite.inhVertex(attr)] else []) ++
+  set:toList(g:edgesFrom(decSite.inhVertex(attr), graph.unstitchedGraph)) ++
+  case decSite of
+  | subtermVertexType(parent, applied, sigName) ->
+    map(fromSigVertex(applied, parent, _),
+      filter(
+        -- The decoration site's own vertex for attr is in the applied tile flow graph through cycles, such as
+        -- those of addDispatchEqs, and would lead back to the tree shared there.
+        \ v::FlowVertex -> v.isSigVertex && v != rhsInhVertex(sigName, attr),
+        set:toList(findProductionGraph(applied, prodGraphs).tileEdgeMap(rhsInhVertex(sigName, attr)))))
+  | _ -> []
+  end;
+
+-- The LHS inherited attributes of a dispatch signature that an equation for v, the inherited attribute of one of its
+-- children, may depend on.  Implementations assume what the signature's normal graph allows (see
+-- implementedSigStitchPoints), and an application that leaves the attribute to the implementation assumes what its
+-- tile flow graph allows, so the bound is what both allow.
+fun dispatchChildAllowedInhs set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
+  set:intersect(onlyLhsInh(dispatchGraph.edgeMap(v)), onlyLhsInh(dispatchGraph.tileEdgeMap(v)));
 
 
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =

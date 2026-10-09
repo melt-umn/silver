@@ -88,6 +88,11 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   propagate flowEnv;
 }
+aspect production dispatchAttributeDef
+top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur e::Expr impl::AttributeDef
+{
+  propagate flowEnv;
+}
 aspect production errorAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr msg::[Message]
 {

@@ -441,16 +441,21 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - The definition of a pattern match on an anonymous reference.
  -
  - @param prod  the full name of the production
- - @param fName  the generated anonymous name for this decoration site
+ - @param fName  the generated anonymous name for this scrutinee
+ - @param gram  the grammar of the match
+ - @param loc  the location of the scrutinee
  - @param deps  the dependencies of this equation on other flow graph elements
  - (no contributions are possible)
  -}
 abstract production anonScrutineeEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  isNt::Boolean  refSet::[String]  gram::String  loc::Location  deps::[FlowVertex]
 {
-  top.localTreeContribs := [(crossnames(prod, fName), top)];
+  -- The vertex type for this scrutinee.  Its full name is used for the scrutinee's vertices, and as the key
+  -- for looking up this equation.
+  local vt::VertexType = anonScrutineeVertexType(fName, gram, loc);
+  top.localTreeContribs := [(crossnames(prod, vt.vertexName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = zipFst(anonEqVertex(fName), deps);
+  top.flowEdges = zipFst(vt.eqVertex, deps);
 }
 
 {--
@@ -567,7 +572,8 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
 }
 
 {--
- - A tree that is shared in the application of a production/dispatch signature
+ - A tree that is shared in the application of a production/dispatch signature.
+ - Only applications in the host language are recorded (see presentAppExpr's isHostApplication.)
  -
  - @param prod       the full name of the production/dispatch signature
  - @param nt         the full name of the nonterminal

@@ -37,13 +37,15 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  - check for a path in the flow graph while excluding some edges.
  -}
 function sharingSiteDependsOnInh
-(Boolean ::= String) ::= ref::VertexType  decSite::VertexType  graph::ProductionGraph
+(Boolean ::= String) ::=
+  ref::VertexType  decSite::VertexType  graph::ProductionGraph  prodGraphs::EnvTree<ProductionGraph>
 {
   local refDeps :: set:Set<FlowVertex> = expandGraph(ref.eqDeps ++ ref.outerEqDeps, graph);
+  -- Only what the decoration site itself supplies for i: its inherited vertex also depends on a tree decorated before
+  -- this production got it, which would make every such decoration site look like a cycle (see addDecSiteTreeEqs).
   return \ i::String -> set:contains(ref.inhVertex(i), expandGraph(
-      if set:contains(ref.inhVertex(i), refDeps)
-      then [decSite.inhVertex(i)]
-      else decSite.inhDeps(i),
+      decSiteOwnInhDeps(graph, decSite, i, prodGraphs) ++
+      (if set:contains(ref.inhVertex(i), refDeps) then [] else decSite.outerEqDeps),
     graph));
 }
 
@@ -62,7 +64,7 @@ top::Expr ::= '@' e::Expr
     case top.decSiteVertexInfo, e.flowVertexInfo of
     | _, just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
     | just(decSite), just(ref) when top.config.warnSharingCycles ->
-      let dependsOnInh :: (Boolean ::= String) = sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph)
+      let dependsOnInh :: (Boolean ::= String) = sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs)
       in flatMap(\ i::String ->
         if !vertexHasInhEq(top.frame.fullName, ref, i, top.flowEnv)
         && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
@@ -86,7 +88,7 @@ top::AppExpr ::= e::Expr
     case sigDecSite, e.flowVertexInfo of
     | just(decSite), just(ref)
         when top.config.warnSharingCycles && sigIsShared && isForwardParam ->
-      let dependsOnInh :: (Boolean ::= String) = sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph)
+      let dependsOnInh :: (Boolean ::= String) = sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs)
       in flatMap(\ i::String ->
         if !vertexHasInhEq(top.frame.fullName, ref, i, top.flowEnv)
         && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)

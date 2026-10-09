@@ -3,7 +3,7 @@ grammar silver:compiler:definition:flow:driver;
 import silver:compiler:definition:type only isNonterminal, typerep;
 
 data nonterminal ProductionGraph with
-  prod, lhsNt, flowTypeAttrs, graph, tileGraph, suspectEdges,
+  prod, lhsNt, flowTypeAttrs, graph, tileGraph, unstitchedGraph, suspectEdges,
   stitchPoints, sigNtStitchPoints,
   stitchedGraph, tileEdges, edgeMap, tileEdgeMap, suspectEdgeMap, cullSuspect;
 
@@ -26,6 +26,10 @@ annotation graph::g:Graph<FlowVertex>;
 
 -- The edges used for tile stitch points, excluding edges from sigNtStitchPoints.
 annotation tileGraph::g:Graph<FlowVertex>;
+
+-- The edges within this production before any stitching or transitive closure,
+-- without edges from addDecSiteTreeEqs (see decSiteOwnInhDeps).
+annotation unstitchedGraph::g:Graph<FlowVertex>;
 
 -- Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
 annotation suspectEdges::[(FlowVertex, FlowVertex)];
@@ -195,6 +199,11 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local inhs :: [String] = getInhAndInhOnTransAttrsOn(nt, realEnv);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
+  -- Only a production with a signature-shared child can reference its forward parent explicitly,
+  -- so don't add the forward parent edges unless it has one.
+  local hasSharedChild :: Boolean = any(map((.elementShared), dcl.namedSignature.inputElements));
+  local fwdParentEdges :: [(FlowVertex, FlowVertex)] =
+    if hasSharedChild then map(\ attr::String -> (forwardParentInhVertex(attr), lhsInhVertex(attr)), inhs) else [];
   
   -- Normal edges!
   local normalEdges :: [(FlowVertex, FlowVertex)] =
@@ -206,9 +215,9 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
      else addFwdSynEqs(prod, nt, synsBySuspicion.fst, flowEnv, realEnv) ++
-          addFwdInhEqs(prod, inhs, flowEnv)) ++
+          addFwdInhEqs(prod, forwardVertexType(), inhs, defs, flowEnv, realEnv)) ++
     addTransRootEqs(prod, syns, flowEnv, realEnv) ++
-    flatMap(addFwdProdAttrInhEqs(prod, _, inhs, flowEnv), allFwdProdAttrs(defs)) ++
+    flatMap(addFwdInhEqs(prod, _, inhs, defs, flowEnv, realEnv), map(localVertexType, allFwdProdAttrs(defs))) ++
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
     map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
   
@@ -237,26 +246,29 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local suspectTransAttrs :: [String] =
     if nonForwarding then [] else filter(contains(_, synsBySuspicion.snd), undefinedTransAttrs);
 
-  -- Stitch points used only in the normal flow graph and not the tile graph: those of the RHS,
-  -- and those of suspect translations taken from the forward.
+  -- Stitch points only in the normal graph: the flow types of the trees this production is given (its children and
+  -- forward parent), and what applications of it, or of the dispatch signature it implements, may supply to its
+  -- children.  Wherever the tile flow graph is stitched in, the stitching graph already has these more precisely.
   local sigNtStitchPoints :: [StitchPoint] =
     flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements) ++
-    lhsTransStitchPoints(realEnv, nt, suspectTransAttrs);
-
-  -- locals and forward.
-  local stitchPoints :: [StitchPoint] =
-    lhsTransStitchPoints(realEnv, nt, defaultTransAttrs) ++
-    localStitchPoints(realEnv, defs) ++
-    patternStitchPoints(realEnv, defs) ++
-    subtermDecSiteStitchPoints(defs) ++
-    sigSharingStitchPoints(realEnv, defs) ++
+    lhsTransStitchPoints(realEnv, nt, suspectTransAttrs) ++
+    (if hasSharedChild then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType()) else []) ++
+    sigSharingStitchPoints(flowEnv, realEnv, prod, dcl.namedSignature.inputNames, dcl.namedSignature.inputElements) ++
     case dcl.implementedSignature of
-    | just(sig) -> concat(zipWith(
-        implementedSigStitchPoints(realEnv, nt, _, sig.fullName, _),
+    | just(sig) ->
+      concat(zipWith(
+        implementedSigStitchPoints(realEnv, _, sig.fullName, _),
         dcl.namedSignature.inputElements,
         sig.inputElements))
     | nothing() -> []
     end;
+
+  -- Stitch points in both graphs.
+  local stitchPoints :: [StitchPoint] =
+    lhsTransStitchPoints(realEnv, nt, defaultTransAttrs) ++
+    localStitchPoints(realEnv, defs) ++
+    patternStitchPoints(realEnv, defs) ++
+    subtermDecSiteStitchPoints(defs);
 
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
   
@@ -264,15 +276,22 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     filter(!contains(_, flowTypeSpecs),
       (if nonForwarding then [] else ["forward"]) ++ syns);
   
+  -- Edges to trees decorated before this production got them (see addDecSiteTreeEqs), left out of unstitchedGraph.
+  local decSiteTreeEdges :: [(FlowVertex, FlowVertex)] =
+    flatMap(addDecSiteTreeEqs(realEnv, dcl.namedSignature, dcl.implementedSignature, _), defs);
+  -- deps on LHS/RHS.EQ don't matter in the regular graph
+  local ownEdges :: [(FlowVertex, FlowVertex)] = filter(notSigEqDep, fixedEdges) ++ fwdParentEdges;
   local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(filter(notSigEqDep, fixedEdges));  -- deps on LHS/RHS.EQ don't matter in the regular graph
+    createFlowGraph(ownEdges ++ decSiteTreeEdges);
   local initialTileGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(suspectEdges ++ fixedEdges);
+    createFlowGraph(suspectEdges ++ fixedEdges ++ decSiteTreeEdges);
+  local unstitchedGraph :: g:Graph<FlowVertex> =
+    g:add(ownEdges, g:emptyWith(compareVertexId));
 
   return productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
-    graph=initialGraph, tileGraph=initialTileGraph, suspectEdges=suspectEdges,
-    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    graph=initialGraph, tileGraph=initialTileGraph, unstitchedGraph=unstitchedGraph,
+    suspectEdges=suspectEdges, stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 }
 
 {--
@@ -324,7 +343,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
 
   local g :: ProductionGraph = productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
-    graph=initialGraph, tileGraph=initialTileGraph, suspectEdges=suspectEdges,
+    graph=initialGraph, tileGraph=initialTileGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 
   return fromMaybe(g, updateGraph(g, prodEnv, ntEnv));
@@ -365,7 +384,7 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   
   local g :: ProductionGraph = productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
-    graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
+    graph=initialGraph, tileGraph=initialGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 
   return fromMaybe(g, updateGraph(g, prodEnv, ntEnv));
@@ -410,7 +429,7 @@ function constructDefaultProductionGraph
 
   local g :: ProductionGraph = productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
-    graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
+    graph=initialGraph, tileGraph=initialGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
   
   -- Optimization: omit the default graph if there are no default equations for the NT.
@@ -447,7 +466,7 @@ function constructPhantomProductionGraph
 
   local g :: ProductionGraph = productionGraph(
     prod="Phantom for " ++ nt, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
-    graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
+    graph=initialGraph, tileGraph=initialGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
   
   -- Optimization: omit the phantom graph if there are no extension syns for the NT.
@@ -471,20 +490,30 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
   local defs :: [FlowDef] = getGraphContribsFor(dispatch, flowEnv);
 
   local normalEdges :: [(FlowVertex, FlowVertex)] =
-    flatMap(addDispatchEqs(flowEnv, realEnv, ns, _), defs);
+    flatMap(addDispatchEqs(flowEnv, realEnv, ns, _), defs) ++
+    addDispatchUnknownImplInhEqs(flowEnv, realEnv, ns);
 
   local stitchPoints :: [StitchPoint] =
-    sigSharingStitchPoints(realEnv, defs) ++  -- where this dispatch is applied
-    dispatchStitchPoints(flowEnv, realEnv, ns, defs);  -- impls of this dispatch
-  local sigNtStitchPoints :: [StitchPoint] = [];
+    dispatchStitchPoints(flowEnv, realEnv, ns, defs) ++  -- impls of this dispatch
+    -- The forward of an implementation from an independent extension: see addDispatchUnknownImplInhEqs.
+    nonterminalStitchPoints(realEnv, nt, forwardVertexType());
+  -- Where this dispatch, or one of its implementations by name, is applied in the host language, for the inherited
+  -- attributes supplied to the children of implementations.  These are not in the tile flow graph, as each application
+  -- knows what it supplies.
+  local sigNtStitchPoints :: [StitchPoint] =
+    flatMap(
+      \ p::(String, [String]) -> sigSharingStitchPoints(flowEnv, realEnv, p.1, p.2, ns.inputElements),
+      (dispatch, ns.inputNames) :: getImplementingProds(dispatch, flowEnv));
 
   local flowTypeAttrs :: [String] = [];  -- Doesn't (directly) affect flow types
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
+  local initialTileGraph :: g:Graph<FlowVertex> =
+    createFlowGraph(normalEdges ++ addDispatchUnknownImplSynEqs(realEnv, ns));
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   return productionGraph(
     prod=dispatch, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
-    graph=initialGraph, tileGraph=initialGraph, suspectEdges=suspectEdges,
+    graph=initialGraph, tileGraph=initialTileGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
     stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
 }
 
@@ -568,22 +597,43 @@ fun lhsTransStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  attrs::[Str
       end,
     attrs);
 {--
- - Introduces implicit 'forward.inh = lhs.inh' equations.
+ - Introduces implicit 'vt.inh = lhs.inh' equations for vt, the forward or a forward production attribute, for the
+ - inherited attributes that have no direct equation on vt.
+ - This production is the forward parent of the tree at vt.  If vt's defining expression may build that tree by
+ - applying a production or dispatch signature that can record a dependency on its forward parent's inherited
+ - attribute i as a dependency on its own i (see dependsOnFwdParentViaLhs), a dependency on vt.i may really be on
+ - this production's i, so the edge is kept even where vt.i has an equation.
  - Inherited equations are never suspect.
  -}
-fun addFwdInhEqs [(FlowVertex, FlowVertex)] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv =
-  if null(inhs) then []
-  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardInhVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
-    addFwdInhEqs(prod, tail(inhs), flowEnv);
-{--
- - Introduces implicit 'fwrd.inh = lhs.inh' equations for forward production attributes.
- - Inherited equations are never suspect.
- -}
-fun addFwdProdAttrInhEqs
-[(FlowVertex, FlowVertex)] ::= prod::ProdName fName::String inhs::[String] flowEnv::FlowEnv =
-  if null(inhs) then []
-  else (if null(lookupLocalInh(prod, fName, head(inhs), flowEnv)) then [(localInhVertex(fName, head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
-    addFwdProdAttrInhEqs(prod, fName, tail(inhs), flowEnv);
+fun addFwdInhEqs
+[(FlowVertex, FlowVertex)] ::=
+  prod::ProdName  vt::VertexType  inhs::[String]  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Env =
+  map(
+    \ attr::String -> (vt.inhVertex(attr), lhsInhVertex(attr)),
+    if any(map(
+         \ d::FlowDef ->
+           case d of
+           | subtermDecEq(_, _, parent, termProd) ->
+             parent.vertexName == vt.vertexName && dependsOnFwdParentViaLhs(termProd, realEnv)
+           | _ -> false
+           end,
+         defs))
+    then inhs
+    else filter(
+      \ attr::String ->
+        null(case vt of
+             | localVertexType(fName) -> lookupLocalInh(prod, fName, attr, flowEnv)
+             | _ -> lookupFwdInh(prod, attr, flowEnv)
+             end),
+      inhs));
+-- Can the production or dispatch signature termProd record a dependency on its forward parent's inherited attribute i
+-- as a dependency on its own i?  A dispatch signature (which has no value declaration) and its implementations can
+-- (see implementedSigStitchPoints), and so can a production with a signature-shared child (see sigSharingStitchPoints).
+fun dependsOnFwdParentViaLhs Boolean ::= termProd::String  realEnv::Env =
+  case getValueDcl(termProd, realEnv) of
+  | [] -> true
+  | dcl :: _ -> dcl.implementedSignature.isJust || any(map((.elementShared), dcl.namedSignature.inputElements))
+  end;
 fun allFwdProdAttrs [String] ::= d::[FlowDef] =
   case d of
   | [] -> []
@@ -628,6 +678,38 @@ fun addDefEqs
    | _ -> []
    end;
 {--
+ - Introduce edges from the inherited attributes of a decoration site to those of the tree shared there, if the tree was
+ - decorated before this production got it.  What was supplied to the tree then takes precedence over the decoration
+ - site's equations.  A decoration site that is a translation attribute of the LHS gets none: its inherited vertices
+ - are LHS inherited vertices (lhs.t.k), which must have no out-edges (see findAdmissibleEdges.)
+ -}
+fun addDecSiteTreeEqs
+[(FlowVertex, FlowVertex)] ::= realEnv::Env  ns::NamedSignature  implSig::Maybe<NamedSignature>  d::FlowDef =
+  case d of
+  | refDecSiteEq(_, nt, ref, decSite, _)
+      when decoratedBefore(ns, implSig, ref) && transRootVertex(decSite) != lhsVertexType() ->
+    map(\ attr::String -> (decSite.inhVertex(attr), ref.inhVertex(attr)), getInhAndInhOnTransAttrsOn(nt, realEnv))
+  | _ -> []
+  end;
+{--
+ - Was the tree vt decorated before the production with signature ns got it?  A child shared through the signature
+ - was, and so may be a nonterminal child of an implementation at a position of the dispatch signature implSig that it
+ - implements, as an application may pass a tree with '@x' to that child even where implSig does not share it (see
+ - implementedSigStitchPoints.)  So may the translation attributes of these.
+ -}
+fun decoratedBefore Boolean ::= ns::NamedSignature  implSig::Maybe<NamedSignature>  vt::VertexType =
+  case transRootVertex(vt) of
+  | rhsVertexType(sigName) ->
+    lookupSignatureInputElem(sigName, ns).elementShared ||
+    case implSig of
+    | just(sig) ->
+      positionOf(sigName, ns.inputNames) < length(sig.inputElements) &&
+      lookupSignatureInputElem(sigName, ns).typerep.isNonterminal
+    | nothing() -> false
+    end
+  | _ -> false
+  end;
+{--
  - Introduce edges between lhs/rhs syn/inh and subterm vertices with tile deps.
  -}
 fun addDispatchEqs
@@ -649,6 +731,59 @@ fun addDispatchEqs
       dispatch.inputElements, sigNames))
   | _ -> []
   end;
+{--
+ - Introduce edges for what an implementation of a dispatch signature in an independent extension may supply.
+ - Such implementations are not known here, but must forward to an application of the dispatch signature
+ - (see OrphanedProduction.sv).  The forward vertex type stands for that forward.  The graph of a dispatch signature
+ - does not otherwise use the forward vertex type.
+ - * The forward has the inherited attributes of the LHS.
+ - * Some application in the host language might not supply an inherited attribute to an argument
+ -   (see sigShareSitesHaveInhEq).  The implementation's equation for that attribute may then depend on anything in the
+ -   forward flow type.
+ -}
+fun addDispatchUnknownImplInhEqs
+[(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature =
+  map(
+    \ attr::String -> (forwardInhVertex(attr), lhsInhVertex(attr)),
+    getInhAndInhOnTransAttrsOn(dispatch.outputElement.typerep.typeName, realEnv)) ++
+  flatMap(
+    \ ie::NamedSignatureElement ->
+      map(
+        \ attr::String -> (rhsInhVertex(ie.elementName, attr), unknownImplForwardVertex),
+        implSuppliedInhs(flowEnv, realEnv, dispatch.fullName, ie)),
+    dispatch.inputElements);
+{--
+ - Introduce edges for the synthesized attributes and the forward of an implementation of a dispatch signature in an
+ - independent extension (see addDispatchUnknownImplInhEqs).  These edges are only in the signature's tile flow graph.
+ - * An attribute of the LHS is copied from the forward, or else defined within its own flow type, as the flow-type
+ -   check on implementations accounts for anything an application or earlier implementation could supply to their
+ -   children (see implementedSigStitchPoints and dispatchChildAllowedInhs).  So the attribute depends on the same
+ -   attribute of the forward.
+ -   A nonterminal stitch point on the forward vertex type relates that attribute to its flow type.
+ - * The forward may be built from the values of the arguments.
+ -}
+fun addDispatchUnknownImplSynEqs
+[(FlowVertex, FlowVertex)] ::= realEnv::Env  dispatch::NamedSignature =
+  flatMap(
+    \ attr::String -> [(lhsSynVertex(attr), forwardSynVertex(attr)), (lhsSynVertex(attr), forwardOuterEqVertex())],
+    "forward" :: getSynAndSynOnTransAttrsOn(dispatch.outputElement.typerep.typeName, realEnv)) ++
+  (unknownImplForwardVertex, forwardOuterEqVertex()) ::
+  flatMap(
+    \ ie::NamedSignatureElement ->
+      [(forwardOuterEqVertex(), rhsEqVertex(ie.elementName)),
+       (forwardOuterEqVertex(), rhsOuterEqVertex(ie.elementName))],
+    dispatch.inputElements);
+-- The inherited attributes of the child de of a dispatch signature that an implementation may supply: those that some
+-- application in the host language does not supply (see sigShareSitesHaveInhEq), or all of an unshared child's, as
+-- sharing sites are only recorded for children shared through the signature.  A child that is not a tree has none.
+fun implSuppliedInhs [String] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::String  de::NamedSignatureElement =
+  if de.elementShared || de.typerep.isNonterminal
+  then filter(
+    \ attr::String -> !de.elementShared || !sigShareSitesHaveInhEq(dispatch, de.elementName, attr, flowEnv),
+    getInhAndInhOnTransAttrsOn(de.typerep.typeName, realEnv))
+  else [];
+-- The forward of an implementation from an independent extension: see addDispatchUnknownImplInhEqs.
+global unknownImplForwardVertex :: FlowVertex = forwardSynVertex("forward");
 {--
  - Introduce 'lhs.eq -> rhs.eq' edges, to capture the deps of taking a reference to the LHS.
  -}
@@ -721,19 +856,32 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =
     | _ -> []
     end,
     defs);
--- deps for prod/dispatch sig, from prods that forwarded to it
-fun sigSharingStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
-  flatMap(\ d::FlowDef ->
-    case d of
-    | sigShareSite(_, sigNt, sigName, sourceProd, vt) ->
-        [projectionStitchPoint(
-          sourceProd, rhsVertexType(sigName), lhsVertexType(), vt,
-          getInhAndInhOnTransAttrsOn(sigNt, realEnv))]
-    | _ -> []
-    end,
-    defs);
--- deps for child of prod, from dispatch sig that prod implements
-fun implementedSigStitchPoints [StitchPoint] ::= realEnv::Env  nt::NtName  ie::NamedSignatureElement  dispatch::String se::NamedSignatureElement =
+-- Stitch points for what host-language applications of prod (a production, dispatch signature or implementation)
+-- supply to the children it shares through its signature.  sigNames are prod's children, and elems those at the same
+-- positions in the signature this graph is for: in a dispatch signature's graph, the signature's, as an
+-- implementation applied by name may pass the tree on to another implementation (see implementedSigStitchPoints).
+fun sigSharingStitchPoints
+[StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  prod::String  sigNames::[String]  elems::[NamedSignatureElement] =
+  concat(zipWith(
+    \ sigName::String e::NamedSignatureElement ->
+      map(
+        \ sharingSite::(String, VertexType) ->
+          projectionStitchPoint(
+            sharingSite.1, rhsVertexType(e.elementName), lhsVertexType(), sharingSite.2,
+            filter(
+              vertexHasInhEq(sharingSite.1, sharingSite.2, _, flowEnv),
+              getInhAndInhOnTransAttrsOn(e.typerep.typeName, realEnv))),
+        lookupSigShareSites(prod, sigName, flowEnv)),
+    sigNames, elems));
+{--
+ - Stitch points for a child of an implementation at a position of the dispatch signature it implements, for what may
+ - be supplied to the child before the implementation gets it: by an application of the signature (see
+ - DispatchSites.sv), by an earlier implementation in a chain of forwards, or by an implementation not known here (see
+ - addDispatchUnknownImplInhEqs).  This projects the signature's normal graph onto the implementation's own inherited
+ - attributes, as for its forward parent.
+ -}
+fun implementedSigStitchPoints
+[StitchPoint] ::= realEnv::Env  ie::NamedSignatureElement  dispatch::String  se::NamedSignatureElement =
   if ie.elementShared || ie.typerep.isNonterminal
   then [projectionStitchPoint(
     dispatch, rhsVertexType(ie.elementName), lhsVertexType(), rhsVertexType(se.elementName),
@@ -752,7 +900,7 @@ fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispa
     end,
     defs);
 
----- End helpers for figuring our stitch points --------------------------------
+---- End helpers for figuring out stitch points --------------------------------
 
 fun prodGraphToEnv Pair<String ProductionGraph> ::= p::ProductionGraph = (p.prod, p);
 

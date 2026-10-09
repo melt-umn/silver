@@ -25,11 +25,6 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
     | [] -> bogusNamedSignature()
     end;
   local ntName::String = vertexTypeName(prodName, vt, realEnv);
-  local implementedSigName::Maybe<String> =
-    case prodDcl of
-    | d :: _ -> map((.fullName), d.implementedSignature)
-    | _ -> nothing()
-    end;
 
   local recurse::(DecSiteTree ::= String VertexType) =
     findDecSites(_, _, flowEnv, realEnv);
@@ -72,14 +67,10 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
          (if !null(getValueDcl(prodOrSig, realEnv))
           -- Projected from a production
           then recurse(prodOrSig, rhsVertexType(sigName))
-          -- Projected from a dispatch signature
-          else if implementedSigName == just(prodOrSig)
-          -- A projection of the same dispatch signature that the current production implements.
-          -- Could potentially be a cycle, but more likely is just an implementation
-          -- production that dispatches again, which we want to permit.
-          -- TODO: This should check that the dispatch is actually applied to the same child;
-          -- should this check be done here or in resolving the decision tree?
-          then alwaysDec()
+          -- Projected from a dispatch signature: what every host-language implementation supplies.
+          -- An implementation in an extension must forward to an application of the dispatch signature
+          -- with the same shared children (see OrphanedProduction.sv).
+          -- So a chain of such forwards eventually reaches a host-language implementation.
           else
             case getTypeDcl(prodOrSig, realEnv) of
             | sigDcl :: _ -> 
@@ -87,7 +78,12 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
                 prodOrSig, rhsVertexType(sigName),
                 product(map(\ prod::(String, [String]) ->
                   case drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2) of
-                  | sn :: _ -> recurse(prod.1, rhsVertexType(sn))
+                  | sn :: _ ->
+                    -- An implementation that dispatches again with the same child relies on what the other
+                    -- implementations supply.
+                    if any(map(isDispatchSite(prodOrSig, sigName, _), lookupAllRefDecSites(prod.1, rhsVertexType(sn), flowEnv)))
+                    then alwaysDec()
+                    else recurse(prod.1, rhsVertexType(sn))
                   | _ -> error(s"findDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
                   end,
                 -- Look at all the (host) productions that implement this dispatch signature
@@ -101,7 +97,8 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
       -- Via the reference set of a pattern match scrutinee
       | anonScrutineeVertexType(_, grammarName, l) ->
         anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l)
-      -- Via signature/dispatch sharing
+      -- Via signature/dispatch sharing.  Only applications in the host language may share a tree as a
+      -- signature-shared child, other than an implementation passing on its own child (see Sharing.sv).
       | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
         product(unzipWith(recurse,
           -- places where this child was decorated in a production forwarding to this one,
@@ -137,6 +134,13 @@ fun suppliesTransAttrInhs Boolean ::= prodName::String  vt::VertexType  transAtt
   | _ -> false
   end;
 
+-- Is the decoration site vt of a shared tree the child sigName of an application of the dispatch signature?
+fun isDispatchSite Boolean ::= dispatch::String  sigName::String  vt::VertexType =
+  case vt of
+  | subtermVertexType(_, d, sn) -> d == dispatch && sn == sigName
+  | _ -> false
+  end;
+
 {--
  - The state used in finding possible decoration sites.
  - We track the (prod, vertex) and (dispatch sig, rhs name) pairs already visited
@@ -152,9 +156,12 @@ type PDSState = ([(String, VertexType)], [(String, String)]);
  - This mirrors the above, but we also consider sites where a tree is only conditionally shared.
  - Since we only care if a vertex is *possibly* supplied with an attribute, we can memoize the
  - vertices visited in the entire search (using a State monad) rather than just the current branch.
+ - The search starts at a decoration site.  It enters another production only through an application that shares the
+ - tree as one of its children, and only that application decorated the tree.  So unlike findDecSites, it does not
+ - follow a child shared through the signature out to the production's other applications.
  -
  - @param prodName The name of the production containing the vertex type.
- - @param vt The vertex type to find decoration sites for.
+ - @param vt The decoration site to start from.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
  - @return A decision tree to determine if an inherited attributes could possibly be supplied for vt.
@@ -164,12 +171,6 @@ State<PDSState DecSiteTree> ::=
   prodName::String vt::VertexType
   flowEnv::FlowEnv realEnv::Env
 {
-  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
-  local ns :: NamedSignature =
-    case prodDcl of
-    | d :: _ -> d.namedSignature
-    | [] -> bogusNamedSignature()
-    end;
   local ntName::String = vertexTypeName(prodName, vt, realEnv);
 
   local recurse::(State<PDSState DecSiteTree> ::= String VertexType) =
@@ -241,12 +242,6 @@ State<PDSState DecSiteTree> ::=
         -- Via the reference set of a pattern match scrutinee
         | anonScrutineeVertexType(_, grammarName, l) ->
           pure(anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l))
-        -- Via signature/dispatch sharing
-        | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
-          map(sum, sequence(unzipWith(recurse,
-            -- places where this child was decorated in a production forwarding to this one,
-            -- or in a dispatch signature that this production implements
-            lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv))))
         | _ -> pure(neverDec())
         end;
       viaDirectShare :: [DecSiteTree] <-

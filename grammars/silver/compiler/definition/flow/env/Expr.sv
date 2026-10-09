@@ -369,12 +369,48 @@ top::AppExpr ::= e::Expr
     | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> true
     | _ -> false
     end;
+  -- The production or dispatch signature whose grammar may share a tree as this child.  If an implementation is
+  -- applied and its dispatch signature has a child at this position, this is that dispatch signature.
+  production appliedSig::Maybe<NamedSignature> =
+    case top.appProd of
+    | just(ns) ->
+      case getValueDcl(ns.fullName, top.env) of
+      | dcl :: _ when dcl.implementedSignature matches just(sig) ->
+        just(if sigIndex < length(sig.inputElements) then sig else ns)
+      | _ -> just(ns)
+      end
+    | nothing() -> nothing()
+    end;
+  -- Is this application in a grammar exported by the grammar of appliedSig?  Only such applications can share a
+  -- tree as a child shared through the signature (see Sharing.sv), so only they are recorded as sharing sites.
+  production isHostApplication::Boolean =
+    case appliedSig of
+    | just(sig) ->
+      isExportedBy(top.grammarName, [implode(":", init(explode(":", sig.fullName)))], top.compiledGrammars)
+    | nothing() -> false
+    end;
+  -- When a dispatch signature is applied, an implementation not known here may build its forward from the value
+  -- of any argument (see addDispatchUnknownImplSynEqs.)
+  top.flowDefs <-
+    case top.decSiteVertexInfo, top.appProd of
+    | just(parent), just(ns) when
+        null(getValueDcl(ns.fullName, top.env)) && (sigIsShared || isDecorable(top.appExprTyperep, top.env)) ->
+      [extraEq(
+        top.frame.fullName, subtermEqVertex(parent, ns.fullName, sigName),
+        case e.flowVertexInfo of
+        | just(v) -> v.eqDeps
+        | nothing() -> e.flowDeps
+        end,
+        true)]
+    | _, _ -> []
+    end;
   top.flowDefs <-
     case sigDecSite, top.appProd, e.flowVertexInfo of
     | just(decSite), just(ns), just(v) ->
       refDecSiteEq(top.frame.fullName, e.finalType.typeName, v, decSite, top.alwaysDecorated) ::
-      if inputSigIsShared then []
-      -- TODO: Should only introduce projected deps in appProd's graph here if we are exported by appProd!
+      -- The root of the shared child is the root of the shared tree
+      decSiteDepEq(top.frame.fullName, decSite, v.outerEqDeps) ::
+      if inputSigIsShared || !isHostApplication then []
       else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v)]
     | _, _, _ -> []
     end;
@@ -674,17 +710,25 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- so we DO need to be transitive. Unfortunately.
 
   local eLoc::Location = getParsedOriginLocationOrFallback(e);
+  local scrutineeName::String = s"__scrutinee${toString(genInt())}";
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of
     | just(vertex) -> vertex
-    | nothing() -> anonScrutineeVertexType(
-        s"__scrutinee${toString(genInt())}", top.grammarName, eLoc)
+    | nothing() -> anonScrutineeVertexType(scrutineeName, top.grammarName, eLoc)
     end;
 
   -- Let's make sure for decorated types, we only demand what's necessary for forward
-  -- evaluation.
-  top.flowDeps := pr.flowDeps ++ f.flowDeps ++ pr.scrutineeVertexType.fwdDeps;
+  -- evaluation.  Matching follows forwards, so matching on the forward parent may also evaluate this production's
+  -- forward.
+  -- TODO: should the forwardParentVertexType's fwdDeps just include on the forward eq vertex?
+  local scrutineeFwdDeps :: [FlowVertex] =
+    pr.scrutineeVertexType.fwdDeps ++
+    case pr.scrutineeVertexType of
+    | forwardParentVertexType() -> [forwardEqVertex]
+    | _ -> []
+    end;
+  top.flowDeps := pr.flowDeps ++ f.flowDeps ++ scrutineeFwdDeps;
 
   local eTy::Type = e.finalType;
   top.flowDefs <-
@@ -693,14 +737,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | nothing() ->
       -- Add the dependencies and nonterminal stitch point for the anon vertex we created:
       [anonScrutineeEq(
-        top.frame.fullName, pr.scrutineeVertexType.vertexName, eTy.typeName, eTy.isNonterminal,
+        top.frame.fullName, scrutineeName, eTy.typeName, eTy.isNonterminal,
         getMinRefSet(^eTy, top.env),
         top.grammarName, eLoc, e.flowDeps)]
     end;
 
   top.flowDefs <-
     case top.decSiteVertexInfo of
-    | just(v) -> [decSiteDepEq(top.frame.fullName, v, pr.scrutineeVertexType.fwdDeps)]
+    | just(v) -> [decSiteDepEq(top.frame.fullName, v, scrutineeFwdDeps)]
     | nothing() -> []
     end;
 

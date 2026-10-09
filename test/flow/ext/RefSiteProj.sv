@@ -30,7 +30,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
+warnCode "hidden transitive dependencies on flow:env2; on some reference to this tree, this attribute may be expected to depend only on flow:env1" {
 production fwrdDecSiteExceedsFTInExt
 top::RSExpr ::= e::RSExpr
 {
@@ -39,7 +39,7 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "may exceed a flow type with hidden transitive dependencies" {
+warnCode "hidden transitive dependencies on flow:env2; on some reference to this tree, this attribute may be expected to depend only on flow:env1" {
 production projExceedsFTInExt
 top::RSExpr ::= e::RSExpr
 {

@@ -41,7 +41,7 @@ abstract production projectionStitchPoint
 top::StitchPoint ::= 
   prod::String -- pattern match on this production
   sourceType::VertexType -- the pattern Variable vertex type
-  targetType::VertexType -- the scruntinee vertex type
+  targetType::VertexType -- the scrutinee vertex type
   prodType::VertexType -- a vertex type of 'prod'
   attrs::[String] -- all inhs on the NT type of sigName/sourceType
 {
@@ -118,7 +118,7 @@ FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   | rhsInhVertex(sigName, attr) ->
     subtermInhVertex(parentType, prodName, sigName, attr)
   -- Deps on forward parent vertices are only allowed in sig sharing prods,
-  -- which must be applied in the root of the forward tree,
+  -- which must be applied in the root of a forward or forward production attribute,
   -- thus forward parent vertices in the remote production always map to the LHS vertices.
   | forwardParentEqVertex() -> lhsEqVertex()
   | forwardParentSynVertex(attr) -> lhsSynVertex(attr)

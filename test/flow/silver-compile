@@ -20,6 +20,9 @@ timeout 300 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow
 # A regression in how shared references in lets are checked is exponential time, hence the timeout.
 timeout 120 ../../support/bin/silver -I $SRC --warn-all --dont-translate $@ flow:longCase
 
+# The grammar of a dispatch signature, exporting the grammar of an implementation that it applies by name.
+silver -I $SRC --warn-all --dont-translate $@ flow:exportedImpl
+
 # Extensions sharing translation attributes of translation attributes in aspects of host productions:
 # flow:transShare declares an occurrence on the shared chain, and flow:transShare:orphan does not.
 silver -I $SRC --warn-all --dont-translate $@ flow:transShare:orphan

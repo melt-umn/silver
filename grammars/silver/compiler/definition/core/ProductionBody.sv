@@ -368,6 +368,27 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 
 dispatch AttributeDef = ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr;
 
+{--
+ - Applies an implementation of AttributeDef chosen elsewhere, decorating dl and attr as attributeDef does.
+ - Only the host language may share a tree as a signature-shared child of AttributeDef.  So an extension that
+ - chooses the implementation forwards to this production.
+ -}
+abstract production dispatchAttributeDef
+top::ProductionStmt ::= dl::DefLHS attr::QNameAttrOccur e::Expr impl::AttributeDef
+{
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate grammarName, config, env, frame, compiledGrammars, originRules;
+
+  -- defs must stay here explicitly, because we dispatch in the forward here!
+  top.productionAttributes := [];
+  top.defs := [];
+
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
+
+  forwards to impl(dl, attr, @e);
+}
+
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
    Invariant: msg should not be null! -}
 abstract production errorAttributeDef implements AttributeDef

@@ -9,6 +9,7 @@ tracked nonterminal AGDcl  with config, grammarName, env, unparse, errors, defs,
 flowtype decorate {config, grammarName, env, flowEnv, compiledGrammars, grammarDependencies} on AGDcls, AGDcl;
 flowtype forward {} on AGDcls;
 flowtype forward {decorate} on AGDcl;
+flowtype unparse {} on AGDcls, AGDcl;
 flowtype errors {decorate} on AGDcls, AGDcl;
 flowtype defs {decorate} on AGDcls, AGDcl;
 flowtype occursDefs {decorate} on AGDcls, AGDcl;

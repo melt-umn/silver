@@ -145,11 +145,13 @@ top::VertexType ::=
   top.outerEqVertex = forwardOuterEqVertex();
 }
 
+{--
+ - Represents the tree that forwarded to this production,
+ - or decorated it via a forward production attribute.
+ -}
 abstract production forwardParentVertexType
 top::VertexType ::=
 {
-  -- TODO: Deps on these vertices need to introduce deps on the forward vertices of the remote prod
-  -- that forwarded to this sig sharing prod, even when there are override eqs.
   top.vertexName = "forwardParent";
   top.vertexPP = "forward parent";
   top.isInhDefVertex = false;
@@ -159,8 +161,11 @@ top::VertexType ::=
   top.eqVertex = forwardParentEqVertex();
   top.outerEqVertex = error("Shouldn't ask for an outerEqVertex on forwardParentVertexType");
   top.outerEqDeps = [];
-  -- The forward of the forward parent is the LHS of this production
-  top.fwdDeps = [lhsEqVertex()];
+  -- The forward of the forward parent: at the root of a forward, this production's LHS;
+  -- at the root of a forward production attribute, another tree.
+  -- Technically, we only depend on one or the other, but we don't know locally if this is the true
+  -- forward of its forward parent, so we conservatively depend on both.
+  top.fwdDeps = [lhsEqVertex(), forwardParentSynVertex("forward")];
 }
 
 {--
@@ -173,10 +178,11 @@ top::VertexType ::= x::String grammarName::String loc::Location
   top.vertexPP = s"anonymous decoration site at ${grammarName}:${loc.unparse}";
   top.isInhDefVertex = true;
   top.isFlowTypeDepVertex = false;
-  top.synVertex = anonSynVertex(x, _);
-  top.inhVertex = anonInhVertex(x, _);
-  top.eqVertex = anonEqVertex(x);
-  top.outerEqVertex = anonEqVertex(x);  -- We don't distinguish the outer eq for anon vertexes
+  -- The vertices use the full name, as anonEq and anonInhEq do for this decoration site's equations.
+  top.synVertex = anonSynVertex(top.vertexName, _);
+  top.inhVertex = anonInhVertex(top.vertexName, _);
+  top.eqVertex = anonEqVertex(top.vertexName);
+  top.outerEqVertex = anonEqVertex(top.vertexName);  -- We don't distinguish the outer eq for anon vertexes
 }
 
 {--

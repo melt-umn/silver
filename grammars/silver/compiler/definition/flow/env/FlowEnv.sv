@@ -127,7 +127,7 @@ fun lookupAllRefDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv 
   | _ -> []
   end;
 
--- places where this child was decorated in a production forwarding to this one
+-- places in the host language where this child was decorated in a production forwarding to this one
 fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
   searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
 
@@ -166,6 +166,10 @@ fun vertexTypeName String ::= prodName::String  vt::VertexType  realEnv::Env =
 fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
+  -- A forward production attribute gets the inherited attributes it has no equation for from the LHS, but not those on
+  -- its translation attributes (see forwardDec).
+  | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) && !splitTransAttrInh(attrName).isJust ->
+    true
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
   -- The forward gets its inherited attributes from the LHS, and those on a translation attribute
   -- only when the production has no equation for the translation attribute,
@@ -249,6 +253,15 @@ fun getNonforwardingProds [String] ::= nt::String  e::FlowEnv =
 -- all host productions implementing a dispatch signature, along with their input sig names
 fun getImplementingProds [(String, [String])] ::= dispatchSig::String e::FlowEnv =
   searchEnvTree(dispatchSig, e.implTree);
+
+{--
+ - Does every host-language application of a production/dispatch signature supply an inherited attribute to its
+ - child shared through the signature?
+ -}
+fun sigShareSitesHaveInhEq Boolean ::= prod::String  sigName::String  attr::String  e::FlowEnv =
+  all(map(
+    \ site::(String, VertexType) -> vertexHasInhEq(site.1, site.2, attr, e),
+    lookupSigShareSites(prod, sigName, e)));
 
 -- Ext Syns subject to ft lower bound
 function getHostSynsFor

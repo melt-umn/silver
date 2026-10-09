@@ -44,3 +44,57 @@ top::SCExpr ::= a::SCExpr b::SCExpr
   top.scTrans = scTgtPair(@a.scTrans, @b.scTrans);
 }
 }
+
+-- Supplying one inherited attribute at a decoration site can depend on its others.  Here e.cnI is cnReadsK's
+-- c.cnI = c.cnK, and e.cnK = e.cnS needs e.cnI: a real cycle.
+nonterminal CNExpr;
+inherited attribute cnI::String occurs on CNExpr;
+inherited attribute cnK::String occurs on CNExpr;
+synthesized attribute cnS::String occurs on CNExpr;
+flowtype cnS {cnI, cnK} on CNExpr;
+
+abstract production cnLeaf
+top::CNExpr ::=
+{
+  top.cnS = top.cnI;
+}
+
+abstract production cnReadsK
+top::CNExpr ::= c::CNExpr
+{
+  c.cnK = top.cnK;
+  c.cnI = c.cnK;
+  top.cnS = c.cnS;
+}
+
+warnCode "Potentially missing inherited override equation for flow:cnI on e" {
+abstract production cnCycle
+top::CNExpr ::= e::CNExpr
+{
+  e.cnK = e.cnS;
+  forwards to cnReadsK(@e);
+}
+}
+
+-- The same through a production's fallback equation for a child shared through its signature: x.cyI is cyFall's
+-- a.cyI = a.cyJ, and x.cyJ = x.cyI.
+nonterminal CYExpr;
+inherited attribute cyI::String occurs on CYExpr;
+inherited attribute cyJ::String occurs on CYExpr;
+synthesized attribute cyS::String occurs on CYExpr;
+
+abstract production cyFall
+top::CYExpr ::= @a::CYExpr
+{
+  a.cyI = a.cyJ;
+  top.cyS = a.cyI;
+}
+
+warnCode "Potentially missing inherited override equation for flow:cyI on x" {
+abstract production cySite
+top::CYExpr ::= x::CYExpr
+{
+  x.cyJ = x.cyI;
+  forwards to cyFall(x);
+}
+}
