@@ -73,6 +73,35 @@ top::GExpr ::= a::GExpr
   forwards to prod(a);
 }
 }
+-- A forward production attribute already has this production as its forward parent, so the applied production's
+-- equations for a child shared through its signature would never apply to it.
+warnCode "Forward production attribute flow:gFwdAttrSigShared:local:flow:fp cannot be shared as child a of flow:GOp" {
+production gFwdAttrSigShared
+top::GExpr ::=
+{
+  forward production attribute fp = gLit();
+  top.gNeedsOther = "";
+  local prod::GOp = gImpl;
+  forwards to prod(fp);
+}
+}
+production gShareByName
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+warnCode "Forward production attribute flow:gFwdAttrByName:local:flow:fp cannot be shared as child a of flow:gShareByName" {
+production gFwdAttrByName
+top::GExpr ::=
+{
+  forward production attribute fp = gLit();
+  top.gNeedsOther = "";
+  forwards to gShareByName(fp);
+}
+}
 
 -- A production may pass a tree with '@' to a child that a dispatch signature does not share.  The production's
 -- equations for the tree may then depend only on what an implementation's equations for that child may depend on.

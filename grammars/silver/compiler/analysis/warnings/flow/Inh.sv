@@ -640,21 +640,19 @@ top::Expr ::= '@' e::Expr
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  -- Sharing a forward production attribute somewhere that isn't already being decorated as the forward
-  -- may cause hidden transitive dependency issues for attributes we don't know about, so we forbid this.
-  top.errors <- 
-    if top.config.warnMissingInh && sigIsShared && isForwardParam
-    then
-      case e.flowVertexInfo of
-      | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) ->
-        case top.decSiteVertexInfo of
-        | just(forwardVertexType()) -> []
-        | just(localVertexType(dSiteFName)) when isForwardProdAttr(top.frame.fullName, dSiteFName, top.flowEnv) -> []
-        | _ -> [mwdaWrnFromOrigin(top, s"Forward production attribute ${fName} may only be shared in a forward decoration site")]
-        end
-      | _ -> []
-      end
-    else [];
+  -- A forward production attribute already has this production as its forward parent, so decorating it again does
+  -- nothing: it keeps this production's inherited attributes, and the applied production's equations for the child
+  -- would never apply.  The analysis assumes they do, so forbid sharing one this way.
+  top.errors <-
+    case top.appProd, e.flowVertexInfo of
+    | just(ns), just(localVertexType(fName))
+        when top.config.warnMissingInh && sigIsShared && isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) ->
+      [mwdaWrnFromOrigin(top,
+        s"Forward production attribute ${fName} cannot be shared as child ${sigName} of ${ns.fullName}: " ++
+        s"its inherited attributes come from this production, so the equations of ${ns.fullName} for ${sigName} " ++
+        "would never apply")]
+    | _, _ -> []
+    end;
 }
 
 -- Also need to check for taking a reference to a pattern var.
