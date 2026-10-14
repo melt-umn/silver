@@ -90,6 +90,15 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @see #local(String)
 	 */
 	protected final Object[] synthesizedValues;
+	/**
+	 * Have any translation attribute trees been cached in synthesizedValues?
+	 * If so, further decoration of this node must also supply them with any new inherited attributes
+	 * and decoration sites for translation attributes.
+	 * 
+	 * @see #translation(int, int, int)
+	 * @see #pushTransInhOverrides(DecoratedNode, Lazy[], Lazy[])
+	 */
+	protected boolean hasTranslationValues;
 
 	/**
 	 * The inherited attributes supplied to this DecoratedNode, to be evaluated with context 'parent'.
@@ -221,19 +230,37 @@ public class DecoratedNode implements Decorable, Typed {
 		// usual chain of decoration sites; this should not cause the decorationSite to be replaced.
 		if (forwardParent == null && !(parent instanceof TopNode)) {
 			if (inhs != null) {
-				if (inheritedAttributes == null) {
-					inheritedAttributes = new Lazy[self.getNumberOfInhAttrs()];
-				} else {
-					inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
-				}
-				copyInhOverrides(parent, inheritedAttributes, inhs);
+				supplyInhOverrides(parent, inhs);
 			}
 			// It's okay if we override the old decorationSite here if it wasn't null,
 			// that just means something else is directly demanding what would have been
 			// forced by the current decorationSite, first.
 			decorationSite = decSite != null? decSite.withContext(parent) : null;
+			if (decorationSite != null && hasTranslationValues) {
+				addTransDecSiteDeps();
+			}
 		}
 		return this;
+	}
+
+	/**
+	 * Supply additional inherited attributes to this node.
+	 * Inherited attributes that this node already has equations for are not replaced.
+	 * 
+	 * @param parent The DecoratedNode in which the new inherited attributes are evaluated.
+	 * @param inhs The new inherited attributes, to be evaluated with context 'parent'.
+	 */
+	private void supplyInhOverrides(final DecoratedNode parent, final Lazy[] inhs) {
+		final Lazy[] oldInhs = inheritedAttributes;
+		if (inheritedAttributes == null) {
+			inheritedAttributes = new Lazy[self.getNumberOfInhAttrs()];
+		} else {
+			inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
+		}
+		copyInhOverrides(parent, inheritedAttributes, inhs);
+		if (hasTranslationValues) {
+			pushTransInhOverrides(parent, oldInhs, inhs);
+		}
 	}
 
 	private void copyInhOverrides(final DecoratedNode parent, final Lazy[] inhs, final Lazy[] newInhs) {
@@ -242,14 +269,136 @@ public class DecoratedNode implements Decorable, Typed {
 		assert inhs.length >= newInhs.length;
 		for(int i = 0; i < newInhs.length; i++) {
 			if(newInhs[i] != null) {
-				Lazy newInh = newInhs[i].withContext(parent);
 				if(inhs[i] == null) {
-					inhs[i] = newInh;
+					inhs[i] = newInhs[i].withContext(parent);
 				} else if (inhs[i] instanceof TransInhs) {
 					assert newInhs[i] instanceof TransInhs;
-					copyInhOverrides(parent, ((TransInhs)inhs[i]).inhs, ((TransInhs)newInh).inhs);
+					// Merge into a copy, since the old TransInhs may belong to the static inh array
+					// of the original parent Node, which is shared by all instances of its production.
+					final TransInhs transInhs = ((TransInhs)inhs[i]).copy();
+					copyInhOverrides(parent, transInhs.inhs, ((TransInhs)newInhs[i]).inhs);
+					inhs[i] = transInhs;
 				}
 			}
+		}
+	}
+
+	// A translation attribute tree is created with the inherited attributes and decoration site that this node has
+	// for the translation attribute, after forcing the decoration sites of this node (see evalTrans).
+	// If this node is decorated further after the tree has been created, the following methods supply what is new
+	// to the tree, so that it behaves as if it had been created afterwards.
+	// This happens when a tree is shared by a decoration site that is not statically known (e.g. in a conditional
+	// expression, or a conditional forward) and its translation attribute is demanded before the site is decorated.
+
+	/**
+	 * Supply the new inherited attributes and decoration sites for translation attributes to the
+	 * translation attribute trees that were already created.
+	 * 
+	 * @param parent The DecoratedNode in which the new inherited attributes are evaluated.
+	 * @param oldInhs The inherited attributes this node had before 'newInhs' were added.
+	 * @param newInhs The new inherited attributes, to be evaluated with context 'parent'.
+	 */
+	private void pushTransInhOverrides(final DecoratedNode parent, final Lazy[] oldInhs, final Lazy[] newInhs) {
+		for(int i = 0; i < synthesizedValues.length; i++) {
+			final TransOccursInfo transOccurs = synthesizedValues[i] != null? self.getTransOccurs(i) : null;
+			if(transOccurs == null) {
+				continue;
+			}
+			final DecoratedNode trans = (DecoratedNode)synthesizedValues[i];
+			// Decoration has no effect if a tree already has a forward parent.
+			if(trans.forwardParent != null) {
+				continue;
+			}
+			if(transOccurs.inhsAttribute < newInhs.length && newInhs[transOccurs.inhsAttribute] != null) {
+				assert newInhs[transOccurs.inhsAttribute] instanceof TransInhs;
+				trans.supplyInhOverrides(parent, ((TransInhs)newInhs[transOccurs.inhsAttribute]).inhs);
+			}
+			// The decoration site is only new if this node did not already have one for the translation attribute,
+			// as in copyInhOverrides.  Otherwise the tree was created with the old one.
+			if(transOccurs.decSiteAttribute < newInhs.length && newInhs[transOccurs.decSiteAttribute] != null &&
+			   (oldInhs == null || oldInhs[transOccurs.decSiteAttribute] == null)) {
+				trans.addDecorationSite(newInhs[transOccurs.decSiteAttribute].withContext(parent), false);
+			}
+		}
+	}
+
+	/**
+	 * This node has a new decoration site, which may supply inherited attributes and decoration sites to
+	 * translation attribute trees that were already created.  Make them force it before their own decoration sites.
+	 */
+	private void addTransDecSiteDeps() {
+		for(int i = 0; i < synthesizedValues.length; i++) {
+			if(synthesizedValues[i] != null && self.getTransOccurs(i) != null) {
+				final DecoratedNode trans = (DecoratedNode)synthesizedValues[i];
+				if(trans.forwardParent == null) {
+					trans.addDecorationSite((context) -> {
+						forceDecorationSites();
+						return trans;
+					}, true);
+				}
+			}
+		}
+	}
+
+	/**
+	 * This node has become the forward of forwardParent.  Translation attribute trees without a decoration site
+	 * default to the decoration site of forwardParent's translation attribute (see evalTrans).
+	 * Supply this to the translation attribute trees that were already created.
+	 */
+	private void addTransFwdDecSites() {
+		for(int i = 0; i < synthesizedValues.length; i++) {
+			final TransOccursInfo transOccurs = synthesizedValues[i] != null? self.getTransOccurs(i) : null;
+			if(transOccurs != null &&
+			   (inheritedAttributes == null || inheritedAttributes[transOccurs.decSiteAttribute] == null) &&
+			   forwardParent.synthesizedValues[i] == null) {
+				final DecoratedNode trans = (DecoratedNode)synthesizedValues[i];
+				if(trans.forwardParent == null) {
+					final int attribute = i;
+					trans.addDecorationSite(
+						(context) -> forwardParent.translation(attribute, transOccurs.inhsAttribute, transOccurs.decSiteAttribute),
+						false);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Add a decoration site to this translation attribute tree, which has already been created.
+	 * 
+	 * @param decSite The new decoration site, to be evaluated with context 'parent'.
+	 * @param first Should it be forced before the decoration sites this node already has, rather than after?
+	 */
+	private void addDecorationSite(final Lazy decSite, final boolean first) {
+		final Lazy oldDecSite = decorationSite;
+		if(oldDecSite == null) {
+			decorationSite = decSite;
+		} else {
+			final Lazy firstDecSite = first? decSite : oldDecSite;
+			final Lazy secondDecSite = first? oldDecSite : decSite;
+			decorationSite = (context) -> {
+				checkDecorationSiteTree(firstDecSite.eval(context));
+				return secondDecSite.eval(context);
+			};
+		}
+		if(hasTranslationValues) {
+			addTransDecSiteDeps();
+		}
+	}
+
+	/**
+	 * Force the decoration sites of this node, if it has any.
+	 */
+	private void forceDecorationSites() {
+		while(decorationSite != null) {
+			final Lazy decSite = decorationSite;
+			decorationSite = null;
+			checkDecorationSiteTree(decSite.eval(parent));
+		}
+	}
+
+	private void checkDecorationSiteTree(final Object decSiteTree) {
+		if(this != decSiteTree) {
+			throw new SilverInternalError("Decoration site for " + getDebugID() + " returned a different tree: " + decSiteTree.toString());
 		}
 	}
 
@@ -269,6 +418,9 @@ public class DecoratedNode implements Decorable, Typed {
 			decorate(parent, inhs, null);
 			forwardParent = fwdParent;
 			isProdForward = prodFwrd;
+			if (isProdForward && hasTranslationValues) {
+				addTransFwdDecSites();
+			}
 		}
 		return this;
 	}
@@ -553,6 +705,7 @@ public class DecoratedNode implements Decorable, Typed {
 
 			// CACHE : comment out to disable caching for translation attributes
 			this.synthesizedValues[attribute] = o;
+			this.hasTranslationValues = true;
 		}
 		return o;
 	}
