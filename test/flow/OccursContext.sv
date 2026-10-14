@@ -36,7 +36,7 @@ global isEqualGlobal ::
   (Boolean ::= a a) = \ x::a y::a ->
     decorate x with {compareTo = decorate y with {};}.isEqual;
 
-warnCode "requires missing inherited attribute(s) silver:core:compareTo, flow:env1 to be supplied to anonymous decoration site" {
+warnCode "requires missing inherited attribute(s) flow:env1 to be supplied to anonymous decoration site" {
 global isEqualGlobalBad ::
   attribute compareTo<a {}> occurs on a,
   attribute isEqual {compareTo, env1} occurs on a =>
@@ -71,7 +71,7 @@ class Equal1 a {
   isEqual1 :: (Boolean ::= a a);
 }
 
-warnCode "requires missing inherited attribute(s) silver:core:compareTo, flow:env1 to be supplied to anonymous decoration site" {
+warnCode "requires missing inherited attribute(s) flow:env1 to be supplied to anonymous decoration site" {
 instance attribute compareTo<a {}> occurs on a,
          attribute isEqual {compareTo, env1} occurs on a =>
          Equal1 a {
@@ -80,7 +80,7 @@ instance attribute compareTo<a {}> occurs on a,
 }
 }
 
-warnCode "requires missing inherited attribute(s) silver:core:compareTo, flow:env1 to be supplied to anonymous decoration site" {
+warnCode "requires missing inherited attribute(s) flow:env1 to be supplied to anonymous decoration site" {
 class attribute compareTo<a {}> occurs on a,
       attribute isEqual {compareTo, env1} occurs on a =>
       Equal2 a {

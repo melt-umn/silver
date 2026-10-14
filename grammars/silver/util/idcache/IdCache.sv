@@ -1,34 +1,29 @@
 grammar silver:util:idcache;
 
 @@{-
- - A utility for mapping comparable objects to unique integer ids.
+ - A utility for mapping strings to unique integer ids.
  -}
 
-type IdCache<a> foreign = "java.util.TreeMap<Object,Integer>";
-
-@{--
- - Returns a new, empty, id cache using Ord for comparison.
- -}
-fun empty Ord a => IdCache<a> ::=  = emptyWith(compare);
+type IdCache foreign = "java.util.HashMap<String,Integer>";
 
 @{--
- - Returns a new, empty, id cache using the specified comparator.
+ - Returns a new, empty, id cache.
  -}
-function emptyWith
-IdCache<a> ::= comparator::(Integer ::= a a)
+function empty
+IdCache ::=
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawIdCache.empty(%comparator%)";
+  "java" : return "new java.util.HashMap<String,Integer>()";
 }
 
 @{--
  - Lookup a key from the id cache, generating a new id if not present.
  -}
 function lookup
-Integer ::= key::a cache::IdCache<a>
+Integer ::= key::String cache::IdCache
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawIdCache.lookup(%key%, %cache%)";
+  "java" : return "%cache%.computeIfAbsent(%key%.toString(), k -> %cache%.size())";
 }
