@@ -783,6 +783,11 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
   top.suppliedInhs = if q.attrFound then [q.attrDcl.fullName] else [];
   
   q.attrFor = top.decoratingnt;
+
+  top.errors <-
+    if q.found && !q.attrDcl.isInherited
+    then [errFromOrigin(top, s"${q.name} is not an inherited attribute and so cannot be supplied here")]
+    else [];
 }
 
 concrete production decorationSiteExpr

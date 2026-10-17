@@ -143,3 +143,14 @@ top::TssX ::=
   forwards to tssX();
 }
 }
+-- 'forwarding with' supplies only inherited attributes to the forward, so it cannot give the forward a translation
+-- attribute either.
+wrongCode "tssA is not an inherited attribute and so cannot be supplied to the forward" {
+production tssFwdWith
+top::TssX ::=
+{
+  top.tssOut = "";
+  forwards to tssX();
+  forwarding with { tssA = tssZ(); };
+}
+}

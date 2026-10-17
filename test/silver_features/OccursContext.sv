@@ -192,10 +192,10 @@ top::OCPolyWrap ::= x::a
   top.prodName = x.prodName;
 }
 
-equalityTest(decorate ocPolyWrap(ocThing()) with {prodName = "blah";}.prodName, "blah", String, silver_tests);
-equalityTest(decorate ocPolyWrap(ocPolyWrap(ocThing())) with {prodName = "blah";}.prodName, "blah", String, silver_tests);
+equalityTest(decorate ocPolyWrap(ocThing()) with {prodNameIn = "blah";}.prodName, "blah", String, silver_tests);
+equalityTest(decorate ocPolyWrap(ocPolyWrap(ocThing())) with {prodNameIn = "blah";}.prodName, "blah", String, silver_tests);
 equalityTest(
-  case decorate ocPolyWrap(ocThing()) with {prodName = "blah";} of
+  case decorate ocPolyWrap(ocThing()) with {prodNameIn = "blah";} of
   | ocPolyWrap(thing) -> thing.prodName
   end, "blah", String, silver_tests);
 

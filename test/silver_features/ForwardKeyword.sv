@@ -40,6 +40,17 @@ t::ForwardKeyword ::=
 
 equalityTest ( decorate bar3() with {fkInh1 = "foobar";}.fkSyn1, "foobar", String, silver_tests ) ;
 
+-- 'forwards to ... with' and 'forwarding with' supply only inherited attributes to the forward.
+wrongCode "fkSyn1 is not an inherited attribute and so cannot be supplied to the forward" {
+abstract production fkWithSyn
+t::ForwardKeyword ::=
+{
+  forwards to bar2() with {
+    fkSyn1 = "foo";
+  };
+}
+}
+
 wrongCode "Forward production attributes are not valid in this context." {
 function forwardProdAttrFn
 ForwardKeyword ::=

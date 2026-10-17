@@ -339,6 +339,11 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.typerep = q.typerep;
   
   q.attrFor = top.frame.signature.outputElement.typerep;
+
+  top.errors <-
+    if q.found && !q.attrDcl.isInherited
+    then [errFromOrigin(top, s"${q.name} is not an inherited attribute and so cannot be supplied to the forward")]
+    else [];
 }
 
 concrete production attributeDef
