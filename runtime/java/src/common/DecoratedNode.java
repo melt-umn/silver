@@ -648,10 +648,9 @@ public class DecoratedNode implements Decorable, Typed {
 		if(l != null) {
 			try {
 				if(l instanceof CollectionAttribute) {
-					// This is necessary to ensure collection
-					// attribute equations in aspect default
-					// productions work; see
-					// https://github.com/melt-umn/silver/issues/290
+					// The default production's '<-' pieces follow the pieces of this node's production, added once
+					// per production (https://github.com/melt-umn/silver/issues/290).  BaseDefault, in
+					// CollectionAttribute, takes only the default production's ':=' as a base.
 					CollectionAttribute prodAttr = (CollectionAttribute)l;
 					if(!prodAttr.appliedNTFix) {
 						prodAttr.appliedNTFix = true;

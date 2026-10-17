@@ -69,8 +69,13 @@ public abstract class CollectionAttribute implements Lazy {
 					throw new TraceException("Error evaluating base of collection attribute " + un.getNameOfSynAttr(index) + " via forward of " + un.getName(),t);
 				}
 			} else {
+				// Only the default production's ':=' is the base: DecoratedNode.evalSyn appends the default
+				// production's '<-' pieces to the pieces of context's production.  Without a default ':=', the
+				// default production's CollectionAttribute keeps a BaseDefault as its base.
 				Lazy l = un.getDefaultSynthesized(index);
-				if(l != null) {
+				if(l instanceof CollectionAttribute)
+					l = ((CollectionAttribute)l).getBase();
+				if(l != null && !(l instanceof BaseDefault)) {
 					try {
 						return l.eval(context);
 					} catch(Throwable t) {
@@ -79,7 +84,8 @@ public abstract class CollectionAttribute implements Lazy {
 				}
 			}
 
-			throw new MissingDefinitionException("No base defined for collection attribute " + un.getNameOfSynAttr(index) + " in " + un.getName());
+			throw new MissingDefinitionException("No base (:=) defined for collection attribute " +
+				un.getNameOfSynAttr(index) + " in " + un.getName() + " or its nonterminal's default production");
 		}
 		
 	}
