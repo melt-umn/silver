@@ -398,8 +398,8 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
 function constructDefaultProductionGraph
 [ProductionGraph] ::= nt::NtName  flowEnv::FlowEnv  realEnv::Env
 {
-  -- The stand-in "full name" of this default production
-  local prod :: String = nt ++ ":default";
+  -- The full name of every default production for nt
+  local prod :: String = defaultProdName(nt);
   -- The flow defs for this default production
   local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
   -- Just synthesized attributes.

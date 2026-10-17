@@ -189,9 +189,12 @@ abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs := [(crossnames(nt, attr), top)];
-  top.prodGraphContribs := [(nt ++ ":default", top)];
+  top.prodGraphContribs := [(defaultProdName(nt), top)];
   top.flowEdges = zipFst(lhsSynVertex(attr), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
+
+-- The name shared by every default production for the nonterminal nt, in any grammar.
+fun defaultProdName String ::= nt::String = nt ++ ":default";
 
 {--
  - The definition of a synthesized attribute in a production.
