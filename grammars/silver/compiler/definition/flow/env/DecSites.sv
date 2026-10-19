@@ -58,10 +58,6 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
        then alwaysDec()
        else neverDec()) +
       case vt of
-      -- Via forwarding
-      | forwardVertexType() -> forwardDec(prodName, nothing())
-      | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
-          forwardDec(prodName, just(fName))
       -- Via projected remote equation
       | subtermVertexType(parent, prodOrSig, sigName) ->
          (if !null(getValueDcl(prodOrSig, realEnv))
@@ -112,25 +108,24 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
       sum(transAttrShareDecSites([], ntName, vt)) +
       -- Via the tree that this is a translation attribute of
       case vt of
-      | transAttrVertexType(treeVertex, transAttr)
-          when suppliesTransAttrInhs(prodName, treeVertex, transAttr, flowEnv) ->
+      | transAttrVertexType(treeVertex, transAttr) when suppliesTransAttrInhs(treeVertex) ->
         transAttrOfDec(transAttr, recurse(prodName, treeVertex))
       | _ -> neverDec()
       end);
 }
 
 {--
- - Can the inherited attributes of translation attribute transAttr of the tree at vt be supplied
- - to that tree (as transAttr.inh), rather than to the translation attribute directly?
- - This is the case for a tree built by a production application, which may supply them for its child,
- - and for the forward, whose translation attribute is the production's own if the production does not define it.
- - The translation attributes of a child, local or the LHS are only supplied directly or by sharing.
+ - Can the inherited attributes of a translation attribute t of the tree at vt be supplied to that
+ - tree (as t.inh), rather than to t directly?  They can for a translation attribute, for the
+ - forward, whose translation attributes are the production's own (see FwdTransAttr.sv), and for a
+ - subterm, as a production application may supply them for its child.  The translation attributes
+ - of a child, local or the LHS are only supplied directly or by sharing.
  -}
-fun suppliesTransAttrInhs Boolean ::= prodName::String  vt::VertexType  transAttr::String  flowEnv::FlowEnv =
+fun suppliesTransAttrInhs Boolean ::= vt::VertexType =
   case vt of
   | subtermVertexType(_, _, _) -> true
   | transAttrVertexType(_, _) -> true
-  | forwardVertexType() -> null(lookupSyn(prodName, transAttr, flowEnv))
+  | forwardVertexType() -> true
   | _ -> false
   end;
 
@@ -205,10 +200,6 @@ State<PDSState DecSiteTree> ::=
       setState(((prodName, vt) :: seen.1, seen.2));
       viaVertex :: DecSiteTree <-
         case vt of
-        -- Via forwarding
-        | forwardVertexType() -> pure(forwardDec(prodName, nothing()))
-        | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) ->
-            pure(forwardDec(prodName, just(fName)))
         -- Via projected remote equation
         | subtermVertexType(parent, prodOrSig, sigName) -> map(
             -- Transitive dependencies of an attribute on the projection must be supplied
@@ -249,8 +240,7 @@ State<PDSState DecSiteTree> ::=
       viaTransAttrShare :: [DecSiteTree] <- transAttrSharePossibleDecSites([], ntName, vt);
       viaTree :: DecSiteTree <-
         case vt of
-        | transAttrVertexType(treeVertex, transAttr)
-            when suppliesTransAttrInhs(prodName, treeVertex, transAttr, flowEnv) ->
+        | transAttrVertexType(treeVertex, transAttr) when suppliesTransAttrInhs(treeVertex) ->
           map(transAttrOfDec(transAttr, _), recurse(prodName, treeVertex))
         | _ -> pure(neverDec())
         end;
@@ -322,19 +312,6 @@ partial strategy attribute lookupDecSiteStep =
   | directDec(prodName, vt)
         when vertexHasInhEq(prodName, vt, top.attrToResolve, top.flowEnv) ->
       alwaysDec()
-  | forwardDec(_, just(_)) ->
-      if splitTransAttrInh(top.attrToResolve).isJust
-      then neverDec()
-      else alwaysDec()
-  | forwardDec(prodName, nothing()) ->
-      case splitTransAttrInh(top.attrToResolve) of
-      | just((transAttr, inhAttr))
-            when !null(lookupSyn(prodName, transAttr, top.flowEnv)) ->
-          -- transAttr has an override equation, so trans.inh supplied on lhs
-          -- isn't supplied to trans on forward:
-          neverDec()
-      | _ -> alwaysDec()
-      end
   -- This is safe as the tree is traversed top-down, so the current attrToResolve is the final one.
   | depAttrDec(attrName, d) when top.attrToResolve == attrName -> ^d
   | projectedDepsDec(prodName, sigName, d) ->

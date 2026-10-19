@@ -319,7 +319,8 @@ production xsSigShareLhsTrans
 top::XSX ::=
 {
   top.xsA = xsY();
-  forwards to xsXShareY(top.xsA);
+  top.xsOut = "";
+  forward l = xsXShareY(top.xsA);
 }
 }
 

@@ -166,19 +166,15 @@ fun vertexTypeName String ::= prodName::String  vt::VertexType  realEnv::Env =
 fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv =
   case vt of
   | rhsVertexType(sigName) -> !null(lookupInh(prodName, sigName, attrName, flowEnv))
-  -- A forward production attribute gets the inherited attributes it has no equation for from the LHS, but not those on
-  -- its translation attributes (see forwardDec).
+  -- A forward production attribute gets from the LHS each inherited attribute it has no equation
+  -- for, except those on its translation attributes.
   | localVertexType(fName) when isForwardProdAttr(prodName, fName, flowEnv) && !splitTransAttrInh(attrName).isJust ->
     true
   | localVertexType(fName) -> !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
-  -- The forward gets its inherited attributes from the LHS, and those on a translation attribute
-  -- only when the production has no equation for the translation attribute,
-  -- so that the forward's translation attribute is the production's own.
-  | forwardVertexType() ->
-    case splitTransAttrInh(attrName) of
-    | just((transAttr, _)) -> null(lookupSyn(prodName, transAttr, flowEnv))
-    | nothing() -> true
-    end
+  -- The forward gets every inherited attribute from the LHS, those on its translation attributes
+  -- too: a forwarding production takes its translation attributes from its forward (see
+  -- FwdTransAttr.sv).
+  | forwardVertexType() -> true
   -- Note that we only support inh equations on trans attrs directly on a child/local,
   -- and not chained trans attrs.
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->

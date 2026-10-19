@@ -58,3 +58,22 @@ top::TSF ::=
   top.tsOutX2 = top.tsXT2.tsU.tsS;
 }
 }
+
+-- An extension may not define even its own translation attribute in an aspect of a forwarding host
+-- production.
+translation attribute tsXT3::TSM;
+attribute tsXT3 occurs on TSF;
+
+aspect production tsFBase
+top::TSF ::=
+{
+  top.tsXT3 = tsM();
+}
+
+warnCode "Translation attribute flow:transExt:tsXT3 is defined in production flow:tsFFwd, which forwards; a forwarding production must take its translation attributes from its forward" {
+aspect production tsFFwd
+top::TSF ::=
+{
+  top.tsXT3 = tsM();
+}
+}

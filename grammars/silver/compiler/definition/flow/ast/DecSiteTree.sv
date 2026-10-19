@@ -100,22 +100,6 @@ top::DecSiteTree ::= prodName::String vt::VertexType
 }
 
 {--
- - An attribute can be supplied via forwarding.
- - Inherited attributes on a translation attribute are only supplied if this is
- - the forward of the production (not a forward prod attr), and there is no
- - override equation for the translation attribute.
- -}
-production forwardDec
-top::DecSiteTree ::= prodName::String prodAttrName::Maybe<String>
-{
-  top.decSitePP =
-    case prodAttrName of
-    | just(attrName) -> s"via forward production attribute ${attrName} of production ${prodName}"
-    | _ -> s"via forward of production ${prodName}"
-    end;
-}
-
-{--
  - Decoration sites where some other attribute must be supplied as a dependency.
  -}
 production depAttrDec

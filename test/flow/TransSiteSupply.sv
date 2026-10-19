@@ -2,7 +2,7 @@ grammar flow;
 
 -- The inherited attributes of a translation attribute of a tree are supplied wherever they are supplied to the tree
 -- (as tssA.tssEnv): by a production that the tree is shared into, for its child's translation attribute,
--- or by forwarding, when the production does not define the translation attribute itself.
+-- or by forwarding, since a forwarding production may not define the translation attribute itself.
 
 inherited attribute tssEnv::String;
 synthesized attribute tssOut::String;
@@ -92,7 +92,6 @@ top::TssW ::= x::TssX
 production tssFwdEqSite
 top::TssW ::= c::TssX
 {
-  top.tssB = tssZ();
   forwards to tssEqSite(@c);
 }
 noWarnCode "requires missing inherited attribute" {
@@ -105,8 +104,7 @@ top::TssW ::= x::TssX
 }
 }
 
--- x is shared as the forward, so its translation attribute is the production's own,
--- unless the production defines the translation attribute.
+-- x is shared as the forward, so its translation attribute is the production's own.
 noWarnCode "requires missing inherited attribute" {
 production tssFwdShared
 top::TssX ::= x::TssX
@@ -115,7 +113,7 @@ top::TssX ::= x::TssX
   forwards to @x;
 }
 }
-warnCode "requires missing inherited attribute" {
+warnCode "Translation attribute flow:tssA is defined in production flow:tssFwdSharedDefined, which forwards; a forwarding production must take its translation attributes from its forward" {
 production tssFwdSharedDefined
 top::TssX ::= x::TssX
 {
@@ -134,7 +132,7 @@ top::TssX ::=
   forwards to tssX();
 }
 }
-warnCode "requires missing inherited attribute" {
+warnCode "Translation attribute flow:tssA is defined in production flow:tssFwdDefined, which forwards; a forwarding production must take its translation attributes from its forward" {
 production tssFwdDefined
 top::TssX ::=
 {

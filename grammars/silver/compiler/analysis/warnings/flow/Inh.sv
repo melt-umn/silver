@@ -381,22 +381,11 @@ top::Expr ::= @q::QName
 aspect production forwardReference
 top::Expr ::= @q::QName
 {
-  -- oh no again
-  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  -- We do, actually, need to check for missing inh equations here, due to weirdness with translation attr overrides.
+  -- The forward has every inherited attribute (see vertexHasInhEq), so only the bound on the
+  -- reference set is checked.
   top.errors <-
-    if top.config.warnMissingInh
-    then
-      case refSet of
-      | just(inhDeps) -> map(\ di::(DecSiteTree, [String]) ->
-          mwdaWrnFromOrigin(top,
-            s"Taking a reference to ${q.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
-            " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, forwardVertexType(), inhDeps, myGraphs, top.flowEnv, top.env))
-      | nothing() ->
-          [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
-      end
+    if top.config.warnMissingInh && !refSet.isJust
+    then [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
     else [];
 }
 

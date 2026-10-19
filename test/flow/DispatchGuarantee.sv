@@ -607,7 +607,6 @@ production rSite
 top::RE ::= x::RE
 {
   x.reTr.rtK = top.reM;
-  top.reTr = rtLeaf();
   local p::ROp = rImpl;
   forwards to p(x);
 }
