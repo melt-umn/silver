@@ -672,11 +672,12 @@ fun addDefEqs
  -}
  fun addSharingEqs [(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv realEnv::Env d::FlowDef =
    case d of
-   | refDecSiteEq(prod, nt, ref, decSite, isAlwaysDec) when
-        case ref of
-        | localVertexType(fName) -> !isForwardProdAttr(prod, fName, flowEnv)
-        | _ -> true
-        end ->
+   -- A forward production attribute already has this production as its forward parent, so
+   -- decorating its tree again at decSite supplies nothing to it; decSite gets what the attribute
+   -- has instead (see addDecSiteTreeEqs).
+   | refDecSiteEq(prod, nt, localVertexType(fName), decSite, _) when isForwardProdAttr(prod, fName, flowEnv) ->
+      sharedSynEdges(realEnv, nt, localVertexType(fName), decSite)
+   | refDecSiteEq(prod, nt, ref, decSite, isAlwaysDec) ->
       filterMap(
         \ attr::String ->
           if vertexHasInhEq(prod, ref, attr, flowEnv) ||
@@ -688,19 +689,21 @@ fun addDefEqs
           then nothing()
           else just((ref.inhVertex(attr), decSite.inhVertex(attr))),
         getInhAndInhOnTransAttrsOn(nt, realEnv)) ++
-      -- The shared tree's translations are the decoration site's translations,
-      -- so their synthesized attributes are related too.
-      map(
-        \ attr::String -> (decSite.synVertex(attr), ref.synVertex(attr)),
-        "forward" :: getSynAndSynOnTransAttrsOn(nt, realEnv))
+      sharedSynEdges(realEnv, nt, ref, decSite)
    | _ -> []
    end;
+-- Edges from the synthesized attributes of decSite to those of ref, the tree shared there,
+-- including those on translations: the shared tree's translations are the decoration site's.
+fun sharedSynEdges [(FlowVertex, FlowVertex)] ::= realEnv::Env  nt::String  ref::VertexType  decSite::VertexType =
+  map(
+    \ attr::String -> (decSite.synVertex(attr), ref.synVertex(attr)),
+    "forward" :: getSynAndSynOnTransAttrsOn(nt, realEnv));
 {--
  - Introduce edges from the inherited attributes of a decoration site to those of the tree shared
  - there, where that tree keeps what was supplied to it first: where the decoration site is a local,
- - or the tree carries attributes supplied before this production shares it (see
- - carriesEarlierInhs).  None at a translation attribute of the LHS, as LHS inherited vertices have
- - no out-edges (see findAdmissibleEdges).
+ - the tree is a forward production attribute (see addSharingEqs), or the tree carries attributes
+ - supplied before this production shares it (see carriesEarlierInhs).  None at a translation
+ - attribute of the LHS, as LHS inherited vertices have no out-edges (see findAdmissibleEdges).
  -}
 fun addDecSiteTreeEqs [(FlowVertex, FlowVertex)] ::= realEnv::Env  flowEnv::FlowEnv  d::FlowDef =
   case d of
@@ -708,6 +711,7 @@ fun addDecSiteTreeEqs [(FlowVertex, FlowVertex)] ::= realEnv::Env  flowEnv::Flow
       when transRootVertex(decSite) != lhsVertexType() &&
         case decSite, ref of
         | localVertexType(_), _ -> true
+        | _, localVertexType(fName) when isForwardProdAttr(prod, fName, flowEnv) -> true
         | _, _ -> carriesEarlierInhs(prod, ref, flowEnv, realEnv)
         end ->
     map(\ attr::String -> (decSite.inhVertex(attr), ref.inhVertex(attr)), getInhAndInhOnTransAttrsOn(nt, realEnv))

@@ -338,6 +338,21 @@ fun isForwardProdAttr Boolean ::= prod::String  fName::String  e::FlowEnv =
   | _ -> false
   end;
 
+-- Is vt a forward production attribute of prod?
+fun isFwdProdAttrVertex Boolean ::= prod::String  vt::VertexType  e::FlowEnv =
+  case vt of
+  | localVertexType(fName) -> isForwardProdAttr(prod, fName, e)
+  | _ -> false
+  end;
+
+-- vt with root in place of transRootVertex(vt): the same translation attribute (of a translation
+-- attribute, and so on) of the tree at root.
+fun rerootVertexType VertexType ::= vt::VertexType  root::VertexType =
+  case vt of
+  | transAttrVertexType(v, transAttr) -> transAttrVertexType(rerootVertexType(v, root), transAttr)
+  | _ -> root
+  end;
+
 fun getAnonScrutineeRefSet [String] ::= prod::String  fName::String  e::FlowEnv =
   case lookupLocalEq(prod, fName, e) of
   | anonScrutineeEq(_, _, _, _, refSet, _, _, _) :: _ -> refSet

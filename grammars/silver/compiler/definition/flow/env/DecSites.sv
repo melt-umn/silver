@@ -59,6 +59,12 @@ DecSiteTree ::=
           end,
         getAttrOccursOn(nt, realEnv));
 
+  -- The tree at the root of vt.  Where it is a forward production attribute y, it already has this
+  -- production as its forward parent: the decoration sites at which y itself is shared supply
+  -- nothing to it (see addSharingEqs).
+  local rootVt::VertexType = transRootVertex(vt);
+  local rootIsFwdProdAttr::Boolean = isFwdProdAttrVertex(prodName, rootVt, flowEnv);
+
   nondecorated local own::DecSiteTree =
     viaProdVertexDec(prodName, vt,
       (if vt.isInhDefVertex
@@ -112,9 +118,14 @@ DecSiteTree ::=
         sigShareSitesDec(chain, beforeSharing, prodName, sigName, flowEnv, realEnv)
       | _ -> neverDec()
       end +
-      -- Via direct sharing, of this tree or of a tree that it is a translation attribute of
+      -- Via direct sharing, of this tree or of a tree that it is a translation attribute of,
+      -- leaving out the decoration sites at which rootVt is shared where it is a forward production
+      -- attribute
       (if beforeSharing then neverDec()
-       else sum(map(recurse(prodName, _), lookupAllRefDecSites(prodName, vt, flowEnv)))) +
+       else sum(map(recurse(prodName, _),
+         removeAll(
+           if rootIsFwdProdAttr then map(rerootVertexType(vt, _), lookupRefDecSite(prodName, rootVt, flowEnv)) else [],
+           lookupAllRefDecSites(prodName, vt, flowEnv))))) +
       -- Via a tree unconditionally shared at this decoration site, which was decorated first and
       -- keeps its equations.  Not at a subterm: the tree shared there is the source vertex, already
       -- resolved on its own path.

@@ -622,7 +622,6 @@ top::Expr ::= '@' e::Expr
       | just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) ->
         case top.decSiteVertexInfo of
         | just(forwardVertexType()) -> []
-        | just(localVertexType(dSiteFName)) when isForwardProdAttr(top.frame.fullName, dSiteFName, top.flowEnv) -> []
         | _ -> [mwdaWrnFromOrigin(top, s"Forward production attribute ${fName} may only be shared in a forward decoration site")]
         end
       | _ -> []
