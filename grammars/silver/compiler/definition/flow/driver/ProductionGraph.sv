@@ -125,8 +125,9 @@ Maybe<ProductionGraph> ::=
 
 {--
  - Update a graph whose flow types and production graphs have changed only for some dependency keys
- - (see stitchDep) since it was last updated.  Only the stitch points depending on those can give new
- - edges, and the suspect edges need another look only if the graph or its nonterminal's flow type changed.
+ - (see stitchDeps) since it was last updated.  Only the stitch points depending on those can give
+ - new edges, and the suspect edges need another look only if the graph or its nonterminal's flow
+ - type changed.
  -
  - @param changed  Whether a dependency key has changed since the graph was last updated
  -}
@@ -136,7 +137,7 @@ Maybe<ProductionGraph> ::=
     prodEnv::EnvTree<ProductionGraph>
     ntEnv::EnvTree<FlowType>
     changed::(Boolean ::= String) =
-  case graph.stitchedGraph(ntEnv, prodEnv, \ sp::StitchPoint -> changed(sp.stitchDep)) of
+  case graph.stitchedGraph(ntEnv, prodEnv, \ sp::StitchPoint -> any(map(changed, sp.stitchDeps))) of
   | just(newGraph) -> alt(newGraph.cullSuspect(ntEnv), just(newGraph))
   | nothing() ->
     if changed(prodDep(graph.prod)) || changed(ntDep(graph.lhsNt))
@@ -214,7 +215,11 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     normalEdges ++
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
-     else addFwdSynEqs(prod, nt, synsBySuspicion.fst, flowEnv, realEnv) ++
+     else
+          -- Matching follows forwards, so the forward includes its own forward (see
+          -- matchPrimitiveReal).
+          (forwardEqVertex, forwardSynVertex("forward")) ::
+          addFwdSynEqs(prod, nt, synsBySuspicion.fst, flowEnv, realEnv) ++
           addFwdInhEqs(prod, forwardVertexType(), inhs, defs, flowEnv, realEnv)) ++
     addTransRootEqs(prod, syns, flowEnv, realEnv) ++
     flatMap(addFwdInhEqs(prod, _, inhs, defs, flowEnv, realEnv), map(localVertexType, allFwdProdAttrs(defs))) ++
@@ -840,19 +845,46 @@ fun rhsStitchPoints [StitchPoint] ::= realEnv::Env  rhs::NamedSignatureElement =
   then nonterminalStitchPoints(realEnv, rhs.typerep.typeName, rhsVertexType(rhs.elementName))
   else [];
 fun patternStitchPoints [StitchPoint] ::= realEnv::Env  defs::[FlowDef] =
-  case defs of
-  | [] -> []
-  | patternRuleEq(_, matchProd, scrutinee, vars) :: rest ->
-      flatMap(patVarStitchPoints(matchProd, scrutinee, realEnv, _), vars) ++
-      patternStitchPoints(realEnv, rest)
-  | _ :: rest -> patternStitchPoints(realEnv, rest)
+  flatMap(
+    \ d::FlowDef ->
+      case d of
+      | patternRuleEq(prod, matchProd, scrutinee, vars) ->
+        flatMap(
+          patVarStitchPoints(
+            matchProd, scrutinee, matchTarget(prod, matchProd, scrutinee, defsForward(defs)), realEnv, _),
+          vars)
+      | _ -> []
+      end,
+    defs);
+-- The tree that a match on scrutinee in prod reaches matchProd from: in a production other than
+-- matchProd that forwards, a match on the LHS is a match on the forward.
+fun matchTarget VertexType ::= prod::String  matchProd::String  scrutinee::VertexType  prodForwards::Boolean =
+  case scrutinee of
+  | lhsVertexType() when prodForwards && prod != matchProd -> forwardVertexType()
+  | _ -> scrutinee
   end;
-fun patVarStitchPoints [StitchPoint] ::= matchProd::String  scrutinee::VertexType  realEnv::Env  var::PatternVarProjection =
+fun defsForward Boolean ::= defs::[FlowDef] =
+  any(map(\ d::FlowDef -> case d of fwdEq(_, _, _) -> true | _ -> false end, defs));
+{--
+ - The nonterminal of matchProd, wherever matchProd is a production in scope, even where matchProd
+ - is applied at the root of the matched tree and no forward is followed.  Matching follows
+ - forwards, so the LHS inherited attributes that the equations of matchProd for a pattern variable
+ - use may come from forward inherited equations of the productions forwarded through, which depend
+ - on at most the forward flow type of that nonterminal (see Inh.sv).
+ -}
+fun matchThroughForwards Maybe<String> ::= realEnv::Env  matchProd::String =
+  case getValueDcl(matchProd, realEnv) of
+  | dcl :: _ -> just(dcl.namedSignature.outputElement.typerep.typeName)
+  | [] -> nothing()
+  end;
+fun patVarStitchPoints
+[StitchPoint] ::=
+  matchProd::String  scrutinee::VertexType  target::VertexType  realEnv::Env  var::PatternVarProjection =
   case var of
   | patternVarProjection(child, typeName) -> 
       projectionStitchPoint(
-        matchProd, subtermVertexType(scrutinee, matchProd, child), scrutinee, rhsVertexType(child),
-        getInhAndInhOnTransAttrsOn(typeName, realEnv)) ::
+        matchProd, subtermVertexType(scrutinee, matchProd, child), target, rhsVertexType(child),
+        getInhAndInhOnTransAttrsOn(typeName, realEnv), matchThroughForwards(realEnv, matchProd)) ::
       nonterminalStitchPoints(realEnv, typeName, subtermVertexType(scrutinee, matchProd, child))
   end;
 -- deps for subterm vertex of applied prod
@@ -880,22 +912,24 @@ fun sigSharingStitchPoints
             sharingSite.1, rhsVertexType(e.elementName), lhsVertexType(), sharingSite.2,
             filter(
               mayHaveInhBeforeSharing(sharingSite.1, sharingSite.2, _, flowEnv, realEnv),
-              getInhAndInhOnTransAttrsOn(e.typerep.typeName, realEnv))),
+              getInhAndInhOnTransAttrsOn(e.typerep.typeName, realEnv)),
+            nothing()),
         lookupSigShareSites(prod, sigName, flowEnv)),
     sigNames, elems));
 {--
- - Stitch points for a child of an implementation at a position of the dispatch signature it implements, for what may
- - be supplied to the child before the implementation gets it: by an application of the signature (see
- - DispatchSites.sv), by an earlier implementation in a chain of forwards, or by an implementation not known here (see
- - addDispatchUnknownImplInhEqs).  This projects the signature's normal graph onto the implementation's own inherited
- - attributes, as for its forward parent.
+ - Stitch points for a child of an implementation at a position of the dispatch signature it
+ - implements, for what may be supplied to the child before the implementation gets it: by an
+ - application of the signature, by an earlier implementation in a chain of forwards, or by an
+ - implementation not known here (see addDispatchUnknownImplInhEqs).  This projects the signature's
+ - normal graph onto the implementation's own inherited attributes, as for its forward parent:
+ - projectedLhsDeps computes the same attributes as dispatchImplAssumes.
  -}
 fun implementedSigStitchPoints
 [StitchPoint] ::= realEnv::Env  ie::NamedSignatureElement  dispatch::String  se::NamedSignatureElement =
   if ie.elementShared || ie.typerep.isNonterminal
   then [projectionStitchPoint(
     dispatch, rhsVertexType(ie.elementName), lhsVertexType(), rhsVertexType(se.elementName),
-    getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv))]
+    getInhAndInhOnTransAttrsOn(ie.typerep.typeName, realEnv), nothing())]
   else [];
 -- deps for dispatch sig, from prods that implement it
 fun dispatchStitchPoints [StitchPoint] ::= flowEnv::FlowEnv  realEnv::Env  dispatch::NamedSignature  defs::[FlowDef] =

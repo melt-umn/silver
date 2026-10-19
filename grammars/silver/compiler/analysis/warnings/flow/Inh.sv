@@ -328,6 +328,7 @@ aspect production childReference
 top::Expr ::= @q::QName
 {
   -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local vt::VertexType = rhsVertexType(q.lookupValue.fullName);
@@ -340,7 +341,7 @@ top::Expr ::= @q::QName
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${q.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, vt, inhDeps, myGraphs, top.flowEnv, top.env))
+          decSitesMissingInhEqs(top.frame.fullName, vt, inhDeps, myGraphs, myFlow, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
       end
@@ -360,6 +361,7 @@ aspect production localReference
 top::Expr ::= @q::QName
 {
   -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local vt::VertexType = localVertexType(q.lookupValue.fullName);
@@ -372,7 +374,7 @@ top::Expr ::= @q::QName
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${q.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, vt, inhDeps, myGraphs, top.flowEnv, top.env))
+          decSitesMissingInhEqs(top.frame.fullName, vt, inhDeps, myGraphs, myFlow, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.finalType)}, as the reference set is not bounded.")]
       end
@@ -457,8 +459,9 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
           decSitesMissingInhEqs(top.frame.fullName, vt,
-            set:toList(graphInhDepsForSyn(vt, q.attrDcl.fullName, inhDeps, top.frame.flowGraph)),
-            myGraphs, top.flowEnv, top.env))
+            set:toList(
+              graphInhDepsForSyn(vt, q.attrDcl.fullName, inhDeps, top.frame.flowGraph)),
+            myGraphs, myFlow, top.flowEnv, top.env))
       | _ -> []
       end
     else [];
@@ -468,6 +471,7 @@ aspect production inhDecoratedAccessHandler
 top::Expr ::= @e::Expr @q::QNameAttrOccur
 {
   -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   -- CASE 1: References. This check is necessary and won't be caught elsewhere.
@@ -497,7 +501,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             "Access of inherited attribute " ++ q.name ++ " on " ++ e.unparse ++  -- TODO: e.unparse can be big, abbreviate it?
             " requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, vt, [q.attrDcl.fullName], myGraphs, top.flowEnv, top.env))
+          decSitesMissingInhEqs(top.frame.fullName, vt, [q.attrDcl.fullName], myGraphs, myFlow, top.flowEnv, top.env))
       | _ -> []
       end
     else [];
@@ -531,7 +535,9 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             mwdaWrnFromOrigin(top,
               s"Taking a reference to ${top.unparse} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
               " to be supplied to " ++ prettyDecSites(0, di.1)),
-            decSitesMissingInhEqs(top.frame.fullName, transAttrVertexType(vt, q.attrDcl.fullName), inhDeps, myGraphs, top.flowEnv, top.env))
+            decSitesMissingInhEqs(
+              top.frame.fullName, transAttrVertexType(vt, q.attrDcl.fullName), inhDeps, myGraphs, myFlow,
+              top.flowEnv, top.env))
         | nothing() ->
             if null(inhDeps) then []
             -- TODO: Would need to introduce an anon vertex type for e as a sink like pattern matching on a reference.
@@ -597,7 +603,7 @@ top::Expr ::= @e::Expr @q::QNameAttrOccur
             set:toList(
               graphInhDepsForSyn(vt, q.attrDcl.fullName, fromMaybe(set:empty(), deps.1), top.frame.flowGraph) ++
               refInhDeps),
-            myGraphs, top.flowEnv, top.env))
+            myGraphs, myFlow, top.flowEnv, top.env))
       | _ -> []
       end
     else [];
@@ -670,6 +676,7 @@ aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local reached::set:Set<FlowVertex> = expandGraph(pr.scrutineeVertexType.fwdDeps, top.frame.flowGraph);
@@ -686,7 +693,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
       decSitesMissingInhEqs(top.frame.fullName, pr.scrutineeVertexType,
         set:toList(inhsReachedOn(
           pr.scrutineeVertexType, reached, set:fromList(getInhAndInhOnTransAttrsOn(e.finalType.typeName, top.env)))),
-        myGraphs, top.flowEnv, top.env))
+        myGraphs, myFlow, top.flowEnv, top.env))
     else [];
 }
 
@@ -696,6 +703,7 @@ aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
   -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   top.errors <-
@@ -707,7 +715,7 @@ top::VarBinder ::= n::Name
           mwdaWrnFromOrigin(top,
             s"Taking a reference to ${n.name} requires missing inherited attribute(s) ${implode(", ", di.2)}" ++
             " to be supplied to " ++ prettyDecSites(0, di.1)),
-          decSitesMissingInhEqs(top.frame.fullName, vt.fromJust, inhDeps, myGraphs, top.flowEnv, top.env))
+          decSitesMissingInhEqs(top.frame.fullName, vt.fromJust, inhDeps, myGraphs, myFlow, top.flowEnv, top.env))
       | nothing() ->
           [mwdaWrnFromOrigin(top, s"Cannot take a reference of type ${prettyType(top.bindingType)}, as the reference set is not bounded.")]
       end

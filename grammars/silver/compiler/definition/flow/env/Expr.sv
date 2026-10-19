@@ -719,16 +719,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | nothing() -> anonScrutineeVertexType(scrutineeName, top.grammarName, eLoc)
     end;
 
-  -- Let's make sure for decorated types, we only demand what's necessary for forward
-  -- evaluation.  Matching follows forwards, so matching on the forward parent may also evaluate this production's
-  -- forward.
-  -- TODO: should the forwardParentVertexType's fwdDeps just include on the forward eq vertex?
-  local scrutineeFwdDeps :: [FlowVertex] =
-    pr.scrutineeVertexType.fwdDeps ++
-    case pr.scrutineeVertexType of
-    | forwardParentVertexType() -> [forwardEqVertex]
-    | _ -> []
-    end;
+  -- Let's make sure for decorated types, we only demand what's necessary for forward evaluation.
+  -- Matching follows forwards, and the forward depends on its own forward (see
+  -- constructProductionGraph), so fwdDeps covers the whole chain of forwards, including this
+  -- production's forward for a match on the forward parent.
+  local scrutineeFwdDeps :: [FlowVertex] = pr.scrutineeVertexType.fwdDeps;
   top.flowDeps := pr.flowDeps ++ f.flowDeps ++ scrutineeFwdDeps;
 
   local eTy::Type = e.finalType;

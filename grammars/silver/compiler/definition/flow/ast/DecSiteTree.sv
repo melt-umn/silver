@@ -112,9 +112,11 @@ top::DecSiteTree ::= attrName::String d::DecSiteTree
 
 {--
   - Supplying an inherited attribute via a flow projection requires the projected dependencies to be supplied.
+  - throughForwards holds the nonterminal of prodName where a match may reach prodName through
+  - forwards (see matchThroughForwards).
   -}
 production projectedDepsDec
-top::DecSiteTree ::= prodName::String sigName::String d::DecSiteTree
+top::DecSiteTree ::= prodName::String sigName::String throughForwards::Maybe<String> d::DecSiteTree
 {
   top.decSitePP = s"projected dependencies for ${sigName} in production ${prodName}: ${d.decSitePP}";
   top.dbgPP = if top.maxDepth > 0 then s"projected dependencies for ${sigName} in production ${prodName}: ${d.dbgPP}" else "...";

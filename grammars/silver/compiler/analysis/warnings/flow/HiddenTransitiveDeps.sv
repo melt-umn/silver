@@ -8,9 +8,10 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   -- oh no again!
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local vertexHasHideableEq :: (Boolean ::= VertexType String) =
-    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
+    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, myFlow, top.flowEnv, top.env);
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case filter(vertexHasHideableEq(_, attr.attrDcl.fullName), dl.defLHSDecSites) of
@@ -137,9 +138,10 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   -- oh no again!
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local vertexHasHideableEq :: (Boolean ::= VertexType String) =
-    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
+    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, myFlow, top.flowEnv, top.env);
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case filter(vertexHasHideableEq(_, attr.attrDcl.fullName), dl.defLHSDecSites) of
@@ -263,9 +265,10 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
 
   -- oh no again!
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local vertexHasHideableEq :: (Boolean ::= VertexType String) =
-    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, top.flowEnv, top.env);
+    possibleDecSiteHasInhEq(top.frame.fullName, _, _, myGraphs, myFlow, top.flowEnv, top.env);
 
   local refDecSiteInhDepsLhsInh :: Maybe<set:Set<String>> =
     case filter(vertexHasHideableEq(_, attr.attrDcl.fullName), dl.defLHSDecSites) of

@@ -16,7 +16,6 @@ top::StitchPoint ::= nt::String  vertexType::VertexType
       g:toList(findFlowType(nt, flowTypes)));
 }
 
-
 {--
  - Given production 'prod :: LHS ::= rhs1::RHS1'
  - with all inherited attributes on 'RHS1' as 'attrs'.
@@ -36,6 +35,10 @@ top::StitchPoint ::= nt::String  vertexType::VertexType
  - @param targetType  The "vertexType" of where this stitchPoint should proxy to
  - @param prodType    The "vertexType" of 'prod' (e.g. rhsVertex("rhs1", _))
  - @param attrs  The attributes we want to project to LHS inhs
+ - @param throughForwards  The nonterminal of 'prod', if a match may reach 'prod' through the
+ -   forwards of other productions (see matchThroughForwards).  Their forward inherited equations
+ -   may supply the LHS inherited attributes of 'prod' from the forward flow type, so an attribute
+ -   that depends on the LHS of 'prod' also depends on that.
  -}
 abstract production projectionStitchPoint
 top::StitchPoint ::= 
@@ -44,39 +47,37 @@ top::StitchPoint ::=
   targetType::VertexType -- the scrutinee vertex type
   prodType::VertexType -- a vertex type of 'prod'
   attrs::[String] -- all inhs on the NT type of sigName/sourceType
+  throughForwards::Maybe<String> -- the NT of 'prod', if matching may reach 'prod' through forwards
 {
   -- A function passing a tree with '@' to a signature-shared child has no graph here, but has no
   -- LHS inherited attributes to project either.
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
     case searchEnvTree(prod, prodGraphs) of
-    | g :: _ -> flatMap(projectInh(_, sourceType, targetType, prodType, g), attrs)
+    | g :: _ ->
+      flatMap(
+        \ attr::String ->
+          map(\ a::String -> (sourceType.inhVertex(attr), targetType.inhVertex(a)),
+            projectedLhsDeps(g, prodType, attr, throughForwards, flowTypes)),
+        attrs)
     | [] -> []
     end;
 }
 
-
-{--
- - @param attr  An inherited attribute
- - @param sourceType  "pattern variable" vertex type
- - @param targetType  "scrutinee" vertex type
- - @param sigName     the child name...
- - @param prod  ...of this production (sigName in here, others in original prod graph)
- - @return edges from 'sourceType.inhVertex(attr)' to 'targetType.inhVertex(??)'
- -}
-fun projectInh
-[(FlowVertex, FlowVertex)] ::=
-  attr::String
-  sourceType::VertexType
-  targetType::VertexType
-  prodType::VertexType
-  prod::ProductionGraph =
-  map(pair(fst=sourceType.inhVertex(attr), snd=_),
-    -- Turn into inh vertexes (in this production) on targetType
-    map(targetType.inhVertex,
-      -- Filter down to just LHS Inh in that production, (string names)
-      filterLhsInh(
-        -- Deps of this vertex in that other production
-        set:toList(prod.edgeMap(prodType.inhVertex(attr))))));
+-- The LHS inherited attributes that the inherited attribute attr of the tree at vt depends on in
+-- graph.  A match that may reach graph's production through forwards (throughForwards, that
+-- production's nonterminal) gets these from forward inherited equations, so where there are any,
+-- the forward flow type is needed too (see matchThroughForwards).
+function projectedLhsDeps
+[String] ::= graph::ProductionGraph  vt::VertexType  attr::String  throughForwards::Maybe<String>
+  flowTypes::EnvTree<FlowType>
+{
+  local lhsDeps :: [String] = filterLhsInh(set:toList(graph.edgeMap(vt.inhVertex(attr))));
+  return
+    case throughForwards of
+    | just(nt) when !null(lhsDeps) -> union(lhsDeps, set:toList(inhDepsForSyn("forward", nt, flowTypes)))
+    | _ -> lhsDeps
+    end;
+}
 
 
 {--
@@ -125,11 +126,10 @@ FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   -- thus forward parent vertices in the remote production always map to the LHS vertices.
   -- A dispatch signature's graph keeps them instead (see implTileStitchPoint).
   | forwardParentEqVertex() -> lhsEqVertex()
-| forwardParentSynVertex(attr) -> lhsSynVertex(attr)
+  | forwardParentSynVertex(attr) -> lhsSynVertex(attr)
   | forwardParentInhVertex(attr) -> lhsInhVertex(attr)
   | _ -> error("Unexpected non-signature vertex in tileEdges: " ++ v.dotName)
   end;
-
 
 {--
  - The tile flow graph of the implementation impl in the graph of the dispatch signature that impl
@@ -174,15 +174,16 @@ fun implTileVertex FlowVertex ::= impl::String  v::FlowVertex =
 
 
 {--
- - The key for what the edges of this stitch point are computed from: the flow type of a nonterminal,
- - or the graph of a production.
+ - The keys for what the edges of this stitch point are computed from: the flow types of
+ - nonterminals, and the graphs of productions.
  -}
-synthesized attribute stitchDep :: String occurs on StitchPoint;
-aspect stitchDep on StitchPoint of
-| nonterminalStitchPoint(nt, _) -> ntDep(nt)
-| projectionStitchPoint(prod, _, _, _, _) -> prodDep(prod)
-| tileStitchPoint(prod, _) -> prodDep(prod)
-| implTileStitchPoint(impl) -> prodDep(impl)
+synthesized attribute stitchDeps :: [String] occurs on StitchPoint;
+aspect stitchDeps on StitchPoint of
+| nonterminalStitchPoint(nt, _) -> [ntDep(nt)]
+| projectionStitchPoint(prod, _, _, _, _, just(nt)) -> [prodDep(prod), ntDep(nt)]
+| projectionStitchPoint(prod, _, _, _, _, nothing()) -> [prodDep(prod)]
+| tileStitchPoint(prod, _) -> [prodDep(prod)]
+| implTileStitchPoint(impl) -> [prodDep(impl)]
 end;
 
 fun ntDep String ::= nt::String = "nt:" ++ nt;

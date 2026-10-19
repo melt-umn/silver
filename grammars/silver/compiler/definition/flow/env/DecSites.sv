@@ -109,7 +109,7 @@ DecSiteTree ::=
             -- We really should be using the global env here.
             | _ -> hiddenProdDec(prodOrSig, rhsVertexType(sigName))
             end) *
-          projectedDepsDec(prodOrSig, sigName, recurse(prodName, parent))
+          subtermProjectedDepsDec(prodName, parent, prodOrSig, sigName, flowEnv, realEnv)
       -- Via the reference set of a pattern match scrutinee
       | anonScrutineeVertexType(_, grammarName, l) ->
         anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l)
@@ -146,6 +146,34 @@ DecSiteTree ::=
       end);
 
   return if contains((prodName, vt), chain) then alwaysDec() else own;
+}
+
+-- The projection for the subterm sigName of prodOrSig at parent in prodName.  It comes from the
+-- tree at parent or, for a pattern variable, from the tree that the match reaches prodOrSig from
+-- (see matchTarget), through forwards if the match may follow them (see matchThroughForwards).
+function subtermProjectedDepsDec
+DecSiteTree ::=
+  prodName::String  parent::VertexType  prodOrSig::String  sigName::String  flowEnv::FlowEnv  realEnv::Env
+{
+  local defs :: [FlowDef] = getGraphContribsFor(prodName, flowEnv);
+  local target :: VertexType = matchTarget(prodName, prodOrSig, parent, !null(lookupFwd(prodName, flowEnv)));
+  local isPatternVar :: Boolean =
+    any(map(
+      \ d::FlowDef ->
+        case d of
+        | patternRuleEq(_, matchProd, scrutinee, vars) ->
+          matchProd == prodOrSig && scrutinee == parent &&
+          any(map(\ v::PatternVarProjection -> case v of patternVarProjection(c, _) -> c == sigName end, vars))
+        | _ -> false
+        end,
+      defs));
+  return
+    if isPatternVar
+    then
+      projectedDepsDec(
+        prodOrSig, sigName, matchThroughForwards(realEnv, prodOrSig),
+        findDecSites(prodName, target, flowEnv, realEnv))
+    else projectedDepsDec(prodOrSig, sigName, nothing(), findDecSites(prodName, parent, flowEnv, realEnv));
 }
 
 -- What the sharing sites of the child sigName of prodName supply to the tree shared there:
@@ -265,7 +293,8 @@ State<PDSState DecSiteTree> ::=
         | subtermVertexType(parent, prodOrSig, sigName) -> map(
             -- Transitive dependencies of an attribute on the projection must be supplied
             -- for the attribute on the projection to be depended upon.
-            bothDec(_, projectedDepsDec(prodOrSig, sigName, findDecSites(prodName, parent, flowEnv, realEnv))),
+            bothDec(_,
+              projectedDepsDec(prodOrSig, sigName, nothing(), findDecSites(prodName, parent, flowEnv, realEnv))),
             if !null(getValueDcl(prodOrSig, realEnv))
             -- Projected from a production
             then recurse(prodOrSig, rhsVertexType(sigName))
@@ -364,7 +393,7 @@ partial strategy attribute elimCycleDecSiteStep =
   | viaProdVertexDec(_, _, neverDec()) -> neverDec()
   end occurs on DecSiteTree;
 
-attribute flowEnv, productionFlowGraphs occurs on DecSiteTree;
+attribute flowEnv, productionFlowGraphs, grammarFlowTypes occurs on DecSiteTree;
 
 -- Resolve the decision tree for a particular attribute, replacing decoration
 -- sites known to be supplied with alwaysDec().
@@ -375,10 +404,11 @@ partial strategy attribute lookupDecSiteStep =
       alwaysDec()
   -- This is safe as the tree is traversed top-down, so the current attrToResolve is the final one.
   | depAttrDec(attrName, d) when top.attrToResolve == attrName -> ^d
-  | projectedDepsDec(prodName, sigName, d) ->
-      product(map(depAttrDec(_, ^d), set:toList(onlyLhsInh(expandGraph(
-        [rhsInhVertex(sigName, top.attrToResolve)],
-        findProductionGraph(prodName, top.productionFlowGraphs))))))
+  | projectedDepsDec(prodName, sigName, throughForwards, d) ->
+      product(map(depAttrDec(_, ^d),
+        projectedLhsDeps(
+          findProductionGraph(prodName, top.productionFlowGraphs), rhsVertexType(sigName), top.attrToResolve,
+          throughForwards, top.grammarFlowTypes)))
   | anonScrutineeRefSetDec(refSet, _, _) when contains(top.attrToResolve, refSet) ->
       alwaysDec()
   | transAttrDec(attrName, d) ->
@@ -416,7 +446,7 @@ strategy attribute resolveDecSite =
   occurs on DecSiteTree;
 
 propagate
-  flowEnv, productionFlowGraphs,
+  flowEnv, productionFlowGraphs, grammarFlowTypes,
   reduceDecSiteStep, elimRedundantDecSiteStep, elimCycleDecSiteStep,
   lookupDecSiteStep, resolveDecSiteStep, cleanupDecSiteStep, resolveDecSite
   on DecSiteTree;
@@ -427,15 +457,18 @@ propagate
   - @param d The decoration site to check.
   - @param attrName The name of the inherited attribute.
   - @param prodGraphs The final production flow graphs.
+  - @param flowTypes The final flow types.
   - @param flowEnv The flow environment.
   - @return alwaysDec(), if the attribute is always present,
   - or else the places where it could be supplied.
   -}
 function resolveDecSiteInhEq
-DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv
+DecSiteTree ::=
+  attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGraph> flowTypes::EnvTree<FlowType> flowEnv::FlowEnv
 {
   d.attrToResolve = attrName;
   d.productionFlowGraphs = prodGraphs;
+  d.grammarFlowTypes = flowTypes;
   d.flowEnv = flowEnv;
   d.seenProdVertexAttrs = set:empty();
   d.maxDepth = 20;
@@ -450,6 +483,7 @@ DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGr
   - @param vt The vertex type to check.
   - @param attrName The name of the inherited attribute.
   - @param prodGraphs The final production flow graphs.
+  - @param flowTypes The final flow types.
   - @param flowEnv The flow environment.
   - @param realEnv The regular environment.
   - @return alwaysDec(), if the attribute is always present,
@@ -458,8 +492,8 @@ DecSiteTree ::= attrName::String d::DecSiteTree prodGraphs::EnvTree<ProductionGr
 fun resolveInhEq
 DecSiteTree ::=
     prodName::String vt::VertexType attrName::String
-    prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, flowEnv, realEnv), prodGraphs, flowEnv);
+    prodGraphs::EnvTree<ProductionGraph> flowTypes::EnvTree<FlowType> flowEnv::FlowEnv realEnv::Env =
+  resolveDecSiteInhEq(attrName, findDecSites(prodName, vt, flowEnv, realEnv), prodGraphs, flowTypes, flowEnv);
 
 {--
  - Determine if a decoration site for some vertex has an inherited attribute supplied.
@@ -467,6 +501,8 @@ DecSiteTree ::=
  - @param prodName The name of the production containing the vertex.
  - @param vt The vertex type to check.
  - @param attrName The name of the inherited attribute.
+ - @param prodGraphs The final production flow graphs.
+ - @param flowTypes The final flow types.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
  - @return true if the vertex is guaranteed to be supplied with the attribute.
@@ -474,16 +510,17 @@ DecSiteTree ::=
 fun decSiteHasInhEq
 Boolean ::=
     prodName::String vt::VertexType attrName::String
-    prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveInhEq(prodName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
+    prodGraphs::EnvTree<ProductionGraph> flowTypes::EnvTree<FlowType> flowEnv::FlowEnv realEnv::Env =
+  resolveInhEq(prodName, vt, attrName, prodGraphs, flowTypes, flowEnv, realEnv) == alwaysDec();
 
 -- Resolves attrName in d, which findDecSitesChain or sigShareSitesDec found with beforeSharing:
 -- alwaysDec() if the tree that d was found for has attrName by the time it is shared.  d then has
--- no projections, so resolving it needs no production graphs and can run while the
+-- no projections, so resolving it needs no production graphs or flow types and can run while the
 -- production graphs are being constructed.
 fun resolveBeforeSharing DecSiteTree ::= attrName::String  d::DecSiteTree  flowEnv::FlowEnv =
   resolveDecSiteInhEq(
-    attrName, d, error("What a tree has before it is shared is resolved without production graphs"), flowEnv);
+    attrName, d, error("What a tree has before it is shared is resolved without production graphs"),
+    error("What a tree has before it is shared is resolved without flow types"), flowEnv);
 
 -- Does the tree at vt in prodName have attrName by the time prodName shares it (see
 -- resolveBeforeSharing)?
@@ -495,11 +532,11 @@ Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv
 function decSitesMissingInhEqs
 [(DecSiteTree, [String])] ::=
   prodName::String vt::VertexType attrNames::[String]
-  prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env
+  prodGraphs::EnvTree<ProductionGraph> flowTypes::EnvTree<FlowType> flowEnv::FlowEnv realEnv::Env
 {
   nondecorated local d::DecSiteTree = findDecSites(prodName, vt, flowEnv, realEnv);
   local resolved::map:Map<DecSiteTree String> =
-    map:add(map(\ a -> (resolveDecSiteInhEq(a, d, prodGraphs, flowEnv), a), attrNames), map:empty());
+    map:add(map(\ a -> (resolveDecSiteInhEq(a, d, prodGraphs, flowTypes, flowEnv), a), attrNames), map:empty());
   return flatMap(\ d -> 
     case map:lookup(d, resolved) of
     | [] -> []
@@ -515,6 +552,7 @@ function decSitesMissingInhEqs
  - @param vt The vertex type to check.
  - @param attrName The name of the inherited attribute.
  - @param prodGraphs The final production flow graphs.
+ - @param flowTypes The final flow types.
  - @param flowEnv The flow environment.
  - @param realEnv The regular environment.
  - @return true if the vertex might ever be supplied with the attribute, false otherwise.
@@ -522,6 +560,8 @@ function decSitesMissingInhEqs
 fun possibleDecSiteHasInhEq
 Boolean ::=
     prodName::String vt::VertexType attrName::String
-    prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(attrName, evalState(findPossibleDecSites(prodName, vt, flowEnv, realEnv), ([], [])), prodGraphs, flowEnv)
+    prodGraphs::EnvTree<ProductionGraph> flowTypes::EnvTree<FlowType> flowEnv::FlowEnv realEnv::Env =
+  resolveDecSiteInhEq(
+    attrName, evalState(findPossibleDecSites(prodName, vt, flowEnv, realEnv), ([], [])), prodGraphs, flowTypes,
+    flowEnv)
   == alwaysDec();

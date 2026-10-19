@@ -55,6 +55,7 @@ top::Expr ::= '@' e::Expr
 {
   -- oh no again!
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   -- Check for cycles due to missing inherited equations on shared trees.
   -- We need to check inherited attributes known locally to occur on the shared tree,
@@ -72,7 +73,7 @@ top::Expr ::= '@' e::Expr
         -- or on a tree shared into it, or from every sharing site of a child shared through the
         -- signature (see hasInhBeforeSharing).
         if !hasInhBeforeSharing(top.frame.fullName, ref, i, top.flowEnv, top.env)
-        && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
+        && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, myFlow, top.flowEnv, top.env)
         && dependsOnInh(i)
         then [mwdaWrnFromOrigin(top, s"Potentially missing inherited override equation for ${i} on ${ref.vertexName}; a cycle may exist via its sharing decoration site ${decSite.vertexName}")]
         else [],
@@ -87,6 +88,7 @@ top::AppExpr ::= e::Expr
 {
   -- oh no again!
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   -- Same checks as for decorationSiteExpr, for application of a prod with a shared signature param.
   top.errors <-
@@ -97,7 +99,7 @@ top::AppExpr ::= e::Expr
             sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs, top.flowEnv)
       in flatMap(\ i::String ->
         if !hasInhBeforeSharing(top.frame.fullName, ref, i, top.flowEnv, top.env)
-        && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
+        && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, myFlow, top.flowEnv, top.env)
         && dependsOnInh(i)
         then [mwdaWrnFromOrigin(top, s"Potentially missing inherited override equation for ${i} on ${ref.vertexName}; a cycle may exist via its sharing decoration site ${decSite.vertexName}")]
         else [],
