@@ -378,10 +378,12 @@ ProductionGraph ::=
     addTransRootEqs(prod, syns, flowEnv, realEnv) ++
     flatMap(addFwdInhEqs(prod, _, inhs, defs, flowEnv, realEnv), map(localVertexType, allFwdProdAttrs(defs))) ++
     map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
-  -- Edges between the trees shared in this production and their decoration sites, left out of
-  -- unstitchedGraph (see ownEqDeps and decSiteOwnInhDeps).
+  -- Edges between the trees shared in this production and their decoration sites, and from pattern
+  -- variables to the trees they may be bound to.  These are left out of unstitchedGraph (see
+  -- ownEqDeps and decSiteOwnInhDeps).
   local sharingEdges :: [(FlowVertex, FlowVertex)] =
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
+    addPatternVarSharedTreeEqs(realEnv, defs) ++
     flatMap(addDecSiteTreeEqs(realEnv, flowEnv, _), defs) ++
     extraSharingEdges;
   
@@ -915,6 +917,61 @@ fun sharedSynEdges [(FlowVertex, FlowVertex)] ::= realEnv::Env  nt::String  ref:
   map(
     \ attr::String -> (decSite.synVertex(attr), ref.synVertex(attr)),
     "forward" :: getSynAndSynOnTransAttrsOn(nt, realEnv));
+{--
+ - Introduce edges from the inherited attributes of a pattern variable bound by matching on the
+ - forward or a local (see matchTarget) to those of the trees this production shares into that
+ - forward or local.  Matching follows forwards, so the variable may be bound to such a tree, which
+ - keeps what this production supplied to it (see patVarStitchPoints for what the matched production
+ - supplies).
+ -}
+function addPatternVarSharedTreeEqs
+[(FlowVertex, FlowVertex)] ::= realEnv::Env  defs::[FlowDef]
+{
+  -- The trees shared at decoration sites rooted at the forward or a local, with that root
+  local sharedInto :: [(VertexType, VertexType)] =
+    flatMap(
+      \ d::FlowDef ->
+        case d of
+        | refDecSiteEq(_, _, ref, decSite, _) ->
+          case decSiteRoot(decSite) of
+          | forwardVertexType() -> [(forwardVertexType(), ref)]
+          | localVertexType(fName) -> [(localVertexType(fName), ref)]
+          | _ -> []
+          end
+        | _ -> []
+        end,
+      defs);
+  return flatMap(
+    \ d::FlowDef ->
+      case d of
+      | patternRuleEq(prod, matchProd, scrutinee, vars) ->
+        flatMap(
+          \ v::PatternVarProjection ->
+            case v of
+            | patternVarProjection(child, typeName) ->
+              flatMap(
+                \ st::(VertexType, VertexType) ->
+                  if st.1 == matchTarget(prod, matchProd, scrutinee, defsForward(defs))
+                  then map(
+                    \ attr::String ->
+                      (subtermVertexType(scrutinee, matchProd, child).inhVertex(attr), st.2.inhVertex(attr)),
+                    getInhAndInhOnTransAttrsOn(typeName, realEnv))
+                  else [],
+                sharedInto)
+            end,
+          vars)
+      | _ -> []
+      end,
+    defs);
+}
+-- The tree that the decoration site vt is, or is nested in: the forward, a local, the LHS or a
+-- child.
+fun decSiteRoot VertexType ::= vt::VertexType =
+  case vt of
+  | subtermVertexType(parent, _, _) -> decSiteRoot(parent)
+  | transAttrVertexType(v, _) -> decSiteRoot(v)
+  | _ -> vt
+  end;
 {--
  - Introduce edges from the inherited attributes of a decoration site to those of the tree shared
  - there, where that tree keeps what was supplied to it first: where the decoration site is a local,
