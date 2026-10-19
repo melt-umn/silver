@@ -52,7 +52,10 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 -- CHECK 2: Effective Completeness
 --   - Ensure each inherited attribute that's used actually has an equation
 --     in existence.
---   - Consists of calls to `checkAllEqDeps`
+--   - Checked where a tree's attributes are demanded: attribute accesses
+--     (synthesized, inherited and translation), references to children, locals
+--     and pattern variables, and matches, which follow forwards.  Each calls
+--     decSitesMissingInhEqs.
 --   - Pattern variable accesses can induced *remote* inherited equation checks
 
 --------------------------------------------------------------------------------
@@ -653,6 +656,31 @@ top::AppExpr ::= e::Expr
         "would never apply")]
     | _, _ -> []
     end;
+}
+
+aspect production matchPrimitiveReal
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
+{
+  -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local reached::set:Set<FlowVertex> = expandGraph(pr.scrutineeVertexType.fwdDeps, top.frame.flowGraph);
+
+  -- Matching follows forwards, so the scrutinee must be supplied what its forward, and that
+  -- forward's forwards, need.  A reference is matched through an anonymous scrutinee vertex, whose
+  -- decoration site is its reference set.
+  top.errors <-
+    if top.config.warnMissingInh
+    then map(\ di::(DecSiteTree, [String]) ->
+      mwdaWrnFromOrigin(top,
+        "Matching requires missing inherited attribute(s) " ++ implode(", ", di.2) ++
+        " to be supplied to " ++ prettyDecSites(0, di.1)),
+      decSitesMissingInhEqs(top.frame.fullName, pr.scrutineeVertexType,
+        set:toList(inhsReachedOn(
+          pr.scrutineeVertexType, reached, set:fromList(getInhAndInhOnTransAttrsOn(e.finalType.typeName, top.env)))),
+        myGraphs, myFlow, top.flowEnv, top.env))
+    else [];
 }
 
 -- Also need to check for taking a reference to a pattern var.
