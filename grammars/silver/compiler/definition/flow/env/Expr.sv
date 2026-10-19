@@ -389,12 +389,11 @@ top::AppExpr ::= e::Expr
       isExportedBy(top.grammarName, [implode(":", init(explode(":", sig.fullName)))], top.compiledGrammars)
     | nothing() -> false
     end;
-  -- When a dispatch signature is applied, an implementation not known here may build its forward from the value
-  -- of any argument (see addDispatchUnknownImplSynEqs.)
+  -- Capture the equation dependencies for decorable children too: the applied production may use
+  -- the child's value, by undecorating or matching on it.
   top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd of
-    | just(parent), just(ns) when
-        null(getValueDcl(ns.fullName, top.env)) && (sigIsShared || isDecorable(top.appExprTyperep, top.env)) ->
+    | just(parent), just(ns) when sigIsShared || isDecorable(top.appExprTyperep, top.env) ->
       [extraEq(
         top.frame.fullName, subtermEqVertex(parent, ns.fullName, sigName),
         case e.flowVertexInfo of

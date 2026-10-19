@@ -479,13 +479,24 @@ top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 {--
  - A match rule from a pattern matching equation.
  - Matching against 'scrutinee' this rule matches 'matchProd'. It extracts the pattern variables in 'vars'.
- - This info is used, not to directly create edges, but to inform which stitch points are needed.
+ - This informs which stitch points are needed (see patternStitchPoints).
+ - A pattern variable that is a tree is part of the scrutinee's value: its equation vertex (a
+ - reference to it) and its outer equation vertex (every attribute accessed on it, see synDeps)
+ - depend on the scrutinee's equation vertex.
  -}
 abstract production patternRuleEq
 top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[PatternVarProjection]
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = [];
+  top.flowEdges =
+    flatMap(
+      \ v::PatternVarProjection ->
+        case v of
+        | patternVarProjection(child, _) ->
+          zipFst(subtermEqVertex(scrutinee, matchProd, child), scrutinee.eqDeps) ++
+          zipFst(subtermOuterEqVertex(scrutinee, matchProd, child), scrutinee.eqDeps)
+        end,
+      vars);
 }
 
 data PatternVarProjection
