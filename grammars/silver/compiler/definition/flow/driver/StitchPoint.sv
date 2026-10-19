@@ -172,6 +172,40 @@ fun implTileVertex FlowVertex ::= impl::String  v::FlowVertex =
   | _ -> fromSigVertex(impl, lhsVertexType(), v)
   end;
 
+{--
+ - Edges from the synthesized attribute attr to the LHS vertices that deps reach in the default
+ - graph of nt (see constructDefaultProductionGraph), where deps are dependencies of a default
+ - equation or contribution for attr that applies at a production (see defaultDepsAt and
+ - expandsDefaultDep).  For a contribution that may not affect the flow type of attr, only edges to
+ - the inherited attributes in that flow type.
+ -}
+abstract production defaultStitchPoint
+top::StitchPoint ::= nt::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
+{
+  top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
+    case searchEnvTree(defaultProdName(nt), prodGraphs) of
+    | g :: _ ->
+      map(pair(fst=lhsSynVertex(attr), snd=_),
+        filter(
+          isDefaultDepTarget(attr, mayAffectFlowType, inhDepsForSyn(attr, nt, flowTypes), _),
+          set:toList(foldr(set:union, set:emptyWith(compareVertexId), map(g.tileEdgeMap, deps)))))
+    | [] -> []
+    end;
+}
+
+-- Whether the edges of defaultStitchPoint for attr go to v, a vertex that a dependency of the
+-- default reaches in the default graph: any LHS vertex other than attr's, and the outer equation
+-- vertex of a translation attribute of the LHS (at any depth).  For a contribution that may not
+-- affect the flow type of attr, only the inherited attributes in ft, the flow type of attr.
+fun isDefaultDepTarget Boolean ::= attr::String  mayAffectFlowType::Boolean  ft::set:Set<String>  v::FlowVertex =
+  case v of
+  | lhsInhVertex(i) -> mayAffectFlowType || set:contains(i, ft)
+  | lhsSynVertex(a) -> mayAffectFlowType && a != attr
+  | lhsEqVertex() -> mayAffectFlowType
+  | transAttrOuterEqVertex(vt, _) -> mayAffectFlowType && transRootVertex(vt) == lhsVertexType()
+  | _ -> false
+  end;
+
 
 {--
  - The keys for what the edges of this stitch point are computed from: the flow types of
@@ -184,6 +218,8 @@ aspect stitchDeps on StitchPoint of
 | projectionStitchPoint(prod, _, _, _, _, nothing()) -> [prodDep(prod)]
 | tileStitchPoint(prod, _) -> [prodDep(prod)]
 | implTileStitchPoint(impl) -> [prodDep(impl)]
+| defaultStitchPoint(nt, _, _, mayAffectFlowType) ->
+  prodDep(defaultProdName(nt)) :: (if mayAffectFlowType then [] else [ntDep(nt)])
 end;
 
 fun ntDep String ::= nt::String = "nt:" ++ nt;

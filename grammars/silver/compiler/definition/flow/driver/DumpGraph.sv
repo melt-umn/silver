@@ -208,4 +208,7 @@ aspect showStitchPoint on StitchPoint of
   s"\ttile ${prod} at ${parentType.vertexName}\n"
 | implTileStitchPoint(impl) ->
   s"\timplementation tile ${impl} at top\n"
+| defaultStitchPoint(nt, attr, deps, mayAffectFlowType) ->
+  s"\tdefault ${attr} of ${nt}${if mayAffectFlowType then "" else " within its flow type"}\n\t\tdeps ${
+    implode(", ", map((.dotName), deps))}\n"
 end;

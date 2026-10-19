@@ -101,8 +101,9 @@ top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignat
   production myFlowGraph :: ProductionGraph =
     case searchEnvTree(ns.namedSignature.fullName, myGraphs) of
     | g :: _ -> g
-    -- In case we didn't find the flow graph (the nonterminal doesn't exist?)
-    -- build an anonymous flow graph to use instead as a "best effort".
+    -- No default graph is constructed for a nonterminal that has no productions, or no default flow
+    -- defs, or doesn't exist (see constructDefaultProductionGraph); construct an anonymous flow
+    -- graph to use instead as a "best effort".
     | [] -> constructAnonymousGraph(body.flowDefs, top.env, myGraphs, myFlow)
     end;
 }

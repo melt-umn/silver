@@ -175,6 +175,8 @@ Maybe<ProductionGraph> ::=
  - 1b. Same for forwarding.
  - 2. All synthesized attributes missing equations have dep on their corresponding fwd.
  - 2b. OR use their default if not forwarding and it exists.
+ - 2c. Default contributions (<-) to a collection are assumed to apply at every production (see
+ -     defaultDepsAt).
  - 3. All inherited attributes not supplied to forward have copies.
  -
  - @param dcl  The DclInfo of the production
@@ -210,17 +212,22 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
+  -- The default equations and contributions that apply in this production (see defaultDepsAt).
+  local defaultDeps :: [(String, [FlowVertex], Boolean)] =
+    defaultDepsAt(prod, nt, syns, nonForwarding, flowEnv);
+  
   -- Insert implicit equations.
   local fixedEdges :: [(FlowVertex, FlowVertex)] =
     normalEdges ++
     (if nonForwarding
-     then addDefEqs(prod, nt, syns, flowEnv)
+     then []
      else
           -- Matching follows forwards, so the forward includes its own forward (see
           -- matchPrimitiveReal).
           (forwardEqVertex, forwardSynVertex("forward")) ::
           addFwdSynEqs(prod, nt, synsBySuspicion.fst, flowEnv, realEnv) ++
           addFwdInhEqs(prod, forwardVertexType(), inhs, defs, flowEnv, realEnv)) ++
+    addDefEqs(true, defaultDeps) ++
     addTransRootEqs(prod, syns, flowEnv, realEnv) ++
     flatMap(addFwdInhEqs(prod, _, inhs, defs, flowEnv, realEnv), map(localVertexType, allFwdProdAttrs(defs))) ++
     map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
@@ -237,6 +244,9 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   -- No implicit equations here, just keep track.
   local suspectEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.suspectFlowEdges), defs) ++
+    -- A default contribution that may not affect the flow type of its attribute is suspect in this
+    -- production too.
+    addDefEqs(false, defaultDeps) ++
     -- If it's forwarding .snd is attributes not known at forwarding time. If it's non, then actually .snd is all attributes. Ignore.
     if nonForwarding then [] else addFwdSynEqs(prod, nt, synsBySuspicion.snd, flowEnv, realEnv);
 
@@ -275,6 +285,7 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   -- Stitch points in both graphs.
   local stitchPoints :: [StitchPoint] =
     lhsTransStitchPoints(realEnv, nt, defaultTransAttrs) ++
+    defaultStitchPoints(nt, defaultDeps) ++
     localStitchPoints(realEnv, defs) ++
     patternStitchPoints(realEnv, defs) ++
     subtermDecSiteStitchPoints(defs);
@@ -404,7 +415,8 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
 {--
  - A graph for dependencies in default equations.
  -
- - This is used in checking, and also to handle dependencies of default equations during inference.
+ - This is used in checking, during inference to handle the dependencies of default equations, and
+ - in the graphs of the productions where those equations apply (see defaultStitchPoint).
  -}
 function constructDefaultProductionGraph
 [ProductionGraph] ::= nt::NtName  flowEnv::FlowEnv  realEnv::Env
@@ -419,7 +431,10 @@ function constructDefaultProductionGraph
   local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap((.flowEdges), defs);
   
-  -- suspectEdges should always be empty! (No "aspects" where they could arise.)
+  -- A contribution ('<-') from a grammar exported by neither the nonterminal's grammar nor the
+  -- attribute's has only suspect edges (see extraEq), left out here: Inh.sv's flow-type check of
+  -- that contribution reports any dependency beyond the attribute's flow type, and the productions
+  -- where that contribution applies get the suspect edges (see defaultDepsAt).
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   local initialGraph :: g:Graph<FlowVertex> =
@@ -661,17 +676,48 @@ fun allFwdProdAttrs [String] ::= d::[FlowDef] =
   | _ :: rest -> allFwdProdAttrs(rest)
   end;
 {--
- - Introduces default equations deps.
+ - The dependencies of the default equations and contributions for nt that apply at prod, each with
+ - its synthesized attribute and whether the equation or contribution may affect the flow type of
+ - that attribute.  A production that does not forward and has no equation (= or :=) of its own for
+ - an attribute gets the default equation for it.  The default contributions (<-) for a collection
+ - are assumed to apply at every production, which only adds dependencies: at run time a forwarding
+ - production with no equation or contribution of its own for the collection takes its forward's
+ - value (see evalSyn in DecoratedNode.java), and a contribution of its own can come from an aspect
+ - in any grammar.
  -}
-fun addDefEqs
-[(FlowVertex, FlowVertex)] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv =
-  if null(syns) then []
-  else (if null(lookupSyn(prod, head(syns), flowEnv)) 
-        then let x :: [FlowDef] = lookupDef(nt, head(syns), flowEnv)
-              in if null(x) then [] else head(x).flowEdges 
-             end
-        else []) ++
-    addDefEqs(prod, nt, tail(syns), flowEnv);
+function defaultDepsAt
+[(String, [FlowVertex], Boolean)] ::=
+  prod::ProdName  nt::NtName  syns::[String]  nonForwarding::Boolean  flowEnv::FlowEnv
+{
+  -- Whether prod has an equation (= or :=) of its own for attr
+  local hasEq :: (Boolean ::= String) = \ attr::String -> !null(lookupSyn(prod, attr, flowEnv));
+  local defaultEqs :: [(String, [FlowVertex], Boolean)] =
+    if !nonForwarding then []
+    else flatMap(
+      \ attr::String ->
+        if hasEq(attr) then []
+        else flatMap(
+          \ d::FlowDef -> case d of defaultSynEq(_, _, deps) -> [(attr, deps, true)] | _ -> [] end,
+          lookupDef(nt, attr, flowEnv)),
+      syns);
+  local contribs :: [(String, [FlowVertex], Boolean)] =
+    flatMap(
+      \ d::FlowDef ->
+        case d of
+        | extraEq(_, lhsSynVertex(attr), deps, mayAffectFlowType) -> [(attr, deps, mayAffectFlowType)]
+        | _ -> []
+        end,
+      getGraphContribsFor(defaultProdName(nt), flowEnv));
+  return defaultEqs ++ contribs;
+}
+-- The edges from the attribute of each entry of ds (see defaultDepsAt) to the entry's dependencies,
+-- for the entries that may affect the flow type of their attribute if mayAffectFlowType, and for
+-- the others otherwise.
+fun addDefEqs [(FlowVertex, FlowVertex)] ::= mayAffectFlowType::Boolean  ds::[(String, [FlowVertex], Boolean)] =
+  flatMap(
+    \ d::(String, [FlowVertex], Boolean) ->
+      if d.3 == mayAffectFlowType then zipFst(lhsSynVertex(d.1), d.2) else [],
+    ds);
 {--
  - Introduce edges for inh/syn attributes on shared references to/from their decoration sites.
  -}
@@ -896,6 +942,29 @@ fun subtermDecSiteStitchPoints [StitchPoint] ::= defs::[FlowDef] =
     | _ -> []
     end,
     defs);
+-- Stitch points for the dependencies in ds (see defaultDepsAt) that only the default graph relates
+-- to the LHS of a production (see expandsDefaultDep).
+fun defaultStitchPoints [StitchPoint] ::= nt::NtName  ds::[(String, [FlowVertex], Boolean)] =
+  flatMap(
+    \ d::(String, [FlowVertex], Boolean) ->
+      case filter(expandsDefaultDep, d.2) of
+      | [] -> []
+      | deps -> [defaultStitchPoint(nt, d.1, deps, d.3)]
+      end,
+    ds);
+-- Whether only the default graph relates v, a dependency of a default equation or contribution that
+-- applies at a production, to that production's LHS: a vertex of a tree in the default, such as a
+-- pattern variable, or the forward of the LHS or of a translation of the LHS, which the default
+-- graph bounds by a forward flow type.  A match on the LHS is assumed to follow forwards, also at a
+-- production that does not forward (as in matchThroughForwards).
+fun expandsDefaultDep Boolean ::= v::FlowVertex =
+  case v of
+  | lhsSynVertex(a) -> a == "forward" || endsWith(".forward", a)
+  | lhsInhVertex(_) -> false
+  | lhsEqVertex() -> false
+  | transAttrOuterEqVertex(vt, _) -> transRootVertex(vt) != lhsVertexType()
+  | _ -> true
+  end;
 -- Stitch points for what host-language applications of prod (a production, dispatch signature or
 -- implementation) supply to the children it shares through its signature, for the attributes the
 -- shared tree may have by then (see mayHaveInhBeforeSharing).  sigNames are prod's children, and
