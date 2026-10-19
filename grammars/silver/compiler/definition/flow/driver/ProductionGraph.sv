@@ -951,7 +951,9 @@ function findAdmissibleEdges
   local currentDeps :: set:Set<String> =
     g:edgesFrom(edgeSyn, ft);
   
-  local targetDeps :: set:Set<FlowVertex> = g:edgesFrom(edge.snd, graph);
+  -- The target itself counts: an equation's direct dependency on an inherited attribute of the LHS
+  -- is an edge to it.
+  local targetDeps :: set:Set<FlowVertex> = set:add([edge.snd], g:edgesFrom(edge.snd, graph));
   local sourceDeps :: set:Set<FlowVertex> = g:edgesFrom(edge.fst, graph);
   
   -- ONLY those that ARE in current. i.e. dependencies that do not expand the flow type of this source vertex.
