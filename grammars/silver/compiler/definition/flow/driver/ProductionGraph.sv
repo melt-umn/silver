@@ -28,8 +28,7 @@ annotation graph::g:Graph<FlowVertex>;
 annotation tileGraph::g:Graph<FlowVertex>;
 
 -- The edges within this production before any stitching or transitive closure, without those
--- between the trees shared in it and their decoration sites (see ownEqDeps and
--- decSiteOwnInhDeps).
+-- between the trees shared in it and their decoration sites (see ownEqDeps and suppliedInhDeps).
 annotation unstitchedGraph::g:Graph<FlowVertex>;
 
 -- Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
@@ -380,7 +379,7 @@ ProductionGraph ::=
     map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
   -- Edges between the trees shared in this production and their decoration sites, and from pattern
   -- variables to the trees they may be bound to.  These are left out of unstitchedGraph (see
-  -- ownEqDeps and decSiteOwnInhDeps).
+  -- ownEqDeps and suppliedInhDeps).
   local sharingEdges :: [(FlowVertex, FlowVertex)] =
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
     addPatternVarSharedTreeEqs(realEnv, defs) ++

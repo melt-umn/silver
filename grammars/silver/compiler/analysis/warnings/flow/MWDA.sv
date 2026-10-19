@@ -23,7 +23,7 @@ imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:driver only
   ProductionGraph, FlowType, prod, implementedSigChildren, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh,
-  PathCtx, boundCtx, pcGraph, pcTree, pcAttr, pcFlowEnv, pcFlowTypes, pcProdGraphs, decSiteOwnInhDeps,
+  PathCtx, boundCtx, pcGraph, pcTree, pcAttr, pcFlowEnv, pcFlowTypes, pcProdGraphs,
   lhsNt, overrideDecSiteInhs, overrideDecSiteWitness, dispatchChildAllowedInhs, unknownImplMaySupply;
 
 -- uniqueness analysis

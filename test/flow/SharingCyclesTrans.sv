@@ -98,3 +98,123 @@ top::CYExpr ::= x::CYExpr
   forwards to cyFall(x);
 }
 }
+
+-- The tree shared into y already has cyI from x's equation, so cyFall's a.cyI = a.cyJ never
+-- applies, and y.cyJ = y.cyI makes no cycle (see hasInhBeforeSharing).
+noWarnCode "a cycle may exist" {
+abstract production cySiteChain
+top::CYExpr ::= x::CYExpr
+{
+  x.cyI = "";
+  local y::CYExpr = @x;
+  y.cyJ = y.cyI;
+  forwards to cyFall(y);
+}
+}
+
+-- What a decoration site supplies is followed along the paths of decoration sites from it (see
+-- suppliedInhDeps), and not along the edges from a decoration site back to the tree shared there
+-- (see addDecSiteTreeEqs).
+nonterminal SLX;
+inherited attribute slI::String occurs on SLX;
+synthesized attribute slS::String occurs on SLX;
+flowtype slS {slI} on SLX;
+abstract production slLeaf
+top::SLX ::=
+{
+  top.slS = top.slI;
+}
+noWarnCode "a cycle may exist" {
+abstract production slLocalNoCycle
+top::SLX ::= x::SLX
+{
+  local y::SLX = @x;
+  y.slI = top.slI;
+  top.slS = y.slS;
+}
+}
+-- Along a chain of locals to the first equation.
+warnCode "Potentially missing inherited override equation for flow:slI on x" {
+abstract production slChainCycle
+top::SLX ::= x::SLX
+{
+  local y::SLX = @x;
+  local z::SLX = @y;
+  z.slI = x.slS;
+  top.slS = z.slS;
+}
+}
+-- Into a production that a child is shared with through its signature.
+nonterminal SGX;
+inherited attribute sgI::String occurs on SGX;
+synthesized attribute sgS::String occurs on SGX;
+flowtype sgS {sgI} on SGX;
+abstract production sgApply
+top::SGX ::= @a::SGX
+{
+  a.sgI = top.sgI;
+  top.sgS = a.sgS;
+}
+noWarnCode "a cycle may exist" {
+abstract production sgSigNoCycle
+top::SGX ::= x::SGX
+{
+  forwards to sgApply(x);
+}
+}
+-- What a production applied at a decoration site gives its child from its own LHS is followed to
+-- what the parent supplies to the application's tree.
+nonterminal SBX;
+inherited attribute sbI::String occurs on SBX;
+synthesized attribute sbS::String occurs on SBX;
+flowtype sbS {sbI} on SBX;
+abstract production sbCopy
+top::SBX ::= c::SBX
+{
+  c.sbI = top.sbI;
+  top.sbS = c.sbS;
+}
+noWarnCode "a cycle may exist" {
+abstract production sbParentNoCycle
+top::SBX ::= x::SBX  b::Boolean
+{
+  local y::SBX = if b then sbCopy(@x) else @x;
+  y.sbI = top.sbI;
+  top.sbS = y.sbS;
+}
+}
+-- Each sharing site is checked on its own: soUsesJ gives its child w.soJ for soI, which uses x
+-- through w.soS, while soUsesK gives its child w.soK, which does not.
+nonterminal SOX;
+inherited attribute soI::String occurs on SOX;
+inherited attribute soJ::String occurs on SOX;
+inherited attribute soK::String occurs on SOX;
+synthesized attribute soS::String occurs on SOX;
+flowtype soS {soI, soJ, soK} on SOX;
+abstract production soUsesJ
+top::SOX ::= c::SOX
+{
+  c.soI = top.soJ;
+  c.soJ = "";
+  c.soK = "";
+  top.soS = c.soS;
+}
+abstract production soUsesK
+top::SOX ::= c::SOX
+{
+  c.soI = top.soK;
+  c.soJ = "";
+  c.soK = "";
+  top.soS = c.soS;
+}
+warnCode "Potentially missing inherited override equation for flow:soI on x" {
+abstract production soBranchCycle
+top::SOX ::= x::SOX  z::SOX  b::Boolean
+{
+  local w::SOX = if b then soUsesJ(@x) else soUsesK(@z);
+  w.soI = top.soI;
+  w.soJ = w.soS;
+  w.soK = top.soK;
+  top.soS = "";
+}
+}
