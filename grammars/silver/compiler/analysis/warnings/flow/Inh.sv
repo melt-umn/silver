@@ -100,9 +100,10 @@ function inhDepsForSynOnType
  -}
 fun graphInhDepsForSyn
 set:Set<String> ::= vt::VertexType  syn::String  flowTypeDeps::set:Set<String>  g::ProductionGraph =
-  let reached::set:Set<FlowVertex> = expandGraph([vt.synVertex(syn)], g)
-  in set:filter(\ i::String -> set:contains(vt.inhVertex(i), reached), flowTypeDeps)
-  end;
+  inhsReachedOn(vt, expandGraph([vt.synVertex(syn)], g), flowTypeDeps);
+-- The attributes in attrs whose inherited vertex on vt is in reached.
+fun inhsReachedOn set:Set<String> ::= vt::VertexType  reached::set:Set<FlowVertex>  attrs::set:Set<String> =
+  set:filter(\ i::String -> set:contains(vt.inhVertex(i), reached), attrs);
 
 
 --------------------------------------------------------------------------------
@@ -662,7 +663,6 @@ aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   -- oh no again
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myGraphs::EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
   local reached::set:Set<FlowVertex> = expandGraph(pr.scrutineeVertexType.fwdDeps, top.frame.flowGraph);
@@ -679,7 +679,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
       decSitesMissingInhEqs(top.frame.fullName, pr.scrutineeVertexType,
         set:toList(inhsReachedOn(
           pr.scrutineeVertexType, reached, set:fromList(getInhAndInhOnTransAttrsOn(e.finalType.typeName, top.env)))),
-        myGraphs, myFlow, top.flowEnv, top.env))
+        myGraphs, top.flowEnv, top.env))
     else [];
 }
 
