@@ -667,6 +667,9 @@ top::QE ::= @a::QE
   top.qTy = l.qTy;
 }
 }
+-- The copy of qTy in qChainSrc depends on qOther the same way: what qChainSite supplies for qOther
+-- takes precedence over m.qOther, as the tree was decorated there first.
+warnCode "In production flow:qChainSrc, the implicit copy equation for flow:qTy (due to forwarding) would exceed the attribute's flow type with dependencies on flow:qOther" {
 production qChainSrc
 top::QE ::= @a::QE
 {
@@ -674,12 +677,15 @@ top::QE ::= @a::QE
   m.qOther = "";
   forwards to qShareOnChain(m);
 }
+}
+warnCode "the implicit copy equation for flow:qTy (due to forwarding) would exceed the attribute's flow type with dependencies on flow:qOther" {
 production qChainSite
 top::QE ::= x::QE
 {
   x.qEnv = top.qEnv;
   x.qOther = top.qOther;
   forwards to qChainSrc(x);
+}
 }
 
 -- A host production supplying everything to a tree shared into it, for the hidden-dependency tests in ext.
@@ -754,4 +760,536 @@ top::SBExpr ::= x::SBExpr
 {
   x.sbA = top.sbB;
   forwards to sbPass(x);
+}
+
+-- A tree passed to this production already decorated cannot be shared as a translation attribute
+-- t of the left-hand side: it keeps the inherited attributes supplied to it before, not those
+-- supplied to t, and the graph cannot show that t's inherited attributes are then the tree's (see
+-- addDecSiteTreeEqs).  A plain child can be.
+inherited attribute tdK::String;
+synthesized attribute tdS::String;
+nonterminal TDT with tdK, tdS;
+flowtype TDT = decorate {}, forward {}, tdS {tdK};
+translation attribute tdT::TDT;
+nonterminal TD with tdK, tdS, tdT;
+flowtype TD = decorate {}, forward {}, tdS {tdK}, tdT {};
+production tdtLeaf
+top::TDT ::=
+{ top.tdS = top.tdK; }
+production tdLeaf
+top::TD ::=
+{
+  top.tdS = top.tdK;
+  top.tdT = tdtLeaf();
+}
+warnCode "child a may be passed to this production already decorated, so it cannot be shared as flow:tdT of the left-hand side: it would keep the inherited attributes supplied to it before, and not receive those supplied to the left-hand side's flow:tdT" {
+production tdShares
+top::TD ::= @a::TDT
+{
+  top.tdT = @a;
+  top.tdS = "";
+}
+}
+noWarnCode "cannot be shared as" {
+production tdPlain
+top::TD ::= a::TDT
+{
+  top.tdT = @a;
+  top.tdS = "";
+}
+}
+
+-- An implementation may supply a child from an attribute of its forward parent: the production
+-- applying the dispatch signature, or an earlier implementation in a chain of forwards, from any
+-- extension.  So what gImplFP's a.gOther depends on is bounded only by gNeedsOther's flow type (see
+-- implTileStitchPoint and ext).
+dispatch GOpFP = GExpr ::= @a::GExpr;
+production gImplFP implements GOpFP
+top::GExpr ::= @a::GExpr
+{
+  a.gOther = forwardParent.gNeedsOther;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gSiteFP
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gNeedsOther = "";
+  local prod::GOpFP = gImplFP;
+  forwards to prod(x);
+}
+
+-- An implementation may supply a child from a second child's attributes, which depend on what it
+-- supplies to the second child (gImplSB's a.gOther from b.gNeedsOther).  GOpSB's graph has the
+-- children's flow types for this (see ext).
+dispatch GOpSB = GExpr ::= @a::GExpr b::GExpr;
+production gImplSB implements GOpSB
+top::GExpr ::= @a::GExpr b::GExpr
+{
+  b.gEnv = top.gEnv;
+  b.gCtx = top.gCtx;
+  b.gOther = top.gOther;
+  a.gOther = b.gNeedsOther;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gSiteSB
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gNeedsOther = "";
+  local prod::GOpSB = gImplSB;
+  forwards to prod(x, gLit());
+}
+
+-- top.gSmall accesses x.gNeedsOther, which needs x.gOther, which gImplFP supplies from its forward
+-- parent's gNeedsOther: that forward parent may be an implementation in another extension, as
+-- gExtImplFPOther (see ext), whose gNeedsOther depends on gOther.  (Also gCtx: this sharing site
+-- leaves gOther to implementations.)
+warnCode "Synthesized equation gSmall exceeds flow type with dependencies on flow:gCtx, flow:gOther" {
+production gSiteFPAccesses
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gSmall = x.gNeedsOther;
+  top.gNeedsOther = "";
+  local prod::GOpFP = gImplFP;
+  forwards to prod(x);
+}
+}
+
+-- A host application may supply the tree it shares with GOpC through a local chain: x's equations
+-- count as what the application supplies to y, in resolution (gImplC) and in the duplicate-equation
+-- check (gImplCDup).
+dispatch GOpC = GExpr ::= @a::GExpr;
+production gChainSite
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = "";
+  x.gCtx = "";
+  local y::GExpr = @x;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpC = gImplC;
+  forwards to prod(y);
+}
+noWarnCode "requires missing inherited attribute" {
+production gImplC implements GOpC
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+warnCode "Duplicate equation for gEnv on a in production flow:gImplCDup" {
+production gImplCDup implements GOpC
+top::GExpr ::= @a::GExpr
+{
+  a.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+
+-- A host sharing site may supply the tree it shares through a local chain: what the dispatch
+-- signature's graph projects for a.gOther is x's equation, which y's vertex reaches (see ext).
+dispatch GOpQ = GExpr ::= @a::GExpr;
+production gImplQ implements GOpQ
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gChainSiteQ
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  x.gOther = top.gOther;
+  local y::GExpr = @x;
+  top.gNeedsOther = "";
+  local prod::GOpQ = gImplQ;
+  forwards to prod(y);
+}
+
+-- A host production may apply an implementation by name with a fresh tree, and that implementation
+-- may dispatch again with it.  The tree then reaches every implementation, so what that application
+-- supplies must suffice for each: gSiteYByName leaves out gCtx.
+dispatch GOpY = GExpr ::= @a::GExpr;
+warnCode "Access of synthesized attribute gTy on a requires missing inherited attribute(s) flow:gCtx to be supplied" {
+production gReadsY implements GOpY
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+production gAgainY implements GOpY
+top::GExpr ::= @a::GExpr
+{
+  local prod::GOpY = gReadsY;
+  forwards to prod(a);
+}
+production gSiteY
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpY = gReadsY;
+  forwards to prod(x);
+}
+production gSiteYByName
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gAgainY(x);
+}
+
+-- gBounce's shared child arrives only through gBouncePass passing on its own shared child, as
+-- Silver's accessBouncer does: what gBouncePass's applications supply reaches gBounce through
+-- gBouncePass.
+warnCode "Access of synthesized attribute gTy on a requires missing inherited attribute(s) flow:gCtx" {
+production gBounce
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+production gBouncePass
+top::GExpr ::= @a::GExpr
+{
+  forwards to gBounce(a);
+}
+production gBounceSite
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gBouncePass(x);
+}
+
+-- An implementation may pass its child to a production that applies the dispatch signature again
+-- (Silver's accessBouncer).  Resolution follows the chain back to the signature's sharing sites,
+-- which lead to the bouncer again: a cycle through sharing sites alone, which counts as supplied,
+-- so only what gSiteZByName leaves out is reported, not gEnv as well.
+dispatch GOpZ = GExpr ::= @a::GExpr;
+production gBounceZ
+top::GExpr ::= @a::GExpr next::GOpZ
+{
+  forwards to next(a);
+}
+production gViaBounceZ implements GOpZ
+top::GExpr ::= @a::GExpr
+{
+  forwards to gBounceZ(a, gReadsZ);
+}
+warnCode "Access of synthesized attribute gTy on a requires missing inherited attribute(s) flow:gCtx to be supplied" {
+production gReadsZ implements GOpZ
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+production gSiteZ
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpZ = gViaBounceZ;
+  forwards to prod(x);
+}
+production gSiteZByName
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gViaBounceZ(x);
+}
+
+-- An implementation that supplies an attribute to the child it passes on supplies it to the trees
+-- shared by its own applications by name, so those need not (gSitePByName leaves out gCtx).
+dispatch GOpP = GExpr ::= @a::GExpr;
+noWarnCode "requires missing inherited attribute" {
+production gReadsP implements GOpP
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+production gSuppliesP implements GOpP
+top::GExpr ::= @a::GExpr
+{
+  a.gCtx = top.gCtx;
+  local prod::GOpP = gReadsP;
+  forwards to prod(a);
+}
+production gSiteP
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpP = gReadsP;
+  forwards to prod(x);
+}
+production gSitePByName
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gSuppliesP(x);
+}
+
+-- A production passing on a child shared through its signature may supply it (cpPass's a.cpK).  The
+-- equation applies to the tree before the receiving production gets it, and reaches that
+-- production's graph through the recorded sharing site (chain precedence, see ext).
+inherited attribute cpEnv::String;
+inherited attribute cpK::String;
+inherited attribute cpOther::String;
+synthesized attribute cpS::String;
+nonterminal CP with cpEnv, cpK, cpOther, cpS;
+flowtype CP = decorate {cpEnv}, forward {cpEnv}, cpS {cpEnv};
+production cpLit
+top::CP ::=
+{ top.cpS = top.cpEnv; }
+production cpReads
+top::CP ::= @a::CP
+{ top.cpS = ""; }
+production cpPass
+top::CP ::= @a::CP
+{
+  a.cpK = top.cpOther;
+  forwards to cpReads(a);
+}
+production cpSite
+top::CP ::= x::CP
+{
+  x.cpEnv = top.cpEnv;
+  x.cpOther = top.cpOther;
+  forwards to cpPass(x);
+}
+
+-- The same as gChainSiteQ through two locals: x's equations reach the implementations through y and
+-- z, both for the projection (see ext) and for the duplicate-equation check.
+dispatch GOpQ2 = GExpr ::= @a::GExpr;
+production gImplQ2 implements GOpQ2
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+warnCode "Duplicate equation for gEnv on a in production flow:gImplQ2Dup" {
+production gImplQ2Dup implements GOpQ2
+top::GExpr ::= @a::GExpr
+{
+  a.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+production gChainSiteQ2
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  x.gOther = top.gOther;
+  local y::GExpr = @x;
+  local z::GExpr = @y;
+  top.gNeedsOther = "";
+  local prod::GOpQ2 = gImplQ2;
+  forwards to prod(z);
+}
+
+-- A chain with a conditional link: where r is a new tree, y's own equations apply, so the
+-- projection reaches both y's and x's (see ext).
+dispatch GOpQ3 = GExpr ::= @a::GExpr;
+production gImplQ3 implements GOpQ3
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gChainSiteQ3
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  x.gOther = top.gOther;
+  local r::GExpr = if top.gEnv == "" then @x else gLit();
+  local y::GExpr = @r;
+  y.gEnv = top.gEnv;
+  y.gCtx = top.gCtx;
+  y.gOther = top.gCtx;
+  top.gPP = "";
+  top.gNeedsOther = "";
+  local prod::GOpQ3 = gImplQ3;
+  forwards to prod(y);
+}
+
+-- A tree shared into a local in one branch only guarantees nothing to the sharing site, so an
+-- implementation's equation for the child is not a duplicate.
+dispatch GOpC3 = GExpr ::= @a::GExpr;
+production gChainSite3
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = "";
+  x.gCtx = "";
+  local r::GExpr = if top.gEnv == "" then @x else gLit();
+  local y::GExpr = @r;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpC3 = gImplC3;
+  forwards to prod(y);
+}
+noWarnCode "Duplicate equation" {
+production gImplC3 implements GOpC3
+top::GExpr ::= @a::GExpr
+{
+  a.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+
+-- As GOpZ, with a local in the bouncer: the cycle through the sharing sites passes through the tree
+-- shared into that local, and still counts as supplied, so what gSiteZLByName supplies suffices for
+-- gSmall.
+dispatch GOpZL = GExpr ::= @a::GExpr;
+production gBounceZL
+top::GExpr ::= @a::GExpr next::GOpZL
+{
+  local y::GExpr = @a;
+  forwards to next(y);
+}
+production gViaBounceZL implements GOpZL
+top::GExpr ::= @a::GExpr
+{
+  forwards to gBounceZL(a, gReadsZL);
+}
+noWarnCode "requires missing inherited attribute" {
+production gReadsZL implements GOpZL
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = a.gSmall;
+  top.gNeedsOther = "";
+}
+}
+production gSiteZL
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpZL = gViaBounceZL;
+  forwards to prod(x);
+}
+production gSiteZLByName
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gViaBounceZL(x);
+}
+
+-- gChooseA applies gReadsA by name or dispatches again with its child, as Silver's
+-- decoratedAccessHandler does (unknownDclAccessHandler, or the attribute's own handler).  gReadsA's
+-- child arrives from gChooseA's child, whose sharing sites lead back to gChooseA's child: a cycle
+-- through sharing sites alone, which counts as supplied, so what gSiteA supplies suffices.
+dispatch GOpA = GExpr ::= @a::GExpr;
+production gChooseA implements GOpA
+top::GExpr ::= @a::GExpr
+{
+  local next::GOpA = gChooseA;
+  forwards to if a.gPP == "" then gReadsA(a) else next(a);
+}
+noWarnCode "requires missing inherited attribute" {
+production gReadsA implements GOpA
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+}
+production gSiteA
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpA = gChooseA;
+  forwards to prod(x);
 }

@@ -38,13 +38,14 @@ Either<String  Decorated CmdArgs> ::= args::[String]
  -}
 function sharingSiteDependsOnInh
 (Boolean ::= String) ::=
-  ref::VertexType  decSite::VertexType  graph::ProductionGraph  prodGraphs::EnvTree<ProductionGraph>
+  ref::VertexType  decSite::VertexType  graph::ProductionGraph  prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv
 {
   local refDeps :: set:Set<FlowVertex> = expandGraph(ref.eqDeps ++ ref.outerEqDeps, graph);
-  -- Only what the decoration site itself supplies for i: its inherited vertex also depends on a tree decorated before
-  -- this production got it, which would make every such decoration site look like a cycle (see addDecSiteTreeEqs).
+  -- Only what the decoration site itself supplies for i: its inherited vertex also reaches the tree
+  -- shared there (see addDecSiteTreeEqs), which would make every such decoration site look like a
+  -- cycle.
   return \ i::String -> set:contains(ref.inhVertex(i), expandGraph(
-      decSiteOwnInhDeps(graph, decSite, i, prodGraphs) ++
+      decSiteOwnInhDeps(graph, decSite, i, prodGraphs, flowEnv) ++
       (if set:contains(ref.inhVertex(i), refDeps) then [] else decSite.outerEqDeps),
     graph));
 }
@@ -64,9 +65,13 @@ top::Expr ::= '@' e::Expr
     case top.decSiteVertexInfo, e.flowVertexInfo of
     | _, just(localVertexType(fName)) when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
     | just(decSite), just(ref) when top.config.warnSharingCycles ->
-      let dependsOnInh :: (Boolean ::= String) = sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs)
+      let dependsOnInh :: (Boolean ::= String) =
+            sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs, top.flowEnv)
       in flatMap(\ i::String ->
-        if !vertexHasInhEq(top.frame.fullName, ref, i, top.flowEnv)
+        -- A tree that has i by the time it is shared here needs no override: from an equation on it
+        -- or on a tree shared into it, or from every sharing site of a child shared through the
+        -- signature (see hasInhBeforeSharing).
+        if !hasInhBeforeSharing(top.frame.fullName, ref, i, top.flowEnv, top.env)
         && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
         && dependsOnInh(i)
         then [mwdaWrnFromOrigin(top, s"Potentially missing inherited override equation for ${i} on ${ref.vertexName}; a cycle may exist via its sharing decoration site ${decSite.vertexName}")]
@@ -88,9 +93,10 @@ top::AppExpr ::= e::Expr
     case sigDecSite, e.flowVertexInfo of
     | just(decSite), just(ref)
         when top.config.warnSharingCycles && sigIsShared && isForwardParam ->
-      let dependsOnInh :: (Boolean ::= String) = sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs)
+      let dependsOnInh :: (Boolean ::= String) =
+            sharingSiteDependsOnInh(ref, decSite, top.frame.flowGraph, myGraphs, top.flowEnv)
       in flatMap(\ i::String ->
-        if !vertexHasInhEq(top.frame.fullName, ref, i, top.flowEnv)
+        if !hasInhBeforeSharing(top.frame.fullName, ref, i, top.flowEnv, top.env)
         && decSiteHasInhEq(top.frame.fullName, decSite, i, myGraphs, top.flowEnv, top.env)
         && dependsOnInh(i)
         then [mwdaWrnFromOrigin(top, s"Potentially missing inherited override equation for ${i} on ${ref.vertexName}; a cycle may exist via its sharing decoration site ${decSite.vertexName}")]

@@ -202,4 +202,6 @@ aspect showStitchPoint on StitchPoint of
   s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
 | tileStitchPoint(prod, parentType) ->
   s"\ttile ${prod} at ${parentType.vertexName}\n"
+| implTileStitchPoint(impl) ->
+  s"\timplementation tile ${impl} at top\n"
 end;

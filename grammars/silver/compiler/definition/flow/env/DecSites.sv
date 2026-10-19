@@ -15,19 +15,30 @@ import silver:compiler:definition:flow:driver;
  - @param realEnv The regular environment.
  - @return A decision tree to determine if an inherited attributes has been supplied for vt.
  -}
-function findDecSites
-DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
-{
-  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
-  local ns :: NamedSignature =
-    case prodDcl of
-    | d :: _ -> d.namedSignature
-    | [] -> bogusNamedSignature()
-    end;
-  local ntName::String = vertexTypeName(prodName, vt, realEnv);
+fun findDecSites
+DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env =
+  findDecSitesChain([], false, prodName, vt, flowEnv, realEnv);
 
+{--
+ - findDecSites, where chain holds the trees that led to vt by steps from a tree to a tree it was
+ - shared from (a tree shared into its decoration site, or the tree at one of its sharing sites),
+ - and the dispatch signatures' children whose sharing sites were checked on the way.  A cycle
+ - through these alone counts as supplied: every tree on it also arrives through a sharing site
+ - outside the cycle, which is checked on its own.  With beforeSharing, only what the tree has by
+ - the time it is shared: the decoration sites at which it is shared supply only what it lacks then,
+ - so they are left out, as are projections (see resolveBeforeSharing).
+ -}
+function findDecSitesChain
+DecSiteTree ::=
+  chain::[(String, VertexType)]  beforeSharing::Boolean  prodName::String vt::VertexType flowEnv::FlowEnv
+  realEnv::Env
+{
   local recurse::(DecSiteTree ::= String VertexType) =
-    findDecSites(_, _, flowEnv, realEnv);
+    findDecSitesChain([], beforeSharing, _, _, flowEnv, realEnv);
+  -- The chain for the trees that this tree was shared from
+  local here::[(String, VertexType)] = (prodName, vt) :: chain;
+
+  local ntName::String = vertexTypeName(prodName, vt, realEnv);
 
   -- Decoration sites where translation attributes of the tree (of translation attributes, and so on)
   -- are shared, for the inherited attributes on these translation attributes.
@@ -48,7 +59,7 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
           end,
         getAttrOccursOn(nt, realEnv));
 
-  return
+  nondecorated local own::DecSiteTree =
     viaProdVertexDec(prodName, vt,
       (if vt.isInhDefVertex
        -- Direct inherited equation at a decoration site
@@ -58,6 +69,9 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
        then alwaysDec()
        else neverDec()) +
       case vt of
+      -- Before sharing, only a pattern variable shared in error reaches a subterm, and the
+      -- subterm's projection would need production graphs
+      | subtermVertexType(_, _, _) when beforeSharing -> neverDec()
       -- Via projected remote equation
       | subtermVertexType(parent, prodOrSig, sigName) ->
          (if !null(getValueDcl(prodOrSig, realEnv))
@@ -93,25 +107,61 @@ DecSiteTree ::= prodName::String vt::VertexType flowEnv::FlowEnv realEnv::Env
       -- Via the reference set of a pattern match scrutinee
       | anonScrutineeVertexType(_, grammarName, l) ->
         anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l)
-      -- Via signature/dispatch sharing.  Only applications in the host language may share a tree as a
-      -- signature-shared child, other than an implementation passing on its own child (see Sharing.sv).
-      | rhsVertexType(sigName) when lookupSignatureInputElem(sigName, ns).elementShared ->
-        product(unzipWith(recurse,
-          -- places where this child was decorated in a production forwarding to this one,
-          -- or in a dispatch signature that this production implements
-          lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)))
+      -- Via signature/dispatch sharing, at every host-language application (see sigShareSite)
+      | rhsVertexType(sigName) when sigSharedChild(prodName, sigName, flowEnv, realEnv) ->
+        sigShareSitesDec(chain, beforeSharing, prodName, sigName, flowEnv, realEnv)
       | _ -> neverDec()
       end +
       -- Via direct sharing, of this tree or of a tree that it is a translation attribute of
-      sum(map(recurse(prodName, _), lookupAllRefDecSites(prodName, vt, flowEnv))) +
+      (if beforeSharing then neverDec()
+       else sum(map(recurse(prodName, _), lookupAllRefDecSites(prodName, vt, flowEnv)))) +
+      -- Via a tree unconditionally shared at this decoration site, which was decorated first and
+      -- keeps its equations.  Not at a subterm: the tree shared there is the source vertex, already
+      -- resolved on its own path.
+      (case vt of
+       | subtermVertexType(_, _, _) -> neverDec()
+       | _ ->
+         sum(map(
+           findDecSitesChain(here, beforeSharing, prodName, _, flowEnv, realEnv),
+           lookupSharedIntoAlways(prodName, vt, flowEnv)))
+       end) +
       -- Via translation attribute sharing
-      sum(transAttrShareDecSites([], ntName, vt)) +
+      (if beforeSharing then neverDec() else sum(transAttrShareDecSites([], ntName, vt))) +
       -- Via the tree that this is a translation attribute of
       case vt of
       | transAttrVertexType(treeVertex, transAttr) when suppliesTransAttrInhs(treeVertex) ->
         transAttrOfDec(transAttr, recurse(prodName, treeVertex))
       | _ -> neverDec()
       end);
+
+  return if contains((prodName, vt), chain) then alwaysDec() else own;
+}
+
+-- What the sharing sites of the child sigName of prodName supply to the tree shared there:
+-- applications of prodName, and, where prodName implements a dispatch signature, applications of
+-- the signature.  chain and beforeSharing are as in findDecSitesChain.
+function sigShareSitesDec
+DecSiteTree ::=
+  chain::[(String, VertexType)]  beforeSharing::Boolean  prodName::String  sigName::String  flowEnv::FlowEnv
+  realEnv::Env
+{
+  local here::[(String, VertexType)] = (prodName, rhsVertexType(sigName)) :: chain;
+  local sharingSitesDec :: (DecSiteTree ::= [(String, VertexType)] String String) =
+    \ c::[(String, VertexType)] p::String sn::String ->
+      product(unzipWith(
+        findDecSitesChain(c, beforeSharing, _, _, flowEnv, realEnv), lookupSigShareSites(p, sn, flowEnv)));
+  return
+    -- places where this child was decorated in a production forwarding to this one,
+    sharingSitesDec(here, prodName, sigName) *
+    -- or in a dispatch signature that this production implements
+    case implementedSigChild(prodName, sigName, flowEnv, realEnv) of
+    -- Every implementation that passes its child on to the dispatch signature has these sharing
+    -- sites, so they are checked once.
+    | just((dispatch, se)) when contains((dispatch, rhsVertexType(se.elementName)), here) -> alwaysDec()
+    | just((dispatch, se)) ->
+      sharingSitesDec((dispatch, rhsVertexType(se.elementName)) :: here, dispatch, se.elementName)
+    | nothing() -> alwaysDec()
+    end;
 }
 
 {--
@@ -415,6 +465,20 @@ Boolean ::=
     prodName::String vt::VertexType attrName::String
     prodGraphs::EnvTree<ProductionGraph> flowEnv::FlowEnv realEnv::Env =
   resolveInhEq(prodName, vt, attrName, prodGraphs, flowEnv, realEnv) == alwaysDec();
+
+-- Resolves attrName in d, which findDecSitesChain or sigShareSitesDec found with beforeSharing:
+-- alwaysDec() if the tree that d was found for has attrName by the time it is shared.  d then has
+-- no projections, so resolving it needs no production graphs and can run while the
+-- production graphs are being constructed.
+fun resolveBeforeSharing DecSiteTree ::= attrName::String  d::DecSiteTree  flowEnv::FlowEnv =
+  resolveDecSiteInhEq(
+    attrName, d, error("What a tree has before it is shared is resolved without production graphs"), flowEnv);
+
+-- Does the tree at vt in prodName have attrName by the time prodName shares it (see
+-- resolveBeforeSharing)?
+fun hasInhBeforeSharing
+Boolean ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
+  resolveBeforeSharing(attrName, findDecSitesChain([], true, prodName, vt, flowEnv, realEnv), flowEnv) == alwaysDec();
 
 -- Helper for checking multiple inh attributes
 function decSitesMissingInhEqs

@@ -155,7 +155,7 @@ top::UDExpr ::= e::UDExpr
 }
 }
 
--- The same for a child shared through the signature, which was decorated before this production got it.
+-- The same for a child shared through the signature, which is already decorated when passed in.
 warnCode "Potentially missing inherited override equation for flow:env2 on e; a cycle may exist via its sharing decoration site forward[flow:DispatchOp2:e]" {
 production dispatchCycleSig
 top::UDExpr ::= @e::UDExpr

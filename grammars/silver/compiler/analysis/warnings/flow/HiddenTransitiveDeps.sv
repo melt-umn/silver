@@ -17,7 +17,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.outerEqDeps ++
-        flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, attr.attrDcl.fullName, myGraphs), vs) ++
+        flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, attr.attrDcl.fullName, myGraphs, top.flowEnv), vs) ++
         flatMap((.outerEqDeps), vs),
         top.frame.flowGraph)))
     end;
@@ -29,7 +29,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.outerEqDeps ++
-          flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, dl.inhAttrName, myGraphs), vs) ++
+          flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, dl.inhAttrName, myGraphs, top.flowEnv), vs) ++
           flatMap((.outerEqDeps), vs),
           top.frame.flowGraph)))
       end
@@ -146,7 +146,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.outerEqDeps ++
-        flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, attr.attrDcl.fullName, myGraphs), vs) ++
+        flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, attr.attrDcl.fullName, myGraphs, top.flowEnv), vs) ++
         flatMap((.outerEqDeps), vs),
         top.frame.flowGraph)))
     end;
@@ -158,7 +158,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.outerEqDeps ++
-          flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, dl.inhAttrName, myGraphs), vs) ++
+          flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, dl.inhAttrName, myGraphs, top.flowEnv), vs) ++
           flatMap((.outerEqDeps), vs),
           top.frame.flowGraph)))
       end
@@ -272,7 +272,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     | [] -> nothing()
     | vs -> just(onlyLhsInh(expandGraph(
         dl.defLHSVertex.outerEqDeps ++
-        flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, attr.attrDcl.fullName, myGraphs), vs) ++
+        flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, attr.attrDcl.fullName, myGraphs, top.flowEnv), vs) ++
         flatMap((.outerEqDeps), vs),
         top.frame.flowGraph)))
     end;
@@ -284,7 +284,7 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
       | [] -> nothing()
       | vs -> just(onlyLhsInh(expandGraph(
           v.outerEqDeps ++
-          flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, dl.inhAttrName, myGraphs), vs) ++
+          flatMap(decSiteOwnInhDeps(top.frame.flowGraph, _, dl.inhAttrName, myGraphs, top.flowEnv), vs) ++
           flatMap((.outerEqDeps), vs),
           top.frame.flowGraph)))
       end

@@ -270,7 +270,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = e1.errors2;
 }
 
-warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to local" {
+warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to any of" {
 production sharedMissing
 top::RSExpr ::= e::RSExpr
 {

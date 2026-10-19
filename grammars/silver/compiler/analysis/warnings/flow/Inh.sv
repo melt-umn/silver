@@ -628,6 +628,25 @@ top::Expr ::= '@' e::Expr
       | _ -> []
       end
     else [];
+
+  -- Where this production shares a tree x as a translation attribute t of the LHS (top.t = @x), and
+  -- x arrives with inherited attributes supplied elsewhere (see arrivesWithInhs), x keeps those:
+  -- what the LHS's decoration site supplies to t does not reach x.  The graph cannot show that t's
+  -- inherited attributes are then x's: t's inherited vertices are LHS inherited vertices, which
+  -- have no out-edges (see findAdmissibleEdges and addDecSiteTreeEqs).  So such sharing is not
+  -- supported.
+  local prodDcl :: [ValueDclInfo] = getValueDcl(top.frame.fullName, top.env);
+  top.errors <-
+    case top.decSiteVertexInfo, e.flowVertexInfo, prodDcl of
+    | just(transAttrVertexType(lhsVertexType(), transAttr)), just(ref), dcl :: _
+        when top.config.warnMissingInh &&
+          arrivesWithInhs(dcl.namedSignature, dcl.implementedSignature, top.flowEnv, ref) ->
+      [mwdaWrnFromOrigin(top,
+        s"${ref.vertexPP} may be passed to this production already decorated, so it cannot be shared as " ++
+        s"${transAttr} of the left-hand side: it would keep the inherited attributes supplied to it before, and " ++
+        s"not receive those supplied to the left-hand side's ${transAttr}")]
+    | _, _, _ -> []
+    end;
 }
 
 aspect production presentAppExpr

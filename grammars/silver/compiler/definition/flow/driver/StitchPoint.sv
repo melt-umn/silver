@@ -45,10 +45,13 @@ top::StitchPoint ::=
   prodType::VertexType -- a vertex type of 'prod'
   attrs::[String] -- all inhs on the NT type of sigName/sourceType
 {
+  -- A function passing a tree with '@' to a signature-shared child has no graph here, but has no
+  -- LHS inherited attributes to project either.
   top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
-    flatMap(
-      projectInh(_, sourceType, targetType, prodType, findProductionGraph(prod, prodGraphs)),
-      attrs);
+    case searchEnvTree(prod, prodGraphs) of
+    | g :: _ -> flatMap(projectInh(_, sourceType, targetType, prodType, g), attrs)
+    | [] -> []
+    end;
 }
 
 
@@ -120,10 +123,53 @@ FlowVertex ::= prodName::String parentType::VertexType v::FlowVertex =
   -- Deps on forward parent vertices are only allowed in sig sharing prods,
   -- which must be applied in the root of a forward or forward production attribute,
   -- thus forward parent vertices in the remote production always map to the LHS vertices.
+  -- A dispatch signature's graph keeps them instead (see implTileStitchPoint).
   | forwardParentEqVertex() -> lhsEqVertex()
-  | forwardParentSynVertex(attr) -> lhsSynVertex(attr)
+| forwardParentSynVertex(attr) -> lhsSynVertex(attr)
   | forwardParentInhVertex(attr) -> lhsInhVertex(attr)
   | _ -> error("Unexpected non-signature vertex in tileEdges: " ++ v.dotName)
+  end;
+
+
+{--
+ - The tile flow graph of the implementation impl in the graph of the dispatch signature that impl
+ - implements, at the signature's LHS (see dispatchStitchPoints).  The forward parent of impl, the
+ - applying production or an earlier implementation (from any extension) in a chain of forwards, has
+ - the attributes of the signature's LHS.
+ -}
+abstract production implTileStitchPoint
+top::StitchPoint ::= impl::String
+{
+  top.stitchEdges = \ flowTypes::EnvTree<FlowType> prodGraphs::EnvTree<ProductionGraph> ->
+    flatMap(implTileEdges(impl, _), findProductionGraph(impl, prodGraphs).tileEdges);
+}
+
+-- The edge e of the tile flow graph of impl, in the dispatch signature's graph.  An edge into a
+-- forward-parent vertex keeps that vertex, which an application maps to the applying production's
+-- LHS vertex (see fromSigVertex), and also goes to the dispatch signature's LHS vertex, for an
+-- earlier implementation in a chain of forwards.
+function implTileEdges
+[(FlowVertex, FlowVertex)] ::= impl::String  e::(FlowVertex, FlowVertex)
+{
+  local src :: FlowVertex = implTileVertex(impl, e.1);
+  return
+    (src, implTileVertex(impl, e.2)) ::
+    case e.2 of
+    | forwardParentSynVertex(attr) -> [(src, lhsSynVertex(attr))]
+    | forwardParentInhVertex(attr) -> [(src, lhsInhVertex(attr))]
+    | _ -> []
+    end;
+}
+
+-- The vertex v of the tile flow graph of impl, in the dispatch signature's graph: a forward-parent
+-- vertex is kept, and any other vertex is mapped as at an application of impl at the dispatch
+-- signature's LHS.
+fun implTileVertex FlowVertex ::= impl::String  v::FlowVertex =
+  case v of
+  | forwardParentEqVertex() -> v
+  | forwardParentSynVertex(_) -> v
+  | forwardParentInhVertex(_) -> v
+  | _ -> fromSigVertex(impl, lhsVertexType(), v)
   end;
 
 
@@ -136,6 +182,7 @@ aspect stitchDep on StitchPoint of
 | nonterminalStitchPoint(nt, _) -> ntDep(nt)
 | projectionStitchPoint(prod, _, _, _, _) -> prodDep(prod)
 | tileStitchPoint(prod, _) -> prodDep(prod)
+| implTileStitchPoint(impl) -> prodDep(impl)
 end;
 
 fun ntDep String ::= nt::String = "nt:" ++ nt;

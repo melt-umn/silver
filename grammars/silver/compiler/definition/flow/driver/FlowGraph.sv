@@ -56,17 +56,37 @@ fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<Flo
   g:edgesFrom(syn, findFlowType(nt, flow));
 
 {--
- - The direct dependencies of what a decoration site itself supplies for the inherited attribute attr, in the terms of
- - the production whose graph is given.  Unlike decSite.inhDeps(attr), these do not go through the tree shared there
- - (see addDecSiteTreeEqs).  They come from the production's own edges (see unstitchedGraph), including implicit copies,
- - and for a subterm, the edges of the production or dispatch signature applied there.  A translation attribute of the
- - LHS is supplied what the LHS is supplied.
+ - The direct dependencies of what a decoration site itself supplies for the inherited attribute
+ - attr, in the terms of the production whose graph is given.  Unlike decSite.inhDeps(attr), these
+ - do not go through the tree shared there (see addDecSiteTreeEqs).  They come from the
+ - production's own edges (see unstitchedGraph), including implicit copies; where the decoration
+ - site has no equation for attr, from the decoration sites where it is shared in turn (see
+ - sharedAtDecSites); and for a subterm, from the edges of the production or dispatch signature
+ - applied there.  A translation attribute of the LHS is supplied what the LHS is supplied.
  -}
 fun decSiteOwnInhDeps
-[FlowVertex] ::= graph::ProductionGraph  decSite::VertexType  attr::String  prodGraphs::EnvTree<ProductionGraph> =
-  (if transRootVertex(decSite) == lhsVertexType() then [decSite.inhVertex(attr)] else []) ++
-  set:toList(g:edgesFrom(decSite.inhVertex(attr), graph.unstitchedGraph)) ++
-  case decSite of
+[FlowVertex] ::=
+  graph::ProductionGraph  decSite::VertexType  attr::String  prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv =
+  ownInhDepsSeen([], graph, decSite, attr, prodGraphs, flowEnv);
+-- decSiteOwnInhDeps for vt, leaving out the trees and attributes in seen, visited on the way to vt.
+function ownInhDepsSeen
+[FlowVertex] ::=
+  seen::[(VertexType, String)]  graph::ProductionGraph  vt::VertexType  attr::String
+  prodGraphs::EnvTree<ProductionGraph>  flowEnv::FlowEnv
+{
+  local seenHere :: [(VertexType, String)] = (vt, attr) :: seen;
+  return
+    (if transRootVertex(vt) == lhsVertexType() then [vt.inhVertex(attr)] else []) ++
+    set:toList(g:edgesFrom(vt.inhVertex(attr), graph.unstitchedGraph)) ++
+    flatMap(
+      \ d::(VertexType, String) ->
+        if contains(d, seenHere) then [] else ownInhDepsSeen(seenHere, graph, d.1, d.2, prodGraphs, flowEnv),
+      sharedAtDecSites(graph.prod, vt, attr, flowEnv)) ++
+    appliedInhDeps(vt, attr, prodGraphs);
+}
+-- For a subterm vt, what the production or dispatch signature applied there supplies for attr.
+fun appliedInhDeps [FlowVertex] ::= vt::VertexType  attr::String  prodGraphs::EnvTree<ProductionGraph> =
+  case vt of
   | subtermVertexType(parent, applied, sigName) ->
     map(fromSigVertex(applied, parent, _),
       filter(
@@ -76,13 +96,35 @@ fun decSiteOwnInhDeps
         set:toList(findProductionGraph(applied, prodGraphs).tileEdgeMap(rhsInhVertex(sigName, attr)))))
   | _ -> []
   end;
+-- Where the tree at vt in prod has no equation for attr, the decoration sites where it is shared,
+-- and those where the translation attribute of it that attr is on is shared, each with attr as
+-- named there (see addSharingEqs).
+fun sharedAtDecSites [(VertexType, String)] ::= prod::String  vt::VertexType  attr::String  flowEnv::FlowEnv =
+  (if vertexHasInhEq(prod, vt, attr, flowEnv) then []
+   else map(\ d::VertexType -> (d, attr), lookupRefPossibleDecSites(prod, vt, flowEnv))) ++
+  case splitTransAttrInh(attr) of
+  | just((transAttr, inh)) -> sharedAtDecSites(prod, transAttrVertexType(vt, transAttr), inh, flowEnv)
+  | nothing() -> []
+  end;
 
--- The LHS inherited attributes of a dispatch signature that an equation for v, the inherited attribute of one of its
--- children, may depend on.  Implementations assume what the signature's normal graph allows (see
--- implementedSigStitchPoints), and an application that leaves the attribute to the implementation assumes what its
--- tile flow graph allows, so the bound is what both allow.
+-- The dispatch contract.  For v, an inherited vertex of a child c of the dispatch signature whose
+-- graph is dispatchGraph, implementations and applications of the signature assume different LHS
+-- inherited attributes.  What implementations and their aspects assume: the normal graph, which
+-- implementedSigStitchPoints projects onto each implementation's child at c's position.  It also
+-- has what host sharing sites supply (see sigSharingStitchPoints).
+fun dispatchImplAssumes set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
+  onlyLhsInh(dispatchGraph.edgeMap(v));
+-- What applications assume: the tile flow graph, which every application stitches (see
+-- tileStitchPoint).  It lacks what sharing sites supply, as an application does not see what other
+-- applications supply, but has what an implementation not known here may copy from its forward (see
+-- addDispatchUnknownImplSynEqs).
+fun dispatchAppAssumes set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
+  onlyLhsInh(dispatchGraph.tileEdgeMap(v));
+-- What an equation for v that implementations and applications both see may depend on, where that
+-- equation takes the place of the implementations' equations: an extension implementation's own
+-- equation for c, or an equation on a tree passed with '@' to c.
 fun dispatchChildAllowedInhs set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
-  set:intersect(onlyLhsInh(dispatchGraph.edgeMap(v)), onlyLhsInh(dispatchGraph.tileEdgeMap(v)));
+  set:intersect(dispatchImplAssumes(dispatchGraph, v), dispatchAppAssumes(dispatchGraph, v));
 
 
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =

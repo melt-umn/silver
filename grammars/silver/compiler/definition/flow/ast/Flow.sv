@@ -80,17 +80,20 @@ monoid attribute refDecSiteContribs :: [(String, VertexType)];
 {-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}
 monoid attribute sigShareContribs :: [(String, String, VertexType)];
 
+{-- lookup (prod, decoration site) to find the trees shared there, and whether the sharing is unconditional -}
+monoid attribute sharedIntoContribs :: [(String, (VertexType, Boolean))];
+
 attribute
   synTreeContribs, inhTreeContribs, defTreeContribs,
   fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
   prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
-  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs, sharedIntoContribs
   occurs on FlowDefs, FlowDef;
 propagate
   synTreeContribs, inhTreeContribs, defTreeContribs,
   fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
   prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
-  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs, sharedIntoContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -125,6 +128,7 @@ top::FlowDef ::=
   top.refPossibleDecSiteContribs := [];
   top.refDecSiteContribs := [];
   top.sigShareContribs := [];
+  top.sharedIntoContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -583,11 +587,14 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
   top.flowEdges = [];  -- Added as fixed edges during flow graph computation, when we know all inh attributes on nt.
   top.refPossibleDecSiteContribs := [(s"${prod}:${ref.vertexName}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
+  top.sharedIntoContribs := [(s"${prod}:${decSite.vertexName}", (ref, alwaysDec))];
 }
 
 {--
  - A tree that is shared in the application of a production/dispatch signature.
- - Only applications in the host language are recorded (see presentAppExpr's isHostApplication.)
+ - Only applications in the host language are recorded (see presentAppExpr's isHostApplication),
+ - including an application passing on the applying production's own child shared through the
+ - signature: resolution follows such a sharing site to the sharing sites that supplied that child.
  -
  - @param prod       the full name of the production/dispatch signature
  - @param nt         the full name of the nonterminal

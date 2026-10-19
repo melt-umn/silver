@@ -17,8 +17,8 @@ monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, at
 monoid attribute refDefs :: [(String, [String])];
 
 data nonterminal FlowEnv with
-  synTree, inhTree, defTree, fwdTree, prodTree, implTree, fwdInhTree, refTree,
-  sharedRefTree, refPossibleDecSiteTree, refDecSiteTree, sigShareTree,
+  synTree, inhTree, defTree, fwdTree, prodTree, implTree, implOfTree, fwdInhTree, refTree,
+  sharedRefTree, refPossibleDecSiteTree, refDecSiteTree, sharedIntoTree, sigShareTree,
   localInhTree, localTree, nonSuspectTree, hostSynTree, specTree,
   prodGraphTree;
 
@@ -29,10 +29,12 @@ synthesized attribute fwdTree :: EnvTree<FlowDef>;
 synthesized attribute fwdInhTree :: EnvTree<FlowDef>;
 synthesized attribute prodTree :: EnvTree<String>;
 synthesized attribute implTree :: EnvTree<(String, [String])>;
+synthesized attribute implOfTree :: EnvTree<(String, [String])>;
 synthesized attribute refTree :: EnvTree<[String]>;
 synthesized attribute sharedRefTree :: EnvTree<SharedRefSite>;
 synthesized attribute refPossibleDecSiteTree :: EnvTree<VertexType>;
 synthesized attribute refDecSiteTree :: EnvTree<VertexType>;
+synthesized attribute sharedIntoTree :: EnvTree<(VertexType, Boolean)>;
 synthesized attribute sigShareTree :: EnvTree<(String, VertexType)>;
 synthesized attribute localInhTree ::EnvTree<FlowDef>;
 synthesized attribute localTree :: EnvTree<FlowDef>;
@@ -54,10 +56,12 @@ top::FlowEnv ::=
   top.fwdInhTree = directBuildTree(d.fwdInhTreeContribs);
   top.prodTree = directBuildTree(d.prodTreeContribs);
   top.implTree = directBuildTree(d.implTreeContribs);
+  top.implOfTree = directBuildTree(map(\ c::(String, String, [String]) -> (c.2, (c.1, c.3)), d.implTreeContribs));
   top.refTree = directBuildTree(refContribs);
   top.sharedRefTree = directBuildTree(sharedRefContribs);
   top.refPossibleDecSiteTree = directBuildTree(d.refPossibleDecSiteContribs);
   top.refDecSiteTree = directBuildTree(d.refDecSiteContribs);
+  top.sharedIntoTree = directBuildTree(d.sharedIntoContribs);
   top.sigShareTree = directBuildTree(d.sigShareContribs);
   top.localInhTree = directBuildTree(d.localInhTreeContribs);
   top.localTree = directBuildTree(d.localTreeContribs);
@@ -127,6 +131,14 @@ fun lookupAllRefDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv 
   | _ -> []
   end;
 
+-- the trees shared at a decoration site of a production, each with whether the sharing is
+-- unconditional
+fun lookupSharedInto [(VertexType, Boolean)] ::= prod::String  v::VertexType  e::FlowEnv =
+  searchEnvTree(s"${prod}:${v.vertexName}", e.sharedIntoTree);
+-- the trees unconditionally shared at a decoration site (at most one, as a tree is shared once)
+fun lookupSharedIntoAlways [VertexType] ::= prod::String  v::VertexType  e::FlowEnv =
+  map(fst, filter(snd, lookupSharedInto(prod, v, e)));
+
 -- places in the host language where this child was decorated in a production forwarding to this one
 fun lookupSigShareSites [(String, VertexType)] ::= prod::String sigName::String e::FlowEnv =
   searchEnvTree(crossnames(prod, sigName), e.sigShareTree);
@@ -135,14 +147,61 @@ fun lookupAllSigShareSites [(String, VertexType)] ::= prod::String sigName::Stri
   -- places where this child was decorated in a production forwarding to this one
   lookupSigShareSites(prod, sigName, e) ++
   -- or in a dispatch signature that this production implements
+  case implementedSigChild(prod, sigName, e, realEnv) of
+  | just((dispatch, se)) -> lookupSigShareSites(dispatch, se.elementName, e)
+  | nothing() -> []
+  end;
+
+-- The dispatch signature that prod implements and the dispatch signature's child at the position of
+-- prod's child sigName: by prod's declaration or, where that is out of scope here, by prod's flow
+-- definitions.
+function implementedSigChild
+Maybe<(String, NamedSignatureElement)> ::= prod::String  sigName::String  e::FlowEnv  realEnv::Env
+{
+  -- The dispatch signature, prod's children and the dispatch signature's children
+  local dispatchChildren :: Maybe<(String, [String], [NamedSignatureElement])> =
+    case getValueDcl(prod, realEnv) of
+    | dcl :: _ when dcl.implementedSignature matches just(dispatchSig) ->
+      just((dispatchSig.fullName, dcl.namedSignature.inputNames, dispatchSig.inputElements))
+    | dcl :: _ -> nothing()
+    | [] ->
+      case lookupImplementedSig(prod, e) of
+      | just((dispatch, sigNames)) ->
+        case getTypeDcl(dispatch, realEnv) of
+        | typeDcl :: _ -> just((dispatch, sigNames, typeDcl.dispatchSignature.inputElements))
+        | [] -> nothing()
+        end
+      | nothing() -> nothing()
+      end
+    end;
+  local pos :: Integer = positionOf(sigName, dispatchChildren.fromJust.2);
+  return
+    -- Where prod's signature does not match the dispatch signature, there is no such child.
+    if dispatchChildren.isJust && pos >= 0 && pos < length(dispatchChildren.fromJust.3)
+    then just((dispatchChildren.fromJust.1, head(drop(pos, dispatchChildren.fromJust.3))))
+    else nothing();
+}
+
+-- The dispatch signature that prod implements and the names of prod's children, from prod's flow
+-- definitions: for an implementation declared in a grammar this one does not import (see
+-- findDecSites).
+fun lookupImplementedSig Maybe<(String, [String])> ::= prod::String  e::FlowEnv =
+  case searchEnvTree(prod, e.implOfTree) of
+  | r :: _ -> just(r)
+  | [] -> nothing()
+  end;
+
+-- Is the child sigName of prod shared through its signature?  By prod's declaration, or, for an
+-- implementation whose declaration is out of scope here, by the dispatch signature's child at the
+-- same position.
+fun sigSharedChild Boolean ::= prod::String  sigName::String  flowEnv::FlowEnv  realEnv::Env =
   case getValueDcl(prod, realEnv) of
-  | dcl :: _ when dcl.implementedSignature matches just(sig) ->
-    case drop(positionOf(sigName, dcl.namedSignature.inputNames), sig.inputNames) of
-    | sn :: _ -> lookupSigShareSites(sig.fullName, sn, e)
-    -- Error case. Sometimes this gets called when the prod sig doesn't match the implemented sig.
-    | _ -> []
+  | dcl :: _ -> lookupSignatureInputElem(sigName, dcl.namedSignature).elementShared
+  | [] ->
+    case implementedSigChild(prod, sigName, flowEnv, realEnv) of
+    | just((_, se)) -> se.elementShared
+    | nothing() -> false
     end
-  | _ -> []
   end;
 
 -- name of the nonterminal type of the tree of a vertex type in a production,
@@ -194,18 +253,68 @@ fun vertexHasInhEq Boolean ::= prodName::String  vt::VertexType  attrName::Strin
   | forwardParentVertexType() -> false  -- Same as LHS - the thing that forwarded to us.
   end;
 
+{--
+ - Does the tree vt arrive at the production with signature ns with inherited attributes that the
+ - production's graph does not define?  A child shared through the signature does, from its
+ - applications, and so may a nonterminal child at a position of the dispatch signature implSig that
+ - the production implements, even where implSig does not share it (see
+ - implementedSigStitchPoints).  So may the translation attributes of these, and a local shared from
+ - any of them (local y = @a), and so on.  Any other child gets them from the production itself: an
+ - override where the production is applied is bounded by its own equations (see pathBound).
+ -}
+fun arrivesWithInhs Boolean ::= ns::NamedSignature  implSig::Maybe<NamedSignature>  flowEnv::FlowEnv  vt::VertexType =
+  arrivesWithInhsSeen([], ns, implSig, flowEnv, vt);
+function arrivesWithInhsSeen
+Boolean ::= seen::[VertexType]  ns::NamedSignature  implSig::Maybe<NamedSignature>  flowEnv::FlowEnv  vt::VertexType
+{
+  local root::VertexType = transRootVertex(vt);
+  return
+    case root of
+    | rhsVertexType(sigName) ->
+      lookupSignatureInputElem(sigName, ns).elementShared ||
+      case implSig of
+      | just(dispatch) ->
+        positionOf(sigName, ns.inputNames) < length(dispatch.inputElements) &&
+        lookupSignatureInputElem(sigName, ns).typerep.isNonterminal
+      | nothing() -> false
+      end
+    | localVertexType(_) when !contains(root, seen) ->
+      any(map(
+        arrivesWithInhsSeen(root :: seen, ns, implSig, flowEnv, _),
+        map(fst, lookupSharedInto(ns.fullName, root, flowEnv))))
+    | _ -> false
+    end;
+}
+
+{--
+ - Does the tree at v in prod carry inherited attributes supplied before prod shares it, beyond v's
+ - own equations?  It does if it arrives with inherited attributes supplied elsewhere (see
+ - arrivesWithInhs), or if it is at a local that a tree was shared into.  Then the inherited
+ - vertices of the decoration sites where it is shared reach v's (see addDecSiteTreeEqs).
+ -}
+fun carriesEarlierInhs Boolean ::= prod::String  v::VertexType  flowEnv::FlowEnv  realEnv::Env =
+  case transRootVertex(v), getValueDcl(prod, realEnv) of
+  | localVertexType(fName), _ -> !null(lookupSharedInto(prod, localVertexType(fName), flowEnv))
+  | _, dcl :: _ -> arrivesWithInhs(dcl.namedSignature, dcl.implementedSignature, flowEnv, v)
+  | rhsVertexType(sigName), [] -> sigSharedChild(prod, sigName, flowEnv, realEnv)
+  | _, [] -> false
+  end;
+
+-- May the tree at v in prod have attr by the time prod shares it: from an equation on v, or as a
+-- tree that carries inherited attributes supplied earlier (see carriesEarlierInhs)?
+fun mayHaveInhBeforeSharing Boolean ::= prod::String  v::VertexType  attr::String  flowEnv::FlowEnv  realEnv::Env =
+  vertexHasInhEq(prod, v, attr, flowEnv) || carriesEarlierInhs(prod, v, flowEnv, realEnv);
+
 -- used for duplicate equations checks
 -- (note that inh is just an inherited attribute, not trans.inh)
 fun countVertexEqs Integer ::= prodName::String  vt::VertexType  attrName::String  flowEnv::FlowEnv  realEnv::Env =
   case vt of
   | rhsVertexType(sigName) ->
       length(lookupInh(prodName, sigName, attrName, flowEnv)) +
-      let sites :: [(String, VertexType)] =
-        lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)
-      in
-        if !null(sites) && all(unzipWith(vertexHasInhEq(_, _, attrName, flowEnv), sites))
-        then 1 else 0
-      end
+      -- Every sharing site supplies the attribute before this production gets the tree
+      (if !null(lookupAllSigShareSites(prodName, sigName, flowEnv, realEnv)) &&
+          sigShareSitesHaveInhEq(prodName, sigName, attrName, flowEnv, realEnv)
+       then 1 else 0)
   | localVertexType(fName) -> length(lookupLocalInh(prodName, fName, attrName, flowEnv))
   | transAttrVertexType(rhsVertexType(sigName), transAttr) ->
       length(lookupInh(prodName, sigName, s"${transAttr}.${attrName}", flowEnv))
@@ -251,13 +360,17 @@ fun getImplementingProds [(String, [String])] ::= dispatchSig::String e::FlowEnv
   searchEnvTree(dispatchSig, e.implTree);
 
 {--
- - Does every host-language application of a production/dispatch signature supply an inherited attribute to its
- - child shared through the signature?
+ - Does every host-language application of a production/dispatch signature supply an inherited
+ - attribute to its child shared through the signature?  For an application passing on the applying
+ - production's own child, what that child has counts.
  -}
-fun sigShareSitesHaveInhEq Boolean ::= prod::String  sigName::String  attr::String  e::FlowEnv =
-  all(map(
-    \ site::(String, VertexType) -> vertexHasInhEq(site.1, site.2, attr, e),
-    lookupSigShareSites(prod, sigName, e)));
+fun sigShareSitesHaveInhEq Boolean ::= prod::String  sigName::String  attr::String  e::FlowEnv  realEnv::Env =
+  resolveBeforeSharing(
+    attr,
+    viaProdVertexDec(prod, rhsVertexType(sigName),
+      sigShareSitesDec([], true, prod, sigName, e, realEnv)),
+    e)
+    == alwaysDec();
 
 -- Ext Syns subject to ft lower bound
 function getHostSynsFor

@@ -434,3 +434,116 @@ top::QE ::= @a::QE
   top.qExt = a.qOther;
 }
 }
+
+-- gImplFP supplies a.gOther from its forward parent's gNeedsOther.  The forward parent may be an
+-- implementation in another extension, whose gNeedsOther may depend on anything in its flow type,
+-- gOther; so may a.gOther.
+warnCode "Synthesized equation gTy exceeds flow type with dependencies on flow:gOther" {
+production gExtImplFP implements GOpFP
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = a.gNeedsOther;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpFP = gImplFP;
+  forwards to prod(a);
+}
+}
+-- gImplSB supplies a.gOther from b.gNeedsOther, which needs b.gOther, which gImplSB supplies from
+-- top.gOther.
+warnCode "Synthesized equation gTy exceeds flow type with dependencies on flow:gOther" {
+production gExtImplSB implements GOpSB
+top::GExpr ::= @a::GExpr b::GExpr
+{
+  top.gTy = a.gNeedsOther;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpSB = gImplSB;
+  forwards to prod(a, @b);
+}
+}
+
+-- The forward parent of gImplFP may be this implementation, whose gNeedsOther depends on gOther
+-- (see gSiteFPAccesses).
+production gExtImplFPOther implements GOpFP
+top::GExpr ::= @a::GExpr
+{
+  top.gNeedsOther = top.gOther;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  local prod::GOpFP = gImplFP;
+  forwards to prod(a);
+}
+
+-- An implementation accessing a.gNeedsOther sees gChainSiteQ's x.gOther = top.gOther through the
+-- local y it shares: the projection from y reaches x's equation.  Projecting only y's (absent)
+-- equations would leave the unknown-implementation edge, giving gEnv, gCtx instead.
+warnCode "Synthesized equation gSmall exceeds flow type with dependencies on flow:gOther" {
+production gExtChainReadsQ implements GOpQ
+top::GExpr ::= @a::GExpr
+{
+  top.gSmall = a.gNeedsOther;
+  top.gPP = "";
+  top.gNeedsOther = "";
+  local prod::GOpQ = gImplQ;
+  forwards to prod(a);
+}
+}
+-- The same through two locals (see gChainSiteQ2).
+warnCode "Synthesized equation gSmall exceeds flow type with dependencies on flow:gOther" {
+production gExtChainReadsQ2 implements GOpQ2
+top::GExpr ::= @a::GExpr
+{
+  top.gSmall = a.gNeedsOther;
+  top.gPP = "";
+  top.gNeedsOther = "";
+  local prod::GOpQ2 = gImplQ2;
+  forwards to prod(a);
+}
+}
+-- Through a conditional link, both x's equation and y's may apply (see gChainSiteQ3).
+warnCode "Synthesized equation gSmall exceeds flow type with dependencies on flow:gCtx, flow:gOther" {
+production gExtChainReadsQ3 implements GOpQ3
+top::GExpr ::= @a::GExpr
+{
+  top.gSmall = a.gNeedsOther;
+  top.gPP = "";
+  top.gNeedsOther = "";
+  local prod::GOpQ3 = gImplQ3;
+  forwards to prod(a);
+}
+}
+
+-- An extension attribute's equation accessing cpReads's child sees what cpPass supplies to it:
+-- a.cpK from cpPass's cpOther, which is outside cpExt's flow type.
+synthesized attribute cpExt::String occurs on CP;
+flowtype cpExt {cpEnv} on CP;
+aspect default production
+top::CP ::=
+{
+  top.cpExt = "";
+}
+warnCode "Synthesized equation cpExt exceeds flow type with dependencies on flow:cpOther" {
+aspect production cpReads
+top::CP ::= @a::CP
+{
+  top.cpExt = a.cpK;
+}
+}
+
+-- An implementation must pass its child on to an application of its dispatch signature in a match's
+-- else branch too.
+warnCode "Orphaned implementation production gExtImplElse for dispatch flow:GOp" {
+production gExtImplElse implements GOp
+top::GExpr ::= @a::GExpr
+{
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOp = gImpl;
+  local other::GOpU = gImplU;
+  forwards to match a return GExpr with gWith(b) -> prod(a) else -> other(@a) end;
+}
+}

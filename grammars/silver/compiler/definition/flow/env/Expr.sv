@@ -409,7 +409,9 @@ top::AppExpr ::= e::Expr
       refDecSiteEq(top.frame.fullName, e.finalType.typeName, v, decSite, top.alwaysDecorated) ::
       -- The root of the shared child is the root of the shared tree
       decSiteDepEq(top.frame.fullName, decSite, v.outerEqDeps) ::
-      if inputSigIsShared || !isHostApplication then []
+      -- Every host-language application is a sharing site, including an application passing on this
+      -- production's own child shared through the signature (see sigShareSite).
+      if !isHostApplication then []
       else [sigShareSite(ns.fullName, e.finalType.typeName, sigName, top.frame.fullName, v)]
     | _, _, _ -> []
     end;
