@@ -131,6 +131,47 @@ fun lookupAllRefDecSites [VertexType] ::= prod::String v::VertexType e::FlowEnv 
   | _ -> []
   end;
 
+-- The vertex types shared in prod that are translation attributes of v (of translation attributes,
+-- and so on), each once, with those translation attributes outermost first: v.t1.t2 gives ["t1",
+-- "t2"]
+fun sharedTransAttrsOf [([String], VertexType)] ::= prod::String  v::VertexType  e::FlowEnv =
+  nub(flatMap(
+    \ s::SharedRefSite ->
+      case transAttrsFrom(v, s.sharedVertex) of
+      | just(transAttrs) -> [(transAttrs, s.sharedVertex)]
+      | nothing() -> []
+      end,
+    lookupSharedRefs(prod, v, e)));
+
+-- The translation attributes t1 ... tk, for k >= 1, such that sub is v.t1 ... tk.
+fun transAttrsFrom Maybe<[String]> ::= v::VertexType  sub::VertexType =
+  case sub of
+  | transAttrVertexType(treeVertex, transAttr) when treeVertex == v -> just([transAttr])
+  | transAttrVertexType(treeVertex, transAttr) ->
+    map(\ transAttrs::[String] -> transAttrs ++ [transAttr], transAttrsFrom(v, treeVertex))
+  | _ -> nothing()
+  end;
+
+-- May the tree at v in prod become prod's forward, in some branch, directly or through locals that
+-- it is shared into?
+fun mayBecomeForward Boolean ::= prod::String  v::VertexType  flowEnv::FlowEnv =
+  mayBecomeForwardSeen([], prod, v, flowEnv);
+-- mayBecomeForward, leaving out the trees in seen, which were visited on the way to v.
+function mayBecomeForwardSeen
+Boolean ::= seen::[VertexType]  prod::String  v::VertexType  flowEnv::FlowEnv
+{
+  local decSites :: [VertexType] = nub(lookupAllRefPossibleDecSites(prod, v, flowEnv));
+  -- Only a tree at a local, or at a translation attribute of a local, can be shared again.
+  local localDecSites :: [VertexType] =
+    filter(
+      \ d::VertexType -> case transRootVertex(d) of | localVertexType(_) -> true | _ -> false end,
+      decSites);
+  return
+    !contains(v, seen) &&
+    (contains(forwardVertexType(), decSites) ||
+     any(map(mayBecomeForwardSeen(v :: seen, prod, _, flowEnv), localDecSites)));
+}
+
 -- the trees shared at a decoration site of a production, each with whether the sharing is
 -- unconditional
 fun lookupSharedInto [(VertexType, Boolean)] ::= prod::String  v::VertexType  e::FlowEnv =

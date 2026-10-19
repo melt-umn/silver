@@ -125,6 +125,10 @@ fun dispatchAppAssumes set:Set<String> ::= dispatchGraph::ProductionGraph  v::Fl
 -- equation for c, or an equation on a tree passed with '@' to c.
 fun dispatchChildAllowedInhs set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
   set:intersect(dispatchImplAssumes(dispatchGraph, v), dispatchAppAssumes(dispatchGraph, v));
+-- May an implementation not known here supply v?  It may where the dispatch signature's graph has
+-- the edge from v that addDispatchUnknownImplInhEqs adds for implSuppliedInhs.
+fun unknownImplMaySupply Boolean ::= dispatchGraph::ProductionGraph  v::FlowVertex =
+  set:contains(unknownImplForwardVertex, g:edgesFrom(v, dispatchGraph.unstitchedGraph));
 
 
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =

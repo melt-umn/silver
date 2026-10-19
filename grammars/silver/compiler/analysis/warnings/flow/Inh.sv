@@ -238,6 +238,31 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur e::Expr
     if top.config.warnMissingInh && dl.name == "forward" && !null(lhsInhExceedsForwardFlowType)
     then [mwdaWrnFromOrigin(top, "Forward inherited equation for " ++ dl.inhAttrName ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsForwardFlowType))]
     else [];
+
+  -- A contribution may depend only on recordedLhsInhDeps, what the attribute depends on through the
+  -- production's graph: its base equation, the contributions recorded there (see
+  -- inhAppendColAttributeDef in flow:env), and what the tree's decoration sites and dispatch
+  -- signature allow.  Grammars that do not import an unrecorded contribution see only these (as in
+  -- appendCollectionValueDef).  The forward flow type above bounds a contribution to the forward.
+  local bounded :: Boolean =
+    case dl of
+    | childDefLHS(_) -> true
+    | localDefLHS(_) -> true
+    | childTransAttrDefLHS(_, _) -> true
+    | localTransAttrDefLHS(_, _) -> true
+    | _ -> false
+    end;
+  local recordedLhsInhDeps :: set:Set<String> =
+    onlyLhsInh(expandGraph([dl.defLHSVertex.inhVertex(attr.attrDcl.fullName)], top.frame.flowGraph));
+  local lhsInhExceedsRecordedDeps :: [String] = set:toList(set:difference(lhsInhDeps, recordedLhsInhDeps));
+
+  top.errors <-
+    if top.config.warnMissingInh && dl.found && attr.found && bounded && !null(lhsInhExceedsRecordedDeps)
+    then [mwdaWrnFromOrigin(top,
+      s"Inherited contribution equation for ${attr.attrDcl.fullName} on ${dl.defLHSVertex.vertexPP} has excess " ++
+      s"dependencies on ${implode(", ", lhsInhExceedsRecordedDeps)}; a contribution from a grammar not exported " ++
+      "by those of the attribute's other equations may depend " ++ depListStr(recordedLhsInhDeps))]
+    else [];
 }
 ------ END AWFUL COPY & PASTE SESSION
 

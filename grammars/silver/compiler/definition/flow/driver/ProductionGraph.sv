@@ -4,7 +4,7 @@ import silver:compiler:definition:type only isNonterminal, typerep;
 
 data nonterminal ProductionGraph with
   prod, lhsNt, flowTypeAttrs, graph, tileGraph, unstitchedGraph, suspectEdges,
-  stitchPoints, sigNtStitchPoints,
+  stitchPoints, sigNtStitchPoints, overrideFreeGraph, dispatchInputs, implementedSigChildren,
   stitchedGraph, tileEdges, edgeMap, tileEdgeMap, suspectEdgeMap, cullSuspect;
 
 -- The full name of this production
@@ -28,7 +28,8 @@ annotation graph::g:Graph<FlowVertex>;
 annotation tileGraph::g:Graph<FlowVertex>;
 
 -- The edges within this production before any stitching or transitive closure, without those
--- between the trees shared in it and their decoration sites (see decSiteOwnInhDeps).
+-- between the trees shared in it and their decoration sites (see ownEqDeps and
+-- decSiteOwnInhDeps).
 annotation unstitchedGraph::g:Graph<FlowVertex>;
 
 -- Edges that are not permitted to affect their OWN flow types (but perhaps some unknown other flowtypes)
@@ -39,6 +40,19 @@ annotation stitchPoints::[StitchPoint];
 
 -- Stitch points that arise from signature nonterminals, only used in graph and not tileGraph.
 annotation sigNtStitchPoints::[StitchPoint];
+
+-- For the graph of a production with override equations on the trees it shares: the graph without
+-- those equations, where those trees, and any shared tree that arrives with inherited attributes
+-- supplied elsewhere (see arrivesWithInhs), get only what their decoration sites supply, not what
+-- was supplied to them before.  It is stitched for the final flow types when first used.
+annotation overrideFreeGraph::Maybe<ProductionGraph>;
+
+-- For a dispatch signature's graph, the names of the signature's children; nothing() for every
+-- other graph.
+annotation dispatchInputs::Maybe<[String]>;
+-- For the graph of an implementation of a dispatch signature: the signature's full name, and the
+-- implementation's children paired with the signature's by position.  nothing() otherwise.
+annotation implementedSigChildren::Maybe<(String, [(String, String)])>;
 
 {--
  - Given a set of flow types, stitches those edges into the graph for
@@ -145,6 +159,76 @@ Maybe<ProductionGraph> ::=
     else nothing()
   end;
 
+-- The graph g with all of its stitch points stitched for the final flow types and production
+-- graphs, and the suspect edges those admit: for a graph that flow type inference did not update,
+-- such as an override-free graph.
+fun stitchFinal ProductionGraph ::= g::ProductionGraph  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType> =
+  case updateGraph(g, prodEnv, ntEnv) of
+  | just(updated) -> stitchFinal(updated, prodEnv, ntEnv)
+  | nothing() -> g
+  end;
+
+-- Is d an inherited equation, or a contribution to one, on a tree shared in its production,
+-- overriding what the decoration sites of that tree supply?
+fun isOverrideEq Boolean ::= d::FlowDef  flowEnv::FlowEnv =
+  case overrideEqVertex(d) of
+  | just((prod, vt, _)) -> !null(lookupAllRefPossibleDecSites(prod, vt, flowEnv))
+  | nothing() -> false
+  end;
+-- The production, tree and attribute of an inherited equation or contribution on a child or local,
+-- or on a translation attribute of one.
+fun overrideEqVertex Maybe<(String, VertexType, String)> ::= d::FlowDef =
+  case d of
+  | inhEq(prod, sigName, attr, _, _) -> just((prod, rhsVertexType(sigName), attr))
+  | localInhEq(prod, fName, attr, _, _) -> just((prod, localVertexType(fName), attr))
+  | transInhEq(prod, sigName, transAttr, attr, _, _, _) ->
+    just((prod, transAttrVertexType(rhsVertexType(sigName), transAttr), attr))
+  | localTransInhEq(prod, fName, transAttr, attr, _, _, _) ->
+    just((prod, transAttrVertexType(localVertexType(fName), transAttr), attr))
+  | extraEq(prod, rhsInhVertex(sigName, attr), _, _) -> just(treeAttr(prod, rhsVertexType(sigName), attr))
+  | extraEq(prod, localInhVertex(fName, attr), _, _) -> just(treeAttr(prod, localVertexType(fName), attr))
+  | _ -> nothing()
+  end;
+-- The tree that the inherited attribute attr of vt is on, and its name there: attr "t.a" is a of
+-- vt's translation t.
+fun treeAttr (String, VertexType, String) ::= prod::String  vt::VertexType  attr::String =
+  case splitTransAttrInh(attr) of
+  | just((transAttr, inh)) -> (prod, transAttrVertexType(vt, transAttr), inh)
+  | nothing() -> (prod, vt, attr)
+  end;
+
+-- Edges from the decoration sites of the tree that the contribution d is on to the dependencies of
+-- d, for the attribute of d, as inhEq records the dependencies of an override at the decoration
+-- sites of the overridden tree.  d is among the flow defs only where the grammar of d is exported
+-- by the production's or the local's grammar, or by the grammar of an occurrence of the attribute
+-- (see inhAppendColAttributeDef in flow:env).
+fun contributionDecSiteEdges [(FlowVertex, FlowVertex)] ::= flowEnv::FlowEnv  d::FlowDef =
+  case d, overrideEqVertex(d) of
+  | extraEq(_, _, deps, _), just((prod, vt, attr)) ->
+    cartProd(map(\ s::VertexType -> s.inhVertex(attr), lookupAllRefPossibleDecSites(prod, vt, flowEnv)), deps)
+  | _, _ -> []
+  end;
+
+-- Edges from the inherited vertex for attr of the tree at vt to those of its decoration sites, and
+-- on through the locals it is shared into, leaving out the trees in seen.  None from a forward
+-- production attribute, whose decoration sites supply nothing to it (see addSharingEqs).
+function decSiteChainEdges
+[(FlowVertex, FlowVertex)] ::= seen::[VertexType]  prod::String  vt::VertexType  attr::String  flowEnv::FlowEnv
+{
+  local decSites :: [VertexType] = nub(lookupAllRefPossibleDecSites(prod, vt, flowEnv));
+  return
+    if contains(vt, seen) || isFwdProdAttrVertex(prod, vt, flowEnv) then []
+    else
+      map(\ d::VertexType -> (vt.inhVertex(attr), d.inhVertex(attr)), decSites) ++
+      flatMap(
+        \ d::VertexType ->
+          case transRootVertex(d) of
+          | localVertexType(_) -> decSiteChainEdges(vt :: seen, prod, d, attr, flowEnv)
+          | _ -> []
+          end,
+        decSites);
+}
+
 
 --------------------------------------------------------------------------------
 -- Below, we have various means of constructing a production graph.
@@ -187,13 +271,75 @@ Maybe<ProductionGraph> ::=
  -         (used to discover attribute occurrences, whether inh/syn)
  - @return A fixed up graph.
  -}
-function constructProductionGraph
-ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
+fun constructProductionGraph ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env =
+  productionGraphFromDefs(dcl, getGraphContribsFor(dcl.fullName, flowEnv), [], true, flowEnv, realEnv);
+
+{--
+ - g, a graph that flow type inference ended with, with its override-free graph if g is the graph of
+ - a production with override equations.  Only the override check uses the override-free graph: it
+ - leaves out real dependencies, so it takes no part in inference, and is stitched for the graphs
+ - and flow types that inference ended with instead.
+ -}
+fun addOverrideFreeGraph
+ProductionGraph ::= g::ProductionGraph  flowEnv::FlowEnv  realEnv::Env
+  finalProdEnv::EnvTree<ProductionGraph>  finalFlowTypes::EnvTree<FlowType> =
+  case getValueDcl(g.prod, realEnv) of
+  | dcl :: _ -> g(overrideFreeGraph=overrideFreeGraphOf(dcl, flowEnv, realEnv, finalProdEnv, finalFlowTypes))
+  | [] -> g
+  end;
+
+-- The override-free graph of the production dcl (see overrideFreeGraph), or nothing() if it has no
+-- override equations.
+function overrideFreeGraphOf
+Maybe<ProductionGraph> ::=
+  dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env  finalProdEnv::EnvTree<ProductionGraph>
+  finalFlowTypes::EnvTree<FlowType>
+{
+  local defs :: [FlowDef] = getGraphContribsFor(dcl.fullName, flowEnv);
+  local overrides :: [FlowDef] = filter(isOverrideEq(_, flowEnv), defs);
+  -- The children that arrive with inherited attributes supplied elsewhere (see arrivesWithInhs),
+  -- and that this production shares at decoration sites.
+  local sharedEarlierChildren :: [NamedSignatureElement] =
+    filter(
+      \ e::NamedSignatureElement ->
+        arrivesWithInhs(dcl.namedSignature, dcl.implementedSignature, flowEnv, rhsVertexType(e.elementName)) &&
+        !null(lookupAllRefPossibleDecSites(dcl.fullName, rhsVertexType(e.elementName), flowEnv)),
+      dcl.namedSignature.inputElements);
+  -- The trees that get their attributes from their decoration sites here, in place of addSharingEqs
+  -- (see decSiteChainEdges): the trees the override equations are on, for those attributes, and
+  -- sharedEarlierChildren.
+  local chainRoots :: [(VertexType, String)] =
+    flatMap(
+      \ d::FlowDef ->
+        case overrideEqVertex(d) of
+        | just((_, vt, attr)) -> [(vt, attr)]
+        | nothing() -> []
+        end,
+      overrides) ++
+    flatMap(
+      \ e::NamedSignatureElement ->
+        map(\ a::String -> (rhsVertexType(e.elementName), a), getInhAndInhOnTransAttrsOn(e.typerep.typeName, realEnv)),
+      sharedEarlierChildren);
+  return
+    if null(overrides) then nothing()
+    else just(stitchFinal(
+      productionGraphFromDefs(
+        ^dcl, filter(\ d::FlowDef -> !isOverrideEq(d, flowEnv), defs),
+        flatMap(\ r::(VertexType, String) -> decSiteChainEdges([], dcl.fullName, r.1, r.2, flowEnv), chainRoots),
+        false, flowEnv, realEnv),
+      finalProdEnv, finalFlowTypes));
+}
+
+-- The graph of the production dcl with the flow defs given, and edges from trees shared in it to
+-- their decoration sites beyond those of addSharingEqs.  Unless projectShared, a child shared at a
+-- decoration site gets no projection of what was supplied to it before it was passed in.
+function productionGraphFromDefs
+ProductionGraph ::=
+  dcl::ValueDclInfo  defs::[FlowDef]  extraSharingEdges::[(FlowVertex, FlowVertex)]  projectShared::Boolean
+  flowEnv::FlowEnv  realEnv::Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
-  -- The flow defs for this production
-  local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- Just synthesized attributes.
@@ -208,9 +354,10 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local fwdParentEdges :: [(FlowVertex, FlowVertex)] =
     if hasSharedChild then map(\ attr::String -> (forwardParentInhVertex(attr), lhsInhVertex(attr)), inhs) else [];
   
-  -- Normal edges!
+  -- Normal edges, and the copies of the contributions' dependencies at decoration sites (see
+  -- contributionDecSiteEdges)
   local normalEdges :: [(FlowVertex, FlowVertex)] =
-    flatMap((.flowEdges), defs);
+    flatMap((.flowEdges), defs) ++ flatMap(contributionDecSiteEdges(flowEnv, _), defs);
   
   -- The default equations and contributions that apply in this production (see defaultDepsAt).
   local defaultDeps :: [(String, [FlowVertex], Boolean)] =
@@ -232,10 +379,11 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     flatMap(addFwdInhEqs(prod, _, inhs, defs, flowEnv, realEnv), map(localVertexType, allFwdProdAttrs(defs))) ++
     map(addLhsEqRhsEq, dcl.namedSignature.inputElements);
   -- Edges between the trees shared in this production and their decoration sites, left out of
-  -- unstitchedGraph (see decSiteOwnInhDeps).
+  -- unstitchedGraph (see ownEqDeps and decSiteOwnInhDeps).
   local sharingEdges :: [(FlowVertex, FlowVertex)] =
     flatMap(addSharingEqs(flowEnv, realEnv, _), defs) ++
-    flatMap(addDecSiteTreeEqs(realEnv, flowEnv, _), defs);
+    flatMap(addDecSiteTreeEqs(realEnv, flowEnv, _), defs) ++
+    extraSharingEdges;
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
@@ -265,6 +413,11 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   local suspectTransAttrs :: [String] =
     if nonForwarding then [] else filter(contains(_, synsBySuspicion.snd), undefinedTransAttrs);
 
+  -- Whether a child gets the projection of what may be supplied to it before this production gets
+  -- it.
+  local projected :: (Boolean ::= NamedSignatureElement) =
+    \ e::NamedSignatureElement ->
+      projectShared || null(lookupAllRefPossibleDecSites(prod, rhsVertexType(e.elementName), flowEnv));
   -- Stitch points only in the normal graph: the flow types of the trees this production is given (its children and
   -- forward parent), and what applications of it, or of the dispatch signature it implements, may supply to its
   -- children.  Wherever the tile flow graph is stitched in, the stitching graph already has these more precisely.
@@ -272,13 +425,17 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
     flatMap(rhsStitchPoints(realEnv, _), dcl.namedSignature.inputElements) ++
     lhsTransStitchPoints(realEnv, nt, suspectTransAttrs) ++
     (if hasSharedChild then nonterminalStitchPoints(realEnv, nt, forwardParentVertexType()) else []) ++
-    sigSharingStitchPoints(flowEnv, realEnv, prod, dcl.namedSignature.inputNames, dcl.namedSignature.inputElements) ++
+    sigSharingStitchPoints(
+      flowEnv, realEnv, prod,
+      map((.elementName), filter(projected, dcl.namedSignature.inputElements)),
+      filter(projected, dcl.namedSignature.inputElements)) ++
     case dcl.implementedSignature of
-    | just(sig) ->
+    | just(dispatch) ->
       concat(zipWith(
-        implementedSigStitchPoints(realEnv, _, sig.fullName, _),
+        \ ie::NamedSignatureElement se::NamedSignatureElement ->
+          if projected(ie) then implementedSigStitchPoints(realEnv, ie, dispatch.fullName, se) else [],
         dcl.namedSignature.inputElements,
-        sig.inputElements))
+        dispatch.inputElements))
     | nothing() -> []
     end;
 
@@ -308,7 +465,11 @@ ProductionGraph ::= dcl::ValueDclInfo  flowEnv::FlowEnv  realEnv::Env
   return productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialTileGraph, unstitchedGraph=unstitchedGraph,
-    suspectEdges=suspectEdges, stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    suspectEdges=suspectEdges, stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints,
+    overrideFreeGraph=nothing(), dispatchInputs=nothing(),
+    implementedSigChildren=
+      map(\ dispatch::NamedSignature -> (dispatch.fullName, zip(dcl.namedSignature.inputNames, dispatch.inputNames)),
+        dcl.implementedSignature));
 }
 
 {--
@@ -366,7 +527,8 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env  prodEnv:
   local g :: ProductionGraph = productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialTileGraph, unstitchedGraph=unstitchedGraph, suspectEdges=suspectEdges,
-    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints, overrideFreeGraph=nothing(),
+    dispatchInputs=nothing(), implementedSigChildren=nothing());
 
   return fromMaybe(g, updateGraph(g, prodEnv, ntEnv));
 }
@@ -407,7 +569,8 @@ ProductionGraph ::= defs::[FlowDef]  realEnv::Env  prodEnv::EnvTree<ProductionGr
   local g :: ProductionGraph = productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
-    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints, overrideFreeGraph=nothing(),
+    dispatchInputs=nothing(), implementedSigChildren=nothing());
 
   return fromMaybe(g, updateGraph(g, prodEnv, ntEnv));
 }
@@ -456,7 +619,8 @@ function constructDefaultProductionGraph
   local g :: ProductionGraph = productionGraph(
     prod=prod, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
-    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints, overrideFreeGraph=nothing(),
+    dispatchInputs=nothing(), implementedSigChildren=nothing());
   
   -- Optimization: omit the default graph if there are no default equations for the NT.
   return if null(defs) then [] else [g];
@@ -493,7 +657,8 @@ function constructPhantomProductionGraph
   local g :: ProductionGraph = productionGraph(
     prod="Phantom for " ++ nt, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
-    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints, overrideFreeGraph=nothing(),
+    dispatchInputs=nothing(), implementedSigChildren=nothing());
   
   -- Optimization: omit the phantom graph if there are no extension syns for the NT.
   return if null(extSyns) then [] else [g];
@@ -549,7 +714,8 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
   return productionGraph(
     prod=dispatch, lhsNt=nt, flowTypeAttrs=flowTypeAttrs,
     graph=initialGraph, tileGraph=initialTileGraph, unstitchedGraph=initialGraph, suspectEdges=suspectEdges,
-    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints);
+    stitchPoints=stitchPoints, sigNtStitchPoints=sigNtStitchPoints, overrideFreeGraph=nothing(),
+    dispatchInputs=just(ns.inputNames), implementedSigChildren=nothing());
 }
 
 fun getPhantomEdge (FlowVertex, FlowVertex) ::= at::String =
@@ -814,10 +980,12 @@ fun addDispatchUnknownImplInhEqs
 {--
  - Introduce edges for the synthesized attributes and the forward of an implementation of a dispatch signature in an
  - independent extension (see addDispatchUnknownImplInhEqs).  These edges are only in the signature's tile flow graph.
- - * An attribute of the LHS is copied from the forward, or else defined within its own flow type, as the flow-type
- -   check on implementations accounts for anything an application or earlier implementation could supply to their
- -   children (see implementedSigStitchPoints and dispatchChildAllowedInhs).  So the attribute depends on the same
- -   attribute of the forward.
+ - * An attribute of the LHS is copied from the forward, or else defined within its own flow type.
+ -   The flow-type check on implementations accounts for anything an application or earlier
+ -   implementation could supply to their children (see implementedSigStitchPoints), and the
+ -   override check bounds an implementation's own equations for its children by
+ -   dispatchChildAllowedInhs, which contains the forward flow type and the host implementations'
+ -   dependencies.  So the attribute depends on the same attribute of the forward.
  -   A nonterminal stitch point on the forward vertex type relates that attribute to its flow type.
  - * The forward may be built from the values of the arguments.
  -}

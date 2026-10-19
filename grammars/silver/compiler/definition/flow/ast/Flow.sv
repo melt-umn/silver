@@ -395,8 +395,10 @@ top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  d
 
 {--
  - Used for contributions to collections. Allows tacking on dependencies
- - to vertices.
- - TODO: Handle contributions for inh collections on shared trees?
+ - to vertices.  A contribution to an inherited attribute of a child or local is only recorded when
+ - the contribution's grammar is exported wherever the attribute's other equations are (see
+ - inhAppendColAttributeDef in flow:env); other contributions are bounded by the recorded
+ - dependencies instead (see Inh.sv).
  -
  - @param prod  the full name of the production
  - @param src  the vertex to add dependencies to

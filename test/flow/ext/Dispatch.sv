@@ -3,7 +3,7 @@ grammar flow:ext;
 -- An implementation's equation for an inherited attribute on a child may depend on anything in the forward flow
 -- type, which is {env1, env2} here.  It may also depend on what host-language implementations' equations for that
 -- attribute depend on.
-warnCode "Inherited override equation for flow:env2 on child e has excess dependencies on flow:icoll" {
+warnCode "Inherited override equation for flow:env2 on child e may exceed a flow type with hidden transitive dependencies on flow:icoll; on some reference to this tree, this attribute may be expected to depend only on flow:env1, flow:env2 (from forward[flow:DispatchOp2:e], applications of dispatch flow:DispatchOp2); flow:icoll is excluded by what flow:DispatchOp2 allows" {
 production extDispatchInhExceedsHost implements DispatchOp2
 top::UDExpr ::= e::UDExpr
 {
@@ -41,6 +41,17 @@ top::UDExpr ::= e::UDExpr
   forwards to prod(@e);
 }
 }
+noWarnCode "hidden transitive" {
+production extDispatchFwdInhOverride2 implements DispatchOp2
+top::UDExpr ::= e::UDExpr
+{
+  top.errors1 = false;
+  forward.env1 = top.env2;
+
+  local prod::DispatchOp2 = doimpl1;
+  forwards to prod(@e);
+}
+}
 
 -- An implementation may rely on the inherited attributes that every application in the host language supplies to
 -- a child shared through the signature.  Here e.errors1 needs env1, which applyOp3 supplies.
@@ -55,7 +66,7 @@ top::UDExpr ::= @e::UDExpr
 }
 
 -- Contributions to inherited collection attributes are checked like other inherited equations.
-warnCode "Inherited contribution equation for flow:icoll on child e has excess dependencies on flow:icoll" {
+warnCode "Inherited contribution equation for flow:icoll on child e may exceed a flow type with hidden transitive dependencies on flow:icoll; on some reference to this tree, this attribute may be expected to depend only on flow:env1, flow:env2 (from forward[flow:DispatchOp2:e], applications of dispatch flow:DispatchOp2); flow:icoll is excluded by what flow:DispatchOp2 allows" {
 production extDispatchInhColExceedsHost implements DispatchOp2
 top::UDExpr ::= e::UDExpr
 {
@@ -68,7 +79,7 @@ top::UDExpr ::= e::UDExpr
 }
 
 -- An extra child cannot launder dependencies.
-warnCode "Inherited override equation for flow:env2 on child e has excess dependencies on flow:icoll" {
+warnCode "Inherited override equation for flow:env2 on child e may exceed a flow type with hidden transitive dependencies on flow:icoll; on some reference to this tree, this attribute may be expected to depend only on flow:env1, flow:env2 (from forward[flow:DispatchOp2:e], applications of dispatch flow:DispatchOp2); flow:icoll is excluded by what flow:DispatchOp2 allows" {
 production extDispatchInhLaunders implements DispatchOp2
 top::UDExpr ::= e::UDExpr y::UDExpr
 {

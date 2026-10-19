@@ -146,6 +146,10 @@ synthesized attribute defLHSTransBaseDecSites::[VertexType] occurs on DefLHS;
 -- The constructor for inherited equations on this DefLHS
 synthesized attribute defLHSInhEq::[(FlowDef ::= [FlowVertex])] occurs on DefLHS;
 
+-- Whether an inherited equation on this DefLHS records its dependencies where the tree is shared
+-- (see inhEq)
+synthesized attribute defLHSRecorded::Boolean occurs on DefLHS;
+
 -- The name of the inherited attribute described by this DefLHS.  May be syn.inh for translation attributes.
 synthesized attribute inhAttrName::String occurs on DefLHS;
 
@@ -156,6 +160,7 @@ top::DefLHS ::=
 {
   top.defLHSVertex = localVertexType("bogus:lhs:vertex");
   top.defLHSInhEq = [];
+  top.defLHSRecorded = false;
   top.inhAttrName = "";
   top.defLHSDecSites =
     lookupRefPossibleDecSites(top.frame.fullName, top.defLHSVertex, top.flowEnv);
@@ -165,12 +170,15 @@ aspect production childDefLHS
 top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = rhsVertexType(q.lookupValue.fullName);
+  -- Only record override deps if the equation will be visible everywhere that the sharing site is
+  -- visible: where the equation's grammar is exported by the production's grammar (which every
+  -- sharing site's grammar depends on) or by the attribute occurrence's (the grammars that
+  -- OrphanedEquation.sv allows).
+  top.defLHSRecorded =
+    isExportedBy(top.grammarName, [top.frame.sourceGrammar, top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars);
   top.defLHSInhEq =
     [inhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _,
-      -- Only record override deps if the equation will be visible everywhere that the sharing site is visible
-      if isExportedBy(top.grammarName, [top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars)
-      then top.defLHSDecSites
-      else [])];
+      if top.defLHSRecorded then top.defLHSDecSites else [])];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production lhsDefLHS
@@ -184,11 +192,13 @@ aspect production localDefLHS
 top::DefLHS ::= @q::QName
 {
   top.defLHSVertex = localVertexType(q.lookupValue.fullName);
+  -- As for a child, with the grammar declaring the local in place of the production's.
+  top.defLHSRecorded =
+    isExportedBy(
+      top.grammarName, [hackGramFromQName(q.lookupValue), top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars);
   top.defLHSInhEq =
     [localInhEq(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, _,
-      if isExportedBy(top.grammarName, [top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars)
-      then top.defLHSDecSites
-      else [])];
+      if top.defLHSRecorded then top.defLHSDecSites else [])];
   top.inhAttrName = top.defLHSattr.attrDcl.fullName;
 }
 aspect production forwardDefLHS
@@ -202,12 +212,16 @@ aspect production childTransAttrDefLHS
 top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.defLHSVertex = transAttrVertexType(rhsVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
-  local isExportedByOccurs::Boolean =
-    isExportedBy(top.grammarName, [attr.dcl.sourceGrammar, top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars);
+  -- As for a child, or where the occurrence of the translation attribute exports the equation's
+  -- grammar.
+  top.defLHSRecorded =
+    isExportedBy(
+      top.grammarName, [top.frame.sourceGrammar, attr.dcl.sourceGrammar, top.defLHSattr.dcl.sourceGrammar],
+      top.compiledGrammars);
   top.defLHSInhEq =
     [transInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
-      if isExportedByOccurs then top.defLHSTransBaseDecSites else [],
-      if isExportedByOccurs then top.defLHSDecSites else [])];
+      if top.defLHSRecorded then top.defLHSTransBaseDecSites else [],
+      if top.defLHSRecorded then top.defLHSDecSites else [])];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
   top.defLHSTransBaseDecSites =
     lookupRefPossibleDecSites(top.frame.fullName, rhsVertexType(q.lookupValue.fullName), top.flowEnv);
@@ -216,12 +230,17 @@ aspect production localTransAttrDefLHS
 top::DefLHS ::= @q::QName @attr::QNameAttrOccur
 {
   top.defLHSVertex = transAttrVertexType(localVertexType(q.lookupValue.fullName), attr.attrDcl.fullName);
-  local isExportedByOccurs::Boolean =
-    isExportedBy(top.grammarName, [attr.dcl.sourceGrammar, top.defLHSattr.dcl.sourceGrammar], top.compiledGrammars);
+  -- As for a local, or where the occurrence of the translation attribute exports the equation's
+  -- grammar.
+  top.defLHSRecorded =
+    isExportedBy(
+      top.grammarName, [hackGramFromQName(q.lookupValue), attr.dcl.sourceGrammar, top.defLHSattr.dcl.sourceGrammar],
+      top.compiledGrammars);
   top.defLHSInhEq =
-    [localTransInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
-      if isExportedByOccurs then top.defLHSTransBaseDecSites else [],
-      if isExportedByOccurs then top.defLHSDecSites else [])];
+    [localTransInhEq(
+      top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, top.defLHSattr.attrDcl.fullName, _,
+      if top.defLHSRecorded then top.defLHSTransBaseDecSites else [],
+      if top.defLHSRecorded then top.defLHSDecSites else [])];
   top.inhAttrName = s"${attr.attrDcl.fullName}.${top.defLHSattr.attrDcl.fullName}";
   top.defLHSTransBaseDecSites =
     lookupRefPossibleDecSites(top.frame.fullName, localVertexType(q.lookupValue.fullName), top.flowEnv);
@@ -278,7 +297,21 @@ top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= @dl::DefLHS @attr::QNameAttrOccur  {- <- -} e::Expr
 {
-  top.flowDefs <- [extraEq(top.frame.fullName, dl.defLHSVertex.inhVertex(attr.attrDcl.fullName), e.flowDeps, true)];
+  -- A contribution that is not recorded (see defLHSRecorded) is left out of the production's graph,
+  -- which must be the same wherever the production is seen: an implementation in another extension
+  -- sees what a sharing site supplies without the grammars it does not import.  It is bounded by
+  -- the recorded dependencies instead (see Inh.sv), as a contribution to a local collection is (see
+  -- appendCollectionValueDef).  A contribution to the forward is always recorded, as the forward
+  -- flow type bounds it.
+  local recorded :: Boolean =
+    case dl of
+    | forwardDefLHS(_) -> true
+    | _ -> attr.found && dl.defLHSRecorded
+    end;
+  top.flowDefs <-
+    if recorded
+    then [extraEq(top.frame.fullName, dl.defLHSVertex.inhVertex(attr.attrDcl.fullName), e.flowDeps, true)]
+    else [];
   e.decSiteVertexInfo = nothing();
   e.alwaysDecorated = false;
   e.appDecSiteVertexInfo = nothing();

@@ -19,9 +19,10 @@ top::LC ::= c::LC
   top.lcS = c.lcK;
 }
 
--- lcReadsK's child keeps x's equation, as this production decorated x first, so the implicit copy
--- of lcS depends on x.lcK, from lcM.
-warnCode "In production flow:lcChain, the implicit copy equation for flow:lcS (due to forwarding) would exceed the attribute's flow type with dependencies on flow:lcM" {
+-- lcReadsK's child keeps x's equation, as this production decorated x first, so x.lcK hides
+-- lcReadsK's c.lcK, which lcReadsK's consumers assume depends on lcK.  This warning suppresses the
+-- warning about the implicit copy of lcS (see FlowTypeCopyEquation.sv).
+warnCode "Inherited override equation for flow:lcK on child x may exceed a flow type with hidden transitive dependencies on flow:lcM; on some reference to this tree, this attribute may be expected to depend only on flow:lcK (from local flow:lcChain:local:" {
 production lcChain
 top::LC ::= x::LC
 {
@@ -32,7 +33,7 @@ top::LC ::= x::LC
 }
 
 -- The same through two locals.
-warnCode "In production flow:lcChain2, the implicit copy equation for flow:lcS (due to forwarding) would exceed the attribute's flow type with dependencies on flow:lcM" {
+warnCode "Inherited override equation for flow:lcK on child x may exceed a flow type with hidden transitive dependencies on flow:lcM; on some reference to this tree, this attribute may be expected to depend only on flow:lcK (from local flow:lcChain2:local:" {
 production lcChain2
 top::LC ::= x::LC
 {
@@ -56,3 +57,37 @@ top::LC ::= x::LC
 }
 }
 
+-- l holds the tree shared into it only where b is true; otherwise l is an application of ckP, whose
+-- child e gets ckK from ckP's own ckK.  So the override of e.ckK from ckM hides a dependency (see
+-- mapApplied), even though the tree shared into l has ckK from ckM.
+inherited attribute ckK::String;
+inherited attribute ckM::String;
+synthesized attribute ckS::String;
+nonterminal CK with ckK, ckM, ckS;
+flowtype CK = decorate {}, forward {}, ckS {};
+production ckQuiet
+top::CK ::=
+{ top.ckS = ""; }
+production ckP
+top::CK ::= c::CK
+{
+  c.ckK = top.ckK;
+  c.ckM = top.ckM;
+  top.ckS = "";
+}
+warnCode "Inherited override equation for flow:ckK on child e may exceed a flow type with hidden transitive dependencies on flow:ckM" {
+production ckCond
+top::CK ::= e::CK b::Boolean
+{
+  local r2::CK = ckQuiet();
+  r2.ckK = top.ckM;
+  r2.ckM = top.ckM;
+  local r::CK = @r2;
+  e.ckK = top.ckM;
+  e.ckM = top.ckM;
+  local l::CK = if b then @r else ckP(@e);
+  l.ckK = top.ckK;
+  l.ckM = top.ckM;
+  forwards to @l;
+}
+}

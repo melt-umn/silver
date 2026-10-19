@@ -26,3 +26,10 @@ silver -I $SRC --warn-all --dont-translate $@ flow:exportedImpl
 # Extensions sharing translation attributes of translation attributes in aspects of host productions:
 # flow:transShare declares an occurrence on the shared chain, and flow:transShare:orphan does not.
 silver -I $SRC --warn-all --dont-translate $@ flow:transShare:orphan
+
+# Overrides whose paths enter productions and dispatch signatures not in scope at the overriding grammar:
+# flow:outScope:mid imports flow:outScope:hidden without exporting it.
+silver -I $SRC --warn-all --dont-translate $@ flow:outScope
+
+# An implementation applied by name, out of scope at the overriding grammar flow:capHost:ovr.
+silver -I $SRC --warn-all --dont-translate $@ flow:capHost

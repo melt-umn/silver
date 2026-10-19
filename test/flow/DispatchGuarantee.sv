@@ -46,8 +46,9 @@ top::GExpr ::= @a::GExpr
   top.gNeedsOther = "";
 }
 -- An implementation with an extra child, as ableC's bindBinaryOp.
--- An implementation in an extension can supply a.gOther itself and then forward to gBind.  The extension's equation
--- for a.gOther may depend on anything in the forward flow type, and overrides gWith's.
+-- An implementation in an extension can supply a.gOther itself and then forward to gBind.  GOp's
+-- graph lets that equation depend on anything in the forward flow type, but the equation hides
+-- gWith's, so the override check bounds it by gWith's (see gExtImplSuppliesEnv in ext).
 warnCode "the implicit copy equation for flow:gNeedsOther (due to forwarding) would exceed the attribute's flow type with dependencies on flow:gCtx, flow:gEnv" {
 production gBind implements GOp
 top::GExpr ::= @a::GExpr r::GExpr
@@ -117,7 +118,7 @@ top::GExpr ::= a::GExpr
   top.gSmall = "";
   top.gNeedsOther = "";
 }
-warnCode "which is shared with an application of flow:GOpU, depends on flow:gOther" {
+warnCode "Inherited override equation for flow:gEnv on child a may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:GOpU:a]); flow:gOther is excluded by what flow:GOpU allows" {
 production gSiteOther
 top::GExpr ::= a::GExpr
 {
@@ -131,7 +132,25 @@ top::GExpr ::= a::GExpr
   forwards to prod(@a);
 }
 }
-noWarnCode "which is shared with an application of" {
+-- gImplU, GOpU's only host implementation, has no equation for gOther, but GOpU's graph allows for
+-- an implementation not known here supplying it: such an equation may depend only on what GOpU
+-- allows.
+warnCode "Inherited override equation for flow:gOther on child a may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv" {
+production gSiteOtherOnly
+top::GExpr ::= a::GExpr
+{
+  a.gOther = top.gOther;
+  a.gEnv = top.gEnv;
+  a.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpU = gImplU;
+  forwards to prod(@a);
+}
+}
+noWarnCode "hidden transitive" {
 production gSiteCrossed
 top::GExpr ::= a::GExpr
 {
@@ -145,8 +164,8 @@ top::GExpr ::= a::GExpr
   forwards to prod(@a);
 }
 }
--- A forward production attribute gets every inherited attribute it has no equation for from the LHS, gOther included.
-warnCode "which is shared with an application of flow:GOpU, depends on flow:gOther" {
+-- A forward production attribute may be shared only where it is decorated as the forward.
+warnCode "Forward production attribute flow:gSiteFwdAttr:local:flow:fp may only be shared in a forward decoration site" {
 production gSiteFwdAttr
 top::GExpr ::=
 {
@@ -173,7 +192,7 @@ top::GExpr ::= a::GExpr
   top.gSmall = "";
   top.gNeedsOther = "";
 }
-warnCode "which is shared with an application of flow:GOpN, depends on flow:gOther; implementations of flow:GOpN, including ones in other extensions, may supply it in its place depending only on flow:gCtx, flow:gEnv" {
+warnCode "Inherited override equation for flow:gEnv on child a may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:GOpN:a]); flow:gOther is excluded by what flow:GOpN allows" {
 production gSiteN
 top::GExpr ::= a::GExpr
 {
@@ -259,10 +278,11 @@ top::GExpr ::= @a::GExpr
 }
 }
 
--- An application need not supply every inherited attribute to the tree it shares.  An implementation not known here
--- may supply the rest, with equations depending on anything in the forward flow type.  This holds even where every
--- implementation in the host language supplies them, as gImplW does through gWith (and ableC's bindBinaryOp through
--- bindExprDecl.)
+-- An application need not supply every inherited attribute to the tree it shares.  GOpW's graph
+-- assumes that an implementation not known here supplies the rest from anything in the forward flow
+-- type, even where every host implementation supplies them, as gImplW does through gWith (and
+-- ableC's bindBinaryOp through bindExprDecl).  The override check bounds such an equation by
+-- gWith's, which it hides (see gExtImplSuppliesEnv in ext).
 dispatch GOpW = GExpr ::= @a::GExpr;
 production gImplW implements GOpW
 top::GExpr ::= @a::GExpr
@@ -438,7 +458,7 @@ top::GExpr ::= x::GExpr
 
 -- What a production supplies to a tree it passes with '@' to a child that a dispatch signature does not share is
 -- bounded, even when it comes from the production's forward parent.
-warnCode "which is shared with an application of flow:GOpU, depends on flow:gOther" {
+warnCode "Inherited override equation for flow:gEnv on child x may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:GOpU:a]); flow:gOther is excluded by what flow:GOpU allows" {
 production gSiteFPShare
 top::GExpr ::= @y::GExpr x::GExpr
 {
@@ -602,7 +622,9 @@ top::RE ::= @a::RE
   top.reTr = rtLeaf();
 }
 }
-warnCode "the implicit copy equation for flow:reS (due to forwarding) would exceed the attribute's flow type with dependencies on flow:reM" {
+-- rSite's equation for x.reTr.rtK takes precedence, so it is bounded by what rtReads supplies (see
+-- overrideBounds).
+warnCode "Inherited override equation for flow:reTr.flow:rtK on child x may exceed a flow type with hidden transitive dependencies on flow:reM; on some reference to this tree, this attribute may be expected to depend on no left-side inherited attributes (from forward[flow:ROp:a])" {
 production rSite
 top::RE ::= x::RE
 {
@@ -610,6 +632,17 @@ top::RE ::= x::RE
   local p::ROp = rImpl;
   forwards to p(x);
 }
+}
+
+-- A dispatch signature that does not share its child, which has a translation attribute (see
+-- gExtImplTrans in ext).
+dispatch ROpT = RE ::= a::RE;
+production rImplT implements ROpT
+top::RE ::= a::RE
+{
+  a.reTr.rtK = "";
+  top.reS = "";
+  top.reTr = rtLeaf();
 }
 
 -- The same for a production that is not an implementation, sharing its own child in turn: what its application by
@@ -635,7 +668,7 @@ top::QE ::= @a::QE
   top.qTy = l.qTy;
 }
 }
-warnCode "the implicit copy equation for flow:qTy (due to forwarding) would exceed the attribute's flow type with dependencies on flow:qOther" {
+warnCode "Inherited override equation for flow:qOther on child x may exceed a flow type with hidden transitive dependencies on flow:qOther; on some reference to this tree, this attribute may be expected to depend on no left-side inherited attributes (from forward[flow:qShareOn:a])" {
 production qSite
 top::QE ::= x::QE
 {
@@ -645,8 +678,9 @@ top::QE ::= x::QE
 }
 }
 
--- Another application of qShareOn by name sees only what it supplies itself, not what qSite supplies.
-noWarnCode "implicit copy equation" {
+-- qShareOn, applied by name in qSiteEnv, sees only what qSiteEnv supplies, not what qSite supplies:
+-- qSiteEnv's x.qOther is bounded by qReadsOther's b.qOther, which depends on nothing.
+warnCode "Inherited override equation for flow:qOther on child x may exceed a flow type with hidden transitive dependencies on flow:qEnv; on some reference to this tree, this attribute may be expected to depend on no left-side inherited attributes (from forward[flow:qShareOn:a])" {
 production qSiteEnv
 top::QE ::= x::QE
 {
@@ -678,7 +712,9 @@ top::QE ::= @a::QE
   forwards to qShareOnChain(m);
 }
 }
-warnCode "the implicit copy equation for flow:qTy (due to forwarding) would exceed the attribute's flow type with dependencies on flow:qOther" {
+-- What qChainSite supplies is what qReadsOther accesses at run time, so its equation for qOther is
+-- bounded by qReadsOther's.
+warnCode "Inherited override equation for flow:qOther on child x may exceed a flow type with hidden transitive dependencies on flow:qOther; on some reference to this tree, this attribute may be expected to depend on no left-side inherited attributes (from forward[flow:qChainSrc:a])" {
 production qChainSite
 top::QE ::= x::QE
 {
@@ -762,6 +798,115 @@ top::SBExpr ::= x::SBExpr
   forwards to sbPass(x);
 }
 
+-- An inherited collection attribute, for contributions from an extension's aspects (see ext).
+inherited attribute gColl::[String] with ++;
+attribute gColl occurs on GExpr;
+
+-- A dispatch signature whose only application in the host language supplies gColl to the tree it
+-- shares.  An implementation in an extension sees gColl depend only on gCtx.
+dispatch GOpK = GExpr ::= @a::GExpr;
+production gImplK implements GOpK
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gSiteK
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  x.gColl := [top.gCtx];
+  top.gNeedsOther = "";
+  local prod::GOpK = gImplK;
+  forwards to prod(x);
+}
+
+-- A dispatch signature whose host implementation gImplL supplies a.gColl itself, while its
+-- application gSiteL does not, so every grammar allows for an implementation it does not import
+-- supplying gColl from the forward flow type.
+dispatch GOpL = GExpr ::= @a::GExpr;
+production gImplL implements GOpL
+top::GExpr ::= @a::GExpr
+{
+  a.gColl := [top.gCtx];
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gSiteL
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gNeedsOther = "";
+  local prod::GOpL = gImplL;
+  forwards to prod(x);
+}
+
+-- A host production supplying gColl to a child it does not share, and to a production attribute
+-- (see ext).
+production gCollWrap
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  x.gColl := [top.gCtx];
+  production attribute l::GExpr;
+  l = gLit();
+  l.gEnv = top.gEnv;
+  l.gCtx = top.gCtx;
+  l.gColl := [top.gCtx];
+  top.gTy = x.gTy;
+  top.gPP = l.gPP;
+  top.gSmall = x.gSmall;
+  top.gNeedsOther = "";
+}
+
+-- A production applied by name, gPassOn, may get a tree with '@' at a child it does not share
+-- through its signature.  Nothing projects what the application supplies onto that child, so
+-- gPassOn and its aspects in other grammars assume what gPassOn supplies itself: here gWith's
+-- a.gEnv, from the applying production's gEnv.  An override at the application may depend only on
+-- that (see pathBound).
+production gPassOn
+top::GExpr ::= c::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gWith(@c);
+}
+warnCode "Inherited override equation for flow:gEnv on child x may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gEnv (from forward[flow:gPassOn:c])" {
+production gSiteByNameOther
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gOther;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gPassOn(@x);
+}
+}
+noWarnCode "hidden transitive" {
+production gSiteByNameEnv
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gPassOn(@x);
+}
+}
+
 -- A tree passed to this production already decorated cannot be shared as a translation attribute
 -- t of the left-hand side: it keeps the inherited attributes supplied to it before, not those
 -- supplied to t, and the graph cannot show that t's inherited attributes are then the tree's (see
@@ -788,6 +933,16 @@ top::TD ::= @a::TDT
 {
   top.tdT = @a;
   top.tdS = "";
+}
+}
+-- tdSite's x.tdK is bounded by what tdShares supplies to a: top.tdT.tdK, as tdShares shares a as
+-- tdT.
+warnCode "Inherited override equation for flow:tdK on child x may exceed a flow type with hidden transitive dependencies on flow:tdK; on some reference to this tree, this attribute may be expected to depend only on flow:tdT.flow:tdK (from forward[flow:tdShares:a])" {
+production tdSite
+top::TD ::= x::TDT
+{
+  x.tdK = top.tdK;
+  forwards to tdShares(x);
 }
 }
 noWarnCode "cannot be shared as" {
@@ -863,6 +1018,65 @@ top::GExpr ::= x::GExpr
   top.gNeedsOther = "";
   local prod::GOpFP = gImplFP;
   forwards to prod(x);
+}
+}
+
+-- Two sharing sites in the host language, only one of which supplies gOther to the tree it shares
+-- (see ext).
+dispatch GOpH = GExpr ::= @a::GExpr;
+production gImplH implements GOpH
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+}
+production gSiteHOther
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  x.gOther = top.gOther;
+  top.gNeedsOther = "";
+  local prod::GOpH = gImplH;
+  forwards to prod(x);
+}
+production gSiteHNone
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gNeedsOther = "";
+  local prod::GOpH = gImplH;
+  forwards to prod(x);
+}
+
+-- gSharedPass passes its signature-shared child a to a child that GOpU does not share: what
+-- gSharedPass's own applications supplied to a applies at GOpU's implementations.
+production gSharedPass
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpU = gImplU;
+  forwards to prod(@a);
+}
+-- So gSharedPassSite's own equation, which the tree keeps, is bounded by what GOpU allows (see
+-- pathBound).
+warnCode "Inherited override equation for flow:gEnv on child x may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:gSharedPass:a])" {
+production gSharedPassSite
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gOther;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gSharedPass(x);
 }
 }
 
@@ -1292,4 +1506,30 @@ top::GExpr ::= x::GExpr
   top.gNeedsOther = "";
   local prod::GOpA = gChooseA;
   forwards to prod(x);
+}
+
+-- A tree carried into an application of GOpN keeps what its sharing site gave it: here gEnv from
+-- gEnv, which GOpN allows.
+production gNCarry
+top::GExpr ::= @a::GExpr
+{
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  local prod::GOpN = gImplN;
+  forwards to prod(@a);
+}
+noWarnCode "hidden transitive" {
+production gNCarrySite
+top::GExpr ::= x::GExpr
+{
+  x.gEnv = top.gEnv;
+  x.gCtx = top.gCtx;
+  top.gTy = "";
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
+  forwards to gNCarry(x);
+}
 }

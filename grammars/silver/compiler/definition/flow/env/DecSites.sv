@@ -38,26 +38,15 @@ DecSiteTree ::=
   -- The chain for the trees that this tree was shared from
   local here::[(String, VertexType)] = (prodName, vt) :: chain;
 
-  local ntName::String = vertexTypeName(prodName, vt, realEnv);
-
   -- Decoration sites where translation attributes of the tree (of translation attributes, and so on)
   -- are shared, for the inherited attributes on these translation attributes.
-  -- The nonterminals seen so far bound this in the presence of a cycle in translation attribute occurrences.
-  local transAttrShareDecSites::([DecSiteTree] ::= [String] String VertexType) =
-    \ seenNts::[String] nt::String transBase::VertexType ->
-      if contains(nt, seenNts) then []
-      else flatMap(
-        \ occDcl::OccursDclInfo ->
-          case getAttrDcl(occDcl.attrOccurring, realEnv) of
-          | dcl :: _ when dcl.isTranslation ->
-            let transVt::VertexType = transAttrVertexType(transBase, occDcl.attrOccurring)
-            in map(transAttrDec(occDcl.attrOccurring, _),
-                map(recurse(prodName, _), lookupRefDecSite(prodName, transVt, flowEnv)) ++
-                transAttrShareDecSites(nt :: seenNts, occDcl.attrTypeName, transVt))
-            end
-          | _ -> []
-          end,
-        getAttrOccursOn(nt, realEnv));
+  local transAttrShareDecSites::[DecSiteTree] =
+    flatMap(
+      \ s::([String], VertexType) ->
+        map(
+          \ d::VertexType -> foldr(transAttrDec, recurse(prodName, d), s.1),
+          lookupRefDecSite(prodName, s.2, flowEnv)),
+      sharedTransAttrsOf(prodName, vt, flowEnv));
 
   -- The tree at the root of vt.  Where it is a forward production attribute y, it already has this
   -- production as its forward parent: the decoration sites at which y itself is shared supply
@@ -137,7 +126,7 @@ DecSiteTree ::=
            lookupSharedIntoAlways(prodName, vt, flowEnv)))
        end) +
       -- Via translation attribute sharing
-      (if beforeSharing then neverDec() else sum(transAttrShareDecSites([], ntName, vt))) +
+      (if beforeSharing then neverDec() else sum(transAttrShareDecSites)) +
       -- Via the tree that this is a translation attribute of
       case vt of
       | transAttrVertexType(treeVertex, transAttr) when suppliesTransAttrInhs(treeVertex) ->
@@ -224,128 +213,6 @@ fun isDispatchSite Boolean ::= dispatch::String  sigName::String  vt::VertexType
   | subtermVertexType(_, d, sn) -> d == dispatch && sn == sigName
   | _ -> false
   end;
-
-{--
- - The state used in finding possible decoration sites.
- - We track the (prod, vertex) and (dispatch sig, rhs name) pairs already visited
- - to avoid O(n^2) blowup due to revisiting the same productions in different
- - branches of the resolution tree.
- -}
-type PDSState = ([(String, VertexType)], [(String, String)]);
-
-{--
- - Generate a decision tree to determine all decoration sites where an inherited attribute
- - might be supplied to some vertex type.
- - This is used in checking for potentially hidden transitive dependencies.
- - This mirrors the above, but we also consider sites where a tree is only conditionally shared.
- - Since we only care if a vertex is *possibly* supplied with an attribute, we can memoize the
- - vertices visited in the entire search (using a State monad) rather than just the current branch.
- - The search starts at a decoration site.  It enters another production only through an application that shares the
- - tree as one of its children, and only that application decorated the tree.  So unlike findDecSites, it does not
- - follow a child shared through the signature out to the production's other applications.
- -
- - @param prodName The name of the production containing the vertex type.
- - @param vt The decoration site to start from.
- - @param flowEnv The flow environment.
- - @param realEnv The regular environment.
- - @return A decision tree to determine if an inherited attributes could possibly be supplied for vt.
- -}
-function findPossibleDecSites
-State<PDSState DecSiteTree> ::=
-  prodName::String vt::VertexType
-  flowEnv::FlowEnv realEnv::Env
-{
-  local ntName::String = vertexTypeName(prodName, vt, realEnv);
-
-  local recurse::(State<PDSState DecSiteTree> ::= String VertexType) =
-    findPossibleDecSites(_, _, flowEnv, realEnv);
-
-  -- As in findDecSites, but for all places where translation attributes of the tree are possibly shared.
-  local transAttrSharePossibleDecSites::(State<PDSState [DecSiteTree]> ::= [String] String VertexType) =
-    \ seenNts::[String] nt::String transBase::VertexType ->
-      if contains(nt, seenNts) then pure([])
-      else map(concat, traverseA(
-        \ occDcl::OccursDclInfo ->
-          case getAttrDcl(occDcl.attrOccurring, realEnv) of
-          | dcl :: _ when dcl.isTranslation ->
-            let transVt::VertexType = transAttrVertexType(transBase, occDcl.attrOccurring)
-            in do {
-              viaShare :: [DecSiteTree] <-
-                traverseA(recurse(prodName, _), lookupRefPossibleDecSites(prodName, transVt, flowEnv));
-              viaNestedShare :: [DecSiteTree] <-
-                transAttrSharePossibleDecSites(nt :: seenNts, occDcl.attrTypeName, transVt);
-              return map(transAttrDec(occDcl.attrOccurring, _), viaShare ++ viaNestedShare);
-            }
-            end
-          | _ -> pure([])
-          end,
-        getAttrOccursOn(nt, realEnv)));
-
-  return do {
-    seen :: PDSState <- getState();
-    if contains((prodName, vt), seen.1)
-    then pure(neverDec())
-    else do {
-      setState(((prodName, vt) :: seen.1, seen.2));
-      viaVertex :: DecSiteTree <-
-        case vt of
-        -- Via projected remote equation
-        | subtermVertexType(parent, prodOrSig, sigName) -> map(
-            -- Transitive dependencies of an attribute on the projection must be supplied
-            -- for the attribute on the projection to be depended upon.
-            bothDec(_,
-              projectedDepsDec(prodOrSig, sigName, nothing(), findDecSites(prodName, parent, flowEnv, realEnv))),
-            if !null(getValueDcl(prodOrSig, realEnv))
-            -- Projected from a production
-            then recurse(prodOrSig, rhsVertexType(sigName))
-            -- Projected from a dispatch signature
-            else if contains((prodOrSig, sigName), seen.2)
-            -- This is a dispatch that we have already tried to resolve.
-            then pure(neverDec())
-            -- Otherwise, look at all the (host) productions that implement this dispatch signature
-            else 
-              case getTypeDcl(prodOrSig, realEnv) of
-              | sigDcl :: _ -> map(sum, traverseA(
-                \ prod::(String, [String]) ->
-                  case drop(positionOf(sigName, sigDcl.dispatchSignature.inputNames), prod.2) of
-                  | sn :: _ -> do {
-                      modifyState(\ seen::PDSState -> (seen.1, (prod.1, sn) :: seen.2));
-                      recurse(prod.1, rhsVertexType(sn));
-                    }
-                  | _ -> error(s"findPossibleDecSites: Couldn't resolve ${sigName} in ${prodOrSig}")
-                  end,
-                getImplementingProds(prodOrSig, flowEnv)))
-              -- TODO: This could be a production in a grammar that isn't in scope in the local environment,
-              -- e.g. in a modification, that was missed in the above getValueDcl(prodOrSig, realEnv).
-              -- We really should be using the global env here.
-              | _ -> pure(alwaysDec())
-              end)
-        -- Via the reference set of a pattern match scrutinee
-        | anonScrutineeVertexType(_, grammarName, l) ->
-          pure(anonScrutineeRefSetDec(getAnonScrutineeRefSet(prodName, vt.vertexName, flowEnv), grammarName, l))
-        | _ -> pure(neverDec())
-        end;
-      viaDirectShare :: [DecSiteTree] <-
-        traverseA(recurse(prodName, _), lookupAllRefPossibleDecSites(prodName, vt, flowEnv));
-      viaTransAttrShare :: [DecSiteTree] <- transAttrSharePossibleDecSites([], ntName, vt);
-      viaTree :: DecSiteTree <-
-        case vt of
-        | transAttrVertexType(treeVertex, transAttr) when suppliesTransAttrInhs(treeVertex) ->
-          map(transAttrOfDec(transAttr, _), recurse(prodName, treeVertex))
-        | _ -> pure(neverDec())
-        end;
-      return
-       (if vt.isInhDefVertex
-        -- Direct inherited equation at a decoration site
-        then directDec(prodName, vt)
-        else if vt.isFlowTypeDepVertex
-        -- May be supplied non-locally
-        then alwaysDec()
-        else neverDec()) +
-        viaVertex + sum(viaDirectShare) + sum(viaTransAttrShare) + viaTree;
-    };
-  };
-}
 
 -- Flatten a resolved decision tree, to determine the minimal places where an
 -- equation is needed.
@@ -544,24 +411,3 @@ function decSitesMissingInhEqs
     end,
     remove(alwaysDec(), map:keys(resolved)));
 }
-
-{--
- - Determine if an inherited attribute for some vertex could possibly be demanded somewhere.
- - 
- - @param prodName The name of the production containing the vertex.
- - @param vt The vertex type to check.
- - @param attrName The name of the inherited attribute.
- - @param prodGraphs The final production flow graphs.
- - @param flowTypes The final flow types.
- - @param flowEnv The flow environment.
- - @param realEnv The regular environment.
- - @return true if the vertex might ever be supplied with the attribute, false otherwise.
- -}
-fun possibleDecSiteHasInhEq
-Boolean ::=
-    prodName::String vt::VertexType attrName::String
-    prodGraphs::EnvTree<ProductionGraph> flowTypes::EnvTree<FlowType> flowEnv::FlowEnv realEnv::Env =
-  resolveDecSiteInhEq(
-    attrName, evalState(findPossibleDecSites(prodName, vt, flowEnv, realEnv), ([], [])), prodGraphs, flowTypes,
-    flowEnv)
-  == alwaysDec();

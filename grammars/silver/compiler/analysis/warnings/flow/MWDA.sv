@@ -6,7 +6,7 @@ imports silver:util:treeset as set;
 -- driver stuff
 imports silver:util:cmdargs;
 imports silver:compiler:driver only parseArgs;
-imports silver:compiler:driver:util only isExportedBy;
+imports silver:compiler:driver:util only isExportedBy, RootSpec;
 imports silver:compiler:analysis:warnings;
 
 -- silver
@@ -22,8 +22,9 @@ imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:flow:env;
 imports silver:compiler:definition:flow:driver only
-  ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh, decSiteOwnInhDeps,
-  dispatchChildAllowedInhs;
+  ProductionGraph, FlowType, prod, implementedSigChildren, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh,
+  PathCtx, boundCtx, pcGraph, pcTree, pcAttr, pcFlowEnv, pcFlowTypes, pcProdGraphs, decSiteOwnInhDeps,
+  lhsNt, overrideDecSiteInhs, overrideDecSiteWitness, dispatchChildAllowedInhs, unknownImplMaySupply;
 
 -- uniqueness analysis
 imports silver:compiler:analysis:uniqueness;

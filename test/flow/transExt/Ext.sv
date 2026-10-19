@@ -77,3 +77,39 @@ top::TSF ::=
   top.tsXT3 = tsM();
 }
 }
+
+-- An override in a production of this grammar is recorded at the decoration sites of the overridden
+-- tree, although the grammar of the attribute's occurrence does not export this grammar (see
+-- defLHSRecorded): through foSigX's equation for foX, foS depends on what the override on e (in
+-- foUnrec) or on y (in foUnrecLocal) depends on.
+synthesized attribute foX::String occurs on FO;
+aspect production foLeaf
+top::FO ::=
+{
+  top.foX = "";
+}
+production foSigX
+top::FO ::= @a::FO
+{
+  top.foX = a.foK;
+  forwards to foLeaf();
+}
+warnCode "Synthesized equation foS exceeds flow type with dependencies on flow:foM" {
+production foUnrec
+top::FO ::= e::FO
+{
+  e.foK = top.foM;
+  top.foS = forward.foX;
+  forwards to foSigX(e);
+}
+}
+warnCode "Synthesized equation foS exceeds flow type with dependencies on flow:foM" {
+production foUnrecLocal
+top::FO ::=
+{
+  local y::FO = foLeaf();
+  y.foK = top.foM;
+  top.foS = forward.foX;
+  forwards to foSigX(y);
+}
+}
