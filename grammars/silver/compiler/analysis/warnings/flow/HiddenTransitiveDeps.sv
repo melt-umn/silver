@@ -389,14 +389,3 @@ fun depListStr String ::= deps::set:Set<String> =
   | [] -> "on no left-side inherited attributes"
   | deps -> "only on " ++ implode(", ", deps)
   end;
-
-fun vertexHasPossibleInhEq Boolean ::= v::VertexType env::Env =
-  case v of
-  | subtermVertexType(_, prodName, sigName) ->
-      case getTypeDcl(prodName, env), getValueDcl(prodName, env) of
-      | dcl :: _, _ -> !lookupSignatureInputElem(sigName, dcl.dispatchSignature).elementShared
-      | _, dcl :: _ -> !lookupSignatureInputElem(sigName, dcl.namedSignature).elementShared
-      | _, _ -> false
-      end
-  | _ -> true
-  end;
