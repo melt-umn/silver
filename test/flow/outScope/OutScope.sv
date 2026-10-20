@@ -37,8 +37,7 @@ top::OB ::= c::OB
 }
 
 -- Into the implementations of a dispatch signature: their equations for its child are assumed as
--- both of the signature's graphs allow (see dispatchChildAllowedInhs), not as its tile flow graph
--- alone does.
+-- the signature allows (see dispatchChildAllowedInhs).
 warnCode "Inherited override equation for flow:gEnv on child a may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:outScope:mid:osMidN:m])" {
 production osSiteN
 top::GExpr ::= a::GExpr
@@ -48,9 +47,9 @@ top::GExpr ::= a::GExpr
   forwards to osMidN(@a);
 }
 }
--- An implementation of OsOuter that passes its child on to an application of GOpN: the walk enters
--- both.
-warnCode "Inherited override equation for flow:gEnv on child x may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:outScope:mid:osOuterMid:m]); flow:gOther is excluded by what flow:GOpN allows, through forward[flow:outScope:hidden:OsOuter:a], child qa of flow:outScope:hidden:osOuterImpl, forward[flow:GOpN:a]" {
+-- An implementation of OsOuter that passes its child on to an application of GOpU, so that what
+-- OsOuter allows for its child is what GOpU allows.
+warnCode "Inherited override equation for flow:gEnv on child x may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:outScope:mid:osOuterMid:m]); flow:gOther is excluded by what flow:outScope:hidden:OsOuter allows, through forward[flow:outScope:hidden:OsOuter:a]" {
 production osOuterSite
 top::GExpr ::= x::GExpr
 {

@@ -55,24 +55,13 @@ set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p:
 fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType> =
   g:edgesFrom(syn, findFlowType(nt, flow));
 
--- The dispatch contract.  For v, an inherited vertex of a child c of the dispatch signature whose
--- graph is dispatchGraph, implementations and applications of the signature assume different LHS
--- inherited attributes.  What implementations and their aspects assume: the normal graph, which
--- implementedSigStitchPoints projects onto each implementation's child at c's position.  It also
--- has what host sharing sites supply (see sigSharingStitchPoints).
-fun dispatchImplAssumes set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
-  onlyLhsInh(dispatchGraph.edgeMap(v));
--- What applications assume: the tile flow graph, which every application stitches (see
--- tileStitchPoint).  It lacks what sharing sites supply, as an application does not see what other
--- applications supply, but has what an implementation not known here may copy from its forward (see
--- addDispatchUnknownImplSynEqs).
-fun dispatchAppAssumes set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
-  onlyLhsInh(dispatchGraph.tileEdgeMap(v));
--- What an equation for v that implementations and applications both see may depend on, where that
--- equation takes the place of the implementations' equations: an extension implementation's own
--- equation for c, or an equation on a tree passed with '@' to c.
-fun dispatchChildAllowedInhs set:Set<String> ::= dispatchGraph::ProductionGraph  v::FlowVertex =
-  set:intersect(dispatchImplAssumes(dispatchGraph, v), dispatchAppAssumes(dispatchGraph, v));
+-- What an equation for c.attr may depend on where it takes the place of the implementations'
+-- equations: an extension implementation's own, or one on a tree passed with '@' to c.  This is
+-- what applications assume (the tile flow graph).  Implementations assume the normal graph, which
+-- has every edge of the tile flow graph except those into EQ vertices, and in a dispatch
+-- signature's graph EQ vertices lead only to other EQ vertices.
+fun dispatchChildAllowedInhs set:Set<String> ::= dispatchGraph::ProductionGraph  c::String  attr::String =
+  onlyLhsInh(dispatchGraph.tileEdgeMap(rhsInhVertex(c, attr)));
 -- May an implementation not known here supply v?  It may where the dispatch signature's graph has
 -- the edge from v that addDispatchUnknownImplInhEqs adds for implSuppliedInhs.
 fun unknownImplMaySupply Boolean ::= dispatchGraph::ProductionGraph  v::FlowVertex =

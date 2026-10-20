@@ -178,9 +178,9 @@ top::GExpr ::=
   forwards to prod(@fp);
 }
 }
--- Where a host implementation's equation for the child accesses a synthesized attribute of its LHS, here gNeedsOther,
--- the dispatch signature's tile flow graph reaches that attribute's flow type through an implementation not known
--- here.  But implementations are checked assuming only the signature's normal graph, so gOther is still excess.
+-- Where a host implementation's equation for the child accesses a synthesized attribute of its
+-- LHS, here gNeedsOther, both of the dispatch signature's graphs reach that attribute's flow type
+-- through an implementation not known here.  So an override may depend on gOther.
 dispatch GOpN = GExpr ::= a::GExpr;
 production gImplN implements GOpN
 top::GExpr ::= a::GExpr
@@ -192,7 +192,6 @@ top::GExpr ::= a::GExpr
   top.gSmall = "";
   top.gNeedsOther = "";
 }
-warnCode "Inherited override equation for flow:gEnv on child a may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:GOpN:a]); flow:gOther is excluded by what flow:GOpN allows" {
 production gSiteN
 top::GExpr ::= a::GExpr
 {
@@ -204,6 +203,20 @@ top::GExpr ::= a::GExpr
   top.gNeedsOther = "";
   local prod::GOpN = gImplN;
   forwards to prod(@a);
+}
+-- Every implementation then allows for its child's gEnv depending on gOther, so one whose gTy
+-- accesses the child's gTy exceeds gTy's flow type.
+dispatch GOpNTy = GExpr ::= a::GExpr;
+warnCode "Synthesized equation gTy exceeds flow type with dependencies on flow:gOther" {
+production gImplNTy implements GOpNTy
+top::GExpr ::= a::GExpr
+{
+  a.gEnv = top.gNeedsOther;
+  a.gCtx = top.gCtx;
+  top.gTy = a.gTy;
+  top.gPP = "";
+  top.gSmall = "";
+  top.gNeedsOther = "";
 }
 }
 -- A production that passes a tree with '@' into a dispatch application held in a local, and accesses an attribute on

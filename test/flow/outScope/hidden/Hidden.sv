@@ -23,14 +23,13 @@ top::OB ::= w::OB  flag::Boolean
   forwards to if flag then obH(@w) else obJ(@w);
 }
 
--- A dispatch signature like flow's GOpN.  If its implementation left gNeedsOther to its forward,
--- the implicit copy would bring gOther into what implementations assume, and an override supplying
--- gEnv from gOther would pass.
+-- A dispatch signature like flow's GOpU, whose implementations do not supply their child's gEnv
+-- from gOther.
 dispatch OsN = GExpr ::= a::GExpr;
 production osImplN implements OsN
 top::GExpr ::= a::GExpr
 {
-  a.gEnv = top.gNeedsOther;
+  a.gEnv = top.gEnv;
   a.gCtx = top.gCtx;
   top.gTy = "";
   top.gPP = "";
@@ -39,7 +38,7 @@ top::GExpr ::= a::GExpr
   forwards to gLit();
 }
 
--- An implementation that passes its child on with '@' to an application of flow's GOpN.
+-- An implementation that passes its child on with '@' to an application of flow's GOpU.
 dispatch OsOuter = GExpr ::= a::GExpr;
 production osOuterImpl implements OsOuter
 top::GExpr ::= qa::GExpr
@@ -48,7 +47,7 @@ top::GExpr ::= qa::GExpr
   top.gPP = "";
   top.gSmall = "";
   top.gNeedsOther = "";
-  local prod::GOpN = gImplN;
+  local prod::GOpU = gImplU;
   forwards to prod(@qa);
 }
 
@@ -58,7 +57,7 @@ dispatch OsInner = GExpr ::= a::GExpr;
 production osInnerImpl implements OsInner
 top::GExpr ::= a::GExpr
 {
-  a.gEnv = top.gNeedsOther;
+  a.gEnv = top.gEnv;
   a.gCtx = top.gCtx;
   top.gTy = "";
   top.gPP = "";

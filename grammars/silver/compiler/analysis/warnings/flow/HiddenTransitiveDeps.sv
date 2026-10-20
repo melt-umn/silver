@@ -182,7 +182,7 @@ Maybe<(String, set:Set<String>)> ::=
     let dispatchGraph = findProductionGraph(impl.1, ctx.pcProdGraphs);
     let dispatchVertex = rhsInhVertex(sn, ctx.pcAttr);
     guard(unknownImplMaySupply(dispatchGraph, dispatchVertex));
-    return (impl.1, dispatchChildAllowedInhs(dispatchGraph, dispatchVertex));
+    return (impl.1, dispatchChildAllowedInhs(dispatchGraph, sn, ctx.pcAttr));
   };
 
 -- The decoration sites of the tree at v named in a message about an override equation on that tree,

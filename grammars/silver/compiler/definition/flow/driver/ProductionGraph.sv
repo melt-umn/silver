@@ -683,11 +683,12 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 
   local normalEdges :: [(FlowVertex, FlowVertex)] =
     flatMap(addDispatchEqs(flowEnv, realEnv, ns, _), defs) ++
-    addDispatchUnknownImplInhEqs(flowEnv, realEnv, ns);
+    addDispatchUnknownImplInhEqs(flowEnv, realEnv, ns) ++
+    addDispatchUnknownImplSynEqs(realEnv, ns);
   -- An implementation may use its forward parent: the applying production, or an earlier
   -- implementation in a chain of forwards (see implTileStitchPoint).  The forward parent's
   -- inherited attributes are the LHS's only in the normal graph, which implementations assume (see
-  -- dispatchImplAssumes); an application maps them to its own LHS.
+  -- dispatchChildAllowedInhs); an application maps them to its own LHS.
   local fwdParentEdges :: [(FlowVertex, FlowVertex)] =
     map(\ attr::String -> (forwardParentInhVertex(attr), lhsInhVertex(attr)), getInhAndInhOnTransAttrsOn(nt, realEnv));
 
@@ -695,10 +696,10 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
     dispatchStitchPoints(flowEnv, realEnv, ns, defs) ++  -- impls of this dispatch
     -- The forward of an implementation from an independent extension: see addDispatchUnknownImplInhEqs.
     nonterminalStitchPoints(realEnv, nt, forwardVertexType());
-  -- Stitch points only in the normal graph, which implementations assume (see dispatchImplAssumes):
-  -- the flow types of the signature's children and forward parent, and what host-language
-  -- applications, of this signature or of its implementations by name, supply to the children
-  -- shared through the signature.
+  -- Stitch points only in the normal graph, which implementations assume (see
+  -- dispatchChildAllowedInhs): the flow types of the signature's children and forward parent, and
+  -- what host-language applications, of this signature or of its implementations by name, supply to
+  -- the children shared through the signature.
   local sigNtStitchPoints :: [StitchPoint] =
     flatMap(rhsStitchPoints(realEnv, _), ns.inputElements) ++
     nonterminalStitchPoints(realEnv, nt, forwardParentVertexType()) ++
@@ -708,8 +709,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Env
 
   local flowTypeAttrs :: [String] = [];  -- Doesn't (directly) affect flow types
   local initialGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges ++ fwdParentEdges);
-  local initialTileGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(normalEdges ++ addDispatchUnknownImplSynEqs(realEnv, ns));
+  local initialTileGraph :: g:Graph<FlowVertex> = createFlowGraph(normalEdges);
   local suspectEdges :: [(FlowVertex, FlowVertex)] = [];
 
   return productionGraph(
@@ -1035,7 +1035,9 @@ fun addDispatchUnknownImplInhEqs
     dispatch.inputElements);
 {--
  - Introduce edges for the synthesized attributes and the forward of an implementation of a dispatch signature in an
- - independent extension (see addDispatchUnknownImplInhEqs).  These edges are only in the signature's tile flow graph.
+ - independent extension (see addDispatchUnknownImplInhEqs).  These edges are in both of the
+ - signature's graphs, so the normal graph reaches every LHS inherited attribute that the tile flow
+ - graph does (see dispatchChildAllowedInhs).
  - * An attribute of the LHS is copied from the forward, or else defined within its own flow type.
  -   The flow-type check on implementations accounts for anything an application or earlier
  -   implementation could supply to their children (see implementedSigStitchPoints), and the
@@ -1215,7 +1217,8 @@ fun sigSharingStitchPoints
  - application of the signature, by an earlier implementation in a chain of forwards, or by an
  - implementation not known here (see addDispatchUnknownImplInhEqs).  This projects the signature's
  - normal graph onto the implementation's own inherited attributes, as for its forward parent:
- - projectedLhsDeps computes the same attributes as dispatchImplAssumes.
+ - projectedLhsDeps computes the same attributes that implementations assume (see
+ - dispatchChildAllowedInhs).
  -}
 fun implementedSigStitchPoints
 [StitchPoint] ::= realEnv::Env  ie::NamedSignatureElement  dispatch::String  se::NamedSignatureElement =

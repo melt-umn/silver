@@ -768,8 +768,8 @@ fun meetResults PathResult ::= rs::[PathResult] = (meetSets(map(fst, rs)), nub(c
 -- What dispatch allows the attribute attr of its child sigName to depend on (see
 -- dispatchChildAllowedInhs).
 fun allowedSet set:Set<FlowVertex> ::= ctx::PathCtx  dispatch::String  sigName::String  attr::String =
-  vertexSet(map(lhsInhVertex, set:toList(dispatchChildAllowedInhs(
-    findProductionGraph(dispatch, ctx.pcProdGraphs), rhsInhVertex(sigName, attr)))));
+  vertexSet(map(lhsInhVertex,
+    set:toList(dispatchChildAllowedInhs(findProductionGraph(dispatch, ctx.pcProdGraphs), sigName, attr))));
 
 -- s, from the terms of an implementation into those of its dispatch signature, where names pairs
 -- their children.  The vertices of the implementation's children that the dispatch signature lacks

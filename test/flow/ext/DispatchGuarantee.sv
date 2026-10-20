@@ -162,16 +162,13 @@ top::GExpr ::= @a::GExpr
   forwards to prod(a);
 }
 }
--- An implementation passing its child on may no more depend on what only the tile flow graph allows than an
--- application may (see gSiteN).
-warnCode "Inherited override equation for flow:gEnv on child a may exceed a flow type with hidden transitive dependencies on flow:gOther; on some reference to this tree, this attribute may be expected to depend only on flow:gCtx, flow:gEnv (from forward[flow:GOpN:a], applications of dispatch flow:GOpN); flow:gOther is excluded by what flow:GOpN allows" {
+-- An implementation passing its child on may depend on gOther, as an application may (see gSiteN).
 production gExtImplN implements GOpN
 top::GExpr ::= a::GExpr
 {
   a.gEnv = top.gOther;
   local prod::GOpN = gImplN;
   forwards to prod(@a);
-}
 }
 
 -- When an implementation supplies an inherited attribute to its child itself, accessing the child's attributes does
