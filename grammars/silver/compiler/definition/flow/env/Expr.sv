@@ -184,7 +184,11 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   propagate flowEnv;
   e.appDecSiteVertexInfo = top.decSiteVertexInfo;
   e.decSiteVertexInfo = nothing();
-  e.alwaysDecorated = false;
+  -- The function is evaluated whenever the application is.  In curriedDispatchApplication's
+  -- forward, this gives the inner application the alwaysDecorated that its override on extraArgs
+  -- supplies. Otherwise, this is harmless as alwaysDecorated is only consulted when
+  -- decSiteVertexInfo is just(...).
+  e.alwaysDecorated = top.alwaysDecorated;
 
   es.appProd =
     case e, e.finalType of
