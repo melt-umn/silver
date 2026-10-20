@@ -365,7 +365,7 @@ Maybe<PathSets> ::= ctx::PathCtx  lvl::PathLevel  dispatch::String  sigName::Str
 
 -- found, a bound for applied at parent in lvl's production, from applied's terms into lvl's:
 -- applied's LHS inherited attributes as lvl's production supplies them to the tree at parent (see
--- parentBound), and found's other vertices as both productions have them (see mapAppliedWith).
+-- parentBound), and found's other vertices as applied's normal graph has them (see mapAppliedWith).
 -- nothing() where the tree at parent never gets a qualified input of found: every consumer of the
 -- hidden equation needs that input, so the completeness checks report every demand of it.
 fun mapApplied
@@ -374,10 +374,9 @@ Maybe<PathSets> ::= ctx::PathCtx  lvl::PathLevel  parent::VertexType  applied::S
   mapAppliedWith(ctx, lvl, parent, applied, found, parentBound(ctx, lvl, parent, parentTree, _, pSeen));
 {--
  - mapApplied, with the parent walk for each of applied's LHS inherited attributes given by
- - parentOf.  lvl's graph unites the decoration sites of every tree it passes through, while
- - applied's flow types, aspects and references assume applied's own equations: found's other
- - vertices count as lvl's graph has them only where applied's normal graph has them too, through
- - parentOf, or where they construct a tree.
+ - parentOf.  found's other vertices count through the LHS inherited attributes that they reach in
+ - applied's normal graph, as applied's flow types, aspects and references assume, and through what
+ - constructing the trees on the way depends on.
  -}
 function mapAppliedWith
 Maybe<PathSets> ::= ctx::PathCtx  lvl::PathLevel  parent::VertexType  applied::String  found::PathSets
@@ -424,7 +423,6 @@ Maybe<PathSets> ::= ctx::PathCtx  lvl::PathLevel  parent::VertexType  applied::S
       if atTop(lvl) then (lhsVertices(ws), set:empty(), vertexSet([]))
       else sigSets(ctx, lvl, ws);
   local othersReach::set:Set<FlowVertex> = reach(map(fromSigVertex(applied, parent, _), nonLhs));
-  local lvlSets::PathSets = inLvl(othersReach);
   local ownSets::PathSets =
     joinSets(map(
       \ k::String ->
@@ -436,13 +434,7 @@ Maybe<PathSets> ::= ctx::PathCtx  lvl::PathLevel  parent::VertexType  applied::S
   -- What constructing the trees on the way depends on, which every consumer that accesses them
   -- needs
   local builtSets::PathSets = inLvl(reach(filter(isConstructionVertex, set:toList(othersReach))));
-  -- otherSets is within lvlSets, so where lvlSets adds nothing to lhsPart, the walks of ownKs are
-  -- not needed.
-  local otherSets::PathSets =
-    if set:subset(lvlSets.1, lhsPart.1) && set:subset(lvlSets.2, lhsPart.2) then noSets
-    else
-      joinSets([
-        (set:intersect(lvlSets.1, ownSets.1), set:intersect(lvlSets.2, ownSets.2), vertexSet([])), builtSets]);
+  local otherSets::PathSets = joinSets([ownSets, builtSets]);
   return
     if any(map(\ p::(String, Maybe<PathSets>) -> contains(p.1, qualifiedKs) && !p.2.isJust, parentParts))
     then nothing()
