@@ -6,7 +6,7 @@ import silver:util:treeset as set;
  - A primitive graph representation. Edges has no special value
  - they either exist or do not.
  -}
-type Graph<a> foreign = "java.util.TreeMap<Object,java.util.TreeSet<Object>>";
+type Graph<a> foreign = "common.rawlib.RawGraph.Graph";
 
 @{--
  - Returns an empty graph using Ord for comparison.
@@ -54,7 +54,7 @@ function adjacency
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.ConsCell.fromList(%graph%.entrySet().stream().map(e -> new silver.core.Ppair(e.getKey(), e.getValue())).collect(java.util.stream.Collectors.toList()))";
+  "java" : return "common.rawlib.RawGraph.adjacency(%graph%)";
 }
 
 @{--
