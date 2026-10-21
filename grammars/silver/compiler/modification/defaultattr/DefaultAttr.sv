@@ -9,7 +9,7 @@ import silver:compiler:analysis:typechecking:core;
 import silver:compiler:translation:java;
 
 import silver:compiler:definition:flow:env;
-import silver:compiler:definition:flow:ast only lhsVertexType;
+import silver:compiler:definition:flow:ast only lhsVertexType, defaultProdName;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructDefaultProductionGraph; -- for the "oh no again!" hack below
 import silver:compiler:driver:util only RootSpec; -- ditto
 
@@ -48,7 +48,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
   top.unparse = lhs.unparse ++ "::" ++ te.unparse ++ " ::=";
   top.defs := [defaultLhsDef(top.grammarName, lhs.nameLoc, lhs.name, te.typerep)];
   top.namedSignature =
-    namedSignature(top.grammarName ++ ":" ++ te.typerep.typeName ++ ":default",
+    namedSignature(defaultProdName(te.typerep.typeName),
       nilContext(), nilNamedSignatureElement(),
       namedSignatureElement(lhs.name, te.typerep, false),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));

@@ -41,16 +41,24 @@ top::Expr ::=  '@' e::Expr
 aspect production productionReference
 top::Expr ::= @q::QName
 {
+  -- An implementation prod with extra shared children in its signature.
+  local sharedExtras :: Boolean =
+    case q.lookupValue.dcl.implementedSignature of
+    | just(sig) ->
+      any(map((.elementShared), drop(length(sig.inputElements), q.lookupValue.dcl.namedSignature.inputElements)))
+    | nothing() -> false
+    end;
   top.errors <-
     if !top.config.warnSharing
     || !q.lookupValue.found
     || !any(map((.elementShared), q.lookupValue.dcl.namedSignature.inputElements))
-    || q.lookupValue.dcl.implementedSignature.isJust
+    || q.lookupValue.dcl.implementedSignature.isJust && !sharedExtras
     then []
     else case top.appDecSiteVertexInfo of
     | just(forwardVertexType()) -> []
     | just(localVertexType(fName))
         when isForwardProdAttr(top.frame.fullName, fName, top.flowEnv) -> []
+    | _ when sharedExtras -> [mwdaWrnFromOrigin(top, s"Production ${q.name} has shared children in its signature beyond those of its dispatch signature, and can only be referenced by applying it in the root position of a forward or forward production attribute equation.")]
     | _ -> [mwdaWrnFromOrigin(top, s"Non-dispatch production ${q.name} has shared children in its signature, and can only be referenced by applying it in the root position of a forward or forward production attribute equation.")]
     end;
 }
@@ -77,6 +85,25 @@ top::Expr ::= @e::Expr @es::AppExprs @anns::AnnoAppExprs
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
+  local passesOnOwnChild :: Boolean =
+    inputSigIsShared &&
+    case getValueDcl(top.frame.fullName, top.env), appliedSig, e.flowVertexInfo of
+    | dcl :: _, just(applied), just(rhsVertexType(fc)) ->
+      case dcl.implementedSignature of
+      | just(sig) -> sig.fullName == applied.fullName && positionOf(fc, dcl.namedSignature.inputNames) == sigIndex
+      | nothing() -> false
+      end
+    | _, _, _ -> false
+    end;
+  top.errors <-
+    case top.appProd, appliedSig of
+    | just(ns), just(sig) when top.config.warnSharing && sigIsShared && !passesOnOwnChild && !isHostApplication ->
+      [mwdaWrnFromOrigin(top,
+        s"Orphaned application of ${ns.fullName}: only the grammar of ${sig.fullName} and grammars it exports " ++
+        s"can share a tree as its child ${sigName}, other than an implementation passing on its own child")]
+    | _, _ -> []
+    end;
+
   -- Check that we are exported by the decoration site.
   top.errors <-
     case e.flowVertexInfo of

@@ -43,7 +43,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 
   forwards to
      if null(merrors)
-     then attr.attrDcl.attrDefDispatcher(dl, attr, monadFail())
+     then dispatchAttributeDef(^dl, ^attr, monadFail(), attr.attrDcl.attrDefDispatcher)
      else errorProductionStmt(merrors);
 }
 
@@ -78,10 +78,10 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   forwards to
           if null(merrors)
           then if attr.found
-               then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
+               then dispatchAttributeDef(^dl, ^attr, @e, attr.attrDcl.attrDefDispatcher)
                     --if not found, let the normal dispatcher handle it
                else attributeDef(^dl, '.', ^attr, '=', @e, ';')
-          else errorAttributeDef(dl, attr, @e, merrors);
+          else dispatchAttributeDef(^dl, ^attr, @e, errorAttributeDef(merrors));
 }
 
 
@@ -118,10 +118,10 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   forwards to
           if null(merrors)
           then if attr.found
-               then attr.attrDcl.attrDefDispatcher(dl, attr, @e)
+               then dispatchAttributeDef(^dl, ^attr, @e, attr.attrDcl.attrDefDispatcher)
                     --if not found, let the normal dispatcher handle it
                else attributeDef(^dl, '.', ^attr, '=', @e, ';')
-          else errorAttributeDef(dl, attr, @e, merrors);
+          else dispatchAttributeDef(^dl, ^attr, @e, errorAttributeDef(merrors));
 }
 
 
@@ -154,10 +154,10 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   forwards to
           if attr.found
           then case attr.attrDcl of
-               | restrictedSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
-               | restrictedInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, restrictedErr)
-               | implicitSynDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
-               | implicitInhDcl(_, _, _) -> errorAttributeDef(dl, attr, @e, implicitErr)
+               | restrictedSynDcl(_, _, _) -> dispatchAttributeDef(^dl, ^attr, @e, errorAttributeDef(restrictedErr))
+               | restrictedInhDcl(_, _, _) -> dispatchAttributeDef(^dl, ^attr, @e, errorAttributeDef(restrictedErr))
+               | implicitSynDcl(_, _, _) -> dispatchAttributeDef(^dl, ^attr, @e, errorAttributeDef(implicitErr))
+               | implicitInhDcl(_, _, _) -> dispatchAttributeDef(^dl, ^attr, @e, errorAttributeDef(implicitErr))
                | _ -> attributeDef(^dl, '.', ^attr, '=', @e, ';')
                end
           --if not found, let the normal dispatcher handle it

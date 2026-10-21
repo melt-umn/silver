@@ -227,6 +227,19 @@ global d6 :: Decorated DExpr with {decorate, env2} = decorate mkDExpr() with {en
 type Inhs1 = {env1};
 global d7 :: Decorated DExpr with Inhs1 = decorate mkDExpr() with {env1 = [];};
 
+-- 'decorate ... with' supplies only inherited attributes to the decorated tree.
+inherited attribute dwInh::String;
+synthesized attribute dwSyn::String;
+nonterminal DWExpr with dwInh, dwSyn;
+production mkDWExpr
+top::DWExpr ::=
+{
+  top.dwSyn = top.dwInh;
+}
+wrongCode "dwSyn is not an inherited attribute and so cannot be supplied here" {
+global dwSynWith :: String = decorate mkDWExpr() with {dwInh = ""; dwSyn = "";}.dwSyn;
+}
+
 global d8 :: Decorated DExpr with {env1} = castRef(decorate mkDExpr() with {env1 = []; env2 = [];});
 global d9 :: Decorated DExpr with {env1} = castRef(decorate mkDExpr() with {env1 = [];});
 

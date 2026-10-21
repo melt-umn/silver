@@ -59,7 +59,8 @@ public class DecoratedNode implements Decorable, Typed {
 	/**
 	 * Is this the forward for the production of forwardParent?
 	 * This is true for normal forwarding, where there will be syn copy equations,
-	 * but false for forward production attributes, which only forward inhs.
+	 * but false for forward production attributes, which only forward inhs,
+	 * until this node becomes the forward of forwardParent's production (see decorate).
 	 * Thus this determines whether translation attributes on this node
 	 * default to having the same decoration sites as forwardParent.
 	 */
@@ -342,7 +343,8 @@ public class DecoratedNode implements Decorable, Typed {
 
 	/**
 	 * This node has become the forward of forwardParent.  Translation attribute trees without a decoration site
-	 * default to the decoration site of forwardParent's translation attribute (see evalTrans).
+	 * default to the decoration site of forwardParent's translation attribute, where
+	 * forwardParent's production has no equation for it (see evalTrans).
 	 * Supply this to the translation attribute trees that were already created.
 	 */
 	private void addTransFwdDecSites() {
@@ -350,7 +352,7 @@ public class DecoratedNode implements Decorable, Typed {
 			final TransOccursInfo transOccurs = synthesizedValues[i] != null? self.getTransOccurs(i) : null;
 			if(transOccurs != null &&
 			   (inheritedAttributes == null || inheritedAttributes[transOccurs.decSiteAttribute] == null) &&
-			   forwardParent.synthesizedValues[i] == null) {
+			   forwardParent.self.getSynthesized(i) == null) {
 				final DecoratedNode trans = (DecoratedNode)synthesizedValues[i];
 				if(trans.forwardParent == null) {
 					final int attribute = i;
@@ -404,7 +406,10 @@ public class DecoratedNode implements Decorable, Typed {
 
 	/**
 	 * Decorate this node with a forward parent.
-	 * This has no effect if the node already has a forward parent.
+	 * This has no effect if the node already has a forward parent, except when this node is a
+	 * forward production attribute of fwdParent's production (or a tree shared into such an
+	 * attribute) that is becoming that production's forward: then it is marked as the forward, so
+	 * its translation attributes default to fwdParent's decoration sites.
 	 * 
 	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
 	 * @param inhs A map from attribute indexes to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
@@ -419,6 +424,13 @@ public class DecoratedNode implements Decorable, Typed {
 			forwardParent = fwdParent;
 			isProdForward = prodFwrd;
 			if (isProdForward && hasTranslationValues) {
+				addTransFwdDecSites();
+			}
+		} else if (prodFwrd && !isProdForward && forwardParent == fwdParent) {
+			// A forward production attribute, or a tree shared into such an attribute, is becoming
+			// the forward.
+			isProdForward = true;
+			if (hasTranslationValues) {
 				addTransFwdDecSites();
 			}
 		}
@@ -648,10 +660,9 @@ public class DecoratedNode implements Decorable, Typed {
 		if(l != null) {
 			try {
 				if(l instanceof CollectionAttribute) {
-					// This is necessary to ensure collection
-					// attribute equations in aspect default
-					// productions work; see
-					// https://github.com/melt-umn/silver/issues/290
+					// The default production's '<-' pieces follow the pieces of this node's production, added once
+					// per production (https://github.com/melt-umn/silver/issues/290).  BaseDefault, in
+					// CollectionAttribute, takes only the default production's ':=' as a base.
 					CollectionAttribute prodAttr = (CollectionAttribute)l;
 					if(!prodAttr.appliedNTFix) {
 						prodAttr.appliedNTFix = true;
@@ -777,7 +788,11 @@ public class DecoratedNode implements Decorable, Typed {
 		Lazy decSite = null;
 		if(inheritedAttributes != null && inheritedAttributes[decSiteAttribute] != null) {
 			decSite = inheritedAttributes[decSiteAttribute].withContext(parent);
-		} else if(forwardParent != null && isProdForward && forwardParent.synthesizedValues[attribute] == null) {
+		} else if(forwardParent != null && isProdForward && forwardParent.self.getSynthesized(attribute) == null) {
+			// forwardParent's production has no equation for the attribute, so forwardParent's
+			// translation attribute is this tree (see the forward case above).  Otherwise that
+			// translation attribute is a different tree, and this tree gets no inherited attributes
+			// from forwardParent.
 			decSite = (context) -> forwardParent.translation(attribute, inhsAttribute, decSiteAttribute);
 		}
 		// Decorate the tree that we computed earlier.

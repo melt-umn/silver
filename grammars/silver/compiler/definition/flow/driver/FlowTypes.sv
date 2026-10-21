@@ -57,7 +57,7 @@ fun runFlowTypeInference
 data InferStateVal = inferStateVal with
   inferGraphs,       -- The production graphs
   inferFlowTypes,    -- The flow types
-  changedLastRound,  -- The dependency keys (see stitchDep) of the graphs and flow types that changed in the last round of updates
+  changedLastRound,  -- The dependency keys (see stitchDeps) of the graphs and flow types that changed in the last round of updates
   changedThisRound;  -- The same, for those that have changed so far in this round
 
 annotation inferGraphs::EnvTree<ProductionGraph>;
@@ -70,15 +70,10 @@ type InferState = State<InferStateVal _>;
 {--
  - Produces flow types for every nonterminal.
  - Iterates until convergence.
- -
- - TODO: Each round builds up a chain of binds and unevaluated states as long as the list of productions,
- - and evaluating it takes stack space for each production (e.g. MWDA of ableC-prolog needs -Xss30m).
- - Making the state strict, evaluating it after the update for each production in turn, would reduce the stack usage.
- - (Just evaluating the states isn't enough without tail calls; the traversal itself needs to be a loop.)
  -}
 fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
   -- Update the flow types from all the initial production graphs
-  traverse_(updateFlowType, prods);
+  forEachProd(updateFlowType, prods);
 
   -- Stitch every graph in full once, then just iterate until no new edges are added,
   -- updating only the graphs with dependencies that changed since they were last updated.
@@ -89,17 +84,37 @@ fun fullySolveFlowTypes InferState<()> ::= prods::[ProdName] = do {
 
 fun solveRound InferState<Boolean> ::= allChanged::Boolean prods::[ProdName] = do {
   modifyState(\ s::InferStateVal -> s(changedLastRound=s.changedThisRound, changedThisRound=set:empty()));
-  map(any, traverseA(
-    \ prod::ProdName -> do {
-      -- Update the production graph
-      graphUpdated :: Boolean <- updateProdGraph(allChanged, prod);
-
-      -- Only update the flow types for the prod's NT if the prod graph changed
-      when_(graphUpdated, updateFlowType(prod));
-      return graphUpdated;
-    },
-    prods));
+  forEachProd(updateProd(allChanged, _), prods);
+  -- Every graph updated in this round is recorded as changed
+  s :: InferStateVal <- getState();
+  return !set:isEmpty(s.changedThisRound);
 };
+
+-- Update the production graph, and the flow types for the prod's NT if the graph changed
+fun updateProd InferState<()> ::= allChanged::Boolean prod::ProdName = do {
+  graphUpdated :: Boolean <- updateProdGraph(allChanged, prod);
+  when_(graphUpdated, updateFlowType(prod));
+};
+
+{--
+ - Runs an action for each production in turn.  The rest of the traversal is constructed only once the state after
+ - the action is evaluated, so each action is evaluated before the next rather than nested within it.
+ - This significantly helps stack usage.
+ -}
+fun forEachProd InferState<()> ::= action::(InferState<()> ::= ProdName)  prods::[ProdName] =
+  foldr(
+    \ prod::ProdName  rest::InferState<()> -> do {
+      action(prod);
+      s :: InferStateVal <- getState();
+      if inferStateEvaluated(s) then rest else error("inferStateEvaluated is always true");
+    },
+    pure(()), prods);
+
+{--
+ - Demands the maps and the set of the state, which the foreign functions evaluate.  Always true.
+ -}
+fun inferStateEvaluated Boolean ::= s::InferStateVal =
+  null(rtm:lookup("", s.inferGraphs)) && null(rtm:lookup("", s.inferFlowTypes)) && set:size(s.changedThisRound) >= 0;
 
 {--
  - Update a production graph using the current flow types and graphs,

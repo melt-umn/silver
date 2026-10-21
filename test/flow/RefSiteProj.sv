@@ -171,6 +171,10 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
+-- The innermost copy12 supplies e.env1 from env2, through copy12From2, and nothing projects what an
+-- application by name supplies onto its child, so the override from env1 is reported, although
+-- nothing here shares e1 (see pathBound).
+warnCode "Inherited override equation for flow:env1 on child e may exceed a flow type with hidden transitive dependencies on flow:env1" {
 production remoteExceedsOverrideOk
 top::RSExpr ::= e::RSExpr
 {
@@ -182,6 +186,24 @@ top::RSExpr ::= e::RSExpr
 
   top.errors1 = e.errors1;
   top.errors2 = e.errors2;
+}
+}
+
+-- A production supplying its child's pmK from pmM, which is all its consumers may assume (see ext).
+inherited attribute pmK::String;
+inherited attribute pmM::String;
+synthesized attribute pmS::String;
+nonterminal PM with pmK, pmM, pmS;
+flowtype PM = decorate {}, forward {}, pmS {pmM};
+production pmLeaf
+top::PM ::=
+{ top.pmS = top.pmM; }
+production pmFromM
+top::PM ::= c::PM
+{
+  c.pmK = top.pmM;
+  c.pmM = top.pmM;
+  top.pmS = c.pmK;
 }
 
 warnCode "equation errors1 exceeds flow type with dependencies on flow:env2" {
@@ -240,7 +262,9 @@ top::RSExpr ::= e::RSExpr
 }
 }
 
-warnCode "the implicit copy equation for flow:errors1 (due to forwarding) would exceed the attribute's flow type with dependencies on flow:env2" {
+-- copy12's consumers assume e.env1 depends on env1, but the override depends on env2.  This warning
+-- suppresses the warning about the implicit copy of errors1.
+warnCode "Inherited override equation for flow:env1 on child e may exceed a flow type with hidden transitive dependencies on flow:env2" {
 production condDecExceedsFT
 top::RSExpr ::= e::RSExpr
 {
@@ -270,7 +294,7 @@ top::RSExpr ::= e::RSExpr
   top.errors2 = e1.errors2;
 }
 
-warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to local" {
+warnCode "Access of synthesized attribute errors1 on e1 requires missing inherited attribute(s) flow:env1 to be supplied to any of" {
 production sharedMissing
 top::RSExpr ::= e::RSExpr
 {
@@ -294,21 +318,30 @@ top::RSExpr ::= @e::RSExpr
 }
 }
 
+-- implProd gets e through its signature, and implProd's graph projects what this production
+-- supplies to e (see enterLevel), so implProd's own e.env2 is not what its consumers assume, and
+-- these equations hide nothing.
+noWarnCode "hidden transitive" {
 production dispatchOverrideKnownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
   e.env2 = top.env1 ++ top.env2;
-  forwards to implProd(e); 
+  forwards to implProd(e);
+}
 }
 
+-- The same through the dispatch signature: its implementations get the child through it, and their
+-- graphs project what this production supplies there (see implLevel).
+noWarnCode "hidden transitive" {
 production dispatchOverrideUnknownProd
 top::RSExpr ::= e::RSExpr
 {
   e.env1 = top.env1;
   e.env2 = top.env1 ++ top.env2;
   local implProdRef::UnaryOp = implProd;
-  forwards to implProdRef(e); 
+  forwards to implProdRef(e);
+}
 }
 
 warnCode "Access of synthesized attribute errors2 on e requires missing inherited attribute(s) flow:env2 to be supplied to child e of production flow:anonDecSuppliedMissing" {

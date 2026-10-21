@@ -80,17 +80,20 @@ monoid attribute refDecSiteContribs :: [(String, VertexType)];
 {-- lookup (prod, sig) to find source production and vertex type where sig was previously decorated -}
 monoid attribute sigShareContribs :: [(String, String, VertexType)];
 
+{-- lookup (prod, decoration site) to find the trees shared there, and whether the sharing is unconditional -}
+monoid attribute sharedIntoContribs :: [(String, (VertexType, Boolean))];
+
 attribute
   synTreeContribs, inhTreeContribs, defTreeContribs,
   fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
   prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
-  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs, sharedIntoContribs
   occurs on FlowDefs, FlowDef;
 propagate
   synTreeContribs, inhTreeContribs, defTreeContribs,
   fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, implTreeContribs,
   prodGraphContribs, hostSynTreeContribs, nonSuspectContribs,
-  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs
+  refPossibleDecSiteContribs, refDecSiteContribs, sigShareContribs, sharedIntoContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -125,6 +128,7 @@ top::FlowDef ::=
   top.refPossibleDecSiteContribs := [];
   top.refDecSiteContribs := [];
   top.sigShareContribs := [];
+  top.sharedIntoContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -189,9 +193,12 @@ abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
   top.defTreeContribs := [(crossnames(nt, attr), top)];
-  top.prodGraphContribs := [(nt ++ ":default", top)];
+  top.prodGraphContribs := [(defaultProdName(nt), top)];
   top.flowEdges = zipFst(lhsSynVertex(attr), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
+
+-- The name shared by every default production for the nonterminal nt, in any grammar.
+fun defaultProdName String ::= nt::String = nt ++ ":default";
 
 {--
  - The definition of a synthesized attribute in a production.
@@ -388,8 +395,10 @@ top::FlowDef ::= prod::String  fName::String  transAttr::String  attr::String  d
 
 {--
  - Used for contributions to collections. Allows tacking on dependencies
- - to vertices.
- - TODO: Handle contributions for inh collections on shared trees?
+ - to vertices.  A contribution to an inherited attribute of a child or local is only recorded when
+ - the contribution's grammar is exported wherever the attribute's other equations are (see
+ - inhAppendColAttributeDef in flow:env); other contributions are bounded by the recorded
+ - dependencies instead (see Inh.sv).
  -
  - @param prod  the full name of the production
  - @param src  the vertex to add dependencies to
@@ -441,16 +450,21 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
  - The definition of a pattern match on an anonymous reference.
  -
  - @param prod  the full name of the production
- - @param fName  the generated anonymous name for this decoration site
+ - @param fName  the generated anonymous name for this scrutinee
+ - @param gram  the grammar of the match
+ - @param loc  the location of the scrutinee
  - @param deps  the dependencies of this equation on other flow graph elements
  - (no contributions are possible)
  -}
 abstract production anonScrutineeEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  isNt::Boolean  refSet::[String]  gram::String  loc::Location  deps::[FlowVertex]
 {
-  top.localTreeContribs := [(crossnames(prod, fName), top)];
+  -- The vertex type for this scrutinee.  Its full name is used for the scrutinee's vertices, and as the key
+  -- for looking up this equation.
+  local vt::VertexType = anonScrutineeVertexType(fName, gram, loc);
+  top.localTreeContribs := [(crossnames(prod, vt.vertexName), top)];
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = zipFst(anonEqVertex(fName), deps);
+  top.flowEdges = zipFst(vt.eqVertex, deps);
 }
 
 {--
@@ -471,13 +485,24 @@ top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 {--
  - A match rule from a pattern matching equation.
  - Matching against 'scrutinee' this rule matches 'matchProd'. It extracts the pattern variables in 'vars'.
- - This info is used, not to directly create edges, but to inform which stitch points are needed.
+ - This informs which stitch points are needed (see patternStitchPoints).
+ - A pattern variable that is a tree is part of the scrutinee's value: its equation vertex (a
+ - reference to it) and its outer equation vertex (every attribute accessed on it, see synDeps)
+ - depend on the scrutinee's equation vertex.
  -}
 abstract production patternRuleEq
 top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[PatternVarProjection]
 {
   top.prodGraphContribs := [(prod, top)];
-  top.flowEdges = [];
+  top.flowEdges =
+    flatMap(
+      \ v::PatternVarProjection ->
+        case v of
+        | patternVarProjection(child, _) ->
+          zipFst(subtermEqVertex(scrutinee, matchProd, child), scrutinee.eqDeps) ++
+          zipFst(subtermOuterEqVertex(scrutinee, matchProd, child), scrutinee.eqDeps)
+        end,
+      vars);
 }
 
 data PatternVarProjection
@@ -564,10 +589,14 @@ top::FlowDef ::= prod::String  nt::String  ref::VertexType  decSite::VertexType 
   top.flowEdges = [];  -- Added as fixed edges during flow graph computation, when we know all inh attributes on nt.
   top.refPossibleDecSiteContribs := [(s"${prod}:${ref.vertexName}", decSite)];
   top.refDecSiteContribs := if alwaysDec then top.refPossibleDecSiteContribs else [];
+  top.sharedIntoContribs := [(s"${prod}:${decSite.vertexName}", (ref, alwaysDec))];
 }
 
 {--
- - A tree that is shared in the application of a production/dispatch signature
+ - A tree that is shared in the application of a production/dispatch signature.
+ - Only applications in the host language are recorded (see presentAppExpr's isHostApplication),
+ - including an application passing on the applying production's own child shared through the
+ - signature: resolution follows such a sharing site to the sharing sites that supplied that child.
  -
  - @param prod       the full name of the production/dispatch signature
  - @param nt         the full name of the nonterminal
