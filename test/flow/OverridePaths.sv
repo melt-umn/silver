@@ -1131,3 +1131,60 @@ String ::= c::OB  d::OB
   return y.obT;
 }
 }
+
+-- An override on a tree that the applied production passes on to an application of its own.  The
+-- access of the attribute there sees the override, so a production that constructs the overriding
+-- production must supply what the override depends on (see addDecSiteTreeEqs).
+inherited attribute ondI::String;
+inherited attribute ondJ::String;
+inherited attribute ondK::String;
+inherited attribute ondEnv::String;
+synthesized attribute ondS::String;
+synthesized attribute ondT::String;
+synthesized attribute ondTy::String;
+nonterminal OND with ondI, ondJ, ondK, ondEnv, ondS, ondT, ondTy;
+flowtype OND = decorate {}, forward {}, ondS {ondK}, ondT {ondJ}, ondTy {ondEnv};
+
+production ondLeaf
+top::OND ::=
+{
+  top.ondS = "";
+  top.ondT = "";
+  top.ondTy = top.ondEnv;
+}
+-- ondInner accesses z.ondI, whose equation depends on ondJ through y's flow type.
+production ondInner
+top::OND ::= z::OND  y::OND  b::OND
+{
+  z.ondI = y.ondS;
+  y.ondK = top.ondJ;
+  b.ondEnv = z.ondI;
+  top.ondS = "";
+  top.ondT = b.ondTy;
+  top.ondTy = "";
+}
+production ondPass
+top::OND ::= x::OND  y::OND  b::OND
+{
+  forwards to ondInner(@x, @y, @b);
+}
+-- The override is within the bound, as ondInner's equation for z.ondI depends on ondJ.
+production ondShare
+top::OND ::= c::OND  b::OND
+{
+  c.ondI = top.ondJ;
+  forwards to ondPass(@c, ondLeaf(), @b);
+}
+-- Through ondShare's graph, ondLeaf's ondS depends on nothing, but at run time ondInner's access of
+-- z.ondI sees ondShare's override, which demands ondJ on l.
+warnCode "Access of synthesized attribute ondT on l requires missing inherited attribute(s) flow:ondJ to be supplied to local" {
+production ondLocal
+top::OND ::=
+{
+  local l::OND = ondShare(ondLeaf(), ondLeaf());
+  l.ondEnv = "";
+  top.ondS = "";
+  top.ondT = l.ondT;
+  top.ondTy = "";
+}
+}

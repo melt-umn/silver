@@ -17,10 +17,15 @@ top::OB ::= w::OB
 {
   forwards to obLeaf();
 }
+-- obH's reference to w depends on w's obK at obH's decoration site, which may be the obK that w
+-- arrives with (see addDecSiteTreeEqs).  w's obK depends on both exclusive decoration sites, so obR
+-- seems to depend on obJ's obM too, although the tree takes only one of them.
+warnCode "In production flow:outScope:hidden:osHid, the implicit copy equation for flow:obR (due to forwarding) would exceed the attribute's flow type with dependencies on flow:obM" {
 production osHid
 top::OB ::= w::OB  flag::Boolean
 {
   forwards to if flag then obH(@w) else obJ(@w);
+}
 }
 
 -- A dispatch signature like flow's GOpU, whose implementations do not supply their child's gEnv

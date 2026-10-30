@@ -23,6 +23,8 @@ top::OB ::= z::OB
   top.obR = y.obR;
   forwards to obLeaf();
 }
+-- As in osHid (see Hidden.sv), y.obR seems to depend on obM.
+warnCode "Synthesized equation obR exceeds flow type with dependencies on flow:obM" {
 production osMidUBoth
 top::OB ::= z::OB
 {
@@ -31,6 +33,7 @@ top::OB ::= z::OB
   y.obM = top.obM;
   top.obR = y.obR;
   forwards to obLeaf();
+}
 }
 
 production osMidN
@@ -79,9 +82,12 @@ top::OB ::= z::OBT
   forwards to osTrHidden(@z);
 }
 
+-- As in osHid (see Hidden.sv), the forward's obR seems to depend on obM.
+warnCode "In production flow:outScope:mid:osParentMid, the implicit copy equation for flow:obR (due to forwarding) would exceed the attribute's flow type with dependencies on flow:obM" {
 production osParentMid
 top::OB ::= z::OB
 {
   local y::OB = obH(@z);
   forwards to osHid(@y, true);
+}
 }

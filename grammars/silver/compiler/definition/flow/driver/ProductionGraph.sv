@@ -974,18 +974,21 @@ fun decSiteRoot VertexType ::= vt::VertexType =
 {--
  - Introduce edges from the inherited attributes of a decoration site to those of the tree shared
  - there, where that tree keeps what was supplied to it first: where the decoration site is a local,
- - the tree is a forward production attribute (see addSharingEqs), or the tree carries attributes
- - supplied before this production shares it (see carriesEarlierInhs).  None at a translation
+ - the tree is a forward production attribute (see addSharingEqs), the tree is at a child, or the
+ - tree carries attributes supplied before this production shares it (see carriesEarlierInhs).  A
+ - production that applies this one may share a tree with an override into the child, and every
+ - decoration site that the child is passed on to then sees the override.  None at a translation
  - attribute of the LHS, as LHS inherited vertices have no out-edges (see findAdmissibleEdges).
  -}
 fun addDecSiteTreeEqs [(FlowVertex, FlowVertex)] ::= realEnv::Env  flowEnv::FlowEnv  d::FlowDef =
   case d of
   | refDecSiteEq(prod, nt, ref, decSite, _)
       when transRootVertex(decSite) != lhsVertexType() &&
-        case decSite, ref of
-        | localVertexType(_), _ -> true
-        | _, localVertexType(fName) when isForwardProdAttr(prod, fName, flowEnv) -> true
-        | _, _ -> carriesEarlierInhs(prod, ref, flowEnv, realEnv)
+        case decSite, ref, transRootVertex(ref) of
+        | localVertexType(_), _, _ -> true
+        | _, localVertexType(fName), _ when isForwardProdAttr(prod, fName, flowEnv) -> true
+        | _, _, rhsVertexType(_) -> true
+        | _, _, _ -> carriesEarlierInhs(prod, ref, flowEnv, realEnv)
         end ->
     map(\ attr::String -> (decSite.inhVertex(attr), ref.inhVertex(attr)), getInhAndInhOnTransAttrsOn(nt, realEnv))
   | _ -> []
