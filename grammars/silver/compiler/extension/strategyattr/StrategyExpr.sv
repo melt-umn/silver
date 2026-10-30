@@ -6,6 +6,7 @@ import silver:compiler:definition:flow:ast only lhsVertexType;
 
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
 import silver:compiler:driver:util;
+import silver:compiler:analysis:warnings:flow only noWarnMissingInhFlag;
 
 import silver:compiler:extension:convenience;
 
@@ -1034,7 +1035,9 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   checkExpr.downSubst2 = checkExpr.upSubst;
   checkExpr.finalSubst = checkExpr.upSubst2;
   checkExpr.grammarName = top.grammarName;
-  checkExpr.config = top.config;
+  -- Missing inherited attributes are checked for where the rule ends up, when the strategy is propagated.
+  -- The bogus frame here lacks the equations that some expressions rely on, e.g. those of an anonymous decoration.
+  checkExpr.config = decorate noWarnMissingInhFlag(^top.config) with {};
   checkExpr.compiledGrammars = top.compiledGrammars;
   checkExpr.originRules = [];
   checkExpr.isRoot = false;

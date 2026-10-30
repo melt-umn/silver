@@ -1,6 +1,11 @@
 package common.rawlib;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -118,49 +123,75 @@ public final class RawGraph {
 			TreeMap<Object,TreeSet<Object>> g) {
 		if(l.nil())
 			return g;
-		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
-		// Let's allow every element in the map to be mutated from the start
-		for(Entry<Object, TreeSet<Object>> entry : ret.entrySet()) {
-			entry.setValue((TreeSet<Object>)entry.getValue().clone());
-		}
-		// The above is justified because calling our comparator is actually quite expensive
-		// Anything we can do to reduce the number of calls is good.
-		// Cloning the crap out of graphs way too often is a smaller price to pay than the additional
-		// calls to comparison functions. So, uh, to-do someday: make silver fast. Heh.
-		
+		final Comparator<? super Object> cmp = g.comparator();
+
+		// Calling our comparator is actually quite expensive, and repairing the closure means looking
+		// through every vertex for those that depend on the source of an edge.
+		// So group the edges by their source, to do this once for each source rather than each edge.
+		final TreeMap<Object,ArrayList<Object>> edgesBySrc = new TreeMap<Object,ArrayList<Object>>(cmp);
 		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
 			final Object src = elem.getAnno_silver_core_fst();
-			final Object dst = elem.getAnno_silver_core_snd();
-
-			// So we have a transitively closed graph, currently, and we
-			// suddenly want to add the edge (src, dst), and repair the closure.
-			
-			// Obtain the transitive dependencies of src
-			TreeSet<Object> srcSet = ret.get(src);
-			
-			if(srcSet == null) {
-				srcSet = new TreeSet<Object>(g.comparator());
-				ret.put(src, srcSet);
-			} else {
-				// Short circuit if edge exists already
-				if(srcSet.contains(dst))
-					continue;				
+			ArrayList<Object> dsts = edgesBySrc.get(src);
+			if(dsts == null) {
+				dsts = new ArrayList<Object>();
+				edgesBySrc.put(src, dsts);
 			}
+			dsts.add(elem.getAnno_silver_core_snd());
+		}
 
-			// Transitive dependenceis of dst
-			TreeSet<Object> dstSet = ret.get(dst);
-			
-			// First step: add dst
-			srcSet.add(dst);
-			if(dstSet != null)
-				srcSet.addAll(dstSet);
-			
-			// This completely repairs srcSet to a transitive closure,
-			// now for the rest of the vertexes...
+		// The sets of the new graph are shared with the old one until they are first changed.
+		final TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
+		final Set<TreeSet<Object>> owned = Collections.newSetFromMap(new IdentityHashMap<TreeSet<Object>,Boolean>());
+
+		for(Entry<Object, ArrayList<Object>> srcEdges : edgesBySrc.entrySet()) {
+			// So we have a transitively closed graph, currently, and we
+			// suddenly want to add the edges from src, and repair the closure.
+			final Object src = srcEdges.getKey();
+
+			// Obtain the transitive dependencies of src
+			final TreeSet<Object> srcSet = ret.get(src);
+
+			// The new dependencies of src: each dst, and the transitive dependencies of dst
+			final TreeSet<Object> added = new TreeSet<Object>(cmp);
+			for(Object dst : srcEdges.getValue()) {
+				// Short circuit if edge exists already
+				if(srcSet != null && srcSet.contains(dst))
+					continue;
+				added.add(dst);
+				final TreeSet<Object> dstSet = ret.get(dst);
+				if(dstSet != null)
+					added.addAll(dstSet);
+			}
+			if(srcSet != null)
+				added.removeAll(srcSet);
+			if(added.isEmpty())
+				continue;
+
+			// This completely repairs the dependencies of src to a transitive closure...
+			TreeSet<Object> newSrcSet;
+			if(srcSet == null) {
+				newSrcSet = new TreeSet<Object>(cmp);
+				owned.add(newSrcSet);
+				ret.put(src, newSrcSet);
+			} else if(!owned.contains(srcSet)) {
+				newSrcSet = (TreeSet<Object>)srcSet.clone();
+				owned.add(newSrcSet);
+				ret.put(src, newSrcSet);
+			} else {
+				newSrcSet = srcSet;
+			}
+			newSrcSet.addAll(added);
+
+			// ...now for the rest of the vertexes, those that depend on src already have its old dependencies.
 			for(Entry<Object, TreeSet<Object>> entry : ret.entrySet()) {
 				TreeSet<Object> target = entry.getValue();
 				if(target.contains(src)) {
-					target.addAll(srcSet);
+					if(!owned.contains(target)) {
+						target = (TreeSet<Object>)target.clone();
+						owned.add(target);
+						entry.setValue(target);
+					}
+					target.addAll(added);
 				}
 			}
 		}

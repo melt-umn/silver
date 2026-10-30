@@ -47,6 +47,17 @@ set:Set<a> ::= vertex::a graph::Graph<a>
 }
 
 @{--
+ - Returns each vertex that has edges from it, with the set of vertices those edges go to.
+ -}
+function adjacency
+[Pair<a set:Set<a>>] ::= graph::Graph<a>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.ConsCell.fromList(%graph%.entrySet().stream().map(e -> new silver.core.Ppair(e.getKey(), e.getValue())).collect(java.util.stream.Collectors.toList()))";
+}
+
+@{--
  - Determines whether an edge already exists in the graph.
  -}
 function contains

@@ -324,17 +324,9 @@ top::AppExpr ::= e::Expr
     end;
 
   -- Capture the equation dependencies for non-decorable children.
-  -- Additional optimization: if the expression is a "boring" tree literal with no flow
-  -- dependencies or sharing, just treat it as a hole.
-  -- Using the flow type is less precise than a tile stitch point, but this
-  -- avoids a massive blowup in the size of the flow graph when constructing
-  -- large trees.
   top.flowDefs <-
     case top.decSiteVertexInfo, top.appProd of
-    | just(parent), just(ns) when
-        !sigIsShared &&
-        (!isDecorable(top.appExprTyperep, top.env) ||
-         (null(e.flowDeps) && null(e.sharedRefs))) ->
+    | just(parent), just(ns) when !sigIsShared && !isDecorable(top.appExprTyperep, top.env) ->
       [holeEq(
         top.frame.fullName, top.appExprTyperep.typeName, false,
         subtermVertexType(parent, ns.fullName, sigName),
@@ -345,8 +337,7 @@ top::AppExpr ::= e::Expr
     case top.decSiteVertexInfo, top.appProd of
     | just(parent), just(ns) when
         !sigIsShared &&
-        isDecorable(top.appExprTyperep, top.env) &&
-        !(null(e.flowDeps) && null(e.sharedRefs)) ->
+        isDecorable(top.appExprTyperep, top.env) ->
       just(subtermVertexType(parent, ns.fullName, sigName))
     | _, _ -> nothing()
     end;
