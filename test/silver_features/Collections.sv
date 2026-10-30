@@ -1,4 +1,6 @@
 
+import silver:reflect only getSynthesized;
+
 -- Basic collection tests
 --------------------------------------------------------------------------------
 
@@ -217,7 +219,7 @@ equalityTest( colTest3().colFun.isJust, true, Boolean, silver_tests );
 equalityTest( fromMaybe(4, colTest3().colFun), 1, Integer, silver_tests );
 equalityTest( colTest3().colProd.colSyn, "( a  c ) j  k  b ", String, silver_tests );
 
--- Regression test for #209
+-- Regression test for #290: a default '<-' contributes to a production with its own ':='.
 
 nonterminal NT209 with colSyn;
 
@@ -240,3 +242,115 @@ top::NT209 ::=
 }
 
 equalityTest(prod209().colSyn, "foobarbaz", String, silver_tests);
+
+-- A forwarding production with only '<-': the forward's value, this production's piece, then the default's piece at
+-- this production.
+abstract production fwd209
+top::NT209 ::=
+{
+  top.colSyn <- "qux";
+  forwards to prod209();
+}
+
+equalityTest(fwd209().colSyn, "foobarbazquxbaz", String, silver_tests);
+
+-- Default collection equations.  A default '<-' contributes to each production with an equation of its own, after
+-- that production's own pieces.  A production with only '<-' takes its base from its forward, else from the default's
+-- ':=' alone; a production with no equation takes its forward's value, else the default's base and pieces.
+synthesized attribute defColList :: [String] with ++;
+synthesized attribute defColName :: String;
+nonterminal DefColNT with defColList, defColName;
+
+aspect default production
+top::DefColNT ::=
+{
+  top.defColList := ["dBase"];
+  top.defColList <- ["d:" ++ top.defColName];
+}
+
+-- No equation and no forward: the default's base and piece.
+abstract production defColNone
+top::DefColNT ::=
+{
+  top.defColName = "none";
+}
+
+-- Only '<-': the default's ':=', this production's piece, then the default's piece once.
+abstract production defColPieces
+top::DefColNT ::=
+{
+  top.defColName = "pieces";
+  top.defColList <- ["own"];
+}
+
+-- A ':=' of its own: this production's base and piece, then the default's piece.
+abstract production defColBase
+top::DefColNT ::=
+{
+  top.defColName = "based";
+  top.defColList := ["ownBase"];
+  top.defColList <- ["own"];
+}
+
+-- Forwards with only '<-': the forward's value, this production's piece, then the default's piece at this production.
+abstract production defColFwdPieces
+top::DefColNT ::=
+{
+  top.defColName = "fwdPieces";
+  top.defColList <- ["own"];
+  forwards to defColNone();
+}
+
+-- Forwards with no equation: the forward's value alone.
+abstract production defColFwdNone
+top::DefColNT ::=
+{
+  top.defColName = "fwdNone";
+  forwards to defColPieces();
+}
+
+equalityTest(defColNone().defColList, ["dBase", "d:none"], [String], silver_tests);
+equalityTest(defColPieces().defColList, ["dBase", "own", "d:pieces"], [String], silver_tests);
+equalityTest(defColBase().defColList, ["ownBase", "own", "d:based"], [String], silver_tests);
+equalityTest(defColFwdPieces().defColList, ["dBase", "d:none", "own", "d:fwdPieces"], [String], silver_tests);
+equalityTest(defColFwdNone().defColList, ["dBase", "own", "d:pieces"], [String], silver_tests);
+
+-- A default '<-' without a default ':=' is no base: a production that does not forward and has no ':=' of its own has
+-- none.  getSynthesized catches the run-time error and gives the message of its innermost cause.
+synthesized attribute noBaseList :: [String] with ++;
+nonterminal NoBaseNT with noBaseList;
+
+aspect default production
+top::NoBaseNT ::=
+{
+  top.noBaseList <- ["d"];
+}
+
+-- No equation of its own.
+abstract production noBaseNone
+top::NoBaseNT ::=
+{}
+
+-- Only '<-'.
+abstract production noBasePieces
+top::NoBaseNT ::=
+{
+  top.noBaseList <- ["own"];
+}
+
+equalityTest(
+  case getSynthesized(noBaseNone(), "silver_features:noBaseList") of
+  | left(msg) -> msg
+  | right(l) -> implode(",", l)
+  end,
+  "No base (:=) defined for collection attribute silver_features:noBaseList in silver_features:noBaseNone " ++
+    "or its nonterminal's default production",
+  String, silver_tests);
+equalityTest(
+  case getSynthesized(noBasePieces(), "silver_features:noBaseList") of
+  | left(msg) -> msg
+  | right(l) -> implode(",", l)
+  end,
+  "No base (:=) defined for collection attribute silver_features:noBaseList in silver_features:noBasePieces " ++
+    "or its nonterminal's default production",
+  String, silver_tests);

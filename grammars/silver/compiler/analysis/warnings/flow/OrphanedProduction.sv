@@ -91,7 +91,8 @@ aspect isDispatchApplication on top::Expr using := of
     | _, _ -> false
     end
 | ifThenElse(_, _, _, t, _, e) -> lift2(conj, t.isDispatchApplication, e.isDispatchApplication)
-| matchPrimitiveReal(_, _, pr, _) -> pr.isDispatchApplication
+-- The else expression is a branch like the patterns'.
+| matchPrimitiveReal(_, _, pr, f) -> lift2(conj, pr.isDispatchApplication, f.isDispatchApplication)
 | _ -> pure(false)
 end;
 

@@ -28,11 +28,23 @@ top::FIExtExpr ::=
   top.errors1 = false;
 }
 
-warnCode "Access of inherited attribute env1 on forward.toFIE requires missing inherited attribute(s) flow:env1 to be supplied to translation attribute flow:toFIE of forward of production flow:fieExtFwrd" {
+-- A forwarding production may not define a translation attribute: defining toFIE would leave
+-- forward.toFIE without inherited attributes...
+warnCode "Translation attribute flow:toFIE is defined in production flow:fieExtFwrd, which forwards; a forwarding production must take its translation attributes from its forward" {
 production fieExtFwrd
 top::FIExtExpr ::= e::FIExtExpr
 {
   top.toFIE = @e.toFIE;
+  top.errors1 = null(forward.toFIE.env1);
+  forwards to fieExt();
+}
+}
+-- ...while taking toFIE from the forward gives forward.toFIE what this production's own toFIE is
+-- given.
+noWarnCode "which forwards; a forwarding production must take its translation attributes from its forward" {
+production fieExtTakesFwd
+top::FIExtExpr ::= e::FIExtExpr
+{
   top.errors1 = null(forward.toFIE.env1);
   forwards to fieExt();
 }

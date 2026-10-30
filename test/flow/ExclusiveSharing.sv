@@ -306,6 +306,10 @@ top::XSW ::= w::XSW
 }
 }
 
+-- c's only sharing site, in xsSigShareLhsTrans, shares a translation attribute of that production's
+-- LHS, which has xsEnv from its parent by then (see hasInhBeforeSharing), so c.xsEnv = top.xsEnv is
+-- a duplicate.
+warnCode "Duplicate equation for xsEnv on c in production flow:xsXShareY" {
 production xsXShareY
 top::XSX ::= @c::XSY
 {
@@ -313,13 +317,15 @@ top::XSX ::= @c::XSY
   top.xsOut = c.xsOut;
   top.xsA = xsY();
 }
+}
 
 wrongFlowCode "Cannot share a translation attribute of the production LHS" {
 production xsSigShareLhsTrans
 top::XSX ::=
 {
   top.xsA = xsY();
-  forwards to xsXShareY(top.xsA);
+  top.xsOut = "";
+  forward l = xsXShareY(top.xsA);
 }
 }
 

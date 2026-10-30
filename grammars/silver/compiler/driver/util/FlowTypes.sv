@@ -59,7 +59,13 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
     then (directBuildTree(map(prodGraphToEnv, prodGraph)), initialFT)
     else runFlowTypeInference(prodGraph, initialFT);
   
-  production finalGraphEnv :: EnvTree<ProductionGraph> = flowTypes1.fst;
+  -- The graphs that inference ended with, each production's with its override-free graph (see
+  -- addOverrideFreeGraph)
+  production finalGraphEnv :: EnvTree<ProductionGraph> =
+    directBuildTree(map(
+      \ p::(String, ProductionGraph) ->
+        (p.1, addOverrideFreeGraph(p.2, allFlowEnv, allRealEnv, flowTypes1.fst, flowTypes1.snd)),
+      rtm:toList(flowTypes1.fst)));
   production flowTypes :: EnvTree<FlowType> = flowTypes1.snd;
   
   g.productionFlowGraphs = finalGraphEnv;

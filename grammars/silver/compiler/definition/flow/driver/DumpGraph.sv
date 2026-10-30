@@ -198,8 +198,17 @@ synthesized attribute showStitchPoint :: String occurs on StitchPoint;
 aspect showStitchPoint on StitchPoint of
 | nonterminalStitchPoint(nt, vertexType) ->
   s"\tnonterminal ${nt} at ${vertexType.vertexName}\n"
-| projectionStitchPoint(prod, sourceType, targetType, prodType, attrs) ->
-  s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}\n\t\tattrs ${implode(", ", attrs)}\n"
+| projectionStitchPoint(prod, sourceType, targetType, prodType, attrs, throughForwards) ->
+  s"\tprojection ${prod}@${prodType.vertexName} at ${sourceType.vertexName}, ${targetType.vertexName}${
+    case throughForwards of
+    | just(nt) -> s" through forwards of ${nt}"
+    | nothing() -> ""
+    end}\n\t\tattrs ${implode(", ", attrs)}\n"
 | tileStitchPoint(prod, parentType) ->
   s"\ttile ${prod} at ${parentType.vertexName}\n"
+| implTileStitchPoint(impl) ->
+  s"\timplementation tile ${impl} at top\n"
+| defaultStitchPoint(nt, attr, deps, mayAffectFlowType) ->
+  s"\tdefault ${attr} of ${nt}${if mayAffectFlowType then "" else " within its flow type"}\n\t\tdeps ${
+    implode(", ", map((.dotName), deps))}\n"
 end;

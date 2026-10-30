@@ -29,21 +29,6 @@ set:Set<FlowVertex> ::= v::[FlowVertex]  e::ProductionGraph
 }
 fun onlyLhsInh set:Set<String> ::= s::set:Set<FlowVertex> = set:add(filterLhsInh(set:toList(s)), set:empty());
 
-fun expandTileGraphSigDeps
-set:Set<FlowVertex> ::= v::[FlowVertex] rhsNames::[String] g::ProductionGraph =
-  set:filter(isSigVertex(rhsNames, _),
-    set:add(v, flatMap(g.tileEdgeMap, v)));
-
-fun isSigVertex Boolean ::= rhsNames::[String] v::FlowVertex =
-  case v of
-  | lhsSynVertex(_) -> true
-  | lhsInhVertex(_) -> true
-  | rhsEqVertex(sigName) -> contains(sigName, rhsNames)
-  | rhsSynVertex(sigName, _) -> contains(sigName, rhsNames)
-  | rhsInhVertex(sigName, _) -> contains(sigName, rhsNames)
-  | _ -> false
-  end;
-
 -- suspect edges are not in the standard graph, so iteratively add them
 -- call like expandSuspectEdges(p.edges.toList, p.edges, p)
 function expandSuspectEdges
@@ -69,6 +54,18 @@ set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p:
  -}
 fun inhDepsForSyn set:Set<String> ::= syn::String  nt::String  flow::EnvTree<FlowType> =
   g:edgesFrom(syn, findFlowType(nt, flow));
+
+-- What an equation for c.attr may depend on where it takes the place of the implementations'
+-- equations: an extension implementation's own, or one on a tree passed with '@' to c.  This is
+-- what applications assume (the tile flow graph).  Implementations assume the normal graph, which
+-- has every edge of the tile flow graph except those into EQ vertices, and in a dispatch
+-- signature's graph EQ vertices lead only to other EQ vertices.
+fun dispatchChildAllowedInhs set:Set<String> ::= dispatchGraph::ProductionGraph  c::String  attr::String =
+  onlyLhsInh(dispatchGraph.tileEdgeMap(rhsInhVertex(c, attr)));
+-- May an implementation not known here supply v?  It may where the dispatch signature's graph has
+-- the edge from v that addDispatchUnknownImplInhEqs adds for implSuppliedInhs.
+fun unknownImplMaySupply Boolean ::= dispatchGraph::ProductionGraph  v::FlowVertex =
+  set:contains(unknownImplForwardVertex, g:edgesFrom(v, dispatchGraph.unstitchedGraph));
 
 
 fun createFlowGraph g:Graph<FlowVertex> ::= l::[(FlowVertex, FlowVertex)] =

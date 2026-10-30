@@ -5,7 +5,7 @@ import silver:compiler:translation:java:type;
 
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, subtermVertexType, VertexType, FlowVertex, inhVertex;
+import silver:compiler:definition:flow:ast only just, PatternVarProjection, patternVarProjection, subtermVertexType, VertexType, FlowVertex, inhVertex, eqDeps;
 import silver:compiler:definition:flow:env only scrutineeVertexType;
 -- also unfortunately placed references to flowEnv
 
@@ -158,10 +158,15 @@ top::VarBinder ::= n::Name
       top.matchingAgainst.fromJust.fullName,
       top.bindingName))
     else nothing();
+  -- A pattern variable is part of the scrutinee's value.  A tree gets a subterm vertex type, whose
+  -- equation vertex depends on the scrutinee's (see patternRuleEq); a reference to it depends on
+  -- that vertex and on its inherited attributes, as a reference to a child does.  Anything else
+  -- depends on the scrutinee's value directly.
   local deps :: [FlowVertex] =
     case vt of
-    | just(svt) -> map(svt.inhVertex, fromMaybe([], refSet))
-    | _ -> []
+    | just(svt) -> svt.eqDeps ++ map(svt.inhVertex, fromMaybe([], refSet))
+    | nothing() when top.matchingAgainst.isJust -> top.scrutineeVertexType.eqDeps
+    | nothing() -> []
     end;
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.nameLoc, fName, ty, vt, deps, [])];
