@@ -549,39 +549,107 @@ top::Expr ::= '@' e::Expr
       else ""}${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 
-  -- TODO: There isn't really a good place to put this.
-  -- We don't have a QNameAttrOccur, so we need to re-do all the work of looking up the occurs dcl, etc.
-  -- Currently we aren't resolving contexts!  This uses attrGlobalOccursInitIndex,
-  -- which breaks if the occurs-on of the translation attr is defined as an occurs-on constraint.
   top.initTransDecSites <-
-    case top.decSiteVertexInfo of
-    | just(decSite) when top.alwaysDecorated ->
-      case e.flowVertexInfo of
-      | just(transAttrVertexType(rhsVertexType(sigName), transAttr)) ->
-        -- Need to lookup the prod dcl and get it's signature, since sigName from the flowVertexInfo
-        -- may not match the one from top.frame.signature if we are in an aspect.
-        case getValueDcl(top.frame.fullName, top.env) of
-        | prdDcl :: _
-            when getOccursDcl(transAttr, lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep.typeName, top.env)
-            matches occDcl :: _ ->
-          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
-          s"\t\t${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${sigName}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
-          s"${refDecSiteTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
-        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ sigName ++ ": " ++ genericShow(zip(top.frame.signature.inputNames, top.frame.signature.inputTypes)))
-        end
-      | just(transAttrVertexType(localVertexType(fName), transAttr)) ->
-        case getValueDcl(fName, top.env) of
-        | dcl :: _ when getOccursDcl(transAttr, dcl.typeScheme.typeName, top.env) matches occDcl :: _ ->
-          s"\t\t// Decoration site for ${e.flowVertexInfo.fromJust.vertexPP}: ${decSite.vertexPP}\n" ++
-          s"\t\t${top.frame.className}.localInheritedAttributes[${dcl.attrOccursIndex}][${occDcl.attrGlobalOccursInitIndex}_dec_site] = " ++
-          s"${refDecSiteTranslation(top.env, top.flowEnv, top.frame.lhsNtName, decSite)};\n"
-        | _ -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ fName)
-        end
-      | _ -> ""
-      end
-    | _ -> ""
+    case top.decSiteVertexInfo, e.flowVertexInfo of
+    | just(decSite), just(v) when top.alwaysDecorated ->
+      transDecSiteTranslation(top.env, top.flowEnv, top.frame.className, top.frame.fullName, top.frame.lhsNtName, v, decSite)
+    | _, _ -> ""
     end;
 }
+
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
+{
+  -- Signature sharing: the static decoration site of a shared child or local is found via the flow env,
+  -- but that of a shared translation attribute must be registered here, as for decorationSiteExpr.
+  top.initTransDecSites <-
+    case sigDecSite, e.flowVertexInfo of
+    | just(decSite), just(v) when top.alwaysDecorated && isForwardParam ->
+      transDecSiteTranslation(top.env, top.flowEnv, top.frame.className, top.frame.fullName, top.frame.lhsNtName, v, decSite)
+    | _, _ -> ""
+    end;
+}
+
+{--
+ - Translation of the statements registering decSite as the static decoration site of the shared tree v,
+ - if v is a translation attribute (of a translation attribute, and so on) of a child or local.
+ - The decoration site of a translation attribute is supplied to the tree on which it occurs as an auxiliary
+ - inherited attribute, so e.g. the decoration site of x.b.a is placed in the TransInhs supplying the
+ - inherited attributes of x.b.
+ -
+ - TODO: There isn't really a good place to put this.
+ - We don't have a QNameAttrOccur, so we need to re-do all the work of looking up the occurs dcl, etc.
+ - Currently we aren't resolving contexts!  This uses attrGlobalOccursInitIndex,
+ - which breaks if the occurs-on of the translation attr is defined as an occurs-on constraint.
+ -}
+fun transDecSiteTranslation
+String ::= env::Env  flowEnv::FlowEnv  className::String  prodName::String  lhsNtName::String  v::VertexType  decSite::VertexType =
+  case v of
+  | transAttrVertexType(treeVertex, transAttr)
+      when transInhsTranslation(env, className, prodName, treeVertex) matches just((initInhs, inhs, treeType)) ->
+    s"\t\t// Decoration site for ${v.vertexPP}: ${decSite.vertexPP}\n" ++
+    initInhs ++
+    s"\t\t${inhs}[${transOccursDcl(transAttr, treeType, env).attrGlobalOccursInitIndex}_dec_site] = " ++
+    s"${refDecSiteTranslation(env, flowEnv, lhsNtName, decSite)};\n"
+  | _ -> ""
+  end;
+
+{--
+ - The inherited attributes that are statically supplied to a child or local, or to a translation attribute
+ - (of a translation attribute, and so on) of a child or local.
+ - Gives the statements creating any TransInhs needed to reach the array of inherited attributes,
+ - a Java expression for that array, and the type of the tree;
+ - or nothing() if the tree is not rooted at a child or local.
+ -}
+fun transInhsTranslation
+Maybe<(String, String, Type)> ::= env::Env  className::String  prodName::String  v::VertexType =
+  case v of
+  | rhsVertexType(sigName) ->
+    -- Need to lookup the prod dcl and get it's signature, since sigName from the flowVertexInfo
+    -- may not match the one from top.frame.signature if we are in an aspect.
+    case getValueDcl(prodName, env) of
+    | prdDcl :: _ ->
+      just((
+        "",
+        s"${className}.childInheritedAttributes[${className}.i_${sigName}]",
+        lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep))
+    | [] -> error("Couldn't find dcl for production " ++ prodName)
+    end
+  | localVertexType(fName) ->
+    case getValueDcl(fName, env) of
+    | dcl :: _ ->
+      just((
+        "",
+        s"${className}.localInheritedAttributes[${dcl.attrOccursIndex}]",
+        dcl.typeScheme.typerep))
+    | [] -> error("Couldn't find dcl for local " ++ fName)
+    end
+  | transAttrVertexType(treeVertex, transAttr)
+      when transInhsTranslation(env, className, prodName, treeVertex) matches just((initInhs, inhs, treeType)) ->
+    -- As for an equation supplying an inherited attribute to a translation attribute,
+    -- create the TransInhs if no other equation has done so.
+    let occDcl::OccursDclInfo = transOccursDcl(transAttr, treeType, env)
+    in
+      let inhsIndex::String = s"${inhs}[${occDcl.attrGlobalOccursInitIndex}_inhs]",
+          transType::Type = determineAttributeType(occDcl, treeType)
+      in just((
+        initInhs ++
+        s"\t\tif (${inhsIndex} == null) {\n" ++
+        s"\t\t\t${inhsIndex} = new common.TransInhs(${makeNTName(transType.typeName)}.num_inh_attrs);\n" ++
+        "\t\t}\n",
+        s"((common.TransInhs)${inhsIndex}).inhs",
+        transType))
+      end
+    end
+  | _ -> nothing()
+  end;
+
+-- The occurrence of a translation attribute on the type of a tree that it is accessed on.
+fun transOccursDcl OccursDclInfo ::= transAttr::String  treeType::Type  env::Env =
+  case getOccursDcl(transAttr, treeType.typeName, env) of
+  | occDcl :: _ -> occDcl
+  | [] -> error("Couldn't find occurs dcl for " ++ transAttr ++ " on " ++ treeType.typeName)
+  end;
 
 aspect production undecExpr
 top::Expr ::= '^' e::Expr

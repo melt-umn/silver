@@ -157,6 +157,18 @@ top::DecSiteTree ::= attrName::String d::DecSiteTree
   d.maxDepth = top.maxDepth - 1;
 }
 
+{--
+ - An inherited attribute on translation attribute attrName of a tree can be supplied
+ - by supplying attrName.inh to the tree.
+ -}
+production transAttrOfDec
+top::DecSiteTree ::= attrName::String d::DecSiteTree
+{
+  top.decSitePP = s"as translation attribute ${attrName} of ${d.decSitePP}";
+  top.dbgPP = if top.maxDepth > 0 then s"as translation attribute ${attrName} of ${d.dbgPP}" else "...";
+  d.maxDepth = top.maxDepth - 1;
+}
+
 fun prettyDecSites String ::= nest::Integer d::DecSiteTree =
   replicate(nest, "\t") ++
   if length(d.decSiteAlts) > 1

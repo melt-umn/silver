@@ -28,7 +28,10 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   
   -- List of all productions
   local allProds :: [ValueDclInfo] = allRealEnv.prodDclList;
-  local allNts :: [String] = nub(map(getProdNt, allProds));
+  local allNtTypes :: [Type] =
+    nubBy(\ t1::Type t2::Type -> t1.typeName == t2.typeName,
+      map(\ d::ValueDclInfo -> d.namedSignature.outputElement.typerep, allProds));
+  local allNts :: [String] = map((.typeName), allNtTypes);
   local allDispatchSigs :: [NamedSignature] = map((.dispatchSignature), allRealEnv.dispatchDclList);
   
   -- Construct production graphs.
@@ -42,9 +45,19 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   local initialFT :: EnvTree<FlowType> =
     computeInitialFlowTypes(allSpecDefs);
   
+  -- A cycle in translation attribute occurrences (a nonterminal that translates, through
+  -- one or more translation attributes, to itself) is an error, reported by typechecking.
+  -- Flow type inference would not terminate on it: stitching a production's tile at a
+  -- translation attribute vertex type nests that vertex type without bound.  So don't
+  -- attempt inference in that case, and leave the graphs unstitched.
+  local transAttrOccursCycle :: Boolean =
+    any(map(ntHasTransAttrOccursCycle(_, allRealEnv), allNtTypes));
+
   -- Now, solve for flow types!!
   local flowTypes1 :: (EnvTree<ProductionGraph>, EnvTree<FlowType>) =
-    runFlowTypeInference(prodGraph, initialFT);
+    if transAttrOccursCycle
+    then (directBuildTree(map(prodGraphToEnv, prodGraph)), initialFT)
+    else runFlowTypeInference(prodGraph, initialFT);
   
   production finalGraphEnv :: EnvTree<ProductionGraph> = flowTypes1.fst;
   production flowTypes :: EnvTree<FlowType> = flowTypes1.snd;
@@ -56,8 +69,3 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  a::Decor
   r.grammarFlowTypes = flowTypes;
 }
 
-function getProdNt
-String ::= d::ValueDclInfo
-{
-  return d.namedSignature.outputElement.typerep.typeName;
-}

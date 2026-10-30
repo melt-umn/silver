@@ -28,6 +28,15 @@ public class TransInhs implements Lazy {
         throw new SilverInternalError("TransInhs location should never be accessed!");
     }
     
+    /**
+     * @return A shallow copy of this TransInhs, that can be modified without affecting this one.
+     */
+    public TransInhs copy() {
+        TransInhs result = new TransInhs(inhs.length);
+        System.arraycopy(inhs, 0, result.inhs, 0, inhs.length);
+        return result;
+    }
+
     @Override
     public TransInhs withContext(final DecoratedNode context) {
         TransInhs result = new TransInhs(inhs.length);

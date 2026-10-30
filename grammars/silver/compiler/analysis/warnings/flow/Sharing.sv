@@ -94,17 +94,12 @@ fun vertexGrammars [String] ::= env::Env prod::String v::VertexType =
   case v of
   | rhsVertexType(_) -> [substring(0, lastIndexOf(":", prod), prod)]
   | localVertexType(fName) when getValueDcl(fName, env) matches valDcl :: _ -> [valDcl.sourceGrammar]
-  | transAttrVertexType(rhsVertexType(sigName), transAttr)
-      when getValueDcl(prod, env) matches prdDcl :: _ ->
-    prdDcl.sourceGrammar ::
-    case getOccursDcl(transAttr, lookupSignatureInputElem(sigName, prdDcl.namedSignature).typerep.typeName, env) of
-    | dcl :: _ -> [dcl.sourceGrammar]
-    | _ -> []
-    end
-  | transAttrVertexType(localVertexType(fName), transAttr)
-      when getValueDcl(fName, env) matches valDcl :: _ ->
-    valDcl.sourceGrammar ::
-    case getOccursDcl(transAttr, valDcl.typeScheme.monoType.typeName, env) of
+  -- A translation attribute (of a translation attribute, and so on) of a child or local can be shared
+  -- by any grammar that can share the tree it occurs on, or by the grammar declaring its occurrence.
+  | transAttrVertexType(treeVertex, transAttr)
+      when vertexGrammars(env, prod, treeVertex) matches g :: gs ->
+    (g :: gs) ++
+    case getOccursDcl(transAttr, vertexTypeName(prod, treeVertex, env), env) of
     | dcl :: _ -> [dcl.sourceGrammar]
     | _ -> []
     end
